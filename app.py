@@ -90,6 +90,8 @@ def calculate_traditional_chart(dt_utc, lat, lon):
         res, _ = swe.calc_ut(jd, obj_id)
         planetary_data[name] = {
             'longitude': res[0],
+            'latitude': res[1],
+            'distance': res[2],
             'speed_in_lon': res[3]
         }
 
@@ -603,39 +605,49 @@ ASPECT_BY_SIGN_COUNT = {
     6: ('Opposition', 180.0),
 }
 
-def evaluate_ptolemaic_aspects(planetary_data):
-    orbs = {'Sun': 15.0, 'Moon': 12.0, 'Saturn': 9.0, 'Jupiter': 9.0, 'Mars': 8.0, 'Venus': 7.0, 'Mercury': 7.0}
+# The two sign-distances left uncovered by ASPECT_BY_SIGN_COUNT: 1 sign
+# apart (2nd/12th from each other) and 5 signs apart (6th/8th from each
+# other). A place in either relationship to another is in Aversion to it --
+# unconfigured, and unable to see it by the classical aspect scheme at all,
+# regardless of how close the raw degree separation happens to land
+# (Sahl, The Introduction Ch.2, 60).
+AVERSION_SIGN_COUNTS = {1, 5}
+
+# Each planet's own orb/"body" radius, front and behind (degrees) --
+# Abu Ma'shar, Great Introduction VII.3, Fig. 105 ("bodies or orbs of
+# planets"), identical to Sahl's "light" figures (The Introduction Ch.3,
+# 12-18). One shared constant: used for Assembly-strength grading below,
+# for the Connection engine, and for the Abu Ma'shar condition evaluator.
+PLANETARY_ORBS = {'Sun': 15.0, 'Moon': 12.0, 'Saturn': 9.0, 'Jupiter': 9.0,
+                   'Mars': 8.0, 'Venus': 7.0, 'Mercury': 7.0}
+
+def _format_orb(degrees):
+    dd = int(degrees)
+    mm = int(round((degrees - dd) * 60))
+    if mm == 60:
+        dd += 1
+        mm = 0
+    return f"{dd:02d}\u00b0 {mm:02d}'"
+
+def _pairwise_configurations(planetary_data):
+    """Shared per-pair raw data for every classical-planet combination:
+    whole-sign gate (Sahl, The Introduction Ch.2, 50-60), faster/slower
+    roles, and (for configured pairs) the signed deviation from the exact
+    (partile) aspect and its Applying/Separating motion. Consumed by
+    evaluate_ptolemaic_aspects() and the Connection/Transfer/Collection
+    evaluators so the gate & kinetics logic lives in exactly one place."""
     planets = [p for p in planetary_data.keys() if p != 'North Node']
-    aspects = []
+    rows = []
 
     for p1, p2 in combinations(planets, 2):
         lon1, v1 = planetary_data[p1]['longitude'], planetary_data[p1]['speed_in_lon']
         lon2, v2 = planetary_data[p2]['longitude'], planetary_data[p2]['speed_in_lon']
 
-        # --- 1. Whole-sign configuration gate ---------------------------
-        # Reject any pair whose SIGNS aren't in a valid Ptolemaic relationship
-        # (0/2/3/4/6 signs apart) before ever looking at degree orbs — this
-        # is what prohibits out-of-sign aspects regardless of how close the
-        # raw degree separation happens to land.
-        sign_idx1 = int(lon1 // 30)
-        sign_idx2 = int(lon2 // 30)
-        raw_signs_apart = abs(sign_idx1 - sign_idx2)
-        signs_apart = min(raw_signs_apart, 12 - raw_signs_apart)
-        if signs_apart not in ASPECT_BY_SIGN_COUNT:
-            continue
-        aspect_name, target = ASPECT_BY_SIGN_COUNT[signs_apart]
-
-        # --- 2. Half-orb (moiety) sum orb check -------------------------
-        raw_dist = abs(lon1 - lon2)
-        dist = raw_dist if raw_dist <= 180.0 else 360.0 - raw_dist
-        moiety1 = orbs.get(p1, 7.0) / 2.0
-        moiety2 = orbs.get(p2, 7.0) / 2.0
-        max_orb = moiety1 + moiety2
-        deviation = dist - target  # signed distance from partile (exact)
-        if abs(deviation) > max_orb:
-            continue
-
-        # --- 3. Faster planet (al-daf') vs Receiver ----------------------
+        # --- 0. Faster planet (al-daf') vs Receiver ----------------------
+        # Determined up front so it's available for Aversion rows too, not
+        # just formed aspects -- who's "faster" doesn't carry the kinetic
+        # meaning it does for a real aspect, but keeps a consistent,
+        # deterministic column order either way.
         if abs(v1) >= abs(v2):
             fast_name, fast_lon, fast_speed = p1, lon1, v1
             slow_name, slow_lon, slow_speed = p2, lon2, v2
@@ -643,18 +655,46 @@ def evaluate_ptolemaic_aspects(planetary_data):
             fast_name, fast_lon, fast_speed = p2, lon2, v2
             slow_name, slow_lon, slow_speed = p1, lon1, v1
 
-        # --- 4. Kinetic direction: Applying (ittisal) vs Separating (insiraf)
+        raw_dist = abs(lon1 - lon2)
+        dist = raw_dist if raw_dist <= 180.0 else 360.0 - raw_dist
+
+        # --- 1. Whole-sign configuration gate ---------------------------
+        # Reject any pair whose SIGNS aren't in a valid Ptolemaic relationship
+        # (0/2/3/4/6 signs apart) -- this is what prohibits out-of-sign aspects
+        # regardless of how close the raw degree separation happens to land.
+        # A pair 1 or 5 signs apart is in Aversion instead: not configured,
+        # and unable to form any aspect at all.
+        sign_idx1 = int(lon1 // 30)
+        sign_idx2 = int(lon2 // 30)
+        raw_signs_apart = abs(sign_idx1 - sign_idx2)
+        signs_apart = min(raw_signs_apart, 12 - raw_signs_apart)
+
+        row = {
+            'p1': p1, 'p2': p2, 'fast_name': fast_name, 'slow_name': slow_name,
+            'fast_speed': fast_speed, 'slow_speed': slow_speed,
+            'signs_apart': signs_apart, 'dist': dist,
+        }
+
+        if signs_apart in AVERSION_SIGN_COUNTS:
+            row.update(aspect_name='Aversion', deviation=None, motion=None, orientation=None)
+            rows.append(row)
+            continue
+
+        aspect_name, target = ASPECT_BY_SIGN_COUNT[signs_apart]
+
+        # --- 2. Kinetic direction: Applying (ittisal) vs Separating (insiraf)
         # s = signed position of the faster body relative to the receiver,
         # wrapped to (-180, 180]. deviation = dist - target is how far off
         # from the exact aspect we currently are; its time-derivative is
         # sign(s) * delta_v. Deviation shrinking toward zero => Applying.
+        deviation = dist - target  # signed distance from partile (exact)
         s = ((fast_lon - slow_lon + 180.0) % 360.0) - 180.0
         sign_s = 1.0 if s >= 0 else -1.0
         delta_v = fast_speed - slow_speed
         rate = sign_s * delta_v
         motion = "Applying" if (deviation == 0 or deviation * rate < 0) else "Separating"
 
-        # --- 5. Dexter / Sinister orientation ----------------------------
+        # --- 3. Dexter / Sinister orientation ----------------------------
         # Conjunction and Opposition have no handedness. For the others: the
         # faster planet trailing the receiver (earlier in the zodiac, s<0)
         # casts a Dexter aspect; leading it (later in the zodiac, s>0)
@@ -664,25 +704,752 @@ def evaluate_ptolemaic_aspects(planetary_data):
         else:
             orientation = "Sinister" if s > 0 else "Dexter"
 
-        # --- 6. Format remaining distance to the partile (exact) aspect --
-        remaining = abs(deviation)
-        dd = int(remaining)
-        mm = int(round((remaining - dd) * 60))
-        if mm == 60:
-            dd += 1
-            mm = 0
-        orb_str = f"{dd:02d}\u00b0 {mm:02d}'"
+        row.update(aspect_name=aspect_name, target=target, deviation=deviation,
+                    motion=motion, orientation=orientation)
+        rows.append(row)
+
+    return rows
+
+def _is_connected(row):
+    """Connection (Sahl, The Introduction Ch.3, 6-21): whether an
+    applying/separating pair currently falls within the FASTER (applying)
+    planet's own orb/light-radius (PLANETARY_ORBS) -- a narrower, per-planet
+    refinement of "looking," distinct from whether the aspect is formed at
+    all. Not defined for Aversion pairs (21: "if it was not in the sign...
+    it will not see it")."""
+    if row['aspect_name'] == 'Aversion':
+        return False
+    light = PLANETARY_ORBS.get(row['fast_name'], 7.0)
+    remaining = abs(row['deviation'])
+    if row['motion'] == 'Applying':
+        return remaining <= light
+    # Separating: 9-11 gives a same-sign (Union) pair longer to still count
+    # as connected (half the light-planet's own light) than the general,
+    # cross-sign rule (9: a full degree).
+    if row['signs_apart'] == 0:
+        return remaining <= light / 2.0
+    return remaining <= 1.0
+
+def evaluate_ptolemaic_aspects(planetary_data):
+    """Aspects, Aversions & Connections per Sahl (The Introduction Ch.2,
+    50-60) and Abu Ma'shar (Great Introduction VII.3-4): Sextile/Square/
+    Trine/Opposition are fully formed once whole-sign configured (50-56) --
+    no degree orb gates them. Union (Assembly) is unconditional same-sign
+    co-presence, graded Strong/Partial/Co-present by each planet's own orb
+    (VII.4, 5-8). Connected (Ch.3) is layered on top as a per-pair
+    refinement of how close an applying/separating pair currently is."""
+    rows = _pairwise_configurations(planetary_data)
+    aspects = []
+
+    for row in rows:
+        fast_name, slow_name = row['fast_name'], row['slow_name']
+
+        if row['aspect_name'] == 'Aversion':
+            # VII.4, 13-14: two planets in different (here, adjacent) signs
+            # can still be "in the power of" each other's body by degree --
+            # not an assembly (different signs), but a minor indication,
+            # worth noting since it's the only case an Aversion pair can
+            # still carry any classical significance at all.
+            note = '\u2013'
+            if row['signs_apart'] == 1:
+                orb1 = PLANETARY_ORBS.get(row['p1'], 7.0)
+                orb2 = PLANETARY_ORBS.get(row['p2'], 7.0)
+                if row['dist'] <= max(orb1, orb2):
+                    note = 'In Power (out-of-sign)'
+            aspects.append({
+                'Faster Planet': fast_name,
+                'Aspect': 'Aversion',
+                'Receiver': slow_name,
+                'Motion': '\u2013',
+                'Orientation': '\u2013',
+                'Exact Orb Dist': '\u2013',
+                'Strength': note,
+                'Connected': '\u2013',
+            })
+            continue
+
+        connected = _is_connected(row)
+
+        if row['aspect_name'] == 'Conjunction':
+            # Assembly strength (VII.4, 5-8): mutually strong if each
+            # planet's own orb reaches the other; one-sided/weaker if only
+            # the wider orb does; otherwise just nominal same-sign
+            # co-presence. A shared bound (term) makes it more powerful still.
+            orb1 = PLANETARY_ORBS.get(row['p1'], 7.0)
+            orb2 = PLANETARY_ORBS.get(row['p2'], 7.0)
+            dist = row['dist']
+            if dist <= min(orb1, orb2):
+                strength = 'Strong'
+            elif dist <= max(orb1, orb2):
+                strength = 'Partial'
+            else:
+                strength = 'Co-present'
+            lon1 = planetary_data[row['p1']]['longitude']
+            lon2 = planetary_data[row['p2']]['longitude']
+            if get_essential_rulers(lon1)['term'] == get_essential_rulers(lon2)['term']:
+                strength += ' (same bound)'
+        else:
+            # Looking-strength (VII.5, 2-7, Fig. 111): "the strongest thing
+            # is looking at the degree most closely related by number to
+            # the degree of its own sign... if the aspect was far from
+            # these degrees, its aspect will be weaker" -- graded, not
+            # gated, using the pair's own orbs as the proximity scale
+            # (no numeric cutoff is given in the source beyond this).
+            combined_orb = PLANETARY_ORBS.get(row['p1'], 7.0) + PLANETARY_ORBS.get(row['p2'], 7.0)
+            remaining = abs(row['deviation'])
+            if remaining <= combined_orb / 3.0:
+                strength = 'Strong'
+            elif remaining <= combined_orb:
+                strength = 'Moderate'
+            else:
+                strength = 'Weak'
 
         aspects.append({
             'Faster Planet': fast_name,
-            'Aspect': aspect_name,
+            'Aspect': row['aspect_name'],
             'Receiver': slow_name,
-            'Motion': motion,
-            'Orientation': orientation,
-            'Exact Orb Dist': orb_str,
+            'Motion': row['motion'],
+            'Orientation': row['orientation'],
+            'Exact Orb Dist': _format_orb(abs(row['deviation'])),
+            'Strength': strength,
+            'Connected': 'Yes' if connected else 'No',
         })
 
     return aspects
+
+# --- Transfer & Collection of light -- Sahl, The Introduction Ch.3, 24-30 ----
+
+# Classical weight order, heaviest (slowest) first -- used to determine
+# which of two connecting planets is the heavier "collector."
+WEIGHT_ORDER = ['Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon']
+
+def evaluate_transfers_of_light(planetary_data):
+    """Transfer of light: the core concept (a carrier separating from one
+    planet and connecting to another) is Sahl's own (Ch.3, 24-27). The
+    two-type breakdown below is Abu Ma'shar's addition (Great Introduction
+    VII.5, 83-85, Fig. 126) -- Sahl does not distinguish a Type II.
+
+    Type I: a "carrier" planet separates from one planet it is (or was) in
+    aspect with, and connects with another, transferring the first
+    planet's nature to the second. "Separates from" only requires the
+    carrier to be the faster body, formerly-applying-now-past-exact
+    (Motion == Separating) in a valid (non-Aversion) aspect -- not the
+    tighter Connected threshold, which the book's own example (25-27)
+    doesn't satisfy for Moon/Mercury (2 degrees past an exact Sextile,
+    outside the 1-degree cross-sign Connected allowance) yet is still
+    plainly described as "separating." "Connects to" does require
+    Connected == True (24-25: "connecting with another... already
+    connected with").
+
+    Type II (84-85): a light planet connects with a slower one, which is
+    itself already connecting onward with a third, even slower planet --
+    the slow one shifts the light one's nature onto the third.
+
+    The carrier must be the faster body in BOTH legs -- confirmed as a
+    deliberate choice, not an oversight, after cross-checking a real chart
+    (29 Oct 1990, 13:02 EST, Pontiac MI) against Janus's medieval module:
+    Janus named the Sun as translating Mercury's light to Venus there, even
+    though the Sun is slower than both (0.999 deg/day vs Mercury's 1.603
+    and Venus's 1.254) -- the looser, more common modern/Lilly-style
+    convention, where the carrier only needs its own angular gap to each
+    to be independently shrinking/growing. Sahl's text ("the light, quick
+    star... separates from the slow one, and connects with another")
+    requires the SAME planet to be light/fast relative to both, which the
+    Sun fails here on both counts -- so this implementation declines to
+    name it a carrier, matching the sources this project is built on over
+    the more permissive mainstream-software convention."""
+    rows = _pairwise_configurations(planetary_data)
+    by_fast = {}
+    for row in rows:
+        if row['aspect_name'] == 'Aversion':
+            continue
+        by_fast.setdefault(row['fast_name'], []).append(row)
+
+    applying_connected_to = {
+        fast: {r['slow_name'] for r in fast_rows if r['motion'] == 'Applying' and _is_connected(r)}
+        for fast, fast_rows in by_fast.items()
+    }
+
+    transfers = []
+    for carrier, carrier_rows in by_fast.items():
+        separating_from = [r['slow_name'] for r in carrier_rows if r['motion'] == 'Separating']
+        connecting_to = applying_connected_to.get(carrier, set())
+        for a in separating_from:
+            for b in connecting_to:
+                if a != b:
+                    transfers.append({'Type': 'I', 'Carrier': carrier, 'Separates From': a, 'Connects To': b})
+
+    for light, mediums in applying_connected_to.items():
+        for medium in mediums:
+            for onward in applying_connected_to.get(medium, set()):
+                if onward != light:
+                    transfers.append({'Type': 'II', 'Carrier': light, 'Separates From': f"(via {medium})", 'Connects To': onward})
+
+    return transfers
+
+# Classical weight order, heaviest (slowest) first -- used to determine
+# which of two connecting planets is the heavier "collector."
+WEIGHT_ORDER = ['Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon']
+
+def evaluate_collections_of_light(planetary_data):
+    """Collection of light (Sahl Ch.3, 28-30; Abu Ma'shar VII.5, 86, Fig.
+    127): two planets not connected to each other both connect with a
+    single heavier planet, which collects their light. Reported per PAIR,
+    matching Sahl's own pairwise framing (and how reference software such
+    as Janus reports it) rather than bundled into one lumped group -- with
+    more than two planets eligible under the same collector, each mutually-
+    unconnected pair among them is its own valid collection fact. (An
+    earlier version dropped a planet from the *entire* group the moment it
+    was connected to any *other* member, which silently ate otherwise-valid
+    pairs -- e.g. Sun and Venus both connecting to Jupiter alongside Mars
+    would wrongly suppress "Jupiter collects Sun & Mars" just because Sun
+    and Venus happened to also be connected to each other.)"""
+    rows = _pairwise_configurations(planetary_data)
+    connected_lookup = {}
+    applying_to = {}
+    for row in rows:
+        pair = frozenset({row['p1'], row['p2']})
+        is_conn = row['aspect_name'] != 'Aversion' and _is_connected(row)
+        connected_lookup[pair] = is_conn
+        if is_conn and row['motion'] == 'Applying':
+            applying_to.setdefault(row['fast_name'], set()).add(row['slow_name'])
+
+    collectors = {}
+    for x, targets in applying_to.items():
+        for z in targets:
+            collectors.setdefault(z, set()).add(x)
+
+    collections = []
+    for z, lights in collectors.items():
+        eligible = sorted(x for x in lights if WEIGHT_ORDER.index(z) < WEIGHT_ORDER.index(x))
+        for x, y in combinations(eligible, 2):
+            if not connected_lookup.get(frozenset({x, y}), False):
+                collections.append({'Collector': z, 'Collects': f'{x} & {y}'})
+    return collections
+
+def evaluate_wildness(planetary_data):
+    """Wildness. Sahl's own term for this is "banished" (مطرود, The
+    Introduction Ch.3, 64): "the planet which none of the planets connects
+    to." His wording doesn't explicitly frame this as whole-sign Aversion
+    to everyone -- that sharper, "aversion to all other planets" definition
+    is a later refinement (Dykes' footnote there, citing his own ITA
+    III.10, calls Sahl's "banished" an early, less precise form of it) that
+    Abu Ma'shar's Great Introduction VII.5, 79-82, Fig. 125 reflects, and
+    which this function implements. Per VII.5, 80-81, a wild planet still
+    counts as connected with the lord of whatever bound it currently
+    occupies, noted here rather than negating the flag."""
+    rows = _pairwise_configurations(planetary_data)
+    planets = [p for p in planetary_data.keys() if p != 'North Node']
+    aversion_count = {p: 0 for p in planets}
+    for row in rows:
+        if row['aspect_name'] == 'Aversion':
+            aversion_count[row['p1']] += 1
+            aversion_count[row['p2']] += 1
+    results = []
+    for p in planets:
+        if aversion_count[p] == len(planets) - 1:
+            lon = planetary_data[p]['longitude']
+            results.append({'Planet': p, 'Bound Lord (residual connection)': get_essential_rulers(lon)['term']})
+    return results
+
+def evaluate_reflections_of_light(planetary_data, ascendant_lon):
+    """Reflection of light (VII.5, 87-89, Figs. 128-129): the Collection/
+    Transfer patterns specifically for two planets that are themselves in
+    Aversion to each other. Type II (89) is Transfer for an Aversion pair
+    (footnote 170: "this kind of reflection is a transfer of light, but for
+    two planets in aversion"). Type I (87-88) is Collection for an Aversion
+    pair, with the collector "reflecting" the light onward via its own
+    further aspects -- for a natal (non-topical) chart there's no "sought
+    matter" to reflect toward, so this reports which Whole-Sign House(s)
+    the collector's own further aspects reach, for the reader to interpret."""
+    rows = _pairwise_configurations(planetary_data)
+    aversion_pairs = {frozenset({r['p1'], r['p2']}) for r in rows if r['aspect_name'] == 'Aversion'}
+
+    reflections = []
+    for t in evaluate_transfers_of_light(planetary_data):
+        if t['Type'] == 'I' and frozenset({t['Separates From'], t['Connects To']}) in aversion_pairs:
+            reflections.append({
+                'Reflection Type': 'II (Transfer)',
+                'Detail': f"{t['Carrier']} reflects between {t['Separates From']} and {t['Connects To']}",
+            })
+
+    for c in evaluate_collections_of_light(planetary_data):
+        collected = c['Collects'].split(' & ')
+        if len(collected) == 2 and frozenset(collected) in aversion_pairs:
+            collector = c['Collector']
+            reached_houses = sorted({
+                get_wsh_house(planetary_data[r['p2'] if r['p1'] == collector else r['p1']]['longitude'], ascendant_lon)
+                for r in rows
+                if r['aspect_name'] != 'Aversion' and collector in (r['p1'], r['p2'])
+                and (r['p2'] if r['p1'] == collector else r['p1']) not in collected
+            })
+            detail = f"{collector} collects {c['Collects']}"
+            if reached_houses:
+                detail += f", reflects toward house(s) {reached_houses}"
+            reflections.append({'Reflection Type': 'I (Collection)', 'Detail': detail})
+    return reflections
+
+def evaluate_blocking(planetary_data):
+    """Blocking. Type I is Sahl's "Intervention" (The Introduction Ch.3,
+    35-37), reused by Abu Ma'shar as his own Blocking Type I (Great
+    Introduction VII.5, 91-92, footnote 172): three planets share a sign;
+    the heaviest sits at the highest degree, and whichever of the other two
+    sits at the middle degree blocks the lightest from reaching the
+    heaviest until it passes by. Type II is Sahl's "Nullification" (The
+    Introduction Ch.3, 38-48), reused by Abu Ma'shar as Blocking Type II
+    (VII.5, 93-94, footnote 174): a light planet is connecting by aspect
+    (from another sign) with a heavy one, but a different planet is
+    co-present (same sign, i.e. connecting by body) with that heavy one --
+    and a body connection categorically outranks an aspect connection to
+    the same target, blocking the light planet's aspect regardless of
+    relative degree closeness. Sahl's third blocking type, "Cutting the
+    Light" (Ch.3, 31-34), is modeled as Type III of evaluate_cutting_
+    the_light() rather than here, confirmed against Fig. 12's own numbers --
+    see that function's docstring."""
+    rows = _pairwise_configurations(planetary_data)
+    planets = [p for p in planetary_data.keys() if p != 'North Node']
+    blocks = []
+
+    by_sign = {}
+    for p in planets:
+        by_sign.setdefault(int(planetary_data[p]['longitude'] // 30), []).append(p)
+    for group in by_sign.values():
+        if len(group) < 3:
+            continue
+        for a, b, c in combinations(group, 3):
+            trio = sorted([a, b, c], key=lambda p: planetary_data[p]['longitude'] % 30)
+            by_weight = sorted([a, b, c], key=lambda p: WEIGHT_ORDER.index(p))
+            heaviest, lightest = by_weight[0], by_weight[-1]
+            if trio[-1] == heaviest and trio[0] == lightest:
+                blocks.append({'Type': 'I', 'Blocked': lightest, 'Blocks': trio[1], 'From Reaching': heaviest})
+
+    for row in rows:
+        if row['aspect_name'] in ('Aversion', 'Conjunction') or row['motion'] != 'Applying':
+            continue
+        fast, slow = row['fast_name'], row['slow_name']
+        slow_sign = int(planetary_data[slow]['longitude'] // 30)
+        for candidate in planets:
+            if candidate in (fast, slow):
+                continue
+            if int(planetary_data[candidate]['longitude'] // 30) == slow_sign:
+                blocks.append({'Type': 'II', 'Blocked': fast, 'Blocks': candidate, 'From Reaching': slow})
+    return blocks
+
+def evaluate_handing_over(planetary_data, sect):
+    """Handing Over (Sahl, The Introduction Ch.3, 70-76): three grades of
+    one phenomenon, not independent subtypes. Management (76, "any
+    application or connection hands over management") is the unconditional
+    baseline for every Connected pair. Power (70-72) is additionally
+    granted when the applying planet is itself in its own house,
+    exaltation, or triplicity at the time of connecting. Nature (73-74,
+    confirmed by the worked example's own footnote -- "that is, in
+    reception") is additionally granted when the applying planet is
+    connecting with the dispositor -- by house or exaltation only,
+    matching Reception's own "perfect" scope (49-50), not triplicity -- of
+    its own position. (Abu Ma'shar's own "Two Natures" subtype, Great
+    Introduction VII.5, 97-100, doesn't appear anywhere in Sahl and isn't
+    modeled here.)
+
+    All three grades run in ONE direction only: "the one handing over" is
+    always the light/applying planet, "the accepting one" is always the
+    heavy planet it connects with (67) -- Power and Nature are graded
+    elaborations of that same fixed direction, not independently
+    reversible. An earlier version of this function also let the heavy
+    (slow) side "hand power/nature back" to the applicant whenever ITS OWN
+    position happened to qualify -- an addition with no basis in the
+    text, caught during a source-fidelity review and removed."""
+    rows = _pairwise_configurations(planetary_data)
+    triplicity_key = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
+    results = []
+
+    for r in rows:
+        if r['aspect_name'] == 'Aversion' or not _is_connected(r):
+            continue
+        fast, slow = r['fast_name'], r['slow_name']
+        fast_lon = planetary_data[fast]['longitude']
+        fast_rulers = get_essential_rulers(fast_lon)
+        fast_power_claims = {fast_rulers['domicile'], fast_rulers['exaltation'], fast_rulers[triplicity_key]} - {'-'}
+        fast_own_dispositors = {fast_rulers['domicile'], fast_rulers['exaltation']} - {'-'}
+
+        results.append({'Type': 'Management', 'Planet': fast, 'Hands Over To': slow})
+
+        if fast in fast_power_claims:
+            results.append({'Type': 'Power', 'Planet': fast, 'Hands Over To': slow})
+
+        if slow in fast_own_dispositors:
+            results.append({'Type': 'Nature', 'Planet': fast, 'Hands Over To': slow})
+
+    return results
+
+# --- Forward simulation -- Great Introduction VII.5's motion-dependent
+# conditions (Emptiness of Course, Revoking, Resistance, Escape, Returning's
+# retrograde case, Recompense) describe what happens as the chart moves
+# forward, not the birth moment alone. This steps the ephemeris ahead and
+# records each planet's sign-exit and station days, shared by every
+# detector below rather than recomputed per-condition.
+
+def _bisect_crossing(test_fn, day_lo, day_hi, tol=0.02, max_iter=40):
+    """Assumes exactly one transition of test_fn's boolean value inside
+    [day_lo, day_hi]; returns the midpoint of the final bracket."""
+    val_lo = test_fn(day_lo)
+    for _ in range(max_iter):
+        if day_hi - day_lo < tol:
+            break
+        mid = (day_lo + day_hi) / 2.0
+        if test_fn(mid) == val_lo:
+            day_lo = mid
+        else:
+            day_hi = mid
+    return (day_lo + day_hi) / 2.0
+
+def _simulate_forward(planetary_data, jd, horizon_days=200, step_days=1.0):
+    """Day-step swe.calc_ut for all 7 classical planets from jd out to
+    horizon_days, returning per-planet daily (day, longitude, speed) series
+    plus interpolated sign-exit and station event days. A near-term cutoff,
+    not an indefinite search -- a condition not found within the horizon is
+    reported as "none found," not chased further."""
+    planets = [p for p in planetary_data.keys() if p != 'North Node']
+    n_steps = int(horizon_days / step_days) + 1
+    series = {p: {'day': [], 'lon': [], 'speed': []} for p in planets}
+    for i in range(n_steps):
+        day = i * step_days
+        for p in planets:
+            res, _ = swe.calc_ut(jd + day, PLANET_SWE_IDS[p])
+            series[p]['day'].append(day)
+            series[p]['lon'].append(res[0])
+            series[p]['speed'].append(res[3])
+
+    events = {p: {'sign_exits': [], 'stations': []} for p in planets}
+    for p in planets:
+        days, lons, speeds = series[p]['day'], series[p]['lon'], series[p]['speed']
+        pid = PLANET_SWE_IDS[p]
+        for i in range(len(days) - 1):
+            sign0 = int(lons[i] // 30)
+            if int(lons[i + 1] // 30) != sign0:
+                def _sign_test(day, _pid=pid, _sign0=sign0):
+                    res, _ = swe.calc_ut(jd + day, _pid)
+                    return int(res[0] // 30) == _sign0
+                events[p]['sign_exits'].append(_bisect_crossing(_sign_test, days[i], days[i + 1]))
+            if (speeds[i] > 0) != (speeds[i + 1] > 0):
+                kind = 'first' if speeds[i] > 0 else 'second'
+                def _speed_test(day, _pid=pid, _positive=(speeds[i] > 0)):
+                    res, _ = swe.calc_ut(jd + day, _pid)
+                    return (res[3] > 0) == _positive
+                events[p]['stations'].append((_bisect_crossing(_speed_test, days[i], days[i + 1]), kind))
+
+    return {'series': series, 'events': events, 'jd': jd, 'horizon_days': horizon_days}
+
+def _deviation_zero_day(sim, p1, p2, target):
+    """First day in a forward simulation where the (p1,p2) pair's raw
+    separation minus the target aspect angle crosses zero (the connection
+    becomes exact), or None if it doesn't within the horizon."""
+    lons1, lons2 = sim['series'][p1]['lon'], sim['series'][p2]['lon']
+    days = sim['series'][p1]['day']
+    prev_dev = None
+    for day, l1, l2 in zip(days, lons1, lons2):
+        raw = abs(l1 - l2)
+        dist = raw if raw <= 180.0 else 360.0 - raw
+        dev = dist - target
+        if prev_dev is not None and (prev_dev > 0) != (dev > 0):
+            return day
+        prev_dev = dev
+    return None
+
+def _interp_lon(sim, planet, day):
+    """Linear-interpolate a planet's longitude at an arbitrary day within
+    the simulation horizon from its daily sample series."""
+    days, lons = sim['series'][planet]['day'], sim['series'][planet]['lon']
+    for i in range(len(days) - 1):
+        if days[i] <= day <= days[i + 1]:
+            frac = (day - days[i]) / (days[i + 1] - days[i]) if days[i + 1] != days[i] else 0.0
+            return lons[i] + frac * (lons[i + 1] - lons[i])
+    return lons[-1]
+
+def evaluate_returning(planetary_data, accidental, ascendant_lon):
+    """Returning (Sahl, The Introduction Ch.3, 65-69, Figs. 21-22): two
+    distinct manners, not grades of one trigger, both present-tense --
+    Sahl gives no forward-looking refinement for either.
+
+    Manner I (65): a planet connects with a retrograde planet, or one
+    under the rays -- either condition alone triggers it. "It returns to
+    it what it accepted from it, and has already corrupted its
+    management, and indicates that the question does not have a beginning
+    nor end."
+
+    Manner II (66-69): the light (handing-over, faster) planet is in a
+    stake (angular house), connecting with a heavy (accepting) planet
+    that is falling (cadent) -- "the sought thing has a beginning...
+    but does not have an end because the accepting one is falling." NOTE:
+    Sahl's own worked example (68: Moon in the 6th, Mars in the 12th --
+    both cadent) doesn't actually satisfy this rule as stated (neither
+    planet is angular); Dykes' own footnote there flags the same
+    inconsistency in the source text, not a misreading here. Implemented
+    per the rule as stated in 66-67, not the example."""
+    rows = _pairwise_configurations(planetary_data)
+    results = []
+    for r in rows:
+        if r['aspect_name'] == 'Aversion' or not _is_connected(r) or r['motion'] != 'Applying':
+            continue
+        fast, slow = r['fast_name'], r['slow_name']
+        acc_slow = accidental[slow]
+
+        if acc_slow['Retrograde'] or acc_slow['Combust'] or acc_slow['UnderBeams']:
+            results.append({'Manner': 'I (65)', 'Planet': fast, 'Returned By': slow})
+
+        fast_house = get_wsh_house(planetary_data[fast]['longitude'], ascendant_lon)
+        slow_house = get_wsh_house(planetary_data[slow]['longitude'], ascendant_lon)
+        if fast_house in ANGLE_HOUSES and slow_house in CADENT_HOUSES:
+            results.append({'Manner': 'II (66-69)', 'Planet': fast, 'Returned By': slow})
+
+    return results
+
+def evaluate_revoking(planetary_data, sim):
+    """Revoking (VII.5, 117, Fig. 137): a planet applying toward a
+    connection stations retrograde before reaching it, nullifying the
+    connection."""
+    if sim is None:
+        return []
+    rows = _pairwise_configurations(planetary_data)
+    results = []
+    for r in rows:
+        if r['aspect_name'] == 'Aversion' or r['motion'] != 'Applying':
+            continue
+        fast, slow = r['fast_name'], r['slow_name']
+        first_station = next((s for s in sim['events'][fast]['stations'] if s[1] == 'first'), None)
+        if not first_station:
+            continue
+        exact_day = _deviation_zero_day(sim, fast, slow, r['target'])
+        if exact_day is None or first_station[0] < exact_day:
+            results.append({'Planet': fast, 'Was Connecting To': slow, 'Stations Retrograde In (days)': round(first_station[0], 1)})
+    return results
+
+def evaluate_resistance(planetary_data, sim):
+    """Resistance (VII.5, 118, Fig. 138): a light planet applying to a
+    heavier one stations retrograde first; a third, even lighter planet
+    that also wanted the light one ends up connecting with it after its
+    retrogradation, instead of the light one ever reaching the original
+    heavy target."""
+    if sim is None:
+        return []
+    rows = _pairwise_configurations(planetary_data)
+    results = []
+    for r in rows:
+        if r['aspect_name'] == 'Aversion' or r['motion'] != 'Applying':
+            continue
+        light, heavy = r['fast_name'], r['slow_name']
+        first_station = next((s for s in sim['events'][light]['stations'] if s[1] == 'first'), None)
+        if not first_station:
+            continue
+        exact_with_heavy = _deviation_zero_day(sim, light, heavy, r['target'])
+        if exact_with_heavy is not None and first_station[0] >= exact_with_heavy:
+            continue
+        for r2 in rows:
+            if light not in (r2['p1'], r2['p2']) or r2['aspect_name'] == 'Aversion':
+                continue
+            other = r2['p2'] if r2['p1'] == light else r2['p1']
+            if other == heavy or WEIGHT_ORDER.index(other) <= WEIGHT_ORDER.index(light):
+                continue
+            exact_with_other = _deviation_zero_day(sim, light, other, r2['target'])
+            if exact_with_other is not None and exact_with_other > first_station[0]:
+                results.append({'Light Planet': light, 'Originally Heading To': heavy, 'Resisted, Now Connects With': other})
+    return results
+
+def evaluate_escape(planetary_data, sim):
+    """Escape (VII.5, 119, Fig. 139): the planet being applied to changes
+    sign before the connection completes, and a different, now-closer
+    planet captures the connection instead."""
+    if sim is None:
+        return []
+    rows = _pairwise_configurations(planetary_data)
+    results = []
+    for r in rows:
+        if r['aspect_name'] == 'Aversion' or r['motion'] != 'Applying':
+            continue
+        fast, slow = r['fast_name'], r['slow_name']
+        sign_exits = sim['events'][slow]['sign_exits']
+        if not sign_exits:
+            continue
+        exit_day = sign_exits[0]
+        exact_day = _deviation_zero_day(sim, fast, slow, r['target'])
+        if exact_day is not None and exact_day <= exit_day:
+            continue
+        fast_lon_at_exit = _interp_lon(sim, fast, exit_day)
+        best, best_dev = None, None
+        for other in planetary_data:
+            if other in (fast, slow, 'North Node'):
+                continue
+            other_lon_at_exit = _interp_lon(sim, other, exit_day)
+            raw = abs(fast_lon_at_exit - other_lon_at_exit)
+            dist = raw if raw <= 180.0 else 360.0 - raw
+            sign_f, sign_o = int(fast_lon_at_exit // 30), int(other_lon_at_exit // 30)
+            apart = min(abs(sign_f - sign_o), 12 - abs(sign_f - sign_o))
+            if apart not in ASPECT_BY_SIGN_COUNT:
+                continue
+            dev = abs(dist - ASPECT_BY_SIGN_COUNT[apart][1])
+            if best_dev is None or dev < best_dev:
+                best, best_dev = other, dev
+        if best is not None:
+            results.append({'Planet': fast, 'Escaped': slow, 'Connected Instead With': best})
+    return results
+
+def evaluate_cutting_the_light(planetary_data, sim):
+    """Cutting the Light. Type III is Sahl's own Blocking #1, "Cutting the
+    Light" (The Introduction Ch.3, 31-34, Fig. 12) -- confirmed against
+    Fig. 12's own numbers (Ascendant Virgo, Mercury 10 Cancer applying by
+    trine to Jupiter 15 Pisces, but Mars 13 Aries sits square to Mercury at
+    only ~3 degrees from exact): Mercury completes the nearer connection to
+    Mars before it ever reaches Jupiter, cutting off the original one --
+    exactly this mechanism (among several planets a given one is applying
+    to, it connects with whichever is nearest by degree first, cutting off
+    the more distant, originally-favored connection). Abu Ma'shar reuses it
+    as his own Type III when he moves "Cutting the Light" out of Sahl's
+    three-way Blocking and into its own later, expanded category (Great
+    Introduction VII.5, 120-125, Fig. 142). Types I-II (121-124, Figs.
+    140-141, forward-sim) are Abu Ma'shar's own further elaboration, not
+    found in Sahl: an intervening planet stations retrograde and enters the
+    light planet's own sign before the light planet reaches its original
+    heavy target."""
+    rows = _pairwise_configurations(planetary_data)
+    results = []
+
+    by_fast = {}
+    for r in rows:
+        if r['aspect_name'] != 'Aversion':
+            by_fast.setdefault(r['fast_name'], []).append(r)
+    for fast, candidates in by_fast.items():
+        applying = sorted((r for r in candidates if r['motion'] == 'Applying'), key=lambda r: abs(r['deviation']))
+        if len(applying) >= 2:
+            nearest = applying[0]['slow_name']
+            for r in applying[1:]:
+                results.append({'Type': 'III', 'Planet': fast, 'Cut Off From': r['slow_name'], 'Connects With Instead': nearest})
+
+    if sim is not None:
+        for r in rows:
+            if r['aspect_name'] == 'Aversion' or r['motion'] != 'Applying':
+                continue
+            light, heavy = r['fast_name'], r['slow_name']
+            exact_day = _deviation_zero_day(sim, light, heavy, r['target'])
+            if exact_day is None:
+                continue
+            light_sign = int(planetary_data[light]['longitude'] // 30)
+            for candidate in planetary_data:
+                if candidate in (light, heavy, 'North Node'):
+                    continue
+                for station_day, kind in sim['events'][candidate]['stations']:
+                    if kind != 'first' or station_day >= exact_day:
+                        continue
+                    for exit_day in sim['events'][candidate]['sign_exits']:
+                        if station_day < exit_day < exact_day and int(_interp_lon(sim, candidate, exit_day) // 30) == light_sign:
+                            results.append({'Type': 'I', 'Planet': light, 'Cut Off From': heavy, 'Cut By': candidate})
+    return results
+
+def _find_recompense_day(sim, helper, helped):
+    """Best-effort forward scan for Recompense (VII.5, 127): the helper
+    planet later enters its own Fall or a Well while the originally-helped
+    planet is positioned to connect with it -- the reciprocal payback.
+    Returns the day found, or None -- not found within the 200-day horizon
+    isn't treated as a hard "no," just omitted from the table."""
+    helper_fall_signs = FALLS.get(helper, [])
+    days = sim['series'][helper]['day']
+    lons_helper, lons_helped = sim['series'][helper]['lon'], sim['series'][helped]['lon']
+    for day, lh, lp in zip(days, lons_helper, lons_helped):
+        sign = get_zodiac_sign(lh)
+        degree_1_based = int(lh % 30) + 1
+        if not (degree_1_based in WELLED_DEGREES.get(sign, []) or sign in helper_fall_signs):
+            continue
+        raw = abs(lh - lp)
+        dist = raw if raw <= 180.0 else 360.0 - raw
+        sign_h, sign_p = int(lh // 30), int(lp // 30)
+        apart = min(abs(sign_h - sign_p), 12 - abs(sign_h - sign_p))
+        if apart in ASPECT_BY_SIGN_COUNT and abs(dist - ASPECT_BY_SIGN_COUNT[apart][1]) < 5.0:
+            return day
+    return None
+
+def evaluate_favor_and_recompense(planetary_data, essential, sect, sim):
+    """Favor and Recompense (VII.5, 126-128, Fig. 143): a planet in its own
+    Fall or a Well, pulled out by a connecting dispositor (Favor);
+    Recompense is the reciprocal payback later, found via the forward
+    simulation when available."""
+    rows = _pairwise_configurations(planetary_data)
+    results = []
+    for r in rows:
+        if r['aspect_name'] == 'Aversion' or not _is_connected(r):
+            continue
+        for helper, helped in ((r['p1'], r['p2']), (r['p2'], r['p1'])):
+            lon = planetary_data[helped]['longitude']
+            sign = get_zodiac_sign(lon)
+            degree_1_based = int(lon % 30) + 1
+            in_well = degree_1_based in WELLED_DEGREES.get(sign, [])
+            in_fall = essential[helped]['Fall']
+            if not (in_well or in_fall):
+                continue
+            if helper not in _dispositors(lon, sect):
+                continue
+            entry = {'Planet': helped, 'Condition': 'Fall' if in_fall else 'Well', 'Favored By': helper}
+            if sim is not None:
+                recompense_day = _find_recompense_day(sim, helper, helped)
+                if recompense_day is not None:
+                    entry['Recompense (days)'] = round(recompense_day, 1)
+            results.append(entry)
+    return results
+
+def evaluate_non_reception(planetary_data, sect):
+    """Non-reception (Sahl, The Introduction Ch.3, 58-62, Fig. 18): five
+    named ways a connection is refused rather than received, using the
+    book's own A -> B model (A = the connecting/faster planet, B = the one
+    it connects with).
+
+    Kind I (58): B holds no essential-dignity claim (domicile, exaltation,
+    triplicity, term, or face) at A's own position -- "B is alien in A's
+    sign." Not recognized, not received.
+
+    Kind II (59-60): A is in B's own sign of fall -- "like one who comes
+    to it from the house of its enemies." Confirmed against Sahl's own
+    five examples (Aries->Saturn, Cancer->Mars, Virgo->Venus, Capricorn->
+    Jupiter, Libra->Sun) -- all exactly A-in-B's-fall.
+
+    Kind III (61): A is in A's OWN fall, and B holds no share -- house or
+    exaltation ONLY, per 61's own parenthetical ("that is, by house or
+    exaltation") -- at A's position. Narrower than Kind I's test (which
+    also allows triplicity/term/face to count): a self-fall specifically
+    needs A's two major dignities, not a minor one, to rescue it -- "as
+    though the one asking is offering defeat."
+
+    Kind IV (62): B is in B's OWN fall -- brings the connection down
+    regardless of A's own condition.
+
+    Kind V (62): B sits in A's own sign of fall -- the planet A is
+    connecting with has landed in the very sign that would ruin A."""
+    rows = _pairwise_configurations(planetary_data)
+    triplicity_key = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
+    results = []
+
+    for r in rows:
+        if r['aspect_name'] == 'Aversion' or not _is_connected(r):
+            continue
+        a, b = r['fast_name'], r['slow_name']
+        a_lon, b_lon = planetary_data[a]['longitude'], planetary_data[b]['longitude']
+        a_sign, b_sign = get_zodiac_sign(a_lon), get_zodiac_sign(b_lon)
+        a_rulers = get_essential_rulers(a_lon)
+        b_alien_in_a_sign = b not in (a_rulers['domicile'], a_rulers['exaltation'], a_rulers[triplicity_key], a_rulers['term'], a_rulers['face'])
+        b_no_major_share_in_a_sign = b not in (a_rulers['domicile'], a_rulers['exaltation'])
+        a_in_own_fall = a_sign in FALLS.get(a, [])
+        b_in_own_fall = b_sign in FALLS.get(b, [])
+        a_in_b_fall = a_sign in FALLS.get(b, [])
+        b_in_a_fall = b_sign in FALLS.get(a, [])
+
+        if b_alien_in_a_sign:
+            results.append({'Kind': 'I (58)', 'Connecting': a, 'With': b})
+        if a_in_b_fall:
+            results.append({'Kind': 'II (59-60)', 'Connecting': a, 'With': b})
+        if a_in_own_fall and b_no_major_share_in_a_sign:
+            results.append({'Kind': 'III (61)', 'Connecting': a, 'With': b})
+        if b_in_own_fall:
+            results.append({'Kind': 'IV (62)', 'Connecting': a, 'With': b})
+        if b_in_a_fall:
+            results.append({'Kind': 'V (62)', 'Connecting': a, 'With': b})
+
+    return results
 
 # --- Prenatal Lunation (Syzygy) — Abbasid / Medieval Method --------------
 
@@ -1007,6 +1774,771 @@ def evaluate_special_degrees(planetary_data):
             })
     return results
 
+# --- Abu Ma'shar's Planetary Condition -- Great Introduction VII.6 -------
+# (with supporting data/mechanics from VII.3-4 and V.20)
+
+FORTUNES = {'Jupiter', 'Venus'}
+INFORTUNES = {'Saturn', 'Mars'}
+
+# Great Introduction V.20, Figs. 60-61: bright/dusky/empty/dark degrees by
+# sign, transcribed as (start, end, category) ranges (degree-in-sign, 0-29).
+BRIGHTNESS_DEGREES = {
+    'Aries':       [(0, 2, 'Dusky'), (3, 7, 'Dark'), (8, 15, 'Dusky'), (16, 19, 'Bright'), (20, 23, 'Dark'), (24, 28, 'Bright'), (29, 29, 'Dark')],
+    'Taurus':      [(0, 2, 'Dusky'), (3, 9, 'Dark'), (10, 11, 'Empty'), (12, 19, 'Bright'), (20, 24, 'Empty'), (25, 27, 'Bright'), (28, 29, 'Dusky')],
+    'Gemini':      [(0, 6, 'Bright'), (7, 9, 'Dusky'), (10, 14, 'Bright'), (15, 16, 'Empty'), (17, 22, 'Bright'), (23, 29, 'Dusky')],
+    'Cancer':      [(0, 6, 'Dusky'), (7, 11, 'Bright'), (12, 13, 'Dusky'), (14, 17, 'Bright'), (18, 19, 'Dark'), (20, 27, 'Bright'), (28, 29, 'Dark')],
+    'Leo':         [(0, 6, 'Bright'), (7, 9, 'Dusky'), (10, 15, 'Dark'), (16, 20, 'Empty'), (21, 29, 'Bright')],
+    'Virgo':       [(0, 4, 'Dusky'), (5, 8, 'Bright'), (9, 10, 'Empty'), (11, 16, 'Bright'), (17, 20, 'Dark'), (21, 27, 'Bright'), (28, 29, 'Empty')],
+    'Libra':       [(0, 4, 'Bright'), (5, 9, 'Dusky'), (10, 17, 'Bright'), (18, 20, 'Dusky'), (21, 27, 'Bright'), (28, 29, 'Empty')],
+    'Scorpio':     [(0, 2, 'Dusky'), (3, 7, 'Bright'), (8, 13, 'Empty'), (14, 19, 'Bright'), (20, 21, 'Dark'), (22, 26, 'Bright'), (27, 29, 'Dusky')],
+    'Sagittarius': [(0, 8, 'Bright'), (9, 11, 'Dusky'), (12, 18, 'Bright'), (19, 22, 'Dark'), (23, 29, 'Dusky')],
+    'Capricorn':   [(0, 6, 'Dusky'), (7, 9, 'Bright'), (10, 14, 'Dark'), (15, 18, 'Bright'), (19, 20, 'Dusky'), (21, 24, 'Empty'), (25, 29, 'Bright')],
+    'Aquarius':    [(0, 3, 'Dark'), (4, 8, 'Bright'), (9, 12, 'Dusky'), (13, 20, 'Bright'), (21, 24, 'Empty'), (25, 29, 'Bright')],
+    'Pisces':      [(0, 5, 'Dusky'), (6, 11, 'Bright'), (12, 17, 'Dusky'), (18, 21, 'Bright'), (22, 24, 'Empty'), (25, 27, 'Bright'), (28, 29, 'Dusky')],
+}
+
+def _brightness_category(lon):
+    sign = get_zodiac_sign(lon)
+    degree_in_sign = int(lon % 30)
+    for start, end, category in BRIGHTNESS_DEGREES[sign]:
+        if start <= degree_in_sign <= end:
+            return category
+    return 'Bright'  # unreachable if the table is complete, kept as a safe default
+
+# Great Introduction VII.3, 19-20: for the five non-luminaries, the domicile
+# in which their nature is "moderated" (simply fortunate) versus the other,
+# "contrary" domicile (suitable, but of a lesser grade).
+PREFERRED_DOMICILE = {'Saturn': 'Aquarius', 'Jupiter': 'Sagittarius', 'Mars': 'Scorpio', 'Venus': 'Taurus', 'Mercury': 'Virgo'}
+
+# Great Introduction VI.26, 3-4, Fig. 90: quadrants alternate Advancing/
+# Masculine/Eastern vs. Withdrawing/Feminine/Western, diagonally opposite
+# pairs sharing a designation. In Whole-Sign-House terms:
+MASCULINE_QUADRANT_HOUSES = {4, 5, 6, 10, 11, 12}
+FEMININE_QUADRANT_HOUSES = {1, 2, 3, 7, 8, 9}
+
+# Approximate geocentric distance range (AU) per planet, used only as a
+# modern proxy for "rising up in the circle of the apogee" (VII.6, 23) --
+# swisseph doesn't expose the classical deferent/epicycle apogee for
+# non-lunar bodies, so this substitutes "farther from Earth than usual" for
+# the true Ptolemaic concept. An approximation, flagged as such.
+GEOCENTRIC_DISTANCE_RANGE = {
+    'Moon': (0.0024, 0.0027), 'Mercury': (0.53, 1.45), 'Venus': (0.27, 1.73),
+    'Sun': (0.983, 1.017), 'Mars': (0.37, 2.68), 'Jupiter': (3.95, 6.45), 'Saturn': (8.0, 11.1),
+}
+
+PLANET_SWE_IDS = {'Sun': swe.SUN, 'Moon': swe.MOON, 'Mercury': swe.MERCURY,
+                   'Venus': swe.VENUS, 'Mars': swe.MARS, 'Jupiter': swe.JUPITER, 'Saturn': swe.SATURN}
+
+def _dispositors(lon, sect):
+    """The rulers of all five essential dignities at a degree -- used for
+    the Received test (VII.6, 12)."""
+    rulers = get_essential_rulers(lon)
+    triplicity_key = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
+    return {rulers['domicile'], rulers['exaltation'], rulers[triplicity_key], rulers['term'], rulers['face']} - {'-'}
+
+def _sahl_enclosed(planet, enclosing_set, rows, blocking_pairs):
+    """Enclosure (Sahl, The Introduction Ch.3, 119-123, Fig. 25). The
+    planet is separating from ONE member of enclosing_set and connecting
+    with the OTHER, with neither leg itself intercepted by a third
+    planet's rays -- "without another planet casting its rays between the
+    two" (121), implemented by excluding either leg if it's already
+    Blocked (evaluate_blocking()'s own output, passed in as
+    blocking_pairs to avoid recomputing it per planet). Graded "more
+    powerful and more unfortunate" when both legs are within 7 degrees of
+    exact (121, confirmed against Fig. 25's own numbers: Moon separating
+    from Mars by square, connecting to Saturn by opposition).
+
+    Replaces an earlier version built from Abu Ma'shar's own VII.6, 56-59
+    (a same-sign front/behind Connected test plus a separate sign-based
+    2nd/12th-house test) which turned out not to match this mechanism at
+    all -- Abu Ma'shar reuses Sahl's own concept rather than defining a
+    new one.
+
+    Returns (is_enclosed, is_severe, separating_from, connecting_to), or
+    (False, False, None, None)."""
+    members = [m for m in enclosing_set if m != planet]
+    if len(members) != 2:
+        return False, False, None, None
+    for sep_target, con_target in ((members[0], members[1]), (members[1], members[0])):
+        sep_row = next((r for r in rows if r['aspect_name'] != 'Aversion'
+                         and r['fast_name'] == planet and r['slow_name'] == sep_target
+                         and r['motion'] == 'Separating' and _is_connected(r)), None)
+        con_row = next((r for r in rows if r['aspect_name'] != 'Aversion'
+                         and r['fast_name'] == planet and r['slow_name'] == con_target
+                         and r['motion'] == 'Applying' and _is_connected(r)), None)
+        if not sep_row or not con_row:
+            continue
+        if (planet, sep_target) in blocking_pairs or (planet, con_target) in blocking_pairs:
+            continue
+        severe = abs(sep_row['deviation']) <= 7.0 and abs(con_row['deviation']) <= 7.0
+        return True, severe, sep_target, con_target
+    return False, False, None, None
+
+def evaluate_enclosure(planetary_data):
+    """Enclosure (Sahl, The Introduction Ch.3, 119-123, Fig. 25): every
+    planet enclosed between the two infortunes (misfortune), or the two
+    fortunes (Abu Ma'shar's own extension of the same shape to a good-
+    fortune direction, Great Introduction VII.6, 5)."""
+    rows = _pairwise_configurations(planetary_data)
+    blocking_pairs = {(row['Blocked'], row['From Reaching']) for row in evaluate_blocking(planetary_data)}
+    results = []
+    for planet in planetary_data:
+        if planet == 'North Node':
+            continue
+        for label, enclosing_set in (('Infortunes', INFORTUNES), ('Fortunes', FORTUNES)):
+            is_enc, severe, sep, con = _sahl_enclosed(planet, enclosing_set, rows, blocking_pairs)
+            if is_enc:
+                results.append({
+                    'Planet': planet, 'Enclosed By': label,
+                    'Separating From': sep, 'Connecting To': con,
+                    'Severity': 'More powerful/unfortunate (within 7°)' if severe else 'Standard',
+                })
+    return results
+
+SIGN_ORDER = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces']
+
+FIXED_SIGNS = {'Taurus', 'Leo', 'Scorpio', 'Aquarius'}
+
+# Traditional planetary gender, for Strength/Weakness (87). Mercury is
+# common/neutral and Sahl's own text doesn't address it here, so it's left
+# unassigned rather than guessed.
+PLANET_GENDER = {'Sun': 'Masculine', 'Moon': 'Feminine', 'Mercury': None,
+                  'Venus': 'Feminine', 'Mars': 'Masculine', 'Jupiter': 'Masculine', 'Saturn': 'Masculine'}
+
+def _averse_to_ascendant(lon, ascendant_lon):
+    """Whether a degree's sign is in Aversion to the Ascendant's sign (2nd/
+    12th or 6th/8th from it, Sahl, The Introduction Ch.2, 50-60) -- the
+    planet-to-point analogue of the Aversion test _pairwise_configurations()
+    already applies planet-to-planet."""
+    sign_idx = SIGN_ORDER.index(get_zodiac_sign(lon))
+    asc_idx = SIGN_ORDER.index(get_zodiac_sign(ascendant_lon))
+    raw_apart = abs(sign_idx - asc_idx)
+    signs_apart = min(raw_apart, 12 - raw_apart)
+    return signs_apart in AVERSION_SIGN_COUNTS
+
+def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendant_lon):
+    """Strength of the Planets (Sahl, The Introduction Ch.3, 78-87): ten
+    testimonies of a planet's strength at the time of judgment. Sahl's own
+    text says "eleven ways" (77), but only ten discrete, ordinally-numbered
+    items follow (78 "the first" ... 87 "the tenth") before the text shifts
+    to closing language (88) -- flagged as a discrepancy rather than an
+    invented eleventh item.
+
+    Distinct from the existing Abu Ma'shar VII.6-based Planetary Condition
+    table, which scores a broader, differently-sourced strength/weakness
+    scheme (21-46) built earlier in this project -- this is Sahl's own,
+    narrower list, kept as its own table rather than merged into a later
+    author's scheme (the project's standing practice: retain the original
+    source's own definition when two sources diverge)."""
+    rows = _pairwise_configurations(planetary_data)
+    results = []
+    for planet, data in planetary_data.items():
+        if planet == 'North Node':
+            continue
+        lon = data['longitude']
+        sign = get_zodiac_sign(lon)
+        house = get_wsh_house(lon, ascendant_lon)
+        ess, acc = essential[planet], accidental[planet]
+        labels = []
+
+        # (78) In an excellent place from the Ascendant: a stake, or what follows one.
+        if house in ANGLE_HOUSES | SUCCEDENT_HOUSES:
+            labels.append('In an excellent place from the Ascendant (78)')
+
+        # (79) In something of its own share: house, exaltation, triplicity, bound, face, or joy.
+        if ess['Domicile'] or ess['Exalt'] or ess['Triplicity'] or ess['Term'] or ess['Face'] or acc['Joy']:
+            labels.append('In its own share of dignity (79)')
+
+        # (80) Direct in course.
+        if not acc['Retrograde']:
+            labels.append('Direct in course (80)')
+
+        # (81) No infortune with it in its sign, connecting with it, or looking at it.
+        infortune_contact = any(
+            r['aspect_name'] != 'Aversion' and (r['p1'] in INFORTUNES or r['p2'] in INFORTUNES)
+            for r in rows if planet in (r['p1'], r['p2'])
+        )
+        if not infortune_contact:
+            labels.append('No infortune with it, connecting, or looking on (81)')
+
+        # (82) Not connecting with a planet falling from the ASC or in its
+        # own fall, and not itself in its own fall.
+        connects_weak_target = False
+        for r in rows:
+            if r['aspect_name'] == 'Aversion' or not _is_connected(r) or planet not in (r['fast_name'], r['slow_name']):
+                continue
+            other = r['slow_name'] if r['fast_name'] == planet else r['fast_name']
+            other_house = get_wsh_house(planetary_data[other]['longitude'], ascendant_lon)
+            other_sign = get_zodiac_sign(planetary_data[other]['longitude'])
+            if other_house in CADENT_HOUSES or other_sign in FALLS.get(other, []):
+                connects_weak_target = True
+                break
+        if not connects_weak_target and not ess['Fall']:
+            labels.append('Not connecting with a falling/fallen planet, nor itself in its fall (82)')
+
+        # (83) Advancing -- a stake or what follows it (Sahl's own master
+        # definition of "advancement," Ch.3, 4, reapplied here).
+        if house in ANGLE_HOUSES | SUCCEDENT_HOUSES:
+            labels.append('Advancing (83)')
+
+        # (84) A masculine planet (Saturn, Jupiter, Mars) eastern, arising at dawn.
+        if planet in ('Saturn', 'Jupiter', 'Mars'):
+            sun_lon = planetary_data['Sun']['longitude']
+            signed_from_sun = ((lon - sun_lon + 180.0) % 360.0) - 180.0
+            if signed_from_sun < 0:
+                labels.append('Masculine planet, eastern of the Sun (84)')
+
+        # (85) In its own glow: a masculine planet by day, feminine by night (i.e. Hayz).
+        if acc['Hayz']:
+            labels.append('In its own glow, i.e. Hayz (85)')
+
+        # (86) In a fixed sign.
+        if sign in FIXED_SIGNS:
+            labels.append('In a fixed sign (86)')
+
+        # (87) Masculine/feminine quadrant and sign matching the planet's own gender.
+        gender = PLANET_GENDER.get(planet)
+        if gender == 'Masculine' and house in MASCULINE_QUADRANT_HOUSES:
+            labels.append('In a matching-gender (masculine) quadrant (87)')
+        elif gender == 'Feminine' and house in FEMININE_QUADRANT_HOUSES:
+            labels.append('In a matching-gender (feminine) quadrant (87)')
+        if gender == 'Masculine' and sign in MASCULINE_SIGNS:
+            labels.append('In a matching-gender (masculine) sign (87)')
+        elif gender == 'Feminine' and sign in FEMININE_SIGNS:
+            labels.append('In a matching-gender (feminine) sign (87)')
+
+        if labels:
+            results.append({'Planet': planet, 'Strength Testimonies': ', '.join(labels), 'Count': len(labels)})
+    return results
+
+def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendant_lon):
+    """Weakness of the Planets (Sahl, The Introduction Ch.3, 91-100): the
+    ten testimonies of weakness Sahl names as item [15] of his sixteen-item
+    scheme (89: "the weakness of the planets, and their harms, in ten
+    ways") -- a count confirmed by the ten ordinally-numbered items in
+    91-100 that follow.
+
+    Distinct from the existing Abu Ma'shar VII.6-based Planetary Condition
+    table's own, differently-sourced weakness scheme (30-46) -- kept
+    separate per the project's standing practice of retaining the original
+    source's own definition. Items 94-95 both describe a planet separating
+    from one infortune and connecting with the other -- Sahl's own
+    Enclosure (119-123) -- and are represented here as a single testimony
+    reusing _sahl_enclosed(), since the source's own wording for both
+    paragraphs is functionally identical rather than two distinct tests."""
+    rows = _pairwise_configurations(planetary_data)
+    blocking_pairs = {(row['Blocked'], row['From Reaching']) for row in evaluate_blocking(planetary_data)}
+    results = []
+    for planet, data in planetary_data.items():
+        if planet == 'North Node':
+            continue
+        lon, lat = data['longitude'], data['latitude']
+        sun_lon = planetary_data['Sun']['longitude']
+        house = get_wsh_house(lon, ascendant_lon)
+        ess, acc = essential[planet], accidental[planet]
+        labels = []
+
+        # (91) Falling from the stakes, and not looking at (averse to) the Ascendant.
+        if house in CADENT_HOUSES and _averse_to_ascendant(lon, ascendant_lon):
+            labels.append('Falling from the stakes, averse to the Ascendant (91)')
+
+        # (92) Retrograde.
+        if acc['Retrograde']:
+            labels.append('Retrograde (92)')
+
+        # (93) Under the rays of the Sun.
+        if acc['Combust'] or acc['UnderBeams']:
+            labels.append('Under the rays of the Sun (93)')
+
+        # (94-95) Enclosed between the two infortunes -- separating from
+        # one, connecting with the other (Sahl's own Enclosure, 119-123).
+        is_enc, severe, sep, con = _sahl_enclosed(planet, INFORTUNES, rows, blocking_pairs)
+        if is_enc:
+            labels.append(f'Enclosed between the infortunes, separating from {sep} and connecting to {con} (94-95, 119-123)')
+
+        # (96) In its own fall.
+        if ess['Fall']:
+            labels.append('In its own fall (96)')
+
+        # (97) Connecting with a planet falling from the Ascendant, or
+        # separating from a planet that would have received it.
+        for r in rows:
+            if r['aspect_name'] == 'Aversion' or planet not in (r['fast_name'], r['slow_name']):
+                continue
+            other = r['slow_name'] if r['fast_name'] == planet else r['fast_name']
+            if _is_connected(r) and get_wsh_house(planetary_data[other]['longitude'], ascendant_lon) in CADENT_HOUSES:
+                labels.append(f'Connecting with {other}, itself falling from the Ascendant (97)')
+            if r['fast_name'] == planet and r['motion'] == 'Separating' and _is_connected(r):
+                other_rulers = get_essential_rulers(planetary_data[other]['longitude'])
+                if planet in (other_rulers['domicile'], other_rulers['exaltation']):
+                    labels.append(f'Separating from {other}, which would have received it (97)')
+
+        # (98) In a house with no dignity claim, already overtaken by the
+        # Sun's rays -- a later degree than the Sun, sinking toward
+        # invisibility in the evening.
+        if ess['Peregrine'] and (acc['Combust'] or acc['UnderBeams']):
+            signed_from_sun = ((lon - sun_lon + 180.0) % 360.0) - 180.0
+            if signed_from_sun > 0:
+                labels.append('Peregrine and overtaken by the Sun, sinking in the evening (98)')
+
+        # (99) With the Head or Tail, without latitude.
+        north_node_lon = planetary_data['North Node']['longitude']
+        south_node_lon = (north_node_lon + 180.0) % 360.0
+        node_dist = min(abs(((lon - north_node_lon + 180) % 360) - 180), abs(((lon - south_node_lon + 180) % 360) - 180))
+        if node_dist < 12.0 and abs(lat) < 1.0:
+            labels.append('With the Head or Tail, without latitude (99)')
+
+        # (100) Inverted: in the seventh sign from its own house (Detriment).
+        if ess['Detriment']:
+            labels.append('Inverted, in the seventh sign from its own house (100)')
+
+        if labels:
+            results.append({'Planet': planet, 'Weakness Testimonies': ', '.join(labels), 'Count': len(labels)})
+    return results
+
+def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential, accidental, jd, ascendant_lon, sim=None):
+    """Planetary condition per Abu Ma'shar's Great Introduction VII.6: good
+    fortune, strength, weakness, misfortune, and enclosure -- plus, for the
+    Moon only, Sahl's own ten defects (The Introduction Ch.3, 102-113,
+    via _corruption_of_the_moon_labels()) rather than VII.6's own,
+    differently-numbered eleven-item version. Distinct from -- and now the
+    authoritative source for -- the Rhetorius/PN4 net dignity score in
+    evaluate_essential_dignities()/evaluate_accidental_dignities(), which
+    is retained separately as the older Hellenistic reconstruction."""
+    rows = _pairwise_configurations(planetary_data)
+    connected_lookup = {}
+    configured_lookup = {}  # frozenset -> aspect name, for non-Connected "look"/assembly checks
+    for row in rows:
+        pair = frozenset({row['p1'], row['p2']})
+        is_conn = row['aspect_name'] != 'Aversion' and _is_connected(row)
+        connected_lookup[pair] = is_conn
+        configured_lookup[pair] = row['aspect_name']
+    blocking_pairs = {(row['Blocked'], row['From Reaching']) for row in evaluate_blocking(planetary_data)}
+
+    def connected_to(planet, targets):
+        return any(connected_lookup.get(frozenset({planet, t}), False) for t in targets if t != planet)
+
+    def configured_to(planet, targets, aspects=None):
+        for t in targets:
+            if t == planet:
+                continue
+            name = configured_lookup.get(frozenset({planet, t}))
+            if name and name != 'Aversion' and (aspects is None or name in aspects):
+                return True
+        return False
+
+    def averted_from(planet, targets):
+        return all(configured_lookup.get(frozenset({planet, t})) == 'Aversion' for t in targets if t != planet)
+
+    # Moon's own corruption count is needed (for §8's "Moon fortunate" test)
+    # before the main per-planet loop, computed with no dependency on this
+    # function's own output, to avoid recursion.
+    moon_corruption_count = _corruption_of_the_moon(planetary_data, ascendant_lon, sect)
+
+    results = {}
+    for planet, data in planetary_data.items():
+        if planet == 'North Node':
+            continue
+        lon, lat, speed = data['longitude'], data['latitude'], data['speed_in_lon']
+        sign = get_zodiac_sign(lon)
+        sign_idx = int(lon // 30)
+        house = get_wsh_house(lon, ascendant_lon)
+        ess, acc = essential[planet], accidental[planet]
+
+        positive, negative = [], []
+
+        # --- Good fortune (VII.6, 1-14) -----------------------------------
+        if connected_to(planet, FORTUNES):
+            positive.append('Aspect/assembly with a fortune (2)')
+        if averted_from(planet, INFORTUNES):
+            positive.append('Infortunes averted (3)')
+        separating_infortune = any(
+            r['fast_name'] == planet and r['slow_name'] in INFORTUNES and r['motion'] == 'Separating' and _is_connected(r)
+            for r in rows
+        )
+        if separating_infortune and connected_to(planet, FORTUNES):
+            positive.append('Separating infortune, connecting fortune (4)')
+        is_enc, severe, _sep, _con = _sahl_enclosed(planet, FORTUNES, rows, blocking_pairs)
+        if is_enc:
+            positive.append('Enclosed between two fortunes (5, 119-123)' + (', severe' if severe else ''))
+        if acc['Cazimi']:
+            positive.append('Cazimi (6)')
+        if configured_to(planet, {'Sun'}, {'Trine', 'Sextile'}):
+            positive.append('Trine/sextile the Sun (7)')
+        if planet != 'Moon' and configured_to(planet, {'Moon'}, {'Trine', 'Sextile'}) and moon_corruption_count == 0:
+            positive.append('Aspects the (uncorrupted) Moon (8)')
+        if acc['Swift']:
+            positive.append('Swift, increasing in light (9)')
+        halb = ess['Domicile'] or ess['Exalt'] or ess['Triplicity'] or ess['Term'] or ess['Face'] or acc['Joy']
+        if halb:
+            positive.append('Halb (10)')
+        brightness = _brightness_category(lon)
+        if brightness == 'Bright':
+            positive.append('Bright degree (11)')
+        # Reception (Sahl, The Introduction Ch.3, 49-56, Fig. 16): a planet
+        # connecting with a planet from its own house or exaltation has
+        # "perfect reception, with truthful intention" (49); connecting
+        # with a planet from its own triplicity is a lesser reception,
+        # below that (50). Sahl's own definition doesn't extend to bound
+        # (term) -- and deliberately excludes face: Dykes treats face as a
+        # poor fit for this kind of technical judgment throughout,
+        # considering its real utility to lie in astrological magic (per
+        # the Picatrix) rather than rulership tests like this one -- so
+        # this follows Sahl's narrower scope rather than Abu Ma'shar's
+        # later five-dignity expansion (Great Introduction VII.5, 129-133).
+        # 130 there does still supply the mutual/reverse case (the far
+        # planet is itself in a dignity of the accepting planet's
+        # placement), applied here under the same narrowed scope.
+        rulers = get_essential_rulers(lon)
+        triplicity_key_local = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
+        reception_dispositors = {rulers['domicile'], rulers['exaltation'], rulers[triplicity_key_local]} - {'-'}
+        received_via = {
+            d for d in reception_dispositors
+            if connected_to(planet, {d}) or configured_lookup.get(frozenset({planet, d})) not in (None, 'Aversion')
+        }
+        received = bool(received_via)
+        mutual_received = False
+        for r in rows:
+            if planet not in (r['p1'], r['p2']) or r['aspect_name'] == 'Aversion':
+                continue
+            other = r['p2'] if r['p1'] == planet else r['p1']
+            other_rulers = get_essential_rulers(planetary_data[other]['longitude'])
+            other_reception_dispositors = {other_rulers['domicile'], other_rulers['exaltation'], other_rulers[triplicity_key_local]} - {'-'}
+            if planet in other_reception_dispositors:
+                mutual_received = True
+                break
+        if received:
+            perfect = rulers['domicile'] in received_via or rulers['exaltation'] in received_via
+            grade_label = 'perfect' if perfect else 'lesser'
+            positive.append(f'Received (12), {grade_label}')
+        if mutual_received:
+            positive.append('Receives a connecting planet into its own dignity (130)')
+        if acc['Hayz']:
+            positive.append('Domain/hayz (13)')
+        if planet in ('Sun', 'Moon'):
+            fortune_dispositors = _dispositors(lon, sect) & FORTUNES
+            if fortune_dispositors:
+                positive.append(f"Luminary in a fortune's share (14): {', '.join(sorted(fortune_dispositors))}")
+
+        # Good-fortune grade (15-20): count of essential-dignity claims, plus
+        # which of a non-luminary's two domiciles it occupies.
+        claims = sum([ess['Domicile'], ess['Exalt'], ess['Triplicity'], ess['Term'], ess['Face']])
+        if claims >= 2:
+            grade = 'Doubled good fortune (16-18)'
+        elif planet in PREFERRED_DOMICILE and ess['Domicile'] and sign != PREFERRED_DOMICILE[planet]:
+            grade = 'Below that / suitable (20)'
+        elif claims == 1:
+            grade = 'Fortunate (19)'
+        else:
+            grade = None
+        if grade:
+            positive.append(grade)
+
+        # --- Strength (VII.6, 21-29) --------------------------------------
+        if lat > 0:
+            positive.append('Northern latitude (22)')
+        dist_range = GEOCENTRIC_DISTANCE_RANGE.get(planet)
+        if dist_range and data['distance'] >= sum(dist_range) / 2.0:
+            positive.append('Apogee circle, approximated (23)')
+        station = None
+        if planet in PLANET_SWE_IDS and abs(speed) <= 0.02:
+            res_next, _ = swe.calc_ut(jd + 1.0, PLANET_SWE_IDS[planet])
+            if res_next[3] > speed:
+                station = 'second'
+                positive.append('Second station (24)')
+            elif res_next[3] < speed:
+                station = 'first'
+        if not acc['Combust'] and not acc['UnderBeams']:
+            positive.append('Out of the rays (25)')
+        stake_or_following = house in ANGLE_HOUSES | SUCCEDENT_HOUSES
+        if stake_or_following:
+            positive.append('Stake or following (26)')
+        is_superior = planet in {'Saturn', 'Jupiter', 'Mars'}
+        is_inferior = planet in {'Venus', 'Mercury'}
+        sun_lon = planetary_data['Sun']['longitude']
+        signed_from_sun = ((lon - sun_lon + 180.0) % 360.0) - 180.0
+        is_eastern_of_sun = signed_from_sun < 0  # rises before the Sun
+        if is_superior and is_eastern_of_sun:
+            positive.append('Superior, eastern of the Sun (27)')
+        in_masculine_quadrant = house in MASCULINE_QUADRANT_HOUSES
+        if is_superior and in_masculine_quadrant:
+            positive.append('Superior, in a masculine quadrant (28)')
+        if is_inferior and not is_eastern_of_sun:
+            positive.append('Inferior, western of the Sun (29)')
+        if is_inferior and not in_masculine_quadrant:
+            positive.append('Inferior, in a feminine quadrant (29)')
+
+        # --- Weakness (VII.6, 30-46) --------------------------------------
+        is_slow = 0 <= speed < AVERAGE_DAILY_MOTION.get(planet, 1.0)
+        if is_slow:
+            negative.append('Slow in course (31)')
+        if station == 'first':
+            negative.append('First station (32)')
+        if acc['Retrograde']:
+            negative.append('Retrograde (33)')
+        if acc['Combust'] or acc['UnderBeams']:
+            negative.append('Under the rays (34)')
+        if brightness == 'Dark':
+            negative.append('Dark degree (35)')
+        elif brightness in ('Dusky', 'Empty'):
+            negative.append(f'{brightness} degree, minor (35)')
+        if not acc['Hayz']:
+            negative.append('Wrong domain (36-37)')
+        if ess['Fall']:
+            negative.append('Sign of fall (37)')
+        if lat < 0:
+            negative.append('Southern latitude (38)')
+        cadent_no_override = house in CADENT_HOUSES
+        if cadent_no_override:
+            negative.append('Falling from the stake (39)')
+        in_burned_path = 180.0 <= lon < 240.0
+        in_harsh_burned_path = 199.0 <= lon < 213.0  # 19 Libra - 3 Scorpio
+        if in_harsh_burned_path:
+            negative.append('Burned path, harsh band (40)')
+        elif in_burned_path:
+            negative.append('Burned path (39/71)')
+        if ess['Detriment']:
+            negative.append('Opposition of own house / detriment (41)')
+        connects_debilitated = any(
+            connected_lookup.get(frozenset({planet, other}), False)
+            and (essential[other]['Fall'] or accidental[other]['Retrograde'] or get_wsh_house(planetary_data[other]['longitude'], ascendant_lon) in CADENT_HOUSES)
+            for other in planetary_data if other not in (planet, 'North Node')
+        )
+        if connects_debilitated:
+            negative.append('Connects to a debilitated planet (42)')
+        if not received:
+            negative.append('Not received (43)')
+        # Emptiness of Course. Sahl's own base concept (The Introduction
+        # Ch.3, 63, Fig. 19 -- illustrated there for the Moon, but item [10]
+        # of his own 16-item list isn't restricted to her) is present-tense:
+        # not currently connecting or uniting with any planet. Abu Ma'shar
+        # sharpens this into the real, prospective definition used here --
+        # no connection completes with ANY planet before this one leaves
+        # its current sign (Great Introduction VII.5, 78, Fig. 124),
+        # confirmed as his own addition by Dykes' footnote on 63 -- via the
+        # forward simulation when available; falls back to Sahl's own
+        # present-tense proxy (no currently-Applying-and-Connected pair)
+        # when sim wasn't supplied.
+        if sim is not None:
+            sign_exits = sim['events'][planet]['sign_exits']
+            exit_day = sign_exits[0] if sign_exits else sim['horizon_days']
+            empty_of_course = True
+            for other in planetary_data:
+                if other in (planet, 'North Node'):
+                    continue
+                raw_apart = abs(sign_idx - int(planetary_data[other]['longitude'] // 30))
+                signs_apart_other = min(raw_apart, 12 - raw_apart)
+                if signs_apart_other not in ASPECT_BY_SIGN_COUNT:
+                    continue
+                target_angle = ASPECT_BY_SIGN_COUNT[signs_apart_other][1]
+                exact_day = _deviation_zero_day(sim, planet, other, target_angle)
+                if exact_day is not None and exact_day <= exit_day:
+                    empty_of_course = False
+                    break
+        else:
+            empty_of_course = not any(
+                (row['fast_name'] == planet and row['motion'] == 'Applying' and _is_connected(row))
+                for row in rows
+            )
+        if ess['Peregrine']:
+            negative.append('Exile/peregrine, empty of course (44)' if empty_of_course else 'Exile/peregrine (44)')
+        if is_superior and not is_eastern_of_sun:
+            negative.append('Superior, western of the Sun (45)')
+        if is_superior and not in_masculine_quadrant:
+            negative.append('Superior, in a feminine quadrant (45)')
+        if is_inferior and is_eastern_of_sun and abs(signed_from_sun) < 15.0:
+            negative.append('Inferior, beginning of easternization (46)')
+        if is_inferior and in_masculine_quadrant:
+            negative.append('Inferior, in a masculine quadrant (46)')
+
+        # --- Misfortune (VII.6, 47-55) ------------------------------------
+        if connected_to(planet, INFORTUNES):
+            negative.append('Connected to an infortune (47-48)')
+        term_lord = get_essential_rulers(lon)['term']
+        if SIGN_TO_DOMICILE.get(sign) in INFORTUNES or term_lord in INFORTUNES:
+            negative.append('In the bound/house of an infortune (49)')
+        for other in planetary_data:
+            if other in (planet, 'North Node'):
+                continue
+            other_lon = planetary_data[other]['longitude']
+            other_idx = int(other_lon // 30)
+            forward = (other_idx - sign_idx) % 12 + 1
+            if other in INFORTUNES and forward in (9, 10, 11) and not received:
+                negative.append('Overcome by an infortune (50)')
+                break
+        if configured_to(planet, {'Sun'}, {'Conjunction', 'Square', 'Opposition'}):
+            negative.append('Assembly/square/opposition to the Sun (51)')
+        north_node_lon = planetary_data['North Node']['longitude']
+        south_node_lon = (north_node_lon + 180.0) % 360.0
+        node_dist = min(abs(((lon - north_node_lon + 180) % 360) - 180), abs(((lon - south_node_lon + 180) % 360) - 180))
+        if node_dist <= 12.0:
+            negative.append('With the Head or Tail (52-55)')
+
+        # --- Enclosure by the infortunes (Sahl, The Introduction Ch.3,
+        # 119-123; Abu Ma'shar VII.6, 56-62 reuses the same concept) -------
+        is_enc, severe, _sep, _con = _sahl_enclosed(planet, INFORTUNES, rows, blocking_pairs)
+        if is_enc:
+            negative.append('Enclosed by infortunes (56-62, 119-123)' + (', severe' if severe else ''))
+
+        # --- Corruption of the Moon (VII.6, 63-74), Moon only -------------
+        if planet == 'Moon':
+            for label in _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect):
+                negative.append(label)
+
+        positive_count = len(positive)
+        negative_count = len(negative)
+        results[planet] = {
+            'Positive Score': positive_count,
+            'Negative Score': negative_count,
+            'Net': positive_count - negative_count,
+            'Condition': 'Good' if positive_count - negative_count >= 0 else 'Bad',
+            'Positive Labels': positive,
+            'Negative Labels': negative,
+        }
+    return results
+
+def _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect):
+    """The ten defects of the Moon (Sahl, The Introduction Ch.3, 102-113).
+    Replaces an earlier version built from Abu Ma'shar's own, differently-
+    numbered eleven-item list (Great Introduction VII.6, 63-74) without
+    cross-checking it against Sahl's own item [16] -- four of that
+    version's items (eclipsed, the twelfth-part of an infortune, southern
+    latitude, ninth house from the Ascendant) don't appear anywhere in
+    Sahl's ten and have been dropped; several genuine gaps against Sahl's
+    own list (Moon in her own fall, connecting with a planet in its own
+    fall, falling from the stakes or connecting with a falling planet,
+    wild/empty of course, waning in light) are added here for the first
+    time.
+
+    Re-verified against the source's full paragraph text (rather than
+    partial photo transcriptions): items [5], [6], and [7] were corrected
+    -- (107) requires the Node to be in the SAME sign as the Moon, not
+    just within 12 degrees regardless of sign; (108) requires the LAST
+    bound of the sign specifically (every sign's final Egyptian term is an
+    infortune's, but not every infortune-ruled bound is the sign's last
+    one -- the earlier version matched any of them); (109) was rebuilt
+    entirely, from "cadent, or connecting with a cadent planet" (which
+    doesn't appear in Sahl's text at all) to "cadent AND averse to the
+    Ascendant AND separating from an infortune," matching 109's own
+    wording. Item [9]'s "wild" (111) is confirmed, on the full text, to be
+    glossed there as "not connecting with any of the planets" -- the same
+    present-tense wording as Emptiness of Course (63) -- so its existing
+    implementation was left as-is.
+
+    Split from evaluate_abu_mashar_condition() so the count alone can be
+    obtained up-front (for the "Moon fortunate" test in VII.6, 8) without
+    recursion, and the full labels reused inside the main per-planet loop
+    for the Moon's row."""
+    moon = planetary_data['Moon']
+    lon, speed = moon['longitude'], moon['speed_in_lon']
+    sun_lon = planetary_data['Sun']['longitude']
+    sign = get_zodiac_sign(lon)
+    rows = _pairwise_configurations(planetary_data)
+    labels = []
+
+    def connected_row(other):
+        return next((r for r in rows if {r['p1'], r['p2']} == {'Moon', other}), None)
+
+    # [1] (103) Burned, within 12 degrees of the Sun, front or behind.
+    sun_dist = abs(((lon - sun_lon + 180) % 360) - 180)
+    if sun_dist <= 12.0:
+        labels.append('Burned, within 12 degrees of the Sun (103)')
+
+    # [2] (104) In the degrees of her own fall (Scorpio), or connecting
+    # with a planet in ITS own fall.
+    if sign in FALLS.get('Moon', []):
+        labels.append('In her own fall, Scorpio (104)')
+    for other in planetary_data:
+        if other in ('Moon', 'North Node'):
+            continue
+        r = connected_row(other)
+        if r and r['aspect_name'] != 'Aversion' and _is_connected(r):
+            other_sign = get_zodiac_sign(planetary_data[other]['longitude'])
+            if other_sign in FALLS.get(other, []):
+                labels.append(f'Connecting with {other}, itself in its own fall (104)')
+
+    # [3] (105) Opposed to the Sun, within 12 degrees, not yet having
+    # reached the exact opposition (still approaching, not past it).
+    opp_target = (sun_lon + 180.0) % 360.0
+    signed_to_opp = ((opp_target - lon + 180) % 360) - 180
+    if 0 <= signed_to_opp <= 12.0:
+        labels.append("Approaching the Sun's opposition, within 12 degrees (105)")
+
+    # [4] (106) Assembled with an infortune, or looking at it from a
+    # square or opposition (sextile/trine don't count here) -- or enclosed
+    # between the two infortunes (separating from one, connecting with the
+    # other -- Sahl's own Enclosure test, 119-123).
+    if any(row['aspect_name'] in ('Conjunction', 'Square', 'Opposition')
+           and 'Moon' in (row['p1'], row['p2'])
+           and (row['p1'] in INFORTUNES or row['p2'] in INFORTUNES)
+           for row in rows):
+        labels.append('Assembled with, square, or opposed by an infortune (106)')
+    blocking_pairs = {(row['Blocked'], row['From Reaching']) for row in evaluate_blocking(planetary_data)}
+    is_enc, severe, _sep, _con = _sahl_enclosed('Moon', INFORTUNES, rows, blocking_pairs)
+    if is_enc:
+        labels.append('Enclosed between the two infortunes (106, 119-123)' + (', severe' if severe else ''))
+
+    # [5] (107) With the Head or Tail, IN ONE SIGN, less than 12 degrees
+    # between them -- same-sign co-presence (Sahl's own "connection" shape)
+    # plus the Moon's own light-radius, not merely raw closeness in degree
+    # regardless of sign boundary.
+    north_node_lon = planetary_data['North Node']['longitude']
+    south_node_lon = (north_node_lon + 180.0) % 360.0
+    for node_lon in (north_node_lon, south_node_lon):
+        if get_zodiac_sign(node_lon) == sign and abs(((lon - node_lon + 180) % 360) - 180) < 12.0:
+            labels.append('With the Head or Tail, in one sign and under 12 degrees (107)')
+            break
+
+    # [6] (108) In the twelfth sign from her own house (Gemini, since her
+    # house is Cancer), or in the LAST degrees of the sign specifically --
+    # the final Egyptian-term division, which (per the table) is always
+    # ruled by one of the two infortunes, not just any infortune-ruled
+    # bound elsewhere in the sign (e.g. Aries' 20-25 degree bound is
+    # Mars's but isn't the sign's last one).
+    if sign == 'Gemini':
+        labels.append("In Gemini, the twelfth sign from her own house (108)")
+    sign_terms = EGYPTIAN_TERMS[sign]
+    last_bound_start = sign_terms[-2][0] if len(sign_terms) > 1 else 0
+    if (lon % 30) >= last_bound_start:
+        labels.append("In the last degrees of the sign, the infortunes' bound (108)")
+
+    # [7] (109) Falling from the stakes and not looking at the Ascendant --
+    # Sahl's own gloss: that combination is what it looks like when she is
+    # separating from an infortune.
+    moon_house = get_wsh_house(lon, ascendant_lon)
+    if moon_house in CADENT_HOUSES and _averse_to_ascendant(lon, ascendant_lon):
+        separating_from_infortune = any(
+            r['fast_name'] == 'Moon' and r['motion'] == 'Separating' and _is_connected(r) and r['slow_name'] in INFORTUNES
+            for r in rows
+        )
+        if separating_from_infortune:
+            labels.append('Falling from the stakes, averse to the Ascendant, separating from an infortune (109)')
+
+    # [8] (110) In the burned path -- Sahl's own wording narrows this to
+    # the end of Libra and the beginning of Scorpio specifically (not the
+    # full two signs), matching the alternate 19-Libra-to-3-Scorpio band
+    # footnoted there.
+    if 199.0 <= lon < 213.0:
+        labels.append('In the burned path, end of Libra/beginning of Scorpio (110)')
+
+    # [9] (111) Wild -- empty of course, not connecting with any planet.
+    # Sahl's own present-tense definition (not Abu Ma'shar's later,
+    # prospective sharpening used elsewhere in this file).
+    if not any(row['fast_name'] == 'Moon' and row['motion'] == 'Applying' and _is_connected(row) for row in rows):
+        labels.append('Wild, empty of course (111)')
+
+    # [10] (112) Slow in course, or waning in light (past full, heading
+    # back toward new).
+    if 0 <= speed < AVERAGE_DAILY_MOTION['Moon']:
+        labels.append('Slow in course (112)')
+    if 180.0 < ((lon - sun_lon) % 360.0) < 360.0:
+        labels.append('Waning in light (112)')
+
+    return labels
+
+def _corruption_of_the_moon(planetary_data, ascendant_lon, sect):
+    return len(_corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect))
+
 def evaluate_house_lords(planetary_data, ascendant_lon):
     """For each Whole Sign topical house (1-12), find its domicile lord and
     the WSH house that lord is physically placed in, then look up
@@ -1034,23 +2566,107 @@ def evaluate_house_lords(planetary_data, ascendant_lon):
         })
     return results
 
-def evaluate_planets_in_houses(planetary_data, essential, accidental, ascendant_lon):
+# --- Victors (Almutens) of significant points -- ibn Ezra (1485/1537),
+# TNAC Handy Tables Lesson 20 -- generalizing the same weighted essential-
+# dignity lookup already used below for the Prenatal Syzygy's Almuten to
+# the Ascendant, Sun, Moon, and Lot of Fortune. Two parallel weighting
+# traditions are given directly in the source, disagreeing on whether
+# Bound or Triplicity ranks higher, so both are computed side by side
+# rather than silently picking one:
+VICTOR_WEIGHTS = {
+    "Older (al-Tabari/Masha'allah)": {'domicile': 5, 'exaltation': 4, 'triplicity': 2, 'term': 3, 'face': 1},
+    "Newer (Al-Qabisi/Abu Ma'shar)": {'domicile': 5, 'exaltation': 4, 'triplicity': 3, 'term': 2, 'face': 1},
+}
+
+# "Places" bonus wheels (Handy Tables Lesson 20): a candidate planet's own
+# Whole-Sign-House placement adds this many points to its total, on top of
+# its essential-dignity claim at the point being profiled. Both are
+# permutations of 1-12; each is paired with the weighting scheme from the
+# same named tradition -- ibn Ezra's own wheel with the newer/Al-Qabisi
+# scheme (his worked table is the fuller, day/hour/places-bonus one this
+# whole function generalizes), Masha'allah's wheel with the older/
+# Masha'allah scheme. That pairing isn't stated outright in the source --
+# it's the more coherent reading of two wheels each already tied to a named
+# tradition, not an arbitrary choice.
+VICTOR_PLACES_VALUES = {
+    "Older (al-Tabari/Masha'allah)": {1: 12, 2: 3, 3: 5, 4: 7, 5: 8, 6: 1, 7: 9, 8: 4, 9: 6, 10: 11, 11: 10, 12: 2},
+    "Newer (Al-Qabisi/Abu Ma'shar)": {1: 12, 2: 6, 3: 3, 4: 9, 5: 7, 6: 1, 7: 10, 8: 4, 9: 5, 10: 11, 11: 8, 12: 2},
+}
+
+def evaluate_victors(planetary_data, ascendant_lon, lot_of_fortune, sect, chronocrats):
+    """Victor (Almuten) of a significant point, per ibn Ezra's tables
+    (1485/1537) -- for each of the Ascendant, Sun, Moon, and Lot of
+    Fortune, scores every planet's essential-dignity claim AT THAT POINT'S
+    degree (not the planet's own position) under both weighting traditions,
+    plus each tradition's own Lord of the Day (+7), Lord of the Hour (+6),
+    and Places (VICTOR_PLACES_VALUES, keyed by the CANDIDATE planet's own
+    Whole-Sign-House placement, not the point's) bonuses, and reports
+    whichever planet scores highest as that point's victor. This is a
+    different question from the Planetary Dignity Evaluation table (a
+    planet's OWN condition) or the Prenatal Syzygy's Almuten (a fifth
+    point, already computed separately) -- it's the classical technique of
+    finding the ruling planet OVER a specific place or degree, not a
+    single whole-chart "victor." Masha'allah's Places wheel had four
+    wedges (the succedent houses) with two competing values attributed to
+    Masha'allah vs. Dorotheus; the Masha'allah value is used for each,
+    matching the "Older (al-Tabari/Masha'allah)" scheme it's paired with."""
+    triplicity_key = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
+    points = {
+        'Ascendant': ascendant_lon,
+        'Sun': planetary_data['Sun']['longitude'],
+        'Moon': planetary_data['Moon']['longitude'],
+        'Lot of Fortune': lot_of_fortune,
+    }
+    day_lord = chronocrats.get('Day Lord')
+    hour_lord = chronocrats.get('Hour Lord')
+
+    results = []
+    for point_name, lon in points.items():
+        rulers = get_essential_rulers(lon)
+        row = {'Point': point_name}
+        for scheme_name, weights in VICTOR_WEIGHTS.items():
+            places_values = VICTOR_PLACES_VALUES[scheme_name]
+            places_bonus = {
+                p: places_values[get_wsh_house(data['longitude'], ascendant_lon)]
+                for p, data in planetary_data.items() if p != 'North Node'
+            }
+            scores = {}
+            def add(planet, pts):
+                if planet and planet != '-':
+                    scores[planet] = scores.get(planet, 0) + pts
+            add(rulers['domicile'], weights['domicile'])
+            add(rulers['exaltation'], weights['exaltation'])
+            add(rulers[triplicity_key], weights['triplicity'])
+            add(rulers['term'], weights['term'])
+            add(rulers['face'], weights['face'])
+            add(day_lord, 7)
+            add(hour_lord, 6)
+            for planet, bonus in places_bonus.items():
+                add(planet, bonus)
+            victor = max(scores, key=scores.get) if scores else '-'
+            row[scheme_name] = f"{victor} ({scores.get(victor, 0)})"
+        results.append(row)
+    return results
+
+def evaluate_planets_in_houses(planetary_data, abu_mashar_condition, ascendant_lon):
     """For each of the 7 classical planets, determine its Whole Sign House
-    placement and net dignity score, then look up the Rhetorius/PN4-derived
-    delineation for that planet in that house under its Good/Bad condition."""
+    placement, then look up the Rhetorius/PN4-derived delineation for that
+    planet in that house under its Good/Bad condition -- per Abu Ma'shar's
+    own VII.6 condition verdict (evaluate_abu_mashar_condition()), not the
+    older Rhetorius/PN4 net dignity score."""
     results = []
     for planet, data in planetary_data.items():
         if planet == 'North Node': continue
 
         wsh_house = get_wsh_house(data['longitude'], ascendant_lon)
-        net_score = essential[planet]['Essential Score'] + accidental[planet]['Accidental Score']
-        condition = 'Good' if net_score >= 0 else 'Bad'
+        condition_data = abu_mashar_condition[planet]
+        condition = condition_data['Condition']
         delineation = PLANETS_IN_HOUSES[wsh_house][planet][condition]
 
         results.append({
             'Planet': planet,
             'Placed In (WSH)': wsh_house,
-            'Net Score': net_score,
+            'Net Score': condition_data['Net'],
             'Condition': condition,
             'Classical Signification': delineation,
         })
@@ -1295,12 +2911,38 @@ if location_query and lat is not None and lon is not None:
         essential = evaluate_essential_dignities(p_data, sect)
         accidental = evaluate_accidental_dignities(p_data, chart_data['houses'], sect)
         aspects = evaluate_ptolemaic_aspects(p_data)
+        transfers = evaluate_transfers_of_light(p_data)
+        collections = evaluate_collections_of_light(p_data)
+        sim = _simulate_forward(p_data, chart_data['julian_day'])
+        abu_mashar_condition = evaluate_abu_mashar_condition(
+            p_data, chart_data['houses'], sect, essential, accidental, chart_data['julian_day'], chart_data['ascendant'], sim
+        )
+        wildness_data = evaluate_wildness(p_data)
+        reflections = evaluate_reflections_of_light(p_data, chart_data['ascendant'])
+        blocking_data = evaluate_blocking(p_data)
+        enclosure_data = evaluate_enclosure(p_data)
+        handing_over_data = evaluate_handing_over(p_data, sect)
+        non_reception_data = evaluate_non_reception(p_data, sect)
+        strength_data = evaluate_strength_of_planets(p_data, essential, accidental, chart_data['ascendant'])
+        weakness_data = evaluate_weakness_of_planets(p_data, essential, accidental, chart_data['ascendant'])
+        returning_data = evaluate_returning(p_data, accidental, chart_data['ascendant'])
+        revoking_data = evaluate_revoking(p_data, sim)
+        resistance_data = evaluate_resistance(p_data, sim)
+        escape_data = evaluate_escape(p_data, sim)
+        cutting_data = evaluate_cutting_the_light(p_data, sim)
+        favor_recompense_data = evaluate_favor_and_recompense(p_data, essential, sect, sim)
+        forward_looking_data = (
+            [{'Condition': 'Revoking', **row} for row in revoking_data]
+            + [{'Condition': 'Resistance', **row} for row in resistance_data]
+            + [{'Condition': 'Escape', **row} for row in escape_data]
+        )
         syzygy = calculate_prenatal_syzygy(chart_data['julian_day'], lat, lon, chart_data['houses'])
         chronocrats = calculate_chronocrats(chart_data['julian_day'], lat, lon, local_dt)
         classical_lots = calculate_classical_lots(chart_data['ascendant'], p_data['Sun']['longitude'], p_data['Moon']['longitude'], sect)
         special_degrees = evaluate_special_degrees(p_data)
         house_lords_data = evaluate_house_lords(p_data, chart_data['ascendant'])
-        planets_in_houses_data = evaluate_planets_in_houses(p_data, essential, accidental, chart_data['ascendant'])
+        victors_data = evaluate_victors(p_data, chart_data['ascendant'], chart_data['lot_of_fortune'], sect, chronocrats)
+        planets_in_houses_data = evaluate_planets_in_houses(p_data, abu_mashar_condition, chart_data['ascendant'])
         time_lords_data = calculate_time_lords(chart_data['ascendant'], input_date, target_date)
 
         svg_code = generate_hybrid_svg(chart_data, location_query, lat, lon, local_dt, tz_name)
@@ -1313,122 +2955,238 @@ if location_query and lat is not None and lon is not None:
             st.iframe(svg_code, height=720)
 
         with tab_metrics:
-            hdr1, hdr2, hdr3, hdr4 = st.columns(4)
-            hdr1.metric("Calculated JD", f"{chart_data['julian_day']:.4f}")
-            hdr2.metric("Sect", sect)
-            hdr3.metric("Lord of the Day", chronocrats['Day Lord'])
-            hdr4.metric("Lord of the Hour", chronocrats['Hour Lord'])
-            if chronocrats.get('Approximate'):
-                st.caption(
-                    "\u26a0\ufe0f No sunrise/sunset exists for this date at this location (circumpolar "
-                    "day/night) — Day and Hour Lord fall back to the plain calendar weekday and an "
-                    "equal 2-hour division of the day, rather than true unequal temporal hours."
-                )
+            tab_chart, tab_dignity, tab_connections = st.tabs(["Chart & Timing", "Dignity, Condition & Houses", "Connections & Corruption (Sahl Ch.3 / Abu Ma'shar VII.5)"])
 
-            st.subheader("Chronocrator Matrix (Active Time Lords)")
-            st.dataframe(pd.DataFrame(time_lords_data), hide_index=True, width='stretch')
+            with tab_chart:
+                hdr1, hdr2, hdr3, hdr4 = st.columns(4)
+                hdr1.metric("Calculated JD", f"{chart_data['julian_day']:.4f}")
+                hdr2.metric("Sect", sect)
+                hdr3.metric("Lord of the Day", chronocrats['Day Lord'])
+                hdr4.metric("Lord of the Hour", chronocrats['Hour Lord'])
+                if chronocrats.get('Approximate'):
+                    st.caption(
+                        "\u26a0\ufe0f No sunrise/sunset exists for this date at this location (circumpolar "
+                        "day/night) — Day and Hour Lord fall back to the plain calendar weekday and an "
+                        "equal 2-hour division of the day, rather than true unequal temporal hours."
+                    )
 
-            col1, col2 = st.columns(2)
+                st.subheader("Chronocrator Matrix (Active Time Lords)", help='The planets and signs ruling the current predictive period -- the year (profection), month, day, and hour -- each cycling to the next lord in zodiacal order as time passes.')
+                st.dataframe(pd.DataFrame(time_lords_data), hide_index=True, width='stretch')
 
-            with col1:
-                st.subheader("Planetary Positions")
-                # True planets only — angles, nodes, and Lot of Fortune
-                # now live in the "Calculated Points" table alongside it.
-                pos_list = [{"Planet": p, "Position": get_degree_string(d['longitude'])} for p, d in p_data.items() if p != 'North Node']
-                st.dataframe(pd.DataFrame(pos_list), hide_index=True, width='stretch')
+                col1, col2 = st.columns(2)
 
-                st.subheader("Calculated Points")
-                north_node_lon = p_data['North Node']['longitude']
-                south_node_lon = (north_node_lon + 180.0) % 360.0
-                calculated_points = {
-                    'Ascendant': chart_data['ascendant'],
-                    'Midheaven': chart_data['mc'],
-                    'Descendant': chart_data['descendant'],
-                    'Imum Coeli': chart_data['ic'],
-                    'North Node': north_node_lon,
-                    'South Node': south_node_lon,
-                    'Lot of Fortune': chart_data['lot_of_fortune'],
-                }
-                calc_list = [{"Point": name, "Position": get_degree_string(lon_val)} for name, lon_val in calculated_points.items()]
-                st.dataframe(pd.DataFrame(calc_list), hide_index=True, width='stretch')
+                with col1:
+                    st.subheader("Planetary Positions", help="The seven classical planets' ecliptic (tropical) longitude at the moment of birth, in sign and degree.")
+                    # True planets only — angles, nodes, and Lot of Fortune
+                    # now live in the "Calculated Points" table alongside it.
+                    pos_list = [{"Planet": p, "Position": get_degree_string(d['longitude'])} for p, d in p_data.items() if p != 'North Node']
+                    st.dataframe(pd.DataFrame(pos_list), hide_index=True, width='stretch')
 
-                st.subheader("Classical Lots")
-                st.dataframe(pd.DataFrame(classical_lots), hide_index=True, width='stretch')
+                    st.subheader("Calculated Points", help="Non-planetary chart points: the four angles (Ascendant, Midheaven, Descendant, Imum Coeli), the Moon's Nodes, and the Lot of Fortune (a sect-dependent formula combining the Sun, Moon, and Ascendant).")
+                    north_node_lon = p_data['North Node']['longitude']
+                    south_node_lon = (north_node_lon + 180.0) % 360.0
+                    calculated_points = {
+                        'Ascendant': chart_data['ascendant'],
+                        'Midheaven': chart_data['mc'],
+                        'Descendant': chart_data['descendant'],
+                        'Imum Coeli': chart_data['ic'],
+                        'North Node': north_node_lon,
+                        'South Node': south_node_lon,
+                        'Lot of Fortune': chart_data['lot_of_fortune'],
+                    }
+                    calc_list = [{"Point": name, "Position": get_degree_string(lon_val)} for name, lon_val in calculated_points.items()]
+                    st.dataframe(pd.DataFrame(calc_list), hide_index=True, width='stretch')
 
-                st.subheader("House Cusps (Alchabitius)")
-                house_list = [{"House": i+1, "Alchabitius Cusp": get_degree_string(chart_data['houses'][i])} for i in range(12)]
-                st.dataframe(pd.DataFrame(house_list), hide_index=True, width='stretch')
+                with col2:
+                    st.subheader("Classical Lots", help='Arabic Parts: sect-dependent formulas combining two planets or points with the Ascendant to derive a new sensitive degree tied to a specific topic (e.g. Fortune = body/livelihood, Spirit = mind/action).')
+                    st.dataframe(pd.DataFrame(classical_lots), hide_index=True, width='stretch')
 
-            with col2:
-                st.subheader("Planetary Dignity Evaluation")
-                dignity_list = []
-                for p in essential.keys():
-                    ess = essential[p]
-                    acc = accidental[p]
+                    st.subheader("House Cusps (Alchabitius)", help='The twelve quadrant house cusps computed by the Alchabitius (semi-arc) system -- shown alongside the Whole-Sign houses used everywhere else in this app, since some techniques call for quadrant division specifically.')
+                    house_list = [{"House": i+1, "Alchabitius Cusp": get_degree_string(chart_data['houses'][i])} for i in range(12)]
+                    st.dataframe(pd.DataFrame(house_list), hide_index=True, width='stretch')
 
-                    dignity_list.append({
+
+            with tab_dignity:
+                st.subheader("Planetary Condition (Abu Ma'shar)", help="Each planet's overall condition per the Great Introduction VII.6: good fortune, strength, weakness, misfortune, and enclosure -- plus (Moon only) Sahl's own ten defects of the Moon (The Introduction Ch.3, 102-113, numbered 103-112 below rather than VII.6's paragraph numbers) -- each criterion checked and summed into a single Good/Bad verdict, used to select the delineation in Topical Planets in Houses below.")
+                condition_list = []
+                for p, cond in abu_mashar_condition.items():
+                    condition_list.append({
                         "Planet": p,
-                        "Net": ess['Essential Score'] + acc['Accidental Score'],
-                        "Ess": ess['Essential Score'],
-                        "Acc": acc['Accidental Score'],
-                        "Essential Dignities": ", ".join(ess['Essential Labels']) if ess['Essential Labels'] else "-",
-                        "Accidental Conditions": ", ".join(acc['Accidental Labels']) if acc['Accidental Labels'] else "-",
+                        "Net": cond['Net'],
+                        "Condition": cond['Condition'],
+                        "Good Fortune / Strength": ", ".join(cond['Positive Labels']) if cond['Positive Labels'] else "-",
+                        "Weakness / Misfortune": ", ".join(cond['Negative Labels']) if cond['Negative Labels'] else "-",
                     })
+                df_condition = pd.DataFrame(condition_list).sort_values(by="Net", ascending=False)
+                st.dataframe(df_condition, hide_index=True, width='stretch')
 
-                df_dignity = pd.DataFrame(dignity_list).sort_values(by="Net", ascending=False)
-                st.dataframe(df_dignity, hide_index=True, width='stretch')
+                col1, col2 = st.columns(2)
 
-                st.subheader("Lordship Mapping")
-                triplicity_key = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
-                lordship_list = []
-                for p, data in p_data.items():
-                    if p == 'North Node': continue
-                    rulers = get_essential_rulers(data['longitude'])
-                    lordship_list.append({
-                        "Planet": p,
-                        "Sign Dispositor": rulers['domicile'],
-                        "Exaltation Lord": rulers['exaltation'],
-                        "Triplicity Lord": rulers[triplicity_key],
-                        "Term Lord": rulers['term'],
-                        "Face Lord": rulers['face'],
-                    })
-                st.dataframe(pd.DataFrame(lordship_list), hide_index=True, width='stretch')
+                with col1:
+                    st.subheader("Lordship Mapping", help="The domicile, exaltation, triplicity, term (bound), and face ruler of each planet's OWN degree -- the five essential dignities, read at the planet's own position rather than another point.")
+                    triplicity_key = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
+                    lordship_list = []
+                    for p, data in p_data.items():
+                        if p == 'North Node': continue
+                        rulers = get_essential_rulers(data['longitude'])
+                        lordship_list.append({
+                            "Planet": p,
+                            "Sign Dispositor": rulers['domicile'],
+                            "Exaltation Lord": rulers['exaltation'],
+                            "Triplicity Lord": rulers[triplicity_key],
+                            "Term Lord": rulers['term'],
+                            "Face Lord": rulers['face'],
+                        })
+                    st.dataframe(pd.DataFrame(lordship_list), hide_index=True, width='stretch')
 
-                st.subheader("Prenatal Lunation (Syzygy)")
-                r = syzygy['rulers']
-                triplicity_str = (
-                    f"{syzygy['active_triplicity_lord']}\u2605 ({syzygy['active_triplicity_label']}) \u00b7 "
-                    f"Day: {r['triplicity_day']} \u00b7 Night: {r['triplicity_night']} \u00b7 Part: {r['triplicity_participating']}"
-                )
-                syzygy_rows = [
-                    {"Metric": "Event Type", "Value": syzygy['event_label']},
-                    {"Metric": "Position", "Value": get_degree_string(syzygy['syzygy_longitude'])},
-                    {"Metric": "Natal House", "Value": f"House {syzygy['natal_house']}"},
-                    {"Metric": "Domicile Lord", "Value": r['domicile']},
-                    {"Metric": "Exaltation Lord", "Value": r['exaltation']},
-                    {"Metric": "Triplicity Lords", "Value": triplicity_str},
-                    {"Metric": "Term Lord", "Value": r['term']},
-                    {"Metric": "Face Lord", "Value": r['face']},
-                    {"Metric": "Syzygy Lord (Almuten)", "Value": f"{syzygy['almuten']} (Score: {syzygy['almuten_score']})"},
-                ]
-                st.dataframe(pd.DataFrame(syzygy_rows), hide_index=True, width='stretch')
+                    st.subheader("Special Degrees & Conditions", help='Flags planets in the Via Combusta (15 Libra-15 Scorpio, a historically "burnt" span) or a classical welled/pitted degree of their current sign (Abu Ma\'shar, Great Introduction V.21).')
+                    if special_degrees:
+                        st.dataframe(pd.DataFrame(special_degrees), hide_index=True, width='stretch')
+                    else:
+                        st.write("No planets in anomalous degrees.")
 
-            st.subheader("Special Degrees & Conditions")
-            if special_degrees:
-                st.dataframe(pd.DataFrame(special_degrees), hide_index=True, width='stretch')
-            else:
-                st.write("No planets in anomalous degrees.")
+                with col2:
+                    st.subheader("Prenatal Lunation (Syzygy)", help='The New or Full Moon exact before birth, its degree, natal house, and Almuten (victor) -- a key predictive point in Persian/Abbasid technique, thought to set the tone for the life or the period leading up to birth.')
+                    r = syzygy['rulers']
+                    triplicity_str = (
+                        f"{syzygy['active_triplicity_lord']}\u2605 ({syzygy['active_triplicity_label']}) \u00b7 "
+                        f"Day: {r['triplicity_day']} \u00b7 Night: {r['triplicity_night']} \u00b7 Part: {r['triplicity_participating']}"
+                    )
+                    syzygy_rows = [
+                        {"Metric": "Event Type", "Value": syzygy['event_label']},
+                        {"Metric": "Position", "Value": get_degree_string(syzygy['syzygy_longitude'])},
+                        {"Metric": "Natal House", "Value": f"House {syzygy['natal_house']}"},
+                        {"Metric": "Domicile Lord", "Value": r['domicile']},
+                        {"Metric": "Exaltation Lord", "Value": r['exaltation']},
+                        {"Metric": "Triplicity Lords", "Value": triplicity_str},
+                        {"Metric": "Term Lord", "Value": r['term']},
+                        {"Metric": "Face Lord", "Value": r['face']},
+                        {"Metric": "Syzygy Lord (Almuten)", "Value": f"{syzygy['almuten']} (Score: {syzygy['almuten_score']})"},
+                    ]
+                    st.dataframe(pd.DataFrame(syzygy_rows), hide_index=True, width='stretch')
 
-            st.subheader("Topical Planets in Houses (Rhetorius & PN4)")
-            st.dataframe(pd.DataFrame(planets_in_houses_data), hide_index=True, width='stretch')
+                    st.subheader("Victors of Significant Points (ibn Ezra)", help='The Victor (Almuten) of the Ascendant, Sun, Moon, and Lot of Fortune -- whichever planet holds the strongest essential-dignity claim, day/hour lordship, and house-position bonus at each point, under two parallel medieval weighting traditions.')
+                    st.dataframe(pd.DataFrame(victors_data), hide_index=True, width='stretch')
+                    st.caption(
+                        "Scored under both weighted essential-dignity traditions Dykes gives (Older: al-Tabari/"
+                        "Masha'allah, Bound > Triplicity; Newer: Al-Qabisi/Abu Ma'shar, Triplicity > Bound), each with "
+                        "its own Lord of the Day (+7), Lord of the Hour (+6), and Places (house-position) bonus wheel."
+                    )
 
-            st.subheader("Ptolemaic Aspects")
-            if aspects:
-                st.dataframe(pd.DataFrame(aspects), hide_index=True, width='stretch')
-            else:
-                st.write("No traditional aspects formed within defined orbs.")
+                st.subheader("Topical Planets in Houses (Rhetorius & PN4)", help="Each planet's Whole-Sign house placement and its Rhetorius/PN4-derived delineation, selected by that planet's Good/Bad verdict from the Planetary Condition table above.")
+                st.dataframe(pd.DataFrame(planets_in_houses_data), hide_index=True, width='stretch')
 
-            st.subheader("Topical House Lords (Masha'allah)")
-            st.dataframe(pd.DataFrame(house_lords_data), hide_index=True, width='stretch')
+                st.subheader("Topical House Lords (Masha'allah)", help='For each of the twelve topical houses, its domicile lord\'s own Whole-Sign placement, and Masha\'allah\'s delineation for that [placed-in, rules] pairing -- the classical way of reading what a house\'s ruler is "doing" elsewhere in the chart.')
+                st.dataframe(pd.DataFrame(house_lords_data), hide_index=True, width='stretch')
+
+                with st.expander("Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", expanded=False):
+                    dignity_list = []
+                    for p in essential.keys():
+                        ess = essential[p]
+                        acc = accidental[p]
+
+                        dignity_list.append({
+                            "Planet": p,
+                            "Net": ess['Essential Score'] + acc['Accidental Score'],
+                            "Ess": ess['Essential Score'],
+                            "Acc": acc['Accidental Score'],
+                            "Essential Dignities": ", ".join(ess['Essential Labels']) if ess['Essential Labels'] else "-",
+                            "Accidental Conditions": ", ".join(acc['Accidental Labels']) if acc['Accidental Labels'] else "-",
+                        })
+
+                    df_dignity = pd.DataFrame(dignity_list).sort_values(by="Net", ascending=False)
+                    st.dataframe(df_dignity, hide_index=True, width='stretch')
+
+
+            with tab_connections:
+                st.subheader("Aspects, Aversions & Connections (Sahl, The Introduction Ch.2 50-60 & Ch.3 6-21)", help="Every planet pair's whole-sign configuration (Union/Sextile/Square/Trine/Opposition, or Aversion if none applies), its Applying/Separating motion, and whether it's Connected -- within the applying planet's own orb of exactness, a narrower test than the aspect itself.")
+                if aspects:
+                    st.dataframe(pd.DataFrame(aspects), hide_index=True, width='stretch')
+                else:
+                    st.write("No traditional aspects or aversions found.")
+
+                st.subheader("Transfer of Light (Sahl, The Introduction Ch.3, 24-27)", help='A faster "carrier" planet separates from one planet and connects with another, carrying the first planet\'s nature to the second -- Type I is a direct hand-off, Type II is via an intermediate planet already connecting onward.')
+                if transfers:
+                    st.dataframe(pd.DataFrame(transfers), hide_index=True, width='stretch')
+                else:
+                    st.write("No transfers of light found.")
+
+                st.subheader("Collection of Light (Sahl, The Introduction Ch.3, 28-30)", help='Two planets not connected to each other both connect with a single heavier planet, which "collects" their combined power -- often read as a third party or authority resolving/mediating between two unconnected significators.')
+                if collections:
+                    st.dataframe(pd.DataFrame(collections), hide_index=True, width='stretch')
+                else:
+                    st.write("No collections of light found.")
+
+                st.subheader("Reflection of Light (Abu Ma'shar, Great Introduction VII.5, 87-89)", help="Collection or Transfer specifically between two planets that are in Aversion to each other, not just unconnected -- since Aversion pairs can't see each other at all, a third planet is the only way their natures can interact.")
+                if reflections:
+                    st.dataframe(pd.DataFrame(reflections), hide_index=True, width='stretch')
+                else:
+                    st.write("No reflections of light found.")
+
+                st.subheader("Blocking (Sahl, The Introduction Ch.3, 31-48: Intervention & Nullification; Abu Ma'shar VII.5, 90-94)", help='A third planet interposes between an applying pair before their connection completes, either by body (co-present in the same sign) or by degree-proximity, delaying or redirecting the intended connection. Sahl\'s own third blocking type, "Cutting the Light," is Type III of the Cutting the Light table below rather than shown here.')
+                if blocking_data:
+                    st.dataframe(pd.DataFrame(blocking_data), hide_index=True, width='stretch')
+                else:
+                    st.write("No blocking configurations found.")
+
+                st.subheader("Enclosure (Sahl, The Introduction Ch.3, 119-123)", help='A planet separating from one of the two infortunes (or, per Abu Ma\'shar\'s extension, fortunes) and connecting with the other, with neither leg intercepted by a third planet\'s rays -- graded "more powerful/unfortunate" when both legs are within 7 degrees of exact.')
+                if enclosure_data:
+                    st.dataframe(pd.DataFrame(enclosure_data), hide_index=True, width='stretch')
+                else:
+                    st.write("No enclosure configurations found.")
+
+                st.subheader("Handing Over (Sahl, The Introduction Ch.3, 70-76)", help='Three grades of one phenomenon, per connected pair: Management is the baseline (any connection at all); Power is added when the giving planet is itself in its own house, exaltation, or triplicity; Nature is added when the planet it connects with is the ruler -- by house or exaltation -- of its own position (i.e. in reception).')
+                if handing_over_data:
+                    st.dataframe(pd.DataFrame(handing_over_data), hide_index=True, width='stretch')
+                else:
+                    st.write("No handing-over configurations found.")
+
+                st.subheader("Non-reception (Sahl, The Introduction Ch.3, 58-62)", help='Five named ways a connection is refused rather than received: (I) the connected-to planet holds no dignity claim at all in the connecting planet\'s sign; (II) the connecting planet is in the other\'s sign of fall; (III) the connecting planet is in its OWN fall, and Kind I also applies; (IV) the connected-to planet is in its OWN fall; (V) the connected-to planet sits in the connecting planet\'s own sign of fall.')
+                if non_reception_data:
+                    st.dataframe(pd.DataFrame(non_reception_data), hide_index=True, width='stretch')
+                else:
+                    st.write("No non-reception configurations found.")
+
+                st.subheader("Cutting the Light (Sahl, The Introduction Ch.3, 31-34: Type III; Abu Ma'shar VII.5, 120-125: Types I-II)", help='Type III is Sahl\'s own Blocking #1: among several planets a given one is applying to, it connects with whichever is nearest by degree first, cutting off the more distant, originally-favored connection. Types I-II are Abu Ma\'shar\'s later addition: an intervening planet -- by retrograding into the path -- intercepts an applying connection before it reaches its original target.')
+                if cutting_data:
+                    st.dataframe(pd.DataFrame(cutting_data), hide_index=True, width='stretch')
+                else:
+                    st.write("No cutting-the-light configurations found.")
+
+                st.subheader("Favor & Recompense (Abu Ma'shar VII.5, 126-128)", help='A planet in its own Fall or a welled/pitted degree, pulled out of that weak condition by a connecting dispositor (Favor). Recompense is the same planet later returning the favor, found by simulating the chart forward.')
+                if favor_recompense_data:
+                    st.dataframe(pd.DataFrame(favor_recompense_data), hide_index=True, width='stretch')
+                else:
+                    st.write("No favor/recompense configurations found.")
+
+                st.subheader("Wildness (Sahl, The Introduction Ch.3, 64: \"Banished\"; Abu Ma'shar VII.5, 79-82)", help='A planet in Aversion to all six other classical planets -- unable to be seen or aspected by anyone, though it may still be "reached" via the lord of whatever bound (term) it occupies. Sahl\'s own term is "banished"; this Aversion-based definition is a later refinement of it.')
+                if wildness_data:
+                    st.dataframe(pd.DataFrame(wildness_data), hide_index=True, width='stretch')
+                else:
+                    st.write("No wild planets found.")
+
+                st.subheader("Returning (Sahl, The Introduction Ch.3, 65-69)", help='Manner I: a planet connects with a retrograde planet or one under the rays -- it "returns to it what it accepted," corrupting the question. Manner II: an angular (faster) planet hands over to a cadent (slower) one -- the matter has a beginning but no end.')
+                if returning_data:
+                    st.dataframe(pd.DataFrame(returning_data), hide_index=True, width='stretch')
+                else:
+                    st.write("No returning configurations found.")
+
+                st.subheader("Forward-Looking Conditions (Revoking, Resistance, Escape — next 200 days)", help="Conditions describing what happens as the chart moves forward in time (up to ~200 days), not the birth moment alone. Revoking: a planet applying toward a connection stations retrograde before reaching it, nullifying it. Resistance: a light planet stations retrograde before reaching its heavier target, and a third, even lighter planet ends up connecting with it after that instead. Escape: the planet being applied to changes sign before the connection completes, and a different, now-closer planet captures it instead.")
+                if forward_looking_data:
+                    st.dataframe(pd.DataFrame(forward_looking_data), hide_index=True, width='stretch')
+                else:
+                    st.write("No forward-looking conditions found within the simulation horizon.")
+
+                st.subheader("Strength of the Planets (Sahl, The Introduction Ch.3, 78-87)", help="Ten testimonies of a planet's strength at the time of judgment -- excellent place, own dignity, direct, free of infortune contact, not tied to a weak planet, advancing, an eastern masculine planet, in its own glow (Hayz), a fixed sign, and gender-matching quadrant/sign. Distinct from the Abu Ma'shar-based Planetary Condition table above, which scores a broader, later scheme.")
+                if strength_data:
+                    st.dataframe(pd.DataFrame(strength_data), hide_index=True, width='stretch')
+                else:
+                    st.write("No strength testimonies found.")
+
+                st.subheader("Weakness of the Planets (Sahl, The Introduction Ch.3, 91-100)", help="Ten testimonies of a planet's weakness at the time of judgment -- falling and averse to the Ascendant, retrograde, under the rays, enclosed between the infortunes, in its own fall, connecting with a falling planet or separating from a would-be receiver, peregrine and overtaken by the Sun, with the Node and no latitude, or inverted (in detriment). Distinct from the Abu Ma'shar-based Planetary Condition table above, which scores a broader, later scheme.")
+                if weakness_data:
+                    st.dataframe(pd.DataFrame(weakness_data), hide_index=True, width='stretch')
+                else:
+                    st.write("No weakness testimonies found.")
     else:
         st.sidebar.error("Timezone boundary not found for coordinates.")
