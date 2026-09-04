@@ -1149,31 +1149,100 @@ def _simulate_forward(planetary_data, jd, horizon_days=200, step_days=1.0):
 
     return {'series': series, 'events': events, 'jd': jd, 'horizon_days': horizon_days}
 
-def _deviation_zero_day(sim, p1, p2, target):
-    """First day in a forward simulation where the (p1,p2) pair's raw
-    separation minus the target aspect angle crosses zero (the connection
-    becomes exact), or None if it doesn't within the horizon."""
-    lons1, lons2 = sim['series'][p1]['lon'], sim['series'][p2]['lon']
-    days = sim['series'][p1]['day']
-    prev_dev = None
-    for day, l1, l2 in zip(days, lons1, lons2):
-        raw = abs(l1 - l2)
-        dist = raw if raw <= 180.0 else 360.0 - raw
-        dev = dist - target
-        if prev_dev is not None and (prev_dev > 0) != (dev > 0):
-            return day
-        prev_dev = dev
-    return None
+def _wrap180(degrees):
+    """Fold an angle into (-180, 180]."""
+    return ((degrees + 180.0) % 360.0) - 180.0
 
-def _interp_lon(sim, planet, day):
-    """Linear-interpolate a planet's longitude at an arbitrary day within
-    the simulation horizon from its daily sample series."""
-    days, lons = sim['series'][planet]['day'], sim['series'][planet]['lon']
+def _lon_at(sim, planet, day):
+    """A planet's longitude at an arbitrary day inside the horizon, read
+    straight from the ephemeris (memoized per simulation).
+
+    Replaces an interpolation over the daily samples, which ran the
+    straight line THROUGH the 0/360 seam: a planet at 359 deg followed by
+    one at 1 deg interpolated backwards across 180 deg, so any event timed
+    between those two samples was placed half a zodiac away."""
+    cache = sim.setdefault('_lon_cache', {})
+    key = (planet, round(day, 6))
+    if key not in cache:
+        res, _ = swe.calc_ut(sim['jd'] + day, PLANET_SWE_IDS[planet])
+        cache[key] = res[0]
+    return cache[key]
+
+def _bisect_zero(fn, day_lo, day_hi, tol=1e-3, max_iter=60):
+    """Bracketed root-find for a continuous fn known to change sign across
+    [day_lo, day_hi]."""
+    f_lo = fn(day_lo)
+    for _ in range(max_iter):
+        if day_hi - day_lo < tol:
+            break
+        mid = (day_lo + day_hi) / 2.0
+        f_mid = fn(mid)
+        if (f_mid < 0.0) == (f_lo < 0.0):
+            day_lo, f_lo = mid, f_mid
+        else:
+            day_hi = mid
+    return (day_lo + day_hi) / 2.0
+
+def _configuration_target_at(sim, p1, p2, day):
+    """The whole-sign aspect angle the pair is entitled to on a given day,
+    or None if they are in aversion then."""
+    s1 = int(_lon_at(sim, p1, day) // 30)
+    s2 = int(_lon_at(sim, p2, day) // 30)
+    raw_apart = abs(s1 - s2)
+    apart = min(raw_apart, 12 - raw_apart)
+    entry = ASPECT_BY_SIGN_COUNT.get(apart)
+    return None if entry is None else entry[1]
+
+def _perfection_day(sim, p1, p2, target, before_day=None):
+    """First day inside the horizon on which p1 and p2 actually perfect the
+    given aspect, or None.
+
+    Three things the previous implementation got wrong:
+
+    (1) It tested `min_angular_distance - target`, which is confined to
+    [0, 180]. For a conjunction (target 0) that residual is never negative
+    and for an opposition (target 180) never positive, so NEITHER could
+    ever cross zero -- perfection was silently undetectable for both, and
+    callers that treat "no perfection found" as a positive result (notably
+    Revoking) fired on every such pair. Here the pair's signed relative
+    longitude is compared against +target and -target, each folded into
+    (-180, 180], so every aspect including those two crosses zero cleanly.
+
+    (2) It returned the sample day at which the sign flipped rather than
+    the root, giving up to a full day of error; now bisected against the
+    ephemeris directly.
+
+    (3) It kept applying the natal aspect angle no matter how the chart had
+    moved. A pair 3 signs apart at birth may be 4 apart by the time the
+    90-degree hit arrives, and Abu Ma'shar permits no out-of-sign aspect
+    (VII.5, 14: few degrees across a sign boundary is not a connection but
+    a weak "mixing of natures"). The whole-sign configuration is now
+    revalidated AT the moment of perfection, and a hit that no longer
+    matches is discarded and the scan continues."""
+    days = sim['series'][p1]['day']
+    lons1, lons2 = sim['series'][p1]['lon'], sim['series'][p2]['lon']
+
+    def residual(day, offset):
+        return _wrap180(_lon_at(sim, p1, day) - _lon_at(sim, p2, day) - offset)
+
     for i in range(len(days) - 1):
-        if days[i] <= day <= days[i + 1]:
-            frac = (day - days[i]) / (days[i + 1] - days[i]) if days[i + 1] != days[i] else 0.0
-            return lons[i] + frac * (lons[i + 1] - lons[i])
-    return lons[-1]
+        if before_day is not None and days[i] > before_day:
+            break
+        for offset in (target, -target):
+            prev = _wrap180(lons1[i] - lons2[i] - offset)
+            cur = _wrap180(lons1[i + 1] - lons2[i + 1] - offset)
+            # A wrapped residual also "changes sign" when it rolls over the
+            # +/-180 seam; a genuine root moves by far less than half a turn
+            # in one step, so that guard rejects the seam artifact.
+            if (prev < 0.0) == (cur < 0.0) or abs(cur - prev) >= 180.0:
+                continue
+            day = _bisect_zero(lambda d, _o=offset: residual(d, _o), days[i], days[i + 1])
+            if before_day is not None and day > before_day:
+                continue
+            actual = _configuration_target_at(sim, p1, p2, day)
+            if actual is not None and abs(actual - target) < 1e-9:
+                return day
+    return None
 
 def evaluate_returning(planetary_data, accidental, ascendant_lon):
     """Returning (Sahl, The Introduction Ch.3, 65-69, Figs. 21-22): two
@@ -1228,7 +1297,7 @@ def evaluate_revoking(planetary_data, sim):
         first_station = next((s for s in sim['events'][fast]['stations'] if s[1] == 'first'), None)
         if not first_station:
             continue
-        exact_day = _deviation_zero_day(sim, fast, slow, r['target'])
+        exact_day = _perfection_day(sim, fast, slow, r['target'])
         if exact_day is None or first_station[0] < exact_day:
             results.append({'Planet': fast, 'Was Connecting To': slow, 'Stations Retrograde In (days)': round(first_station[0], 1)})
     return results
@@ -1250,7 +1319,7 @@ def evaluate_resistance(planetary_data, sim):
         first_station = next((s for s in sim['events'][light]['stations'] if s[1] == 'first'), None)
         if not first_station:
             continue
-        exact_with_heavy = _deviation_zero_day(sim, light, heavy, r['target'])
+        exact_with_heavy = _perfection_day(sim, light, heavy, r['target'])
         if exact_with_heavy is not None and first_station[0] >= exact_with_heavy:
             continue
         for r2 in rows:
@@ -1259,7 +1328,7 @@ def evaluate_resistance(planetary_data, sim):
             other = r2['p2'] if r2['p1'] == light else r2['p1']
             if other == heavy or WEIGHT_ORDER.index(other) <= WEIGHT_ORDER.index(light):
                 continue
-            exact_with_other = _deviation_zero_day(sim, light, other, r2['target'])
+            exact_with_other = _perfection_day(sim, light, other, r2['target'])
             if exact_with_other is not None and exact_with_other > first_station[0]:
                 results.append({'Light Planet': light, 'Originally Heading To': heavy, 'Resisted, Now Connects With': other})
     return results
@@ -1280,26 +1349,28 @@ def evaluate_escape(planetary_data, sim):
         if not sign_exits:
             continue
         exit_day = sign_exits[0]
-        exact_day = _deviation_zero_day(sim, fast, slow, r['target'])
-        if exact_day is not None and exact_day <= exit_day:
+        if _perfection_day(sim, fast, slow, r['target'], before_day=exit_day) is not None:
             continue
-        fast_lon_at_exit = _interp_lon(sim, fast, exit_day)
-        best, best_dev = None, None
+        # Whichever still-configured planet the escapee actually perfects
+        # with FIRST after the target has slipped away takes the
+        # connection. An earlier version instead picked whichever planet
+        # merely had the smallest deviation at the moment of the sign exit,
+        # which asserts a capture without any connection ever perfecting.
+        best, best_day = None, None
         for other in planetary_data:
             if other in (fast, slow, 'North Node'):
                 continue
-            other_lon_at_exit = _interp_lon(sim, other, exit_day)
-            raw = abs(fast_lon_at_exit - other_lon_at_exit)
-            dist = raw if raw <= 180.0 else 360.0 - raw
-            sign_f, sign_o = int(fast_lon_at_exit // 30), int(other_lon_at_exit // 30)
-            apart = min(abs(sign_f - sign_o), 12 - abs(sign_f - sign_o))
-            if apart not in ASPECT_BY_SIGN_COUNT:
+            target_then = _configuration_target_at(sim, fast, other, exit_day)
+            if target_then is None:
                 continue
-            dev = abs(dist - ASPECT_BY_SIGN_COUNT[apart][1])
-            if best_dev is None or dev < best_dev:
-                best, best_dev = other, dev
+            day = _perfection_day(sim, fast, other, target_then)
+            if day is None or day < exit_day:
+                continue
+            if best_day is None or day < best_day:
+                best, best_day = other, day
         if best is not None:
-            results.append({'Planet': fast, 'Escaped': slow, 'Connected Instead With': best})
+            results.append({'Planet': fast, 'Escaped': slow, 'Connected Instead With': best,
+                             'Perfects In (days)': round(best_day, 1)})
     return results
 
 def evaluate_cutting_the_light(planetary_data, sim):
@@ -1338,10 +1409,9 @@ def evaluate_cutting_the_light(planetary_data, sim):
             if r['aspect_name'] == 'Aversion' or r['motion'] != 'Applying':
                 continue
             light, heavy = r['fast_name'], r['slow_name']
-            exact_day = _deviation_zero_day(sim, light, heavy, r['target'])
+            exact_day = _perfection_day(sim, light, heavy, r['target'])
             if exact_day is None:
                 continue
-            light_sign = int(planetary_data[light]['longitude'] // 30)
             for candidate in planetary_data:
                 if candidate in (light, heavy, 'North Node'):
                     continue
@@ -1349,7 +1419,9 @@ def evaluate_cutting_the_light(planetary_data, sim):
                     if kind != 'first' or station_day >= exact_day:
                         continue
                     for exit_day in sim['events'][candidate]['sign_exits']:
-                        if station_day < exit_day < exact_day and int(_interp_lon(sim, candidate, exit_day) // 30) == light_sign:
+                        # The light planet's sign is read AT the crossing,
+                        # not at birth -- it may itself have moved on by then.
+                        if station_day < exit_day < exact_day and int(_lon_at(sim, candidate, exit_day) // 30) == int(_lon_at(sim, light, exit_day) // 30):
                             results.append({'Type': 'I', 'Planet': light, 'Cut Off From': heavy, 'Cut By': candidate})
     return results
 
@@ -2413,7 +2485,7 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
                 if signs_apart_other not in ASPECT_BY_SIGN_COUNT:
                     continue
                 target_angle = ASPECT_BY_SIGN_COUNT[signs_apart_other][1]
-                exact_day = _deviation_zero_day(sim, planet, other, target_angle)
+                exact_day = _perfection_day(sim, planet, other, target_angle, before_day=exit_day)
                 if exact_day is not None and exact_day <= exit_day:
                     empty_of_course = False
                     break
