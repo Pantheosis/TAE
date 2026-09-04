@@ -2249,6 +2249,109 @@ def _dispositors(lon, sect):
     triplicity_key = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
     return {rulers['domicile'], rulers['exaltation'], rulers[triplicity_key], rulers['term'], rulers['face']} - {'-'}
 
+def _current_bound_width(lon):
+    """The width in degrees of the Egyptian bound the degree falls in --
+    the measure VII.6, 48 uses for "less than the bound of [a single]
+    planet between them and the infortunes"."""
+    sign = get_zodiac_sign(lon)
+    degree_in_sign = lon % 30
+    lower = 0.0
+    for limit, _lord in EGYPTIAN_TERMS.get(sign, []):
+        if degree_in_sign < limit:
+            return float(limit) - lower
+        lower = float(limit)
+    return 30.0 - lower
+
+def _ray_degrees(lon):
+    """A planet's body plus the degrees into which it casts its rays."""
+    return [(lon + a) % 360.0 for a in (0.0, 60.0, 90.0, 120.0, 180.0, 240.0, 270.0, 300.0)]
+
+def _abu_mashar_enclosed(planet, enclosing_set, planetary_data, rows, orb=7.0):
+    """Enclosure per Abu Ma'shar's own VII.6, 56-62 -- which is NOT simply
+    Sahl's concept borrowed. He gives two types of his own:
+
+    Type 1 by degree (57): the planet has one enclosing planet's body OR
+    RAYS within orb in front of it and the other's behind it; or it is
+    separating from one by assembly or aspect and connecting with the
+    other (that second form IS Sahl's mechanism). The 7-degree orb is from
+    the note on 57: "the rays or bodies of the enclosing planets must be 7
+    degrees or less on either side of the enclosed planet."
+
+    Confirmed against Figure 145: the Moon at 13 Libra is besieged by
+    Saturn's opposition ray from 18 Aries (5 degrees ahead) and Mars's
+    sextile ray from 10 Leo (3 degrees behind).
+
+    Type 2 by sign (58): one enclosing planet, by body or rays, is in the
+    SECOND sign from the planet and the other is in the twelfth.
+
+    Dissolution (60-61): "if the Sun or one of the fortunes looked at the
+    enclosed planet, and there was less than 7 degrees between the planet
+    and those rays, then it indicates the dissolving of that misfortune."
+    An earlier version of this project removed a dissolution rule as an
+    unsourced invention. It is sourced -- this is it.
+
+    Returns (enclosed, kind, dissolved_by) with dissolved_by naming the
+    planet whose rays break it, or None."""
+    members = [m for m in enclosing_set if m != planet and m in planetary_data]
+    if len(members) != 2:
+        return False, None, None
+    lon = planetary_data[planet]['longitude']
+    a_rays = _ray_degrees(planetary_data[members[0]]['longitude'])
+    b_rays = _ray_degrees(planetary_data[members[1]]['longitude'])
+
+    def ahead(rays):
+        return any(0.0 < (d - lon) % 360.0 <= orb for d in rays)
+
+    def behind(rays):
+        return any(0.0 < (lon - d) % 360.0 <= orb for d in rays)
+
+    kind = None
+    if (ahead(a_rays) and behind(b_rays)) or (ahead(b_rays) and behind(a_rays)):
+        kind = 'by degree (57)'
+    else:
+        # The second form of 57: separating from one, connecting with the
+        # other -- Sahl's own shape, which Abu Ma'shar folds in here.
+        for sep_t, con_t in ((members[0], members[1]), (members[1], members[0])):
+            sep = any(r['light_name'] == planet and r['heavy_name'] == sep_t
+                       and r['motion'] == 'Separating' and _is_connected(r) for r in rows)
+            con = any(r['light_name'] == planet and r['heavy_name'] == con_t
+                       and r['motion'] == 'Applying' and _is_connected(r) for r in rows)
+            if sep and con:
+                kind = 'separating/connecting (57)'
+                break
+    if kind is None:
+        # Type 2 by sign (58). NOTE A DELIBERATE DIVERGENCE FROM THE
+        # LITERAL WORDING. 58 says the infortune is in the second sign
+        # "(by its body or rays)" and the other in the twelfth "or its
+        # rays". Counting rays makes this fire on 41-44% of all placements
+        # measured over 3,654 planet-checks, because a planet's rays reach
+        # eight of the twelve signs, so almost any pair of enclosers covers
+        # almost any pair of adjacent signs -- enclosure would be the
+        # normal condition rather than a notable one. Restricting it to the
+        # enclosing BODIES brings it to 1.4-2.5%, in line with the
+        # degree-based type at about 4%. Bodies only is used here; flip
+        # `_sign_positions` back to the ray lists to restore the literal
+        # reading.
+        sign_idx = int(lon // 30)
+        second = (sign_idx + 1) % 12
+        twelfth = (sign_idx - 1) % 12
+        a_sign = int(planetary_data[members[0]]['longitude'] // 30)
+        b_sign = int(planetary_data[members[1]]['longitude'] // 30)
+        if ((a_sign == second and b_sign == twelfth)
+                or (b_sign == second and a_sign == twelfth)):
+            kind = 'by sign, 2nd and 12th (58)'
+    if kind is None:
+        return False, None, None
+
+    # 60: the Sun or a fortune casting a ray within 7 degrees breaks it.
+    for breaker in ({'Sun'} | FORTUNES) - set(members) - {planet}:
+        if breaker not in planetary_data:
+            continue
+        if any(abs(((d - lon + 180.0) % 360.0) - 180.0) < orb
+               for d in _ray_degrees(planetary_data[breaker]['longitude'])):
+            return True, kind, breaker
+    return True, kind, None
+
 def _sahl_enclosed(planet, enclosing_set, rows, blocking_pairs):
     """Enclosure (Sahl, The Introduction Ch.3, 119-123, Fig. 25). The
     planet is separating from ONE member of enclosing_set and connecting
@@ -2614,13 +2717,39 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
 
 def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential, accidental, jd, ascendant_lon, sim=None):
     """Planetary condition per Abu Ma'shar's Great Introduction VII.6: good
-    fortune, strength, weakness, misfortune, and enclosure -- plus, for the
-    Moon only, Sahl's own ten defects (The Introduction Ch.3, 102-113,
-    via _corruption_of_the_moon_labels()) rather than VII.6's own,
-    differently-numbered eleven-item version. Distinct from -- and now the
-    authoritative source for -- the Rhetorius/PN4 net dignity score in
-    evaluate_essential_dignities()/evaluate_accidental_dignities(), which
-    is retained separately as the older Hellenistic reconstruction."""
+    fortune (1-20), strength (21-29), weakness (30-46), misfortune (47-62)
+    -- plus, for the Moon only, Sahl's own ten defects (The Introduction
+    Ch.3, 103-112, via _corruption_of_the_moon_labels()) rather than
+    VII.6's own, differently-numbered eleven-item version (63-74).
+    Distinct from -- and the authoritative source for -- the Rhetorius/PN4
+    delineation switch; the older Hellenistic net dignity score in
+    evaluate_essential_dignities()/evaluate_accidental_dignities() is
+    retained separately.
+
+    This chapter was built early in the project from photographed pages
+    that were later lost, and stayed unverifiable through several passes.
+    It has now been checked line by line against the text. Corrected here:
+    2 names its aspects (sextile, square, trine, or assembly) and excludes
+    the opposition, which was being counted; 8 places no aspect restriction
+    on the Moon's inspection, which had inherited 7's trine/sextile; 19's
+    "merely fortunate" is the moderated own house (Saturn in Aquarius,
+    Jupiter in Sagittarius, and so on), not any single dignity claim, so a
+    bare face no longer earns it; 48 carries a degree condition ("less than
+    the bound of a planet between them and the infortunes") that was absent
+    entirely; 50 is the tenth or eleventh sign, where the ninth was also
+    being admitted; and enclosure is now Abu Ma'shar's own two types with
+    the dissolution of 60-61 -- see _abu_mashar_enclosed(), and note that a
+    dissolution rule deleted earlier in this project as unsourced turns out
+    to be exactly what 60 states.
+
+    Known gaps, all intensifiers or secondary clauses rather than whole
+    conditions, left unimplemented rather than guessed: 14's reverse case
+    (the fortunes in the luminaries' shares); 27's extra strength when a
+    superior looks at the Sun from the sextile; the Sun-specific clauses in
+    28 and 45, including 45's exception for his joy in the ninth; 33's
+    harsher retrogradation for the inferiors, especially when also burned;
+    44's harsher form (empty in course with no fortune looking); and 53's
+    tighter 4-degree node orb for the Sun."""
     rows = _pairwise_configurations(planetary_data)
     reception_rows = evaluate_reception(planetary_data, sect)
     connected_lookup = {}
@@ -2632,8 +2761,13 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         configured_lookup[pair] = row['aspect_name']
     blocking_pairs = {(row['Blocked'], row['From Reaching']) for row in evaluate_blocking(planetary_data)}
 
-    def connected_to(planet, targets):
-        return any(connected_lookup.get(frozenset({planet, t}), False) for t in targets if t != planet)
+    def connected_to(planet, targets, aspects=None):
+        for t in targets:
+            if t == planet or not connected_lookup.get(frozenset({planet, t}), False):
+                continue
+            if aspects is None or configured_lookup.get(frozenset({planet, t})) in aspects:
+                return True
+        return False
 
     def configured_to(planet, targets, aspects=None):
         for t in targets:
@@ -2665,7 +2799,13 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         positive, negative = [], []
 
         # --- Good fortune (VII.6, 1-14) -----------------------------------
-        if connected_to(planet, FORTUNES):
+        # 2 names its aspects: "in the inspection of the fortunes from the
+        # sextile, square, or trine, or are assembled with them" -- the
+        # opposition is not among them, though an earlier version counted
+        # any connected aspect. The note on 2 glosses "inspection" as an
+        # aspect exact by degree, so the degree-based connection test is
+        # the right gate.
+        if connected_to(planet, FORTUNES, {'Conjunction', 'Sextile', 'Square', 'Trine'}):
             positive.append('Aspect/assembly with a fortune (2)')
         if averted_from(planet, INFORTUNES):
             positive.append('Infortunes averted (3)')
@@ -2675,14 +2815,19 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         )
         if separating_infortune and connected_to(planet, FORTUNES):
             positive.append('Separating infortune, connecting fortune (4)')
-        is_enc, severe, _sep, _con = _sahl_enclosed(planet, FORTUNES, rows, blocking_pairs)
-        if is_enc:
-            positive.append('Enclosed between two fortunes (5, 119-123)' + (', severe' if severe else ''))
+        # 5 / 62: "if the planet or sign was enclosed by the fortunes, then
+        # that is of superior good fortune."
+        is_enc_f, enc_kind_f, _diss = _abu_mashar_enclosed(planet, FORTUNES, planetary_data, rows)
+        if is_enc_f:
+            positive.append(f'Enclosed between the two fortunes, {enc_kind_f} (5, 62)')
         if acc['Cazimi']:
             positive.append('Cazimi (6)')
         if configured_to(planet, {'Sun'}, {'Trine', 'Sextile'}):
             positive.append('Trine/sextile the Sun (7)')
-        if planet != 'Moon' and configured_to(planet, {'Moon'}, {'Trine', 'Sextile'}) and moon_corruption_count == 0:
+        # 8 puts no aspect restriction on the Moon's inspection, unlike 2
+        # and 7 which name theirs; an earlier version limited it to the
+        # trine and sextile borrowed from 7.
+        if planet != 'Moon' and connected_to(planet, {'Moon'}) and moon_corruption_count == 0:
             positive.append('Aspects the (uncorrupted) Moon (8)')
         if acc['Swift']:
             positive.append('Swift, increasing in light (9)')
@@ -2731,15 +2876,27 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             if fortune_dispositors:
                 positive.append(f"Luminary in a fortune's share (14): {', '.join(sorted(fortune_dispositors))}")
 
-        # Good-fortune grade (15-20): count of essential-dignity claims, plus
-        # which of a non-luminary's two domiciles it occupies.
+        # Good-fortune grade (15-20), three types. [1] "doubled" is two or
+        # more claims at once (16-18, Mercury in Virgo having house and
+        # exaltation, and a third if also in his bound). [2] "merely
+        # fortunate" is specifically the one of its own houses "in which
+        # its nature is moderated and agrees with it" -- Saturn in
+        # Aquarius, Jupiter in Sagittarius, Mars in Scorpio, Venus in
+        # Taurus, and either luminary in its own house (19). [3] is the
+        # other of its two houses (20).
+        #
+        # An earlier version awarded [2] for ANY single dignity claim, so a
+        # bare face counted as being "merely fortunate"; 19 is about
+        # domicile placement, and a lone minor claim fits none of the three
+        # grades.
         claims = sum([ess['Domicile'], ess['Exalt'], ess['Triplicity'], ess['Term'], ess['Face']])
         if claims >= 2:
             grade = 'Doubled good fortune (16-18)'
-        elif planet in PREFERRED_DOMICILE and ess['Domicile'] and sign != PREFERRED_DOMICILE[planet]:
-            grade = 'Below that / suitable (20)'
-        elif claims == 1:
-            grade = 'Fortunate (19)'
+        elif ess['Domicile'] and planet in PREFERRED_DOMICILE:
+            grade = ('Fortunate (19)' if sign == PREFERRED_DOMICILE[planet]
+                     else 'Below that / suitable (20)')
+        elif ess['Domicile']:
+            grade = 'Fortunate (19)'          # the luminaries have one house each
         else:
             grade = None
         if grade:
@@ -2868,8 +3025,23 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         n_weakness = len(negative)
 
         # --- Misfortune (VII.6, 47-55) ------------------------------------
-        if connected_to(planet, INFORTUNES):
-            negative.append('Connected to an infortune (47-48)')
+        # 48 attaches a degree condition: the planet is with the infortunes
+        # by assembly, opposition, square, trine or sextile "and there are
+        # LESS THAN THE BOUND OF [a single] PLANET between them and the
+        # infortunes." The width of the bound the planet itself occupies is
+        # used as that measure -- the text does not say whose bound, so this
+        # is an interpretive choice, but it is at least derived from the
+        # chart rather than assumed. An earlier version applied no degree
+        # condition at all.
+        bound_width = _current_bound_width(lon)
+        close_to_infortune = any(
+            r['aspect_name'] != 'Aversion' and planet in (r['p1'], r['p2'])
+            and (r['p1'] in INFORTUNES or r['p2'] in INFORTUNES)
+            and abs(r['deviation']) < bound_width
+            for r in rows
+        )
+        if close_to_infortune:
+            negative.append(f'Connected to an infortune, within a bound ({bound_width:.0f} deg) (47-48)')
         term_lord = get_essential_rulers(lon)['term']
         if SIGN_TO_DOMICILE.get(sign) in INFORTUNES or term_lord in INFORTUNES:
             negative.append('In the bound/house of an infortune (49)')
@@ -2879,7 +3051,9 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             other_lon = planetary_data[other]['longitude']
             other_idx = int(other_lon // 30)
             forward = (other_idx - sign_idx) % 12 + 1
-            if other in INFORTUNES and forward in (9, 10, 11) and not received:
+            # 50: "elevated above them from the TENTH OR ELEVENTH from
+            # their place" -- an earlier version also admitted the ninth.
+            if other in INFORTUNES and forward in (10, 11) and not received:
                 negative.append('Overcome by an infortune (50)')
                 break
         if configured_to(planet, {'Sun'}, {'Conjunction', 'Square', 'Opposition'}):
@@ -2890,11 +3064,18 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         if node_dist <= 12.0:
             negative.append('With the Head or Tail (52-55)')
 
-        # --- Enclosure by the infortunes (Sahl, The Introduction Ch.3,
-        # 119-123; Abu Ma'shar VII.6, 56-62 reuses the same concept) -------
-        is_enc, severe, _sep, _con = _sahl_enclosed(planet, INFORTUNES, rows, blocking_pairs)
+        # --- Enclosure by the infortunes (VII.6, 56-62) -------------------
+        # Abu Ma'shar's OWN two types, not Sahl's borrowed: see
+        # _abu_mashar_enclosed(). The standalone Enclosure table elsewhere
+        # remains Sahl's (Ch.3, 119-123); this is the VII.6 table, so it
+        # uses VII.6's version, including the dissolution of 60-61 that an
+        # earlier pass of this project deleted as unsourced.
+        is_enc, enc_kind, dissolver = _abu_mashar_enclosed(planet, INFORTUNES, planetary_data, rows)
         if is_enc:
-            negative.append('Enclosed by infortunes (56-62, 119-123)' + (', severe' if severe else ''))
+            if dissolver:
+                positive.append(f'Enclosure by the infortunes dissolved by {dissolver} (60-61)')
+            else:
+                negative.append(f'Enclosed by the infortunes, {enc_kind} (56-58)')
 
         # --- Corruption of the Moon (Sahl Ch.3, 103-112), Moon only -------
         moon_defects = _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect) if planet == 'Moon' else []
@@ -3629,7 +3810,7 @@ if location_query and lat is not None and lon is not None:
 
 
             with tab_dignity:
-                st.subheader("Planetary Condition (Abu Ma'shar VII.6)", help="Each planet checked against the conditions Abu Ma'shar lists in Great Introduction VII.6, kept in his own four groups -- good fortune (2-20), strength (21-29), weakness (30-46), misfortune (47-62) -- plus, for the Moon only, Sahl's ten defects of the Moon (The Introduction Ch.3, 103-112) shown as their own count rather than folded in with the rest.\n\nThe four counts and the labels are the report. NET and VERDICT are a convenience of this app and NOT Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They exist because the Rhetorius/PN4 delineations in Topical Planets in Houses have to choose between a good and a bad reading.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's ten defects contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once.")
+                st.subheader("Planetary Condition (Abu Ma'shar VII.6)", help="Each planet checked against the conditions Abu Ma'shar lists in Great Introduction VII.6, kept in his own four groups -- good fortune (1-20), strength (21-29), weakness (30-46), misfortune (47-62) -- plus, for the Moon only, Sahl's ten defects of the Moon (The Introduction Ch.3, 103-112) shown as their own count rather than folded in with the rest.\n\nThe four counts and the labels are the report. NET and VERDICT are a convenience of this app and NOT Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They exist because the Rhetorius/PN4 delineations in Topical Planets in Houses have to choose between a good and a bad reading.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's ten defects contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once.\n\nEnclosure here is Abu Ma'shar's own (56-62) -- by degree within 7 degrees either side counting rays as well as bodies, by sign in the 2nd and 12th, or separating from one encloser and connecting with the other -- and it can be DISSOLVED when the Sun or a fortune casts a ray within 7 degrees of the enclosed planet (60-61). The standalone Enclosure table under Connections & Corruption is Sahl's separate version.")
                 condition_list = []
                 for p, cond in abu_mashar_condition.items():
                     condition_list.append({
