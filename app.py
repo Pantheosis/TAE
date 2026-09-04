@@ -2714,6 +2714,8 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         if grade:
             positive.append(grade)
 
+        n_good_fortune = len(positive)
+
         # --- Strength (VII.6, 21-29) --------------------------------------
         if lat > 0:
             positive.append('Northern latitude (22)')
@@ -2749,6 +2751,7 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             positive.append('Inferior, in a feminine quadrant (29)')
 
         # --- Weakness (VII.6, 30-46) --------------------------------------
+        # (negative starts here; everything before was good fortune/strength)
         is_slow = 0 <= speed < AVERAGE_DAILY_MOTION.get(planet, 1.0)
         if is_slow:
             negative.append('Slow in course (31)')
@@ -2831,6 +2834,8 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         if is_inferior and in_masculine_quadrant:
             negative.append('Inferior, in a masculine quadrant (46)')
 
+        n_weakness = len(negative)
+
         # --- Misfortune (VII.6, 47-55) ------------------------------------
         if connected_to(planet, INFORTUNES):
             negative.append('Connected to an infortune (47-48)')
@@ -2860,20 +2865,55 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         if is_enc:
             negative.append('Enclosed by infortunes (56-62, 119-123)' + (', severe' if severe else ''))
 
-        # --- Corruption of the Moon (VII.6, 63-74), Moon only -------------
-        if planet == 'Moon':
-            for label in _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect):
-                negative.append(label)
+        # --- Corruption of the Moon (Sahl Ch.3, 103-112), Moon only -------
+        moon_defects = _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect) if planet == 'Moon' else []
 
-        positive_count = len(positive)
-        negative_count = len(negative)
+        # --- The Good/Bad verdict -----------------------------------------
+        # NOT Abu Ma'shar's. He enumerates these conditions; he nowhere adds
+        # them up, and no weighting or tie rule appears anywhere in VII.6.
+        # Counting the labels and subtracting is this app's own convenience,
+        # kept because the Rhetorius/PN4 delineations downstream have to
+        # choose one of two readings, and labelled as a heuristic everywhere
+        # it is shown.
+        #
+        # Two distortions in the raw count are corrected here, both of which
+        # let one underlying fact vote many times:
+        #
+        # (1) The Moon was the only planet handed a SECOND full checklist,
+        # her ten defects, each as its own vote. Over 325 sampled charts
+        # that pushed her average negative tally to 10.1 against 6.5-7.9 for
+        # every other planet, and she came out "Good" 24.9% of the time
+        # against 40-61% for the rest -- an artifact of the arithmetic, not
+        # a judgement about the Moon. Her defects still show in full below;
+        # they now contribute one entry to the tally.
+        #
+        # (2) Reception can yield several rows for one planet (more so under
+        # Abu Ma'shar's wider profile, which counts all five dignities and
+        # runs in both directions), and each was voting separately. Received
+        # or not received is one fact, so it counts once.
+        reception_labels = [l for l in positive if l.startswith(('Received', 'Receives', 'Mutual reception'))]
+        positive_votes = [l for l in positive if l not in reception_labels]
+        if reception_labels:
+            positive_votes.append(reception_labels[0])
+        negative_votes = list(negative)
+        if moon_defects:
+            negative_votes.append(f'Corruption of the Moon ({len(moon_defects)} defects)')
+
+        net = len(positive_votes) - len(negative_votes)
         results[planet] = {
-            'Positive Score': positive_count,
-            'Negative Score': negative_count,
-            'Net': positive_count - negative_count,
-            'Condition': 'Good' if positive_count - negative_count >= 0 else 'Bad',
+            # The four sections VII.6 itself is organised into, reported
+            # separately so the picture doesn't collapse to one number.
+            'Good Fortune': n_good_fortune,
+            'Strength': len(positive) - n_good_fortune,
+            'Weakness': n_weakness,
+            'Misfortune': len(negative) - n_weakness,
+            'Moon Defects': len(moon_defects),
+            'Positive Score': len(positive),
+            'Negative Score': len(negative) + len(moon_defects),
+            'Net': net,
+            'Condition': 'Good' if net >= 0 else 'Bad',
             'Positive Labels': positive,
-            'Negative Labels': negative,
+            'Negative Labels': negative + moon_defects,
         }
     return results
 
@@ -3193,8 +3233,8 @@ def evaluate_planets_in_houses(planetary_data, abu_mashar_condition, ascendant_l
         results.append({
             'Planet': planet,
             'Placed In (WSH)': wsh_house,
-            'Net Score': condition_data['Net'],
-            'Condition': condition,
+            'Net (heuristic)': condition_data['Net'],
+            'Reading Selected': condition,
             'Classical Signification': delineation,
         })
     return results
@@ -3558,18 +3598,33 @@ if location_query and lat is not None and lon is not None:
 
 
             with tab_dignity:
-                st.subheader("Planetary Condition (Abu Ma'shar)", help="Each planet's overall condition per the Great Introduction VII.6: good fortune, strength, weakness, misfortune, and enclosure -- plus (Moon only) Sahl's own ten defects of the Moon (The Introduction Ch.3, 102-113, numbered 103-112 below rather than VII.6's paragraph numbers) -- each criterion checked and summed into a single Good/Bad verdict, used to select the delineation in Topical Planets in Houses below.")
+                st.subheader("Planetary Condition (Abu Ma'shar VII.6)", help="Each planet checked against the conditions Abu Ma'shar lists in Great Introduction VII.6, kept in his own four groups -- good fortune (2-20), strength (21-29), weakness (30-46), misfortune (47-62) -- plus, for the Moon only, Sahl's ten defects of the Moon (The Introduction Ch.3, 103-112) shown as their own count rather than folded in with the rest.\n\nThe four counts and the labels are the report. NET and VERDICT are a convenience of this app and NOT Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They exist because the Rhetorius/PN4 delineations in Topical Planets in Houses have to choose between a good and a bad reading.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's ten defects contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once.")
                 condition_list = []
                 for p, cond in abu_mashar_condition.items():
                     condition_list.append({
                         "Planet": p,
-                        "Net": cond['Net'],
-                        "Condition": cond['Condition'],
+                        # VII.6's own four sections, kept apart: the chapter
+                        # enumerates these separately and never totals them.
+                        "Good Fortune": cond['Good Fortune'],
+                        "Strength": cond['Strength'],
+                        "Weakness": cond['Weakness'],
+                        "Misfortune": cond['Misfortune'],
+                        # str, not int-or-'': a column mixing the two is an
+                        # object column that Arrow rejects.
+                        "Moon Defects": str(cond['Moon Defects']) if cond['Moon Defects'] else '',
+                        "Net (heuristic)": cond['Net'],
+                        "Verdict (heuristic)": cond['Condition'],
                         "Good Fortune / Strength": ", ".join(cond['Positive Labels']) if cond['Positive Labels'] else "-",
                         "Weakness / Misfortune": ", ".join(cond['Negative Labels']) if cond['Negative Labels'] else "-",
                     })
-                df_condition = pd.DataFrame(condition_list).sort_values(by="Net", ascending=False)
+                df_condition = pd.DataFrame(condition_list).sort_values(by="Net (heuristic)", ascending=False)
                 st.dataframe(df_condition, hide_index=True, width='stretch')
+                st.caption(
+                    ":orange[**Net and Verdict are this app's heuristic, not Abu Ma'shar's.**] He enumerates these "
+                    "conditions; he nowhere adds them up, and VII.6 gives no weighting and no tie rule. They are kept "
+                    "only because the Rhetorius/PN4 delineations below have to pick one of two readings. Read the four "
+                    "counts and the labels themselves in preference to the single number."
+                )
 
                 col1, col2 = st.columns(2)
 
@@ -3623,7 +3678,7 @@ if location_query and lat is not None and lon is not None:
                                 + ("  \n:orange[Tied at the top — the sheet does not break ties.]" if res['tied'] else ""))
                     st.dataframe(pd.DataFrame(res['grid']), hide_index=True, width='stretch')
 
-                st.subheader("Topical Planets in Houses (Rhetorius & PN4)", help="Each planet's Whole-Sign house placement and its Rhetorius/PN4-derived delineation, selected by that planet's Good/Bad verdict from the Planetary Condition table above.")
+                st.subheader("Topical Planets in Houses (Rhetorius & PN4)", help="Each planet's Whole-Sign house placement and the Rhetorius/PN4 delineation for it. Each pairing has a good and a bad reading, and the one shown is picked by that planet's Net score in the Planetary Condition table above -- which is this app's own heuristic, not Abu Ma'shar's. Treat the selected reading as a starting point, and check it against the four condition counts and the labels rather than trusting the switch.")
                 st.dataframe(pd.DataFrame(planets_in_houses_data), hide_index=True, width='stretch')
 
                 st.subheader("Topical House Lords (Masha'allah)", help='For each of the twelve topical houses, its domicile lord\'s own Whole-Sign placement, and Masha\'allah\'s delineation for that [placed-in, rules] pairing -- the classical way of reading what a house\'s ruler is "doing" elsewhere in the chart.')
