@@ -695,14 +695,19 @@ def _pairwise_configurations(planetary_data):
         motion = "Applying" if (deviation == 0 or deviation * rate < 0) else "Separating"
 
         # --- 3. Dexter / Sinister orientation ----------------------------
-        # Conjunction and Opposition have no handedness. For the others: the
-        # faster planet trailing the receiver (earlier in the zodiac, s<0)
-        # casts a Dexter aspect; leading it (later in the zodiac, s>0)
-        # casts a Sinister aspect.
+        # Conjunction and Opposition have no handedness. Handedness is
+        # reciprocal (if A's ray to B is dexter, B's to A is sinister), so
+        # it needs a stated caster: here it is always the FASTER planet.
+        # A dexter ("right") ray is cast against the order of signs, onto
+        # EARLIER degrees; a sinister ("left") ray is cast with the order
+        # of signs, onto LATER degrees. So a faster planet already ahead
+        # of the receiver (s > 0) is casting backwards onto it = Dexter;
+        # trailing it (s < 0) it casts forwards = Sinister. These two were
+        # transposed in an earlier version.
         if aspect_name in ('Conjunction', 'Opposition'):
             orientation = "Direct"
         else:
-            orientation = "Sinister" if s > 0 else "Dexter"
+            orientation = "Dexter" if s > 0 else "Sinister"
 
         row.update(aspect_name=aspect_name, target=target, deviation=deviation,
                     motion=motion, orientation=orientation)
@@ -723,11 +728,16 @@ def _is_connected(row):
     remaining = abs(row['deviation'])
     if row['motion'] == 'Applying':
         return remaining <= light
-    # Separating: 9-11 gives a same-sign (Union) pair longer to still count
-    # as connected (half the light-planet's own light) than the general,
-    # cross-sign rule (9: a full degree).
+    # Separating: 10-11 gives a same-sign pair longer to still count as
+    # connected than the general cross-sign rule (9: a full degree). The
+    # threshold is "one-half of its body -- and that is its light" (10),
+    # and PLANETARY_ORBS ALREADY stores those half-body radii: 13 gives
+    # the Sun a body of 30 degrees, "one-half of them in front of him,"
+    # yielding the stored 15. So the cutoff is the stored light itself.
+    # An earlier version divided it by two a second time, halving every
+    # separation window (the Moon's to 6 degrees instead of 12).
     if row['signs_apart'] == 0:
-        return remaining <= light / 2.0
+        return remaining <= light
     return remaining <= 1.0
 
 def evaluate_ptolemaic_aspects(planetary_data):
@@ -1917,12 +1927,13 @@ def _averse_to_ascendant(lon, ascendant_lon):
     return signs_apart in AVERSION_SIGN_COUNTS
 
 def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendant_lon):
-    """Strength of the Planets (Sahl, The Introduction Ch.3, 78-87): ten
-    testimonies of a planet's strength at the time of judgment. Sahl's own
-    text says "eleven ways" (77), but only ten discrete, ordinally-numbered
-    items follow (78 "the first" ... 87 "the tenth") before the text shifts
-    to closing language (88) -- flagged as a discrepancy rather than an
-    invented eleventh item.
+    """Strength of the Planets (Sahl, The Introduction Ch.3, 78-88): the
+    eleven testimonies of a planet's strength at the time of judgment that
+    77 announces, cross-checked against the author's own summary table
+    (Fig. 24). An earlier version found only ten, having misread 87 (the
+    tenth, "in the heart of the Sun") and renumbered 88 (the eleventh, the
+    gender-matching quadrant and sign) as the tenth; the count discrepancy
+    against 77 was noted at the time but resolved the wrong way.
 
     Distinct from the existing Abu Ma'shar VII.6-based Planetary Condition
     table, which scores a broader, differently-sourced strength/weakness
@@ -1953,13 +1964,18 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
         if not acc['Retrograde']:
             labels.append('Direct in course (80)')
 
-        # (81) No infortune with it in its sign, connecting with it, or looking at it.
+        # (81) No infortune "with it in its sign, connecting with it, or
+        # looking at it FROM A SQUARE OR OPPOSITION" -- Fig. 24 renders
+        # this as "not in whole-sign angles of infortune," so assembly,
+        # square and opposition count and sextile/trine do not. (An
+        # earlier version counted any non-Aversion configuration.)
         infortune_contact = any(
-            r['aspect_name'] != 'Aversion' and (r['p1'] in INFORTUNES or r['p2'] in INFORTUNES)
+            r['aspect_name'] in ('Conjunction', 'Square', 'Opposition')
+            and (r['p1'] in INFORTUNES or r['p2'] in INFORTUNES)
             for r in rows if planet in (r['p1'], r['p2'])
         )
         if not infortune_contact:
-            labels.append('No infortune with it, connecting, or looking on (81)')
+            labels.append('Not in the whole-sign angles of an infortune (81)')
 
         # (82) Not connecting with a planet falling from the ASC or in its
         # own fall, and not itself in its own fall.
@@ -1996,36 +2012,56 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
         if sign in FIXED_SIGNS:
             labels.append('In a fixed sign (86)')
 
-        # (87) Masculine/feminine quadrant and sign matching the planet's own gender.
+        # (87) In the heart of the Sun -- "when they are with him in one
+        # degree." Sahl's own one-degree window, not the later 16-17
+        # arcminute cazimi convention that accidental[]['Cazimi'] uses, so
+        # it is measured here rather than reusing that flag.
+        if planet != 'Sun':
+            sun_lon = planetary_data['Sun']['longitude']
+            if abs(((lon - sun_lon + 180.0) % 360.0) - 180.0) <= 1.0:
+                labels.append('In the heart of the Sun (87)')
+
+        # (88) Masculine/feminine quadrant and sign matching the planet's
+        # own gender. This is Sahl's ELEVENTH testimony, not the tenth --
+        # an earlier version numbered it (87) and omitted the heart of the
+        # Sun entirely, leaving only ten of the eleven that 77 announces.
         gender = PLANET_GENDER.get(planet)
         if gender == 'Masculine' and house in MASCULINE_QUADRANT_HOUSES:
-            labels.append('In a matching-gender (masculine) quadrant (87)')
+            labels.append('In a matching-gender (masculine) quadrant (88)')
         elif gender == 'Feminine' and house in FEMININE_QUADRANT_HOUSES:
-            labels.append('In a matching-gender (feminine) quadrant (87)')
+            labels.append('In a matching-gender (feminine) quadrant (88)')
         if gender == 'Masculine' and sign in MASCULINE_SIGNS:
-            labels.append('In a matching-gender (masculine) sign (87)')
+            labels.append('In a matching-gender (masculine) sign (88)')
         elif gender == 'Feminine' and sign in FEMININE_SIGNS:
-            labels.append('In a matching-gender (feminine) sign (87)')
+            labels.append('In a matching-gender (feminine) sign (88)')
 
         if labels:
             results.append({'Planet': planet, 'Strength Testimonies': ', '.join(labels), 'Count': len(labels)})
     return results
 
-def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendant_lon):
+def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendant_lon, sect):
     """Weakness of the Planets (Sahl, The Introduction Ch.3, 91-100): the
     ten testimonies of weakness Sahl names as item [15] of his sixteen-item
-    scheme (89: "the weakness of the planets, and their harms, in ten
-    ways") -- a count confirmed by the ten ordinally-numbered items in
-    91-100 that follow.
+    scheme (90: "the weakness of the planets, and their harms in nativities
+    and questions, indeed that is in ten ways"), cross-checked against the
+    author's own summary table (Fig. 24).
 
     Distinct from the existing Abu Ma'shar VII.6-based Planetary Condition
     table's own, differently-sourced weakness scheme (30-46) -- kept
     separate per the project's standing practice of retaining the original
-    source's own definition. Items 94-95 both describe a planet separating
-    from one infortune and connecting with the other -- Sahl's own
-    Enclosure (119-123) -- and are represented here as a single testimony
-    reusing _sahl_enclosed(), since the source's own wording for both
-    paragraphs is functionally identical rather than two distinct tests."""
+    source's own definition.
+
+    94 and 95 are separate testimonies, not one: 94 is an ordinary harmful
+    connection with a single infortune by assembly/square/opposition, 95 is
+    enclosure between both of them. An earlier version merged the two into
+    the enclosure test and so never flagged a single-infortune contact.
+
+    97's two clauses ("connecting with a planet falling away from the
+    Ascendant, AND it is separating from a planet receiving it") are
+    reported independently, since the translator's own footnote says he is
+    "not sure that these conditions must both exist at once" -- an open
+    question in the source, so the permissive reading is used and flagged
+    rather than silently settled."""
     rows = _pairwise_configurations(planetary_data)
     blocking_pairs = {(row['Blocked'], row['From Reaching']) for row in evaluate_blocking(planetary_data)}
     results = []
@@ -2046,15 +2082,31 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
         if acc['Retrograde']:
             labels.append('Retrograde (92)')
 
-        # (93) Under the rays of the Sun.
+        # (93, 99) Under the rays of the Sun. 99's first clause -- western,
+        # "the Sun having already overtaken it (that is, if it was in front
+        # of the Sun)" -- belongs to this testimony, not to 98; Fig. 24
+        # pairs them as one "(93, 99) Under the rays" row.
         if acc['Combust'] or acc['UnderBeams']:
-            labels.append('Under the rays of the Sun (93)')
+            signed_from_sun = ((lon - sun_lon + 180.0) % 360.0) - 180.0
+            western = signed_from_sun > 0
+            labels.append('Under the rays of the Sun' + (', western/overtaken (93, 99)' if western else ' (93)'))
 
-        # (94-95) Enclosed between the two infortunes -- separating from
-        # one, connecting with the other (Sahl's own Enclosure, 119-123).
+        # (94) Connecting with the infortunes from an assembly, opposition,
+        # or square -- an ordinary harmful connection, and a testimony in
+        # its own right. An earlier version folded this into 95's enclosure
+        # and so never reported a single-infortune contact at all.
+        for r in rows:
+            if r['aspect_name'] not in ('Conjunction', 'Square', 'Opposition') or planet not in (r['p1'], r['p2']):
+                continue
+            other = r['p2'] if r['p1'] == planet else r['p1']
+            if other in INFORTUNES and _is_connected(r):
+                labels.append(f'Connecting with {other} by assembly, square, or opposition (94)')
+
+        # (95) Enclosed between the two infortunes -- separating from one,
+        # connecting with the other (Sahl's own Enclosure, 119-123).
         is_enc, severe, sep, con = _sahl_enclosed(planet, INFORTUNES, rows, blocking_pairs)
         if is_enc:
-            labels.append(f'Enclosed between the infortunes, separating from {sep} and connecting to {con} (94-95, 119-123)')
+            labels.append(f'Enclosed between the infortunes, separating from {sep} and connecting to {con} (95, 119-123)')
 
         # (96) In its own fall.
         if ess['Fall']:
@@ -2073,13 +2125,18 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
                 if planet in (other_rulers['domicile'], other_rulers['exaltation']):
                     labels.append(f'Separating from {other}, which would have received it (97)')
 
-        # (98) In a house with no dignity claim, already overtaken by the
-        # Sun's rays -- a later degree than the Sun, sinking toward
-        # invisibility in the evening.
-        if ess['Peregrine'] and (acc['Combust'] or acc['UnderBeams']):
-            signed_from_sun = ((lon - sun_lon + 180.0) % 360.0) - 180.0
-            if signed_from_sun > 0:
-                labels.append('Peregrine and overtaken by the Sun, sinking in the evening (98)')
+        # (98) "In a house in which it did not have testimony (neither
+        # house nor exaltation nor triplicity)" -- alien/peregrine, and a
+        # standalone testimony. Two corrections here: the scope is those
+        # three dignities only, so a bare term or face claim does NOT
+        # rescue it (essential[]['Peregrine'] counts all five and is
+        # therefore too lenient); and it carries no solar condition at all
+        # -- an earlier version additionally required the planet to be
+        # under the rays AND western, which is 99's clause, not 98's.
+        alien_rulers = get_essential_rulers(lon)
+        triplicity_key_local = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
+        if planet not in (alien_rulers['domicile'], alien_rulers['exaltation'], alien_rulers[triplicity_key_local]):
+            labels.append('Alien: no house, exaltation, or triplicity where it sits (98)')
 
         # (99) With the Head or Tail, without latitude.
         north_node_lon = planetary_data['North Node']['longitude']
@@ -2411,19 +2468,17 @@ def _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect):
     time.
 
     Re-verified against the source's full paragraph text (rather than
-    partial photo transcriptions): items [5], [6], and [7] were corrected
-    -- (107) requires the Node to be in the SAME sign as the Moon, not
-    just within 12 degrees regardless of sign; (108) requires the LAST
-    bound of the sign specifically (every sign's final Egyptian term is an
+    partial photo transcriptions): items [5] and [6] were corrected --
+    (107) requires the Node to be in the SAME sign as the Moon, not just
+    within 12 degrees regardless of sign; (108) requires the LAST bound of
+    the sign specifically (every sign's final Egyptian term is an
     infortune's, but not every infortune-ruled bound is the sign's last
-    one -- the earlier version matched any of them); (109) was rebuilt
-    entirely, from "cadent, or connecting with a cadent planet" (which
-    doesn't appear in Sahl's text at all) to "cadent AND averse to the
-    Ascendant AND separating from an infortune," matching 109's own
-    wording. Item [9]'s "wild" (111) is confirmed, on the full text, to be
-    glossed there as "not connecting with any of the planets" -- the same
-    present-tense wording as Emptiness of Course (63) -- so its existing
-    implementation was left as-is.
+    one -- the earlier version matched any of them). Item [7] (109) is a
+    plain disjunction in the source and is implemented as one. Item [9]'s
+    "wild" (111) is confirmed, on the full text, to be glossed there as
+    "not connecting with any of the planets" -- the same present-tense
+    wording as Emptiness of Course (63) -- so its existing implementation
+    was left as-is.
 
     Split from evaluate_abu_mashar_condition() so the count alone can be
     obtained up-front (for the "Moon fortunate" test in VII.6, 8) without
@@ -2502,17 +2557,21 @@ def _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect):
     if (lon % 30) >= last_bound_start:
         labels.append("In the last degrees of the sign, the infortunes' bound (108)")
 
-    # [7] (109) Falling from the stakes and not looking at the Ascendant --
-    # Sahl's own gloss: that combination is what it looks like when she is
-    # separating from an infortune.
+    # [7] (109) "Falling from the stakes, or connecting with a planet
+    # falling from the stakes" -- a plain disjunction, verbatim. (A prior
+    # edit replaced this with a cadent + averse-to-Ascendant + separating-
+    # from-an-infortune predicate, which is Weakness 91/97 material and
+    # appears nowhere in 109; reverted.)
     moon_house = get_wsh_house(lon, ascendant_lon)
-    if moon_house in CADENT_HOUSES and _averse_to_ascendant(lon, ascendant_lon):
-        separating_from_infortune = any(
-            r['fast_name'] == 'Moon' and r['motion'] == 'Separating' and _is_connected(r) and r['slow_name'] in INFORTUNES
-            for r in rows
-        )
-        if separating_from_infortune:
-            labels.append('Falling from the stakes, averse to the Ascendant, separating from an infortune (109)')
+    if moon_house in CADENT_HOUSES:
+        labels.append('Falling from the stakes (109)')
+    for other in planetary_data:
+        if other in ('Moon', 'North Node'):
+            continue
+        r = connected_row(other)
+        if r and r['aspect_name'] != 'Aversion' and _is_connected(r):
+            if get_wsh_house(planetary_data[other]['longitude'], ascendant_lon) in CADENT_HOUSES:
+                labels.append(f'Connecting with {other}, itself falling from the stakes (109)')
 
     # [8] (110) In the burned path -- Sahl's own wording narrows this to
     # the end of Libra and the beginning of Scorpio specifically (not the
@@ -2924,7 +2983,7 @@ if location_query and lat is not None and lon is not None:
         handing_over_data = evaluate_handing_over(p_data, sect)
         non_reception_data = evaluate_non_reception(p_data, sect)
         strength_data = evaluate_strength_of_planets(p_data, essential, accidental, chart_data['ascendant'])
-        weakness_data = evaluate_weakness_of_planets(p_data, essential, accidental, chart_data['ascendant'])
+        weakness_data = evaluate_weakness_of_planets(p_data, essential, accidental, chart_data['ascendant'], sect)
         returning_data = evaluate_returning(p_data, accidental, chart_data['ascendant'])
         revoking_data = evaluate_revoking(p_data, sim)
         resistance_data = evaluate_resistance(p_data, sim)
@@ -3177,13 +3236,13 @@ if location_query and lat is not None and lon is not None:
                 else:
                     st.write("No forward-looking conditions found within the simulation horizon.")
 
-                st.subheader("Strength of the Planets (Sahl, The Introduction Ch.3, 78-87)", help="Ten testimonies of a planet's strength at the time of judgment -- excellent place, own dignity, direct, free of infortune contact, not tied to a weak planet, advancing, an eastern masculine planet, in its own glow (Hayz), a fixed sign, and gender-matching quadrant/sign. Distinct from the Abu Ma'shar-based Planetary Condition table above, which scores a broader, later scheme.")
+                st.subheader("Strength of the Planets (Sahl, The Introduction Ch.3, 78-88)", help="The eleven testimonies of a planet's strength at the time of judgment -- excellent place, own dignity, direct, out of the whole-sign angles of an infortune, not tied to a fallen or falling planet, advancing, an eastern masculine planet, in its own glow, a fixed sign, in the heart of the Sun, and a gender-matching quadrant and sign. Distinct from the Abu Ma'shar-based Planetary Condition table above, which scores a broader, later scheme.")
                 if strength_data:
                     st.dataframe(pd.DataFrame(strength_data), hide_index=True, width='stretch')
                 else:
                     st.write("No strength testimonies found.")
 
-                st.subheader("Weakness of the Planets (Sahl, The Introduction Ch.3, 91-100)", help="Ten testimonies of a planet's weakness at the time of judgment -- falling and averse to the Ascendant, retrograde, under the rays, enclosed between the infortunes, in its own fall, connecting with a falling planet or separating from a would-be receiver, peregrine and overtaken by the Sun, with the Node and no latitude, or inverted (in detriment). Distinct from the Abu Ma'shar-based Planetary Condition table above, which scores a broader, later scheme.")
+                st.subheader("Weakness of the Planets (Sahl, The Introduction Ch.3, 91-100)", help="The ten testimonies of a planet's weakness at the time of judgment -- falling and averse to the Ascendant (i.e. the 6th or 12th), retrograde, under the rays, connecting with an infortune by assembly/square/opposition, enclosed between both infortunes, in its own fall, connecting with a falling planet or separating from a would-be receiver, alien (no house/exaltation/triplicity where it sits), with the Node and no latitude, or inverted (in detriment). Distinct from the Abu Ma'shar-based Planetary Condition table above, which scores a broader, later scheme.")
                 if weakness_data:
                     st.dataframe(pd.DataFrame(weakness_data), hide_index=True, width='stretch')
                 else:
