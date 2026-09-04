@@ -621,6 +621,15 @@ AVERSION_SIGN_COUNTS = {1, 5}
 PLANETARY_ORBS = {'Sun': 15.0, 'Moon': 12.0, 'Saturn': 9.0, 'Jupiter': 9.0,
                    'Mars': 8.0, 'Venus': 7.0, 'Mercury': 7.0}
 
+# The standing order of the planets by weight, heaviest (and so naturally
+# slowest) first. This is the classical hierarchy the sources treat as
+# fixed when they speak of "the light planet" and "the heavy planet", and
+# it is the single definition of light/heavy used everywhere in this file:
+# for the giver/accepter roles in _pairwise_configurations(), and for the
+# heavier "collector" in evaluate_collections_of_light(). Instantaneous
+# speed is a separate question, answered separately.
+WEIGHT_ORDER = ['Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon']
+
 def _format_orb(degrees):
     dd = int(degrees)
     mm = int(round((degrees - dd) * 60))
@@ -631,7 +640,7 @@ def _format_orb(degrees):
 
 def _pairwise_configurations(planetary_data):
     """Shared per-pair raw data for every classical-planet combination:
-    whole-sign gate (Sahl, The Introduction Ch.2, 50-60), faster/slower
+    whole-sign gate (Sahl, The Introduction Ch.2, 50-60), the light/heavy
     roles, and (for configured pairs) the signed deviation from the exact
     (partile) aspect and its Applying/Separating motion. Consumed by
     evaluate_ptolemaic_aspects() and the Connection/Transfer/Collection
@@ -643,17 +652,40 @@ def _pairwise_configurations(planetary_data):
         lon1, v1 = planetary_data[p1]['longitude'], planetary_data[p1]['speed_in_lon']
         lon2, v2 = planetary_data[p2]['longitude'], planetary_data[p2]['speed_in_lon']
 
-        # --- 0. Faster planet (al-daf') vs Receiver ----------------------
-        # Determined up front so it's available for Aversion rows too, not
-        # just formed aspects -- who's "faster" doesn't carry the kinetic
-        # meaning it does for a real aspect, but keeps a consistent,
-        # deterministic column order either way.
-        if abs(v1) >= abs(v2):
-            fast_name, fast_lon, fast_speed = p1, lon1, v1
-            slow_name, slow_lon, slow_speed = p2, lon2, v2
+        # --- 0. The light/heavy roles ------------------------------------
+        # "Light" and "heavy" are the fixed classes both authors name as
+        # nouns -- "the light planet", "the heavy planet" (Sahl Ch.3, 6-8,
+        # 22, 67) -- so they are taken from the standing weight order,
+        # NOT from instantaneous speed. The role decides who gives and who
+        # accepts (67: "the one handing over is the light planet ... the
+        # accepting one is the heavy planet"), whose light measures the
+        # connection (19), and who casts the ray.
+        #
+        # An earlier version ranked by abs(speed_in_lon), which let a
+        # transient reading flip the hierarchy: across an 860-year weekly
+        # sample that disagrees with the standing order on 8% of pairs,
+        # including Saturn/Jupiter on 23% and Saturn/Mercury on 2% --
+        # i.e. it repeatedly made Saturn the LIGHT planet, which no source
+        # allows. It also contradicted this same file, since Collection of
+        # Light has always picked its heavier "collector" from WEIGHT_ORDER.
+        #
+        # Actual signed motion still decides everything kinetic below
+        # (applying, separating, stationing, retrograde); the two are
+        # simply no longer the same question. Note the Applying/Separating
+        # result is invariant under this change: swapping the roles flips
+        # the sign of both `s` and `delta_v`, and only their product is
+        # used.
+        if WEIGHT_ORDER.index(p1) > WEIGHT_ORDER.index(p2):
+            light_name, fast_lon, light_speed = p1, lon1, v1
+            heavy_name, slow_lon, heavy_speed = p2, lon2, v2
         else:
-            fast_name, fast_lon, fast_speed = p2, lon2, v2
-            slow_name, slow_lon, slow_speed = p1, lon1, v1
+            light_name, fast_lon, light_speed = p2, lon2, v2
+            heavy_name, slow_lon, heavy_speed = p1, lon1, v1
+
+        # The kinetic facts, kept separate from the roles above.
+        swifter_name = p1 if abs(v1) >= abs(v2) else p2
+        light_retrograde = light_speed < 0
+        heavy_retrograde = heavy_speed < 0
 
         raw_dist = abs(lon1 - lon2)
         dist = raw_dist if raw_dist <= 180.0 else 360.0 - raw_dist
@@ -680,20 +712,33 @@ def _pairwise_configurations(planetary_data):
         # power of Saturn's, "until there is a little under 9 degrees
         # between them." (This is per-planet spheres, NOT a moiety --
         # nothing in either author averages the two orbs.)
-        fast_orb = PLANETARY_ORBS.get(fast_name, 7.0)
-        slow_orb = PLANETARY_ORBS.get(slow_name, 7.0)
-        fast_in_slow_body = dist <= slow_orb
-        slow_in_fast_body = dist <= fast_orb
+        light_orb = PLANETARY_ORBS.get(light_name, 7.0)
+        heavy_orb = PLANETARY_ORBS.get(heavy_name, 7.0)
+        light_in_heavy_body = dist <= heavy_orb
+        heavy_in_light_body = dist <= light_orb
 
         row = {
-            'p1': p1, 'p2': p2, 'fast_name': fast_name, 'slow_name': slow_name,
-            'fast_speed': fast_speed, 'slow_speed': slow_speed,
+            'p1': p1, 'p2': p2, 'light_name': light_name, 'heavy_name': heavy_name,
+            'light_speed': light_speed, 'heavy_speed': heavy_speed,
             'signs_apart': signs_apart, 'dist': dist,
+            'swifter_name': swifter_name,
+            'light_retrograde': light_retrograde,
+            'heavy_retrograde': heavy_retrograde,
+            # Abu Ma'shar VII.5, 24: "sometimes at the assembly both of the
+            # two planets will be retrograde, or one of them will be
+            # retrograde and the other direct: the connection of one of
+            # them with the other, and its separation from it, will be BY
+            # RETROGRADATION." Neither author reassigns the light/heavy
+            # roles in that case, so the roles stand and the fact is
+            # surfaced instead of being silently resolved. Cf. the note on
+            # VII.5, 130: Saturn "could never be received because he is too
+            # slow to connect with anyone (unless by retrogradation)."
+            'by_retrogradation': light_retrograde or heavy_retrograde,
             'assembly': signs_apart == 0,
-            'fast_orb': fast_orb, 'slow_orb': slow_orb,
-            'fast_in_slow_body': fast_in_slow_body,
-            'slow_in_fast_body': slow_in_fast_body,
-            'mutual_body': fast_in_slow_body and slow_in_fast_body,
+            'light_orb': light_orb, 'heavy_orb': heavy_orb,
+            'light_in_heavy_body': light_in_heavy_body,
+            'heavy_in_light_body': heavy_in_light_body,
+            'mutual_body': light_in_heavy_body and heavy_in_light_body,
             # Set by the post-pass below; only ever true on Aversion rows.
             'sahl_body_connection': False,
         }
@@ -713,7 +758,7 @@ def _pairwise_configurations(planetary_data):
         deviation = dist - target  # signed distance from partile (exact)
         s = ((fast_lon - slow_lon + 180.0) % 360.0) - 180.0
         sign_s = 1.0 if s >= 0 else -1.0
-        delta_v = fast_speed - slow_speed
+        delta_v = light_speed - heavy_speed
         rate = sign_s * delta_v
         motion = "Applying" if (deviation == 0 or deviation * rate < 0) else "Separating"
 
@@ -795,7 +840,7 @@ def _is_connected_sahl(row):
     onto the row by _pairwise_configurations()."""
     if row['aspect_name'] == 'Aversion':
         return row.get('sahl_body_connection', False)
-    light = PLANETARY_ORBS.get(row['fast_name'], 7.0)
+    light = PLANETARY_ORBS.get(row['light_name'], 7.0)
     remaining = abs(row['deviation'])
     if row['motion'] == 'Applying':
         return remaining <= light
@@ -838,10 +883,10 @@ def _body_overlap_label(row):
     rather than folded into the Connected verdict (VII.4, 5-8)."""
     if row['mutual_body']:
         return 'Mutual'
-    if row['slow_in_fast_body']:
-        return f"{row['slow_name']} in {row['fast_name']}'s body"
-    if row['fast_in_slow_body']:
-        return f"{row['fast_name']} in {row['slow_name']}'s body"
+    if row['heavy_in_light_body']:
+        return f"{row['heavy_name']} in {row['light_name']}'s body"
+    if row['light_in_heavy_body']:
+        return f"{row['light_name']} in {row['heavy_name']}'s body"
     return '–'
 
 def _mixing_natures(row):
@@ -862,7 +907,7 @@ def evaluate_ptolemaic_aspects(planetary_data):
     aspects = []
 
     for row in rows:
-        fast_name, slow_name = row['fast_name'], row['slow_name']
+        light_name, heavy_name = row['light_name'], row['heavy_name']
 
         if row['aspect_name'] == 'Aversion':
             # VII.4, 13-14: two planets in different (here, adjacent) signs
@@ -871,14 +916,14 @@ def evaluate_ptolemaic_aspects(planetary_data):
             # worth noting since it's the only case an Aversion pair can
             # still carry any classical significance at all.
             note = '\u2013'
-            if row['signs_apart'] == 1 and (row['fast_in_slow_body'] or row['slow_in_fast_body']):
+            if row['signs_apart'] == 1 and (row['light_in_heavy_body'] or row['heavy_in_light_body']):
                 note = 'In Power (out-of-sign)'
             if row['sahl_body_connection']:
                 note = f"Body connection: {row['body_connection_from']} \u2192 {row['body_connection_to']} (Sahl 20-21)"
             aspects.append({
-                'Faster Planet': fast_name,
+                'Light Planet': light_name,
                 'Aspect': 'Aversion',
-                'Receiver': slow_name,
+                'Heavy Planet': heavy_name,
                 'Motion': '\u2013',
                 'Orientation': '\u2013',
                 'Exact Orb Dist': '\u2013',
@@ -897,7 +942,7 @@ def evaluate_ptolemaic_aspects(planetary_data):
             # co-presence. A shared bound (term) makes it more powerful still.
             if row['mutual_body']:
                 strength = 'Strong'
-            elif row['fast_in_slow_body'] or row['slow_in_fast_body']:
+            elif row['light_in_heavy_body'] or row['heavy_in_light_body']:
                 strength = 'Partial'
             else:
                 strength = 'Co-present'
@@ -922,10 +967,13 @@ def evaluate_ptolemaic_aspects(planetary_data):
                 strength = 'Weak'
 
         aspects.append({
-            'Faster Planet': fast_name,
+            'Light Planet': light_name,
             'Aspect': row['aspect_name'],
-            'Receiver': slow_name,
-            'Motion': row['motion'],
+            'Heavy Planet': heavy_name,
+            # VII.5, 24: with either planet retrograde the approach or
+            # departure happens "by retrogradation" -- flagged rather than
+            # allowed to quietly reassign the light/heavy roles.
+            'Motion': row['motion'] + (' (by retrogradation)' if row['by_retrogradation'] else ''),
             'Orientation': row['orientation'],
             'Exact Orb Dist': _format_orb(abs(row['deviation'])),
             'Bodies': _body_overlap_label(row),
@@ -936,10 +984,6 @@ def evaluate_ptolemaic_aspects(planetary_data):
     return aspects
 
 # --- Transfer & Collection of light -- Sahl, The Introduction Ch.3, 24-30 ----
-
-# Classical weight order, heaviest (slowest) first -- used to determine
-# which of two connecting planets is the heavier "collector."
-WEIGHT_ORDER = ['Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon']
 
 def evaluate_transfers_of_light(planetary_data):
     """Transfer of light: the core concept (a carrier separating from one
@@ -981,16 +1025,16 @@ def evaluate_transfers_of_light(planetary_data):
     for row in rows:
         if row['aspect_name'] == 'Aversion':
             continue
-        by_fast.setdefault(row['fast_name'], []).append(row)
+        by_fast.setdefault(row['light_name'], []).append(row)
 
     applying_connected_to = {
-        fast: {r['slow_name'] for r in fast_rows if r['motion'] == 'Applying' and _is_connected(r)}
+        fast: {r['heavy_name'] for r in fast_rows if r['motion'] == 'Applying' and _is_connected(r)}
         for fast, fast_rows in by_fast.items()
     }
 
     transfers = []
     for carrier, carrier_rows in by_fast.items():
-        separating_from = [r['slow_name'] for r in carrier_rows if r['motion'] == 'Separating']
+        separating_from = [r['heavy_name'] for r in carrier_rows if r['motion'] == 'Separating']
         connecting_to = applying_connected_to.get(carrier, set())
         for a in separating_from:
             for b in connecting_to:
@@ -1004,10 +1048,6 @@ def evaluate_transfers_of_light(planetary_data):
                     transfers.append({'Type': 'II', 'Carrier': light, 'Separates From': f"(via {medium})", 'Connects To': onward})
 
     return transfers
-
-# Classical weight order, heaviest (slowest) first -- used to determine
-# which of two connecting planets is the heavier "collector."
-WEIGHT_ORDER = ['Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon']
 
 def evaluate_collections_of_light(planetary_data):
     """Collection of light (Sahl Ch.3, 28-30; Abu Ma'shar VII.5, 86, Fig.
@@ -1030,7 +1070,7 @@ def evaluate_collections_of_light(planetary_data):
         is_conn = row['aspect_name'] != 'Aversion' and _is_connected(row)
         connected_lookup[pair] = is_conn
         if is_conn and row['motion'] == 'Applying':
-            applying_to.setdefault(row['fast_name'], set()).add(row['slow_name'])
+            applying_to.setdefault(row['light_name'], set()).add(row['heavy_name'])
 
     collectors = {}
     for x, targets in applying_to.items():
@@ -1144,7 +1184,7 @@ def evaluate_blocking(planetary_data):
     for row in rows:
         if row['aspect_name'] in ('Aversion', 'Conjunction') or row['motion'] != 'Applying':
             continue
-        fast, slow = row['fast_name'], row['slow_name']
+        fast, slow = row['light_name'], row['heavy_name']
         slow_sign = int(planetary_data[slow]['longitude'] // 30)
         for candidate in planets:
             if candidate in (fast, slow):
@@ -1183,7 +1223,7 @@ def evaluate_handing_over(planetary_data, sect):
     for r in rows:
         if r['aspect_name'] == 'Aversion' or not _is_connected(r):
             continue
-        fast, slow = r['fast_name'], r['slow_name']
+        fast, slow = r['light_name'], r['heavy_name']
         fast_lon = planetary_data[fast]['longitude']
         fast_rulers = get_essential_rulers(fast_lon)
         fast_power_claims = {fast_rulers['domicile'], fast_rulers['exaltation'], fast_rulers[triplicity_key]} - {'-'}
@@ -1377,7 +1417,7 @@ def evaluate_returning(planetary_data, accidental, ascendant_lon):
     for r in rows:
         if r['aspect_name'] == 'Aversion' or not _is_connected(r) or r['motion'] != 'Applying':
             continue
-        fast, slow = r['fast_name'], r['slow_name']
+        fast, slow = r['light_name'], r['heavy_name']
         acc_slow = accidental[slow]
 
         if acc_slow['Retrograde'] or acc_slow['Combust'] or acc_slow['UnderBeams']:
@@ -1401,7 +1441,7 @@ def evaluate_revoking(planetary_data, sim):
     for r in rows:
         if r['aspect_name'] == 'Aversion' or r['motion'] != 'Applying':
             continue
-        fast, slow = r['fast_name'], r['slow_name']
+        fast, slow = r['light_name'], r['heavy_name']
         first_station = next((s for s in sim['events'][fast]['stations'] if s[1] == 'first'), None)
         if not first_station:
             continue
@@ -1423,7 +1463,7 @@ def evaluate_resistance(planetary_data, sim):
     for r in rows:
         if r['aspect_name'] == 'Aversion' or r['motion'] != 'Applying':
             continue
-        light, heavy = r['fast_name'], r['slow_name']
+        light, heavy = r['light_name'], r['heavy_name']
         first_station = next((s for s in sim['events'][light]['stations'] if s[1] == 'first'), None)
         if not first_station:
             continue
@@ -1452,7 +1492,7 @@ def evaluate_escape(planetary_data, sim):
     for r in rows:
         if r['aspect_name'] == 'Aversion' or r['motion'] != 'Applying':
             continue
-        fast, slow = r['fast_name'], r['slow_name']
+        fast, slow = r['light_name'], r['heavy_name']
         sign_exits = sim['events'][slow]['sign_exits']
         if not sign_exits:
             continue
@@ -1504,19 +1544,19 @@ def evaluate_cutting_the_light(planetary_data, sim):
     by_fast = {}
     for r in rows:
         if r['aspect_name'] != 'Aversion':
-            by_fast.setdefault(r['fast_name'], []).append(r)
+            by_fast.setdefault(r['light_name'], []).append(r)
     for fast, candidates in by_fast.items():
         applying = sorted((r for r in candidates if r['motion'] == 'Applying'), key=lambda r: abs(r['deviation']))
         if len(applying) >= 2:
-            nearest = applying[0]['slow_name']
+            nearest = applying[0]['heavy_name']
             for r in applying[1:]:
-                results.append({'Type': 'III', 'Planet': fast, 'Cut Off From': r['slow_name'], 'Connects With Instead': nearest})
+                results.append({'Type': 'III', 'Planet': fast, 'Cut Off From': r['heavy_name'], 'Connects With Instead': nearest})
 
     if sim is not None:
         for r in rows:
             if r['aspect_name'] == 'Aversion' or r['motion'] != 'Applying':
                 continue
-            light, heavy = r['fast_name'], r['slow_name']
+            light, heavy = r['light_name'], r['heavy_name']
             exact_day = _perfection_day(sim, light, heavy, r['target'])
             if exact_day is None:
                 continue
@@ -1617,7 +1657,7 @@ def evaluate_non_reception(planetary_data, sect):
     for r in rows:
         if r['aspect_name'] == 'Aversion' or not _is_connected(r):
             continue
-        a, b = r['fast_name'], r['slow_name']
+        a, b = r['light_name'], r['heavy_name']
         a_lon, b_lon = planetary_data[a]['longitude'], planetary_data[b]['longitude']
         a_sign, b_sign = get_zodiac_sign(a_lon), get_zodiac_sign(b_lon)
         a_rulers = get_essential_rulers(a_lon)
@@ -2051,10 +2091,10 @@ def _sahl_enclosed(planet, enclosing_set, rows, blocking_pairs):
         return False, False, None, None
     for sep_target, con_target in ((members[0], members[1]), (members[1], members[0])):
         sep_row = next((r for r in rows if r['aspect_name'] != 'Aversion'
-                         and r['fast_name'] == planet and r['slow_name'] == sep_target
+                         and r['light_name'] == planet and r['heavy_name'] == sep_target
                          and r['motion'] == 'Separating' and _is_connected(r)), None)
         con_row = next((r for r in rows if r['aspect_name'] != 'Aversion'
-                         and r['fast_name'] == planet and r['slow_name'] == con_target
+                         and r['light_name'] == planet and r['heavy_name'] == con_target
                          and r['motion'] == 'Applying' and _is_connected(r)), None)
         if not sep_row or not con_row:
             continue
@@ -2172,9 +2212,9 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
         # own fall, and not itself in its own fall.
         connects_weak_target = False
         for r in rows:
-            if r['aspect_name'] == 'Aversion' or not _is_connected(r) or planet not in (r['fast_name'], r['slow_name']):
+            if r['aspect_name'] == 'Aversion' or not _is_connected(r) or planet not in (r['light_name'], r['heavy_name']):
                 continue
-            other = r['slow_name'] if r['fast_name'] == planet else r['fast_name']
+            other = r['heavy_name'] if r['light_name'] == planet else r['light_name']
             other_house = get_wsh_house(planetary_data[other]['longitude'], ascendant_lon)
             other_sign = get_zodiac_sign(planetary_data[other]['longitude'])
             if other_house in CADENT_HOUSES or other_sign in FALLS.get(other, []):
@@ -2320,12 +2360,12 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
         # (97) Connecting with a planet falling from the Ascendant, or
         # separating from a planet that would have received it.
         for r in rows:
-            if r['aspect_name'] == 'Aversion' or planet not in (r['fast_name'], r['slow_name']):
+            if r['aspect_name'] == 'Aversion' or planet not in (r['light_name'], r['heavy_name']):
                 continue
-            other = r['slow_name'] if r['fast_name'] == planet else r['fast_name']
+            other = r['heavy_name'] if r['light_name'] == planet else r['light_name']
             if _is_connected(r) and get_wsh_house(planetary_data[other]['longitude'], ascendant_lon) in CADENT_HOUSES:
                 labels.append(f'Connecting with {other}, itself falling from the Ascendant (97)')
-            if r['fast_name'] == planet and r['motion'] == 'Separating' and _is_connected(r):
+            if r['light_name'] == planet and r['motion'] == 'Separating' and _is_connected(r):
                 other_rulers = get_essential_rulers(planetary_data[other]['longitude'])
                 if planet in (other_rulers['domicile'], other_rulers['exaltation']):
                     labels.append(f'Separating from {other}, which would have received it (97)')
@@ -2415,7 +2455,7 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         if averted_from(planet, INFORTUNES):
             positive.append('Infortunes averted (3)')
         separating_infortune = any(
-            r['fast_name'] == planet and r['slow_name'] in INFORTUNES and r['motion'] == 'Separating' and _is_connected(r)
+            r['light_name'] == planet and r['heavy_name'] in INFORTUNES and r['motion'] == 'Separating' and _is_connected(r)
             for r in rows
         )
         if separating_infortune and connected_to(planet, FORTUNES):
@@ -2599,7 +2639,7 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
                     break
         else:
             empty_of_course = not any(
-                (row['fast_name'] == planet and row['motion'] == 'Applying' and _is_connected(row))
+                (row['light_name'] == planet and row['motion'] == 'Applying' and _is_connected(row))
                 for row in rows
             )
         if ess['Peregrine']:
@@ -2788,7 +2828,7 @@ def _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect):
     # [9] (111) Wild -- empty of course, not connecting with any planet.
     # Sahl's own present-tense definition (not Abu Ma'shar's later,
     # prospective sharpening used elsewhere in this file).
-    if not any(row['fast_name'] == 'Moon' and row['motion'] == 'Applying' and _is_connected(row) for row in rows):
+    if not any(row['light_name'] == 'Moon' and row['motion'] == 'Applying' and _is_connected(row) for row in rows):
         labels.append('Wild, empty of course (111)')
 
     # [10] (112) Slow in course, or waning in light (past full, heading
@@ -3385,7 +3425,7 @@ if location_query and lat is not None and lon is not None:
 
 
             with tab_connections:
-                st.subheader(f"Aspects, Aversions & Connections (Sahl, The Introduction Ch.2 50-60 & Ch.3 6-21) — {CONNECTION_PROFILE} rule", help="Four separate facts about each pair, kept apart rather than collapsed into one verdict. LOOKING is the whole-sign configuration (Union/Sextile/Square/Trine/Opposition, or Aversion if none applies) -- sign to sign. MOTION and EXACT ORB DIST are the degree-to-degree approach. BODIES is whether each planet falls inside the other's sphere of power, which is asymmetric because the spheres differ in size: Abu Ma'shar VII.4, 7 notes that Saturn sits inside the Moon's body from 12 degrees while she only enters his at a little under 9. CONNECTED is the active author's verdict -- switch the Connection rule in the sidebar to see where they disagree.")
+                st.subheader(f"Aspects, Aversions & Connections (Sahl, The Introduction Ch.2 50-60 & Ch.3 6-21) — {CONNECTION_PROFILE} rule", help="Four separate facts about each pair, kept apart rather than collapsed into one verdict. LOOKING is the whole-sign configuration (Union/Sextile/Square/Trine/Opposition, or Aversion if none applies) -- sign to sign. MOTION and EXACT ORB DIST are the degree-to-degree approach. BODIES is whether each planet falls inside the other's sphere of power, which is asymmetric because the spheres differ in size: Abu Ma'shar VII.4, 7 notes that Saturn sits inside the Moon's body from 12 degrees while she only enters his at a little under 9. CONNECTED is the active author's verdict -- switch the Connection rule in the sidebar to see where they disagree.\n\nLIGHT and HEAVY are the standing classes both authors name as nouns (Saturn heaviest through the Moon lightest), not a reading of momentary speed: the light planet gives and the heavy one accepts (Ch.3, 67), and the light planet's own light measures the connection (19). A planet slowing toward its station does not thereby become heavy.")
                 if aspects:
                     st.dataframe(pd.DataFrame(aspects), hide_index=True, width='stretch')
                 else:
