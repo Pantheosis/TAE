@@ -1926,7 +1926,15 @@ def _averse_to_ascendant(lon, ascendant_lon):
     signs_apart = min(raw_apart, 12 - raw_apart)
     return signs_apart in AVERSION_SIGN_COUNTS
 
-def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendant_lon):
+# Sahl, The Introduction Ch.3, 78: the stakes and what follows them, but
+# only "of the places which look at the Ascendant" -- which drops the 2nd
+# and 8th (both in aversion to the Ascendant), leaving six. The author's
+# own footnote to 78 confirms the count: "the definition here allows only
+# six good places." Distinct from bare advancement (4, 83), which is every
+# stake and succeedent place with no visibility qualifier.
+EXCELLENT_PLACES = {1, 4, 5, 7, 10, 11}
+
+def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendant_lon, sect):
     """Strength of the Planets (Sahl, The Introduction Ch.3, 78-88): the
     eleven testimonies of a planet's strength at the time of judgment that
     77 announces, cross-checked against the author's own summary table
@@ -1952,8 +1960,11 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
         ess, acc = essential[planet], accidental[planet]
         labels = []
 
-        # (78) In an excellent place from the Ascendant: a stake, or what follows one.
-        if house in ANGLE_HOUSES | SUCCEDENT_HOUSES:
+        # (78) In an excellent place: a stake or what follows one, limited
+        # to those that look at the Ascendant (see EXCELLENT_PLACES). An
+        # earlier version used all eight angular+succeedent houses, which
+        # wrongly admitted the 2nd and 8th.
+        if house in EXCELLENT_PLACES:
             labels.append('In an excellent place from the Ascendant (78)')
 
         # (79) In something of its own share: house, exaltation, triplicity, bound, face, or joy.
@@ -2004,9 +2015,23 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
             if signed_from_sun < 0:
                 labels.append('Masculine planet, eastern of the Sun (84)')
 
-        # (85) In its own glow: a masculine planet by day, feminine by night (i.e. Hayz).
-        if acc['Hayz']:
-            labels.append('In its own glow, i.e. Hayz (85)')
+        # (85) "In their own glow: that is, a masculine planet in the day,
+        # and a feminine planet in the night." The translator's footnote
+        # calls the gendered wording an error for DIURNAL/NOCTURNAL (Mars
+        # being masculine but nocturnal), and Fig. 24 renders the row as
+        # simply "of the sect" -- so this is bare sect agreement. An
+        # earlier version reused accidental[]['Hayz'], which additionally
+        # demands the right side of the horizon and a sign of matching
+        # gender, and so under-reported the testimony.
+        if planet == 'Mercury':
+            sun_lon = planetary_data['Sun']['longitude']
+            planet_is_diurnal = (((lon - sun_lon + 180.0) % 360.0) - 180.0) < 0
+        elif planet in DIURNAL_SECT_PLANETS:
+            planet_is_diurnal = True
+        else:
+            planet_is_diurnal = False
+        if planet_is_diurnal == (sect == 'Diurnal'):
+            labels.append('In its own glow, i.e. of the sect (85)')
 
         # (86) In a fixed sign.
         if sign in FIXED_SIGNS:
@@ -2982,7 +3007,7 @@ if location_query and lat is not None and lon is not None:
         enclosure_data = evaluate_enclosure(p_data)
         handing_over_data = evaluate_handing_over(p_data, sect)
         non_reception_data = evaluate_non_reception(p_data, sect)
-        strength_data = evaluate_strength_of_planets(p_data, essential, accidental, chart_data['ascendant'])
+        strength_data = evaluate_strength_of_planets(p_data, essential, accidental, chart_data['ascendant'], sect)
         weakness_data = evaluate_weakness_of_planets(p_data, essential, accidental, chart_data['ascendant'], sect)
         returning_data = evaluate_returning(p_data, accidental, chart_data['ascendant'])
         revoking_data = evaluate_revoking(p_data, sim)
