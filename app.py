@@ -2978,59 +2978,104 @@ VICTOR_PLACES_VALUES = {
     "Newer (Al-Qabisi/Abu Ma'shar)": {1: 12, 2: 6, 3: 3, 4: 9, 5: 7, 6: 1, 7: 10, 8: 4, 9: 5, 10: 11, 11: 8, 12: 2},
 }
 
-def evaluate_victors(planetary_data, ascendant_lon, lot_of_fortune, sect, chronocrats):
-    """Victor (Almuten) of a significant point, per ibn Ezra's tables
-    (1485/1537) -- for each of the Ascendant, Sun, Moon, and Lot of
-    Fortune, scores every planet's essential-dignity claim AT THAT POINT'S
-    degree (not the planet's own position) under both weighting traditions,
-    plus each tradition's own Lord of the Day (+7), Lord of the Hour (+6),
-    and Places (VICTOR_PLACES_VALUES, keyed by the CANDIDATE planet's own
-    Whole-Sign-House placement, not the point's) bonuses, and reports
-    whichever planet scores highest as that point's victor. This is a
-    different question from the Planetary Dignity Evaluation table (a
-    planet's OWN condition) or the Prenatal Syzygy's Almuten (a fifth
-    point, already computed separately) -- it's the classical technique of
-    finding the ruling planet OVER a specific place or degree, not a
-    single whole-chart "victor." Masha'allah's Places wheel had four
-    wedges (the succedent houses) with two competing values attributed to
-    Masha'allah vs. Dorotheus; the Masha'allah value is used for each,
-    matching the "Older (al-Tabari/Masha'allah)" scheme it's paired with."""
+def evaluate_victors(planetary_data, ascendant_lon, lot_of_fortune, syzygy_lon, sect, chronocrats):
+    """The victor of the chart, per ibn Ezra's victor #1 worksheet
+    (1485/1537, Handy Tables Lesson 20).
+
+    The worksheet is ONE table: the seven planets are its columns, and its
+    rows are the five points -- Sun, Moon, Ascendant, Lot of Fortune, and
+    the prenatal New/Full Moon -- followed by Lord of the Day (+7), Lord of
+    the Hour (+6) and Places. Every column is then summed into a single
+    Totals row, and the highest total is the victor. So this produces one
+    aggregate victor per weighting scheme, and the output mirrors the
+    worksheet grid so a student can check it cell by cell against a
+    hand-filled sheet.
+
+    Rebuilt from an earlier version that computed a SEPARATE victor for
+    each of four points, omitted the prenatal syzygy row entirely, and
+    added the Lord of the Day, Lord of the Hour and Places bonuses afresh
+    to every one of those four tallies -- so the auxiliary rows, which
+    appear once on the sheet, were counted four times over, and the four
+    winners were reported where the sheet asks for one.
+
+    The two axes are independent and are kept that way. The five dignity
+    weights come from the older (Umar al-Tabari / Masha'allah: bound 3,
+    triplicity 2) or newer (al-Qabisi / Abu Ma'shar: triplicity 3, bound 2)
+    tradition; the Places wheel comes from ibn Ezra's own or Masha'allah's.
+    Which pairing to use is not stated in the source, so each scheme keeps
+    the wheel of its own named tradition, as before.
+
+    Dignity claims are read AT EACH POINT'S degree, not at the candidate
+    planet's own position; the Places value is keyed the other way, by the
+    CANDIDATE's own Whole-Sign house. Masha'allah's wheel gives two
+    competing values on four wedges (Masha'allah vs. Dorotheus); the
+    Masha'allah value is used, matching the scheme it is paired with.
+
+    Ibn Ezra's victor #2 (1507) is not implemented: it drops the two
+    chronocrator rows and adds a "Superiors" row scored only for Saturn,
+    Jupiter and Mars (the worksheet blacks out the other four cells), but
+    no available course document gives that row's weight, and guessing it
+    would make the totals meaningless."""
     triplicity_key = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
     points = {
-        'Ascendant': ascendant_lon,
         'Sun': planetary_data['Sun']['longitude'],
         'Moon': planetary_data['Moon']['longitude'],
+        'Ascendant': ascendant_lon,
         'Lot of Fortune': lot_of_fortune,
+        'Prenatal Syzygy': syzygy_lon,
     }
+    columns = [p for p in WEIGHT_ORDER]           # worksheet column order
     day_lord = chronocrats.get('Day Lord')
     hour_lord = chronocrats.get('Hour Lord')
 
-    results = []
-    for point_name, lon in points.items():
-        rulers = get_essential_rulers(lon)
-        row = {'Point': point_name}
-        for scheme_name, weights in VICTOR_WEIGHTS.items():
-            places_values = VICTOR_PLACES_VALUES[scheme_name]
-            places_bonus = {
-                p: places_values[get_wsh_house(data['longitude'], ascendant_lon)]
-                for p, data in planetary_data.items() if p != 'North Node'
-            }
-            scores = {}
-            def add(planet, pts):
-                if planet and planet != '-':
-                    scores[planet] = scores.get(planet, 0) + pts
-            add(rulers['domicile'], weights['domicile'])
-            add(rulers['exaltation'], weights['exaltation'])
-            add(rulers[triplicity_key], weights['triplicity'])
-            add(rulers['term'], weights['term'])
-            add(rulers['face'], weights['face'])
-            add(day_lord, 7)
-            add(hour_lord, 6)
-            for planet, bonus in places_bonus.items():
-                add(planet, bonus)
-            victor = max(scores, key=scores.get) if scores else '-'
-            row[scheme_name] = f"{victor} ({scores.get(victor, 0)})"
-        results.append(row)
+    results = {}
+    for scheme_name, weights in VICTOR_WEIGHTS.items():
+        places_values = VICTOR_PLACES_VALUES[scheme_name]
+        totals = {p: 0 for p in columns}
+        grid = []
+
+        for point_name, lon in points.items():
+            rulers = get_essential_rulers(lon)
+            claims = {p: 0 for p in columns}
+            for key, weight_key in (('domicile', 'domicile'), ('exaltation', 'exaltation'),
+                                     (triplicity_key, 'triplicity'), ('term', 'term'), ('face', 'face')):
+                lord = rulers[key]
+                if lord in claims:
+                    claims[lord] += weights[weight_key]
+            for p in columns:
+                totals[p] += claims[p]
+            grid.append({'Row': point_name, **{p: str(claims[p]) if claims[p] else '' for p in columns}})
+
+        # The three auxiliary rows appear ONCE on the sheet, not per point.
+        for label, lord, pts in (('Lord of the Day (7)', day_lord, 7),
+                                  ('Lord of the Hour (6)', hour_lord, 6)):
+            row = {p: '' for p in columns}
+            if lord in totals:
+                totals[lord] += pts
+                row[lord] = str(pts)
+            grid.append({'Row': label, **row})
+
+        places_row = {}
+        for p in columns:
+            if p in planetary_data:
+                bonus = places_values[get_wsh_house(planetary_data[p]['longitude'], ascendant_lon)]
+                totals[p] += bonus
+                places_row[p] = str(bonus)
+            else:
+                places_row[p] = ''
+        grid.append({'Row': 'Places', **places_row})
+        grid.append({'Row': 'Totals', **{p: str(totals[p]) for p in columns}})
+
+        victor = max(columns, key=lambda p: totals[p])
+        runners = sorted(columns, key=lambda p: -totals[p])
+        tied = [p for p in columns if totals[p] == totals[victor]]
+        results[scheme_name] = {
+            'grid': grid,
+            'victor': ' / '.join(tied) if len(tied) > 1 else victor,
+            'total': totals[victor],
+            'runner_up': f"{runners[1]} ({totals[runners[1]]})" if len(runners) > 1 else '-',
+            'tied': len(tied) > 1,
+        }
     return results
 
 def evaluate_planets_in_houses(planetary_data, abu_mashar_condition, ascendant_lon):
@@ -3348,7 +3393,8 @@ if location_query and lat is not None and lon is not None:
         classical_lots = calculate_classical_lots(chart_data['ascendant'], p_data['Sun']['longitude'], p_data['Moon']['longitude'], sect)
         special_degrees = evaluate_special_degrees(p_data)
         house_lords_data = evaluate_house_lords(p_data, chart_data['ascendant'])
-        victors_data = evaluate_victors(p_data, chart_data['ascendant'], chart_data['lot_of_fortune'], sect, chronocrats)
+        victors_data = evaluate_victors(p_data, chart_data['ascendant'], chart_data['lot_of_fortune'],
+                                         syzygy['syzygy_longitude'], sect, chronocrats)
         planets_in_houses_data = evaluate_planets_in_houses(p_data, abu_mashar_condition, chart_data['ascendant'])
         time_lords_data = calculate_time_lords(chart_data['ascendant'], input_date, target_date)
 
@@ -3472,13 +3518,12 @@ if location_query and lat is not None and lon is not None:
                     ]
                     st.dataframe(pd.DataFrame(syzygy_rows), hide_index=True, width='stretch')
 
-                    st.subheader("Victors of Significant Points (ibn Ezra)", help='The Victor (Almuten) of the Ascendant, Sun, Moon, and Lot of Fortune -- whichever planet holds the strongest essential-dignity claim, day/hour lordship, and house-position bonus at each point, under two parallel medieval weighting traditions.')
-                    st.dataframe(pd.DataFrame(victors_data), hide_index=True, width='stretch')
-                    st.caption(
-                        "Scored under both weighted essential-dignity traditions Dykes gives (Older: al-Tabari/"
-                        "Masha'allah, Bound > Triplicity; Newer: Al-Qabisi/Abu Ma'shar, Triplicity > Bound), each with "
-                        "its own Lord of the Day (+7), Lord of the Hour (+6), and Places (house-position) bonus wheel."
-                    )
+
+                st.subheader("Victor of the Chart (ibn Ezra's victor #1, 1485/1537)", help="Ibn Ezra's worksheet reproduced cell for cell, so it can be checked against a hand-filled sheet. The seven planets are the columns. The first five rows score each planet's essential-dignity claim AT THAT POINT'S degree -- Sun, Moon, Ascendant, Lot of Fortune, and the prenatal New/Full Moon. Then Lord of the Day (+7), Lord of the Hour (+6) and Places are added ONCE each, not per point; Places is keyed the other way round, by the candidate planet's own Whole-Sign house. Every column is summed into Totals, and the single highest total is the chart's victor.\n\nTwo independent choices are shown side by side: the dignity weights (Older = al-Tabari/Masha'allah, Bound 3 > Triplicity 2; Newer = al-Qabisi/Abu Ma'shar, Triplicity 3 > Bound 2) and the Places wheel of the same named tradition. Ibn Ezra's later victor #2 (1507) replaces the two chronocrator rows with a Superiors row scored only for Saturn, Jupiter and Mars; its weight is not given in the course materials, so it is not implemented rather than guessed.")
+                for scheme_name, res in victors_data.items():
+                    st.markdown(f"**{scheme_name}** — victor: **{res['victor']}** ({res['total']}), runner-up {res['runner_up']}"
+                                + ("  \n:orange[Tied at the top — the sheet does not break ties.]" if res['tied'] else ""))
+                    st.dataframe(pd.DataFrame(res['grid']), hide_index=True, width='stretch')
 
                 st.subheader("Topical Planets in Houses (Rhetorius & PN4)", help="Each planet's Whole-Sign house placement and its Rhetorius/PN4-derived delineation, selected by that planet's Good/Bad verdict from the Planetary Condition table above.")
                 st.dataframe(pd.DataFrame(planets_in_houses_data), hide_index=True, width='stretch')
