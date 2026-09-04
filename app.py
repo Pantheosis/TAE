@@ -669,10 +669,33 @@ def _pairwise_configurations(planetary_data):
         raw_signs_apart = abs(sign_idx1 - sign_idx2)
         signs_apart = min(raw_signs_apart, 12 - raw_signs_apart)
 
+        # --- 1b. Facts that are independent of the whole-sign gate -------
+        # Each planet's body projects its own sphere of power outward
+        # (Great Introduction VII.3, 6-11; VII.4, 5-8), so "is A inside B's
+        # body" and "is B inside A's body" are separate questions with
+        # separate answers, and the pair is only MUTUALLY merged when the
+        # separation fits inside the smaller of the two. VII.4, 7 spells
+        # this out: with Saturn and the Moon within 12 degrees, Saturn is
+        # in the power of the Moon's body while the Moon is not yet in the
+        # power of Saturn's, "until there is a little under 9 degrees
+        # between them." (This is per-planet spheres, NOT a moiety --
+        # nothing in either author averages the two orbs.)
+        fast_orb = PLANETARY_ORBS.get(fast_name, 7.0)
+        slow_orb = PLANETARY_ORBS.get(slow_name, 7.0)
+        fast_in_slow_body = dist <= slow_orb
+        slow_in_fast_body = dist <= fast_orb
+
         row = {
             'p1': p1, 'p2': p2, 'fast_name': fast_name, 'slow_name': slow_name,
             'fast_speed': fast_speed, 'slow_speed': slow_speed,
             'signs_apart': signs_apart, 'dist': dist,
+            'assembly': signs_apart == 0,
+            'fast_orb': fast_orb, 'slow_orb': slow_orb,
+            'fast_in_slow_body': fast_in_slow_body,
+            'slow_in_fast_body': slow_in_fast_body,
+            'mutual_body': fast_in_slow_body and slow_in_fast_body,
+            # Set by the post-pass below; only ever true on Aversion rows.
+            'sahl_body_connection': False,
         }
 
         if signs_apart in AVERSION_SIGN_COUNTS:
@@ -713,32 +736,119 @@ def _pairwise_configurations(planetary_data):
                     motion=motion, orientation=orientation)
         rows.append(row)
 
+    # --- 4. Sahl's out-of-sign connection by body (Ch.3, 20-21) ---------
+    # "And if a planet was at the end of a sign, NOT CONNECTING WITH
+    # ANYTHING, and it has already struck into the next sign with its own
+    # light, then whatever planet was the first in that light, it is
+    # connected with it. 21 And if it was not in the sign, then it will not
+    # see it." The translator's note on 21 is explicit: such a pair does
+    # not SEE each other (the next sign is in aversion), yet they are still
+    # CONNECTED -- "the sentence is emphasizing the existence of
+    # out-of-sign conjunctions by body. But it does not support out-of-sign
+    # aspects." So this applies only to adjacent signs, only forward (the
+    # light strikes INTO the next sign), and only when the striking planet
+    # has no other connection at all. Abu Ma'shar denies this case outright
+    # -- see _is_connected_abu_mashar().
+    already_connected = set()
+    for row in rows:
+        if row['aspect_name'] != 'Aversion' and _is_connected_sahl(row):
+            already_connected.add(row['p1'])
+            already_connected.add(row['p2'])
+    for row in rows:
+        if row['aspect_name'] != 'Aversion' or row['signs_apart'] != 1:
+            continue
+        lon_a, lon_b = planetary_data[row['p1']]['longitude'], planetary_data[row['p2']]['longitude']
+        # Order the pair so `earlier` is the one whose light would strike
+        # forward across the boundary into the other's sign.
+        if (lon_b - lon_a) % 360.0 < (lon_a - lon_b) % 360.0:
+            earlier, later, gap = row['p1'], row['p2'], (lon_b - lon_a) % 360.0
+        else:
+            earlier, later, gap = row['p2'], row['p1'], (lon_a - lon_b) % 360.0
+        if earlier in already_connected:
+            continue
+        if gap <= PLANETARY_ORBS.get(earlier, 7.0):
+            row['sahl_body_connection'] = True
+            row['body_connection_from'] = earlier
+            row['body_connection_to'] = later
+
     return rows
 
-def _is_connected(row):
-    """Connection (Sahl, The Introduction Ch.3, 6-21): whether an
-    applying/separating pair currently falls within the FASTER (applying)
-    planet's own orb/light-radius (PLANETARY_ORBS) -- a narrower, per-planet
-    refinement of "looking," distinct from whether the aspect is formed at
-    all. Not defined for Aversion pairs (21: "if it was not in the sign...
-    it will not see it")."""
+# --- Connection profiles --------------------------------------------------
+# Sahl and Abu Ma'shar agree that looking is sign-to-sign and connecting is
+# degree-to-degree (Sahl Ch.3, 23), but they part company at the sign
+# boundary and on what activates a connection. Rather than blend them into
+# one Boolean, each author's rule is written out separately and one is made
+# active; every downstream doctrine reads _is_connected(), which dispatches.
+CONNECTION_PROFILE = 'Sahl'
+
+def _is_connected_sahl(row):
+    """Sahl, The Introduction Ch.3, 6-21. The applying planet's OWN light
+    (19: "it already struck with its own light upon its degree") governs,
+    so the test is asymmetric by design -- the orb belongs to the planet
+    casting, not to the pair.
+
+    Separation windows: same-sign, until the light one has departed by
+    "one-half of its body -- and that is its light" (10-11); cross-sign, a
+    full degree (9). PLANETARY_ORBS already stores those half-body radii.
+
+    Also admits the out-of-sign connection by body of 20-21, precomputed
+    onto the row by _pairwise_configurations()."""
     if row['aspect_name'] == 'Aversion':
-        return False
+        return row.get('sahl_body_connection', False)
     light = PLANETARY_ORBS.get(row['fast_name'], 7.0)
     remaining = abs(row['deviation'])
     if row['motion'] == 'Applying':
         return remaining <= light
-    # Separating: 10-11 gives a same-sign pair longer to still count as
-    # connected than the general cross-sign rule (9: a full degree). The
-    # threshold is "one-half of its body -- and that is its light" (10),
-    # and PLANETARY_ORBS ALREADY stores those half-body radii: 13 gives
-    # the Sun a body of 30 degrees, "one-half of them in front of him,"
-    # yielding the stored 15. So the cutoff is the stored light itself.
-    # An earlier version divided it by two a second time, halving every
-    # separation window (the Moon's to 6 degrees instead of 12).
     if row['signs_apart'] == 0:
         return remaining <= light
     return remaining <= 1.0
+
+def _is_connected_abu_mashar(row):
+    """Abu Ma'shar, Great Introduction VII.4-5. Two flat activation
+    distances rather than Sahl's per-planet lights:
+
+    - Assembly is same-sign (VII.4, 3), and its power begins "if there were
+      15 degrees and less between one of them and the other."
+    - "The beginning of the power of the connection by aspect is when there
+      are 12 degrees between the two planets" (VII.5, 27) -- one figure for
+      every pair, since (per the note there) "aspect rays are not given
+      specific orbs, because they are not bodies with a glow of power
+      around them."
+
+    And no out-of-sign connection of any kind: VII.4, 13 says planets in
+    two different signs are "NOT said to be united ... because of the
+    difference of their signs," and VII.5, 14 that few degrees across a
+    boundary "is not counted as a connection by assembly, but they are both
+    mixing their natures in a weak way." That weak mixing is reported
+    separately (see row['mutual_body']), never as a connection."""
+    if row['aspect_name'] == 'Aversion':
+        return False
+    if row['assembly']:
+        return row['dist'] <= 15.0
+    return abs(row['deviation']) <= 12.0
+
+CONNECTION_PROFILES = {'Sahl': _is_connected_sahl, "Abu Ma'shar": _is_connected_abu_mashar}
+
+def _is_connected(row):
+    """Whether the pair is Connected under the active author profile."""
+    return CONNECTION_PROFILES[CONNECTION_PROFILE](row)
+
+def _body_overlap_label(row):
+    """How the two bodies' spheres of power overlap, reported on its own
+    rather than folded into the Connected verdict (VII.4, 5-8)."""
+    if row['mutual_body']:
+        return 'Mutual'
+    if row['slow_in_fast_body']:
+        return f"{row['slow_name']} in {row['fast_name']}'s body"
+    if row['fast_in_slow_body']:
+        return f"{row['fast_name']} in {row['slow_name']}'s body"
+    return '–'
+
+def _mixing_natures(row):
+    """Abu Ma'shar's weak cross-sign case (VII.4, 13-14; VII.5, 14): the
+    two bodies' spheres of power merge across a sign boundary, which is an
+    indication but explicitly not a connection or an assembly."""
+    return (not row['assembly']) and row['mutual_body']
 
 def evaluate_ptolemaic_aspects(planetary_data):
     """Aspects, Aversions & Connections per Sahl (The Introduction Ch.2,
@@ -761,11 +871,10 @@ def evaluate_ptolemaic_aspects(planetary_data):
             # worth noting since it's the only case an Aversion pair can
             # still carry any classical significance at all.
             note = '\u2013'
-            if row['signs_apart'] == 1:
-                orb1 = PLANETARY_ORBS.get(row['p1'], 7.0)
-                orb2 = PLANETARY_ORBS.get(row['p2'], 7.0)
-                if row['dist'] <= max(orb1, orb2):
-                    note = 'In Power (out-of-sign)'
+            if row['signs_apart'] == 1 and (row['fast_in_slow_body'] or row['slow_in_fast_body']):
+                note = 'In Power (out-of-sign)'
+            if row['sahl_body_connection']:
+                note = f"Body connection: {row['body_connection_from']} \u2192 {row['body_connection_to']} (Sahl 20-21)"
             aspects.append({
                 'Faster Planet': fast_name,
                 'Aspect': 'Aversion',
@@ -773,8 +882,9 @@ def evaluate_ptolemaic_aspects(planetary_data):
                 'Motion': '\u2013',
                 'Orientation': '\u2013',
                 'Exact Orb Dist': '\u2013',
+                'Bodies': _body_overlap_label(row),
                 'Strength': note,
-                'Connected': '\u2013',
+                'Connected': 'Yes' if _is_connected(row) else 'No',
             })
             continue
 
@@ -785,12 +895,9 @@ def evaluate_ptolemaic_aspects(planetary_data):
             # planet's own orb reaches the other; one-sided/weaker if only
             # the wider orb does; otherwise just nominal same-sign
             # co-presence. A shared bound (term) makes it more powerful still.
-            orb1 = PLANETARY_ORBS.get(row['p1'], 7.0)
-            orb2 = PLANETARY_ORBS.get(row['p2'], 7.0)
-            dist = row['dist']
-            if dist <= min(orb1, orb2):
+            if row['mutual_body']:
                 strength = 'Strong'
-            elif dist <= max(orb1, orb2):
+            elif row['fast_in_slow_body'] or row['slow_in_fast_body']:
                 strength = 'Partial'
             else:
                 strength = 'Co-present'
@@ -821,6 +928,7 @@ def evaluate_ptolemaic_aspects(planetary_data):
             'Motion': row['motion'],
             'Orientation': row['orientation'],
             'Exact Orb Dist': _format_orb(abs(row['deviation'])),
+            'Bodies': _body_overlap_label(row),
             'Strength': strength,
             'Connected': 'Yes' if connected else 'No',
         })
@@ -3035,6 +3143,28 @@ except ValueError:
     st.sidebar.error("Invalid Target Date syntax.")
     st.stop()
 
+st.sidebar.markdown("---")
+st.sidebar.header("Doctrine")
+CONNECTION_PROFILE = st.sidebar.radio(
+    "Connection rule",
+    list(CONNECTION_PROFILES.keys()),
+    help=(
+        "Which author's rule decides whether a pair counts as Connected. The two agree that "
+        "looking is sign-to-sign and connecting is degree-to-degree, but they part company at "
+        "the sign boundary and on what activates a connection.\n\n"
+        "**Sahl** (The Introduction Ch.3, 6-21): the applying planet's OWN light governs "
+        "(15/12/9/8/7 by planet), so the test is asymmetric. A planet at the end of a sign that "
+        "is not connecting with anything, whose light strikes into the next sign, IS connected "
+        "to the first planet there by body (20-21) -- even though the two do not see each other.\n\n"
+        "**Abu Ma'shar** (Great Introduction VII.4-5): two flat distances instead -- assembly "
+        "within 15 degrees in one sign (VII.4, 3), aspects within 12 degrees of exact (VII.5, 27, "
+        "since aspect rays have no bodies of their own). No out-of-sign connection at all: across "
+        "a boundary the bodies merely 'mix their natures in a weak way' (VII.5, 14).\n\n"
+        "Everything downstream -- transfer, collection, blocking, handing over, reception -- reads "
+        "this setting."
+    ),
+)
+
 if location_query and lat is not None and lon is not None:
     st.sidebar.success(f"**Resolved:** {lat:.4f}, {lon:.4f}")
 
@@ -3255,7 +3385,7 @@ if location_query and lat is not None and lon is not None:
 
 
             with tab_connections:
-                st.subheader("Aspects, Aversions & Connections (Sahl, The Introduction Ch.2 50-60 & Ch.3 6-21)", help="Every planet pair's whole-sign configuration (Union/Sextile/Square/Trine/Opposition, or Aversion if none applies), its Applying/Separating motion, and whether it's Connected -- within the applying planet's own orb of exactness, a narrower test than the aspect itself.")
+                st.subheader(f"Aspects, Aversions & Connections (Sahl, The Introduction Ch.2 50-60 & Ch.3 6-21) — {CONNECTION_PROFILE} rule", help="Four separate facts about each pair, kept apart rather than collapsed into one verdict. LOOKING is the whole-sign configuration (Union/Sextile/Square/Trine/Opposition, or Aversion if none applies) -- sign to sign. MOTION and EXACT ORB DIST are the degree-to-degree approach. BODIES is whether each planet falls inside the other's sphere of power, which is asymmetric because the spheres differ in size: Abu Ma'shar VII.4, 7 notes that Saturn sits inside the Moon's body from 12 degrees while she only enters his at a little under 9. CONNECTED is the active author's verdict -- switch the Connection rule in the sidebar to see where they disagree.")
                 if aspects:
                     st.dataframe(pd.DataFrame(aspects), hide_index=True, width='stretch')
                 else:
