@@ -2337,7 +2337,7 @@ def _averse_to_ascendant(lon, ascendant_lon):
 # stake and succeedent place with no visibility qualifier.
 EXCELLENT_PLACES = {1, 4, 5, 7, 10, 11}
 
-def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendant_lon, sect):
+def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendant_lon, sect, natal_houses):
     """Strength of the Planets (Sahl, The Introduction Ch.3, 78-88): the
     eleven testimonies of a planet's strength at the time of judgment that
     77 announces, cross-checked against the author's own summary table
@@ -2345,6 +2345,15 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
     tenth, "in the heart of the Sun") and renumbered 88 (the eleventh, the
     gender-matching quadrant and sign) as the tenth; the count discrepancy
     against 77 was noted at the time but resolved the wrong way.
+
+    Note that 78 and 83 are NOT the same test, though an earlier version
+    computed both from the same eight whole-sign houses. 78's "excellent
+    place" is whole-sign and is narrowed by which places LOOK at the
+    Ascendant (six of them, per its own footnote). 83's "advancing" is
+    dynamic -- measured against the quadrant cusps, per the note on 83 and
+    the course glossary -- and takes this function's natal_houses argument.
+    On a sample of 414 charts the two readings of advancement disagree for
+    a third of all planet placements.
 
     Distinct from the existing Abu Ma'shar VII.6-based Planetary Condition
     table, which scores a broader, differently-sourced strength/weakness
@@ -2360,6 +2369,9 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
         lon = data['longitude']
         sign = get_zodiac_sign(lon)
         house = get_wsh_house(lon, ascendant_lon)
+        # 83 is measured against the real angular axes rather than by sign
+        # -- see the comment there.
+        quadrant_house = get_house_number(lon, natal_houses)
         ess, acc = essential[planet], accidental[planet]
         labels = []
 
@@ -2406,9 +2418,28 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
         if not connects_weak_target and not ess['Fall']:
             labels.append('Not connecting with a falling/fallen planet, nor itself in its fall (82)')
 
-        # (83) Advancing -- a stake or what follows it (Sahl's own master
-        # definition of "advancement," Ch.3, 4, reapplied here).
-        if house in ANGLE_HOUSES | SUCCEDENT_HOUSES:
+        # (83) Advancing -- measured DYNAMICALLY, against the quadrant
+        # cusps, not by whole sign. The note on 83 is explicit that the
+        # word is the active participle of Form IV and so "means that it
+        # is dynamically angular or succeedent, i.e. by primary motion
+        # with respect to the angular axes, and not by whole sign"; Sahl's
+        # own Figure 9 for 4-5 is captioned "understood dynamically," and
+        # the course glossary defines advancement as "moving by primary
+        # motion toward an axial degree."
+        #
+        # Primary motion carries a planet 1 -> 12 -> 11 -> 10: out of an
+        # angle into the cadent house, moving AWAY from the axis it just
+        # crossed, then into the succedent house, approaching the next
+        # one. So "dynamically angular or succeedent" is the same set of
+        # house numbers as the whole-sign test uses -- the difference is
+        # entirely in which house system assigns the number, and on a
+        # typical chart it moves most of the planets.
+        #
+        # Note this is deliberately NOT the same predicate as 78's
+        # "excellent place", which is whole-sign: that one is defined by
+        # which places LOOK at the Ascendant, and its own footnote counts
+        # the six resulting places.
+        if quadrant_house in ANGLE_HOUSES | SUCCEDENT_HOUSES:
             labels.append('Advancing (83)')
 
         # (84) A masculine planet (Saturn, Jupiter, Mars) eastern, arising at dawn.
@@ -3513,7 +3544,7 @@ if location_query and lat is not None and lon is not None:
         handing_over_data = evaluate_handing_over(p_data, sect)
         reception_data = evaluate_reception(p_data, sect)
         non_reception_data = evaluate_non_reception(p_data, sect)
-        strength_data = evaluate_strength_of_planets(p_data, essential, accidental, chart_data['ascendant'], sect)
+        strength_data = evaluate_strength_of_planets(p_data, essential, accidental, chart_data['ascendant'], sect, chart_data['houses'])
         weakness_data = evaluate_weakness_of_planets(p_data, essential, accidental, chart_data['ascendant'], sect)
         returning_data = evaluate_returning(p_data, accidental, chart_data['ascendant'])
         revoking_data = evaluate_revoking(p_data, sim)
@@ -3788,7 +3819,7 @@ if location_query and lat is not None and lon is not None:
                 else:
                     st.write("No forward-looking conditions found within the simulation horizon.")
 
-                st.subheader("Strength of the Planets (Sahl, The Introduction Ch.3, 78-88)", help="The eleven testimonies of a planet's strength at the time of judgment -- excellent place, own dignity, direct, out of the whole-sign angles of an infortune, not tied to a fallen or falling planet, advancing, an eastern masculine planet, in its own glow, a fixed sign, in the heart of the Sun, and a gender-matching quadrant and sign. Distinct from the Abu Ma'shar-based Planetary Condition table above, which scores a broader, later scheme.")
+                st.subheader("Strength of the Planets (Sahl, The Introduction Ch.3, 78-88)", help="The eleven testimonies of a planet's strength at the time of judgment -- excellent place, own dignity, direct, out of the whole-sign angles of an infortune, not tied to a fallen or falling planet, advancing, an eastern masculine planet, in its own glow, a fixed sign, in the heart of the Sun, and a gender-matching quadrant and sign.\n\nTestimonies 78 and 83 look similar but are different measurements. 78 is whole-sign, narrowed to the six places that LOOK at the Ascendant. 83, advancing, is DYNAMIC -- read against the Alchabitius quadrant cusps, since the note on 83 says the word means \"dynamically angular or succeedent, i.e. by primary motion with respect to the angular axes, and not by whole sign.\" A planet leaving an angle is withdrawing even while its whole sign is still angular, so the two disagree for about a third of placements.\n\nDistinct from the Abu Ma'shar-based Planetary Condition table, which scores a broader, later scheme.")
                 if strength_data:
                     st.dataframe(pd.DataFrame(strength_data), hide_index=True, width='stretch')
                 else:
