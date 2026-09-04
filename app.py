@@ -1704,6 +1704,108 @@ def evaluate_favor_and_recompense(planetary_data, essential, sect, sim):
             results.append(entry)
     return results
 
+def evaluate_reception(planetary_data, sect):
+    """Reception, under whichever author profile is active. The two differ
+    in scope, in direction, and in what counts as strong, so they are
+    written out separately rather than blended.
+
+    SAHL (The Introduction Ch.3, 49-55). One direction only: the connecting
+    planet sits in a dignity belonging to the planet it connects with, and
+    so is received by it (52: "if the Moon is in Aries and she is
+    connecting with Mars, then he receives her because Aries is his
+    house"). House or exaltation is "perfect reception, with truthful
+    intention" (49); triplicity alone is expressly ranked "below this
+    reception" (50); bound counts only together with triplicity, which
+    Sahl attributes to Masha'allah (54-55, and Abu Ma'shar's own note on
+    132 confirms the attribution). Face never appears. A connection is
+    required throughout.
+
+    ABU MA'SHAR (Great Introduction VII.5, 129-133). Wider on every axis.
+    All five dignities count (129). Reception also runs in REVERSE: "a
+    planet connects with a planet, and the one accepting the connection is
+    in the house of the one handing over" (130) -- his own note explains
+    why, since "Saturn could never be received because he is too slow to
+    connect with anyone." House or exaltation is strongest (131); a single
+    minor dignity alone is weak "unless it brings together the bound and
+    triplicity, or the bound and face, or the triplicity and face: for that
+    will be a complete reception" (132). And reception can hold by looking
+    with no connection at all, "except that reception by connection is more
+    powerful" (133).
+
+    Returns one row per reception found, naming the receiver, the planet
+    received, which way round it runs, the dignities it rests on, its grade
+    and whether it holds by connection or only by looking -- so the
+    evidence is inspectable rather than reduced to a single flag. Mutual
+    reception is reported as its own row.
+
+    Absence of a row here is NOT Sahl's non-reception: that is a set of
+    specific hostile configurations (58-62), computed separately in
+    evaluate_non_reception(). A pair can easily be neither received nor
+    non-received."""
+    rows = _pairwise_configurations(planetary_data)
+    triplicity_key = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
+    sahl = CONNECTION_PROFILE == 'Sahl'
+    results = []
+
+    def claims(sitter, lord):
+        """Which of `lord`'s dignities the `sitter` planet is standing in."""
+        r = get_essential_rulers(planetary_data[sitter]['longitude'])
+        found = []
+        if r['domicile'] == lord: found.append('house')
+        if r['exaltation'] == lord: found.append('exaltation')
+        if r[triplicity_key] == lord: found.append('triplicity')
+        if r['term'] == lord: found.append('bound')
+        if not sahl and r['face'] == lord: found.append('face')   # Sahl never uses face
+        return found
+
+    def grade(found):
+        if 'house' in found or 'exaltation' in found:
+            return 'Perfect' if sahl else 'Strongest (131)'
+        if sahl:
+            # 50 ranks triplicity below perfect; bound only counts paired
+            # with triplicity, on Masha'allah's authority (54-55).
+            if 'triplicity' in found and 'bound' in found:
+                return "Complete, triplicity with bound (54-55, Masha'allah)"
+            if 'triplicity' in found:
+                return 'Lesser, triplicity alone (50)'
+            return None                                   # bound alone is not reception for Sahl
+        minors = [d for d in found if d in ('bound', 'triplicity', 'face')]
+        return 'Complete (132)' if len(minors) >= 2 else 'Weak, one minor dignity alone (132)'
+
+    for row in rows:
+        if row['aspect_name'] == 'Aversion':
+            continue
+        connected = _is_connected(row)
+        if sahl and not connected:
+            continue                                      # Sahl requires the connection
+        mode = 'By connection' if connected else 'By looking only (133)'
+        light, heavy = row['light_name'], row['heavy_name']
+
+        # 129: the connecting planet stands in the receiver's dignity.
+        directions = [(heavy, light, 'Receives the connecting planet (129)')]
+        if not sahl:
+            # 130: the reverse, which Sahl does not have.
+            directions.append((light, heavy, 'Receives the accepting planet (130)'))
+
+        found_here = []
+        for receiver, received, direction in directions:
+            found = claims(received, receiver)
+            g = grade(found) if found else None
+            if not g:
+                continue
+            found_here.append(receiver)
+            results.append({
+                'Receiver': receiver, 'Received': received, 'Direction': direction,
+                'Via': ', '.join(found), 'Grade': g, 'Mode': mode,
+            })
+        if len(found_here) == 2:
+            results.append({
+                'Receiver': f'{light} & {heavy}', 'Received': 'each other',
+                'Direction': 'Mutual', 'Via': '–', 'Grade': 'Mutual reception',
+                'Mode': mode,
+            })
+    return results
+
 def evaluate_non_reception(planetary_data, sect):
     """Non-reception (Sahl, The Introduction Ch.3, 58-62, Fig. 18): five
     named ways a connection is refused rather than received, using the
@@ -2489,6 +2591,7 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
     evaluate_essential_dignities()/evaluate_accidental_dignities(), which
     is retained separately as the older Hellenistic reconstruction."""
     rows = _pairwise_configurations(planetary_data)
+    reception_rows = evaluate_reception(planetary_data, sect)
     connected_lookup = {}
     configured_lookup = {}  # frozenset -> aspect name, for non-Connected "look"/assembly checks
     for row in rows:
@@ -2574,28 +2677,22 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         # placement), applied here under the same narrowed scope.
         rulers = get_essential_rulers(lon)
         triplicity_key_local = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
-        reception_dispositors = {rulers['domicile'], rulers['exaltation'], rulers[triplicity_key_local]} - {'-'}
-        received_via = {
-            d for d in reception_dispositors
-            if connected_to(planet, {d}) or configured_lookup.get(frozenset({planet, d})) not in (None, 'Aversion')
-        }
-        received = bool(received_via)
-        mutual_received = False
-        for r in rows:
-            if planet not in (r['p1'], r['p2']) or r['aspect_name'] == 'Aversion':
-                continue
-            other = r['p2'] if r['p1'] == planet else r['p1']
-            other_rulers = get_essential_rulers(planetary_data[other]['longitude'])
-            other_reception_dispositors = {other_rulers['domicile'], other_rulers['exaltation'], other_rulers[triplicity_key_local]} - {'-'}
-            if planet in other_reception_dispositors:
-                mutual_received = True
-                break
-        if received:
-            perfect = rulers['domicile'] in received_via or rulers['exaltation'] in received_via
-            grade_label = 'perfect' if perfect else 'lesser'
-            positive.append(f'Received (12), {grade_label}')
-        if mutual_received:
-            positive.append('Receives a connecting planet into its own dignity (130)')
+        # Reception is defined once, in evaluate_reception(), under the
+        # active author profile; this row just reports what it found for
+        # this planet. An earlier version reimplemented it inline and
+        # blended the two authors -- Sahl's narrowed dignity scope with
+        # Abu Ma'shar's paragraph numbering and his reverse case.
+        received = any(rec['Received'] == planet or (rec['Direction'] == 'Mutual'
+                                                      and planet in rec['Receiver'].split(' & '))
+                        for rec in reception_rows)
+        for rec in reception_rows:
+            if rec['Direction'] == 'Mutual':
+                if planet in rec['Receiver'].split(' & '):
+                    positive.append(f"Mutual reception with {[x for x in rec['Receiver'].split(' & ') if x != planet][0]}")
+            elif rec['Received'] == planet:
+                positive.append(f"Received by {rec['Receiver']} ({rec['Grade'].split(' (')[0].lower()}, via {rec['Via']})")
+            elif rec['Receiver'] == planet:
+                positive.append(f"Receives {rec['Received']} into its own {rec['Via']}")
         if acc['Hayz']:
             positive.append('Domain/hayz (13)')
         if planet in ('Sun', 'Moon'):
@@ -3374,6 +3471,7 @@ if location_query and lat is not None and lon is not None:
         blocking_data = evaluate_blocking(p_data)
         enclosure_data = evaluate_enclosure(p_data)
         handing_over_data = evaluate_handing_over(p_data, sect)
+        reception_data = evaluate_reception(p_data, sect)
         non_reception_data = evaluate_non_reception(p_data, sect)
         strength_data = evaluate_strength_of_planets(p_data, essential, accidental, chart_data['ascendant'], sect)
         weakness_data = evaluate_weakness_of_planets(p_data, essential, accidental, chart_data['ascendant'], sect)
@@ -3593,7 +3691,13 @@ if location_query and lat is not None and lon is not None:
                 else:
                     st.write("No handing-over configurations found.")
 
-                st.subheader("Non-reception (Sahl, The Introduction Ch.3, 58-62)", help='Five named ways a connection is refused rather than received: (I) the connected-to planet holds no dignity claim at all in the connecting planet\'s sign; (II) the connecting planet is in the other\'s sign of fall; (III) the connecting planet is in its OWN fall, and Kind I also applies; (IV) the connected-to planet is in its OWN fall; (V) the connected-to planet sits in the connecting planet\'s own sign of fall.')
+                st.subheader(f"Reception — {CONNECTION_PROFILE} rule", help="Who receives whom, on what dignity, which way round, and how strongly. The two authors differ on every one of those, so the active Connection rule in the sidebar governs here too.\n\nSAHL (Ch.3, 49-55) runs one way only -- the connecting planet stands in a dignity of the planet it connects with, and so is received by it (52: the Moon in Aries connecting with Mars, \"he receives her because Aries is his house\"). House or exaltation is perfect reception; triplicity alone is expressly ranked below it (50); bound counts only paired with triplicity, which Sahl credits to Masha'allah (54-55). Face never appears, and a connection is always required.\n\nABU MA'SHAR (VII.5, 129-133) is wider on every axis: all five dignities count (129), reception also runs in REVERSE where the accepting planet sits in the connector's dignity (130, which exists because Saturn is otherwise too slow to ever be received), house/exaltation is strongest (131), a lone minor dignity is weak unless two of bound/triplicity/face combine into a complete reception (132), and reception can hold by looking with no connection at all (133).\n\nAn empty table is NOT non-reception -- that is a separate set of hostile configurations, in the table below.")
+                if reception_data:
+                    st.dataframe(pd.DataFrame(reception_data), hide_index=True, width='stretch')
+                else:
+                    st.write("No receptions found.")
+
+                st.subheader("Non-reception (Sahl, The Introduction Ch.3, 58-62)", help='Five named ways a connection is refused rather than received -- a distinct finding from simply lacking reception: (I) the connected-to planet holds no dignity claim at all in the connecting planet\'s sign; (II) the connecting planet is in the other\'s sign of fall; (III) the connecting planet is in its OWN fall, and Kind I also applies; (IV) the connected-to planet is in its OWN fall; (V) the connected-to planet sits in the connecting planet\'s own sign of fall.')
                 if non_reception_data:
                     st.dataframe(pd.DataFrame(non_reception_data), hide_index=True, width='stretch')
                 else:

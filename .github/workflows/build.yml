@@ -1,10 +1,10 @@
 name: Build Desktop App
 
-# Runs on every push to main, and can also be triggered manually from the
-# Actions tab (workflow_dispatch) without needing a push.
+# Manual only. Start a build from the Actions tab -> "Build Desktop App" ->
+# "Run workflow". Pushes to main deliberately do NOT trigger it: the desktop
+# binaries are cut for releases, not for every commit, and building both
+# platforms on each push burns Actions minutes on work nobody downloads.
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
