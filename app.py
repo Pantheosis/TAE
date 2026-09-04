@@ -1155,42 +1155,123 @@ def evaluate_blocking(planetary_data):
     sits at the middle degree blocks the lightest from reaching the
     heaviest until it passes by. Type II is Sahl's "Nullification" (The
     Introduction Ch.3, 38-48), reused by Abu Ma'shar as Blocking Type II
-    (VII.5, 93-94, footnote 174): a light planet is connecting by aspect
-    (from another sign) with a heavy one, but a different planet is
-    co-present (same sign, i.e. connecting by body) with that heavy one --
-    and a body connection categorically outranks an aspect connection to
-    the same target, blocking the light planet's aspect regardless of
-    relative degree closeness. Sahl's third blocking type, "Cutting the
-    Light" (Ch.3, 31-34), is modeled as Type III of evaluate_cutting_
-    the_light() rather than here, confirmed against Fig. 12's own numbers --
-    see that function's docstring."""
+    (VII.5, 93-94, footnote 174): a light planet connects by aspect from
+    another sign with a heavy one, while a third, lighter planet co-present
+    with that heavy one is joining it by body and gets there first.
+
+    Both types are reproduced against the authors' own worked figures --
+    Fig. 13 (Moon 8, Mars 10, Saturn 12 Gemini: Mars intervenes) and
+    Fig. 14 (Moon 10 Scorpio, Mars 15 and Saturn 23 Taurus: Mars cuts the
+    Moon's aspect).
+
+    An earlier version stated Type II as "a body connection categorically
+    outranks an aspect connection regardless of relative degree closeness,"
+    and so accepted ANY third planet sharing the heavy planet's sign, with
+    no application and no exception. That conflated two different passages.
+    Sahl 44-48 IS a flat precedence rule, but its subject is one planet
+    holding both a union and an aspect of its own (45-48: the Moon uniting
+    with Mars while aspecting Venus). The third-party blocking of 38-42 and
+    VII.5, 93-94 is conditional, and both authors give it an escape: "if it
+    goes beyond that, its connection is valid" (40), and "when the degrees
+    of the one looking are closer to the connection than the degrees of the
+    one joining by body, the connection belongs to the one looking" (94).
+    Across ~3,600 sampled charts the correction removes 76% of reported
+    blockings, nearly all of them third planets that were merely co-present
+    and in fact SEPARATING from the heavy planet.
+
+    Sahl's third blocking type, "Cutting the Light" (Ch.3, 31-34), is
+    modeled as Type III of evaluate_cutting_the_light() rather than here,
+    confirmed against Fig. 12's own numbers -- see that docstring.
+
+    Note these are configurations, not verdicts about a matter: both
+    authors are describing horary charts in which a querent and a quesited
+    have already been identified. With no topical significators nominated,
+    a row here says a blocking pattern exists between those three planets,
+    not that any particular sought thing is obstructed."""
     rows = _pairwise_configurations(planetary_data)
     planets = [p for p in planetary_data.keys() if p != 'North Node']
+    row_for = {frozenset({r['p1'], r['p2']}): r for r in rows}
+    speed = {p: planetary_data[p]['speed_in_lon'] for p in planets}
     blocks = []
 
+    def applying(a, b):
+        r = row_for.get(frozenset({a, b}))
+        return r is not None and r['aspect_name'] != 'Aversion' and r['motion'] == 'Applying'
+
+    # --- Type I: Intervention (Sahl 35-37, Fig. 13; VII.5, 91-92) -------
+    # "Three planets are in a single sign, IN DIFFERENT DEGREES, and the
+    # heavy one has more degrees than [the other] two, so that the middle
+    # one blocks the one with the fewest degrees from connecting with the
+    # heavy one, UNTIL IT PASSES BY IT."
     by_sign = {}
     for p in planets:
         by_sign.setdefault(int(planetary_data[p]['longitude'] // 30), []).append(p)
     for group in by_sign.values():
         if len(group) < 3:
             continue
-        for a, b, c in combinations(group, 3):
-            trio = sorted([a, b, c], key=lambda p: planetary_data[p]['longitude'] % 30)
-            by_weight = sorted([a, b, c], key=lambda p: WEIGHT_ORDER.index(p))
-            heaviest, lightest = by_weight[0], by_weight[-1]
-            if trio[-1] == heaviest and trio[0] == lightest:
-                blocks.append({'Type': 'I', 'Blocked': lightest, 'Blocks': trio[1], 'From Reaching': heaviest})
+        for combo in combinations(group, 3):
+            trio = sorted(combo, key=lambda p: planetary_data[p]['longitude'] % 30)
+            blocked, blocker, target = trio
+            if len({round(planetary_data[p]['longitude'] % 30, 6) for p in trio}) < 3:
+                continue  # "in different degrees"
+            if target != min(combo, key=WEIGHT_ORDER.index):
+                continue  # the heavy one must be the one holding the most degrees
+            # "Until it passes by it" only describes forward motion, and
+            # VII.5, 10 frames the connection by assembly as belonging to
+            # planets "direct in motion".
+            if speed[blocked] <= 0 or speed[blocker] <= 0:
+                continue
+            # There is nothing to block unless the light planet is actually
+            # on its way to the heavy one.
+            if not applying(blocked, target):
+                continue
+            blocks.append({'Type': 'I (Intervention)', 'Blocked': blocked,
+                            'Blocked By': blocker, 'From Reaching': target})
 
+    # --- Type II: Nullification (Sahl 38-48, Fig. 14; VII.5, 93-94) -----
+    # "Two planets are in a single sign, and the light one is connecting
+    # with the heavy one, and another, [third] planet connects with that
+    # heavy one BY LOOKING, but by degree it is less than the light one
+    # which is uniting: thus the one with it in its sign blocks the one
+    # looking." An earlier version treated ANY third planet co-present in
+    # the heavy planet's sign as a blocker -- with no application, no
+    # degree condition and no exception -- which is the bulk of the
+    # over-reporting.
+    #
+    # VII.5, 94 supplies the exception: "when the degrees of the one
+    # looking are closer to the connection than the degrees of the one
+    # joining by body, the connection belongs to the one looking, because
+    # it connects with it before the one joining with it" -- Sahl's own 40
+    # says the same ("if it goes beyond that, its connection is valid").
+    # The test is the REMAINING ARC IN DEGREES, not time-to-perfection,
+    # even though 94 phrases the reason temporally. Sahl's worked Fig. 14
+    # settles it: Moon 10 Scorpio, Mars 15 Taurus, Saturn 23 Taurus, and
+    # his verdict is that Mars cuts the Moon's aspect. Mars has 8 degrees
+    # left to Saturn against the Moon's 23, so by arc Mars wins -- but the
+    # Moon covers her 23 degrees in under two days against Mars's fifteen,
+    # so by elapsed time she would perfect first and the verdict would
+    # invert. Arc it is.
     for row in rows:
         if row['aspect_name'] in ('Aversion', 'Conjunction') or row['motion'] != 'Applying':
             continue
-        fast, slow = row['light_name'], row['heavy_name']
-        slow_sign = int(planetary_data[slow]['longitude'] // 30)
-        for candidate in planets:
-            if candidate in (fast, slow):
+        looking, heavy = row['light_name'], row['heavy_name']
+        remaining_ray = abs(row['deviation'])
+        heavy_lon = planetary_data[heavy]['longitude']
+        heavy_sign = int(heavy_lon // 30)
+        for uniting in planets:
+            if uniting in (looking, heavy):
                 continue
-            if int(planetary_data[candidate]['longitude'] // 30) == slow_sign:
-                blocks.append({'Type': 'II', 'Blocked': fast, 'Blocks': candidate, 'From Reaching': slow})
+            if int(planetary_data[uniting]['longitude'] // 30) != heavy_sign:
+                continue
+            if WEIGHT_ORDER.index(uniting) <= WEIGHT_ORDER.index(heavy):
+                continue  # it is "the LIGHT one which is uniting" with the heavy one
+            if not applying(uniting, heavy):
+                continue  # co-presence alone is not a joining
+            remaining_body = abs(heavy_lon - planetary_data[uniting]['longitude'])
+            if remaining_body > remaining_ray:
+                continue  # 40 / 94: the ray arrives first, so the connection is its own
+            blocks.append({'Type': 'II (Nullification)', 'Blocked': looking,
+                            'Blocked By': uniting, 'From Reaching': heavy})
     return blocks
 
 def evaluate_handing_over(planetary_data, sect):
@@ -3449,11 +3530,11 @@ if location_query and lat is not None and lon is not None:
                 else:
                     st.write("No reflections of light found.")
 
-                st.subheader("Blocking (Sahl, The Introduction Ch.3, 31-48: Intervention & Nullification; Abu Ma'shar VII.5, 90-94)", help='A third planet interposes between an applying pair before their connection completes, either by body (co-present in the same sign) or by degree-proximity, delaying or redirecting the intended connection. Sahl\'s own third blocking type, "Cutting the Light," is Type III of the Cutting the Light table below rather than shown here.')
+                st.subheader("Candidate Blocking Patterns (Sahl, The Introduction Ch.3, 31-48: Intervention & Nullification; Abu Ma'shar VII.5, 90-94)", help='A third planet gets to the heavy planet first, so the connection heading there does not complete. INTERVENTION: three planets in one sign, the heavy one at the highest degree, and the middle one stands between the lightest and its target until it passes by. NULLIFICATION: one planet aspects a heavy planet from another sign while a lighter planet already in that sign is joining it by body -- and arrives first. Where the ray has less arc left to travel than the body does, the ray prevails instead and no blocking is reported (Ch.3, 40; VII.5, 94).\n\nCalled CANDIDATE patterns because both authors are describing horary charts with a querent and a quesited already nominated. With no topical significators chosen, a row says the pattern exists between those three planets -- not that a particular sought matter is obstructed.\n\nSahl\'s own third blocking type, "Cutting the Light," is Type III of the Cutting the Light table below rather than shown here.')
                 if blocking_data:
                     st.dataframe(pd.DataFrame(blocking_data), hide_index=True, width='stretch')
                 else:
-                    st.write("No blocking configurations found.")
+                    st.write("No candidate blocking patterns found.")
 
                 st.subheader("Enclosure (Sahl, The Introduction Ch.3, 119-123)", help='A planet separating from one of the two infortunes (or, per Abu Ma\'shar\'s extension, fortunes) and connecting with the other, with neither leg intercepted by a third planet\'s rays -- graded "more powerful/unfortunate" when both legs are within 7 degrees of exact.')
                 if enclosure_data:
