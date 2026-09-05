@@ -1106,17 +1106,68 @@ def _pairwise_configurations(planetary_data):
 CONNECTION_PROFILE = 'Sahl'
 
 def _is_connected_sahl(row):
-    """Sahl, The Introduction Ch.3, 6-21. The applying planet's OWN light
-    (19: "it already struck with its own light upon its degree") governs,
-    so the test is asymmetric by design -- the orb belongs to the planet
-    casting, not to the pair.
+    """Sahl, The Introduction Ch.3, 6-21. The APPLYING planet's own light
+    governs, so the test is asymmetric by design -- the orb belongs to the
+    planet that acts, not to the pair.
 
     Separation windows: same-sign, until the light one has departed by
     "one-half of its body -- and that is its light" (10-11); cross-sign, a
     full degree (9). PLANETARY_ORBS already stores those half-body radii.
 
     Also admits the out-of-sign connection by body of 20-21, precomputed
-    onto the row by _pairwise_configurations()."""
+    onto the row by _pairwise_configurations().
+
+    A DISSENTING READING, recorded because it has real textual support and
+    was raised in an independent audit of this file.
+
+    For the asymmetric reading as implemented, three passages, of which the
+    first is the one that actually defines the test:
+
+        19: "if a planet looked at a planet [from another sign], and IT
+        already struck WITH ITS OWN LIGHT upon its degree, then it is
+        connected with it; and if it is NOT STRIKING WITH ITS OWN LIGHT,
+        then it is moving toward the connection until it is connected."
+
+        6: connection is the light planet "GOING STRAIGHTAWAY TO" the heavy
+        one -- the action belongs to the mover.
+
+        10: separation is measured by "the light one departs from the heavy
+        one by one-half of ITS body."
+
+    Against it, two lines in the list of the lights themselves:
+
+        13: "if there was from a degree to 15 degrees between THE SUN and
+        one of the planets, then HE has already shone HIS light, and HE is
+        connected with [the planet]." In the standing weight order the Sun
+        is HEAVIER than Venus, Mercury and the Moon, so here the heavier
+        planet's light does the connecting.
+
+        18, closing the list: "So by the extent of these lights, they are
+        connected ONE TO THE OTHER."
+
+    Two things were checked before settling this. First, whether 13 could
+    be quarantined as a rule peculiar to the Sun, on the grounds that his
+    15 degrees is the largest light and so the only one that could matter.
+    IT CANNOT: over 5,405 applying configured pairs the two readings
+    disagree on 288 (5.3%), and only 48% of those involve the Sun. The rest
+    are Mercury to Jupiter, Venus to Saturn, Mars to Jupiter and the like --
+    every case where the mover's light is smaller than the receiver's.
+
+    Second, what Abu Ma'shar does with the same orb table (his Fig. 105 is
+    13-17's numbers exactly). VII.4, 7: with Saturn and the Moon within 12
+    degrees, "Saturn is in the power of the Moon's body WHILE THE MOON IS
+    NOT YET IN THE POWER OF SATURN'S, until there is a little under 9
+    degrees between them." That is explicitly directional and per-planet,
+    and under a reciprocal reading it could not describe anything -- there
+    would be no state in which one is inside the other's body and not the
+    reverse. This file already implements that asymmetry as
+    light_in_heavy_body / heavy_in_light_body.
+
+    So 18's "one to the other" is read as naming the lights by which
+    connection happens, not as saying either one suffices; and 13 is left
+    standing as the genuine awkwardness it is. The asymmetric reading is
+    kept because 19 is the paragraph that states the test. Switching would
+    move about 5% of applying pairs."""
     if row['aspect_name'] == 'Aversion':
         return row.get('sahl_body_connection', False)
     light = PLANETARY_ORBS.get(row['light_name'], 7.0)
@@ -5425,6 +5476,15 @@ CONNECTION_PROFILE = st.sidebar.radio(
         "(15/12/9/8/7 by planet), so the test is asymmetric. A planet at the end of a sign that "
         "is not connecting with anything, whose light strikes into the next sign, IS connected "
         "to the first planet there by body (20-21) -- even though the two do not see each other.\n\n"
+        "A DISSENTING READING is recorded in the code but not implemented. Sahl 13 says that with "
+        "15 degrees between THE SUN and a planet 'he has already shone his light, and he is connected "
+        "with [the planet]' -- and the Sun is the HEAVIER body there -- while 18 closes the list of "
+        "lights with 'they are connected ONE TO THE OTHER'. Against that, 19 states the test itself in "
+        "terms of the mover ('it already struck WITH ITS OWN LIGHT'), and Abu Ma'shar, using the same "
+        "orb table, needs the asymmetry: with Saturn and the Moon within 12 degrees 'Saturn is in the "
+        "power of the Moon's body while the Moon is NOT YET in the power of Saturn's' (VII.4, 7). The "
+        "asymmetric reading is kept; the reciprocal one would move about 5% of applying pairs, and only "
+        "half of those involve the Sun.\n\n"
         "**Abu Ma'shar** (Great Introduction VII.4-5): two flat distances instead -- assembly "
         "within 15 degrees in one sign (VII.4, 3), aspects within 12 degrees of exact (VII.5, 27, "
         "since aspect rays have no bodies of their own). No out-of-sign connection at all: across "
