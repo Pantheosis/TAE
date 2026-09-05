@@ -661,16 +661,28 @@ def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None):
         # required the planet's own sect to match the chart's, which threw
         # away that entire second half of the rule.
         #
-        # Mars's exception is handled by classing him with the nocturnal
-        # planets, which is what "contrary to what we said" amounts to: he
-        # is a masculine planet who takes the feminine side of both tests.
+        # Mars's exception applies to the HEMISPHERE ONLY. He is masculine
+        # in every source here, so the sign-gender half of the test is not
+        # what "contrary to what we said" reverses -- and VII.6, 13 restates
+        # the whole rule with no Mars exception at all. Dykes' note on
+        # VII.1, 37 points the same way ("Mars will stand out because he is
+        # a MALE, NOCTURNAL planet"), and the Course Glossary defines Domain
+        # as "in a sign of ITS OWN GENDER and also in its preferred
+        # hemisphere". An earlier version flipped him on both tests, which
+        # required him to be in feminine signs -- a reading no text states.
+        mars_is_masculine_but_nocturnal = (planet == 'Mars')
         is_hayz = contrary_domain = False
         if planet_is_diurnal is not None:
             if planet_is_diurnal:
                 horizon_ok = is_above_horizon if is_diurnal_chart else not is_above_horizon
-                gender_ok = current_sign in MASCULINE_SIGNS
             else:
                 horizon_ok = not is_above_horizon if is_diurnal_chart else is_above_horizon
+            # Sign gender follows the PLANET'S OWN gender, not its sect.
+            # They coincide for six of the seven; Mars is the one that
+            # comes apart, and he keeps the masculine signs.
+            if mars_is_masculine_but_nocturnal or planet_is_diurnal:
+                gender_ok = current_sign in MASCULINE_SIGNS
+            else:
                 gender_ok = current_sign in FEMININE_SIGNS
             is_hayz = horizon_ok and gender_ok
             # VII.6, 36 spells out the opposite pole: "the male ones are in a
