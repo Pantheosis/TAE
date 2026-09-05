@@ -1845,6 +1845,24 @@ def evaluate_escape(planetary_data, sim):
                              'Perfects In (days)': round(best_day, 1)})
     return results
 
+# Sahl's precedence among the three kinds of contact a planet can hold,
+# stated at Ch.3, 44 and enumerated in Dykes' note there: "(1) 'uniting' or
+# a conjunction by degree, (2) a connection by degree from another sign,
+# (3) an aspect by sign. In other words, while degree-based connections can
+# cut each other as in type #1, aspects by sign do not cut each other."
+#
+# The rule itself, at 44: "a connection does not nullify a uniting, but a
+# uniting does NULLIFY a connection, while an aspect does not cut an aspect
+# [but] hands over the sought thing, and a uniting cuts an aspect."
+_CONTACT_NAMES = {0: 'a uniting', 1: 'a connection by degree', 2: 'an aspect by sign'}
+
+def _contact_rank(row):
+    if row['assembly'] and _is_connected(row):
+        return 0
+    if _is_connected(row):
+        return 1
+    return 2
+
 def evaluate_cutting_the_light(planetary_data, sim):
     """Cutting the Light. Type III is Sahl's own Blocking #1, "Cutting the
     Light" (The Introduction Ch.3, 31-34, Fig. 12) -- confirmed against
@@ -1861,20 +1879,54 @@ def evaluate_cutting_the_light(planetary_data, sim):
     140-141, forward-sim) are Abu Ma'shar's own further elaboration, not
     found in Sahl: an intervening planet stations retrograde and enters the
     light planet's own sign before the light planet reaches its original
-    heavy target."""
+    heavy target.
+
+    Type III is ordered by Sahl's own PRECEDENCE (44 and its note, see
+    _contact_rank()), not by nearness alone. Nearness only breaks ties
+    within a rank. Sahl works the case out himself at 46-48, Figure 15:
+    "the Moon is in 10 degrees of Taurus, and Mars in 20 degrees of Taurus,
+    and the Moon is connecting with Venus (and Venus is in 15 degrees of
+    Cancer). So her connection with Venus is PRIOR to her uniting with
+    Mars, BUT the Moon is uniting [with Mars], and that is stronger than an
+    aspect and a connection." The Venus sextile is 5 degrees from exact and
+    the Mars union 10, so sorting by nearness alone produced the opposite
+    of Sahl's stated verdict -- it had the Moon cut off from Mars.
+
+    Note this is the SAME passage that was once misapplied in this project
+    to third-party blocking. 42-43 (Fig. 14) is the third-party case, where
+    Mars unites with Saturn and cuts the Moon's aspect to him; 45-48
+    (Fig. 15) is the one-planet case handled here, where a single planet
+    holds both a union and a connection and the union wins. They are
+    consecutive and easy to conflate."""
     rows = _pairwise_configurations(planetary_data)
     results = []
 
     by_fast = {}
     for r in rows:
         if r['aspect_name'] != 'Aversion':
-            by_fast.setdefault(r['light_name'], []).append(r)
+            by_fast.setdefault(r['applicant'] or r['light_name'], []).append(r)
     for fast, candidates in by_fast.items():
-        applying = sorted((r for r in candidates if r['motion'] == 'Applying'), key=lambda r: abs(r['deviation']))
-        if len(applying) >= 2:
-            nearest = applying[0]['heavy_name']
-            for r in applying[1:]:
-                results.append({'Type': 'III', 'Planet': fast, 'Cut Off From': r['heavy_name'], 'Connects With Instead': nearest})
+        applying = sorted((r for r in candidates if r['motion'] == 'Applying'),
+                           key=lambda r: (_contact_rank(r), abs(r['deviation'])))
+        if len(applying) < 2:
+            continue
+        winner = applying[0]
+        win_rank = _contact_rank(winner)
+        if win_rank == 2:
+            continue   # "an aspect does not cut an aspect" (44)
+        for r in applying[1:]:
+            if _contact_rank(r) == 2 and win_rank != 0:
+                # 44 gives only the uniting as cutting a bare aspect.
+                continue
+            results.append({
+                'Type': 'III',
+                'Planet': fast,
+                'Cut Off From': r['receiver'] or r['heavy_name'],
+                'Connects With Instead': winner['receiver'] or winner['heavy_name'],
+                'Because': f'{_CONTACT_NAMES[win_rank]} outranks {_CONTACT_NAMES[_contact_rank(r)]}'
+                            if win_rank != _contact_rank(r)
+                            else f'nearer by {abs(r["deviation"]) - abs(winner["deviation"]):.1f} deg',
+            })
 
     if sim is not None:
         for r in rows:
@@ -4734,7 +4786,7 @@ if location_query and lat is not None and lon is not None:
                 else:
                     st.write("No non-reception configurations found.")
 
-                st.subheader("Cutting the Light (Sahl, The Introduction Ch.3, 31-34: Type III; Abu Ma'shar VII.5, 120-125: Types I-II)", help='Type III is Sahl\'s own Blocking #1: among several planets a given one is applying to, it connects with whichever is nearest by degree first, cutting off the more distant, originally-favored connection. Types I-II are Abu Ma\'shar\'s later addition: an intervening planet -- by retrograding into the path -- intercepts an applying connection before it reaches its original target.')
+                st.subheader("Cutting the Light (Sahl, The Introduction Ch.3, 31-34: Type III; Abu Ma'shar VII.5, 120-125: Types I-II)", help='Type III is Sahl\'s own Blocking #1: among several planets a given one is applying to, one contact wins and cuts off the others.\n\nWhich one wins is decided by Sahl\'s own PRECEDENCE, not by nearness alone: "a connection does not nullify a uniting, but a uniting does NULLIFY a connection, while an aspect does not cut an aspect, and a uniting cuts an aspect" (Ch.3, 44). The note there ranks the three kinds -- (1) a uniting, i.e. a conjunction by degree; (2) a connection by degree from another sign; (3) an aspect by sign only -- and adds that degree-based connections can cut each other while aspects by sign cannot. Nearness only breaks ties within a rank, and the BECAUSE column says which applied.\n\nSahl works it himself at 46-48 (Fig. 15): Moon 10 Taurus, Mars 20 Taurus, Venus 15 Cancer. "Her connection with Venus is PRIOR to her uniting with Mars, but the Moon is uniting [with Mars], and that is stronger than an aspect and a connection." The Venus sextile is 5 degrees from exact against the Mars union\'s 10, so nearness alone gives the opposite of Sahl\'s verdict; the precedence rule changes the winner for about 7% of planets holding two or more applying contacts.\n\nTypes I-II are Abu Ma\'shar\'s later addition: an intervening planet -- by retrograding into the path -- intercepts an applying connection before it reaches its original target.')
                 if cutting_data:
                     st.dataframe(pd.DataFrame(cutting_data), hide_index=True, width='stretch')
                 else:
