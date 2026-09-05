@@ -2288,7 +2288,7 @@ def evaluate_favor_and_recompense(planetary_data, essential, sect, sim):
             results.append(entry)
     return results
 
-def evaluate_reception(planetary_data, sect):
+def evaluate_reception(planetary_data, sect, sim=None):
     """Reception, under whichever author profile is active. The two differ
     in scope, in direction, and in what counts as strong, so they are
     written out separately rather than blended.
@@ -2303,6 +2303,36 @@ def evaluate_reception(planetary_data, sect):
     Sahl attributes to Masha'allah (54-55, and Abu Ma'shar's own note on
     132 confirms the attribution). Face never appears. A connection is
     required throughout.
+
+    Sahl gives two further forms after that, both previously unimplemented
+    and both now here (they are his own, so they run under his profile
+    only):
+
+    56, RECEPTION AT ONE REMOVE. "If the Moon was connecting with a planet
+    and that planet was connecting with the lord of the house of the Moon
+    or its exaltation, then the Moon is received." The note glosses the
+    second lord as "the exalted lord of the sign in which the Moon is," and
+    calls the whole thing "like a transfer of light which indirectly allows
+    for reception." Both legs are taken in Sahl's own directed sense of
+    "connecting with" -- 6's "going straightaway to ... going towards," not
+    mere proximity, since separating is his separate term at 22. On the
+    loose reading this fired 1.93 times a chart, more often than direct
+    reception; on the directed one, 0.20.
+
+    57, RECEPTION OR UNDERMINING AFTER THE SIGN CHANGE. "If the Moon was
+    empty in course, and then she passed over into the next sign and
+    connected with the lord of her first sign (or its exaltation), IT IS
+    JUST LIKE RECEPTION; and if she connected with a planet OTHER than the
+    lord of her first sign or its exaltation, IT UNDERMINES HER." Both
+    halves are reported: the second is a finding in its own right, not the
+    absence of the first. Needs the forward simulation, which also means
+    the slow planets exclude themselves -- Saturn takes years to change
+    sign, well past the horizon.
+
+    Sahl names the Moon in both, as he does throughout 49-57, but neither
+    mechanism has anything lunar in it and 58 immediately widens the same
+    shape to "the Moon or the lord of the Ascendant," so both are applied
+    to any planet with the paragraph number on the row.
 
     ABU MA'SHAR (Great Introduction VII.5, 129-133). Wider on every axis.
     All five dignities count (129). Reception also runs in REVERSE: "a
@@ -2405,6 +2435,107 @@ def evaluate_reception(planetary_data, sect):
                 'Direction': 'Mutual', 'Via': '–', 'Grade': 'Mutual reception',
                 'Mode': mode,
             })
+
+    if not sahl:
+        return results
+
+    # --- 56: reception at one remove ---------------------------------
+    # "And if the Moon was CONNECTING WITH A PLANET and THAT PLANET was
+    # connecting with the lord of the house of the Moon or its exaltation,
+    # then the Moon is received." The note on 56 glosses the second lord as
+    # "the exalted lord of the sign in which the Moon is," and the note on
+    # the sentence calls the whole thing "like a transfer of light which
+    # indirectly allows for reception."
+    #
+    # Sahl names the Moon, as he does throughout 49-57; the mechanism has
+    # nothing lunar in it, and 58 immediately widens the same shape to "the
+    # Moon or the lord of the Ascendant," so it is applied to any planet
+    # and the paragraph number is on the row.
+    connected_pairs = {frozenset({r['p1'], r['p2']}): r for r in rows
+                        if (r['aspect_name'] != 'Aversion' or _sahl_body_row(r)) and _is_connected(r)}
+
+    def _connected(a, b):
+        return frozenset({a, b}) in connected_pairs
+
+    def _applies_to(a, b):
+        """a is CONNECTING WITH b in Sahl's own directed sense: "a light,
+        quick star GOING STRAIGHTAWAY TO a heavy star ... as long as the
+        planet is GOING TOWARDS the [other] planet" (6). Separating is his
+        separate term (22), so it does not satisfy "connecting with"."""
+        r = connected_pairs.get(frozenset({a, b}))
+        return (r is not None and r['motion'] == 'Applying'
+                and (r['applicant'] or r['light_name']) == a)
+
+    for planet in planetary_data:
+        if planet == 'North Node':
+            continue
+        own_sign = get_zodiac_sign(planetary_data[planet]['longitude'])
+        lords = {SIGN_TO_DOMICILE.get(own_sign)} | {
+            p for p, s in EXALTATIONS.items() if s[0] == own_sign}
+        lords.discard(None)
+        lords.discard(planet)
+        for middle in planetary_data:
+            if middle in (planet, 'North Node') or middle in lords:
+                continue          # middle == the lord is plain 49-52, not 56
+            if not _applies_to(planet, middle):
+                continue
+            for lord in sorted(lords):
+                if lord in planetary_data and _applies_to(middle, lord):
+                    results.append({
+                        'Receiver': lord, 'Received': planet,
+                        'Direction': f'Received at one remove, via {middle} (56)',
+                        'Via': f"lord of {own_sign}", 'Grade': 'Indirect reception (56)',
+                        'Mode': 'By connection',
+                    })
+
+    # --- 57: reception, or undermining, after the sign change ---------
+    # "And if the Moon was EMPTY IN COURSE, and then she PASSED OVER INTO
+    # THE NEXT SIGN and connected with the lord of her first sign (or its
+    # exaltation), IT IS JUST LIKE RECEPTION; and if she connected with a
+    # planet OTHER than the lord of her first sign or its exaltation, IT
+    # UNDERMINES HER." Both halves are reported: the second is a finding,
+    # not the absence of one.
+    if sim is not None:
+        for planet in planetary_data:
+            if planet == 'North Node' or planet not in sim['events']:
+                continue
+            if any(_connected(planet, other) for other in planetary_data
+                    if other not in (planet, 'North Node')):
+                continue          # not empty in course
+            exits = sim['events'][planet]['sign_exits']
+            if not exits:
+                continue
+            ingress = exits[0]
+            first_lord = SIGN_TO_DOMICILE.get(get_zodiac_sign(planetary_data[planet]['longitude']))
+            exalted = next((p for p, s in EXALTATIONS.items()
+                             if s[0] == get_zodiac_sign(planetary_data[planet]['longitude'])), None)
+            wanted = {first_lord, exalted} - {None, planet}
+            best, best_day = None, None
+            for other in planetary_data:
+                if other in (planet, 'North Node'):
+                    continue
+                target = _configuration_target_at(sim, planet, other, ingress + 0.05)
+                if target is None:
+                    continue
+                day = _perfection_day(sim, planet, other, target, after_day=ingress)
+                if day is not None and (best_day is None or day < best_day):
+                    best, best_day = other, day
+            if best is None:
+                continue
+            if best in wanted:
+                results.append({
+                    'Receiver': best, 'Received': planet,
+                    'Direction': f'Just like reception, after the sign change (57)',
+                    'Via': 'lord of the sign it left',
+                    'Grade': f'Reached on day {best_day:.0f}', 'Mode': 'By connection',
+                })
+            else:
+                results.append({
+                    'Receiver': best, 'Received': planet,
+                    'Direction': 'UNDERMINED after the sign change (57)',
+                    'Via': f"connects with {best}, not the lord of the sign it left",
+                    'Grade': f'Reached on day {best_day:.0f}', 'Mode': 'By connection',
+                })
     return results
 
 def evaluate_non_reception(planetary_data, sect):
@@ -3488,7 +3619,7 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
     52's "their own Dragons" -- each planet's own nodes, where only the
     Moon's are computed here."""
     rows = _pairwise_configurations(planetary_data)
-    reception_rows = evaluate_reception(planetary_data, sect)
+    reception_rows = evaluate_reception(planetary_data, sect, sim)
     connected_lookup = {}
     configured_lookup = {}  # frozenset -> aspect name, for non-Connected "look"/assembly checks
     for row in rows:
@@ -4855,7 +4986,7 @@ if location_query and lat is not None and lon is not None:
         blocking_data = evaluate_blocking(p_data)
         enclosure_data = evaluate_enclosure(p_data)
         handing_over_data = evaluate_handing_over(p_data, sect)
-        reception_data = evaluate_reception(p_data, sect)
+        reception_data = evaluate_reception(p_data, sect, sim)
         non_reception_data = evaluate_non_reception(p_data, sect)
         strength_data = evaluate_strength_of_planets(p_data, essential, accidental, chart_data['ascendant'], sect, chart_data['houses'])
         weakness_data = evaluate_weakness_of_planets(p_data, essential, accidental, chart_data['ascendant'], sect)
@@ -5106,7 +5237,7 @@ if location_query and lat is not None and lon is not None:
                 else:
                     st.write("No handing-over configurations found.")
 
-                st.subheader(f"Reception — {CONNECTION_PROFILE} rule", help="Who receives whom, on what dignity, which way round, and how strongly. The two authors differ on every one of those, so the active Connection rule in the sidebar governs here too.\n\nSAHL (Ch.3, 49-55) runs one way only -- the connecting planet stands in a dignity of the planet it connects with, and so is received by it (52: the Moon in Aries connecting with Mars, \"he receives her because Aries is his house\"). House or exaltation is perfect reception; triplicity alone is expressly ranked below it (50); bound counts only paired with triplicity, which Sahl credits to Masha'allah (54-55). Face never appears, and a connection is always required.\n\nABU MA'SHAR (VII.5, 129-133) is wider on every axis: all five dignities count (129), reception also runs in REVERSE where the accepting planet sits in the connector's dignity (130, which exists because Saturn is otherwise too slow to ever be received), house/exaltation is strongest (131), a lone minor dignity is weak unless two of bound/triplicity/face combine into a complete reception (132), and reception can hold by looking with no connection at all (133).\n\nAn empty table is NOT non-reception -- that is a separate set of hostile configurations, in the table below.")
+                st.subheader(f"Reception — {CONNECTION_PROFILE} rule", help="Who receives whom, on what dignity, which way round, and how strongly. The two authors differ on every one of those, so the active Connection rule in the sidebar governs here too.\n\nSAHL (Ch.3, 49-55) runs one way only -- the connecting planet stands in a dignity of the planet it connects with, and so is received by it (52: the Moon in Aries connecting with Mars, \"he receives her because Aries is his house\"). House or exaltation is perfect reception; triplicity alone is expressly ranked below it (50); bound counts only paired with triplicity, which Sahl credits to Masha'allah (54-55). Face never appears, and a connection is always required.\n\nABU MA'SHAR (VII.5, 129-133) is wider on every axis: all five dignities count (129), reception also runs in REVERSE where the accepting planet sits in the connector's dignity (130, which exists because Saturn is otherwise too slow to ever be received), house/exaltation is strongest (131), a lone minor dignity is weak unless two of bound/triplicity/face combine into a complete reception (132), and reception can hold by looking with no connection at all (133).\n\nSahl has two further forms, both under his profile only. 56, RECEPTION AT ONE REMOVE: \"if the Moon was connecting with a planet and that planet was connecting with the lord of the house of the Moon or its exaltation, then the Moon is received\" -- the note there calls it \"like a transfer of light which indirectly allows for reception.\" Both legs are read in Sahl's directed sense of connecting (6: \"going straightaway to ... going towards\"), since separating is his separate term at 22.\n\n57, AFTER THE SIGN CHANGE: \"if the Moon was empty in course, and then she passed over into the next sign and connected with the lord of her first sign, it is JUST LIKE RECEPTION; and if she connected with a planet OTHER than [that], IT UNDERMINES HER.\" Both halves appear -- the undermining is a finding, not a blank.\n\nAn empty table is NOT non-reception -- that is a separate set of hostile configurations, in the table below.")
                 if reception_data:
                     st.dataframe(pd.DataFrame(reception_data), hide_index=True, width='stretch')
                 else:
