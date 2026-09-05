@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timezone, time, timedelta
 from itertools import combinations
+from xml.sax.saxutils import escape
 from timezonefinder import TimezoneFinder
 import pytz
 from pathlib import Path
@@ -352,9 +353,14 @@ def generate_hybrid_svg(chart_data, location_query, lat, lon, dt_local, tz_name)
 
     # Central Metadata Hub
     svg.append(f'<text x="{cx}" y="{cy - 55}" text-anchor="middle" font-size="13" font-weight="bold" fill="#000000">Whole-Sign Hybrid Chart</text>')
-    svg.append(f'<text x="{cx}" y="{cy - 35}" text-anchor="middle" font-size="11" fill="#000000">{location_query}</text>')
+    # User-supplied text goes through XML escaping before it reaches the
+    # markup. A place name containing & or < would otherwise produce
+    # malformed XML and silently break the whole wheel, and the string is
+    # free-form: it comes from the City Search box or a saved chart's
+    # stored label.
+    svg.append(f'<text x="{cx}" y="{cy - 35}" text-anchor="middle" font-size="11" fill="#000000">{escape(str(location_query))}</text>')
     svg.append(f'<text x="{cx}" y="{cy - 20}" text-anchor="middle" font-size="10" fill="#000000">Lat: {lat:.4f}° | Lon: {lon:.4f}°</text>')
-    svg.append(f'<text x="{cx}" y="{cy - 5}" text-anchor="middle" font-size="10" fill="#000000">{dt_local.strftime("%Y-%m-%d %H:%M")} [{tz_name}]</text>')
+    svg.append(f'<text x="{cx}" y="{cy - 5}" text-anchor="middle" font-size="10" fill="#000000">{dt_local.strftime("%Y-%m-%d %H:%M")} [{escape(str(tz_name))}]</text>')
     svg.append(f'<text x="{cx}" y="{cy + 15}" text-anchor="middle" font-size="10" font-weight="bold" fill="#000000">Sect: {chart_data["sect"]}</text>')
     svg.append(f'<text x="{cx}" y="{cy + 30}" text-anchor="middle" font-size="10" fill="#000000">Layout: Whole Sign + Alchabitius Cusps</text>')
     svg.append(f'<text x="{cx}" y="{cy + 45}" text-anchor="middle" font-size="10" fill="#000000">Zodiac: Tropical</text>')
@@ -2197,7 +2203,24 @@ def _find_sun_event(jd_start, lat, lon, want_rise):
         )
     return tret[0]
 
-def calculate_chronocrats(jd_utc, lat, lon, local_dt):
+def _weekday_from_jd(jd_ut, utc_offset_hours):
+    """Local weekday (Monday=0, matching DAY_LORD_BY_WEEKDAY) taken from the
+    Julian Day rather than from datetime.weekday().
+
+    This matters for every chart before the Gregorian reform. The chart is
+    computed with swe.JUL_CAL for pre-1582 dates, so the same digits denote
+    a Julian-calendar date -- but datetime.weekday() reads those digits as
+    PROLEPTIC GREGORIAN, and the two calendars had drifted ten days apart by
+    1582. For 1582-10-04, a Thursday in the Julian calendar, datetime says
+    Monday: a three-planet error in the Lord of the Day, and through the
+    Chaldean order an error in the Lord of the Hour as well.
+
+    The Julian Day count is continuous across the reform and knows nothing
+    of either calendar, so it is the reliable source. The weekday wanted is
+    the LOCAL one, so the UT day is shifted by the local offset first."""
+    return int(math.floor(jd_ut + (utc_offset_hours / 24.0) + 0.5)) % 7
+
+def calculate_chronocrats(jd_utc, lat, lon, local_dt, utc_offset_hours=0.0):
     """Planetary Day (from the astrological day, which begins at Sunrise —
     not the calendar weekday) and Planetary Hour (from the unequal/temporal
     hour system, bracketed by real sunrise/sunset times for this date and
@@ -2223,8 +2246,7 @@ def calculate_chronocrats(jd_utc, lat, lon, local_dt):
         # elapsed time since the most recent sunrise to sample the correct
         # weekday.
         time_since_sunrise = jd_utc - sunrise_before
-        true_day_dt = local_dt - timedelta(days=time_since_sunrise)
-        day_lord = DAY_LORD_BY_WEEKDAY[true_day_dt.weekday()]
+        day_lord = DAY_LORD_BY_WEEKDAY[_weekday_from_jd(jd_utc - time_since_sunrise, utc_offset_hours)]
 
         is_diurnal_hour = sunrise_before > sunset_before
         if is_diurnal_hour:
@@ -2248,7 +2270,7 @@ def calculate_chronocrats(jd_utc, lat, lon, local_dt):
         # astrological-day rollover correction) and an equal 2-hour
         # division of the 24-hour civil day, continuing the same 7-cycle.
         approximate = True
-        day_lord = DAY_LORD_BY_WEEKDAY[local_dt.weekday()]
+        day_lord = DAY_LORD_BY_WEEKDAY[_weekday_from_jd(jd_utc, utc_offset_hours)]
         cycle_offset = min(local_dt.hour // 2, 11)
 
     start_index = CHALDEAN_HOUR_ORDER.index(day_lord)
@@ -2407,6 +2429,12 @@ def _current_bound_width(lon):
         lower = float(limit)
     return 30.0 - lower
 
+# VII.6, 58 says an encloser counts as present in the 2nd or 12th sign "by
+# its body or rays." True (the default) is the literal text. False selects
+# this project's own conservative variant -- see the note in
+# _abu_mashar_enclosed().
+SIGN_ENCLOSURE_BODIES_ONLY = False
+
 def _ray_degrees(lon):
     """A planet's body plus the degrees into which it casts its rays."""
     return [(lon + a) % 360.0 for a in (0.0, 60.0, 90.0, 120.0, 180.0, 240.0, 270.0, 300.0)]
@@ -2426,8 +2454,13 @@ def _abu_mashar_enclosed(planet, enclosing_set, planetary_data, rows, orb=7.0):
     Saturn's opposition ray from 18 Aries (5 degrees ahead) and Mars's
     sextile ray from 10 Leo (3 degrees behind).
 
-    Type 2 by sign (58): one enclosing planet, by body or rays, is in the
-    SECOND sign from the planet and the other is in the twelfth.
+    Type 2 by sign (58): one enclosing planet, by body OR RAYS, is in the
+    SECOND sign from the planet and the other is in the twelfth. Taken
+    literally this fires on about 43 percent of placements, since a planet's
+    rays reach eight of the twelve signs; SIGN_ENCLOSURE_BODIES_ONLY selects
+    a bodies-only variant at about 2 percent. The literal text is the
+    default -- a rule being common is not evidence that it was meant to be
+    rare.
 
     Dissolution (60-61): "if the Sun or one of the fortunes looked at the
     enclosed planet, and there was less than 7 degrees between the planet
@@ -2465,26 +2498,31 @@ def _abu_mashar_enclosed(planet, enclosing_set, planetary_data, rows, orb=7.0):
                 kind = 'separating/connecting (57)'
                 break
     if kind is None:
-        # Type 2 by sign (58). NOTE A DELIBERATE DIVERGENCE FROM THE
-        # LITERAL WORDING. 58 says the infortune is in the second sign
-        # "(by its body or rays)" and the other in the twelfth "or its
-        # rays". Counting rays makes this fire on 41-44% of all placements
-        # measured over 3,654 planet-checks, because a planet's rays reach
-        # eight of the twelve signs, so almost any pair of enclosers covers
-        # almost any pair of adjacent signs -- enclosure would be the
-        # normal condition rather than a notable one. Restricting it to the
-        # enclosing BODIES brings it to 1.4-2.5%, in line with the
-        # degree-based type at about 4%. Bodies only is used here; flip
-        # `_sign_positions` back to the ray lists to restore the literal
-        # reading.
+        # Type 2 by sign (58): one encloser in the second sign from the
+        # planet "by its body or rays," the other in the twelfth.
+        #
+        # A previous pass restricted this to BODIES because the literal
+        # reading fires on 41-44% of placements over 3,654 planet-checks
+        # (a planet's rays reach eight of the twelve signs), against
+        # 1.4-2.5% for bodies alone. That frequency argument is real but it
+        # is not textual authority, and the text says "or rays" twice. The
+        # literal reading is the default; SIGN_ENCLOSURE_BODIES_ONLY selects
+        # the conservative variant, which is this project's own and is
+        # labelled as such wherever it is shown.
         sign_idx = int(lon // 30)
         second = (sign_idx + 1) % 12
         twelfth = (sign_idx - 1) % 12
-        a_sign = int(planetary_data[members[0]]['longitude'] // 30)
-        b_sign = int(planetary_data[members[1]]['longitude'] // 30)
-        if ((a_sign == second and b_sign == twelfth)
-                or (b_sign == second and a_sign == twelfth)):
-            kind = 'by sign, 2nd and 12th (58)'
+        if SIGN_ENCLOSURE_BODIES_ONLY:
+            a_signs = {int(planetary_data[members[0]]['longitude'] // 30)}
+            b_signs = {int(planetary_data[members[1]]['longitude'] // 30)}
+            variant = 'bodies only, project variant'
+        else:
+            a_signs = {int(d // 30) for d in a_rays}
+            b_signs = {int(d // 30) for d in b_rays}
+            variant = 'body or rays'
+        if ((second in a_signs and twelfth in b_signs)
+                or (second in b_signs and twelfth in a_signs)):
+            kind = f'by sign, 2nd and 12th, {variant} (58)'
     if kind is None:
         return False, None, None
 
@@ -2971,12 +3009,17 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             positive.append('Aspect/assembly with a fortune (2)')
         if averted_from(planet, INFORTUNES):
             positive.append('Infortunes averted (3)')
-        separating_infortune = any(
-            r['light_name'] == planet and r['heavy_name'] in INFORTUNES and r['motion'] == 'Separating' and _is_connected(r)
+        # 4: "Or they are separating from a FORTUNE and connecting with a
+        # fortune" -- surrounded by benefics in time. An earlier version
+        # tested separation from an INFORTUNE, which is the shape of 57's
+        # enclosure (separating from one infortune, connecting with the
+        # other) and belongs to the misfortune list, not this one.
+        separating_fortune = any(
+            r['light_name'] == planet and r['heavy_name'] in FORTUNES and r['motion'] == 'Separating' and _is_connected(r)
             for r in rows
         )
-        if separating_infortune and connected_to(planet, FORTUNES):
-            positive.append('Separating infortune, connecting fortune (4)')
+        if separating_fortune and connected_to(planet, FORTUNES):
+            positive.append('Separating fortune, connecting fortune (4)')
         # 5 / 62: "if the planet or sign was enclosed by the fortunes, then
         # that is of superior good fortune."
         is_enc_f, enc_kind_f, _diss = _abu_mashar_enclosed(planet, FORTUNES, planetary_data, rows)
@@ -2984,15 +3027,25 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             positive.append(f'Enclosed between the two fortunes, {enc_kind_f} (5, 62)')
         if acc['Cazimi']:
             positive.append('Cazimi (6)')
-        if configured_to(planet, {'Sun'}, {'Trine', 'Sextile'}):
+        # 7, like 2 and 8, says "in the INSPECTION of" -- and the note on 2
+        # glosses inspection as an aspect exact by degree. This was the one
+        # of the three still testing bare whole-sign configuration.
+        if connected_to(planet, {'Sun'}, {'Trine', 'Sextile'}):
             positive.append('Trine/sextile the Sun (7)')
         # 8 puts no aspect restriction on the Moon's inspection, unlike 2
         # and 7 which name theirs; an earlier version limited it to the
         # trine and sextile borrowed from 7.
         if planet != 'Moon' and connected_to(planet, {'Moon'}) and moon_corruption_count == 0:
             positive.append('Aspects the (uncorrupted) Moon (8)')
-        if acc['Swift']:
-            positive.append('Swift, increasing in light (9)')
+        # 9 is a conjunction, not a synonym: "quick in motion, INCREASING IN
+        # LIGHT and number." VII.1, 19-21 defines increasing in light as
+        # falling from the apogee toward the earth, so geocentric distance
+        # decreasing. "Number" is the equation-table term of VII.1, 23-25,
+        # which Dykes' note there says has no direct astrological import, so
+        # it is not required. An earlier version accepted swiftness alone.
+        increasing_in_light = data.get('speed_in_dist', 0.0) < 0
+        if acc['Swift'] and increasing_in_light:
+            positive.append('Swift and increasing in light (9)')
         halb = ess['Domicile'] or ess['Exalt'] or ess['Triplicity'] or ess['Term'] or ess['Face'] or acc['Joy']
         if halb:
             positive.append('Halb (10)')
@@ -3096,13 +3149,29 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
                 positive.append('Second station (24)')
             elif res_next[3] < speed:
                 station = 'first'
-        if not acc['Combust'] and not acc['UnderBeams']:
-            positive.append('Out of the rays (25)')
+        # 25 is "GOING OUT of the rays of the Sun," a departure, not a
+        # location: VII.2, 12 has the planet "begin in [its] advancement
+        # towards easternization" at exactly this point. So the elongation
+        # must be opening, not merely large. An earlier version credited
+        # every planet anywhere outside the rays, including one sinking back
+        # toward them.
+        _signed_sun = ((lon - planetary_data['Sun']['longitude'] + 180.0) % 360.0) - 180.0
+        elongation_opening = (
+            planet != 'Sun'
+            and (speed - planetary_data['Sun']['speed_in_lon']) * _signed_sun > 0
+        )
+        if not acc['Combust'] and not acc['UnderBeams'] and elongation_opening:
+            positive.append('Going out of the rays (25)')
         stake_or_following = house in ANGLE_HOUSES | SUCCEDENT_HOUSES
         if stake_or_following:
             positive.append('Stake or following (26)')
         is_superior = planet in {'Saturn', 'Jupiter', 'Mars'}
-        is_inferior = planet in {'Venus', 'Mercury'}
+        # "THE THREE inferior planets" (29, 46), against "the three
+        # superiors" (27, 45). Venus and Mercury are only two: the third
+        # inferior is the Moon, who is below the Sun in the same sense the
+        # other two are. An earlier version left her out of both clauses,
+        # so she was tested by neither the superior nor the inferior rule.
+        is_inferior = planet in {'Venus', 'Mercury', 'Moon'}
         sun_lon = planetary_data['Sun']['longitude']
         signed_from_sun = ((lon - sun_lon + 180.0) % 360.0) - 180.0
         is_eastern_of_sun = signed_from_sun < 0  # rises before the Sun
@@ -3123,15 +3192,20 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         # inferior and so fell through both clauses: "and if the Sun was in
         # these two quadrants or in the male signs, then he is also strong,
         # UNLESS HE IS IN LIBRA" -- his own sign of fall.
+        #
+        # Note the shape: these are OR-clauses, so both halves matching is
+        # still ONE condition satisfied. Each such paragraph contributes a
+        # single entry, with the evidence named inside it, rather than one
+        # vote per matching sub-clause.
         if planet == 'Sun' and sign != 'Libra':
-            if in_masculine_quadrant:
-                positive.append('Sun in a masculine quadrant (28)')
-            if sign in MASCULINE_SIGNS:
-                positive.append('Sun in a masculine sign (28)')
-        if is_inferior and not is_eastern_of_sun:
-            positive.append('Inferior, western of the Sun (29)')
-        if is_inferior and not in_masculine_quadrant:
-            positive.append('Inferior, in a feminine quadrant (29)')
+            sun_28 = ([ 'masculine quadrant' ] if in_masculine_quadrant else []) + \
+                     ([ 'masculine sign' ] if sign in MASCULINE_SIGNS else [])
+            if sun_28:
+                positive.append(f"Sun, {' and '.join(sun_28)} (28)")
+        inf_29 = ([ 'western of the Sun' ] if not is_eastern_of_sun else []) + \
+                 ([ 'feminine quadrant' ] if not in_masculine_quadrant else [])
+        if is_inferior and inf_29:
+            positive.append(f"Inferior, {' and '.join(inf_29)} (29)")
 
         # --- Weakness (VII.6, 30-46) --------------------------------------
         # (negative starts here; everything before was good fortune/strength)
@@ -3153,10 +3227,12 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
                 negative.append('Retrograde (33)')
         if acc['Combust'] or acc['UnderBeams']:
             negative.append(f"Under the rays, {acc['SolarSide']} (34)")
+        # 35 names the dark degrees and nothing else. The dusky and empty
+        # bands come from the separate brightness scheme of V.20 (Fig. 61);
+        # an earlier version voted them here as extra "minor" negatives,
+        # which is this app's invention, not 35's.
         if brightness == 'Dark':
             negative.append('Dark degree (35)')
-        elif brightness in ('Dusky', 'Empty'):
-            negative.append(f'{brightness} degree, minor (35)')
         # 36 is the exact mirror of 13, and needs BOTH halves wrong: "the
         # male ones are in a FEMALE sign, or in the female degrees, by day
         # UNDER the earth, and by night above the earth." VII.1, 39 keeps a
@@ -3263,19 +3339,20 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         # the Sun is if he is in the feminine signs or in these two quadrants
         # as well, UNLESS HE IS IN THE NINTH: FOR IT IS HIS JOY)." The Sun
         # previously fell through both the superior and inferior clauses and
-        # so was never tested here at all.
+        # so was never tested here at all. One entry per paragraph, as at 28.
         if planet == 'Sun' and house != 9:
-            if not in_masculine_quadrant:
-                negative.append('Sun in a feminine quadrant (45)')
-            if sign in FEMININE_SIGNS:
-                negative.append('Sun in a feminine sign (45)')
+            sun_45 = ([ 'feminine quadrant' ] if not in_masculine_quadrant else []) + \
+                     ([ 'feminine sign' ] if sign in FEMININE_SIGNS else [])
+            if sun_45:
+                negative.append(f"Sun, {' and '.join(sun_45)} (45)")
         # "The beginning of their easternization" is where VII.2, 40-41 puts
         # it: from leaving the burned band until strong easternization at
         # 12 deg, not the flat 15 deg an earlier version used.
-        if is_inferior and is_eastern_of_sun and abs(signed_from_sun) < SOLAR_RAYS_ORB[planet][0]:
-            negative.append('Inferior, beginning of easternization (46)')
-        if is_inferior and in_masculine_quadrant:
-            negative.append('Inferior, in a masculine quadrant (46)')
+        inf_46 = ([ 'beginning of easternization' ]
+                  if is_eastern_of_sun and abs(signed_from_sun) < SOLAR_RAYS_ORB[planet][0] else []) + \
+                 ([ 'masculine quadrant' ] if in_masculine_quadrant else [])
+        if is_inferior and inf_46:
+            negative.append(f"Inferior, {' and '.join(inf_46)} (46)")
 
         n_weakness = len(negative)
 
@@ -3289,9 +3366,13 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         # chart rather than assumed. An earlier version applied no degree
         # condition at all.
         bound_width = _current_bound_width(lon)
+        # The infortune must be the OTHER planet in the pair. Testing
+        # "either member is an infortune" made Mars and Saturn satisfy this
+        # against any partner at all, since each is itself an infortune --
+        # so both malefics were permanently near an infortune by definition.
         close_to_infortune = any(
             r['aspect_name'] != 'Aversion' and planet in (r['p1'], r['p2'])
-            and (r['p1'] in INFORTUNES or r['p2'] in INFORTUNES)
+            and ({r['p1'], r['p2']} - {planet}) & INFORTUNES
             and abs(r['deviation']) < bound_width
             for r in rows
         )
@@ -3307,30 +3388,61 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             other_idx = int(other_lon // 30)
             forward = (other_idx - sign_idx) % 12 + 1
             # 50: "elevated above them from the TENTH OR ELEVENTH from
-            # their place" -- an earlier version also admitted the ninth.
-            if other in INFORTUNES and forward in (10, 11) and not received:
-                negative.append('Overcome by an infortune (50)')
-                break
+            # their place (and it is bad for that in all of this IF THE
+            # INFORTUNES WERE NOT RECEPTIVE OF THEM)" -- an earlier version
+            # admitted the ninth, and read the reception clause as reception
+            # by anybody, so being received by a fortune elsewhere in the
+            # chart suppressed an overcoming by Saturn. The escape is that
+            # THIS infortune receives it.
+            if other in INFORTUNES and forward in (10, 11):
+                received_by_other = any(
+                    rec['Receiver'] == other and rec['Received'] == planet
+                    or (rec['Direction'] == 'Mutual'
+                        and {planet, other} <= set(rec['Receiver'].split(' & ')))
+                    for rec in reception_rows
+                )
+                if not received_by_other:
+                    negative.append(f'Overcome by {other}, unreceived (50)')
+                    break
         if configured_to(planet, {'Sun'}, {'Conjunction', 'Square', 'Opposition'}):
             negative.append('Assembly/square/opposition to the Sun (51)')
         north_node_lon = planetary_data['North Node']['longitude']
         south_node_lon = (north_node_lon + 180.0) % 360.0
-        node_dist = min(abs(((lon - north_node_lon + 180) % 360) - 180), abs(((lon - south_node_lon + 180) % 360) - 180))
+        head_dist = abs(((lon - north_node_lon + 180) % 360) - 180)
+        tail_dist = abs(((lon - south_node_lon + 180) % 360) - 180)
+        with_head = head_dist <= tail_dist
+        node_dist = min(head_dist, tail_dist)
         # 52 sets the general orb at 12 deg. 53 then grades it: "the most
         # harmful they can be for the SUN is if there were 4 deg between him
         # and them ... and the most harmful they can be for the MOON is if
         # there were 12 deg between her and one of them." So the Sun's
         # damage concentrates in a narrow 4 deg, the Moon's spans the whole
         # 12 deg. An earlier version applied one flat 12 deg to everything.
+        #
+        # 54-55 add a polarity, which the earlier version collapsed by
+        # taking the nearer node without recording which it was: "the Head's
+        # nature is that of increase ... the nature of the Tail is decrease,"
+        # so the Head is a fortune with the fortunes and an infortune with
+        # the infortunes, and the Tail the reverse. Abu Ma'shar reports this
+        # as the ancients' view rather than asserting it ("some of the
+        # ancients claimed"), so it is named in the label and not scored
+        # separately.
         if node_dist <= 12.0:
-            if planet == 'Sun' and node_dist <= 4.0:
-                negative.append('With the Head or Tail, at his worst (52-53)')
-            elif planet == 'Sun':
-                negative.append('With the Head or Tail (52)')
-            elif planet == 'Moon':
-                negative.append('With the Head or Tail, at her worst (52-53)')
+            node_name = 'Head' if with_head else 'Tail'
+            if planet in FORTUNES:
+                polarity = 'increasing its good' if with_head else 'taking from its good'
+            elif planet in INFORTUNES:
+                polarity = 'increasing its evil' if with_head else 'taking from its evil'
             else:
-                negative.append('With the Head or Tail (52-55)')
+                polarity = 'increase' if with_head else 'decrease'
+            worst = ((planet == 'Sun' and node_dist <= 4.0)
+                     or (planet == 'Moon' and node_dist <= 12.0))
+            if planet == 'Sun' and not worst:
+                negative.append(f'With the {node_name}, {polarity} (52, 54-55)')
+            elif worst:
+                negative.append(f'With the {node_name} at its worst, {polarity} (52-55)')
+            else:
+                negative.append(f'With the {node_name}, {polarity} (52-55)')
 
         # --- Enclosure by the infortunes (VII.6, 56-62) -------------------
         # Abu Ma'shar's OWN two types, not Sahl's borrowed: see
@@ -3338,6 +3450,13 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         # remains Sahl's (Ch.3, 119-123); this is the VII.6 table, so it
         # uses VII.6's version, including the dissolution of 60-61 that an
         # earlier pass of this project deleted as unsourced.
+        #
+        # The dissolution is a positive entry belonging to the MISFORTUNE
+        # section (56-62), not to Strength (21-29). It is appended after the
+        # strength count has already been taken, so the boundary is recorded
+        # here rather than inferred from list length -- an earlier version
+        # inferred it, and filed every dissolved enclosure under Strength.
+        n_positive_through_strength = len(positive)
         is_enc, enc_kind, dissolver = _abu_mashar_enclosed(planet, INFORTUNES, planetary_data, rows)
         if is_enc:
             if dissolver:
@@ -3345,8 +3464,13 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             else:
                 negative.append(f'Enclosed by the infortunes, {enc_kind} (56-58)')
 
-        # --- Corruption of the Moon (Sahl Ch.3, 103-112), Moon only -------
-        moon_defects = _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect) if planet == 'Moon' else []
+        # --- Corruption of the Moon (VII.6, 63-74), Moon only -------------
+        # This is Abu Ma'shar's OWN eleven, which is what belongs in a table
+        # that is otherwise wholly VII.6. Sahl's ten (The Introduction Ch.3,
+        # 103-112) remain in Sahl's own tables under their own numbering --
+        # the two lists overlap only partly, and neither is a variant
+        # reading of the other.
+        moon_defects = _abu_mashar_moon_corruption(planetary_data, ascendant_lon, jd) if planet == 'Moon' else []
 
         # --- The Good/Bad verdict -----------------------------------------
         # NOT Abu Ma'shar's. He enumerates these conditions; he nowhere adds
@@ -3384,9 +3508,9 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             # The four sections VII.6 itself is organised into, reported
             # separately so the picture doesn't collapse to one number.
             'Good Fortune': n_good_fortune,
-            'Strength': len(positive) - n_good_fortune,
+            'Strength': n_positive_through_strength - n_good_fortune,
             'Weakness': n_weakness,
-            'Misfortune': len(negative) - n_weakness,
+            'Misfortune': (len(negative) - n_weakness) + (len(positive) - n_positive_through_strength),
             'Moon Defects': len(moon_defects),
             'Positive Score': len(positive),
             'Negative Score': len(negative) + len(moon_defects),
@@ -3396,6 +3520,125 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             'Negative Labels': negative + moon_defects,
         }
     return results
+
+def _twelfth_part_sign(lon):
+    """The sign holding a point's twelfth-part. Each sign's 30 degrees are
+    mapped onto the twelve signs in order, 2.5 degrees apiece, beginning
+    with the sign itself.
+
+    NOTE ON PROVENANCE: both authors USE twelfth-parts -- Abu Ma'shar makes
+    the Moon's twelfth-part falling to Saturn or Mars her fifth corruption
+    (VII.6, 68) and counts assembly with them among the ways planets meet
+    (VII.4, 2), and Sahl devotes On Nativities Ch.2.6 to them -- but neither
+    passage in hand states the formula. This is the standard Hellenistic and
+    Arabic construction, supplied from convention rather than from the texts
+    available to this project."""
+    sign_idx = int(lon // 30)
+    step = int((lon % 30.0) // 2.5)
+    return get_zodiac_sign(((sign_idx + step) % 12) * 30.0 + 15.0)
+
+def _abu_mashar_moon_corruption(planetary_data, ascendant_lon, jd=None):
+    """The ELEVEN corruptions of the Moon, Abu Ma'shar's own (Great
+    Introduction VII.6, 63-74) -- announced at 63 as "in 11 ways" and
+    enumerated one per paragraph through 74.
+
+    Kept deliberately separate from Sahl's ten (The Introduction Ch.3,
+    103-112, in _corruption_of_the_moon_labels()). They are not two
+    transcriptions of one list: Abu Ma'shar has eclipse, the twelfth-part of
+    Saturn or Mars, southern latitude and the ninth house, none of which
+    appear in Sahl; Sahl has her own fall, connection with a fallen planet,
+    and wildness, none of which appear here. The VII.6 condition table uses
+    this list because that table is otherwise wholly VII.6; Sahl's tables
+    keep Sahl's.
+
+    64's "harsher" clause -- eclipsed in the natal sign or its trine or
+    square -- needs a radix separate from the chart being judged and is not
+    implemented for a natal chart, which IS the root."""
+    moon = planetary_data['Moon']
+    lon, lat, speed = moon['longitude'], moon['latitude'], moon['speed_in_lon']
+    sun_lon = planetary_data['Sun']['longitude']
+    sign = get_zodiac_sign(lon)
+    rows = _pairwise_configurations(planetary_data)
+    labels = []
+
+    signed_sun = ((lon - sun_lon + 180.0) % 360.0) - 180.0
+    elongation = abs(signed_sun)
+
+    # [1] (64) Eclipsed. A lunar eclipse needs her near the Sun's exact
+    # opposition AND near a node; a solar eclipse is the Moon's conjunction
+    # under the same node condition. Swiss Ephemeris is asked directly when
+    # a julian day is available, and the geometry is the fallback.
+    north_node_lon = planetary_data['North Node']['longitude']
+    node_dist = min(abs(((lon - north_node_lon + 180) % 360) - 180),
+                    abs(((lon - (north_node_lon + 180.0) + 180) % 360) - 180))
+    eclipsed = False
+    if jd is not None:
+        try:
+            # retflag > 0 means an eclipse is in progress at this moment.
+            eclipsed = swe.lun_eclipse_how(jd, [0.0, 0.0, 0.0])[0] > 0
+        except Exception:
+            eclipsed = False
+    if not eclipsed:
+        eclipsed = node_dist <= 12.0 and (elongation >= 168.0 or elongation <= 12.0)
+    if eclipsed:
+        labels.append('Eclipsed (64)')
+
+    # [2] (65) Under the rays: 12 degrees between her and the Sun's body,
+    # "in the front or in the rear."
+    if elongation <= 12.0:
+        labels.append('Within 12 degrees of the Sun (65)')
+
+    # [3] (66) The same 12 degrees around the minute of his opposition,
+    # "going towards his opposition or flowing away from it."
+    if abs(elongation - 180.0) <= 12.0:
+        labels.append('Within 12 degrees of the Sun\'s opposition (66)')
+
+    # [4] (67) "With the infortunes or they were looking at her" -- assembly
+    # or aspect, and the looking half is whole-sign by its own wording.
+    for infortune in sorted(INFORTUNES):
+        row = next((r for r in rows if {r['p1'], r['p2']} == {'Moon', infortune}), None)
+        if row and row['aspect_name'] != 'Aversion':
+            labels.append(f"With or looked at by {infortune} (67)")
+            break
+
+    # [5] (68) In the twelfth-part of Saturn or Mars -- the twelfth-part
+    # falling in a sign those two rule.
+    tp_sign = _twelfth_part_sign(lon)
+    tp_lord = SIGN_TO_DOMICILE.get(tp_sign)
+    if tp_lord in INFORTUNES:
+        labels.append(f'In the twelfth-part of {tp_lord} ({tp_sign}) (68)')
+
+    # [6] (69) With the Head or Tail within 12 degrees.
+    if node_dist <= 12.0:
+        labels.append('With the Head or Tail, within 12 degrees (69)')
+
+    # [7] (70) "Southern OR going down in the south" -- two states, as at 38.
+    if lat < 0:
+        labels.append('Going down in the south (70)' if moon.get('speed_in_lat', 0.0) < 0
+                      else 'Southern in latitude (70)')
+
+    # [8] (71) In the burned path, "and that is Libra and Scorpio" -- the
+    # whole two signs here, wider than the 15 Libra to 15 Scorpio span the
+    # Via Combusta table uses.
+    if sign in ('Libra', 'Scorpio'):
+        labels.append('In the burned path, Libra or Scorpio (71)')
+
+    # [9] (72) At the end of the signs, "because at that time she will be in
+    # the bounds of the infortunes" -- the reason names the test, so this is
+    # the sign's LAST bound rather than a fixed number of degrees.
+    terms = EGYPTIAN_TERMS.get(sign, [])
+    if terms and (lon % 30.0) >= terms[-2][0]:
+        labels.append('In the last bound of the sign (72)')
+
+    # [10] (73) Slow, "when she goes at less than her mean motion."
+    if 0 <= speed < AVERAGE_DAILY_MOTION['Moon']:
+        labels.append('Slow in motion (73)')
+
+    # [11] (74) In the ninth house from the Ascendant.
+    if get_wsh_house(lon, ascendant_lon) == 9:
+        labels.append('In the ninth house (74)')
+
+    return labels
 
 def _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect):
     """The ten defects of the Moon (Sahl, The Introduction Ch.3, 102-113).
@@ -3722,12 +3965,21 @@ def evaluate_planets_in_houses(planetary_data, abu_mashar_condition, ascendant_l
 # --- Chronocrator Matrix (Time Lords): Profections & Distributions -------
 
 def calculate_time_lords(ascendant_lon, birth_date, target_date):
-    """Annual Profection (Lord of the Year) and a simple Ptolemaic
-    Distribution (1 degree = 1 year, Egyptian-term ruler of the directed
-    Ascendant) for the given target date."""
+    """Annual Profection (Lord of the Year) and a symbolic 1-degree-per-year
+    direction of the Ascendant through the Egyptian bounds.
+
+    The second of these was previously called a "Ptolemaic Distribution."
+    It is not one -- see the note on the row it returns."""
+    # Age in COMPLETED CIVIL ANNIVERSARIES, not elapsed days over a mean
+    # year length. Profection turns on the birthday: dividing by 365.2425
+    # let the sign advance up to a day early or late around it, and drifts
+    # further the older the native is.
     days_alive = (target_date - birth_date).days
+    integer_age = target_date.year - birth_date.year
+    if (target_date.month, target_date.day) < (birth_date.month, birth_date.day):
+        integer_age -= 1
+    integer_age = max(integer_age, 0)
     fractional_age = days_alive / 365.2425
-    integer_age = int(fractional_age)
 
     # --- Annual Profection ---------------------------------------------
     natal_sign_idx = int(ascendant_lon // 30)
@@ -3749,10 +4001,21 @@ def calculate_time_lords(ascendant_lon, birth_date, target_date):
             'Details': f"Age {integer_age} (1 Sign / Year)",
         },
         {
-            'Technique': 'Distribution (Ptolemaic)',
+            # NOT a distribution in either Sahl's or Ptolemy's sense, and no
+            # longer labelled as one. Real distribution directs a releaser
+            # through the bounds by PRIMARY motion, in ascensional degrees
+            # for the birth latitude, and names both a distributor (the
+            # bound lord) and a partner (the body or ray met on the way) --
+            # Sahl, On Nativities Ch.2.13, 48-51 grades the result in three
+            # 15-degree ascensional bands. Advancing zodiacal longitude at a
+            # flat 1 degree per year is the schoolbook shortcut for that; it
+            # reaches a different bound whenever the ascensions of the sign
+            # in question are not 1 degree per year, which is most of the
+            # time away from the equator.
+            'Technique': 'Symbolic direction (1\u00b0/yr, NOT a distribution)',
             'Active Point': f"{get_degree_string(directed_asc_lon)}",
             'Active Ruler': distributor,
-            'Details': "Egyptian Term (1\u00b0 / Year)",
+            'Details': "Egyptian bound of the symbolically directed Asc",
         },
     ]
 
@@ -3962,15 +4225,46 @@ if location_query and lat is not None and lon is not None:
             f"{'+' if offset_hours >= 0 else '-'}"
             f"{abs(int(offset_hours)):02d}:{int((abs(offset_hours) * 60) % 60):02d}:{int((abs(offset_hours) * 3600) % 60):02d}"
         )
+        utc_offset_hours = offset_hours
         st.sidebar.info(f"**Time standard:** Exact LMT\n**UTC offset:** {offset_str}")
     else:
         tf = TimezoneFinder()
         tz_name = tf.timezone_at(lng=lon, lat=lat)
         if tz_name:
             local_tz = pytz.timezone(tz_name)
-            localized_dt = local_tz.localize(local_dt)
+            # is_dst=None makes pytz RAISE on the two clock times a named
+            # zone cannot resolve on its own: the hour that occurs twice at
+            # a DST fall-back, and the hour that never occurs at spring
+            # forward. Without it pytz silently picks one, which moves the
+            # chart by an hour with no indication that a choice was made.
+            try:
+                localized_dt = local_tz.localize(local_dt, is_dst=None)
+            except pytz.exceptions.AmbiguousTimeError:
+                st.sidebar.error(
+                    f"**{local_dt:%Y-%m-%d %H:%M}** happens twice in {tz_name} "
+                    "(daylight-saving fall-back). Choose LMT, or enter a time "
+                    "outside the repeated hour."
+                )
+                st.stop()
+            except pytz.exceptions.NonExistentTimeError:
+                st.sidebar.error(
+                    f"**{local_dt:%Y-%m-%d %H:%M}** does not exist in {tz_name} "
+                    "(the clocks jump over it at daylight-saving spring-forward). "
+                    "Check the recorded time."
+                )
+                st.stop()
             dt_utc = localized_dt.astimezone(pytz.utc)
-            st.sidebar.info(f"**Timezone:** {tz_name}\n**UTC offset:** {dt_utc.strftime('%H:%M:%S')} UTC")
+            # This is the OFFSET, not the UTC clock time -- an earlier
+            # version printed dt_utc's own time under the label "UTC offset".
+            _off = localized_dt.utcoffset()
+            utc_offset_hours = _off.total_seconds() / 3600.0
+            _sign = '+' if utc_offset_hours >= 0 else '-'
+            _tot = int(abs(_off.total_seconds()))
+            st.sidebar.info(
+                f"**Timezone:** {tz_name}\n**UTC offset:** "
+                f"{_sign}{_tot // 3600:02d}:{(_tot % 3600) // 60:02d}"
+                f"\n**UTC time:** {dt_utc:%Y-%m-%d %H:%M:%S}"
+            )
 
     if tz_name:
         chart_data = calculate_traditional_chart(dt_utc, lat, lon)
@@ -4007,7 +4301,7 @@ if location_query and lat is not None and lon is not None:
             + [{'Condition': 'Escape', **row} for row in escape_data]
         )
         syzygy = calculate_prenatal_syzygy(chart_data['julian_day'], lat, lon, chart_data['houses'])
-        chronocrats = calculate_chronocrats(chart_data['julian_day'], lat, lon, local_dt)
+        chronocrats = calculate_chronocrats(chart_data['julian_day'], lat, lon, local_dt, utc_offset_hours)
         classical_lots = calculate_classical_lots(chart_data['ascendant'], p_data['Sun']['longitude'], p_data['Moon']['longitude'], sect)
         special_degrees = evaluate_special_degrees(p_data)
         house_lords_data = evaluate_house_lords(p_data, chart_data['ascendant'])
@@ -4078,7 +4372,7 @@ if location_query and lat is not None and lon is not None:
 
 
             with tab_dignity:
-                st.subheader("Planetary Condition (Abu Ma'shar VII.6)", help="Each planet checked against the conditions Abu Ma'shar lists in Great Introduction VII.6, kept in his own four groups -- good fortune (1-20), strength (21-29), weakness (30-46), misfortune (47-62) -- plus, for the Moon only, Sahl's ten defects of the Moon (The Introduction Ch.3, 103-112) shown as their own count rather than folded in with the rest.\n\nThe four counts and the labels are the report. NET and VERDICT are a convenience of this app and NOT Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They exist because the Rhetorius/PN4 delineations in Topical Planets in Houses have to choose between a good and a bad reading.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's ten defects contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once.\n\nEnclosure here is Abu Ma'shar's own (56-62) -- by degree within 7 degrees either side counting rays as well as bodies, by sign in the 2nd and 12th, or separating from one encloser and connecting with the other -- and it can be DISSOLVED when the Sun or a fortune casts a ray within 7 degrees of the enclosed planet (60-61). The standalone Enclosure table under Connections & Corruption is Sahl's separate version.")
+                st.subheader("Planetary Condition (Abu Ma'shar VII.6)", help="Each planet checked against the conditions Abu Ma'shar lists in Great Introduction VII.6, kept in his own four groups -- good fortune (1-20), strength (21-29), weakness (30-46), misfortune (47-62) -- plus, for the Moon only, HIS OWN eleven corruptions of her (63-74) shown as their own count rather than folded in with the rest. Sahl's ten (The Introduction Ch.3, 103-112) are a different list, not a variant reading of this one, and stay in Sahl's own tables: Abu Ma'shar has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear here.\n\nThe four counts and the labels are the report. NET and VERDICT are a convenience of this app and NOT Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They exist because the Rhetorius/PN4 delineations in Topical Planets in Houses have to choose between a good and a bad reading.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's ten defects contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once.\n\nEnclosure here is Abu Ma'shar's own (56-62) -- by degree within 7 degrees either side counting rays as well as bodies, by sign in the 2nd and 12th, or separating from one encloser and connecting with the other -- and it can be DISSOLVED when the Sun or a fortune casts a ray within 7 degrees of the enclosed planet (60-61). The standalone Enclosure table under Connections & Corruption is Sahl's separate version.\n\nThe by-sign type counts an encloser's RAYS as well as its body, which is what 58 says twice. Be aware that this makes it common: it fires on roughly 43% of placements, because a planet's rays reach eight of the twelve signs. A bodies-only variant at about 2% exists in the code (SIGN_ENCLOSURE_BODIES_ONLY) but is this project's own conjecture, not the text, so it is off.")
                 condition_list = []
                 for p, cond in abu_mashar_condition.items():
                     condition_list.append({
