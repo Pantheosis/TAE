@@ -512,7 +512,16 @@ HOUSE_ORDINAL = {1: '1st', 2: '2nd', 3: '3rd', 4: '4th', 5: '5th', 6: '6th', 7: 
 #   Mars             burned to 10 deg, under the rays to 18 deg east
 #                    (VII.2, 11-13; On Nativities 1.22, 3 and 6)
 #   Venus, Mercury   burned to 7 deg,  under the rays to 12 deg east,
-#                    15 deg west (VII.2, 37-53; On Nativities 1.22, 7-8)
+#                    15 deg west (VII.2, 40, 48, 51-52; On Nativities
+#                    1.22, 7-8). NOTE: the burned figure is an INFERENCE.
+#                    VII.2, 37 is where it should be stated and the scan
+#                    is illegible there -- the OCR carries an editorial
+#                    marker at that point. 7 comes from 40, "when they
+#                    are distant from [the Sun] at a full 7 degrees in
+#                    longitude, then they have passed beyond burning",
+#                    and 44-45 gives 6 on the direct branch, which Dykes
+#                    flags as probably an error for 7. Treat as sound but
+#                    not as a reading.
 #   Moon             burned to 6 deg,  under the rays to 12 deg
 #                    (VII.2, 60-61 and 72-74)
 #
@@ -541,7 +550,13 @@ SOLAR_RAYS_ORB = {
     'Venus': (12.0, 15.0), 'Mercury': (12.0, 15.0), 'Moon': (12.0, 12.0),
 }
 # The seven-day setting allowance (VII.2, 30-31; On Nativities 1.22, 2-4).
-SOLAR_SETTING_DEGREES = {'Saturn': 22.0, 'Jupiter': 22.0, 'Mars': 22.0}
+# VII.2, 30 gives the two figures separately: the superiors do not cease
+# to be "westernizing" "until there are 22 degrees between Saturn and
+# Jupiter and [the Sun] in the west (AND 18 DEGREES BETWEEN MARS AND [THE
+# SUN])", after which 31 puts them "in the degrees of setting" down to 15.
+# Mars carried 22 here, which is his figure from Sahl's On Nativities 1.22
+# table, not from the chapter this constant cites.
+SOLAR_SETTING_DEGREES = {'Saturn': 22.0, 'Jupiter': 22.0, 'Mars': 18.0}
 # "In the heart." Abu Ma'shar fixes this at 16', reasoning from the Sun's
 # own apparent diameter of about 32' (VII.2, 7-9), and Dykes notes that
 # al-Biruni has 16' as well. Sahl instead says "with him in one degree"
@@ -1854,15 +1869,23 @@ def evaluate_returning(planetary_data, accidental, ascendant_lon):
 
         fast_house = get_wsh_house(planetary_data[fast]['longitude'], ascendant_lon)
         slow_house = get_wsh_house(planetary_data[slow]['longitude'], ascendant_lon)
-        if fast_house in ANGLE_HOUSES and slow_house in CADENT_HOUSES:
+        # 66's "falling away from the Ascendant" is aversion, not cadency:
+        # Dykes' note there reads "That is, in aversion to it," and the Course
+        # Glossary makes the same equivalence under Cadent.
+        slow_averse = _averse_to_ascendant(planetary_data[slow]['longitude'], ascendant_lon)
+        if fast_house in ANGLE_HOUSES and slow_averse:
             results.append({'Manner': 'II (66-69)', 'Planet': fast, 'Returned By': slow})
 
     return results
 
 def evaluate_revoking(planetary_data, sim):
-    """Revoking (VII.5, 117, Fig. 137; the same sentence in Sahl Ch.3,
-    117): "a planet is CONNECTING with a planet, but BEFORE IT REACHES IT,
-    it retrogrades away from it, and its connection is nullified."
+    """Revoking (Abu Ma'shar VII.5, 117, Fig. 137): "a planet is
+    CONNECTING with a planet, but BEFORE IT REACHES IT, it retrogrades away
+    from it, and its connection is nullified."
+
+    NOT Sahl Ch.3, 117, which an earlier version of this docstring also
+    cited: that paragraph is "know that Saturn, in nativities of the day
+    ... decreases harm." The two works' paragraph numbers collide.
 
     "Before it reaches it" fixes the window: the only question is whether
     the aspect perfects between now and the applicant's first station. If
@@ -2089,23 +2112,46 @@ def evaluate_cutting_the_light(planetary_data, sim):
     light planet's own sign before the light planet reaches its original
     heavy target.
 
-    Type III is ordered by Sahl's own PRECEDENCE (44 and its note, see
-    _contact_rank()), not by nearness alone. Nearness only breaks ties
-    within a rank. Sahl works the case out himself at 46-48, Figure 15:
-    "the Moon is in 10 degrees of Taurus, and Mars in 20 degrees of Taurus,
-    and the Moon is connecting with Venus (and Venus is in 15 degrees of
-    Cancer). So her connection with Venus is PRIOR to her uniting with
-    Mars, BUT the Moon is uniting [with Mars], and that is stronger than an
-    aspect and a connection." The Venus sextile is 5 degrees from exact and
-    the Mars union 10, so sorting by nearness alone produced the opposite
-    of Sahl's stated verdict -- it had the Moon cut off from Mars.
+    Contacts are ordered by Sahl's own PRECEDENCE (44 and its note, see
+    _contact_rank()), not by nearness alone; nearness only breaks ties
+    within a rank. But precedence decides which contact PREVAILS, and that
+    is not the same question as which one is CUT.
 
-    Note this is the SAME passage that was once misapplied in this project
-    to third-party blocking. 42-43 (Fig. 14) is the third-party case, where
-    Mars unites with Saturn and cuts the Moon's aspect to him; 45-48
-    (Fig. 15) is the one-planet case handled here, where a single planet
-    holds both a union and a connection and the union wins. They are
-    consecutive and easy to conflate."""
+    Two outcomes are therefore reported, not one:
+
+    NULLIFICATION (44-48, Fig. 15). A single planet holds both a union and
+    a connection. Sahl: "the Moon is in 10 degrees of Taurus, and Mars in
+    20 degrees of Taurus, and the Moon is connecting with Venus (and Venus
+    is in 15 degrees of Cancer). So her connection with Venus is PRIOR to
+    her uniting with Mars, BUT the Moon is uniting [with Mars], and that is
+    stronger than an aspect and a connection" (46-47). The note on 47:
+    "EVEN THOUGH the connection by aspect may perfect first, the planet it
+    is connecting to by body will still be the DOMINANT one." The note on
+    48 then rules this out of the cutting category by name: "note that this
+    is NOT A CASE OF 'CUTTING' ... and it is not exactly a case of blocking
+    by nullification, because Venus is not one of the significators we want
+    to join." An earlier version emitted it as "Moon cut off from Venus"
+    and cited Fig. 15 in this docstring as confirmation of the sort order.
+    The sort order was right; the verdict drawn from it was not.
+
+    CUTTING (Sahl 31-34, Fig. 12; VII.5, 125, Fig. 142). A nearer
+    degree-connection intercepts a more distant one. 32 defines it purely
+    by order of arrival: "a planet between the lord of the Ascendant and
+    the lord of the sought thing, IN FEWER DEGREES than one of them, so the
+    connection with it is BEFORE the connection ... with the lord of the
+    sought thing." Abu Ma'shar's Fig. 142 is the case the previous version
+    could not detect: Mars 12 Aquarius wants Jupiter 29 Taurus by square,
+    17 degrees off, and Saturn at 15 Taurus is 3 degrees off -- "he
+    connects with Saturn first, WHO CUTS OFF HIS LIGHT from reaching
+    Jupiter" (note on 125). A rank-2 exclusion, reasoned from 44's "an
+    aspect does not cut an aspect", was discarding exactly this: 44
+    withholds cutting from an ASPECT, and the note on 44 grants it to
+    degree-based connections, which "can cut each other as in type #1".
+    Only a bare sign-aspect cuts nothing.
+
+    Note that 42-48 has been misread twice in this project. 42-43 (Fig. 14)
+    is third-party blocking, handled in evaluate_blocking(); 45-48 (Fig.
+    15) is the one-planet nullification above. They are consecutive."""
     rows = _pairwise_configurations(planetary_data)
     results = []
 
@@ -2123,18 +2169,41 @@ def evaluate_cutting_the_light(planetary_data, sim):
         if win_rank == 2:
             continue   # "an aspect does not cut an aspect" (44)
         for r in applying[1:]:
-            if _contact_rank(r) == 2 and win_rank != 0:
-                # 44 gives only the uniting as cutting a bare aspect.
-                continue
-            results.append({
-                'Type': 'III',
-                'Planet': fast,
-                'Cut Off From': r['receiver'] or r['heavy_name'],
-                'Connects With Instead': winner['receiver'] or winner['heavy_name'],
-                'Because': f'{_CONTACT_NAMES[win_rank]} outranks {_CONTACT_NAMES[_contact_rank(r)]}'
-                            if win_rank != _contact_rank(r)
-                            else f'nearer by {abs(r["deviation"]) - abs(winner["deviation"]):.1f} deg',
-            })
+            lose_rank = _contact_rank(r)
+            because = (f'{_CONTACT_NAMES[win_rank]} outranks {_CONTACT_NAMES[lose_rank]}'
+                        if win_rank != lose_rank
+                        else f'nearer by {abs(r["deviation"]) - abs(winner["deviation"]):.1f} deg')
+            # A UNITING does not CUT: it DOMINATES. Dykes' note on 47 --
+            # "EVEN THOUGH the connection by aspect may perfect first, the
+            # planet it is connecting to by body will still be the DOMINANT
+            # one" -- and his note on 48 rules the case out of this category
+            # by name: "note that this is NOT A CASE OF 'CUTTING' which only
+            # involves a connection from different signs; it is not a case
+            # of 'intervention' ... and it is not exactly a case of blocking
+            # by nullification, because Venus is not one of the
+            # significators we want to join."
+            #
+            # An earlier version reported Fig. 15 as "Moon cut off from
+            # Venus", and cited that figure in its own docstring as
+            # CONFIRMATION of the sort order. The sort order is right; the
+            # verdict drawn from it was not. 44's precedence says which
+            # contact prevails, not which is severed.
+            if win_rank == 0:
+                results.append({
+                    'Type': 'Nullification (44-48)',
+                    'Planet': fast,
+                    'Yields To': winner['receiver'] or winner['heavy_name'],
+                    'Other Contact': r['receiver'] or r['heavy_name'],
+                    'Because': because + '; the other perfects first but is not cut off',
+                })
+            else:
+                results.append({
+                    'Type': 'III',
+                    'Planet': fast,
+                    'Yields To': winner['receiver'] or winner['heavy_name'],
+                    'Other Contact': r['receiver'] or r['heavy_name'],
+                    'Because': because,
+                })
 
     if sim is not None:
         for r in rows:
@@ -2178,7 +2247,7 @@ def evaluate_cutting_the_light(planetary_data, sim):
                 if union is None:
                     continue
                 results.append({
-                    'Type': 'I', 'Planet': light, 'Cut Off From': heavy, 'Cut By': candidate,
+                    'Type': 'I', 'Planet': light, 'Yields To': candidate, 'Other Contact': heavy,
                     'Because': f'stations day {station:.0f}, enters the sign day {ingress:.0f}, '
                                 f'conjoins day {union:.0f}, before perfection on day {exact_day:.0f}',
                 })
@@ -2216,7 +2285,7 @@ def evaluate_cutting_the_light(planetary_data, sim):
                                       # which is what "nullifies its
                                       # connection with the first one" means
                 results.append({
-                    'Type': 'II', 'Planet': light, 'Cut Off From': heavy, 'Cut By': onward,
+                    'Type': 'II', 'Planet': light, 'Yields To': onward, 'Other Contact': heavy,
                     'Because': f'{heavy} reaches {onward} on day {mid_day:.0f} and moves on; '
                                 f'{light} lands on {onward} instead on day {far_day:.0f}',
                 })
@@ -2572,7 +2641,13 @@ def evaluate_non_reception(planetary_data, sect):
     for r in rows:
         if (r['aspect_name'] == 'Aversion' and not _sahl_body_row(r)) or not _is_connected(r):
             continue
-        a, b = r['light_name'], r['heavy_name']
+        # A is "the connecting planet" (58: "if the Moon or the lord of the
+        # Ascendant CONNECTED WITH a planet"), which is the directed
+        # applicant, not the standing lighter one. Reception already keys
+        # this way; keying non-reception the other way made the two
+        # disagree on the ~3.6% of pairs where the heavier planet is the
+        # one closing.
+        a, b = r['applicant'] or r['light_name'], r['receiver'] or r['heavy_name']
         a_lon, b_lon = planetary_data[a]['longitude'], planetary_data[b]['longitude']
         a_sign, b_sign = get_zodiac_sign(a_lon), get_zodiac_sign(b_lon)
         a_rulers = get_essential_rulers(a_lon)
@@ -3000,7 +3075,7 @@ def calculate_classical_lots(asc, sun, moon, sect):
 LOT_DEFINITIONS = [
     dict(id='fortune', topic='Fortune', name='Lot of Fortune',
          start='Sun', end='Moon', project='Ascendant', reverse_at_night=True,
-         source='Sahl, On Nativities Ch. 2.1 (and throughout)',
+         source='Sahl, On Nativities Ch. 1.37, 1 (and throughout)',
          confidence='settled', note='"The Ascendant of the Moon" (2.1, 1).'),
     dict(id='spirit', topic='Spirit', name='Lot of Spirit',
          start='Moon', end='Sun', project='Ascendant', reverse_at_night=True,
@@ -3008,21 +3083,29 @@ LOT_DEFINITIONS = [
          confidence='settled',
          note='Sahl calls this the Lot of the Invisible, later Spirituality; '
               'the notes on Ch. 11.2, 73 and Ch. 12.1, 5 confirm the identity.'),
+    # The night formula is not the day formula reversed: it changes BOTH
+    # ends. "By day from the degree of the Sun to the degree of HIS
+    # exaltation ... and by night from the degree of the MOON to the degree
+    # of HER exaltation" (4.1, 6). The generic reversal produced
+    # Asc + (Sun - 33) at night, using the wrong body and the wrong
+    # direction, and disagreed with the Classical Lots table two rows above
+    # it on every nocturnal chart. reverse_at_night is False because
+    # _lot_point already swaps the luminary by sect.
     dict(id='exaltation', topic='Exaltation', name='Lot of Exaltation',
-         start='Sun', end='exaltation_degree', project='Ascendant', reverse_at_night=True,
-         source='Sahl, On Nativities Ch. 11.1, 6 (Theophilus)',
+         start='sect_light', end='exaltation_degree', project='Ascendant', reverse_at_night=False,
+         source='Sahl, On Nativities Ch. 4.1, 6 (Theophilus)',
          confidence='settled',
          note='"By day from the degree of the Sun to the degree of his exaltation ... '
               'by night from the degree of the Moon to the degree of her exaltation."'),
     dict(id='assets_lord2', topic='Assets', name='Lot of assets (lord of the 2nd)',
          start='lord2', end='cusp2', project='Ascendant', reverse_at_night=False,
-         source='Sahl, On Nativities Ch. 2.1, 1',
+         source='Sahl, On Nativities Ch. 2.15, 1',
          confidence='attested',
          note='"Count from the lord of the second to the second place, and add on top of '
               'that the degrees of the Ascendant."'),
     dict(id='assets_jupsat', topic='Assets', name='Lot of assets (Jupiter-Saturn)',
          start='Jupiter', end='Saturn', project='Ascendant', reverse_at_night=True,
-         source='Sahl, On Nativities Ch. 2.1, 17',
+         source='Sahl, On Nativities Ch. 2.15, 17',
          confidence='variant',
          note='Sahl gives a second, unrelated formula for the same topic in the same '
               'chapter: "count from Jupiter to Saturn by day, and by night the reverse."'),
@@ -3040,18 +3123,18 @@ LOT_DEFINITIONS = [
               'this one is specifically for the NUMBER of siblings.'),
     dict(id='father', topic='Father', name='Lot of the father',
          start='Sun', end='Saturn', project='Ascendant', reverse_at_night=True,
-         source='Sahl, On Nativities Ch. 4.1, 1',
+         source='Sahl, On Nativities Ch. 4.14, 1',
          confidence='settled',
          note='"By day from the Sun to Saturn and by night from Saturn to the Sun."'),
     dict(id='father_burnt', topic='Father', name='Lot of the father (Saturn under the rays)',
          start='Mars', end='Jupiter', project='Ascendant', reverse_at_night=False,
-         source='Sahl, On Nativities Ch. 4.1, 2',
+         source='Sahl, On Nativities Ch. 4.14, 2',
          confidence='conditional',
          note='"Now if Saturn was under the rays, then count from Mars to Jupiter." Shown '
               'always; apply it only when Saturn is in fact under the rays.'),
     dict(id='mother', topic='Mother', name='Lot of the mother',
          start='Venus', end='Moon', project='Ascendant', reverse_at_night=True,
-         source="Sahl, On Nativities Ch. 4.4 (Dykes' note)",
+         source="Sahl, On Nativities Ch. 4.14 (Dykes' note 198)",
          confidence='attested',
          note='"Taken by day from Venus to the Moon (and by night the contrary), and is '
               'projected from the Ascendant."'),
@@ -3103,12 +3186,12 @@ LOT_DEFINITIONS = [
          note='"Taken from Saturn to Mars by day, and by night the contrary." Stated twice.'),
     dict(id='slaves', topic='Slaves', name='Lot of slaves',
          start='Mercury', end='Moon', project='Ascendant', reverse_at_night=True,
-         source='Sahl, On Nativities Ch. 6.5, 20',
+         source='Sahl, On Nativities Ch. 6.10, 20',
          confidence='settled',
          note='"Taken from Mercury to the Moon by day, and by night the reverse."'),
     dict(id='death', topic='Death', name='Lot of death',
          start='Moon', end='cusp8', project='Saturn', reverse_at_night=False,
-         source='Sahl, On Nativities Ch. 8.4, 1',
+         source='Sahl, On Nativities Ch. 8.6, 1',
          confidence='settled',
          note='PROJECTED FROM SATURN, not the Ascendant: "taken by night and day from the '
               'Moon to the degree of the eighth place, AND CAST OUT FROM SATURN."'),
@@ -3210,9 +3293,11 @@ def _lot_point(name, planetary_data, asc, cusps, sect, resolved):
         return planetary_data[name]['longitude']
     if name in resolved:
         return resolved[name]
+    if name == 'sect_light':
+        return planetary_data['Sun' if sect == 'Diurnal' else 'Moon']['longitude']
     if name == 'exaltation_degree':
-        # Ch. 11.1, 6 pairs the sect light with ITS OWN exaltation degree:
-        # the Sun's is 19 Aries, the Moon's 3 Taurus.
+        # 4.1, 6 pairs the sect light with ITS OWN exaltation degree: the
+        # Sun's is 19 Aries, the Moon's 3 Taurus.
         return 19.0 if sect == 'Diurnal' else 33.0
     if name.startswith('cusp'):
         return cusps[int(name[4:]) - 1]
@@ -3449,11 +3534,22 @@ def _abu_mashar_enclosed(planet, enclosing_set, planetary_data, rows, orb=7.0):
     a_rays = _ray_degrees(planetary_data[members[0]]['longitude'])
     b_rays = _ray_degrees(planetary_data[members[1]]['longitude'])
 
+    # 57 confines the degree type to the planet's OWN SIGN: "a planet is in
+    # a sign, and WITH IT IN ITS SIGN is an infortune or its rays in front
+    # of it, and an infortune or its rays behind it." The windows below were
+    # pure degree arithmetic and so reached across the sign boundary, where
+    # 20% of type-1 hits were coming from. The by-sign type at 58 is the
+    # construction that is allowed to look outside the sign, and it does so
+    # on its own terms.
+    own_sign = int(lon // 30)
+
     def ahead(rays):
-        return any(0.0 < (d - lon) % 360.0 <= orb for d in rays)
+        return any(0.0 < (d - lon) % 360.0 <= orb and int(d // 30) == own_sign
+                    for d in rays)
 
     def behind(rays):
-        return any(0.0 < (lon - d) % 360.0 <= orb for d in rays)
+        return any(0.0 < (lon - d) % 360.0 <= orb and int(d // 30) == own_sign
+                    for d in rays)
 
     kind = None
     if (ahead(a_rays) and behind(b_rays)) or (ahead(b_rays) and behind(a_rays)):
@@ -3498,12 +3594,31 @@ def _abu_mashar_enclosed(planet, enclosing_set, planetary_data, rows, orb=7.0):
     if kind is None:
         return False, None, None
 
-    # 60: the Sun or a fortune casting a ray within 7 degrees breaks it.
+    # 60: "in BOTH TYPES, if the Sun or one of the fortunes looked at the
+    # enclosed planet, and there was less than 7 degrees between the planet
+    # and those rays, then it indicates the dissolving of that misfortune."
+    # Dykes' note on 60 restricts it: "Actually this only refers to the
+    # degree-based type of enclosure, in 56."
+    #
+    # Both are honoured, because the disagreement is about the MEASURE, not
+    # about whether a sign-based enclosure can be dissolved at all -- 61
+    # gives a dissolution in the same breath for an enclosed sign, with no
+    # degree condition ("if the enclosed thing was itself a sign, and the
+    # fortunes or Sun looked at it, they will dissolve that misfortune").
+    # So the degree type takes 60's 7-degree ray test, and the sign type
+    # takes 61's bare look. Applying the 7-degree test to the sign type, as
+    # an earlier version did, is the one reading the note rules out.
+    by_sign = kind is not None and 'by sign' in kind
     for breaker in ({'Sun'} | FORTUNES) - set(members) - {planet}:
         if breaker not in planetary_data:
             continue
-        if any(abs(((d - lon + 180.0) % 360.0) - 180.0) < orb
-               for d in _ray_degrees(planetary_data[breaker]['longitude'])):
+        breaker_lon = planetary_data[breaker]['longitude']
+        if by_sign:
+            raw = abs(int(breaker_lon // 30) - own_sign)
+            if min(raw, 12 - raw) not in AVERSION_SIGN_COUNTS:
+                return True, kind, breaker
+        elif any(abs(((d - lon + 180.0) % 360.0) - 180.0) < orb
+                  for d in _ray_degrees(breaker_lon)):
             return True, kind, breaker
     return True, kind, None
 
@@ -3531,9 +3646,27 @@ def _sahl_enclosed(planet, enclosing_set, rows, blocking_pairs):
     if len(members) != 2:
         return False, False, None, None
     for sep_target, con_target in ((members[0], members[1]), (members[1], members[0])):
+        # The separating leg is NOT gated on the connection still being
+        # live. 121 gives the base condition as "separating from one of
+        # them [and] connecting with the other, without another planet
+        # casting its rays between the two", and makes 7 degrees the
+        # SEVERE grade, not the entry condition. Sahl's own Fig. 25 proves
+        # it: "Mars is in 10 degrees of Cancer, and Saturn in 18 degrees of
+        # Aries, and the Moon in 13 degrees of Libra. So the Moon is
+        # separating from Mars from [his] second square, connecting with
+        # Saturn from the opposition: at this time she is enclosed" (122).
+        # She is 3 degrees past Mars ACROSS A SIGN BOUNDARY, and 9's
+        # cross-sign separation window is a single degree -- so requiring
+        # _is_connected here made the chapter's own worked figure return
+        # nothing, and suppressed 82% of enclosures besides.
+        #
+        # This is the same distinction the Transfer evaluator already draws
+        # for its own past leg (see its docstring): separating needs a
+        # valid configuration and past-exact motion, not the tighter
+        # Connected threshold.
         sep_row = next((r for r in rows if r['aspect_name'] != 'Aversion'
                          and (r['applicant'] or r['light_name']) == planet and (r['receiver'] or r['heavy_name']) == sep_target
-                         and r['motion'] == 'Separating' and _is_connected(r)), None)
+                         and r['motion'] == 'Separating'), None)
         con_row = next((r for r in rows if r['aspect_name'] != 'Aversion'
                          and (r['applicant'] or r['light_name']) == planet and (r['receiver'] or r['heavy_name']) == con_target
                          and r['motion'] == 'Applying' and _is_connected(r)), None)
@@ -3675,7 +3808,18 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
             other = r['heavy_name'] if r['light_name'] == planet else r['light_name']
             other_house = get_wsh_house(planetary_data[other]['longitude'], ascendant_lon)
             other_sign = get_zodiac_sign(planetary_data[other]['longitude'])
-            if other_house in CADENT_HOUSES or other_sign in FALLS.get(other, []):
+            # Sahl's "falling away from the Ascendant" is AVERSION, not
+            # cadency. The Course Glossary's own Cadent entry says so:
+            # "3rd, 6th, 9th, 12th. But see also FALLING AWAY FROM, WHICH
+            # IS EQUIVALENT TO AVERSION" -- and its Aversion entry is the
+            # 2nd, 6th, 8th and 12th. Sahl keeps the two apart himself at
+            # 91, "falling from the stakes AND not looking at the
+            # Ascendant: and that is in the sixth and the twelfth", which
+            # this file already reads correctly. Reading it as cadency
+            # admits the 3rd and 9th, which DO look at the Ascendant, and
+            # misses the 2nd and 8th, which do not.
+            if _averse_to_ascendant(planetary_data[other]['longitude'], ascendant_lon) \
+                    or other_sign in FALLS.get(other, []):
                 connects_weak_target = True
                 break
         if not connects_weak_target and not ess['Fall']:
@@ -3709,11 +3853,21 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
                 labels.append('Advancing (83)')
 
         # (84) A masculine planet (Saturn, Jupiter, Mars) eastern, arising at dawn.
+        # 84 is "eastern, ARISING AT DAWN" -- visible, not merely on the
+        # eastern side. Sahl gives the floors himself in On Nativities 1.22,
+        # 1: with 6 degrees between Saturn or Jupiter and the Sun "they are
+        # considered to be eastern ... BUT IF THEY WERE LESS THAN THAT, THEY
+        # WILL NOT BE FIT"; Mars at 15 degrees (1.22, 3 and its note). The
+        # Course Glossary's Eastern (2) is "outside the Sun's rays and
+        # visible." An earlier version tested only which side of the Sun the
+        # planet stood on, so 11.5% of eastern superiors took this testimony
+        # while burned or under the rays.
         if planet in ('Saturn', 'Jupiter', 'Mars'):
             sun_lon = planetary_data['Sun']['longitude']
             signed_from_sun = ((lon - sun_lon + 180.0) % 360.0) - 180.0
-            if signed_from_sun < 0:
-                labels.append('Masculine planet, eastern of the Sun (84)')
+            visible_floor = 15.0 if planet == 'Mars' else 6.0
+            if signed_from_sun < 0 and abs(signed_from_sun) >= visible_floor:
+                labels.append('Masculine planet, eastern and risen (84)')
 
         # (85) "In their own glow: that is, a masculine planet in the day,
         # and a feminine planet in the night." The translator's footnote
@@ -3843,8 +3997,8 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
             if r['aspect_name'] == 'Aversion' or planet not in (r['light_name'], r['heavy_name']):
                 continue
             other = r['heavy_name'] if r['light_name'] == planet else r['light_name']
-            if _is_connected(r) and get_wsh_house(planetary_data[other]['longitude'], ascendant_lon) in CADENT_HOUSES:
-                labels.append(f'Connecting with {other}, itself falling from the Ascendant (97)')
+            if _is_connected(r) and _averse_to_ascendant(planetary_data[other]['longitude'], ascendant_lon):
+                labels.append(f'Connecting with {other}, itself averse to the Ascendant (97)')
             if (r['applicant'] or r['light_name']) == planet and r['motion'] == 'Separating' and _is_connected(r):
                 other_rulers = get_essential_rulers(planetary_data[other]['longitude'])
                 if planet in (other_rulers['domicile'], other_rulers['exaltation']):
@@ -3868,7 +4022,7 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
         south_node_lon = (north_node_lon + 180.0) % 360.0
         node_dist = min(abs(((lon - north_node_lon + 180) % 360) - 180), abs(((lon - south_node_lon + 180) % 360) - 180))
         if node_dist < 12.0 and abs(lat) < 1.0:
-            labels.append('With the Head or Tail, without latitude (99)')
+            labels.append('With the Head or Tail, without latitude (99, 12 deg orb not in the source)')
 
         # (100) Inverted: in the seventh sign from its own house (Detriment).
         if ess['Detriment']:
@@ -3881,9 +4035,17 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
 def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential, accidental, jd, ascendant_lon, sim=None):
     """Planetary condition per Abu Ma'shar's Great Introduction VII.6: good
     fortune (1-20), strength (21-29), weakness (30-46), misfortune (47-62)
-    -- plus, for the Moon only, Sahl's own ten defects (The Introduction
-    Ch.3, 103-112, via _corruption_of_the_moon_labels()) rather than
-    VII.6's own, differently-numbered eleven-item version (63-74).
+    -- plus, for the Moon only, Abu Ma'shar's OWN eleven corruptions of her
+    (63-74, via _abu_mashar_moon_corruption()). Sahl's ten (The Introduction
+    Ch.3, 103-112) are a different list, not a variant reading of this one,
+    and stay in Sahl's own tables.
+
+    One exception, and it is inconsistent: 8's "while the Moon is made
+    fortunate" is still gated on zero of SAHL's ten defects. Reading
+    "fortunate" as "zero defects" is this app's own -- in this chapter's
+    vocabulary being made fortunate means satisfying 1-14 -- and on either
+    list the Moon has no defects in under 1.5% of charts, so 8 almost never
+    fires. Left as-is rather than replaced by another guess, but flagged.
     Distinct from -- and the authoritative source for -- the Rhetorius/PN4
     delineation switch; the older Hellenistic net dignity score in
     evaluate_essential_dignities()/evaluate_accidental_dignities() is
@@ -4049,10 +4211,27 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         rulers = get_essential_rulers(lon)
         triplicity_key_local = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
         # Reception is defined once, in evaluate_reception(), under the
-        # active author profile; this row just reports what it found for
-        # this planet. An earlier version reimplemented it inline and
-        # blended the two authors -- Sahl's narrowed dignity scope with
-        # Abu Ma'shar's paragraph numbering and his reverse case.
+        # ACTIVE AUTHOR PROFILE -- which means this VII.6 table reads Sahl's
+        # reception whenever the sidebar says Sahl, and Abu Ma'shar's when
+        # it says Abu Ma'shar.
+        #
+        # That is a live doctrinal choice, not a detail. Sahl's is
+        # one-directional, restricted to house/exaltation/triplicity, and
+        # requires a connection; Abu Ma'shar's own rule for this chapter
+        # (VII.5, 129-133) counts all five dignities, runs in reverse as
+        # well (130), and holds by looking with no connection at all (133).
+        # 43's "not received" therefore fires on about 81% of placements
+        # under the Sahl profile against about 8% under Abu Ma'shar's -- a
+        # ten-fold swing in a VII.6 result, driven by a setting labelled
+        # "Connection rule".
+        #
+        # It is left profile-driven deliberately, because the sidebar's own
+        # help text says every downstream table reads that setting, and
+        # comparing the two authors across the whole app is the point of
+        # having the switch. But it is recorded here rather than left to be
+        # discovered. A previous pair of comments at this spot contradicted
+        # each other, one still claiming the table pinned Sahl's narrower
+        # scope.
         received = any(rec['Received'] == planet or (rec['Direction'] == 'Mutual'
                                                       and planet in rec['Receiver'].split(' & '))
                         for rec in reception_rows)
@@ -4129,18 +4308,31 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
                 positive.append('Second station (24)')
             elif res_next[3] < speed:
                 station = 'first'
-        # 25 is "GOING OUT of the rays of the Sun," a departure, not a
-        # location: VII.2, 12 has the planet "begin in [its] advancement
-        # towards easternization" at exactly this point. So the elongation
-        # must be opening, not merely large. An earlier version credited
-        # every planet anywhere outside the rays, including one sinking back
-        # toward them.
+        # 25 is "GOING OUT of the rays of the Sun" -- a specific station in
+        # the synodic cycle, not "anywhere outside them". VII.2, 12 names it:
+        # at the burnt limit "they have already gone past burning and shift
+        # over to the third condition, and they are said to be simply 'under
+        # the rays', and FROM THERE THEY BEGIN IN [THEIR] ADVANCEMENT TOWARDS
+        # EASTERNIZATION, AND THEY ARE SUITABLE FOR GRANTING THEIR GREATER
+        # YEARS AS WELL AS SPEAR-BEARING." VII.2 itself credits that band
+        # with a benefit, and 32 denies the same benefit to the band on the
+        # setting side ("they [are] not suitable for granting their greater
+        # years"), so the departure is what carries the merit.
+        #
+        # So this is the under-the-rays band WITH the elongation opening.
+        # It does overlap 34's weakness, necessarily -- both chapters say
+        # what they say, and VII.6 lists strengths and weaknesses in
+        # separate categories that can both hold. An earlier version
+        # credited every planet anywhere outside the rays whose elongation
+        # was opening, which is the whole eastern half of a superior's
+        # cycle: 35% of placements, and a second vote alongside 27 for
+        # every eastern superior.
         _signed_sun = ((lon - planetary_data['Sun']['longitude'] + 180.0) % 360.0) - 180.0
         elongation_opening = (
             planet != 'Sun'
             and (speed - planetary_data['Sun']['speed_in_lon']) * _signed_sun > 0
         )
-        if not acc['Combust'] and not acc['UnderBeams'] and elongation_opening:
+        if acc['UnderBeams'] and elongation_opening:
             positive.append('Going out of the rays (25)')
         stake_or_following = house in ANGLE_HOUSES | SUCCEDENT_HOUSES
         if stake_or_following:
@@ -4189,7 +4381,14 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
 
         # --- Weakness (VII.6, 30-46) --------------------------------------
         # (negative starts here; everything before was good fortune/strength)
-        is_slow = 0 <= speed < AVERAGE_DAILY_MOTION.get(planet, 1.0)
+        # 31's "slow in course" takes VII.1, 30-31's exception like every
+        # other speed test in this file: for Venus and Mercury the pace is
+        # the SUN's motion that day, not their own mean. Measured against
+        # their own means, Mercury read slow 32.2% of the time and Venus
+        # 44.0%, against 18.3% and 17.1% correctly.
+        _pace = (planetary_data['Sun']['speed_in_lon'] if planet in ('Venus', 'Mercury')
+                 else AVERAGE_DAILY_MOTION.get(planet, 1.0))
+        is_slow = 0 <= speed < _pace
         if is_slow:
             negative.append('Slow in course (31)')
         if station == 'first':
@@ -4255,7 +4454,7 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         if in_harsh_burned_path:
             negative.append('Burned path, harsh band (40)')
         elif in_burned_path:
-            negative.append('Burned path (39/71)')
+            negative.append('Burned path (40)')
         if ess['Detriment']:
             negative.append('Opposition of own house / detriment (41)')
         # 42: "if it connects with a planet [that is] retrograde, corrupted,
@@ -5565,7 +5764,7 @@ if location_query and lat is not None and lon is not None:
                 else:
                     st.write("No non-reception configurations found.")
 
-                st.subheader("Cutting the Light (Sahl, The Introduction Ch.3, 31-34: Type III; Abu Ma'shar VII.5, 120-125: Types I-II)", help='Type III is Sahl\'s own Blocking #1: among several planets a given one is applying to, one contact wins and cuts off the others.\n\nWhich one wins is decided by Sahl\'s own PRECEDENCE, not by nearness alone: "a connection does not nullify a uniting, but a uniting does NULLIFY a connection, while an aspect does not cut an aspect, and a uniting cuts an aspect" (Ch.3, 44). The note there ranks the three kinds -- (1) a uniting, i.e. a conjunction by degree; (2) a connection by degree from another sign; (3) an aspect by sign only -- and adds that degree-based connections can cut each other while aspects by sign cannot. Nearness only breaks ties within a rank, and the BECAUSE column says which applied.\n\nSahl works it himself at 46-48 (Fig. 15): Moon 10 Taurus, Mars 20 Taurus, Venus 15 Cancer. "Her connection with Venus is PRIOR to her uniting with Mars, but the Moon is uniting [with Mars], and that is stronger than an aspect and a connection." The Venus sextile is 5 degrees from exact against the Mars union\'s 10, so nearness alone gives the opposite of Sahl\'s verdict; the precedence rule changes the winner for about 7% of planets holding two or more applying contacts.\n\nTypes I and II are Abu Ma\'shar\'s later addition, and each requires its own full sequence of dated events.\n\nTYPE I (121-22): a planet in the SECOND SIGN from the applicant stations retrograde, re-enters the applicant\'s sign, and conjoins it BY DEGREE -- all before the applicant reaches its original target. The note on 121 reads that last verb as conjoining by degree, "rather than the looser assembling."\n\nTYPE II (123-24): the planet being applied to reaches a heavier planet first and moves on, leaving the applicant to land on that heavier planet instead. "Mercury wants to connect with Venus. But before he can do that, she connects with Mars and then continues on. Then Mercury is left with the conjunction of Mars, which was not what he wanted."')
+                st.subheader("Cutting the Light (Sahl, The Introduction Ch.3, 31-34: Type III; Abu Ma'shar VII.5, 120-125: Types I-II)", help='Two different outcomes, kept apart. TYPE III is a CUTTING: a nearer degree-connection intercepts a more distant one, per Sahl 32 (\"the connection with it is BEFORE the connection with the lord of the sought thing\") and Abu Ma\'shar\'s Fig. 142. NULLIFICATION (44-48, Fig. 15) is not a cutting at all: one planet holds both a union and a connection, and the union DOMINATES while the other still perfects. Dykes\' note on 47: \"even though the connection by aspect may perfect first, the planet it is connecting to by body will still be the dominant one\"; his note on 48 rules the case out of the cutting category by name. YIELDS TO is the contact that prevails, OTHER CONTACT the one that gives way -- which under Nullification is not severed.\n\nWhich one wins is decided by Sahl\'s own PRECEDENCE, not by nearness alone: "a connection does not nullify a uniting, but a uniting does NULLIFY a connection, while an aspect does not cut an aspect, and a uniting cuts an aspect" (Ch.3, 44). The note there ranks the three kinds -- (1) a uniting, i.e. a conjunction by degree; (2) a connection by degree from another sign; (3) an aspect by sign only -- and adds that degree-based connections can cut each other while aspects by sign cannot. Nearness only breaks ties within a rank, and the BECAUSE column says which applied.\n\nSahl works it himself at 46-48 (Fig. 15): Moon 10 Taurus, Mars 20 Taurus, Venus 15 Cancer. "Her connection with Venus is PRIOR to her uniting with Mars, but the Moon is uniting [with Mars], and that is stronger than an aspect and a connection." The Venus sextile is 5 degrees from exact against the Mars union\'s 10, so nearness alone gives the opposite of Sahl\'s verdict; the precedence rule changes the winner for about 7% of planets holding two or more applying contacts.\n\nTypes I and II are Abu Ma\'shar\'s later addition, and each requires its own full sequence of dated events.\n\nTYPE I (121-22): a planet in the SECOND SIGN from the applicant stations retrograde, re-enters the applicant\'s sign, and conjoins it BY DEGREE -- all before the applicant reaches its original target. The note on 121 reads that last verb as conjoining by degree, "rather than the looser assembling."\n\nTYPE II (123-24): the planet being applied to reaches a heavier planet first and moves on, leaving the applicant to land on that heavier planet instead. "Mercury wants to connect with Venus. But before he can do that, she connects with Mars and then continues on. Then Mercury is left with the conjunction of Mars, which was not what he wanted."')
                 if cutting_data:
                     st.dataframe(pd.DataFrame(cutting_data), hide_index=True, width='stretch')
                 else:
