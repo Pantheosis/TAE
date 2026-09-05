@@ -413,7 +413,7 @@ MASHAALLAH_LORDS = {
     5: {1: "Happy with children (if unharmed)", 2: "Children have status, will gain good", 3: "Native has siblings abroad who travel and have children", 4: "Prosperous parents see successive generations; good increases", 5: "Native has well-known children who are happy", 6: "Children's upbringing hard, children have defect", 7: "Native marries younger spouse, well-known and virtuous", 8: "Children die early, or have power over others due to Sultan", 9: "Has children in foreign country, delighted; children religious/educated", 10: "Abundance of children; illness/death if harmed; hardship from Sultan", 11: "Delightful children, blessed with good and comfort", 12: "Children debased, sick, from low-status; disobedient/hostile"},
     6: {1: "Miserable, slave work; illness if received; literal slave if Moon corrupted", 2: "Livelihood from 6th-place things; disaster/hardship if not received", 3: "Siblings are hostile and crave his ruin", 4: "Parents unknown in country; aspecting planet shows good/bad", 5: "Fortunate children, but defects will appear in them", 6: "Native healthy, if lord of Ascendant does not look", 7: "Native associates with slave girls or women with defects", 8: "Calamities in slaves and riding animals; not blessed by them", 9: "Blessed with slaves/animals; travel brings illness or corrupts slaves", 10: "Short lifespan, itinerant, enslaves free people", 11: "Bad condition in livelihood, little good, creating discord", 12: "Saddened by slaves and riding animals, no good in them"},
     7: {1: "Native very eager; subordinate to spouse", 2: "Lower-status women; gain/lose money in marriage", 3: "Marries a relative; brothers hostile or marry his women", 4: "Marries relative, good rank; father hostile to native", 5: "Younger spouse; children hostile; deluded about women; servant children", 6: "Sick/slave spouse; low-status spouse; bad reputation due to spouse", 7: "Suitable marriage; spouse has rank of maternal relatives; well-known", 8: "Will inherit from spouse; native dies in exile", 9: "Foreign spouse; good character/pious if a fortune", 10: "Esteemed, well-known spouse; higher-status and connected", 11: "Loving, happy spouse; children and benefit from spouse", 12: "Low-status or sick spouse; spouse is hostile"},
-    8: {1: "A wicked soul, much distress, faint-hearted", 2: "Livelihood from inheritance/dead; generous; assets taken if connecting to 8th", 3: "Brother's women will not survive or get inheritance", 4: "Diminishes father's lifespan; fear for native, mother dies in childbirth", 5: "Children premature or miscarried", 6: "Native healthy if lord of Ascendant does not look", 7: "Consumes inheritance of women; marries foreign woman", 8: "Native is healthy, illness insignificant, death will be light", 9: "Suffers robbery on journeys, eager in accumulating assets", 10: "Authority in youth, a follower who seeks leadership/boasts", 11: "Not well known/descended; does low work like commerce", 12: "Few enemies; many of native's slaves will die"},
+    8: {1: "A wicked soul, much distress, faint-hearted", 2: "Livelihood from inheritance/dead; generous; assets taken if connecting to 8th", 3: "Brother's women will not survive or get inheritance", 4: "Diminishes father's lifespan; fear for native, mother dies in childbirth", 5: "[UNCERTAIN -- the source reads '[illegible] they will survive and will be miscarried', an unresolved contradiction; do not rely on this cell]", 6: "Native healthy if lord of Ascendant does not look", 7: "Consumes inheritance of women; marries foreign woman", 8: "Native is healthy, illness insignificant, death will be light", 9: "Suffers robbery on journeys, eager in accumulating assets", 10: "Authority in youth, a follower who seeks leadership/boasts", 11: "Not well known/descended; does low work like commerce", 12: "Few enemies; many of native's slaves will die"},
     9: {1: "Remains in foreign land; travel; speaks knowledge; sensible if unharmed", 2: "Livelihood from travel, piety, religion", 3: "Siblings marry foreign women, live abroad", 4: "Unknown fathers who leave, with defects/bad death; bad faith", 5: "Has children abroad; they make native happy", 6: "Excellent intentions; illness while traveling, encounters hardship", 7: "Marries foreign woman given by her brother; native loves her", 8: "Bad thoughts and work; die in exile", 9: "Few journeys; upright in religion of fathers, good intention", 10: "Authority/leadership traveling abroad; offered the good", 11: "Good fortune abroad; happy until end of life", 12: "Siblings/native have hardship from enemies traveling; bad religion"},
     10: {1: "Interacting with Sultan, known by him, living due to Sultan", 2: "Livelihood from the Sultan", 3: "Death of siblings, jealousy and grudges", 4: "Fathers well known to Sultan", 5: "Defects and illnesses in children", 6: "Encounters hardship from the Sultan", 7: "Marriage to someone related to Sultan, fortunate woman, good from her", 8: "Native's ruin will be due to Sultan", 9: "Siblings marry better women or from Sultan's family; native is pious", 10: "Proficient in work, having influence, livelihood from work", 11: "Authority in friendship, Sultan will not be hostile", 12: "Hostility from Sultan and native's superiors; unhappy"},
     11: {1: "Good character, many friends, but harsh toward children/few children", 2: "Livelihood relates to friends/commerce; friends need native if Asc lord looks", 3: "Pious siblings known for that; reflects well on native", 4: "Short lifespan for father; bad condition unless received by fortune", 5: "Pleased by children and family; praise for him", 6: "Friends are not well known", 7: "Marries fertile woman, will love her, live in luxury because of her", 8: "Friends diminished; corrupts friendship; dies when condition is good", 9: "Pious friends, shared religious love; siblings marry foreign women", 10: "Friends benefit from native; child inherits assets from Sultan", 11: "Lives comfortable life, imputed with goodness, many friends, culture", 12: "Leaves goodness of friends; friends become enemies, unhappy"},
@@ -1217,6 +1217,19 @@ def _is_connected_abu_mashar(row):
     mixing their natures in a weak way." That weak mixing is reported
     separately (see row['mutual_body']), never as a connection."""
     if row['aspect_name'] == 'Aversion':
+        return False
+    # 34, recovered with p. 452: "in all of this, WHEN ONE OF THEM GOES
+    # BEYOND ITS ASSOCIATE BY 1' OR LESS, THEN IT HAS ALREADY SEPARATED
+    # FROM IT -- except that they will both be BLENDING IN NATURE."
+    #
+    # So for Abu Ma'shar a connection ends essentially at the exact degree.
+    # His activation distances below are approach windows, not two-sided
+    # orbs, and this test previously applied them to separating pairs as
+    # well -- treating a planet 10 degrees past exact as still connected,
+    # which 34 denies outright. The residue he does allow is a mixing of
+    # natures, which this file already reports separately as the body
+    # overlap, never as a connection.
+    if row['motion'] == 'Separating' and abs(row['deviation']) > (1.0 / 60.0):
         return False
     if row['assembly']:
         return row['dist'] <= 15.0
@@ -2615,6 +2628,97 @@ def evaluate_reception(planetary_data, sect, sim=None):
             })
 
     if not sahl:
+        # --- 134-142: the recovered acceptance material ------------------
+        # p. 477 was missing from the photographs until this revision. It
+        # is Abu Ma'shar's OWN, and it is a different thing from 129-133:
+        # the note on 134 says he "turns to a more general sense of the
+        # Arabic word 'reception' which is NOT BASED ON DIGNITIES: namely,
+        # that one planet will 'accept' the management of another if they
+        # are in harmonious signs." Reported as its own basis so it cannot
+        # be mistaken for a dignity reception.
+        sign_of = {p: get_zodiac_sign(d['longitude']) for p, d in planetary_data.items()
+                    if p != 'North Node'}
+        for row in rows:
+            if row['aspect_name'] == 'Aversion':
+                continue
+            a, b = row['p1'], row['p2']
+            asp = row['aspect_name']
+
+            # 134: "if one of the two planets was in the TRINE of the other
+            # (or in its SEXTILE), or in two signs of equal ascensions, or
+            # in two signs whose length of the day is one [and the same],
+            # or IN TWO SIGNS BELONGING TO ONE [and the same] PLANET, then
+            # one of the two will 'receive' its associate due to the
+            # agreement of the nature of these signs with each other."
+            #
+            # Two of the four are computable here. Equal ascensions and
+            # equal daylight are the sign categories of VI.5-VI.6, which
+            # this project does not have -- they are named in the coverage
+            # note rather than guessed at.
+            harmonious = []
+            if asp in ('Trine', 'Sextile'):
+                harmonious.append(f'{asp.lower()}')
+            if SIGN_TO_DOMICILE.get(sign_of[a]) == SIGN_TO_DOMICILE.get(sign_of[b]):
+                harmonious.append(f'both signs of {SIGN_TO_DOMICILE.get(sign_of[a])}')
+            if harmonious:
+                results.append({
+                    'Receiver': f'{a} & {b}', 'Received': 'each other',
+                    'Direction': 'Acceptance by harmonious signs (134)',
+                    'Via': ', '.join(harmonious),
+                    'Grade': 'Below middling (142)', 'Mode': 'Not a dignity reception',
+                })
+
+            # 135: "the fortunes receive each other due to the moderation
+            # of their natures, while Mars and Saturn each receive the
+            # other from the assembly, sextile, and trine."
+            if {a, b} == FORTUNES:
+                results.append({
+                    'Receiver': f'{a} & {b}', 'Received': 'each other',
+                    'Direction': 'Acceptance by nature, the two fortunes (135)',
+                    'Via': 'moderation of their natures',
+                    'Grade': 'Below middling (142)', 'Mode': 'Not a dignity reception',
+                })
+            if {a, b} == INFORTUNES and asp in ('Conjunction', 'Sextile', 'Trine'):
+                results.append({
+                    'Receiver': f'{a} & {b}', 'Received': 'each other',
+                    'Direction': 'Acceptance, the two infortunes (135)',
+                    'Via': f'{asp.lower()} only -- 135 allows assembly, sextile and trine',
+                    'Grade': 'Below middling (142)', 'Mode': 'Not a dignity reception',
+                })
+
+            # 137-138: "the majority of [strong reception] belongs to the
+            # Moon relative to the Sun, because HE RECEIVES HER FROM ALL
+            # SIGNS, since her glow is from him -- EXCEPT THAT HIS
+            # RECEPTION OF HER FROM THE OPPOSITION IS DETESTABLE. But if
+            # her connection with him is from a sign in which he has a
+            # claim, that is TWO RECEPTIONS: a reception by nature, and a
+            # reception by sign."
+            if {a, b} == {'Sun', 'Moon'}:
+                if asp == 'Opposition':
+                    grade, via = 'Detestable (137)', 'from the opposition'
+                else:
+                    sun_claims = _dispositors(planetary_data['Moon']['longitude'], sect) & {'Sun'}
+                    doubled = bool(sun_claims)
+                    grade = 'Strong (137)' + (', doubled by sign (138)' if doubled else '')
+                    via = 'her glow is from him' + (', and he has a claim where she stands' if doubled else '')
+                results.append({
+                    'Receiver': 'Sun', 'Received': 'Moon',
+                    'Direction': 'Reception by nature (137-138)',
+                    'Via': via, 'Grade': grade, 'Mode': 'Natural, from all signs',
+                })
+
+            # 139: "if Mercury received a planet from out of Virgo, that is
+            # also a strong reception." The note reads "from out of" as the
+            # other planet being IN Virgo, where Mercury holds both house
+            # and exaltation.
+            for x, y in ((a, b), (b, a)):
+                if x == 'Mercury' and sign_of[y] == 'Virgo':
+                    results.append({
+                        'Receiver': 'Mercury', 'Received': y,
+                        'Direction': 'Reception in Virgo (139)',
+                        'Via': 'house and exaltation together',
+                        'Grade': 'Strong (139)', 'Mode': 'By dignity',
+                    })
         return results
 
     # --- 56: reception at one remove ---------------------------------
@@ -2644,9 +2748,12 @@ def evaluate_reception(planetary_data, sect, sim=None):
         return (r is not None and r['motion'] == 'Applying'
                 and (r['applicant'] or r['light_name']) == a)
 
-    for planet in planetary_data:
-        if planet == 'North Node':
-            continue
+    # 56 and 57 both name THE MOON, and both are restricted to her. 58's
+    # subsequent "the Moon or the lord of the Ascendant" governs 58, not
+    # the two paragraphs before it -- an earlier version generalised them
+    # to every planet on the strength of that later sentence, which is the
+    # weaker reading and was flagged as such at the time.
+    for planet in ('Moon',):
         own_sign = get_zodiac_sign(planetary_data[planet]['longitude'])
         lords = {SIGN_TO_DOMICILE.get(own_sign)} | {
             p for p, s in EXALTATIONS.items() if s[0] == own_sign}
@@ -2674,16 +2781,35 @@ def evaluate_reception(planetary_data, sect, sim=None):
     # UNDERMINES HER." Both halves are reported: the second is a finding,
     # not the absence of one.
     if sim is not None:
-        for planet in planetary_data:
-            if planet == 'North Node' or planet not in sim['events']:
+        for planet in ('Moon',):
+            if planet not in sim['events']:
                 continue
-            if any(_connected(planet, other) for other in planetary_data
-                    if other not in (planet, 'North Node')):
-                continue          # not empty in course
             exits = sim['events'][planet]['sign_exits']
             if not exits:
                 continue
             ingress = exits[0]
+            # "EMPTY IN COURSE" is prospective, not a snapshot: no
+            # perfection completes before she leaves the sign she is in.
+            # The previous test asked only whether she was connected to
+            # anything right now, which is Sahl's looser sense at 63 and
+            # not what 57 needs.
+            empty = True
+            for other in planetary_data:
+                if other in (planet, 'North Node'):
+                    continue
+                tgt = _configuration_target_at(sim, planet, other, 0.0)
+                if tgt is None:
+                    continue
+                if _perfection_day(sim, planet, other, tgt, before_day=ingress) is not None:
+                    empty = False
+                    break
+            if not empty:
+                continue
+            # And the search window is the NEXT SIGN ONLY -- "she passed
+            # over into the next sign and connected with ..." An unbounded
+            # search after the ingress could return a connection several
+            # signs and months later and label it "after the sign change".
+            second_exit = next((d for d in exits if d > ingress), sim['horizon_days'])
             first_lord = SIGN_TO_DOMICILE.get(get_zodiac_sign(planetary_data[planet]['longitude']))
             exalted = next((p for p, s in EXALTATIONS.items()
                              if s[0] == get_zodiac_sign(planetary_data[planet]['longitude'])), None)
@@ -2695,7 +2821,8 @@ def evaluate_reception(planetary_data, sect, sim=None):
                 target = _configuration_target_at(sim, planet, other, ingress + 0.05)
                 if target is None:
                     continue
-                day = _perfection_day(sim, planet, other, target, after_day=ingress)
+                day = _perfection_day(sim, planet, other, target,
+                                       after_day=ingress, before_day=second_exit)
                 if day is not None and (best_day is None or day < best_day):
                     best, best_day = other, day
             if best is None:
@@ -2814,8 +2941,18 @@ FIVE_DEGREE_CARRYOVER = 5.0
 ANGLE_CUSP_INDICES = (0, 3, 6, 9)  # the four stakes, in swe.houses order
 
 def get_effective_house(longitude, cusps, angles_only=True):
-    """Quadrant house WITH the five-degree carryover applied: a planet
+    """Quadrant house with the five-degree carryover applied: a planet
     within 5 degrees before a cusp is counted as already in that house.
+
+    MEASURED IN ECLIPTIC LONGITUDE, WHICH IS AN APPROXIMATION. Dykes' note
+    on Fifty Aphorisms #44 says the five degrees are reckoned "AS MEASURED
+    IN DIURNAL MOTION, hence Sahl's reference to the 'rear' of the stake" --
+    that is, in right ascension along the diurnal circle, not in zodiacal
+    degrees. The two coincide only near the equinoctial points and diverge
+    with latitude and with the obliquity of the rising sign. Implementing
+    it properly needs oblique-ascension geometry, which this file does not
+    yet have; until then this is a longitude proxy and is named as one
+    wherever it is reported. It affects Sahl 83 and Abu Ma'shar 39 and 42.
 
     Both source statements are about the stakes specifically -- neither
     says "any cusp" -- and the transitions they describe (12th into 1st,
@@ -3129,7 +3266,7 @@ def calculate_classical_lots(asc, sun, moon, sect):
         'Lot of Fortune': fortune,
         'Lot of Spirit': spirit,
         'Lot of Exaltation': exaltation,
-        'Lot of Basis (unattested in the sources here)': basis,
+        'Lot of Basis (EXTERNAL -- unattested anywhere in this corpus)': basis,
     }
     result = []
     for name, lon_val in lots.items():
@@ -3238,9 +3375,10 @@ LOT_DEFINITIONS = [
     dict(id='father_burnt', topic='Father', name='Lot of the father (Saturn under the rays)',
          start='Mars', end='Jupiter', project='Ascendant', reverse_at_night=False,
          source='Sahl, On Nativities Ch. 4.14, 2',
-         confidence='conditional',
-         note='"Now if Saturn was under the rays, then count from Mars to Jupiter." Shown '
-              'always; apply it only when Saturn is in fact under the rays.'),
+         confidence='conditional -- see the Active column',
+         note='"Now if Saturn was under the rays, then count from Mars to Jupiter." This '
+              'replaces the ordinary father Lot only while Saturn is actually under the '
+              'rays; the row reports whether that condition holds in this chart.'),
     dict(id='mother', topic='Mother', name='Lot of the mother',
          start='Venus', end='Moon', project='Ascendant', reverse_at_night=True,
          source="Sahl, On Nativities Ch. 4.14 (Dykes' note 198)",
@@ -3439,9 +3577,19 @@ def calculate_topical_lots(planetary_data, asc, cusps, sect):
         lon = (p + b - a) % 360.0
         resolved[d['id']] = lon
         arc = 'day' if is_diurnal else 'night'
+        active = 'yes'
+        if d['id'] == 'father_burnt':
+            # Only replaces the ordinary father Lot while Saturn is in fact
+            # under the rays (4.14, 2). Shown either way, but the row now
+            # says whether its condition holds instead of leaving the
+            # reader to check.
+            _ph, _sd, _el = solar_phase('Saturn', planetary_data['Saturn']['longitude'],
+                                         planetary_data['Sun']['longitude'])
+            active = 'yes' if _ph in ('Burned', 'Under the rays', 'Cazimi') else 'NO -- Saturn is not under the rays'
         rows.append({
             'Topic': d['topic'],
             'Lot': d['name'],
+            'Active': active,
             'Position': get_degree_string(lon),
             'WSH House': get_wsh_house(lon, asc),
             'Lord': SIGN_TO_DOMICILE.get(get_zodiac_sign(lon), '-'),
@@ -3452,6 +3600,38 @@ def calculate_topical_lots(planetary_data, asc, cusps, sect):
             'Editor’s note': d['note'],
         })
     return rows
+
+# --- Coverage: what these sources contain that this file does not ---------
+# Named explicitly rather than left as silence, so the absence is a stated
+# scope limit and not an implied claim of completeness. Each entry is a
+# doctrine present in the corpus and not implemented here.
+NOT_IMPLEMENTED_COVERAGE = [
+    ("Abu Ma'shar VII.5, 29-31", "Priority among several planets connecting from a "
+     "single degree and minute, decided by claims in the handing-over sign, with the "
+     "bound lord breaking ties. Recovered with p. 452; computable, not yet built."),
+    ("Abu Ma'shar VII.5, 38-52", "Connection by LATITUDE, in three kinds -- assembly "
+     "at equal latitude with one eclipsing the other, and two further kinds. Recovered "
+     "with pp. 452-453. Latitude is available in the chart data but unused for "
+     "connection."),
+    ("Abu Ma'shar VII.5, 53-77", "Natural connections by equal ascensions, equal "
+     "daylight, and sign affinity. Needs the sign categories of VI.5-VI.6, which are "
+     "not in this corpus."),
+    ("Abu Ma'shar VII.5, 97-100", "Handing over TWO NATURES. The Sahl handing-over "
+     "table is not a substitute."),
+    ("Abu Ma'shar VII.5, 104-116", "The full returning tree, with its suitability and "
+     "corruption grades. Only Sahl's two manners (Ch.3, 65-69) are implemented."),
+    ("Abu Ma'shar VII.5, 134", "Two of the four harmonious-sign bases -- equal "
+     "ascensions and equal length of day -- for the same VI.5-VI.6 reason."),
+    ("Abu Ma'shar VII.6, 13 and 36", "The masculine and feminine DEGREES, alongside "
+     "the signs. No table for them in this corpus."),
+    ("Abu Ma'shar VII.6, 52", "Each planet's OWN nodes (\"their own Dragons\"). Only "
+     "the Moon's are computed."),
+    ("Abu Ma'shar VII.7", "The casting of rays according to Ptolemy. The chapter "
+     "begins on a page not photographed."),
+    ("Masculine/feminine quadrants", "The assignment used here is the conventional "
+     "one. VII.6, 28 and 45 name the quadrants but define them at IV.8, 16, which is "
+     "outside this corpus, and Figure 90's table image is unavailable."),
+]
 
 # --- Special Degrees & Conditions ----------------------------------------
 
@@ -3499,7 +3679,7 @@ def evaluate_special_degrees(planetary_data):
         conditions = []
 
         if 195.0 <= lon <= 225.0:
-            conditions.append("Via Combusta")
+            conditions.append("Via Combusta (external convention, not from these sources)")
 
         sign = get_zodiac_sign(lon)
         degree_1_based = int(lon % 30) + 1
@@ -4092,12 +4272,18 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
         # or square -- an ordinary harmful connection, and a testimony in
         # its own right. An earlier version folded this into 95's enclosure
         # and so never reported a single-infortune contact at all.
+        # ONE testimony however many infortunes match -- 94 announces a
+        # single item, and appending a label per matching planet let one
+        # numbered testimony vote twice.
+        _hit94 = []
         for r in rows:
             if r['aspect_name'] not in ('Conjunction', 'Square', 'Opposition') or planet not in (r['p1'], r['p2']):
                 continue
             other = r['p2'] if r['p1'] == planet else r['p1']
             if other in INFORTUNES and _is_connected(r):
-                labels.append(f'Connecting with {other} by assembly, square, or opposition (94)')
+                _hit94.append(other)
+        if _hit94:
+            labels.append(f"Connecting with {' and '.join(sorted(_hit94))} by assembly, square, or opposition (94)")
 
         # (95) Enclosed between the two infortunes -- separating from one,
         # connecting with the other (Sahl's own Enclosure, 119-123).
@@ -4111,16 +4297,26 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
 
         # (97) Connecting with a planet falling from the Ascendant, or
         # separating from a planet that would have received it.
+        # Likewise ONE testimony for 97, whose two clauses and any number of
+        # matching planets previously produced a label each.
+        _averse97, _sep97 = [], []
         for r in rows:
             if r['aspect_name'] == 'Aversion' or planet not in (r['light_name'], r['heavy_name']):
                 continue
             other = r['heavy_name'] if r['light_name'] == planet else r['light_name']
             if _is_connected(r) and _averse_to_ascendant(planetary_data[other]['longitude'], ascendant_lon):
-                labels.append(f'Connecting with {other}, itself averse to the Ascendant (97)')
+                _averse97.append(other)
             if (r['applicant'] or r['light_name']) == planet and r['motion'] == 'Separating' and _is_connected(r):
                 other_rulers = get_essential_rulers(planetary_data[other]['longitude'])
                 if planet in (other_rulers['domicile'], other_rulers['exaltation']):
-                    labels.append(f'Separating from {other}, which would have received it (97)')
+                    _sep97.append(other)
+        if _averse97 or _sep97:
+            _parts = []
+            if _averse97:
+                _parts.append(f"connecting with {' and '.join(sorted(_averse97))}, averse to the Ascendant")
+            if _sep97:
+                _parts.append(f"separating from {' and '.join(sorted(_sep97))}, which would have received it")
+            labels.append('; '.join(_parts).capitalize() + ' (97)')
 
         # (98) "In a house in which it did not have testimony (neither
         # house nor exaltation nor triplicity)" -- alien/peregrine, and a
@@ -4244,7 +4440,13 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
     # Moon's own corruption count is needed (for §8's "Moon fortunate" test)
     # before the main per-planet loop, computed with no dependency on this
     # function's own output, to avoid recursion.
-    moon_corruption_count = _corruption_of_the_moon(planetary_data, ascendant_lon, sect)
+    # 8's "while the Moon is made fortunate" is judged on ABU MA'SHAR's
+    # own eleven corruptions (63-74), not Sahl's ten. An Abu Ma'shar table
+    # reaching into Sahl's list for its own paragraph was the last place
+    # the two authors were still crossed. Note this is still a reading:
+    # "made fortunate" in this chapter's vocabulary most naturally means
+    # satisfying 1-14, and "uncorrupted" is the app's proxy for it.
+    moon_corruption_count = len(_abu_mashar_moon_corruption(planetary_data, ascendant_lon, jd))
 
     results = {}
     for planet, data in planetary_data.items():
@@ -4296,7 +4498,7 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         # and 7 which name theirs; an earlier version limited it to the
         # trine and sextile borrowed from 7.
         if planet != 'Moon' and connected_to(planet, {'Moon'}) and moon_corruption_count == 0:
-            positive.append('Aspects the (uncorrupted) Moon (8)')
+            positive.append('Aspects the Moon, uncorrupted by 63-74 (8)')
         # 9 is a conjunction, not a synonym: "quick in motion, INCREASING IN
         # LIGHT and number." VII.1, 19-21 defines increasing in light as
         # falling from the apogee toward the earth, so geocentric distance
@@ -5712,6 +5914,16 @@ if location_query and lat is not None and lon is not None:
                 with col2:
                     st.subheader("Classical Lots", help='Arabic Parts: sect-dependent formulas combining two planets or points with the Ascendant to derive a new sensitive degree tied to a specific topic (e.g. Fortune = body/livelihood, Spirit = mind/action).\n\nFortune, Spirit and Exaltation are attested in Sahl and carry their provenance in the Topical Lots table below. BASIS IS NOT: no Lot of Basis appears anywhere in the material this project has, and the construction used takes the unsigned shorter arc between Fortune and Spirit, discarding the direction the pair actually stands in. It is kept because it has always been here, and marked rather than presented as settled.')
                     st.dataframe(pd.DataFrame(classical_lots), hide_index=True, width='stretch')
+
+                    with st.expander("Coverage: what these sources contain that this app does not", expanded=False):
+                        st.caption(
+                            "Named explicitly so the absence is a stated scope limit rather than an "
+                            "implied claim of completeness. Several of these became legible only when "
+                            "the missing pages were rephotographed."
+                        )
+                        st.dataframe(pd.DataFrame(
+                            [{'Passage': a, 'Not implemented': b} for a, b in NOT_IMPLEMENTED_COVERAGE]),
+                            hide_index=True, width='stretch')
 
                     st.subheader("Topical Lots (Sahl, On Nativities)", help="Sahl's topical Lots, each with its own provenance. He gives several of them MORE THAN ONCE, with formulas that genuinely conflict, and Dykes' apparatus does not silently reconcile them -- so neither does this table. The STANDING column records his editorial position in his own words where he states one.\n\nFour kinds of case. SAHL HIMSELF RULES: of the two sibling Lots, \"both of the Lots are correct, so work with them both together\" (3.11, 4) -- neither is subordinate. DYKES NAMES HIS CHOICE: of the three witnesses to the Lot of enemies, \"I have used M here\"; on the night reversal of the Saturn-Moon work Lot, \"Paul instructs us to reverse it by night, but Abu Ma'shar says not to. We should follow Paul.\" DYKES MARKS ONE STANDARD: on children, \"the usual calculation ... is that of Hermes.\" DYKES ONLY TABULATES: three Lots for work, after noting that \"Sahl quietly switches to Masha'allah's treatise on Lots ... without telling us that the formula is different.\"\n\nEvery formula is taken from the running prose or a footnote, never from one of the summary tables, whose glyph columns the OCR mangles -- Fig. 63's row for Ch. 10.2.5 renders as Mercury-Venus where the body text plainly reads \"from Saturn to the Moon.\"\n\nNote the Lot of death is projected FROM SATURN, not from the Ascendant.")
                     st.dataframe(pd.DataFrame(topical_lots), hide_index=True, width='stretch')
