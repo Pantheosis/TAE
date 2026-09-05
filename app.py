@@ -1011,6 +1011,14 @@ def _pairwise_configurations(planetary_data):
         if row['aspect_name'] != 'Aversion' and _is_connected_sahl(row):
             already_connected.add(row['p1'])
             already_connected.add(row['p2'])
+    # Candidates first, then ONE per striking planet: "whatever planet was
+    # THE FIRST IN THAT LIGHT, it is connected with it" (20). An earlier
+    # version flagged every planet inside the projected light, so a planet
+    # at the end of Gemini with two planets early in Cancer came out
+    # connected to both -- which 20 rules out in as many words, and which
+    # also contradicts its own opening condition, since after the first
+    # connection the striker is no longer "not connecting with anything."
+    strikes = {}
     for row in rows:
         if row['aspect_name'] != 'Aversion' or row['signs_apart'] != 1:
             continue
@@ -1024,9 +1032,41 @@ def _pairwise_configurations(planetary_data):
         if earlier in already_connected:
             continue
         if gap <= PLANETARY_ORBS.get(earlier, 7.0):
-            row['sahl_body_connection'] = True
-            row['body_connection_from'] = earlier
-            row['body_connection_to'] = later
+            strikes.setdefault(earlier, []).append((gap, later, row))
+
+    for earlier, candidates in strikes.items():
+        if earlier in already_connected:
+            continue
+        gap, later, row = min(candidates, key=lambda c: c[0])
+        row['sahl_body_connection'] = True
+        row['body_connection_from'] = earlier
+        row['body_connection_to'] = later
+        already_connected.add(earlier)
+        already_connected.add(later)
+        # These rows stay ASPECT_NAME 'Aversion', because 21 is explicit
+        # that the two do not see each other -- not seeing and being
+        # connected are both true here, which is the whole point of the
+        # paragraph. But without kinetics the row was inert: every
+        # downstream evaluator needs a motion and a direction, so the
+        # connection was computed and then never used by anything.
+        #
+        # The gap closes when the later planet's motion falls behind the
+        # earlier one's, and the applicant is whichever of the two is
+        # closing it -- the same test the configured branch uses above.
+        v_e = planetary_data[earlier]['speed_in_lon']
+        v_l = planetary_data[later]['speed_in_lon']
+        row['deviation'] = gap
+        row['target'] = 0.0
+        row['motion'] = 'Applying' if (v_l - v_e) < 0 else 'Separating'
+        if v_e > 0 and v_l < v_e:
+            row['applicant'], row['receiver'] = earlier, later
+        elif v_l < 0:
+            row['applicant'], row['receiver'] = later, earlier
+        else:
+            row['applicant'], row['receiver'] = earlier, later
+        row['application_cause'] = 'out-of-sign body (20-21)'
+        row['applicant_is_heavier'] = (
+            WEIGHT_ORDER.index(row['applicant']) < WEIGHT_ORDER.index(row['receiver']))
 
     return rows
 
@@ -1211,6 +1251,19 @@ def evaluate_ptolemaic_aspects(planetary_data):
 
 # --- Transfer & Collection of light -- Sahl, The Introduction Ch.3, 24-30 ----
 
+def _sahl_body_row(row):
+    """True for the out-of-sign body connection of Ch.3, 20-21.
+
+    Such a row keeps aspect_name 'Aversion' -- 21 says outright that the
+    two do not see each other -- while _is_connected_sahl() still reports
+    it as connected. Every evaluator that gates on Aversion therefore
+    dropped it before ever consulting the connection, so Sahl's own rule
+    was computed and then thrown away by all of them. The evaluators that
+    belong to Sahl's doctrine now admit it through this predicate; Abu
+    Ma'shar's VII.6 table does not, because VII.5, 14 denies the case
+    outright ("they mix their natures in a weak way", not a connection)."""
+    return row.get('sahl_body_connection', False)
+
 def evaluate_transfers_of_light(planetary_data):
     """Transfer of light: the core concept (a carrier separating from one
     planet and connecting to another) is Sahl's own (Ch.3, 24-27). The
@@ -1254,7 +1307,7 @@ def evaluate_transfers_of_light(planetary_data):
     # recognised as the carrier rather than as the thing carried.
     by_fast = {}
     for row in rows:
-        if row['aspect_name'] == 'Aversion':
+        if row['aspect_name'] == 'Aversion' and not _sahl_body_row(row):
             continue
         by_fast.setdefault(row['applicant'] or row['light_name'], []).append(row)
 
@@ -1301,7 +1354,7 @@ def evaluate_collections_of_light(planetary_data):
     applying_to = {}
     for row in rows:
         pair = frozenset({row['p1'], row['p2']})
-        is_conn = row['aspect_name'] != 'Aversion' and _is_connected(row)
+        is_conn = (row['aspect_name'] != 'Aversion' or _sahl_body_row(row)) and _is_connected(row)
         connected_lookup[pair] = is_conn
         # Collection needs the light planets to be the ones APPLYING to the
         # collector, so the pair is keyed applicant -> receiver. 28's own
@@ -1343,11 +1396,26 @@ def evaluate_wildness(planetary_data):
         if row['aspect_name'] == 'Aversion':
             aversion_count[row['p1']] += 1
             aversion_count[row['p2']] += 1
+    body_connected = {p for row in rows if row.get('sahl_body_connection')
+                       for p in (row['p1'], row['p2'])}
     results = []
     for p in planets:
         if aversion_count[p] == len(planets) - 1:
             lon = planetary_data[p]['longitude']
-            results.append({'Planet': p, 'Bound Lord (residual connection)': get_essential_rulers(lon)['term']})
+            row = {'Planet': p, 'Bound Lord (residual connection)': get_essential_rulers(lon)['term']}
+            # The two definitions come apart here, and the disagreement is
+            # reported rather than resolved. Abu Ma'shar's is whole-sign
+            # aversion to everything, which an out-of-sign body connection
+            # does not break (Ch.3, 21: the two "will not see" each other).
+            # Sahl's own "banished" is "the planet which NONE OF THE
+            # PLANETS CONNECTS TO" (64), and 20-21 is exactly a connection
+            # without sight -- so by his wording this planet is not
+            # banished at all.
+            if p in body_connected:
+                row['Note'] = ("Wild by Abu Ma'shar's whole-sign definition only: it holds an "
+                                "out-of-sign body connection (Sahl Ch.3, 20-21), so it is not "
+                                "\"banished\" by Sahl's own wording at 64")
+            results.append(row)
     return results
 
 def evaluate_reflections_of_light(planetary_data, ascendant_lon):
@@ -1550,7 +1618,7 @@ def evaluate_handing_over(planetary_data, sect):
     results = []
 
     for r in rows:
-        if r['aspect_name'] == 'Aversion' or not _is_connected(r):
+        if (r['aspect_name'] == 'Aversion' and not _sahl_body_row(r)) or not _is_connected(r):
             continue
         fast, slow = r['light_name'], r['heavy_name']
         fast_lon = planetary_data[fast]['longitude']
@@ -1769,7 +1837,7 @@ def evaluate_returning(planetary_data, accidental, ascendant_lon):
     rows = _pairwise_configurations(planetary_data)
     results = []
     for r in rows:
-        if r['aspect_name'] == 'Aversion' or not _is_connected(r) or r['motion'] != 'Applying':
+        if (r['aspect_name'] == 'Aversion' and not _sahl_body_row(r)) or not _is_connected(r) or r['motion'] != 'Applying':
             continue
         # Returning is directed: 65 has "a planet ... CONNECTING WITH a
         # retrograde planet or one under the rays," and 67 names the mover
@@ -2289,7 +2357,7 @@ def evaluate_reception(planetary_data, sect):
         return 'Complete (132)' if len(minors) >= 2 else 'Weak, one minor dignity alone (132)'
 
     for row in rows:
-        if row['aspect_name'] == 'Aversion':
+        if row['aspect_name'] == 'Aversion' and not _sahl_body_row(row):
             continue
         connected = _is_connected(row)
         if sahl and not connected:
@@ -2371,7 +2439,7 @@ def evaluate_non_reception(planetary_data, sect):
     results = []
 
     for r in rows:
-        if r['aspect_name'] == 'Aversion' or not _is_connected(r):
+        if (r['aspect_name'] == 'Aversion' and not _sahl_body_row(r)) or not _is_connected(r):
             continue
         a, b = r['light_name'], r['heavy_name']
         a_lon, b_lon = planetary_data[a]['longitude'], planetary_data[b]['longitude']
