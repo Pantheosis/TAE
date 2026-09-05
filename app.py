@@ -3628,9 +3628,11 @@ NOT_IMPLEMENTED_COVERAGE = [
      "the Moon's are computed."),
     ("Abu Ma'shar VII.7", "The casting of rays according to Ptolemy. The chapter "
      "begins on a page not photographed."),
-    ("Masculine/feminine quadrants", "The assignment used here is the conventional "
-     "one. VII.6, 28 and 45 name the quadrants but define them at IV.8, 16, which is "
-     "outside this corpus, and Figure 90's table image is unavailable."),
+    ("Abu Ma'shar VI.26, 3", "The sentence defining the quadrants and saying what "
+     "makes one ADVANCING. Figure 90 labels houses 4-6 and 10-12 advancing, where "
+     "Sahl 83 is implemented as angular-or-succedent; the two differ for about half "
+     "of all placements, and the text that would settle it is cut off in both the OCR "
+     "and the photograph. The quadrant GENDERS are settled -- Figure 90 confirms them."),
 ]
 
 # --- Special Degrees & Conditions ----------------------------------------
@@ -3739,8 +3741,45 @@ PREFERRED_DOMICILE = {'Saturn': 'Aquarius', 'Jupiter': 'Sagittarius', 'Mars': 'S
 # Great Introduction VI.26, 3-4, Fig. 90: quadrants alternate Advancing/
 # Masculine/Eastern vs. Withdrawing/Feminine/Western, diagonally opposite
 # pairs sharing a designation. In Whole-Sign-House terms:
+# Quadrant genders, VERIFIED against Abu Ma'shar's Figure 90 (VI.26, 3,
+# "Advancing and withdrawing quadrants"). Reading the figure with the
+# Ascendant on the left, the Midheaven on top and primary motion running
+# clockwise, its four quadrants map onto house numbers as:
+#
+#   upper-left,  MC to Asc  = 10, 11, 12 -> Advancing, MALE, eastern, on right
+#   upper-right, Desc to MC =  7,  8,  9 -> Withdrawing, FEMININE, western, on left
+#   lower-left,  Asc to IC  =  1,  2,  3 -> Withdrawing, FEMININE, western, on left
+#   lower-right, IC to Desc =  4,  5,  6 -> Advancing, MALE, eastern, on right
+#
+# which is exactly the assignment below. It was previously carried as an
+# unsourced convention, because VII.6, 28 names the quadrants but defines
+# them at IV.8, 16, outside this corpus, and the figure's image was
+# missing until it was rephotographed.
 MASCULINE_QUADRANT_HOUSES = {4, 5, 6, 10, 11, 12}
 FEMININE_QUADRANT_HOUSES = {1, 2, 3, 7, 8, 9}
+
+# OPEN QUESTION, raised by the same figure. Fig. 90 labels those two
+# masculine quadrants ADVANCING and the two feminine ones WITHDRAWING --
+# so on its reading advancing is houses 4-6 and 10-12. Sahl 83 is
+# implemented here as dynamically angular OR SUCCEDENT, which is houses
+# 1, 2, 4, 5, 7, 8, 10 and 11. The two sets differ on six of the twelve
+# houses and would change the advancing verdict for about half of all
+# placements.
+#
+# The conflict is not resolvable from what this project holds. Figure 90
+# belongs to VI.26, a different chapter from Sahl's 83, and VI.26, 3 --
+# the sentence that would define the quadrants and say what makes one
+# advancing -- is cut off in the OCR and in the photograph of the figure
+# alike. Reading the figure's own geometry does not settle it either: a
+# planet in the upper-left quadrant is approaching the Midheaven, which
+# fits "advancing", but one in the upper-right is approaching the
+# Descendant and is labelled withdrawing, so the criterion is not simply
+# nearness to the next angle.
+#
+# 83 is therefore left as it is. Changing half of all placements on an
+# inference drawn from another chapter's diagram is not warranted; the
+# page carrying VI.26, 3 needs to be read first.
+ADVANCING_BY_QUADRANT_FIG90 = {4, 5, 6, 10, 11, 12}   # not used; recorded
 
 # Approximate geocentric distance range (AU) per planet, used only as a
 # modern proxy for "rising up in the circle of the apogee" (VII.6, 23) --
