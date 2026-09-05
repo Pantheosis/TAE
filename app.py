@@ -1655,7 +1655,28 @@ def _configuration_target_at(sim, p1, p2, day):
     entry = ASPECT_BY_SIGN_COUNT.get(apart)
     return None if entry is None else entry[1]
 
-def _perfection_day(sim, p1, p2, target, before_day=None):
+def _sign_ingress_day(sim, planet, sign_idx, after_day=0.0, before_day=None):
+    """Day the planet ENTERS the given sign, or None inside the horizon.
+
+    sim['events'][p]['sign_exits'] records the moments a planet leaves the
+    sign it was in; the sign it lands in is read just past the crossing."""
+    for day in sim['events'][planet]['sign_exits']:
+        if day <= after_day:
+            continue
+        if before_day is not None and day > before_day:
+            break
+        if int(_lon_at(sim, planet, day + 0.02) // 30) == sign_idx % 12:
+            return day
+    return None
+
+def _body_union_day(sim, a, b, after_day=0.0, before_day=None):
+    """Day two planets conjoin BY DEGREE -- the "uniting" the sources treat
+    as a distinct, stronger event than a ray perfecting (Sahl Ch.3, 44;
+    VII.5, 121 and its note, which reads the verb as "conjoins" by degree
+    "rather than the looser 'assembling'")."""
+    return _perfection_day(sim, a, b, 0.0, after_day=after_day, before_day=before_day)
+
+def _perfection_day(sim, p1, p2, target, before_day=None, after_day=None):
     """First day inside the horizon on which p1 and p2 actually perfect the
     given aspect, or None.
 
@@ -1690,6 +1711,8 @@ def _perfection_day(sim, p1, p2, target, before_day=None):
     for i in range(len(days) - 1):
         if before_day is not None and days[i] > before_day:
             break
+        if after_day is not None and days[i + 1] < after_day:
+            continue
         for offset in (target, -target):
             prev = _wrap180(lons1[i] - lons2[i] - offset)
             cur = _wrap180(lons1[i + 1] - lons2[i + 1] - offset)
@@ -1700,6 +1723,8 @@ def _perfection_day(sim, p1, p2, target, before_day=None):
                 continue
             day = _bisect_zero(lambda d, _o=offset: residual(d, _o), days[i], days[i + 1])
             if before_day is not None and day > before_day:
+                continue
+            if after_day is not None and day < after_day:
                 continue
             actual = _configuration_target_at(sim, p1, p2, day)
             if actual is not None and abs(actual - target) < 1e-9:
@@ -1752,9 +1777,17 @@ def evaluate_returning(planetary_data, accidental, ascendant_lon):
     return results
 
 def evaluate_revoking(planetary_data, sim):
-    """Revoking (VII.5, 117, Fig. 137): a planet applying toward a
-    connection stations retrograde before reaching it, nullifying the
-    connection."""
+    """Revoking (VII.5, 117, Fig. 137; the same sentence in Sahl Ch.3,
+    117): "a planet is CONNECTING with a planet, but BEFORE IT REACHES IT,
+    it retrogrades away from it, and its connection is nullified."
+
+    "Before it reaches it" fixes the window: the only question is whether
+    the aspect perfects between now and the applicant's first station. If
+    it does, nothing was revoked; if it does not, the station is what
+    stopped it. Searching the whole horizon instead, and accepting "no
+    perfection found anywhere" as a positive, let a station on day 190
+    revoke a connection that was never going to complete inside 200 days
+    regardless -- a finding with no causal content."""
     if sim is None:
         return []
     rows = _pairwise_configurations(planetary_data)
@@ -1769,46 +1802,125 @@ def evaluate_revoking(planetary_data, sim):
         first_station = next((s for s in sim['events'][fast]['stations'] if s[1] == 'first'), None)
         if not first_station:
             continue
-        exact_day = _perfection_day(sim, fast, slow, r['target'])
-        if exact_day is None or first_station[0] < exact_day:
-            results.append({'Planet': fast, 'Was Connecting To': slow, 'Stations Retrograde In (days)': round(first_station[0], 1)})
+        # "BEFORE IT REACHES IT, it retrogrades away from it." The only
+        # window that matters is up to the station: if the aspect perfects
+        # in it, nothing was revoked, and if it does not, the station is
+        # what stopped it. An earlier version searched the whole 200-day
+        # horizon and also accepted "no perfection found anywhere" as proof
+        # -- so a station on day 190 revoked a connection that was never
+        # going to complete inside the horizon in the first place, with the
+        # station doing none of the work.
+        station_day = first_station[0]
+        if _perfection_day(sim, fast, slow, r['target'], before_day=station_day) is not None:
+            continue
+        results.append({
+            'Planet': fast, 'Was Connecting To': slow,
+            'Stations Retrograde In (days)': round(station_day, 1),
+        })
     return results
 
 def evaluate_resistance(planetary_data, sim):
-    """Resistance (VII.5, 118, Fig. 138): a light planet applying to a
-    heavier one stations retrograde first; a third, even lighter planet
-    that also wanted the light one ends up connecting with it after its
-    retrogradation, instead of the light one ever reaching the original
-    heavy target."""
+    """Resistance (VII.5, 118, Fig. 138). The chapter prescribes an ordered
+    sequence of events, and each step is now required rather than inferred:
+
+    "RESISTANCE is if there was A LIGHT PLANET IN MANY DEGREES, and another
+    planet HEAVIER THAN IT IN FEWER DEGREES, and A THIRD PLANET LIGHTER
+    THAN THAT LIGHT ONE wanting a connection with the heavy one, so that
+    the light one in more degrees GOES RETROGRADE and CONNECTS WITH THE
+    HEAVY ONE THROUGH ITS RETROGRADATION -- and then GOES PAST IT and there
+    is A CONNECTION OF THAT THIRD ONE with this retrograde one ... not with
+    the heavy one."
+
+    Dykes' note: "In Figure 138, Mercury wants to connect with Mars. But
+    Venus, who is in a later degree, suddenly goes retrograde, passes by
+    Mars, and connects with Mercury, resisting and obstructing his attempt
+    to connect with Mars." So L = Venus, H = Mars, T = Mercury.
+
+    Required, in order: T applying to H; L ahead of H by degree and lighter
+    than it; L's first station; L's union with H after that station; T's
+    connection with L after that; and T not reaching H first. An earlier
+    version proved only the station and that some later connection existed,
+    never that L actually reached H by retrogradation or that it did so
+    before T arrived."""
     if sim is None:
         return []
     rows = _pairwise_configurations(planetary_data)
+    row_for = {frozenset({r['p1'], r['p2']}): r for r in rows}
+    planets = [p for p in planetary_data.keys() if p != 'North Node']
     results = []
-    for r in rows:
-        if r['aspect_name'] == 'Aversion' or r['motion'] != 'Applying':
-            continue
-        light, heavy = r['light_name'], r['heavy_name']
-        first_station = next((s for s in sim['events'][light]['stations'] if s[1] == 'first'), None)
-        if not first_station:
-            continue
-        exact_with_heavy = _perfection_day(sim, light, heavy, r['target'])
-        if exact_with_heavy is not None and first_station[0] >= exact_with_heavy:
-            continue
-        for r2 in rows:
-            if light not in (r2['p1'], r2['p2']) or r2['aspect_name'] == 'Aversion':
+
+    for heavy in planets:
+        h_lon = planetary_data[heavy]['longitude']
+        for light in planets:
+            if light == heavy or WEIGHT_ORDER.index(light) <= WEIGHT_ORDER.index(heavy):
+                continue                       # L must be LIGHTER than H
+            # "a light planet in many degrees, and another planet heavier
+            # than it in fewer degrees" -- L ahead of H in the zodiac.
+            if not 0.0 < (planetary_data[light]['longitude'] - h_lon) % 360.0 < 180.0:
                 continue
-            other = r2['p2'] if r2['p1'] == light else r2['p1']
-            if other == heavy or WEIGHT_ORDER.index(other) <= WEIGHT_ORDER.index(light):
+            station = next((s for s, k in sim['events'][light]['stations'] if k == 'first'), None)
+            if station is None:
                 continue
-            exact_with_other = _perfection_day(sim, light, other, r2['target'])
-            if exact_with_other is not None and exact_with_other > first_station[0]:
-                results.append({'Light Planet': light, 'Originally Heading To': heavy, 'Resisted, Now Connects With': other})
+            # "connects with the heavy one THROUGH ITS RETROGRADATION"
+            union_lh = _body_union_day(sim, light, heavy, after_day=station)
+            if union_lh is None:
+                continue
+            for third in planets:
+                if third in (light, heavy):
+                    continue
+                if WEIGHT_ORDER.index(third) <= WEIGHT_ORDER.index(light):
+                    continue                   # T must be LIGHTER than L
+                r_th = row_for.get(frozenset({third, heavy}))
+                if r_th is None or r_th['aspect_name'] == 'Aversion' or r_th['motion'] != 'Applying':
+                    continue                   # T must actually want H
+                # "and then goes past it and there is a connection of that
+                # third one with this retrograde one" -- after the union.
+                r_tl = row_for.get(frozenset({third, light}))
+                if r_tl is None or r_tl['aspect_name'] == 'Aversion':
+                    continue
+                meet_tl = _perfection_day(sim, third, light, r_tl['target'], after_day=union_lh)
+                if meet_tl is None:
+                    continue
+                # T must not have reached H first; otherwise nothing was
+                # obstructed.
+                reach_th = _perfection_day(sim, third, heavy, r_th['target'], before_day=meet_tl)
+                if reach_th is not None:
+                    continue
+                results.append({
+                    'Light Planet': light,
+                    'Originally Heading To': heavy,
+                    'Resisted, Now Connects With': third,
+                    'Station (days)': round(station, 1),
+                    'Reaches It Retrograde (days)': round(union_lh, 1),
+                    'Third Planet Meets It (days)': round(meet_tl, 1),
+                })
     return results
 
 def evaluate_escape(planetary_data, sim):
-    """Escape (VII.5, 119, Fig. 139): the planet being applied to changes
-    sign before the connection completes, and a different, now-closer
-    planet captures the connection instead."""
+    """Escape (VII.5, 119, Fig. 139):
+
+    "ESCAPE is if a planet is going towards the connection of a planet, but
+    BEFORE IT REACHES IT, the one it is connecting with SHIFTS OVER TO THE
+    NEXT SIGN, and WHEN THE ONE HANDING OVER CHANGES [to that next sign]
+    there is one of the planets closer to it than [the first one], so its
+    connection is with the other planet, and its connection with the first
+    one is nullified."
+
+    The second half is the part that was missing. Dykes' note spells out
+    the picture: "Venus in Virgo had wanted to connect with Mercury, who
+    was at the end of the sign. But before she could complete the
+    connection, Mercury passed into Libra (and went past Saturn). BY THE
+    TIME VENUS PASSES INTO LIBRA, SHE ENCOUNTERS THE BODY OF SATURN and
+    connects with him, letting Mercury escape."
+
+    So the applicant must itself follow the escapee into the new sign, and
+    the capture is a body it meets there -- not merely whatever it happens
+    to perfect with next anywhere in the chart. Both the ingress and the
+    union are now required events with times, so a row asserts a capture
+    only when one actually occurs.
+
+    This makes Escape rare, which it should be: it needs two planets to
+    cross the same sign boundary in sequence inside the horizon."""
     if sim is None:
         return []
     rows = _pairwise_configurations(planetary_data)
@@ -1816,33 +1928,46 @@ def evaluate_escape(planetary_data, sim):
     for r in rows:
         if r['aspect_name'] == 'Aversion' or r['motion'] != 'Applying':
             continue
-        fast, slow = r['light_name'], r['heavy_name']
+        fast, slow = r['applicant'] or r['light_name'], r['receiver'] or r['heavy_name']
         sign_exits = sim['events'][slow]['sign_exits']
         if not sign_exits:
             continue
         exit_day = sign_exits[0]
+        # "before it reaches it, the one it is connecting with shifts over"
         if _perfection_day(sim, fast, slow, r['target'], before_day=exit_day) is not None:
             continue
-        # Whichever still-configured planet the escapee actually perfects
-        # with FIRST after the target has slipped away takes the
-        # connection. An earlier version instead picked whichever planet
-        # merely had the smallest deviation at the moment of the sign exit,
-        # which asserts a capture without any connection ever perfecting.
+        new_sign = int(_lon_at(sim, slow, exit_day + 0.02) // 30)
+        # "when the one handing over changes [to THAT NEXT SIGN]" -- the
+        # applicant follows it across the same boundary, which is what
+        # Fig. 139 shows: Venus and Mercury are both in Virgo, Mercury
+        # crosses into Libra, and Venus's own next crossing is into Libra
+        # behind him. So it must be the applicant's NEXT sign change, not
+        # any later arrival in that sign -- otherwise the Moon qualifies
+        # against everything, since she re-enters every sign each month.
+        next_exit = next((d for d in sim['events'][fast]['sign_exits'] if d > exit_day), None)
+        if next_exit is None or int(_lon_at(sim, fast, next_exit + 0.02) // 30) != new_sign:
+            continue
+        ingress_day = next_exit
+        # "there is one of the planets closer to it" -- the body it meets
+        # in that sign once it arrives.
         best, best_day = None, None
         for other in planetary_data:
             if other in (fast, slow, 'North Node'):
                 continue
-            target_then = _configuration_target_at(sim, fast, other, exit_day)
-            if target_then is None:
+            day = _body_union_day(sim, fast, other, after_day=ingress_day)
+            if day is None:
                 continue
-            day = _perfection_day(sim, fast, other, target_then)
-            if day is None or day < exit_day:
+            if int(_lon_at(sim, other, day) // 30) != new_sign:
                 continue
             if best_day is None or day < best_day:
                 best, best_day = other, day
         if best is not None:
-            results.append({'Planet': fast, 'Escaped': slow, 'Connected Instead With': best,
-                             'Perfects In (days)': round(best_day, 1)})
+            results.append({
+                'Planet': fast, 'Escaped': slow, 'Connected Instead With': best,
+                'Escapee Leaves Sign (days)': round(exit_day, 1),
+                'Applicant Follows In (days)': round(ingress_day, 1),
+                'Meets Its Body (days)': round(best_day, 1),
+            })
     return results
 
 # Sahl's precedence among the three kinds of contact a planet can hold,
@@ -1932,43 +2057,124 @@ def evaluate_cutting_the_light(planetary_data, sim):
         for r in rows:
             if r['aspect_name'] == 'Aversion' or r['motion'] != 'Applying':
                 continue
-            light, heavy = r['light_name'], r['heavy_name']
+            light, heavy = r['applicant'] or r['light_name'], r['receiver'] or r['heavy_name']
             exact_day = _perfection_day(sim, light, heavy, r['target'])
             if exact_day is None:
                 continue
+            light_sign = int(planetary_data[light]['longitude'] // 30)
+
+            # --- Type I (121-122, Fig. 140) ---------------------------
+            # "a planet wants a connection with a planet heavier than
+            # itself, and IN THE SECOND SIGN FROM THE LIGHT ONE is a
+            # planet, but before the light one reaches the connection with
+            # the heavy one, the planet which is in the second [sign] from
+            # it GOES RETROGRADE AND ENTERS ITS SIGN, AND CONJOINS with
+            # it." The note on 121 reads that last verb as conjoining by
+            # degree, "rather than the looser 'assembling'".
+            #
+            # Two of those four clauses were unchecked: the intervener had
+            # to start in the second sign, and it had to actually reach the
+            # light planet's body. An earlier version accepted any planet
+            # that stationed and crossed into the light planet's sign,
+            # whatever it did once there and wherever it started.
             for candidate in planetary_data:
                 if candidate in (light, heavy, 'North Node'):
                     continue
-                for station_day, kind in sim['events'][candidate]['stations']:
-                    if kind != 'first' or station_day >= exact_day:
-                        continue
-                    for exit_day in sim['events'][candidate]['sign_exits']:
-                        # The light planet's sign is read AT the crossing,
-                        # not at birth -- it may itself have moved on by then.
-                        if station_day < exit_day < exact_day and int(_lon_at(sim, candidate, exit_day) // 30) == int(_lon_at(sim, light, exit_day) // 30):
-                            results.append({'Type': 'I', 'Planet': light, 'Cut Off From': heavy, 'Cut By': candidate})
+                if int(planetary_data[candidate]['longitude'] // 30) != (light_sign + 1) % 12:
+                    continue
+                station = next((s for s, k in sim['events'][candidate]['stations']
+                                 if k == 'first' and s < exact_day), None)
+                if station is None:
+                    continue
+                ingress = _sign_ingress_day(sim, candidate, light_sign,
+                                             after_day=station, before_day=exact_day)
+                if ingress is None:
+                    continue
+                union = _body_union_day(sim, candidate, light,
+                                         after_day=ingress, before_day=exact_day)
+                if union is None:
+                    continue
+                results.append({
+                    'Type': 'I', 'Planet': light, 'Cut Off From': heavy, 'Cut By': candidate,
+                    'Because': f'stations day {station:.0f}, enters the sign day {ingress:.0f}, '
+                                f'conjoins day {union:.0f}, before perfection on day {exact_day:.0f}',
+                })
+
+            # --- Type II (123-124, Fig. 141) --------------------------
+            # "a light planet is connecting with a planet heavier than
+            # itself, and THAT PLANET HANDS OVER TO A HEAVY PLANET, but
+            # before the light one reaches the degree of the planet which
+            # is heavier than itself, that planet CONNECTS WITH THE HEAVY
+            # PLANET AND GOES PAST IT, so there is a connection of the
+            # light one WITH THE HEAVY ONE, while it nullifies its
+            # connection with the first one." The note: "Mercury wants to
+            # connect with Venus. But before he can do that, she connects
+            # with Mars and then continues on. Then Mercury is left with
+            # the conjunction of Mars, which was not what he wanted."
+            # Not implemented at all before this.
+            for onward in planetary_data:
+                if onward in (light, heavy, 'North Node'):
+                    continue
+                r_mid = next((x for x in rows if {x['p1'], x['p2']} == {heavy, onward}), None)
+                if r_mid is None or r_mid['aspect_name'] == 'Aversion' or r_mid['motion'] != 'Applying':
+                    continue
+                if (r_mid['applicant'] or r_mid['light_name']) != heavy:
+                    continue          # the middle planet must be the one handing on
+                mid_day = _perfection_day(sim, heavy, onward, r_mid['target'], before_day=exact_day)
+                if mid_day is None:
+                    continue          # it must get there FIRST
+                r_far = next((x for x in rows if {x['p1'], x['p2']} == {light, onward}), None)
+                if r_far is None or r_far['aspect_name'] == 'Aversion':
+                    continue
+                far_day = _perfection_day(sim, light, onward, r_far['target'], after_day=mid_day)
+                if far_day is None or far_day >= exact_day:
+                    continue          # ... and the light one must land on it
+                                      # BEFORE reaching the one it wanted,
+                                      # which is what "nullifies its
+                                      # connection with the first one" means
+                results.append({
+                    'Type': 'II', 'Planet': light, 'Cut Off From': heavy, 'Cut By': onward,
+                    'Because': f'{heavy} reaches {onward} on day {mid_day:.0f} and moves on; '
+                                f'{light} lands on {onward} instead on day {far_day:.0f}',
+                })
     return results
 
 def _find_recompense_day(sim, helper, helped):
-    """Best-effort forward scan for Recompense (VII.5, 127): the helper
-    planet later enters its own Fall or a Well while the originally-helped
-    planet is positioned to connect with it -- the reciprocal payback.
-    Returns the day found, or None -- not found within the 200-day horizon
-    isn't treated as a hard "no," just omitted from the table."""
+    """Recompense (VII.5, 127): "[the first planet] will not cease to have
+    favor for it until the planet which had bestowed the favor on it FALLS
+    INTO ITS OWN WELL OR FALL, and the other [planet] CONNECTS WITH IT (or
+    it connects with the other), and PULLS IT OUT of its well or fall."
+
+    Two events, both required: the helper arriving in its own well or fall,
+    and a connection actually perfecting there. An earlier version scanned
+    the daily samples and accepted any pair whose separation sat within 5
+    degrees of an aspect angle on one of those days -- a proximity this
+    project invented, on a one-day grid, standing in for a perfection that
+    was never computed. Now the aspect is perfected against the ephemeris
+    and the helper must still be in the well or fall when it lands.
+
+    Returns the day, or None. Not found inside the horizon is omitted from
+    the table, not reported as a negative finding."""
     helper_fall_signs = FALLS.get(helper, [])
+
+    def in_well_or_fall(lon):
+        sign = get_zodiac_sign(lon)
+        return (sign in helper_fall_signs
+                or (int(lon % 30) + 1) in WELLED_DEGREES.get(sign, []))
+
     days = sim['series'][helper]['day']
-    lons_helper, lons_helped = sim['series'][helper]['lon'], sim['series'][helped]['lon']
-    for day, lh, lp in zip(days, lons_helper, lons_helped):
-        sign = get_zodiac_sign(lh)
-        degree_1_based = int(lh % 30) + 1
-        if not (degree_1_based in WELLED_DEGREES.get(sign, []) or sign in helper_fall_signs):
+    lons_helper = sim['series'][helper]['lon']
+    for day, lh in zip(days, lons_helper):
+        if not in_well_or_fall(lh):
             continue
-        raw = abs(lh - lp)
-        dist = raw if raw <= 180.0 else 360.0 - raw
-        sign_h, sign_p = int(lh // 30), int(lp // 30)
-        apart = min(abs(sign_h - sign_p), 12 - abs(sign_h - sign_p))
-        if apart in ASPECT_BY_SIGN_COUNT and abs(dist - ASPECT_BY_SIGN_COUNT[apart][1]) < 5.0:
-            return day
+        target = _configuration_target_at(sim, helper, helped, day)
+        if target is None:
+            continue
+        perf = _perfection_day(sim, helped, helper, target, after_day=day)
+        if perf is None:
+            continue
+        if in_well_or_fall(_lon_at(sim, helper, perf)):
+            return perf
     return None
 
 def evaluate_favor_and_recompense(planetary_data, essential, sect, sim):
@@ -4786,7 +4992,7 @@ if location_query and lat is not None and lon is not None:
                 else:
                     st.write("No non-reception configurations found.")
 
-                st.subheader("Cutting the Light (Sahl, The Introduction Ch.3, 31-34: Type III; Abu Ma'shar VII.5, 120-125: Types I-II)", help='Type III is Sahl\'s own Blocking #1: among several planets a given one is applying to, one contact wins and cuts off the others.\n\nWhich one wins is decided by Sahl\'s own PRECEDENCE, not by nearness alone: "a connection does not nullify a uniting, but a uniting does NULLIFY a connection, while an aspect does not cut an aspect, and a uniting cuts an aspect" (Ch.3, 44). The note there ranks the three kinds -- (1) a uniting, i.e. a conjunction by degree; (2) a connection by degree from another sign; (3) an aspect by sign only -- and adds that degree-based connections can cut each other while aspects by sign cannot. Nearness only breaks ties within a rank, and the BECAUSE column says which applied.\n\nSahl works it himself at 46-48 (Fig. 15): Moon 10 Taurus, Mars 20 Taurus, Venus 15 Cancer. "Her connection with Venus is PRIOR to her uniting with Mars, but the Moon is uniting [with Mars], and that is stronger than an aspect and a connection." The Venus sextile is 5 degrees from exact against the Mars union\'s 10, so nearness alone gives the opposite of Sahl\'s verdict; the precedence rule changes the winner for about 7% of planets holding two or more applying contacts.\n\nTypes I-II are Abu Ma\'shar\'s later addition: an intervening planet -- by retrograding into the path -- intercepts an applying connection before it reaches its original target.')
+                st.subheader("Cutting the Light (Sahl, The Introduction Ch.3, 31-34: Type III; Abu Ma'shar VII.5, 120-125: Types I-II)", help='Type III is Sahl\'s own Blocking #1: among several planets a given one is applying to, one contact wins and cuts off the others.\n\nWhich one wins is decided by Sahl\'s own PRECEDENCE, not by nearness alone: "a connection does not nullify a uniting, but a uniting does NULLIFY a connection, while an aspect does not cut an aspect, and a uniting cuts an aspect" (Ch.3, 44). The note there ranks the three kinds -- (1) a uniting, i.e. a conjunction by degree; (2) a connection by degree from another sign; (3) an aspect by sign only -- and adds that degree-based connections can cut each other while aspects by sign cannot. Nearness only breaks ties within a rank, and the BECAUSE column says which applied.\n\nSahl works it himself at 46-48 (Fig. 15): Moon 10 Taurus, Mars 20 Taurus, Venus 15 Cancer. "Her connection with Venus is PRIOR to her uniting with Mars, but the Moon is uniting [with Mars], and that is stronger than an aspect and a connection." The Venus sextile is 5 degrees from exact against the Mars union\'s 10, so nearness alone gives the opposite of Sahl\'s verdict; the precedence rule changes the winner for about 7% of planets holding two or more applying contacts.\n\nTypes I and II are Abu Ma\'shar\'s later addition, and each requires its own full sequence of dated events.\n\nTYPE I (121-22): a planet in the SECOND SIGN from the applicant stations retrograde, re-enters the applicant\'s sign, and conjoins it BY DEGREE -- all before the applicant reaches its original target. The note on 121 reads that last verb as conjoining by degree, "rather than the looser assembling."\n\nTYPE II (123-24): the planet being applied to reaches a heavier planet first and moves on, leaving the applicant to land on that heavier planet instead. "Mercury wants to connect with Venus. But before he can do that, she connects with Mars and then continues on. Then Mercury is left with the conjunction of Mars, which was not what he wanted."')
                 if cutting_data:
                     st.dataframe(pd.DataFrame(cutting_data), hide_index=True, width='stretch')
                 else:
@@ -4810,7 +5016,7 @@ if location_query and lat is not None and lon is not None:
                 else:
                     st.write("No returning configurations found.")
 
-                st.subheader("Forward-Looking Conditions (Revoking, Resistance, Escape — next 200 days)", help="Conditions describing what happens as the chart moves forward in time (up to ~200 days), not the birth moment alone. Revoking: a planet applying toward a connection stations retrograde before reaching it, nullifying it. Resistance: a light planet stations retrograde before reaching its heavier target, and a third, even lighter planet ends up connecting with it after that instead. Escape: the planet being applied to changes sign before the connection completes, and a different, now-closer planet captures it instead.")
+                st.subheader("Forward-Looking Conditions (Revoking, Resistance, Escape — next 200 days)", help="Conditions describing what happens as the chart moves forward in time (up to ~200 days), not the birth moment alone. Each chapter prescribes an ORDERED SEQUENCE of events, and a row appears only when every step in that sequence actually occurs against the ephemeris -- the day columns show when. A condition not found inside 200 days is reported as not found, never as a negative finding.\n\nREVOKING (117): \"a planet is connecting with a planet, but BEFORE IT REACHES IT, it retrogrades away from it.\" The window is now birth to the applicant's first station: perfection inside it means nothing was revoked.\n\nRESISTANCE (118): a light planet ahead of a heavier one by degree stations retrograde, reaches that heavier one BY RETROGRADATION, goes past it, and a third planet lighter still -- one that wanted the heavy planet -- meets the retrograde one instead. All five steps are required and timed.\n\nESCAPE (119): the planet being applied to leaves its sign first; the applicant then follows across the SAME boundary on its own next crossing, and is captured by a body it meets in the new sign. Dykes' note on Fig. 139 is the picture: Mercury slips from Virgo into Libra, Venus follows, and Saturn's body catches her there.")
                 if forward_looking_data:
                     st.dataframe(pd.DataFrame(forward_looking_data), hide_index=True, width='stretch')
                 else:
