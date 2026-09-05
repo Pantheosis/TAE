@@ -2139,6 +2139,47 @@ def get_house_number(longitude, cusps):
             return i + 1
     return 12
 
+# Ptolemy's five-degree rule, in Sahl's own words. Fifty Aphorisms #44,
+# 87-89: "the planet will NOT BE FALLING FROM THE STAKE unless it was 5
+# degrees distant from its rear: I mean, if the stake was 10 degrees of
+# Aries, then indeed every planet which has less than 5 degrees between it
+# and the stake, is truly counted as BEING IN THE STAKE. And every planet
+# which was in more than 5 degrees [from it] is not counted as being in the
+# stake." Dykes' note there names it as Ptolemy's rule, "where the power of
+# the stake or angle extends by 5 degrees beyond the cusp -- as measured in
+# diurnal motion, hence Sahl's reference to the 'rear' of the stake."
+#
+# Sahl states it a second time, in a different work: "the planets will not
+# fall from the stakes except after 5 degrees, and the planets do not become
+# powerful in the sign [they are in] until they travel 5 degrees in it"
+# (On Nativities Ch.1.22, 9, whose own footnote cross-references Aphorism
+# #44). Two independent witnesses to the same rule.
+FIVE_DEGREE_CARRYOVER = 5.0
+ANGLE_CUSP_INDICES = (0, 3, 6, 9)  # the four stakes, in swe.houses order
+
+def get_effective_house(longitude, cusps, angles_only=True):
+    """Quadrant house WITH the five-degree carryover applied: a planet
+    within 5 degrees before a cusp is counted as already in that house.
+
+    Both source statements are about the stakes specifically -- neither
+    says "any cusp" -- and the transitions they describe (12th into 1st,
+    3rd into 4th, 6th into 7th, 9th into 10th) are exactly the cadent-to-
+    angular ones, which is why the rule is phrased as not FALLING from the
+    stake. So angles_only=True is the literal reading and the default;
+    later authors generalise it to all twelve cusps, which the parameter
+    allows without pretending Sahl said it.
+
+    get_house_number() is deliberately left alone and still returns strict
+    cusp membership. The two are separate facts and both are kept."""
+    raw = get_house_number(longitude, cusps)
+    next_idx = raw % 12                       # cusp that ENDS the raw house
+    if angles_only and next_idx not in ANGLE_CUSP_INDICES:
+        return raw
+    to_next_cusp = (cusps[next_idx] - longitude) % 360.0
+    if to_next_cusp <= FIVE_DEGREE_CARRYOVER:
+        return next_idx + 1
+    return raw
+
 def get_wsh_house(longitude, ascendant_lon):
     """Whole Sign House: the Ascendant's sign is house 1 in its entirety,
     and each subsequent sign (in zodiacal order) is the next house — no
@@ -2439,8 +2480,25 @@ WELLED_DEGREES = {
 }
 
 def evaluate_special_degrees(planetary_data):
-    """Flags planets in the Via Combusta (15 Libra-15 Scorpio) and/or a
-    classical welled/pitted degree of their current sign."""
+    """Flags planets in the Via Combusta (15 Libra-15 Scorpio), a classical
+    welled/pitted degree of their current sign, or one of Sahl's two
+    sign-boundary conditions.
+
+    The boundary pair is the other half of the five-degree rule and its
+    mirror at the far end of the sign:
+
+    ENTERING -- "every planet which is at the beginning of a sign is weak
+    until it is firmly established in it and comes to be 5 degrees within
+    it" (Fifty Aphorisms #44, 87), repeated as "the planets do not become
+    powerful in the sign [they are in] until they travel 5 degrees in it"
+    (On Nativities Ch.1.22, 9).
+
+    LEAVING -- "if a planet came to be in the LAST degree of the sign, then
+    its strength has already gone away from that sign, and its strength is
+    in the next sign ... like a man putting his foot on the threshold of
+    [his] door. And if a planet was in the twenty-ninth degree, then indeed
+    the strength of the planet IS in that sign" (Fifty Aphorisms #15,
+    31-33). So the 29th degree still counts, and only the 30th has left."""
     results = []
     for planet, data in planetary_data.items():
         if planet == 'North Node': continue
@@ -2454,6 +2512,12 @@ def evaluate_special_degrees(planetary_data):
         degree_1_based = int(lon % 30) + 1
         if degree_1_based in WELLED_DEGREES.get(sign, []):
             conditions.append("Welled Degree")
+
+        deg_in_sign = lon % 30.0
+        if deg_in_sign < 5.0:
+            conditions.append("Not yet established in the sign (Aph. #44, 87)")
+        elif deg_in_sign >= 29.0:
+            conditions.append("On the threshold; strength already in the next sign (Aph. #15, 31)")
 
         if conditions:
             results.append({
@@ -2765,8 +2829,13 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
         sign = get_zodiac_sign(lon)
         house = get_wsh_house(lon, ascendant_lon)
         # 83 is measured against the real angular axes rather than by sign
-        # -- see the comment there.
-        quadrant_house = get_house_number(lon, natal_houses)
+        # -- see the comment there. Both readings of the quadrant place are
+        # kept: strict cusp membership, and the same with Sahl's own
+        # five-degree carryover (Fifty Aphorisms #44, 87-89; On Nativities
+        # Ch.1.22, 9). A planet a few degrees short of an angle is not
+        # "falling from the stake" by either of those passages.
+        quadrant_house_strict = get_house_number(lon, natal_houses)
+        quadrant_house = get_effective_house(lon, natal_houses)
         ess, acc = essential[planet], accidental[planet]
         labels = []
 
@@ -2835,7 +2904,10 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
         # which places LOOK at the Ascendant, and its own footnote counts
         # the six resulting places.
         if quadrant_house in ANGLE_HOUSES | SUCCEDENT_HOUSES:
-            labels.append('Advancing (83)')
+            if quadrant_house != quadrant_house_strict:
+                labels.append(f'Advancing, by the five-degree rule into the {HOUSE_ORDINAL[quadrant_house]} (83)')
+            else:
+                labels.append('Advancing (83)')
 
         # (84) A masculine planet (Saturn, Jupiter, Mars) eastern, arising at dawn.
         if planet in ('Saturn', 'Jupiter', 'Mars'):
@@ -3367,7 +3439,15 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         # quadrant cusps, consistent with how Sahl's own "advancing" (Ch.3,
         # 83) is measured elsewhere in this file -- but see 42, which names
         # BOTH words and so gets both readings.
-        quadrant_house = get_house_number(lon, natal_houses)
+        #
+        # And with the five-degree carryover, which is stated in exactly
+        # this vocabulary: "the planet will NOT BE FALLING FROM THE STAKE
+        # unless it was 5 degrees distant from its rear" (Fifty Aphorisms
+        # #44, 88), "the planets will not fall from the stakes except after
+        # 5 degrees" (On Nativities Ch.1.22, 9). A planet a few degrees
+        # short of an angle was being called cadent here, which is the one
+        # case both passages exist to rule out.
+        quadrant_house = get_effective_house(lon, natal_houses)
         cadent_no_override = quadrant_house in CADENT_HOUSES
         if cadent_no_override:
             negative.append('Falling from the stake (39)')
@@ -3388,7 +3468,7 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             connected_lookup.get(frozenset({planet, other}), False)
             and (essential[other]['Fall'] or accidental[other]['Retrograde']
                  or get_wsh_house(planetary_data[other]['longitude'], ascendant_lon) in CADENT_HOUSES
-                 or get_house_number(planetary_data[other]['longitude'], natal_houses) in CADENT_HOUSES)
+                 or get_effective_house(planetary_data[other]['longitude'], natal_houses) in CADENT_HOUSES)
             for other in planetary_data if other not in (planet, 'North Node')
         )
         if connects_debilitated:
@@ -4528,7 +4608,7 @@ if location_query and lat is not None and lon is not None:
                         })
                     st.dataframe(pd.DataFrame(lordship_list), hide_index=True, width='stretch')
 
-                    st.subheader("Special Degrees & Conditions", help='Flags planets in the Via Combusta (15 Libra-15 Scorpio, a historically "burnt" span) or a classical welled/pitted degree of their current sign (Abu Ma\'shar, Great Introduction V.21).')
+                    st.subheader("Special Degrees & Conditions", help='Flags planets in the Via Combusta (15 Libra-15 Scorpio, a historically "burnt" span), a classical welled/pitted degree of their current sign (Abu Ma\'shar, Great Introduction V.21), or one of Sahl\'s two sign-boundary conditions.\n\nENTERING: "every planet which is at the beginning of a sign is weak until it is firmly established in it and comes to be 5 degrees within it" (Fifty Aphorisms #44, 87), repeated in On Nativities Ch.1.22, 9. This is the other half of the five-degree rule that also governs advancement.\n\nLEAVING: "if a planet came to be in the last degree of the sign, then its strength has already gone away from that sign, and its strength is in the next sign ... like a man putting his foot on the threshold of his door. And if a planet was in the twenty-ninth degree, then indeed the strength of the planet IS in that sign" (Fifty Aphorisms #15, 31-33) -- so the 29th degree still counts and only the 30th has left.')
                     if special_degrees:
                         st.dataframe(pd.DataFrame(special_degrees), hide_index=True, width='stretch')
                     else:
@@ -4684,7 +4764,7 @@ if location_query and lat is not None and lon is not None:
                 else:
                     st.write("No forward-looking conditions found within the simulation horizon.")
 
-                st.subheader("Strength of the Planets (Sahl, The Introduction Ch.3, 78-88)", help="The eleven testimonies of a planet's strength at the time of judgment -- excellent place, own dignity, direct, out of the whole-sign angles of an infortune, not tied to a fallen or falling planet, advancing, an eastern masculine planet, in its own glow, a fixed sign, in the heart of the Sun, and a gender-matching quadrant and sign.\n\nTestimonies 78 and 83 look similar but are different measurements. 78 is whole-sign, narrowed to the six places that LOOK at the Ascendant. 83, advancing, is DYNAMIC -- read against the Alchabitius quadrant cusps, since the note on 83 says the word means \"dynamically angular or succeedent, i.e. by primary motion with respect to the angular axes, and not by whole sign.\" A planet leaving an angle is withdrawing even while its whole sign is still angular, so the two disagree for about a third of placements.\n\nDistinct from the Abu Ma'shar-based Planetary Condition table, which scores a broader, later scheme.")
+                st.subheader("Strength of the Planets (Sahl, The Introduction Ch.3, 78-88)", help="The eleven testimonies of a planet's strength at the time of judgment -- excellent place, own dignity, direct, out of the whole-sign angles of an infortune, not tied to a fallen or falling planet, advancing, an eastern masculine planet, in its own glow, a fixed sign, in the heart of the Sun, and a gender-matching quadrant and sign.\n\nTestimonies 78 and 83 look similar but are different measurements. 78 is whole-sign, narrowed to the six places that LOOK at the Ascendant. 83, advancing, is DYNAMIC -- read against the Alchabitius quadrant cusps, since the note on 83 says the word means \"dynamically angular or succeedent, i.e. by primary motion with respect to the angular axes, and not by whole sign.\" A planet leaving an angle is withdrawing even while its whole sign is still angular, so the two disagree for about a third of placements.\n\n83 also carries Sahl's FIVE-DEGREE RULE: \"the planet will not be falling from the stake unless it was 5 degrees distant from its rear -- I mean, if the stake was 10 degrees of Aries, then every planet which has less than 5 degrees between it and the stake is truly counted as being in the stake\" (Fifty Aphorisms #44, 88), which he states again in On Nativities Ch.1.22, 9. A planet a few degrees short of an angle is therefore angular, not cadent; the row says so when that is why it qualifies. It moves about 5% of placements, all of them cadent-to-angular. Both source statements are about the STAKES specifically, so the carryover is applied at the four angles only, not at all twelve cusps as later authors generalise it.\n\nDistinct from the Abu Ma'shar-based Planetary Condition table, which scores a broader, later scheme.")
                 if strength_data:
                     st.dataframe(pd.DataFrame(strength_data), hide_index=True, width='stretch')
                 else:
