@@ -892,6 +892,11 @@ def _pairwise_configurations(planetary_data):
             'mutual_body': light_in_heavy_body and heavy_in_light_body,
             # Set by the post-pass below; only ever true on Aversion rows.
             'sahl_body_connection': False,
+            # Directed agency, filled in for configured pairs at 2b below.
+            # Distinct from light_name/heavy_name, which are the STANDING
+            # ranks and never move.
+            'applicant': None, 'receiver': None, 'application_cause': None,
+            'applicant_is_heavier': False,
         }
 
         if signs_apart in AVERSION_SIGN_COUNTS:
@@ -912,6 +917,62 @@ def _pairwise_configurations(planetary_data):
         delta_v = light_speed - heavy_speed
         rate = sign_s * delta_v
         motion = "Applying" if (deviation == 0 or deviation * rate < 0) else "Separating"
+
+        # --- 2b. Who is actually approaching whom ------------------------
+        # Natural rank (above) is one fact; DIRECTED AGENCY is another, and
+        # the two come apart whenever the naturally heavier planet is the
+        # one closing the gap.
+        #
+        # Sahl states the ordinary case: "connection is if a light, quick
+        # star is GOING STRAIGHTAWAY TO a heavy star, and the light star is
+        # FEWER IN DEGREES than the heavy one, as long as the [light] planet
+        # is GOING TOWARDS the [heavy] planet" (Ch.3, 6), and "the one
+        # handing over is the light planet ... the accepting one is the
+        # heavy planet" (67). Both clauses assume forward motion, and in
+        # forward motion the lighter planet is always the one that closes.
+        #
+        # Retrogradation breaks that assumption, and both authors say so
+        # rather than leaving it to be inferred. Abu Ma'shar: "sometimes at
+        # the assembly both of the two planets will be retrograde, or one of
+        # them will be retrograde and the other direct: the connection of
+        # one of them with the other, and its separation from it, will be BY
+        # RETROGRADATION" (VII.5, 24). His Cutting the Light turns on it --
+        # "the light one IN MORE DEGREES goes retrograde and connects with
+        # the heavy one through its retrogradation" (VII.5, 120), reversing
+        # 6's fewer-degrees clause outright -- and Fig. 138's Resistance has
+        # Venus retrograde connecting with Mercury, who is lighter than she
+        # is. Dykes' note on VII.5, 130 makes the consequence explicit:
+        # Saturn "could never be received because he is too slow to connect
+        # with anyone (UNLESS BY RETROGRADATION)." And the note on Fifty
+        # Aphorisms #19 says the same from the other side: "it would only be
+        # possible for Saturn to be the one HANDING OVER if he is
+        # retrograde."
+        #
+        # So the applicant is whichever planet's own motion is closing the
+        # aspect, and the receiver is the one being approached. When both
+        # move toward each other neither is fleeing, and 67's plain rule
+        # stands: the naturally lighter planet is the one handing over.
+        contrib_light = sign_s * light_speed   # d(deviation)/dt from the light planet alone
+        contrib_heavy = -sign_s * heavy_speed  # ... and from the heavy one alone
+        if deviation == 0:
+            acting_light = acting_heavy = True
+        elif motion == 'Applying':
+            acting_light = deviation * contrib_light < 0
+            acting_heavy = deviation * contrib_heavy < 0
+        else:
+            acting_light = deviation * contrib_light > 0
+            acting_heavy = deviation * contrib_heavy > 0
+        if acting_heavy and not acting_light:
+            applicant, receiver = heavy_name, light_name
+            cause = 'retrogradation' if heavy_retrograde else 'its own motion'
+        elif acting_light and not acting_heavy:
+            applicant, receiver = light_name, heavy_name
+            cause = 'retrogradation' if light_retrograde else 'direct motion'
+        else:
+            applicant, receiver = light_name, heavy_name
+            cause = 'mutual approach' if motion == 'Applying' else 'mutual recession'
+        row.update(applicant=applicant, receiver=receiver, application_cause=cause,
+                    applicant_is_heavier=(applicant == heavy_name))
 
         # --- 3. Dexter / Sinister orientation ----------------------------
         # Conjunction and Opposition have no handedness. Handedness is
@@ -1121,6 +1182,13 @@ def evaluate_ptolemaic_aspects(planetary_data):
             'Light Planet': light_name,
             'Aspect': row['aspect_name'],
             'Heavy Planet': heavy_name,
+            # Natural rank above, directed agency here. They coincide for
+            # about 96% of configured pairs; the column exists for the rest,
+            # where the naturally heavier planet is the one closing.
+            'Applying Planet': (
+                f"{row['applicant']} → {row['receiver']}"
+                + (f" ({row['application_cause']})" if row['applicant_is_heavier'] else '')
+            ) if row['applicant'] else '–',
             # VII.5, 24: with either planet retrograde the approach or
             # departure happens "by retrogradation" -- flagged rather than
             # allowed to quietly reassign the light/heavy roles.
@@ -1172,20 +1240,28 @@ def evaluate_transfers_of_light(planetary_data):
     name it a carrier, matching the sources this project is built on over
     the more permissive mainstream-software convention."""
     rows = _pairwise_configurations(planetary_data)
+    # The carrier is the planet that MOVES between the other two -- "the
+    # light planet separates from the heavy planet, and is connecting with
+    # another" (Ch.3, 24). Keyed on the directed applicant rather than on
+    # natural rank, so that a planet carrying light by retrogradation is
+    # recognised as the carrier rather than as the thing carried.
     by_fast = {}
     for row in rows:
         if row['aspect_name'] == 'Aversion':
             continue
-        by_fast.setdefault(row['light_name'], []).append(row)
+        by_fast.setdefault(row['applicant'] or row['light_name'], []).append(row)
+
+    def _other(r):
+        return r['receiver'] or r['heavy_name']
 
     applying_connected_to = {
-        fast: {r['heavy_name'] for r in fast_rows if r['motion'] == 'Applying' and _is_connected(r)}
+        fast: {_other(r) for r in fast_rows if r['motion'] == 'Applying' and _is_connected(r)}
         for fast, fast_rows in by_fast.items()
     }
 
     transfers = []
     for carrier, carrier_rows in by_fast.items():
-        separating_from = [r['heavy_name'] for r in carrier_rows if r['motion'] == 'Separating']
+        separating_from = [_other(r) for r in carrier_rows if r['motion'] == 'Separating']
         connecting_to = applying_connected_to.get(carrier, set())
         for a in separating_from:
             for b in connecting_to:
@@ -1220,8 +1296,14 @@ def evaluate_collections_of_light(planetary_data):
         pair = frozenset({row['p1'], row['p2']})
         is_conn = row['aspect_name'] != 'Aversion' and _is_connected(row)
         connected_lookup[pair] = is_conn
+        # Collection needs the light planets to be the ones APPLYING to the
+        # collector, so the pair is keyed applicant -> receiver. 28's own
+        # "heavier than they" is still enforced by natural rank below, so
+        # both of the chapter's conditions are checked rather than one
+        # standing in for the other.
         if is_conn and row['motion'] == 'Applying':
-            applying_to.setdefault(row['light_name'], set()).add(row['heavy_name'])
+            applying_to.setdefault(row['applicant'] or row['light_name'], set()).add(
+                row['receiver'] or row['heavy_name'])
 
     collectors = {}
     for x, targets in applying_to.items():
@@ -1649,7 +1731,14 @@ def evaluate_returning(planetary_data, accidental, ascendant_lon):
     for r in rows:
         if r['aspect_name'] == 'Aversion' or not _is_connected(r) or r['motion'] != 'Applying':
             continue
-        fast, slow = r['light_name'], r['heavy_name']
+        # Returning is directed: 65 has "a planet ... CONNECTING WITH a
+        # retrograde planet or one under the rays," and 67 names the mover
+        # as the one handing over. So the subject is the applicant and the
+        # planet that returns the management is the one being approached --
+        # which for a retrograde connection is not the naturally heavier of
+        # the two. (Manner I would otherwise report the retrograde planet
+        # as returning management to itself whenever it was the applicant.)
+        fast, slow = r['applicant'] or r['light_name'], r['receiver'] or r['heavy_name']
         acc_slow = accidental[slow]
 
         if acc_slow['Retrograde'] or acc_slow['Combust'] or acc_slow['UnderBeams']:
@@ -1673,7 +1762,10 @@ def evaluate_revoking(planetary_data, sim):
     for r in rows:
         if r['aspect_name'] == 'Aversion' or r['motion'] != 'Applying':
             continue
-        fast, slow = r['light_name'], r['heavy_name']
+        # 117 revokes the connection of "a planet ... connecting with a
+        # planet" when IT retrogrades away before arriving, so the station
+        # that matters is the applicant's, not the naturally lighter one's.
+        fast, slow = r['applicant'] or r['light_name'], r['receiver'] or r['heavy_name']
         first_station = next((s for s in sim['events'][fast]['stations'] if s[1] == 'first'), None)
         if not first_station:
             continue
@@ -1930,13 +2022,30 @@ def evaluate_reception(planetary_data, sect):
         if sahl and not connected:
             continue                                      # Sahl requires the connection
         mode = 'By connection' if connected else 'By looking only (133)'
+        # Reception is DIRECTED at the planet that is actually connecting,
+        # not at the naturally lighter one. Sahl's own example is "the Moon
+        # in Aries connecting with Mars, he receives her" -- she is received
+        # because she is the one applying. Ordinarily the applicant is the
+        # lighter planet and the two readings coincide; when the heavier is
+        # closing (by retrogradation, or by overtaking a planet that is
+        # slower still), they do not.
+        #
+        # Dykes' note on 130 makes this the explicit reason that paragraph
+        # exists: "if the received planet always had to be the lighter
+        # planet and connect with its own lord ... Saturn could never be
+        # received because he is too slow to connect with anyone (UNLESS BY
+        # RETROGRADATION)." Reading reception off natural rank threw away
+        # the exception that note names. On a sample of ~8,000 configured
+        # pairs the applicant is the heavier planet in 3.6% of them.
         light, heavy = row['light_name'], row['heavy_name']
+        applicant = row['applicant'] or light
+        accepter = row['receiver'] or heavy
 
         # 129: the connecting planet stands in the receiver's dignity.
-        directions = [(heavy, light, 'Receives the connecting planet (129)')]
+        directions = [(accepter, applicant, 'Receives the connecting planet (129)')]
         if not sahl:
             # 130: the reverse, which Sahl does not have.
-            directions.append((light, heavy, 'Receives the accepting planet (130)'))
+            directions.append((applicant, accepter, 'Receives the accepting planet (130)'))
 
         found_here = []
         for receiver, received, direction in directions:
@@ -1951,7 +2060,7 @@ def evaluate_reception(planetary_data, sect):
             })
         if len(found_here) == 2:
             results.append({
-                'Receiver': f'{light} & {heavy}', 'Received': 'each other',
+                'Receiver': f'{applicant} & {accepter}', 'Received': 'each other',
                 'Direction': 'Mutual', 'Via': '–', 'Grade': 'Mutual reception',
                 'Mode': mode,
             })
@@ -2560,10 +2669,10 @@ def _sahl_enclosed(planet, enclosing_set, rows, blocking_pairs):
         return False, False, None, None
     for sep_target, con_target in ((members[0], members[1]), (members[1], members[0])):
         sep_row = next((r for r in rows if r['aspect_name'] != 'Aversion'
-                         and r['light_name'] == planet and r['heavy_name'] == sep_target
+                         and (r['applicant'] or r['light_name']) == planet and (r['receiver'] or r['heavy_name']) == sep_target
                          and r['motion'] == 'Separating' and _is_connected(r)), None)
         con_row = next((r for r in rows if r['aspect_name'] != 'Aversion'
-                         and r['light_name'] == planet and r['heavy_name'] == con_target
+                         and (r['applicant'] or r['light_name']) == planet and (r['receiver'] or r['heavy_name']) == con_target
                          and r['motion'] == 'Applying' and _is_connected(r)), None)
         if not sep_row or not con_row:
             continue
@@ -2865,7 +2974,7 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
             other = r['heavy_name'] if r['light_name'] == planet else r['light_name']
             if _is_connected(r) and get_wsh_house(planetary_data[other]['longitude'], ascendant_lon) in CADENT_HOUSES:
                 labels.append(f'Connecting with {other}, itself falling from the Ascendant (97)')
-            if r['light_name'] == planet and r['motion'] == 'Separating' and _is_connected(r):
+            if (r['applicant'] or r['light_name']) == planet and r['motion'] == 'Separating' and _is_connected(r):
                 other_rulers = get_essential_rulers(planetary_data[other]['longitude'])
                 if planet in (other_rulers['domicile'], other_rulers['exaltation']):
                     labels.append(f'Separating from {other}, which would have received it (97)')
@@ -3015,7 +3124,7 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
         # enclosure (separating from one infortune, connecting with the
         # other) and belongs to the misfortune list, not this one.
         separating_fortune = any(
-            r['light_name'] == planet and r['heavy_name'] in FORTUNES and r['motion'] == 'Separating' and _is_connected(r)
+            (r['applicant'] or r['light_name']) == planet and (r['receiver'] or r['heavy_name']) in FORTUNES and r['motion'] == 'Separating' and _is_connected(r)
             for r in rows
         )
         if separating_fortune and connected_to(planet, FORTUNES):
@@ -3315,7 +3424,7 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
                     break
         else:
             empty_of_course = not any(
-                (row['light_name'] == planet and row['motion'] == 'Applying' and _is_connected(row))
+                ((row['applicant'] or row['light_name']) == planet and row['motion'] == 'Applying' and _is_connected(row))
                 for row in rows
             )
         # 44's parenthesis, unreadable in the photographs: "(and harsher
@@ -3769,7 +3878,7 @@ def _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect):
     # [9] (111) Wild -- empty of course, not connecting with any planet.
     # Sahl's own present-tense definition (not Abu Ma'shar's later,
     # prospective sharpening used elsewhere in this file).
-    if not any(row['light_name'] == 'Moon' and row['motion'] == 'Applying' and _is_connected(row) for row in rows):
+    if not any((row['applicant'] or row['light_name']) == 'Moon' and row['motion'] == 'Applying' and _is_connected(row) for row in rows):
         labels.append('Wild, empty of course (111)')
 
     # [10] (112) Slow in course, or waning in light (past full, heading
@@ -4491,7 +4600,7 @@ if location_query and lat is not None and lon is not None:
 
 
             with tab_connections:
-                st.subheader(f"Aspects, Aversions & Connections (Sahl, The Introduction Ch.2 50-60 & Ch.3 6-21) — {CONNECTION_PROFILE} rule", help="Four separate facts about each pair, kept apart rather than collapsed into one verdict. LOOKING is the whole-sign configuration (Union/Sextile/Square/Trine/Opposition, or Aversion if none applies) -- sign to sign. MOTION and EXACT ORB DIST are the degree-to-degree approach. BODIES is whether each planet falls inside the other's sphere of power, which is asymmetric because the spheres differ in size: Abu Ma'shar VII.4, 7 notes that Saturn sits inside the Moon's body from 12 degrees while she only enters his at a little under 9. CONNECTED is the active author's verdict -- switch the Connection rule in the sidebar to see where they disagree.\n\nLIGHT and HEAVY are the standing classes both authors name as nouns (Saturn heaviest through the Moon lightest), not a reading of momentary speed: the light planet gives and the heavy one accepts (Ch.3, 67), and the light planet's own light measures the connection (19). A planet slowing toward its station does not thereby become heavy.")
+                st.subheader(f"Aspects, Aversions & Connections (Sahl, The Introduction Ch.2 50-60 & Ch.3 6-21) — {CONNECTION_PROFILE} rule", help="Four separate facts about each pair, kept apart rather than collapsed into one verdict. LOOKING is the whole-sign configuration (Union/Sextile/Square/Trine/Opposition, or Aversion if none applies) -- sign to sign. MOTION and EXACT ORB DIST are the degree-to-degree approach. BODIES is whether each planet falls inside the other's sphere of power, which is asymmetric because the spheres differ in size: Abu Ma'shar VII.4, 7 notes that Saturn sits inside the Moon's body from 12 degrees while she only enters his at a little under 9. CONNECTED is the active author's verdict -- switch the Connection rule in the sidebar to see where they disagree.\n\nLIGHT and HEAVY are the standing classes both authors name as nouns (Saturn heaviest through the Moon lightest), not a reading of momentary speed: they are fixed, and a planet slowing toward its station does not thereby become heavy.\n\nAPPLYING PLANET is the separate, directed fact: which one is actually closing the aspect. Normally it is the lighter, and Ch.3, 6 assumes as much (\"a light, quick star GOING STRAIGHTAWAY TO a heavy star ... FEWER IN DEGREES than the heavy one\"). Retrogradation reverses it, and both authors say so rather than leaving it to be inferred -- Abu Ma'shar VII.5, 24 (\"the connection of one of them with the other ... will be BY RETROGRADATION\"), VII.5, 120 (\"the light one IN MORE DEGREES goes retrograde and connects with the heavy one\"), and the note on VII.5, 130 (Saturn \"could never be received because he is too slow to connect with anyone, UNLESS BY RETROGRADATION\"). The cause is named in this column whenever the heavier planet is the one applying, which happens for about 4% of configured pairs. Reception, transfer, collection, returning, revoking, emptiness of course and enclosure all read this column, not the light/heavy one.")
                 if aspects:
                     st.dataframe(pd.DataFrame(aspects), hide_index=True, width='stretch')
                 else:
