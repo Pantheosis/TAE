@@ -1170,12 +1170,32 @@ def _is_connected_sahl(row):
     move about 5% of applying pairs."""
     if row['aspect_name'] == 'Aversion':
         return row.get('sahl_body_connection', False)
-    light = PLANETARY_ORBS.get(row['light_name'], 7.0)
     remaining = abs(row['deviation'])
+
+    # Each branch has its own owner, and each is named in its own
+    # paragraph. This function previously used the NATURALLY LIGHTER
+    # planet's orb for all three, while its own docstring said the applying
+    # planet's -- true only while the two coincide, which is about 96% of
+    # pairs. On the rest the file asserted the corrected doctrine and
+    # implemented the superseded one.
     if row['motion'] == 'Applying':
-        return remaining <= light
+        # 19: "if a planet looked at a planet, and IT already struck WITH
+        # ITS OWN LIGHT upon its degree, then it is connected with it." The
+        # actor is the planet approaching, which is the directed applicant
+        # -- the naturally heavier one when it closes by retrogradation or
+        # by overtaking a slower body.
+        actor = row['applicant'] or row['light_name']
+        return remaining <= PLANETARY_ORBS.get(actor, 7.0)
     if row['signs_apart'] == 0:
-        return remaining <= light
+        # 10 names the owner explicitly for same-sign separation: "a planet
+        # is not considered to be separated from a planet until THE LIGHT
+        # ONE departs from the heavy one by one-half of ITS body." Sahl is
+        # not contemplating a retrograde separation here, and the sentence
+        # says "the light one", so the standing rank governs this branch.
+        return remaining <= PLANETARY_ORBS.get(row['light_name'], 7.0)
+    # 9 gives a flat degree across a sign boundary and names no owner:
+    # "the planet does not cease to be counted as being connected until it
+    # separates from the planet by a full degree."
     return remaining <= 1.0
 
 def _is_connected_abu_mashar(row):
@@ -1589,8 +1609,20 @@ def evaluate_blocking(planetary_data):
     blocks = []
 
     def applying(a, b):
+        """a is applying TO b, and the pair is actually connected under the
+        active author's rule.
+
+        Both halves were missing. Motion alone let a pair "block" while
+        outside every activation window either author gives -- 12 or 15
+        degrees for Abu Ma'shar, the actor's own light for Sahl -- and
+        without checking direction, b applying to a counted as a applying
+        to b."""
         r = row_for.get(frozenset({a, b}))
-        return r is not None and r['aspect_name'] != 'Aversion' and r['motion'] == 'Applying'
+        if r is None or r['aspect_name'] == 'Aversion' or r['motion'] != 'Applying':
+            return False
+        if (r['applicant'] or r['light_name']) != a:
+            return False
+        return _is_connected(r)
 
     # --- Type I: Intervention (Sahl 35-37, Fig. 13; VII.5, 91-92) -------
     # "Three planets are in a single sign, IN DIFFERENT DEGREES, and the
@@ -1616,8 +1648,17 @@ def evaluate_blocking(planetary_data):
             if speed[blocked] <= 0 or speed[blocker] <= 0:
                 continue
             # There is nothing to block unless the light planet is actually
-            # on its way to the heavy one.
+            # on its way to the heavy one ...
             if not applying(blocked, target):
+                continue
+            # ... and nothing does the blocking unless the MIDDLE body is
+            # itself joining the target. 35 has the middle planet standing
+            # between the other two on its own way to the heavy one, so
+            # that the light one cannot reach past it "UNTIL IT PASSES BY
+            # IT". A middle planet already separating from the target is
+            # moving out of the way, not standing in it -- this was
+            # unchecked, so a separating body still emitted a block.
+            if not applying(blocker, target):
                 continue
             blocks.append({'Type': 'I (Intervention)', 'Blocked': blocked,
                             'Blocked By': blocker, 'From Reaching': target})
@@ -1648,7 +1689,9 @@ def evaluate_blocking(planetary_data):
     for row in rows:
         if row['aspect_name'] in ('Aversion', 'Conjunction') or row['motion'] != 'Applying':
             continue
-        looking, heavy = row['light_name'], row['heavy_name']
+        # The planet being blocked is the one APPLYING by ray, and the
+        # target is what it applies to -- directed, not standing rank.
+        looking, heavy = row['applicant'] or row['light_name'], row['receiver'] or row['heavy_name']
         remaining_ray = abs(row['deviation'])
         heavy_lon = planetary_data[heavy]['longitude']
         heavy_sign = int(heavy_lon // 30)
@@ -1698,7 +1741,10 @@ def evaluate_handing_over(planetary_data, sect):
     for r in rows:
         if (r['aspect_name'] == 'Aversion' and not _sahl_body_row(r)) or not _is_connected(r):
             continue
-        fast, slow = r['light_name'], r['heavy_name']
+        # Handing over is directed: 67 makes the ONE HANDING OVER the planet
+        # that connects, and 76 the one that accepts. This read natural rank
+        # while the docstring described the applicant.
+        fast, slow = r['applicant'] or r['light_name'], r['receiver'] or r['heavy_name']
         fast_lon = planetary_data[fast]['longitude']
         fast_rulers = get_essential_rulers(fast_lon)
         fast_power_claims = {fast_rulers['domicile'], fast_rulers['exaltation'], fast_rulers[triplicity_key]} - {'-'}
@@ -3621,9 +3667,9 @@ def _abu_mashar_enclosed(planet, enclosing_set, planetary_data, rows, orb=7.0):
         # The second form of 57: separating from one, connecting with the
         # other -- Sahl's own shape, which Abu Ma'shar folds in here.
         for sep_t, con_t in ((members[0], members[1]), (members[1], members[0])):
-            sep = any(r['light_name'] == planet and r['heavy_name'] == sep_t
+            sep = any((r['applicant'] or r['light_name']) == planet and (r['receiver'] or r['heavy_name']) == sep_t
                        and r['motion'] == 'Separating' and _is_connected(r) for r in rows)
-            con = any(r['light_name'] == planet and r['heavy_name'] == con_t
+            con = any((r['applicant'] or r['light_name']) == planet and (r['receiver'] or r['heavy_name']) == con_t
                        and r['motion'] == 'Applying' and _is_connected(r) for r in rows)
             if sep and con:
                 kind = 'separating/connecting (57)'
@@ -3963,19 +4009,28 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
             if abs(((lon - sun_lon + 180.0) % 360.0) - 180.0) <= 1.0:
                 labels.append('In the heart of the Sun (87)')
 
-        # (88) Masculine/feminine quadrant and sign matching the planet's
+        # (88) Masculine/feminine QUADRANT and sign matching the planet's
         # own gender. This is Sahl's ELEVENTH testimony, not the tenth --
         # an earlier version numbered it (87) and omitted the heart of the
         # Sun entirely, leaving only ten of the eleven that 77 announces.
+        #
+        # The quadrant clause is measured against the QUADRANT CUSPS. It
+        # read the whole-sign house, which is a different place for 52.3% of
+        # placements and flips the masculine/feminine verdict for 18.6% of
+        # them. A quadrant is the span between two angles; a whole sign is
+        # not, and the file computes the real one a few lines above.
+        #
+        # 88 announces ONE testimony with two clauses. Both are reported,
+        # but as a single entry -- appending them separately gave one
+        # paragraph two votes.
         gender = PLANET_GENDER.get(planet)
-        if gender == 'Masculine' and house in MASCULINE_QUADRANT_HOUSES:
-            labels.append('In a matching-gender (masculine) quadrant (88)')
-        elif gender == 'Feminine' and house in FEMININE_QUADRANT_HOUSES:
-            labels.append('In a matching-gender (feminine) quadrant (88)')
-        if gender == 'Masculine' and sign in MASCULINE_SIGNS:
-            labels.append('In a matching-gender (masculine) sign (88)')
-        elif gender == 'Feminine' and sign in FEMININE_SIGNS:
-            labels.append('In a matching-gender (feminine) sign (88)')
+        _q88 = ((gender == 'Masculine' and quadrant_house in MASCULINE_QUADRANT_HOUSES)
+                 or (gender == 'Feminine' and quadrant_house in FEMININE_QUADRANT_HOUSES))
+        _s88 = ((gender == 'Masculine' and sign in MASCULINE_SIGNS)
+                 or (gender == 'Feminine' and sign in FEMININE_SIGNS))
+        if _q88 or _s88:
+            _parts = (['quadrant'] if _q88 else []) + (['sign'] if _s88 else [])
+            labels.append(f"In a matching-gender ({gender.lower()}) {' and '.join(_parts)} (88)")
 
         if labels:
             results.append({'Planet': planet, 'Strength Testimonies': ', '.join(labels), 'Count': len(labels)})
@@ -4420,7 +4475,11 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
                 positive.append('Superior, eastern of the Sun, by sextile (27)')
             else:
                 positive.append('Superior, eastern of the Sun (27)')
-        in_masculine_quadrant = house in MASCULINE_QUADRANT_HOUSES
+        # 28, 29, 45 and 46 all say QUADRANT. This read the whole-sign
+        # house, which differs from the real quadrant for 52.3% of
+        # placements and flips the gender verdict for 18.6%.
+        quadrant_house = get_effective_house(lon, natal_houses)
+        in_masculine_quadrant = quadrant_house in MASCULINE_QUADRANT_HOUSES
         if is_superior and in_masculine_quadrant:
             positive.append('Superior, in a masculine quadrant (28)')
         # 28's parenthesis covers the Sun, who is neither superior nor
