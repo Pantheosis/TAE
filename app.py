@@ -2,7 +2,7 @@ import swisseph as swe
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timezone, time, timedelta
-from itertools import combinations
+from itertools import combinations, product
 from xml.sax.saxutils import escape
 from timezonefinder import TimezoneFinder
 import pytz
@@ -1163,20 +1163,27 @@ def evaluate_ptolemaic_aspects(planetary_data):
             if get_essential_rulers(lon1)['term'] == get_essential_rulers(lon2)['term']:
                 strength += ' (same bound)'
         else:
-            # Looking-strength (VII.5, 2-7, Fig. 111): "the strongest thing
-            # is looking at the degree most closely related by number to
-            # the degree of its own sign... if the aspect was far from
-            # these degrees, its aspect will be weaker" -- graded, not
-            # gated, using the pair's own orbs as the proximity scale
-            # (no numeric cutoff is given in the source beyond this).
+            # Looking-strength (VII.5, 4, Fig. 111): "the strongest thing
+            # there is in its looking ... is the degree which is RELATED
+            # MOST CLOSELY BY NUMBER to the degree of its own sign (such as
+            # 60, 90, 120, and 180 degrees) ... and if the aspect was far
+            # from these degrees, its aspect will be WEAKER."
+            #
+            # That is a continuum with no cutoffs anywhere in the chapter.
+            # The thirds below are this app's own scale for scanning a
+            # table quickly, and are marked as such in the cell rather than
+            # presented as doctrine -- unlike the assembly grading above,
+            # where the per-planet bodies and the shared bound are the
+            # source's own (VII.4, 5-8). The measurement itself, the exact
+            # distance from partile, is in its own column.
             combined_orb = PLANETARY_ORBS.get(row['p1'], 7.0) + PLANETARY_ORBS.get(row['p2'], 7.0)
             remaining = abs(row['deviation'])
             if remaining <= combined_orb / 3.0:
-                strength = 'Strong'
+                strength = 'Strong (app scale)'
             elif remaining <= combined_orb:
-                strength = 'Moderate'
+                strength = 'Moderate (app scale)'
             else:
-                strength = 'Weak'
+                strength = 'Weak (app scale)'
 
         aspects.append({
             'Light Planet': light_name,
@@ -1368,15 +1375,23 @@ def evaluate_reflections_of_light(planetary_data, ascendant_lon):
         collected = c['Collects'].split(' & ')
         if len(collected) == 2 and frozenset(collected) in aversion_pairs:
             collector = c['Collector']
+            # The places the collector's OWN RAYS fall into. An earlier
+            # version listed the whole-sign houses OCCUPIED BY OTHER
+            # PLANETS that happened to aspect the collector, which is a
+            # different set entirely -- it named where the collector is
+            # looked at FROM, not where it looks TO, and it went silent
+            # whenever no third planet happened to be configured to it.
+            #
+            # VII.5, 3: a planet "looks at every degree of the sign as well
+            # as everything which is in it," so the reach is the seven
+            # signs its rays fall in, independent of what occupies them.
+            collector_lon = planetary_data[collector]['longitude']
             reached_houses = sorted({
-                get_wsh_house(planetary_data[r['p2'] if r['p1'] == collector else r['p1']]['longitude'], ascendant_lon)
-                for r in rows
-                if r['aspect_name'] != 'Aversion' and collector in (r['p1'], r['p2'])
-                and (r['p2'] if r['p1'] == collector else r['p1']) not in collected
+                get_wsh_house(d, ascendant_lon)
+                for d in _ray_degrees(collector_lon)[1:]   # skip its own body
             })
-            detail = f"{collector} collects {c['Collects']}"
-            if reached_houses:
-                detail += f", reflects toward house(s) {reached_houses}"
+            detail = (f"{collector} collects {c['Collects']}, "
+                       f"and its own rays reach houses {reached_houses}")
             reflections.append({'Reflection Type': 'I (Collection)', 'Detail': detail})
     return reflections
 
@@ -2672,19 +2687,34 @@ def calculate_chronocrats(jd_utc, lat, lon, local_dt, utc_offset_hours=0.0):
         # 1 is the 13th step in that same cycle.
         cycle_offset = (hour_number - 1) if is_diurnal_hour else (12 + hour_number - 1)
     except _CircumpolarSunError:
-        # No real sunrise/sunset exists at this date/location (polar day or
-        # polar night) — there's no meaningful temporal-hour boundary to
-        # anchor to, so fall back to the plain calendar weekday (no
-        # astrological-day rollover correction) and an equal 2-hour
-        # division of the 24-hour civil day, continuing the same 7-cycle.
+        # No real sunrise or sunset exists here on this date (polar day or
+        # polar night). The temporal hour is DEFINED by the interval
+        # between them, so it has no value at all in that case -- there is
+        # no canonical technique to fall back on, and none of the sources
+        # in hand contemplates the situation.
+        #
+        # What is returned is an explicitly modern approximation, flagged
+        # as such: the civil day divided into 24 equal hours, continuing
+        # the same Chaldean 7-cycle. An earlier version wrote
+        # `min(hour // 2, 11)` -- twelve two-hour bins, so the cycle
+        # advanced twelve steps across the day where the temporal-hour
+        # branch above advances twenty-four. It did cover the whole day,
+        # but at half the rate, so it was not "continuing the same 7-cycle"
+        # as its comment claimed: the same civil moment landed on a
+        # different lord depending on which branch had run.
         approximate = True
         day_lord = DAY_LORD_BY_WEEKDAY[_weekday_from_jd(jd_utc, utc_offset_hours)]
-        cycle_offset = min(local_dt.hour // 2, 11)
+        cycle_offset = local_dt.hour          # 0-23, one step per civil hour
 
     start_index = CHALDEAN_HOUR_ORDER.index(day_lord)
     hour_lord = CHALDEAN_HOUR_ORDER[(start_index + cycle_offset) % 7]
 
-    return {'Day Lord': day_lord, 'Hour Lord': hour_lord, 'Approximate': approximate}
+    return {
+        'Day Lord': day_lord, 'Hour Lord': hour_lord, 'Approximate': approximate,
+        'Hour Basis': 'Equal civil hours (modern approximation; the Sun is '
+                       'circumpolar here, so the temporal hour is undefined)'
+                       if approximate else 'Temporal (unequal) hours',
+    }
 
 # --- Classical Lots (Arabic Parts) ---------------------------------------
 
@@ -4335,9 +4365,18 @@ def evaluate_victors(planetary_data, ascendant_lon, lot_of_fortune, syzygy_lon, 
     day_lord = chronocrats.get('Day Lord')
     hour_lord = chronocrats.get('Hour Lord')
 
+    # The two axes are genuinely independent, so all four combinations are
+    # computed rather than the two diagonal pairings alone. Which wheel
+    # goes with which weighting is nowhere stated in the source; pairing
+    # each with the wheel of its own named tradition is a reading, and
+    # hard-coding it hid the two off-diagonal cases entirely. The diagonal
+    # pairings are marked as the interpretive presets they are.
     results = {}
-    for scheme_name, weights in VICTOR_WEIGHTS.items():
-        places_values = VICTOR_PLACES_VALUES[scheme_name]
+    for (weight_name, weights), (places_name, places_values) in product(
+            VICTOR_WEIGHTS.items(), VICTOR_PLACES_VALUES.items()):
+        preset = ' (matched preset)' if weight_name == places_name else ''
+        scheme_name = (f"{weight_name.split(' (')[0]} weights + "
+                       f"{places_name.split(' (')[0]} places{preset}")
         totals = {p: 0 for p in columns}
         grid = []
 
@@ -4386,26 +4425,41 @@ def evaluate_victors(planetary_data, ascendant_lon, lot_of_fortune, syzygy_lon, 
     return results
 
 def evaluate_planets_in_houses(planetary_data, abu_mashar_condition, ascendant_lon):
-    """For each of the 7 classical planets, determine its Whole Sign House
-    placement, then look up the Rhetorius/PN4-derived delineation for that
-    planet in that house under its Good/Bad condition -- per Abu Ma'shar's
-    own VII.6 condition verdict (evaluate_abu_mashar_condition()), not the
-    older Rhetorius/PN4 net dignity score."""
+    """Each planet's Whole Sign house placement and BOTH Rhetorius/PN4
+    readings for that pairing, good and bad.
+
+    Both are shown rather than one being chosen for the reader. The only
+    thing available to choose with is the Net in the Planetary Condition
+    table, and that number is this app's own arithmetic: Abu Ma'shar
+    enumerates the VII.6 conditions and nowhere totals them, supplies no
+    weighting, and gives no rule for ties. Letting an invented score
+    silently pick one of two classical delineations turned a convenience
+    into a verdict, and hid the fact that a chart can sit one label away
+    from the opposite reading.
+
+    The Net still appears, as a LEAN rather than a selection, and goes
+    'Indeterminate' inside a margin of one -- the width of a single
+    testimony, so the cases that could flip on one more source paragraph
+    say so instead of committing."""
     results = []
     for planet, data in planetary_data.items():
         if planet == 'North Node': continue
 
         wsh_house = get_wsh_house(data['longitude'], ascendant_lon)
         condition_data = abu_mashar_condition[planet]
-        condition = condition_data['Condition']
-        delineation = PLANETS_IN_HOUSES[wsh_house][planet][condition]
+        net = condition_data['Net']
+        if abs(net) <= 1:
+            lean = 'Indeterminate'
+        else:
+            lean = f"leans {condition_data['Condition']}"
 
         results.append({
             'Planet': planet,
             'Placed In (WSH)': wsh_house,
-            'Net (heuristic)': condition_data['Net'],
-            'Reading Selected': condition,
-            'Classical Signification': delineation,
+            'Net (app heuristic)': net,
+            'Lean': lean,
+            'If Well Placed': PLANETS_IN_HOUSES[wsh_house][planet]['Good'],
+            'If Badly Placed': PLANETS_IN_HOUSES[wsh_house][planet]['Bad'],
         })
     return results
 
@@ -4658,6 +4712,7 @@ CONNECTION_PROFILE = st.sidebar.radio(
     ),
 )
 
+
 if location_query and lat is not None and lon is not None:
     st.sidebar.success(f"**Resolved:** {lat:.4f}, {lon:.4f}")
 
@@ -4777,9 +4832,12 @@ if location_query and lat is not None and lon is not None:
                 hdr4.metric("Lord of the Hour", chronocrats['Hour Lord'])
                 if chronocrats.get('Approximate'):
                     st.caption(
-                        "\u26a0\ufe0f No sunrise/sunset exists for this date at this location (circumpolar "
-                        "day/night) — Day and Hour Lord fall back to the plain calendar weekday and an "
-                        "equal 2-hour division of the day, rather than true unequal temporal hours."
+                        "\u26a0\ufe0f **The Lord of the Hour here is not a temporal hour.** No sunrise "
+                        "or sunset exists for this date at this location (circumpolar day or night), and "
+                        "the temporal hour is *defined* by the interval between them — so it has no "
+                        "value at all, and no source in hand contemplates the case. What is shown is an "
+                        "explicitly modern approximation: the civil day divided into 24 equal hours, "
+                        "continuing the same Chaldean cycle. The Lord of the Day is still exact."
                     )
 
                 st.subheader("Chronocrator Matrix (Active Time Lords)", help='The planets and signs ruling the current predictive period -- the year (profection), month, day, and hour -- each cycling to the next lord in zodiacal order as time passes.')
@@ -4893,13 +4951,13 @@ if location_query and lat is not None and lon is not None:
                     st.dataframe(pd.DataFrame(syzygy_rows), hide_index=True, width='stretch')
 
 
-                st.subheader("Victor of the Chart (ibn Ezra's victor #1, 1485/1537)", help="Ibn Ezra's worksheet reproduced cell for cell, so it can be checked against a hand-filled sheet. The seven planets are the columns. The first five rows score each planet's essential-dignity claim AT THAT POINT'S degree -- Sun, Moon, Ascendant, Lot of Fortune, and the prenatal New/Full Moon. Then Lord of the Day (+7), Lord of the Hour (+6) and Places are added ONCE each, not per point; Places is keyed the other way round, by the candidate planet's own Whole-Sign house. Every column is summed into Totals, and the single highest total is the chart's victor.\n\nTwo independent choices are shown side by side: the dignity weights (Older = al-Tabari/Masha'allah, Bound 3 > Triplicity 2; Newer = al-Qabisi/Abu Ma'shar, Triplicity 3 > Bound 2) and the Places wheel of the same named tradition. Ibn Ezra's later victor #2 (1507) replaces the two chronocrator rows with a Superiors row scored only for Saturn, Jupiter and Mars; its weight is not given in the course materials, so it is not implemented rather than guessed.")
+                st.subheader("Victor of the Chart (ibn Ezra's victor #1, 1485/1537)", help="Ibn Ezra's worksheet reproduced cell for cell, so it can be checked against a hand-filled sheet. The seven planets are the columns. The first five rows score each planet's essential-dignity claim AT THAT POINT'S degree -- Sun, Moon, Ascendant, Lot of Fortune, and the prenatal New/Full Moon. Then Lord of the Day (+7), Lord of the Hour (+6) and Places are added ONCE each, not per point; Places is keyed the other way round, by the candidate planet's own Whole-Sign house. Every column is summed into Totals, and the single highest total is the chart's victor.\n\nTWO INDEPENDENT AXES, and all four combinations are shown. The dignity weights are Older (al-Tabari/Masha'allah, Bound 3 > Triplicity 2) or Newer (al-Qabisi/Abu Ma'shar, Triplicity 3 > Bound 2); the Places wheel is ibn Ezra's own or Masha'allah's. Nothing in the source says which wheel goes with which weighting, so pairing each with the wheel of its own named tradition is a reading, not a fact -- those two are labelled \"matched preset\" and the two off-diagonal combinations, previously not computed at all, are shown beside them. Where all four agree the victor is robust; where they part, the disagreement is the finding. Ibn Ezra's later victor #2 (1507) replaces the two chronocrator rows with a Superiors row scored only for Saturn, Jupiter and Mars; its weight is not given in the course materials, so it is not implemented rather than guessed.")
                 for scheme_name, res in victors_data.items():
                     st.markdown(f"**{scheme_name}** — victor: **{res['victor']}** ({res['total']}), runner-up {res['runner_up']}"
                                 + ("  \n:orange[Tied at the top — the sheet does not break ties.]" if res['tied'] else ""))
                     st.dataframe(pd.DataFrame(res['grid']), hide_index=True, width='stretch')
 
-                st.subheader("Topical Planets in Houses (Rhetorius & PN4)", help="Each planet's Whole-Sign house placement and the Rhetorius/PN4 delineation for it. Each pairing has a good and a bad reading, and the one shown is picked by that planet's Net score in the Planetary Condition table above -- which is this app's own heuristic, not Abu Ma'shar's. Treat the selected reading as a starting point, and check it against the four condition counts and the labels rather than trusting the switch.")
+                st.subheader("Topical Planets in Houses (Rhetorius & PN4)", help="Each planet's Whole-Sign house placement with BOTH Rhetorius/PN4 readings for that pairing, good and bad.\n\nNeither is chosen for you. The only thing available to choose with is the Net from the Planetary Condition table, and that number is this app's own arithmetic -- Abu Ma'shar enumerates the VII.6 conditions, never totals them, gives no weighting and no tie rule. An invented score silently picking one of two classical delineations turns a convenience into a verdict.\n\nThe Net is shown as a LEAN instead, and reads Indeterminate within a margin of one, which is the width of a single testimony: those charts sit one label away from the opposite reading, and should be judged on the condition counts and the labels rather than on the number.")
                 st.dataframe(pd.DataFrame(planets_in_houses_data), hide_index=True, width='stretch')
 
                 st.subheader("Topical House Lords (Masha'allah)", help='For each of the twelve topical houses, its domicile lord\'s own Whole-Sign placement, and Masha\'allah\'s delineation for that [placed-in, rules] pairing -- the classical way of reading what a house\'s ruler is "doing" elsewhere in the chart.')
@@ -4938,7 +4996,7 @@ if location_query and lat is not None and lon is not None:
 
 
             with tab_connections:
-                st.subheader(f"Aspects, Aversions & Connections (Sahl, The Introduction Ch.2 50-60 & Ch.3 6-21) — {CONNECTION_PROFILE} rule", help="Four separate facts about each pair, kept apart rather than collapsed into one verdict. LOOKING is the whole-sign configuration (Union/Sextile/Square/Trine/Opposition, or Aversion if none applies) -- sign to sign. MOTION and EXACT ORB DIST are the degree-to-degree approach. BODIES is whether each planet falls inside the other's sphere of power, which is asymmetric because the spheres differ in size: Abu Ma'shar VII.4, 7 notes that Saturn sits inside the Moon's body from 12 degrees while she only enters his at a little under 9. CONNECTED is the active author's verdict -- switch the Connection rule in the sidebar to see where they disagree.\n\nLIGHT and HEAVY are the standing classes both authors name as nouns (Saturn heaviest through the Moon lightest), not a reading of momentary speed: they are fixed, and a planet slowing toward its station does not thereby become heavy.\n\nAPPLYING PLANET is the separate, directed fact: which one is actually closing the aspect. Normally it is the lighter, and Ch.3, 6 assumes as much (\"a light, quick star GOING STRAIGHTAWAY TO a heavy star ... FEWER IN DEGREES than the heavy one\"). Retrogradation reverses it, and both authors say so rather than leaving it to be inferred -- Abu Ma'shar VII.5, 24 (\"the connection of one of them with the other ... will be BY RETROGRADATION\"), VII.5, 120 (\"the light one IN MORE DEGREES goes retrograde and connects with the heavy one\"), and the note on VII.5, 130 (Saturn \"could never be received because he is too slow to connect with anyone, UNLESS BY RETROGRADATION\"). The cause is named in this column whenever the heavier planet is the one applying, which happens for about 4% of configured pairs. Reception, transfer, collection, returning, revoking, emptiness of course and enclosure all read this column, not the light/heavy one.")
+                st.subheader(f"Aspects, Aversions & Connections (Sahl, The Introduction Ch.2 50-60 & Ch.3 6-21) — {CONNECTION_PROFILE} rule", help="Four separate facts about each pair, kept apart rather than collapsed into one verdict. LOOKING is the whole-sign configuration (Union/Sextile/Square/Trine/Opposition, or Aversion if none applies) -- sign to sign. MOTION and EXACT ORB DIST are the degree-to-degree approach. BODIES is whether each planet falls inside the other's sphere of power, which is asymmetric because the spheres differ in size: Abu Ma'shar VII.4, 7 notes that Saturn sits inside the Moon's body from 12 degrees while she only enters his at a little under 9. CONNECTED is the active author's verdict -- switch the Connection rule in the sidebar to see where they disagree.\n\nSTRENGTH is two different measures. For an assembly it is the source's own: whose body reaches whose (VII.4, 5-8) and whether they share a bound. For an aspect it is marked \"(app scale)\", because VII.5, 4 grades looking as a continuum with no cutoffs anywhere -- \"the strongest thing there is in its looking is the degree related most closely by number to the degree of its own sign, and if the aspect was far from these degrees, its aspect will be weaker.\" The thirds are this app's own scanning aid; the measurement itself is the Exact Orb Dist column.\n\nLIGHT and HEAVY are the standing classes both authors name as nouns (Saturn heaviest through the Moon lightest), not a reading of momentary speed: they are fixed, and a planet slowing toward its station does not thereby become heavy.\n\nAPPLYING PLANET is the separate, directed fact: which one is actually closing the aspect. Normally it is the lighter, and Ch.3, 6 assumes as much (\"a light, quick star GOING STRAIGHTAWAY TO a heavy star ... FEWER IN DEGREES than the heavy one\"). Retrogradation reverses it, and both authors say so rather than leaving it to be inferred -- Abu Ma'shar VII.5, 24 (\"the connection of one of them with the other ... will be BY RETROGRADATION\"), VII.5, 120 (\"the light one IN MORE DEGREES goes retrograde and connects with the heavy one\"), and the note on VII.5, 130 (Saturn \"could never be received because he is too slow to connect with anyone, UNLESS BY RETROGRADATION\"). The cause is named in this column whenever the heavier planet is the one applying, which happens for about 4% of configured pairs. Reception, transfer, collection, returning, revoking, emptiness of course and enclosure all read this column, not the light/heavy one.")
                 if aspects:
                     st.dataframe(pd.DataFrame(aspects), hide_index=True, width='stretch')
                 else:
