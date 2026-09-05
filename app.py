@@ -2918,9 +2918,19 @@ def calculate_chronocrats(jd_utc, lat, lon, local_dt, utc_offset_hours=0.0):
 # --- Classical Lots (Arabic Parts) ---------------------------------------
 
 def calculate_classical_lots(asc, sun, moon, sect):
-    """Lots of Fortune, Spirit, Exaltation, and Basis, sect-flipped per
-    medieval practice. Basis is placed the short angular distance between
-    Fortune and Spirit away from the Ascendant."""
+    """The four Lots this app has always shown. Fortune, Spirit and
+    Exaltation are all attested in Sahl and carry full provenance in
+    LOT_DEFINITIONS alongside the topical Lots.
+
+    BASIS IS NOT. No Lot of Basis appears anywhere in the material this
+    project has -- not in On Nativities, not in the Introduction, not in
+    Abu Ma'shar Book VII -- and the construction below is a Hellenistic one
+    from outside those texts. It also takes the UNSIGNED shorter arc
+    between Fortune and Spirit, which discards the direction the pair
+    actually stands in, so the same figure is produced whether Spirit
+    leads Fortune or trails it. It is left computed and shown, because it
+    has been in this table from the start, but it is marked as
+    unattested here rather than presented as settled."""
     is_diurnal = (sect == 'Diurnal')
 
     fortune = (asc + moon - sun) % 360.0 if is_diurnal else (asc + sun - moon) % 360.0
@@ -2935,7 +2945,7 @@ def calculate_classical_lots(asc, sun, moon, sect):
         'Lot of Fortune': fortune,
         'Lot of Spirit': spirit,
         'Lot of Exaltation': exaltation,
-        'Lot of Basis': basis,
+        'Lot of Basis (unattested in the sources here)': basis,
     }
     result = []
     for name, lon_val in lots.items():
@@ -2946,6 +2956,308 @@ def calculate_classical_lots(asc, sun, moon, sect):
             'Sign Dispositor': SIGN_TO_DOMICILE.get(get_zodiac_sign(lon_val), '-'),
         })
     return result
+
+# --- Topical Lots ---------------------------------------------------------
+# Every Lot carries its own provenance. Sahl's Nativities gives many of
+# these more than once, with formulas that genuinely conflict, and Dykes'
+# apparatus does not silently reconcile them -- so neither does this table.
+# His editorial position is recorded on each row, in his own words where he
+# states one, and the rivals stay visible beside the default.
+#
+# Four kinds of case, all of them his:
+#
+#   SAHL HIMSELF RULES. Of the two sibling Lots: "and they are both
+#   applied ... And both of the Lots are correct, SO WORK WITH THEM BOTH
+#   TOGETHER" (Ch. 3.11, 1-4). Neither is subordinate.
+#
+#   DYKES NAMES HIS CHOICE. On the three witnesses to Masha'allah's Lot of
+#   enemies (his Fig. 71): "I HAVE USED M HERE, which adopts the 'Hermetic'
+#   Lot of necessity ... the problem is that the end of 48 equates it with
+#   the Lot of slaves, and that is not true." On the night reversal of the
+#   Saturn-Moon Lot: "Paul instructs us to reverse it by night, but Abu
+#   Ma'shar says not to. WE SHOULD FOLLOW PAUL."
+#
+#   DYKES MARKS ONE STANDARD. On children: "this view belongs to
+#   Theophilus, whereas THE USUAL CALCULATION (from Jupiter to Saturn by
+#   day, and reversed by night) is that of Hermes."
+#
+#   DYKES ONLY TABULATES. Three Lots for work (his Fig. 63), after: "Sahl
+#   quietly switches to Masha'allah's treatise on Lots ... and now he is
+#   substituting another one WITHOUT TELLING US that the formula is
+#   different! So we now have three different Lots, ostensibly for the same
+#   topic." All three are shown.
+#
+# NOTE ON THE SOURCE TEXT. Every formula here is taken from the running
+# prose or a footnote, never from one of the summary tables: the OCR
+# mangles their glyph columns. Fig. 63's row for Ch. 10.2.5 renders as
+# "Mercury -> Venus" where the body text at 10.2.5, 1 plainly reads "from
+# Saturn to the Moon". Where prose and table disagree, the prose is used
+# and the disagreement is noted.
+#
+# A point may be a planet, 'Ascendant', 'cuspN' (a quadrant cusp),
+# 'lordN' (the domicile lord of the Nth whole-sign house), or another Lot
+# by id. Lots that feed other Lots are listed before them.
+LOT_DEFINITIONS = [
+    dict(id='fortune', topic='Fortune', name='Lot of Fortune',
+         start='Sun', end='Moon', project='Ascendant', reverse_at_night=True,
+         source='Sahl, On Nativities Ch. 2.1 (and throughout)',
+         confidence='settled', note='"The Ascendant of the Moon" (2.1, 1).'),
+    dict(id='spirit', topic='Spirit', name='Lot of Spirit',
+         start='Moon', end='Sun', project='Ascendant', reverse_at_night=True,
+         source='Sahl, On Nativities Ch. 11.2, 4-6',
+         confidence='settled',
+         note='Sahl calls this the Lot of the Invisible, later Spirituality; '
+              'the notes on Ch. 11.2, 73 and Ch. 12.1, 5 confirm the identity.'),
+    dict(id='exaltation', topic='Exaltation', name='Lot of Exaltation',
+         start='Sun', end='exaltation_degree', project='Ascendant', reverse_at_night=True,
+         source='Sahl, On Nativities Ch. 11.1, 6 (Theophilus)',
+         confidence='settled',
+         note='"By day from the degree of the Sun to the degree of his exaltation ... '
+              'by night from the degree of the Moon to the degree of her exaltation."'),
+    dict(id='assets_lord2', topic='Assets', name='Lot of assets (lord of the 2nd)',
+         start='lord2', end='cusp2', project='Ascendant', reverse_at_night=False,
+         source='Sahl, On Nativities Ch. 2.1, 1',
+         confidence='attested',
+         note='"Count from the lord of the second to the second place, and add on top of '
+              'that the degrees of the Ascendant."'),
+    dict(id='assets_jupsat', topic='Assets', name='Lot of assets (Jupiter-Saturn)',
+         start='Jupiter', end='Saturn', project='Ascendant', reverse_at_night=True,
+         source='Sahl, On Nativities Ch. 2.1, 17',
+         confidence='variant',
+         note='Sahl gives a second, unrelated formula for the same topic in the same '
+              'chapter: "count from Jupiter to Saturn by day, and by night the reverse."'),
+    dict(id='siblings_hermes', topic='Siblings', name='Lot of siblings (Hermes)',
+         start='Saturn', end='Jupiter', project='Ascendant', reverse_at_night=False,
+         source='Sahl, On Nativities Ch. 3.11, 2',
+         confidence='settled, used alongside the other',
+         note='"For one who was born by day and night" -- no reversal. Sahl: "both of the '
+              'Lots are correct, so work with them both together" (3.11, 4).'),
+    dict(id='siblings_valens', topic='Siblings', name='Lot of siblings (Valens)',
+         start='Mercury', end='Jupiter', project='Ascendant', reverse_at_night=False,
+         source='Sahl, On Nativities Ch. 3.11, 3',
+         confidence='settled, used alongside the other',
+         note='"Taken by night and day." The note on Ch. 3.1.2, 1 adds that in Dorotheus '
+              'this one is specifically for the NUMBER of siblings.'),
+    dict(id='father', topic='Father', name='Lot of the father',
+         start='Sun', end='Saturn', project='Ascendant', reverse_at_night=True,
+         source='Sahl, On Nativities Ch. 4.1, 1',
+         confidence='settled',
+         note='"By day from the Sun to Saturn and by night from Saturn to the Sun."'),
+    dict(id='father_burnt', topic='Father', name='Lot of the father (Saturn under the rays)',
+         start='Mars', end='Jupiter', project='Ascendant', reverse_at_night=False,
+         source='Sahl, On Nativities Ch. 4.1, 2',
+         confidence='conditional',
+         note='"Now if Saturn was under the rays, then count from Mars to Jupiter." Shown '
+              'always; apply it only when Saturn is in fact under the rays.'),
+    dict(id='mother', topic='Mother', name='Lot of the mother',
+         start='Venus', end='Moon', project='Ascendant', reverse_at_night=True,
+         source="Sahl, On Nativities Ch. 4.4 (Dykes' note)",
+         confidence='attested',
+         note='"Taken by day from Venus to the Moon (and by night the contrary), and is '
+              'projected from the Ascendant."'),
+    dict(id='children_theophilus', topic='Children', name='Lot of children (Jupiter-Saturn, unreversed)',
+         start='Jupiter', end='Saturn', project='Ascendant', reverse_at_night=False,
+         source='Sahl, On Nativities Ch. 5.1, 91',
+         confidence='variant',
+         note='Sahl gives it "by night and by day". The note: "According to Abu Ma\'shar, '
+              'this view belongs to Theophilus."'),
+    dict(id='children_hermes', topic='Children', name='Lot of children (Jupiter-Saturn, reversed)',
+         start='Jupiter', end='Saturn', project='Ascendant', reverse_at_night=True,
+         source="Sahl, On Nativities Ch. 5.1, 91 (Dykes' note 51)",
+         confidence='the usual calculation',
+         note='"THE USUAL CALCULATION (from Jupiter to Saturn by day, and reversed by '
+              'night) is that of Hermes." The only difference from the row above is the '
+              'night reversal, which Sahl\'s text omits.'),
+    dict(id='children_mercury', topic='Children', name='Lot of children (Mercury-Saturn)',
+         start='Mercury', end='Saturn', project='Ascendant', reverse_at_night=False,
+         source='Sahl, On Nativities Ch. 5.1, 92',
+         confidence='variant, attribution disputed',
+         note='"And according to the method of Hermes, it is taken from Mercury to '
+              'Saturn." Sahl assigns this to Hermes; the note on 91 assigns Hermes the '
+              'Jupiter-Saturn form instead. The conflict is in the sources.'),
+    dict(id='children_timing', topic='Children', name='Lot of the timing of children',
+         start='Mars', end='Jupiter', project='Ascendant', reverse_at_night=False,
+         source='Sahl, On Nativities Ch. 5.2, 2 and 8',
+         confidence='attested',
+         note='A separate Lot for WHEN, not how many: "when Jupiter reaches this Lot in '
+              'his course and transit."'),
+    dict(id='marriage_men', topic='Marriage', name="Lot of men's marriage",
+         start='Saturn', end='Venus', project='Ascendant', reverse_at_night=False,
+         source='Sahl, On Nativities Ch. 7.1, 223 and Ch. 7.4, 44',
+         confidence='settled', note='Stated twice, identically.'),
+    dict(id='marriage_women', topic='Marriage', name="Lot of women's marriage",
+         start='Venus', end='Saturn', project='Ascendant', reverse_at_night=False,
+         source='Sahl, On Nativities Ch. 7.1, 224 and Ch. 7.4, 44',
+         confidence='settled', note='Stated twice, identically.'),
+    dict(id='passion', topic='Marriage', name='Lot of passion (Eros)',
+         start='fortune', end='spirit', project='Ascendant', reverse_at_night=True,
+         source="Sahl, On Nativities Ch. 7.1, 141 (Dykes' note 11)",
+         confidence='attested',
+         note='"The Lot of Eros or love according to Valens, taken by day from Fortune to '
+              'Spirit (and reversed at night)." Sahl\'s text says Fortune to the Lot of '
+              'the Invisible, which is the Lot of Spirit.'),
+    dict(id='chronic_illness', topic='Health', name='Lot of chronic illness',
+         start='Saturn', end='Mars', project='Ascendant', reverse_at_night=True,
+         source='Sahl, On Nativities Ch. 6.3.4, 2 and Ch. 6.3.5, 1',
+         confidence='settled',
+         note='"Taken from Saturn to Mars by day, and by night the contrary." Stated twice.'),
+    dict(id='slaves', topic='Slaves', name='Lot of slaves',
+         start='Mercury', end='Moon', project='Ascendant', reverse_at_night=True,
+         source='Sahl, On Nativities Ch. 6.5, 20',
+         confidence='settled',
+         note='"Taken from Mercury to the Moon by day, and by night the reverse."'),
+    dict(id='death', topic='Death', name='Lot of death',
+         start='Moon', end='cusp8', project='Saturn', reverse_at_night=False,
+         source='Sahl, On Nativities Ch. 8.4, 1',
+         confidence='settled',
+         note='PROJECTED FROM SATURN, not the Ascendant: "taken by night and day from the '
+              'Moon to the degree of the eighth place, AND CAST OUT FROM SATURN."'),
+    dict(id='killer', topic='Death', name='Lot of the killer',
+         start='lord1', end='Moon', project='Ascendant', reverse_at_night=True,
+         source='Sahl, On Nativities Ch. 8.2, 17',
+         confidence='attested',
+         note='"Taken from the lord of the Ascendant to the Moon by day (and by night the '
+              'reverse), and is cast out from the Ascendant."'),
+    dict(id='travel', topic='Travel', name='Lot of travel',
+         start='lord9', end='cusp9', project='Ascendant', reverse_at_night=False,
+         source='Sahl, On Nativities Ch. 9.1, 9',
+         confidence='settled',
+         note='"Taken by night and day from the lord of the ninth to the ninth."'),
+    dict(id='work_action', topic='Work', name='Lot of work (action / praxis)',
+         start='Mercury', end='Mars', project='Ascendant', reverse_at_night=True,
+         source='Sahl, On Nativities Ch. 10.1.1, 14',
+         confidence='variant (one of three)',
+         note="The Greek Lot of action. Dykes' Fig. 63 names it Work in Sahl and BA, "
+              "\"managers, viziers, and Sultans\" in Abu Ma'shar VIII.4."),
+    dict(id='work_expedition', topic='Work', name='Lot of work (expedition)',
+         start='Saturn', end='Moon', project='Ascendant', reverse_at_night=True,
+         source='Sahl, On Nativities Ch. 10.2.5, 1',
+         confidence='variant (one of three); night reversal per Dykes',
+         note='Sahl gives it "by day and night", but the note rules on the calculation: '
+              '"Paul instructs us to reverse it by night, but Abu Ma\'shar says not to. WE '
+              'SHOULD FOLLOW PAUL." A military Lot in Dorotheus, Paul and Theophilus.'),
+    dict(id='work_authority', topic='Work', name="Lot of authority, work and craft (Masha'allah)",
+         start='Sun', end='Saturn', project='Ascendant', reverse_at_night=False,
+         source="Sahl, On Nativities Ch. 10.2.5, 4-14 (Masha'allah)",
+         confidence='variant (one of three)',
+         note='Sahl switches treatises mid-chapter without saying so. The note: '
+              'Masha\'allah "defines this in the same way as the Lot of fathers '
+              '(Sun-Saturn)". Identical in form to the Lot of the father; Fig. 63\'s glyph '
+              'column reads Sun-Mercury, but the prose is followed here.'),
+    dict(id='friends', topic='Friends', name='Lot of friends',
+         start='Moon', end='Mercury', project='Ascendant', reverse_at_night=True,
+         source='Sahl, On Nativities Ch. 11.1, 5',
+         confidence='settled',
+         note='The note on Ch. 10.2.9 identifies it: "the Moon-Mercury Lot (projected from '
+              'the Ascendant, reversed by night), which is identical to Dorotheus\'s Lot '
+              'of friendship."'),
+    dict(id='desire', topic='Friends', name='Lot of desire',
+         start='fortune', end='spirit', project='Ascendant', reverse_at_night=True,
+         source='Sahl, On Nativities Ch. 11.4, 5',
+         confidence='attested; identical in form to the Lot of passion',
+         note='"By day from the Lot of Fortune to the Lot of Spirituality ... and by night '
+              'the converse."'),
+    dict(id='necessity', topic='Friends', name='Lot of necessity',
+         start='spirit', end='fortune', project='Ascendant', reverse_at_night=True,
+         source="Sahl, On Nativities Ch. 11.5 (Dykes' note 62)",
+         confidence='attested',
+         note='"This is the opposite of the Lot of Eros: by day from the Lot of Spirit to '
+              'the Lot of Fortune (and by night the reverse)."'),
+    dict(id='enemies_necessity', topic='Enemies', name='Lot of enemies (M: Mercury to Fortune)',
+         start='Mercury', end='fortune', project='Ascendant', reverse_at_night=True,
+         source="Sahl, On Nativities Ch. 12.1, 48 (Dykes' Fig. 71)",
+         confidence="Dykes' own choice of the three",
+         note='"I HAVE USED M HERE, which adopts the \'Hermetic\' Lot of necessity (from '
+              'Mercury to Fortune or \'the Lot of the Moon\', reversed by night). This Lot '
+              'does have to do with enmity, but the problem is that the end of 48 equates '
+              'it with the Lot of slaves, and that is not true."'),
+    dict(id='enemies_slaves', topic='Enemies', name='Lot of enemies (E: Mercury to Moon)',
+         start='Mercury', end='Moon', project='Ascendant', reverse_at_night=True,
+         source="Sahl, On Nativities Ch. 12.1, 49 (Dykes' Fig. 71)",
+         confidence='variant; really the Lot of slaves',
+         note="The second manuscript's reading. Dykes' table names its real identity as the "
+              'Lot of slaves, which is why he did not adopt it.'),
+    dict(id='enemies_hermes', topic='Enemies', name='Lot of enemies (Latin: lord of the 12th)',
+         start='lord12', end='cusp12', project='Ascendant', reverse_at_night=False,
+         source="Vat. Pal. lat. 1892, f. 103r (Dykes' Fig. 71)",
+         confidence='variant; the Latin witness',
+         note="Dykes' table names this one Enemies (Hermes) -- the only one of the three "
+              'whose real identity is the topic it is used for.'),
+    dict(id='courage', topic='Courage', name='Lot of courage (Hermetic)',
+         start='Mars', end='fortune', project='Ascendant', reverse_at_night=True,
+         source="Sahl, On Nativities Ch. 10.3 (Dykes' note 214)",
+         confidence='conjectural identification',
+         note='"There seem to be two Lots used here ... for either of these the author '
+              'might mean the Hermetic Lot of courage: by day from Mars to the Lot of '
+              'Fortune (by night the reverse). ... However, I SUSPECT that one of them -- '
+              'probably the Lot of valor -- is originally Dorotheus\'s Lot of expedition."'),
+    dict(id='deception_men', topic='Deception', name="Lot of men's deception",
+         start='Sun', end='Venus', project='Ascendant', reverse_at_night=False,
+         source='Sahl, On Nativities Ch. 7.1, 220',
+         confidence='attested', note='"By day and by night from the Sun to Venus."'),
+    dict(id='deception_women', topic='Deception', name="Lot of women's deception",
+         start='Moon', end='Mars', project='Ascendant', reverse_at_night=False,
+         source='Sahl, On Nativities Ch. 7.1, 221',
+         confidence='attested', note='"By day and by night from the Moon to Mars."'),
+]
+
+def _lot_point(name, planetary_data, asc, cusps, sect, resolved):
+    """Resolve one end of a Lot formula to a longitude, or None if the
+    chart cannot supply it."""
+    if name == 'Ascendant':
+        return asc
+    if name in planetary_data:
+        return planetary_data[name]['longitude']
+    if name in resolved:
+        return resolved[name]
+    if name == 'exaltation_degree':
+        # Ch. 11.1, 6 pairs the sect light with ITS OWN exaltation degree:
+        # the Sun's is 19 Aries, the Moon's 3 Taurus.
+        return 19.0 if sect == 'Diurnal' else 33.0
+    if name.startswith('cusp'):
+        return cusps[int(name[4:]) - 1]
+    if name.startswith('lord'):
+        house = int(name[4:])
+        sign = get_zodiac_sign(((int(asc // 30) + house - 1) % 12) * 30.0 + 15.0)
+        lord = SIGN_TO_DOMICILE.get(sign)
+        return planetary_data[lord]['longitude'] if lord in planetary_data else None
+    return None
+
+def calculate_topical_lots(planetary_data, asc, cusps, sect):
+    """Every Lot in LOT_DEFINITIONS, computed with its provenance attached.
+
+    A Lot is projected_point + (end - start), and the day formula reverses
+    to end -> start at night where the source says so. Lots that feed other
+    Lots (Fortune and Spirit feed passion, desire, necessity, courage and
+    one of the enemy variants) are resolved in table order."""
+    is_diurnal = (sect == 'Diurnal')
+    resolved = {}
+    rows = []
+    for d in LOT_DEFINITIONS:
+        start, end = d['start'], d['end']
+        if d['reverse_at_night'] and not is_diurnal:
+            start, end = end, start
+        a = _lot_point(start, planetary_data, asc, cusps, sect, resolved)
+        b = _lot_point(end, planetary_data, asc, cusps, sect, resolved)
+        p = _lot_point(d['project'], planetary_data, asc, cusps, sect, resolved)
+        if a is None or b is None or p is None:
+            continue
+        lon = (p + b - a) % 360.0
+        resolved[d['id']] = lon
+        arc = 'day' if is_diurnal else 'night'
+        rows.append({
+            'Topic': d['topic'],
+            'Lot': d['name'],
+            'Position': get_degree_string(lon),
+            'WSH House': get_wsh_house(lon, asc),
+            'Lord': SIGN_TO_DOMICILE.get(get_zodiac_sign(lon), '-'),
+            'Formula': f"{d['project']} + ({end} - {start})"
+                        + ('' if not d['reverse_at_night'] else f'  [{arc} order]'),
+            'Standing': d['confidence'],
+            'Source': d['source'],
+            'Editor’s note': d['note'],
+        })
+    return rows
 
 # --- Special Degrees & Conditions ----------------------------------------
 
@@ -5004,6 +5316,7 @@ if location_query and lat is not None and lon is not None:
         syzygy = calculate_prenatal_syzygy(chart_data['julian_day'], lat, lon, chart_data['houses'])
         chronocrats = calculate_chronocrats(chart_data['julian_day'], lat, lon, local_dt, utc_offset_hours)
         classical_lots = calculate_classical_lots(chart_data['ascendant'], p_data['Sun']['longitude'], p_data['Moon']['longitude'], sect)
+        topical_lots = calculate_topical_lots(p_data, chart_data['ascendant'], chart_data['houses'], sect)
         special_degrees = evaluate_special_degrees(p_data)
         house_lords_data = evaluate_house_lords(p_data, chart_data['ascendant'])
         victors_data = evaluate_victors(p_data, chart_data['ascendant'], chart_data['lot_of_fortune'],
@@ -5067,8 +5380,11 @@ if location_query and lat is not None and lon is not None:
                     st.dataframe(pd.DataFrame(calc_list), hide_index=True, width='stretch')
 
                 with col2:
-                    st.subheader("Classical Lots", help='Arabic Parts: sect-dependent formulas combining two planets or points with the Ascendant to derive a new sensitive degree tied to a specific topic (e.g. Fortune = body/livelihood, Spirit = mind/action).')
+                    st.subheader("Classical Lots", help='Arabic Parts: sect-dependent formulas combining two planets or points with the Ascendant to derive a new sensitive degree tied to a specific topic (e.g. Fortune = body/livelihood, Spirit = mind/action).\n\nFortune, Spirit and Exaltation are attested in Sahl and carry their provenance in the Topical Lots table below. BASIS IS NOT: no Lot of Basis appears anywhere in the material this project has, and the construction used takes the unsigned shorter arc between Fortune and Spirit, discarding the direction the pair actually stands in. It is kept because it has always been here, and marked rather than presented as settled.')
                     st.dataframe(pd.DataFrame(classical_lots), hide_index=True, width='stretch')
+
+                    st.subheader("Topical Lots (Sahl, On Nativities)", help="Sahl's topical Lots, each with its own provenance. He gives several of them MORE THAN ONCE, with formulas that genuinely conflict, and Dykes' apparatus does not silently reconcile them -- so neither does this table. The STANDING column records his editorial position in his own words where he states one.\n\nFour kinds of case. SAHL HIMSELF RULES: of the two sibling Lots, \"both of the Lots are correct, so work with them both together\" (3.11, 4) -- neither is subordinate. DYKES NAMES HIS CHOICE: of the three witnesses to the Lot of enemies, \"I have used M here\"; on the night reversal of the Saturn-Moon work Lot, \"Paul instructs us to reverse it by night, but Abu Ma'shar says not to. We should follow Paul.\" DYKES MARKS ONE STANDARD: on children, \"the usual calculation ... is that of Hermes.\" DYKES ONLY TABULATES: three Lots for work, after noting that \"Sahl quietly switches to Masha'allah's treatise on Lots ... without telling us that the formula is different.\"\n\nEvery formula is taken from the running prose or a footnote, never from one of the summary tables, whose glyph columns the OCR mangles -- Fig. 63's row for Ch. 10.2.5 renders as Mercury-Venus where the body text plainly reads \"from Saturn to the Moon.\"\n\nNote the Lot of death is projected FROM SATURN, not from the Ascendant.")
+                    st.dataframe(pd.DataFrame(topical_lots), hide_index=True, width='stretch')
 
                     st.subheader("House Cusps (Alchabitius)", help='The twelve quadrant house cusps computed by the Alchabitius (semi-arc) system -- shown alongside the Whole-Sign houses used everywhere else in this app, since some techniques call for quadrant division specifically.')
                     house_list = [{"House": i+1, "Alchabitius Cusp": get_degree_string(chart_data['houses'][i])} for i in range(12)]
