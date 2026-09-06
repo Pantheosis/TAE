@@ -126,7 +126,12 @@ def calculate_traditional_chart(dt_utc, lat, lon):
         'mc': mc,
         'ic': ic,
         'sect': sect,
-        'lot_of_fortune': lot_of_fortune
+        'lot_of_fortune': lot_of_fortune,
+        # Lesson 5 worksheet lines 14 and 15: the right ascension of the
+        # meridian from the same houses call, and the true obliquity of the
+        # ecliptic at the moment. Read by the Chart page's Calculation table.
+        'armc': ascmc[2],
+        'obliquity': swe.calc_ut(jd, swe.ECL_NUT)[0][0],
     }
 
 # ==========================================
@@ -6198,7 +6203,7 @@ if location_query and lat is not None and lon is not None:
 
         svg_code = generate_hybrid_svg(chart_data, location_query, lat, lon, local_dt, tz_name)
 
-        st.title("Traditional Astrological Engine")
+        st.title("Traditional Astrology Engine")
 
         # --- Structure: the course's own order, with a lesson gate --------
         # This was grouped by KIND OF COMPUTATION -- chart, then dignity,
@@ -6257,24 +6262,80 @@ if location_query and lat is not None and lon is not None:
                 st.caption("Not present in this chart: " + ", ".join(bucket) + ".")
                 del bucket[:]
 
+        # Table heights: st.dataframe shows about ten rows and then scrolls
+        # inside itself. A table meant to be read whole gets its own height.
+        def _rows_height(n):
+            return 35 * (n + 1) + 3
+
+        def _hms(hours):
+            total = int(round((hours % 24.0) * 3600))
+            return f"{total // 3600:02d}h {(total % 3600) // 60:02d}m {total % 60:02d}s"
+
+        def _dms(degrees):
+            total = int(round((degrees % 360.0) * 3600))
+            return f"{total // 3600}° {(total % 3600) // 60:02d}' {total % 60:02d}\""
+
+        # The wheel is a square SVG scaled to the iframe. html/body at 100%
+        # with overflow hidden removes the inner scrollbar the default body
+        # margin used to cause. 500 px keeps it inside a 720 px viewport
+        # with the title and captions above it.
+        WHEEL_HEIGHT = 500
+
         def page_chart():
             st.header("Chart")
             st.caption("Lessons 3-5: chart identification, measurement, astronomy.")
+            st.caption(
+                "A TNAC study companion: work the homework by hand, then check it here and "
+                "see the doctrine applied to a real chart.  \n"
+                "Enter a chart in the sidebar; saved charts load from the top of it.  \n"
+                "Pages follow the course's lesson order. Sahl's *Introduction* is the course "
+                "text; Abu Ma'shar's *Great Introduction* VII is the supplement."
+            )
             _gap = []
-            hdr1, hdr2, hdr3, hdr4 = st.columns(4)
-            hdr1.metric("Calculated JD", f"{chart_data['julian_day']:.4f}")
+            # Looking at the chart is the primary act, so the wheel comes first.
+            st.iframe(
+                '<html><head><style>html,body{margin:0;height:100%;overflow:hidden;'
+                f'background:#fff}}</style></head><body>{svg_code}</body></html>',
+                height=WHEEL_HEIGHT)
+            hdr1, hdr2, hdr3, hdr4 = st.columns([1.6, 1, 1, 1])
+            # Lesson 5 asks "conjunctional or preventional?"; the full syzygy
+            # table stays on the victors page, gated at Lesson 19.
+            hdr1.metric("Prenatal lunation", syzygy['event_label'])
+            hdr1.caption(f"{get_degree_string(syzygy['syzygy_longitude'])} · House {syzygy['natal_house']}")
             hdr2.metric("Sect", sect)
             hdr3.metric("Lord of the Day", chronocrats['Day Lord'])
             hdr4.metric("Lord of the Hour", chronocrats['Hour Lord'])
             if chronocrats.get('Approximate'):
                 st.caption(
-                    "\u26a0\ufe0f **The Lord of the Hour here is not a temporal hour.** No sunrise "
+                    "⚠️ **The Lord of the Hour here is not a temporal hour.** No sunrise "
                     "or sunset exists for this date at this location (circumpolar day or night), and "
                     "the temporal hour is *defined* by the interval between them — so it has no "
                     "value at all, and no source in hand contemplates the case. What is shown is an "
                     "explicitly modern approximation: the civil day divided into 24 equal hours, "
                     "continuing the same Chaldean cycle. The Lord of the Day is still exact."
                 )
+            # The Lesson 5 worksheet's intermediate lines, so a hand
+            # calculation can be checked line by line rather than only at
+            # the Ascendant. GST is the Greenwich sidereal time at the UT of
+            # birth; LST adds the longitude in hours; RAMC is the right
+            # ascension of the meridian from the same swe.houses call that
+            # produced the cusps.
+            st.subheader('Calculation', help="The Lesson 5 worksheet's intermediate quantities, in the worksheet's order, so each line of a hand calculation can be checked against the app.")
+            gst_hours = swe.sidtime(chart_data['julian_day'])
+            lst_hours = (gst_hours + lon / 15.0) % 24.0
+            calc_rows = [
+                {"Quantity": "Local time and standard", "Value": f"{local_dt:%Y-%m-%d %H:%M:%S} {tz_name}"},
+                {"Quantity": "Universal time (line 8)", "Value": f"{dt_utc:%Y-%m-%d %H:%M:%S} UT"},
+                {"Quantity": "Julian Day", "Value": f"{chart_data['julian_day']:.4f}"},
+                {"Quantity": "Greenwich sidereal time at birth (line 11)", "Value": _hms(gst_hours)},
+                {"Quantity": "Local sidereal time (line 13)", "Value": _hms(lst_hours)},
+                {"Quantity": "RAMC (line 14)", "Value": _dms(chart_data['armc'])},
+                {"Quantity": "Obliquity of the ecliptic (line 15)", "Value": _dms(chart_data['obliquity'])},
+                {"Quantity": "MC", "Value": get_degree_string(chart_data['mc'])},
+                {"Quantity": "Ascendant", "Value": get_degree_string(chart_data['ascendant'])},
+            ]
+            st.dataframe(pd.DataFrame(calc_rows), hide_index=True, width='content')
+            st.caption("Matches the Lesson 5 worksheet: lines 8, 11, 13, 14, 15 and Step 2–3 results.")
             st.subheader('Planetary Positions', help="The seven classical planets' ecliptic (tropical) longitude at the moment of birth, in sign and degree.")
             # True planets only — angles, nodes, and Lot of Fortune
             # now live in the "Calculated Points" table alongside it.
@@ -6283,7 +6344,9 @@ if location_query and lat is not None and lon is not None:
             # planet is direct or retrograde -- all of which this app already
             # computes and none of which it showed on the table a student
             # reaches for first. Lesson 16's solar phase is here for the same
-            # reason.
+            # reason, and Lesson 15's standing instruction -- does the planet
+            # see the Ascendant, i.e. is it out of the 2nd, 6th, 8th and 12th
+            # -- is the "Sees ASC" column.
             pos_list = []
             for p, d in p_data.items():
                 if p == 'North Node':
@@ -6292,41 +6355,47 @@ if location_query and lat is not None and lon is not None:
                 q = get_effective_house(lon_p, chart_data['houses'])
                 phase, side, elong = solar_phase(p, lon_p, p_data['Sun']['longitude'])
                 acc_p = accidental[p]
+                ws_place = get_wsh_house(lon_p, chart_data['ascendant'])
                 pos_list.append({
                     "Planet": p,
                     "Position": get_degree_string(lon_p),
-                    "Absolute": f"{lon_p:.4f}\u00b0",
-                    "WS place": get_wsh_house(lon_p, chart_data['ascendant']),
+                    "Absolute": f"{lon_p:.4f}°",
+                    "WS place": ws_place,
+                    "Sees ASC": "No (averse)" if ws_place in (2, 6, 8, 12) else "Yes",
                     # Sahl's sense (Ch.3, 4-5: stake or succedent vs. falling), not
-                    # Abu Ma'shar's quadrant term of VI.26, 3.
-                    "Quadrant": f"{q} ({'advancing' if q in ANGLE_HOUSES | SUCCEDENT_HOUSES else 'retreating'} -- Sahl Ch.3, 4-5)",
+                    # Abu Ma'shar's quadrant term of VI.26, 3. Cited in the caption.
+                    "Quadrant": f"{q}, {'advancing' if q in ANGLE_HOUSES | SUCCEDENT_HOUSES else 'retreating'}",
                     "Motion": ('Retrograde' if acc_p['Retrograde']
                                else 'Stationary' if acc_p['Stationary'] else 'Direct'),
-                    "Solar phase": (f"{phase}, {side}" if phase and side else (phase or '\u2013')),
+                    "Solar phase": (f"{phase}, {side}" if phase and side else (phase or '–')),
                 })
             st.dataframe(pd.DataFrame(pos_list), hide_index=True, width='stretch')
-            st.subheader('Calculated Points', help="Non-planetary chart points: the four angles (Ascendant, Midheaven, Descendant, Imum Coeli), the Moon's Nodes, and the Lot of Fortune (a sect-dependent formula combining the Sun, Moon, and Ascendant).")
-            north_node_lon = p_data['North Node']['longitude']
-            south_node_lon = (north_node_lon + 180.0) % 360.0
-            calculated_points = {
-                'Ascendant': chart_data['ascendant'],
-                'Midheaven': chart_data['mc'],
-                'Descendant': chart_data['descendant'],
-                'Imum Coeli': chart_data['ic'],
-                'North Node': north_node_lon,
-                'South Node': south_node_lon,
-                'Lot of Fortune': chart_data['lot_of_fortune'],
-            }
-            calc_list = [{"Point": name, "Position": get_degree_string(lon_val)} for name, lon_val in calculated_points.items()]
-            st.dataframe(pd.DataFrame(calc_list), hide_index=True, width='stretch')
-            st.subheader('Quadrant divisions (Alchabitius)', help='The twelve quadrant house cusps computed by the Alchabitius (semi-arc) system -- shown alongside the Whole-Sign houses used everywhere else in this app, since some techniques call for quadrant division specifically.')
-            house_list = [{"House": i+1, "Cusp": get_degree_string(chart_data['houses'][i])} for i in range(12)]
-            st.dataframe(pd.DataFrame(house_list), hide_index=True, width='stretch')
+            st.caption("Quadrant column: Alchabitius house, advancing or retreating in Sahl's sense "
+                       "(The Introduction Ch.3, 4-5): stake or succedent versus falling. "
+                       "Sees ASC: whole-sign aversion to the first place (the 2nd, 6th, 8th and 12th do not see it).")
+            points_col, cusps_col = st.columns(2)
+            with points_col:
+                st.subheader('Calculated Points', help="Non-planetary chart points: the four angles (Ascendant, Midheaven, Descendant, Imum Coeli), the Moon's Nodes, and the Lot of Fortune (a sect-dependent formula combining the Sun, Moon, and Ascendant).")
+                north_node_lon = p_data['North Node']['longitude']
+                south_node_lon = (north_node_lon + 180.0) % 360.0
+                calculated_points = {
+                    'Ascendant': chart_data['ascendant'],
+                    'Midheaven': chart_data['mc'],
+                    'Descendant': chart_data['descendant'],
+                    'Imum Coeli': chart_data['ic'],
+                    'North Node': north_node_lon,
+                    'South Node': south_node_lon,
+                    'Lot of Fortune': chart_data['lot_of_fortune'],
+                }
+                calc_list = [{"Point": name, "Position": get_degree_string(lon_val)} for name, lon_val in calculated_points.items()]
+                st.dataframe(pd.DataFrame(calc_list), hide_index=True, width='content')
+            with cusps_col:
+                st.subheader('Quadrant divisions (Alchabitius)', help='The twelve quadrant house cusps computed by the Alchabitius (semi-arc) system -- shown alongside the Whole-Sign houses used everywhere else in this app, since some techniques call for quadrant division specifically.')
+                house_list = [{"House": i+1, "Cusp": get_degree_string(chart_data['houses'][i])} for i in range(12)]
+                st.dataframe(pd.DataFrame(house_list), hide_index=True, width='content', height=_rows_height(12))
             _finding(_gap, 'Special Degrees & Conditions', None, special_degrees,
                       glance='Flags planets in the Via Combusta (15 Libra-15 Scorpio, a historically "burnt" span), a classical welled/pitted degree of their current sign (Abu Ma\'shar, Great Introduction V.21), or one of Sahl\'s two sign-boundary conditions.',
                       notes='ENTERING: "every planet which is at the beginning of a sign is weak until it is firmly established in it and comes to be 5 degrees within it" (Fifty Aphorisms #44, 87), repeated in On Nativities Ch.1.22, 9. This is the other half of the five-degree rule that also governs advancement.\n\nLEAVING: "if a planet came to be in the last degree of the sign, then its strength has already gone away from that sign, and its strength is in the next sign ... like a man putting his foot on the threshold of his door. And if a planet was in the twenty-ninth degree, then indeed the strength of the planet IS in that sign" (Fifty Aphorisms #15, 31-33) -- so the 29th degree still counts and only the 30th has left.')
-            st.subheader("Chart wheel")
-            st.iframe(svg_code, height=720)
             _absent(_gap)
 
         def page_dignities():
