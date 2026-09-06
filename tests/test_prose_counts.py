@@ -53,7 +53,7 @@ def test_non_reception_five_kinds():
 # --- Counts of code structures -------------------------------------------
 
 def test_wildness_six_other_planets(engine):
-    assert prose_number(r"in Aversion to all (\w+) other classical planets") == len(engine["WEIGHT_ORDER"]) - 1
+    assert prose_number(r"in (?:whole-sign )?Aversion to all (\w+) other classical planets") == len(engine["WEIGHT_ORDER"]) - 1
 
 
 def test_classical_lots_are_four(engine):

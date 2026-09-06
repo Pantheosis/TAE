@@ -1625,17 +1625,63 @@ def evaluate_collections_of_light(planetary_data):
                     collections.append({'Collector': z, 'Collects': f'{x} & {y}'})
         return collections
 
-def evaluate_wildness(planetary_data):
-    """Wildness. Sahl's own term for this is "banished" (مطرود, The
-    Introduction Ch.3, 64): "the planet which none of the planets connects
-    to." His wording doesn't explicitly frame this as whole-sign Aversion
-    to everyone -- that sharper, "aversion to all other planets" definition
-    is a later refinement (Dykes' footnote there, citing his own ITA
-    III.10, calls Sahl's "banished" an early, less precise form of it) that
-    Abu Ma'shar's Great Introduction VII.5, 79-82, Fig. 125 reflects, and
-    which this function implements. Per VII.5, 80-81, a wild planet still
+def evaluate_sahl_banishment(planetary_data):
+    """Sahl's "banished" planet (The Introduction Ch.3, 64): "the banished
+    planet is the planet which NONE OF THE PLANETS CONNECTS TO." That is a
+    statement about connections, not about signs: a planet can share a
+    trine with every other body and still be banished if no one is inside
+    a live connection with it, and it can hold an out-of-sign body
+    connection (20-21) without being banished at all. Connection here is
+    Sahl's own (6-21, _is_connected_sahl): a state of the pair, so a planet
+    applying to another within its light is connected and neither side is
+    banished.
+
+    This is NOT Abu Ma'shar's wildness (VII.5, 79-82), which is whole-sign
+    aversion to every planet -- see evaluate_abu_wildness(). An earlier
+    version ran the aversion rule under both names, so Sahl's table showed
+    his rule's absence as a fact about his text. Dykes' note on 64 calls
+    Sahl's an early, less precise form of the later definition; the two are
+    kept apart so the student can see where they disagree.
+
+    Each row says how close the planet came, so an empty table and a
+    near-miss look different."""
+    with doctrine(SAHL):
+        rows = _pairwise_configurations(planetary_data)
+        planets = [p for p in planetary_data.keys() if p != 'North Node']
+        connected = set()
+        for row in rows:
+            if (row['aspect_name'] != 'Aversion' or _sahl_body_row(row)) and _is_connected(row):
+                connected.update((row['p1'], row['p2']))
+        results = []
+        for p in planets:
+            if p in connected:
+                continue
+            nearest = None
+            for row in rows:
+                if p not in (row['p1'], row['p2']) or row['aspect_name'] == 'Aversion':
+                    continue
+                if nearest is None or abs(row['deviation']) < abs(nearest['deviation']):
+                    nearest = row
+            if nearest is None:
+                closest = 'in aversion to every planet'
+            else:
+                other = nearest['p2'] if nearest['p1'] == p else nearest['p1']
+                actor = nearest['applicant'] or nearest['light_name']
+                closest = (f"{other}: {nearest['aspect_name'].lower()} by sign, {abs(nearest['deviation']):.1f}\u00b0 from exact "
+                           f"and {nearest['motion'].lower()}, outside {actor}'s light of {PLANETARY_ORBS.get(actor, 7.0):.0f}\u00b0")
+            results.append({'Planet': p, 'Closest configured planet': closest})
+        return results
+
+def evaluate_abu_wildness(planetary_data):
+    """Abu Ma'shar's wildness (Great Introduction VII.5, 79-82, Fig. 125):
+    "if a planet is in a sign such that absolutely no planet looks at it,"
+    which his own figure glosses as "in aversion to all other planets."
+    Whole-sign, and independent of degree. Per 80-81, a wild planet still
     counts as connected with the lord of whatever bound it currently
-    occupies, noted here rather than negating the flag."""
+    occupies, noted here rather than negating the flag.
+
+    Distinct from Sahl's banishment (Ch.3, 64), which is about live
+    connections and is in evaluate_sahl_banishment()."""
     rows = _pairwise_configurations(planetary_data)
     planets = [p for p in planetary_data.keys() if p != 'North Node']
     aversion_count = {p: 0 for p in planets}
@@ -1650,18 +1696,13 @@ def evaluate_wildness(planetary_data):
         if aversion_count[p] == len(planets) - 1:
             lon = planetary_data[p]['longitude']
             row = {'Planet': p, 'Bound Lord (residual connection)': get_essential_rulers(lon)['term']}
-            # The two definitions come apart here, and the disagreement is
-            # reported rather than resolved. Abu Ma'shar's is whole-sign
-            # aversion to everything, which an out-of-sign body connection
-            # does not break (Ch.3, 21: the two "will not see" each other).
-            # Sahl's own "banished" is "the planet which NONE OF THE
-            # PLANETS CONNECTS TO" (64), and 20-21 is exactly a connection
-            # without sight -- so by his wording this planet is not
-            # banished at all.
+            # Whole-sign aversion to everything is not broken by an out-of-
+            # sign body connection (Ch.3, 21: the two "will not see" each
+            # other) -- but that connection means the planet is NOT banished
+            # by Sahl's wording, and his own table will say so.
             if p in body_connected:
-                row['Note'] = ("Wild by Abu Ma'shar's whole-sign definition only: it holds an "
-                                "out-of-sign body connection (Sahl Ch.3, 20-21), so it is not "
-                                "\"banished\" by Sahl's own wording at 64")
+                row['Note'] = ("Wild by whole-sign aversion; holds an out-of-sign body connection "
+                                "(Sahl Ch.3, 20-21), so it is not banished in Sahl's table")
             results.append(row)
     return results
 
@@ -6276,7 +6317,8 @@ if location_query and lat is not None and lon is not None:
         abu_mashar_condition = evaluate_abu_mashar_condition(
             p_data, chart_data['houses'], sect, essential, accidental, chart_data['julian_day'], chart_data['ascendant'], sim
         )
-        wildness_data = evaluate_wildness(p_data)
+        banishment_data = evaluate_sahl_banishment(p_data)
+        wildness_data = evaluate_abu_wildness(p_data)
         reflections = evaluate_reflections_of_light(p_data, chart_data['ascendant'])
         blocking_data = evaluate_blocking(p_data)
         enclosure_data = evaluate_enclosure(p_data)
@@ -6780,9 +6822,9 @@ if location_query and lat is not None and lon is not None:
                     _finding(_gap, 'Prevented connections', "Sahl, The Introduction Ch.3, 31-48; Abu Ma'shar, Great Introduction VII.5, 90-94 and 120-125", prevented,
 
                              glance="Ways of stopping a connection before it completes, in one table as the Handy Tables give them: Sahl's intervention, nullification and cutting, plus Abu Ma'shar's two further cuttings (VII.5, 121-124), which Sahl does not have. His revoking, resistance and escape are in his own section.")
-                    _finding(_gap, 'Wildness', 'Sahl, The Introduction Ch.3, 64: "Banished"; Abu Ma\'shar VII.5, 79-82', wildness_data,
-                              glance='A planet in Aversion to all six other classical planets -- unable to be seen or aspected by anyone, though it may still be "reached" via the lord of whatever bound (term) it occupies.',
-                              notes='Sahl\'s own term is "banished"; this Aversion-based definition is a later refinement of it.')
+                    _finding(_gap, 'Banished', 'Sahl, The Introduction Ch.3, 64', banishment_data,
+                              glance='"The banished planet is the planet which none of the planets connects to" (64) -- a planet outside every live connection, whatever the signs are doing. Each row shows the nearest configured planet and why that is not a connection.',
+                              notes='Sahl\'s definition is about CONNECTIONS (6-21), not signs: a planet can be in trine by sign with everyone and still be banished if no planet is inside a live connection with it, and it can hold an out-of-sign body connection (20-21) and not be banished at all. Abu Ma\'shar\'s later "wildness" (VII.5, 79-82) is a different, whole-sign test -- aversion to every planet -- and has its own table in his view. Dykes\' note on 64 calls Sahl\'s the earlier, less precise form; the two are kept apart rather than one served under both names.')
                     _absent(_gap)
                 with st.container(border=True):
                     st.markdown("**Strength and weakness** — Ch.3, 77-112")
@@ -6842,6 +6884,9 @@ if location_query and lat is not None and lon is not None:
                     )
                     with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
                         st.markdown("The Moon's eleven corruptions (63-74) are shown as their own count rather than folded in with the rest. Sahl's ten (The Introduction Ch.3, 103-112) are a different list, not a variant reading of this one, and have their own table, Corruption of the Moon, in the Sahl view: Abu Ma'shar has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear here.\n\nThe four counts and the labels are the report. NET and VERDICT are a convenience of this app and NOT Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They exist because the Rhetorius/PN4 delineations in Topical Planets in Houses have to choose between a good and a bad reading.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's eleven corruptions contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once.\n\nEnclosure here is Abu Ma'shar's own (56-62) -- by degree within 7 degrees either side counting rays as well as bodies, by sign in the 2nd and 12th, or separating from one encloser and connecting with the other -- and it can be DISSOLVED: the degree type when the Sun or a fortune casts a ray within 7 degrees of the enclosed planet (60), the sign type by any look from them (61). The standalone Enclosure table in the Connection group of the Sahl view is Sahl's separate version.\n\nThe by-sign type counts an encloser's RAYS as well as its body, which is what 58 says twice. Be aware that this makes it common: it fires on roughly 43% of placements, because a planet's rays reach eight of the twelve signs. A bodies-only variant at about 2% exists in the code (SIGN_ENCLOSURE_BODIES_ONLY) but is this project's own conjecture, not the text, so it is off.")
+                    _finding(_gap, 'Wildness', "Abu Ma'shar, Great Introduction VII.5, 79-82", wildness_data,
+                              glance='A planet in whole-sign Aversion to all six other classical planets -- "in a sign such that absolutely no planet looks at it" (79) -- though it may still be "reached" via the lord of whatever bound it occupies (80-81).',
+                              notes='Whole-sign and independent of degree. Sahl\'s "banished" (Ch.3, 64) is a different test, about live connections rather than signs, and has its own table in his view.')
                     _finding(_gap, 'Reflection of Light', "Abu Ma'shar, Great Introduction VII.5, 87-89", reflections,
                               glance="Collection or Transfer specifically between two planets that are in Aversion to each other, not just unconnected -- since Aversion pairs can't see each other at all, a third planet is the only way their natures can interact.")
                     _finding(_gap, 'Favor & Recompense', "Abu Ma'shar VII.5, 126-128", favor_recompense_data,

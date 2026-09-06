@@ -447,3 +447,45 @@ def test_moon_defects_control_clean_moon(engine):
     fig = pdata(Moon=(35, 14.0), Sun=(0, 1.0), Jupiter=(155, JUP), North_Node=(200, 0.0))
     rec = engine["evaluate_corruption_of_the_moon"](fig, 30.0, "Diurnal")
     assert rec["unique_testimony_count"] == 0 and rec["labels"] == [], rec
+
+
+# --- CODE-03: Sahl banishment is not Abu Ma'shar wildness -----------------
+
+def test_banished_but_not_wild_when_signs_trine_without_a_connection(engine):
+    """Moon 0 Aries, Mars 29 Leo: the signs trine, so neither is in
+    aversion (not wild for Abu Ma'shar), but the ray is 29 degrees from
+    exact -- outside the Moon's 12 -- so no planet connects to either
+    (both banished for Sahl, 64)."""
+    fig = pdata(Moon=(0, MOON), Mars=(149, MARS))
+    banished = engine["evaluate_sahl_banishment"](fig)
+    assert {r["Planet"] for r in banished} == {"Moon", "Mars"}, banished
+    assert "29.0" in next(r for r in banished if r["Planet"] == "Moon")["Closest configured planet"]
+    assert engine["evaluate_abu_wildness"](fig) == []
+
+
+def test_wild_but_not_banished_with_an_out_of_sign_body_connection(engine):
+    """Moon 29 Aries, Mars 2 Taurus: adjacent signs are in aversion (wild
+    for Abu Ma'shar), yet the Moon's light strikes into Taurus and
+    connects with Mars by body (Ch.3, 20-21) -- neither is banished."""
+    fig = pdata(Moon=(29, MOON), Mars=(32, MARS))
+    assert engine["evaluate_sahl_banishment"](fig) == []
+    wild = engine["evaluate_abu_wildness"](fig)
+    assert {r["Planet"] for r in wild} == {"Moon", "Mars"}
+    assert all("not banished" in r["Note"] for r in wild)
+
+
+def test_neither_banished_nor_wild_inside_a_live_connection(engine):
+    fig = pdata(Moon=(0, MOON), Mars=(125, MARS))   # 5 degrees from the trine
+    assert engine["evaluate_sahl_banishment"](fig) == []
+    assert engine["evaluate_abu_wildness"](fig) == []
+
+
+def test_both_banished_and_wild_in_full_aversion(engine):
+    fig = pdata(Moon=(0, MOON), Mars=(45, MARS))    # Aries / Taurus, no body reach
+    assert {r["Planet"] for r in engine["evaluate_sahl_banishment"](fig)} == {"Moon", "Mars"}
+    assert {r["Planet"] for r in engine["evaluate_abu_wildness"](fig)} == {"Moon", "Mars"}
+    assert engine["evaluate_sahl_banishment"](fig)[0]["Closest configured planet"] == "in aversion to every planet"
+
+
+def test_the_shared_wildness_evaluator_is_gone(engine):
+    assert "evaluate_wildness" not in engine
