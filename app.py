@@ -142,9 +142,12 @@ def calculate_traditional_chart(dt_utc, lat, lon):
 SIGN_ORDER = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces']
 
 def get_zodiac_sign(longitude):
-    return SIGN_ORDER[int(longitude // 30)]
+    # Longitudes are circular: exactly 360.0 is 0 Aries, not a thirteenth
+    # sign. Every public geometry helper normalises at its own door.
+    return SIGN_ORDER[int((longitude % 360.0) // 30)]
 
 def get_degree_string(longitude):
+    longitude = longitude % 360.0
     sign = get_zodiac_sign(longitude)
     deg = int(longitude % 30)
     minute = int((longitude % 1) * 60)
@@ -3141,8 +3144,8 @@ def get_wsh_house(longitude, ascendant_lon):
     """Whole Sign House: the Ascendant's sign is house 1 in its entirety,
     and each subsequent sign (in zodiacal order) is the next house — no
     quadrant cusp division within a sign."""
-    asc_sign_idx = int(ascendant_lon // 30)
-    target_sign_idx = int(longitude // 30)
+    asc_sign_idx = int((ascendant_lon % 360.0) // 30)
+    target_sign_idx = int((longitude % 360.0) // 30)
     return ((target_sign_idx - asc_sign_idx) % 12) + 1
 
 def get_essential_rulers(longitude):
@@ -3150,6 +3153,7 @@ def get_essential_rulers(longitude):
     triplicity, term, face) ruling an arbitrary zodiacal degree — not tied
     to any specific planet's own position, unlike evaluate_essential_
     dignities(). Used to profile the prenatal syzygy degree itself."""
+    longitude = longitude % 360.0
     sign = get_zodiac_sign(longitude)
     degree_in_sign = longitude % 30
     element = SIGN_ELEMENT[sign]
