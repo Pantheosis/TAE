@@ -17,6 +17,7 @@
    ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because", "Source"]],
    ["Strength of the Planets", ["Planet", "Strength Testimonies", "Count"]],
    ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]],
+   ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Net", "Verdict", "Standing", "Good Fortune / Strength", "Weakness / Misfortune"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
@@ -27,7 +28,8 @@
    ["Non-reception", ["Kind", "Connecting", "With"]],
    ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because", "Source"]],
    ["Strength of the Planets", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]]
+   ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]],
+   ["Corruption of the Moon", ["Planet", "Defects", "Count"]]
   ],
   "dignities": [
    ["Lordship Mapping", ["Planet", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord"]],
@@ -76,6 +78,7 @@
    ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because", "Source"]],
    ["Strength of the Planets", ["Planet", "Strength Testimonies", "Count"]],
    ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]],
+   ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Net", "Verdict", "Standing", "Good Fortune / Strength", "Weakness / Misfortune"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
@@ -90,7 +93,8 @@
    ["Returning", ["Manner", "Planet", "Returned By"]],
    ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because", "Source"]],
    ["Strength of the Planets", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]]
+   ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]],
+   ["Corruption of the Moon", ["Planet", "Defects", "Count"]]
   ],
   "dignities": [
    ["Lordship Mapping", ["Planet", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord"]],
@@ -139,6 +143,7 @@
    ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because", "Source"]],
    ["Strength of the Planets", ["Planet", "Strength Testimonies", "Count"]],
    ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]],
+   ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Net", "Verdict", "Standing", "Good Fortune / Strength", "Weakness / Misfortune"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
    ["Favor & Recompense", ["Planet", "Condition", "Favored By"]],
@@ -153,7 +158,8 @@
    ["Non-reception", ["Kind", "Connecting", "With"]],
    ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because", "Source"]],
    ["Strength of the Planets", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]]
+   ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]],
+   ["Corruption of the Moon", ["Planet", "Defects", "Count"]]
   ],
   "dignities": [
    ["Lordship Mapping", ["Planet", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord"]],
@@ -262,6 +268,7 @@
    ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because", "Source"]],
    ["Strength of the Planets", ["Planet", "Strength Testimonies", "Count"]],
    ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]],
+   ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Net", "Verdict", "Standing", "Good Fortune / Strength", "Weakness / Misfortune"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
    ["Favor & Recompense", ["Planet", "Condition", "Favored By"]]
@@ -277,7 +284,8 @@
    ["Returning", ["Manner", "Planet", "Returned By"]],
    ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because", "Source"]],
    ["Strength of the Planets", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]]
+   ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]],
+   ["Corruption of the Moon", ["Planet", "Defects", "Count"]]
   ],
   "dignities": [
    ["Lordship Mapping", ["Planet", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord"]],

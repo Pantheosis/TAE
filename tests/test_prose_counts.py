@@ -129,9 +129,13 @@ def test_dignity_caption_restates_the_solar_orbs(engine):
     expected = (f"burned to {deg(b['Saturn'][0])} for Saturn and Jupiter, {deg(b['Mars'][0])} for Mars, "
                 f"{deg(b['Venus'][0])} for Venus and Mercury, {deg(b['Moon'][0])} for the Moon; "
                 f"under the rays to {deg(r['Saturn'][0])}, {deg(r['Mars'][0])} east / {deg(r['Mars'][1])} west, "
-                f"{deg(r['Venus'][0])} east / {deg(r['Venus'][1])} west, and {deg(r['Moon'][0])} respectively")
-    ui = ui_source().replace('"\n                    "', "")   # the caption is a wrapped literal
+                f"{deg(r['Venus'][0])} east / {deg(r['Venus'][1])} west, and ")
+    ui = re.sub(r'"\n\s+f?"', "", ui_source())   # the caption is a wrapped literal
     assert expected in ui, f"caption should read: {expected}"
+    # The Moon's figure and the domain rule are sidebar switches, so the
+    # caption interpolates them rather than quoting a number.
+    assert "{MOON_RAYS_ORB:.0f}° for the Moon" in ui
+    assert "currently {DOMAIN_RULE}" in ui and "DOMAIN_RULE == DOMAIN_RULE_OPTIONS[0]" in ui
     assert b["Saturn"] == b["Jupiter"] and b["Venus"] == b["Mercury"] and r["Venus"] == r["Mercury"]
     assert round(engine["CAZIMI_ORB"] * 60) == 16 and "in the heart within 16'" in ui
 
@@ -150,21 +154,22 @@ def test_via_combusta_span_matches_prose():
 
 # --- Switch option literals ----------------------------------------------
 
-def test_switch_options_match_the_values_the_code_compares_against():
-    """The sidebar radios offer string literals and the engine compares
-    globals against string literals. If either side is reworded the switch
-    silently falls through to its default. Pin both copies together."""
+def test_switch_options_match_the_values_the_code_compares_against(engine):
+    """Each switch's alternatives live in one *_OPTIONS tuple that both the
+    sidebar radio and the engine's comparison read. A radio that typed its
+    own list, or a comparison against a bare literal, would let a reworded
+    option silently fall through to the default."""
     src = app_source()
-    def radio_options(prefix):
-        m = re.search(r"st\.radio\(\s*\"" + re.escape(prefix) + r"[^\"]*\",\s*(\[[^\]]*\])", src)
-        assert m, f"radio starting {prefix!r} not found"
-        return eval(m.group(1))
-    assert radio_options("VII.6, 27/45") == SWITCHES["eastern"][2]
-    assert "EASTERN_RULE == 'VII.2 band'" in src
-    assert radio_options("Domain (hayz)") == SWITCHES["domain"][2]
-    assert "DOMAIN_RULE == \"Masha'allah\"" in src
-    assert radio_options("House-based Lots") == SWITCHES["lot_cusp"][2]
-    assert "LOT_HOUSE_CUSP == 'quadrant cusp'" in src
+    for prefix, const, name in (("VII.6, 27/45", "EASTERN_RULE", "eastern"),
+                                ("Domain (hayz)", "DOMAIN_RULE", "domain"),
+                                ("House-based Lots", "LOT_HOUSE_CUSP", "lot_cusp")):
+        assert list(engine[const + "_OPTIONS"]) == SWITCHES[name][2]
+        assert engine[const] == engine[const + "_OPTIONS"][0], f"{const} default is not the first option"
+        assert re.search(r"st\.radio\(\s*\"" + re.escape(prefix) + r"[^\"]*\",\s*list\(" + const + r"_OPTIONS\)", src), \
+            f"the {prefix!r} radio should take list({const}_OPTIONS)"
+        assert f"{const} == {const}_OPTIONS[1]" in src, f"the engine should compare {const} against its OPTIONS tuple"
+        # No bare literal comparison anywhere.
+        assert not re.search(const + r" == ['\"]", src), f"{const} is compared against a bare literal somewhere"
     # The Connection rule radio derives its options from CONNECTION_PROFILES,
     # so it cannot drift; check it still does.
     assert re.search(r"st\.sidebar\.radio\(\s*\"Connection rule\",\s*list\(CONNECTION_PROFILES\.keys\(\)\)", src)
@@ -176,3 +181,79 @@ def test_configurations_views_match_the_code():
     assert m and eval(m.group(1)) == ["Sahl (course text)", "Abu Ma'shar (supplement)", "Both"]
     assert 'show_sahl = view in (None, "Sahl (course text)", "Both")' in src
     assert 'show_abu = view in ("Abu Ma\'shar (supplement)", "Both")' in src
+
+
+# --- Pins added with the 2026-09-06 consistency fixes -------------------
+
+def test_sahl_moon_table_prose_matches_its_list():
+    assert prose_number(r"glance=\"Sahl's own (\w+) defects of the Moon") == 10
+    assert "'Corruption of the Moon', 'Sahl, The Introduction Ch.3, 103-112'" in ui_source()
+    # Every mention of the two lists points at a table that exists.
+    assert "stay in Sahl's own tables" not in app_source()
+    assert "102-113" not in app_source()
+
+
+def test_timing_table_has_exactly_the_rows_its_help_describes(engine):
+    from datetime import date
+    rows = engine["calculate_time_lords"](100.0, date(1240, 5, 23), date(2026, 9, 6))
+    assert [r["Technique"] for r in rows] == ["Annual Profection",
+                                             "Symbolic direction (1\u00b0/yr, NOT a distribution)"]
+    assert "Two rows: the lord of the year" in ui_source()
+    assert "month, day, and hour" not in ui_source()
+
+
+def test_governed_tables_list_is_stated_identically_and_excludes_wildness():
+    """The Connection rule governs the dual-author tables; wildness never
+    reads it. The list is stated in the sidebar help and in doctrine()'s
+    docstring, and the two must agree."""
+    governed = "the aspect grid, reception, blocking, cutting"
+    assert governed + ". Each author's own tables" in ui_source().replace('"\n        "', "")
+    assert governed + " --" in function_source("doctrine")
+    assert "cutting, wildness" not in app_source()
+
+
+def test_one_station_tolerance(engine):
+    src = engine_source()
+    assert src.count("STATION_SPEED_TOLERANCE") >= 3          # definition + two readers
+    assert not re.search(r"abs\(speed\) <= 0\.\d", src), "a bare station threshold literal is back"
+    assert engine["STATION_SPEED_TOLERANCE"] == 0.003
+
+
+def test_lots_tables_agree_with_each_other_and_with_the_chart(engine):
+    """Fortune, Spirit and Exaltation appear in the Classical Lots table,
+    the Topical Lots table and (Fortune) the chart itself. All three now
+    read LOT_DEFINITIONS; check they say the same thing on both sects."""
+    from datetime import datetime
+    for dt in (datetime(1240, 5, 23, 13, 45), datetime(1240, 5, 23, 1, 45)):
+        chart = engine["calculate_traditional_chart"](dt, 43.7792, 11.2463)
+        pd_, asc, sect = chart["planetary_data"], chart["ascendant"], chart["sect"]
+        classical = {r["Lot Name"]: r["Position"] for r in
+                     engine["calculate_classical_lots"](asc, pd_["Sun"]["longitude"], pd_["Moon"]["longitude"], sect)}
+        topical = {r["Lot"]: r["Position"] for r in engine["calculate_topical_lots"](pd_, asc, chart["houses"], sect)}
+        for name in ("Lot of Fortune", "Lot of Spirit", "Lot of Exaltation"):
+            assert classical[name] == topical[name], (sect, name)
+        assert classical["Lot of Fortune"] == engine["get_degree_string"](chart["lot_of_fortune"])
+
+
+def test_no_engine_function_is_dead():
+    """Every top-level function in the engine half is referenced somewhere
+    else in the file. Sahl's Moon-defect evaluator sat uncalled for weeks
+    while three notes told the user where to find its table."""
+    import ast
+    src = app_source()
+    tree = ast.parse(engine_source())
+    dead = []
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef):
+            uses = len(re.findall(r"\b" + re.escape(node.name) + r"\b", src)) - 1   # minus the def
+            if uses == 0:
+                dead.append(node.name)
+    assert not dead, f"engine functions defined but never referenced: {dead}"
+
+
+def test_prevented_connections_cite_what_they_contain():
+    ui = ui_source()
+    assert "Great Introduction VII.5, 90-94 and 120-125\", prevented" in ui
+    assert "'Source': 'Sahl Ch.3, 35-48; VII.5, 90-94'" in ui
+    assert "Abu Ma'shar VII.5, 121-124 (not in Sahl)" in ui
+    assert "Type II is Abu Ma'shar, Great Introduction VII.5, 84-85" in ui
