@@ -1711,6 +1711,19 @@ def evaluate_reflections_of_light(planetary_data, ascendant_lon):
                 reflections.append({'Reflection Type': 'I (Collection)', 'Detail': detail})
         return reflections
 
+# How far outside the active author's own ray window Blocking Type II may
+# still fire. Sahl's Fig. 14 / Abu Ma'shar's Fig. 131 needs one degree.
+WORKED_FIGURE_TOLERANCE = 1.0
+
+def _ray_activation_distance(row):
+    """The active author's own approach window for this pair's ray: the
+    applicant's light for Sahl (Ch.3, 13-19), a flat 12 degrees for Abu
+    Ma'shar (VII.5, 27). The figure that connection would be measured
+    against, before any tolerance is added."""
+    if CONNECTION_PROFILE == SAHL:
+        return PLANETARY_ORBS.get(row['applicant'] or row['light_name'], 7.0)
+    return 12.0
+
 def evaluate_blocking(planetary_data):
     """Blocking. Type I is Sahl's "Intervention" (The Introduction Ch.3,
     35-37), reused by Abu Ma'shar as his own Blocking Type I (Great
@@ -1843,6 +1856,22 @@ def evaluate_blocking(planetary_data):
         # target is what it applies to -- directed, not standing rank.
         looking, heavy = row['applicant'] or row['light_name'], row['receiver'] or row['heavy_name']
         remaining_ray = abs(row['deviation'])
+        # The ray leg is NOT held to the live-connection test, and the
+        # reason is the worked figure itself: Fig. 14 puts the Moon 13
+        # degrees from her opposition to Saturn, one degree outside her
+        # own 12-degree light (Ch.3, 13-17), and both authors still call
+        # it a connection about to be cut. That is an inconsistency in the
+        # source, not a bug, and it is honoured by exactly the one degree
+        # it needs. An earlier version had no bound at all, so a ray 29
+        # degrees from exact -- no connection by anyone's measure -- still
+        # produced a nullification.
+        if _is_connected(row):
+            standing = 'live connection'
+        elif remaining_ray <= _ray_activation_distance(row) + WORKED_FIGURE_TOLERANCE:
+            standing = (f'worked-figure tolerance: ray {remaining_ray:.1f}\u00b0 from exact, within '
+                        f'{WORKED_FIGURE_TOLERANCE:.0f}\u00b0 of the light (Fig. 14 sits 13\u00b0 against the Moon\'s 12\u00b0)')
+        else:
+            continue
         heavy_lon = planetary_data[heavy]['longitude']
         heavy_sign = int(heavy_lon // 30)
         for uniting in planets:
@@ -1858,7 +1887,7 @@ def evaluate_blocking(planetary_data):
             if remaining_body > remaining_ray:
                 continue  # 40 / 94: the ray arrives first, so the connection is its own
             blocks.append({'Type': 'II (Nullification)', 'Blocked': looking,
-                            'Blocked By': uniting, 'From Reaching': heavy})
+                            'Blocked By': uniting, 'From Reaching': heavy, 'Standing': standing})
     return blocks
 
 def evaluate_handing_over(planetary_data, sect):
@@ -6682,7 +6711,7 @@ if location_query and lat is not None and lon is not None:
                     # Sahl Ch.3, 35-48; VII.5, 90-94 -- cited in the caption.
                     prevented.append({'Kind': r['Type'], 'Planet': r['Blocked'],
                                        'Prevented From': r['From Reaching'],
-                                       'By': r['Blocked By'], 'Because': ''})
+                                       'By': r['Blocked By'], 'Because': r.get('Standing', '')})
                 for r in cutting_data:
                     prevented.append({'Kind': 'Cutting ' + r['Type'], 'Planet': r['Planet'],
                                        'Prevented From': r.get('Other Contact', ''),

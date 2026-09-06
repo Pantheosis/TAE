@@ -387,3 +387,35 @@ def test_abu_connection_ends_one_minute_past_exact(engine):
         row = engine["_pairwise_configurations"](pdata(Moon=(10 + d, MOON), Saturn=(130, SAT)))[0]
         assert row["motion"] == "Separating"
         assert engine["_is_connected_abu_mashar"](row) is expect, d
+
+
+# --- CODE-04: the Fig. 14 tolerance is bounded ----------------------------
+
+def test_fig14_fires_under_the_named_worked_figure_tolerance(sahl):
+    fig = pdata(Moon=(220, MOON), Mars=(45, MARS), Saturn=(53, SAT))
+    row = next(r for r in sahl["evaluate_blocking"](fig) if r["Type"] == "II (Nullification)")
+    assert row["Standing"].startswith("worked-figure tolerance"), row
+
+
+def test_fig14_control_ray_29_degrees_from_exact_does_not_nullify(sahl):
+    # Moon 0 Scorpio, Mars 22 Taurus, Saturn 29 Taurus: Mars is joining
+    # Saturn, but the Moon's ray is 29 degrees from exact -- no connection
+    # by either author's measure, so nothing is there to be cut.
+    fig = pdata(Moon=(210, MOON), Mars=(52, MARS), Saturn=(59, SAT))
+    rows = sahl["evaluate_blocking"](fig)
+    assert not _has(rows, Type="II (Nullification)"), rows
+
+
+def test_fig14_tolerance_thresholds(sahl):
+    """Moon opposing Saturn 29 Taurus from Scorpio, Mars 22 Taurus joining
+    him: the ray leg fires up to the Moon's 12 + 1 and not beyond."""
+    for d, expect in ((13 - EPS, True), (13.0, True), (13 + EPS, False)):
+        fig = pdata(Moon=(239 - d, MOON), Mars=(52, MARS), Saturn=(59, SAT))
+        rows = sahl["evaluate_blocking"](fig)
+        assert _has(rows, Type="II (Nullification)") is expect, (d, rows)
+
+
+def test_fig14_live_connection_is_named_as_such(sahl):
+    fig = pdata(Moon=(230, MOON), Mars=(52, MARS), Saturn=(59, SAT))   # 9 degrees from exact
+    row = next(r for r in sahl["evaluate_blocking"](fig) if r["Type"] == "II (Nullification)")
+    assert row["Standing"] == "live connection"
