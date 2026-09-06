@@ -1,7 +1,8 @@
-"""The switch matrix. The sidebar carries six controls that rewrite module
-globals -- the Connection rule radio and the five "Configurable readings"
--- and the Configurations page has a three-way view. Every combination must
-render without exception on every chart. This is the check that would have
+"""The switch matrix. Six page controls rewrite module globals -- the
+Connection rule radio and the five configurable readings, each on the page
+it affects and read at the top level from a persisted store key -- and the
+Configurations page has a three-way view. Every combination must render
+without exception on every chart. This is the check that would have
 caught the KeyError: 'Net (heuristic)' (a renamed column, seen only under
 the Abu Ma'shar view).
 
@@ -14,10 +15,10 @@ from itertools import product
 
 import pytest
 
-from conftest import CHARTS, PAGES, SWITCHES, assert_no_exception, make_app, slot_name
+from conftest import CHARTS, PAGES, SWITCHES, assert_no_exception, find_page_widget, make_app, slot_name
 
 SWITCH_NAMES = list(SWITCHES)
-MATRIX = list(product(*(SWITCHES[n][2] for n in SWITCH_NAMES)))   # 64 states
+MATRIX = list(product(*(SWITCHES[n][1] for n in SWITCH_NAMES)))   # 64 states
 
 
 def _state_id(values):
@@ -39,7 +40,7 @@ def test_configurations_both_views_under_every_switch_state(date, values):
 @pytest.mark.parametrize("view", ["Sahl (course text)", "Abu Ma'shar (supplement)"])
 @pytest.mark.parametrize("name", SWITCH_NAMES)
 def test_configurations_single_views_under_each_alternative(date, view, name):
-    alternative = SWITCHES[name][2][1]
+    alternative = SWITCHES[name][1][1]
     at = make_app(date=date, page="configurations", view=view, switches={name: alternative}).run()
     assert_no_exception(at, f"{date} configurations/{view} {name}={alternative}")
 
@@ -49,16 +50,34 @@ def test_configurations_single_views_under_each_alternative(date, view, name):
 @pytest.mark.parametrize("page", [p for p in PAGES if p != "configurations"])
 @pytest.mark.parametrize("name", SWITCH_NAMES)
 def test_other_pages_under_each_alternative(date, page, name):
-    alternative = SWITCHES[name][2][1]
+    alternative = SWITCHES[name][1][1]
     at = make_app(date=date, page=page, switches={name: alternative}).run()
     assert_no_exception(at, f"{date} {slot_name(page, None)} {name}={alternative}")
 
 
-def test_every_switch_is_present_in_the_sidebar():
-    """The matrix locates controls by label prefix; if a restructure moves
-    or renames one, fail here with the name rather than 320 times below."""
-    at = make_app().run()
-    labels = [w.label for w in at.sidebar.radio] + [w.label for w in at.sidebar.checkbox]
-    for name, (kind, prefix, _alts) in SWITCHES.items():
-        hits = [l for l in labels if l.startswith(prefix)]
-        assert len(hits) == 1, f"switch {name!r}: expected one sidebar {kind} starting '{prefix}', got {hits}"
+@pytest.mark.parametrize("name", SWITCH_NAMES)
+def test_every_switch_renders_on_its_page(name):
+    """Each control lives on the page it affects, and the store key the
+    engine reads is what the widget shows: set the alternative through the
+    store, render the page, and the widget must display it."""
+    store, alternatives, page, view, kind, prefix = SWITCHES[name]
+    at = make_app(page=page, view=view, switches={name: alternatives[1]}).run()
+    assert_no_exception(at, f"{page} {name}")
+    widget = find_page_widget(at, kind, prefix)
+    assert widget.value == alternatives[1], f"{name}: widget shows {widget.value!r}, store holds {alternatives[1]!r}"
+    # No reading is left in the sidebar.
+    assert not [w for w in list(at.sidebar.radio) + list(at.sidebar.checkbox) if w.label.startswith(prefix)]
+
+
+def test_page_control_survives_navigation():
+    """The persist pattern: a value chosen on the Configurations page is
+    still in force after rendering another page and coming back."""
+    at = make_app(page="configurations", view="Both").run()
+    find_page_widget(at, "radio", "Connection test").set_value("Abu Ma'shar").run()
+    assert at.session_state["_connection_rule"] == "Abu Ma'shar"
+    from streamlit.util import calc_hash
+    at._page_hash = calc_hash("chart"); at.run()
+    at._page_hash = calc_hash("configurations"); at.run()
+    assert_no_exception(at)
+    assert find_page_widget(at, "radio", "Connection test").value == "Abu Ma'shar"
+    assert any("Abu Ma'shar rule in force" in c.value for c in at.main.caption)

@@ -1,45 +1,51 @@
 {
  "1240-05-23": {
   "chart": [
-   ["Planetary Positions", ["Planet", "Position", "Absolute", "WS place", "Quadrant", "Motion", "Solar phase"]],
+   ["Calculation", ["Quantity", "Value"]],
+   ["Planetary Positions", ["Planet", "Position", "Absolute", "WS place", "Sees ASC", "Quadrant", "Motion", "Solar phase"]],
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]]
   ],
   "configurations/Abu Ma'shar (supplement)": [
-   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Net", "Verdict", "Standing", "Good Fortune / Strength", "Weakness / Misfortune"]],
+   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
   "configurations/Both": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected"]],
+   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Handing Over", ["Type", "Planet", "Hands Over To"]],
    ["Non-reception", ["Kind", "Connecting", "With"]],
-   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because", "Source"]],
-   ["Strength of the Planets", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]],
+   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because"]],
+   ["Strength of the Planets", ["Planet", "78 excellent place", "79 own dignity", "80 direct", "81 not in infortune stakes", "82 not with fallen", "83 advancing", "84 eastern, masculine", "85 of sect", "86 fixed sign", "87 heart of Sun", "88 gender match", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
+   ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
-   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Net", "Verdict", "Standing", "Good Fortune / Strength", "Weakness / Misfortune"]],
+   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
   "configurations/Sahl (course text)": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected"]],
+   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Handing Over", ["Type", "Planet", "Hands Over To"]],
    ["Non-reception", ["Kind", "Connecting", "With"]],
-   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because", "Source"]],
-   ["Strength of the Planets", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]],
+   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because"]],
+   ["Strength of the Planets", ["Planet", "78 excellent place", "79 own dignity", "80 direct", "81 not in infortune stakes", "82 not with fallen", "83 advancing", "84 eastern, masculine", "85 of sect", "86 fixed sign", "87 heart of Sun", "88 gender match", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
+   ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]]
   ],
   "dignities": [
-   ["Lordship Mapping", ["Planet", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord"]],
-   ["Topical Planets in Houses", ["Planet", "Placed in (WS place)", "Net", "Lean", "Standing", "If Well Placed", "If Badly Placed"]],
-   ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Masha'allah Signification"]],
-   ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Standing", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
+   ["Lordship Mapping", ["Planet", "Position", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord", "Own dignity here"]],
+   ["Sect", ["Planet", "Planet's sect", "Above horizon", "Of the chart's sect", "Domain (hayz)"]],
+   ["Topical Planets in Houses", ["Planet", "Placed in (WS place)", "Lean"]],
+   ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Averse to its place"]],
+   ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
   ],
   "lots": [
-   ["Classical Lots", ["Lot Name", "Standing", "Position", "WS place", "Sign Dispositor"]],
-   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Active", "Position", "WS place", "Lord", "Formula", "Standing", "Source", "Editor’s note"]]
+   ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
+   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
   ],
   "sources": [
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
@@ -51,60 +57,66 @@
    ["Prenatal Lunation (Syzygy)", ["Metric", "Value"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
-   ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
-   ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]]
+   ["Cross-check: the two unmatched weight/place pairings", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
+   ["Cross-check: the two unmatched weight/place pairings", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]]
   ]
  },
  "1240-05-25": {
   "chart": [
-   ["Planetary Positions", ["Planet", "Position", "Absolute", "WS place", "Quadrant", "Motion", "Solar phase"]],
+   ["Calculation", ["Quantity", "Value"]],
+   ["Planetary Positions", ["Planet", "Position", "Absolute", "WS place", "Sees ASC", "Quadrant", "Motion", "Solar phase"]],
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]]
   ],
   "configurations/Abu Ma'shar (supplement)": [
-   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Net", "Verdict", "Standing", "Good Fortune / Strength", "Weakness / Misfortune"]],
+   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
   "configurations/Both": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Applying Planet"]],
+   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Collection of Light", ["Collector", "Collects"]],
    ["Handing Over", ["Type", "Planet", "Hands Over To"]],
    ["Reception — Sahl rule", ["Receiver", "Received", "Direction", "Via", "Grade", "Mode"]],
    ["Non-reception", ["Kind", "Connecting", "With"]],
    ["Returning", ["Manner", "Planet", "Returned By"]],
-   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because", "Source"]],
-   ["Strength of the Planets", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]],
+   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because"]],
+   ["Strength of the Planets", ["Planet", "78 excellent place", "79 own dignity", "80 direct", "81 not in infortune stakes", "82 not with fallen", "83 advancing", "84 eastern, masculine", "85 of sect", "86 fixed sign", "87 heart of Sun", "88 gender match", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
+   ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
-   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Net", "Verdict", "Standing", "Good Fortune / Strength", "Weakness / Misfortune"]],
+   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
   "configurations/Sahl (course text)": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Applying Planet"]],
+   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Collection of Light", ["Collector", "Collects"]],
    ["Handing Over", ["Type", "Planet", "Hands Over To"]],
    ["Reception — Sahl rule", ["Receiver", "Received", "Direction", "Via", "Grade", "Mode"]],
    ["Non-reception", ["Kind", "Connecting", "With"]],
    ["Returning", ["Manner", "Planet", "Returned By"]],
-   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because", "Source"]],
-   ["Strength of the Planets", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]],
+   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because"]],
+   ["Strength of the Planets", ["Planet", "78 excellent place", "79 own dignity", "80 direct", "81 not in infortune stakes", "82 not with fallen", "83 advancing", "84 eastern, masculine", "85 of sect", "86 fixed sign", "87 heart of Sun", "88 gender match", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
+   ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]]
   ],
   "dignities": [
-   ["Lordship Mapping", ["Planet", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord"]],
-   ["Topical Planets in Houses", ["Planet", "Placed in (WS place)", "Net", "Lean", "Standing", "If Well Placed", "If Badly Placed"]],
-   ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Masha'allah Signification"]],
-   ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Standing", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
+   ["Lordship Mapping", ["Planet", "Position", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord", "Own dignity here"]],
+   ["Sect", ["Planet", "Planet's sect", "Above horizon", "Of the chart's sect", "Domain (hayz)"]],
+   ["Topical Planets in Houses", ["Planet", "Placed in (WS place)", "Lean"]],
+   ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Averse to its place"]],
+   ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
   ],
   "lots": [
-   ["Classical Lots", ["Lot Name", "Standing", "Position", "WS place", "Sign Dispositor"]],
-   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Active", "Position", "WS place", "Lord", "Formula", "Standing", "Source", "Editor’s note"]]
+   ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
+   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
   ],
   "sources": [
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
@@ -116,60 +128,66 @@
    ["Prenatal Lunation (Syzygy)", ["Metric", "Value"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
-   ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
-   ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]]
+   ["Cross-check: the two unmatched weight/place pairings", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
+   ["Cross-check: the two unmatched weight/place pairings", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]]
   ]
  },
  "1240-05-26": {
   "chart": [
-   ["Planetary Positions", ["Planet", "Position", "Absolute", "WS place", "Quadrant", "Motion", "Solar phase"]],
+   ["Calculation", ["Quantity", "Value"]],
+   ["Planetary Positions", ["Planet", "Position", "Absolute", "WS place", "Sees ASC", "Quadrant", "Motion", "Solar phase"]],
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]]
   ],
   "configurations/Abu Ma'shar (supplement)": [
-   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Net", "Verdict", "Standing", "Good Fortune / Strength", "Weakness / Misfortune"]],
+   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
    ["Favor & Recompense", ["Planet", "Condition", "Favored By"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
   "configurations/Both": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Applying Planet"]],
+   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Enclosure", ["Planet", "Enclosed By", "Separating From", "Connecting To", "Severity"]],
    ["Handing Over", ["Type", "Planet", "Hands Over To"]],
    ["Reception — Sahl rule", ["Receiver", "Received", "Direction", "Via", "Grade", "Mode"]],
    ["Non-reception", ["Kind", "Connecting", "With"]],
-   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because", "Source"]],
-   ["Strength of the Planets", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]],
+   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because"]],
+   ["Strength of the Planets", ["Planet", "78 excellent place", "79 own dignity", "80 direct", "81 not in infortune stakes", "82 not with fallen", "83 advancing", "84 eastern, masculine", "85 of sect", "86 fixed sign", "87 heart of Sun", "88 gender match", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
+   ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
-   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Net", "Verdict", "Standing", "Good Fortune / Strength", "Weakness / Misfortune"]],
+   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
    ["Favor & Recompense", ["Planet", "Condition", "Favored By"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
   "configurations/Sahl (course text)": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Applying Planet"]],
+   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Enclosure", ["Planet", "Enclosed By", "Separating From", "Connecting To", "Severity"]],
    ["Handing Over", ["Type", "Planet", "Hands Over To"]],
    ["Reception — Sahl rule", ["Receiver", "Received", "Direction", "Via", "Grade", "Mode"]],
    ["Non-reception", ["Kind", "Connecting", "With"]],
-   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because", "Source"]],
-   ["Strength of the Planets", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]],
+   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because"]],
+   ["Strength of the Planets", ["Planet", "78 excellent place", "79 own dignity", "80 direct", "81 not in infortune stakes", "82 not with fallen", "83 advancing", "84 eastern, masculine", "85 of sect", "86 fixed sign", "87 heart of Sun", "88 gender match", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
+   ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]]
   ],
   "dignities": [
-   ["Lordship Mapping", ["Planet", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord"]],
-   ["Topical Planets in Houses", ["Planet", "Placed in (WS place)", "Net", "Lean", "Standing", "If Well Placed", "If Badly Placed"]],
-   ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Masha'allah Signification"]],
-   ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Standing", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
+   ["Lordship Mapping", ["Planet", "Position", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord", "Own dignity here"]],
+   ["Sect", ["Planet", "Planet's sect", "Above horizon", "Of the chart's sect", "Domain (hayz)"]],
+   ["Topical Planets in Houses", ["Planet", "Placed in (WS place)", "Lean"]],
+   ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Averse to its place"]],
+   ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
   ],
   "lots": [
-   ["Classical Lots", ["Lot Name", "Standing", "Position", "WS place", "Sign Dispositor"]],
-   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Active", "Position", "WS place", "Lord", "Formula", "Standing", "Source", "Editor’s note"]]
+   ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
+   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
   ],
   "sources": [
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
@@ -181,54 +199,60 @@
    ["Prenatal Lunation (Syzygy)", ["Metric", "Value"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
-   ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
-   ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]]
+   ["Cross-check: the two unmatched weight/place pairings", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
+   ["Cross-check: the two unmatched weight/place pairings", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]]
   ]
  },
  "1240-09-18": {
   "chart": [
-   ["Planetary Positions", ["Planet", "Position", "Absolute", "WS place", "Quadrant", "Motion", "Solar phase"]],
+   ["Calculation", ["Quantity", "Value"]],
+   ["Planetary Positions", ["Planet", "Position", "Absolute", "WS place", "Sees ASC", "Quadrant", "Motion", "Solar phase"]],
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]]
   ],
   "configurations/Abu Ma'shar (supplement)": [
-   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Net", "Verdict", "Standing", "Good Fortune / Strength", "Weakness / Misfortune"]],
+   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]]
   ],
   "configurations/Both": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected"]],
+   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Handing Over", ["Type", "Planet", "Hands Over To"]],
    ["Reception — Sahl rule", ["Receiver", "Received", "Direction", "Via", "Grade", "Mode"]],
    ["Non-reception", ["Kind", "Connecting", "With"]],
    ["Returning", ["Manner", "Planet", "Returned By"]],
-   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because", "Source"]],
-   ["Strength of the Planets", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]],
-   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Net", "Verdict", "Standing", "Good Fortune / Strength", "Weakness / Misfortune"]],
+   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because"]],
+   ["Strength of the Planets", ["Planet", "78 excellent place", "79 own dignity", "80 direct", "81 not in infortune stakes", "82 not with fallen", "83 advancing", "84 eastern, masculine", "85 of sect", "86 fixed sign", "87 heart of Sun", "88 gender match", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
+   ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
+   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]]
   ],
   "configurations/Sahl (course text)": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected"]],
+   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Handing Over", ["Type", "Planet", "Hands Over To"]],
    ["Reception — Sahl rule", ["Receiver", "Received", "Direction", "Via", "Grade", "Mode"]],
    ["Non-reception", ["Kind", "Connecting", "With"]],
    ["Returning", ["Manner", "Planet", "Returned By"]],
-   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because", "Source"]],
-   ["Strength of the Planets", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]]
+   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because"]],
+   ["Strength of the Planets", ["Planet", "78 excellent place", "79 own dignity", "80 direct", "81 not in infortune stakes", "82 not with fallen", "83 advancing", "84 eastern, masculine", "85 of sect", "86 fixed sign", "87 heart of Sun", "88 gender match", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
+   ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]]
   ],
   "dignities": [
-   ["Lordship Mapping", ["Planet", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord"]],
-   ["Topical Planets in Houses", ["Planet", "Placed in (WS place)", "Net", "Lean", "Standing", "If Well Placed", "If Badly Placed"]],
-   ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Masha'allah Signification"]],
-   ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Standing", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
+   ["Lordship Mapping", ["Planet", "Position", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord", "Own dignity here"]],
+   ["Sect", ["Planet", "Planet's sect", "Above horizon", "Of the chart's sect", "Domain (hayz)"]],
+   ["Topical Planets in Houses", ["Planet", "Placed in (WS place)", "Lean"]],
+   ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Averse to its place"]],
+   ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
   ],
   "lots": [
-   ["Classical Lots", ["Lot Name", "Standing", "Position", "WS place", "Sign Dispositor"]],
-   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Active", "Position", "WS place", "Lord", "Formula", "Standing", "Source", "Editor’s note"]]
+   ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
+   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
   ],
   "sources": [
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
@@ -240,24 +264,25 @@
    ["Prenatal Lunation (Syzygy)", ["Metric", "Value"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
-   ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
-   ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]]
+   ["Cross-check: the two unmatched weight/place pairings", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
+   ["Cross-check: the two unmatched weight/place pairings", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]]
   ]
  },
  "1240-10-05": {
   "chart": [
-   ["Planetary Positions", ["Planet", "Position", "Absolute", "WS place", "Quadrant", "Motion", "Solar phase"]],
+   ["Calculation", ["Quantity", "Value"]],
+   ["Planetary Positions", ["Planet", "Position", "Absolute", "WS place", "Sees ASC", "Quadrant", "Motion", "Solar phase"]],
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]]
   ],
   "configurations/Abu Ma'shar (supplement)": [
-   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Net", "Verdict", "Standing", "Good Fortune / Strength", "Weakness / Misfortune"]],
+   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
    ["Favor & Recompense", ["Planet", "Condition", "Favored By"]]
   ],
   "configurations/Both": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Applying Planet"]],
+   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Collection of Light", ["Collector", "Collects"]],
    ["Enclosure", ["Planet", "Enclosed By", "Separating From", "Connecting To", "Severity"]],
@@ -265,16 +290,18 @@
    ["Reception — Sahl rule", ["Receiver", "Received", "Direction", "Via", "Grade", "Mode"]],
    ["Non-reception", ["Kind", "Connecting", "With"]],
    ["Returning", ["Manner", "Planet", "Returned By"]],
-   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because", "Source"]],
-   ["Strength of the Planets", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]],
+   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because"]],
+   ["Strength of the Planets", ["Planet", "78 excellent place", "79 own dignity", "80 direct", "81 not in infortune stakes", "82 not with fallen", "83 advancing", "84 eastern, masculine", "85 of sect", "86 fixed sign", "87 heart of Sun", "88 gender match", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
+   ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
-   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Net", "Verdict", "Standing", "Good Fortune / Strength", "Weakness / Misfortune"]],
+   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
    ["Favor & Recompense", ["Planet", "Condition", "Favored By"]]
   ],
   "configurations/Sahl (course text)": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Applying Planet"]],
+   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Collection of Light", ["Collector", "Collects"]],
    ["Enclosure", ["Planet", "Enclosed By", "Separating From", "Connecting To", "Severity"]],
@@ -282,20 +309,23 @@
    ["Reception — Sahl rule", ["Receiver", "Received", "Direction", "Via", "Grade", "Mode"]],
    ["Non-reception", ["Kind", "Connecting", "With"]],
    ["Returning", ["Manner", "Planet", "Returned By"]],
-   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because", "Source"]],
-   ["Strength of the Planets", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "Weakness Testimonies", "Count"]],
+   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because"]],
+   ["Strength of the Planets", ["Planet", "78 excellent place", "79 own dignity", "80 direct", "81 not in infortune stakes", "82 not with fallen", "83 advancing", "84 eastern, masculine", "85 of sect", "86 fixed sign", "87 heart of Sun", "88 gender match", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
+   ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
+   ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]]
   ],
   "dignities": [
-   ["Lordship Mapping", ["Planet", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord"]],
-   ["Topical Planets in Houses", ["Planet", "Placed in (WS place)", "Net", "Lean", "Standing", "If Well Placed", "If Badly Placed"]],
-   ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Masha'allah Signification"]],
-   ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Standing", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
+   ["Lordship Mapping", ["Planet", "Position", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord", "Own dignity here"]],
+   ["Sect", ["Planet", "Planet's sect", "Above horizon", "Of the chart's sect", "Domain (hayz)"]],
+   ["Topical Planets in Houses", ["Planet", "Placed in (WS place)", "Lean"]],
+   ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Averse to its place"]],
+   ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
   ],
   "lots": [
-   ["Classical Lots", ["Lot Name", "Standing", "Position", "WS place", "Sign Dispositor"]],
-   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Active", "Position", "WS place", "Lord", "Formula", "Standing", "Source", "Editor’s note"]]
+   ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
+   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
   ],
   "sources": [
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
@@ -307,8 +337,8 @@
    ["Prenatal Lunation (Syzygy)", ["Metric", "Value"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
-   ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
-   ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]]
+   ["Cross-check: the two unmatched weight/place pairings", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
+   ["Cross-check: the two unmatched weight/place pairings", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]]
   ]
  }
 }

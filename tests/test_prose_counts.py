@@ -30,9 +30,7 @@ def test_weakness_testimonies_ten():
 def test_abu_mashar_moon_corruptions_eleven():
     labels = cited_paragraphs(function_source("_abu_mashar_moon_corruption"), 64, 74)
     assert labels == set(range(64, 75)), f"VII.6 Moon labels cite {sorted(labels)}"
-    # The help text ends "HIS OWN eleven" and the notes continue
-    # "corruptions of her (63-74)"; the number lives in the help.
-    assert prose_number(r"for the Moon only, HIS OWN (\w+)\"") == len(labels)
+    assert prose_number(r"for the Moon only, HIS OWN (\w+) corruptions") == len(labels)
     # The docstring announces the same count.
     assert re.search(r"The ELEVEN corruptions", function_source("_abu_mashar_moon_corruption"))
 
@@ -156,23 +154,26 @@ def test_via_combusta_span_matches_prose():
 
 def test_switch_options_match_the_values_the_code_compares_against(engine):
     """Each switch's alternatives live in one *_OPTIONS tuple that both the
-    sidebar radio and the engine's comparison read. A radio that typed its
+    page radio and the engine's comparison read. A radio that typed its
     own list, or a comparison against a bare literal, would let a reworded
-    option silently fall through to the default."""
+    option silently fall through to the default. The top-level read of the
+    store key must default to the same first option."""
     src = app_source()
     for prefix, const, name in (("VII.6, 27/45", "EASTERN_RULE", "eastern"),
                                 ("Domain (hayz)", "DOMAIN_RULE", "domain"),
                                 ("House-based Lots", "LOT_HOUSE_CUSP", "lot_cusp")):
-        assert list(engine[const + "_OPTIONS"]) == SWITCHES[name][2]
+        assert list(engine[const + "_OPTIONS"]) == SWITCHES[name][1]
         assert engine[const] == engine[const + "_OPTIONS"][0], f"{const} default is not the first option"
-        assert re.search(r"st\.radio\(\s*\"" + re.escape(prefix) + r"[^\"]*\",\s*list\(" + const + r"_OPTIONS\)", src), \
-            f"the {prefix!r} radio should take list({const}_OPTIONS)"
+        assert re.search(r"_reading_radio\(\s*\"" + re.escape(prefix) + r"[^\"]*\",\s*" + const + r"_OPTIONS,", src), \
+            f"the {prefix!r} radio should take {const}_OPTIONS"
+        assert re.search(const + r" = _reading\(\"\w+\", \"" + SWITCHES[name][0] + r"\", " + const + r"_OPTIONS\[0\]\)", src), \
+            f"the top-level read of {const} should default to {const}_OPTIONS[0]"
         assert f"{const} == {const}_OPTIONS[1]" in src, f"the engine should compare {const} against its OPTIONS tuple"
         # No bare literal comparison anywhere.
         assert not re.search(const + r" == ['\"]", src), f"{const} is compared against a bare literal somewhere"
     # The Connection rule radio derives its options from CONNECTION_PROFILES,
     # so it cannot drift; check it still does.
-    assert re.search(r"st\.sidebar\.radio\(\s*\"Connection rule\",\s*list\(CONNECTION_PROFILES\.keys\(\)\)", src)
+    assert re.search(r"_reading_radio\(\"Connection test used in the shared tables\", CONNECTION_PROFILES\.keys\(\)", src)
 
 
 def test_configurations_views_match_the_code():
@@ -207,7 +208,7 @@ def test_governed_tables_list_is_stated_identically_and_excludes_wildness():
     reads it. The list is stated in the sidebar help and in doctrine()'s
     docstring, and the two must agree."""
     governed = "the aspect grid, reception, blocking, cutting"
-    assert governed + ". Each author's own tables" in ui_source().replace('"\n        "', "")
+    assert governed + ". Each author's own tables" in re.sub(r'"\n\s+"', "", ui_source())
     assert governed + " --" in function_source("doctrine")
     assert "cutting, wildness" not in app_source()
 
@@ -254,6 +255,9 @@ def test_no_engine_function_is_dead():
 def test_prevented_connections_cite_what_they_contain():
     ui = ui_source()
     assert "Great Introduction VII.5, 90-94 and 120-125\", prevented" in ui
-    assert "'Source': 'Sahl Ch.3, 35-48; VII.5, 90-94'" in ui
-    assert "Abu Ma'shar VII.5, 121-124 (not in Sahl)" in ui
+    # The per-row Source column is gone (the caption cites both passages);
+    # the two readings it distinguished are kept as comments on the rows.
+    assert "'Source'" not in ui[ui.index("prevented = []"):ui.index("_finding(_gap, 'Prevented connections'")]
+    assert "Sahl Ch.3, 35-48; VII.5, 90-94 -- cited in the caption" in ui
+    assert "Types I and II are Abu Ma'shar's own (VII.5, 121-124)" in ui
     assert "Type II is Abu Ma'shar, Great Introduction VII.5, 84-85" in ui

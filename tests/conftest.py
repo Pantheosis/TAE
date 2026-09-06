@@ -54,16 +54,21 @@ LOCAL_TIME = time(14, 30)
 PAGES = ["chart", "dignities", "configurations", "lots", "victors", "timing", "sources"]
 CONFIG_VIEWS = ["Sahl (course text)", "Abu Ma'shar (supplement)", "Both"]
 
-# Sidebar "Configurable readings" controls, located by label prefix so a
-# reworded label fails loudly instead of silently selecting the wrong one.
+# The six configurable readings. Since the 2026-09-06 UI restructure each
+# control renders on the page and table it affects, and the engine reads
+# its value at the top level from a store key that _persist() keeps across
+# navigation. Tests set the STORE key through session_state before the run
+# (the widget-first read at the top level falls back to it); the widget
+# itself is located by label prefix on its page so a reworded or moved
+# control fails loudly.
 SWITCHES = {
-    # name: (widget kind, label prefix, alternatives)
-    "connection": ("radio", "Connection rule", ["Sahl", "Abu Ma'shar"]),
-    "five_degree": ("checkbox", "Five-degree carryover", [False, True]),
-    "eastern": ("radio", "VII.6, 27/45", ["hemisphere", "VII.2 band"]),
-    "moon_rays": ("checkbox", "Moon under the rays", [False, True]),
-    "domain": ("radio", "Domain (hayz)", ["Abu Ma'shar", "Masha'allah"]),
-    "lot_cusp": ("radio", "House-based Lots", ["whole-sign place", "quadrant cusp"]),
+    # name: (store key, alternatives, page, view, widget kind, label prefix)
+    "connection": ("_connection_rule", ["Sahl", "Abu Ma'shar"], "configurations", "Both", "radio", "Connection test"),
+    "five_degree": ("_five_degree_all_cusps", [False, True], "configurations", "Both", "checkbox", "Five-degree carryover"),
+    "eastern": ("_eastern_rule", ["hemisphere", "VII.2 band"], "configurations", "Both", "radio", "VII.6, 27/45"),
+    "moon_rays": ("_moon_rays_15", [False, True], "chart", None, "checkbox", "Moon under the rays"),
+    "domain": ("_domain_rule", ["Abu Ma'shar", "Masha'allah"], "dignities", None, "radio", "Domain (hayz)"),
+    "lot_cusp": ("_lot_house_cusp", ["whole-sign place", "quadrant cusp"], "lots", None, "radio", "House-based Lots"),
 }
 
 
@@ -108,28 +113,28 @@ def make_app(date="1240-05-23", page=None, view=None, switches=None, timeout=60)
     if page is not None:
         at._page_hash = calc_hash(page)
     if switches:
-        # Widgets without keys have to be set after a first run has created
-        # them; the caller then reruns.
-        at.run()
         apply_switches(at, switches)
     return at
 
 
-def _find_widget(at, kind, label_prefix):
-    widgets = getattr(at.sidebar, kind)
+def find_page_widget(at, kind, label_prefix):
+    """The one widget of `kind` on the rendered page whose label starts
+    with `label_prefix`."""
+    widgets = getattr(at.main, kind)
     hits = [w for w in widgets if w.label.startswith(label_prefix)]
     assert len(hits) == 1, (
-        f"expected exactly one sidebar {kind} labelled '{label_prefix}...', "
+        f"expected exactly one page {kind} labelled '{label_prefix}...', "
         f"found {[w.label for w in widgets]}")
     return hits[0]
 
 
 def apply_switches(at, switches):
-    """switches: {name: value} using the names in SWITCHES."""
+    """switches: {name: value} using the names in SWITCHES. Sets the store
+    key the engine reads; call before at.run()."""
     for name, value in switches.items():
-        kind, prefix, alternatives = SWITCHES[name]
+        store, alternatives = SWITCHES[name][0], SWITCHES[name][1]
         assert value in alternatives, f"{name}: {value!r} not in {alternatives}"
-        _find_widget(at, kind, prefix).set_value(value)
+        at.session_state[store] = value
     return at
 
 
