@@ -6378,7 +6378,13 @@ if location_query and lat is not None and lon is not None:
             ]
             st.dataframe(pd.DataFrame(calc_rows), hide_index=True, width='content')
             st.caption("Matches the Lesson 5 worksheet: lines 8, 11, 13, 14, 15 and Step 2–3 results.")
-            st.subheader('Planetary Positions', help="The seven classical planets' ecliptic (tropical) longitude at the moment of birth, in sign and degree.")
+            pos_col, moon_col = st.columns([3, 1])
+            pos_col.subheader('Planetary Positions', help="The seven classical planets' ecliptic (tropical) longitude at the moment of birth, in sign and degree.")
+            with moon_col:
+                _reading_checkbox("Moon under the rays to 15 degrees", "moon_rays_15", "_moon_rays_15",
+                                  help="Sahl, On Nativities 1.19, 6 gives 15 degrees for the Moon; Abu Ma'shar VII.2, 61 "
+                                       "and 72-73 give 12. Affects: the Solar phase column here, and on the Configurations "
+                                       "page Weakness (93), Planetary Condition and Corruption of the Moon. Full text on the Sources page.")
             # True planets only — angles, nodes, and Lot of Fortune
             # now live in the "Calculated Points" table alongside it.
             # The Lesson 3 homework asks for sign/degree/minute AND absolute
@@ -6646,6 +6652,10 @@ if location_query and lat is not None and lon is not None:
                     _absent(_gap)
                 with st.container(border=True):
                     st.markdown("**Strength and weakness** — Ch.3, 77-112")
+                    _reading_checkbox("Five-degree carryover at all twelve cusps", "five_degree_all_cusps", "_five_degree_all_cusps",
+                                      help="Sahl states the rule for the stakes twice (Aphorism #44, 88; On Nativities 1.22, 9) "
+                                           "and once for every house (On Nativities 1.18, 19). Off = stakes only. "
+                                           "Affects: Strength of the Planets, testimony 83. Full text on the Sources page.")
                     _tick_grid(_gap, 'Strength of the Planets', 'Sahl, The Introduction Ch.3, 78-88', strength_data,
                                'Strength Testimonies', STRENGTH_COLUMNS,
                                glance="The eleven testimonies of a planet's strength at the time of judgment (Sahl, The Introduction Ch.3, 78-88), one column per testimony; the answer key under the grid spells each one out in words.",
@@ -6663,6 +6673,11 @@ if location_query and lat is not None and lon is not None:
                     st.markdown("**Abu Ma'shar, Great Introduction VII.5-6**")
                     st.subheader('Planetary Condition', help="Each planet checked against Abu Ma'shar's conditions in Great Introduction VII.6, kept in his own four groups: good fortune (1-20), strength (21-29), weakness (30-46), misfortune (47-62), plus, for the Moon only, HIS OWN eleven corruptions (63-74).")
                     st.caption("Abu Ma'shar VII.6")
+                    _reading_radio("VII.6, 27/45 'eastern/western relative to the Sun'", EASTERN_RULE_OPTIONS,
+                                   "eastern_rule", "_eastern_rule",
+                                   help="'hemisphere': the whole half, excluding the rays (VII.2, 2; VII.6, 34). "
+                                        "'VII.2 band': only the easternizing and westernizing bands (VII.2, 14-31). "
+                                        "Affects: Planetary Condition (27, 45). Full text on the Sources page.")
                     condition_list = []
                     for p, cond in abu_mashar_condition.items():
                         condition_list.append({
