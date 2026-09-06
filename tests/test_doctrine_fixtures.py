@@ -144,3 +144,246 @@ def test_legacy_migration_validates_and_copies(engine, chart_paths):
     legacy.write_text('{"Old": %s}' % __import__("json").dumps(ENTRY))
     assert engine["load_saved_charts"]() == {"Old": ENTRY}
     assert path.exists()
+
+
+# =========================================================================
+# Worked figures: one positive fixture and one mutation per figure.
+# Positions are the figures' own; the mutation moves one body so the
+# configuration the paragraph describes no longer holds, and the row must
+# not appear. Under Sahl's rule unless the figure is Abu Ma'shar's own.
+# =========================================================================
+
+def _has(rows, **want):
+    return any(all(r.get(k) == v for k, v in want.items()) for r in rows)
+
+
+@pytest.fixture
+def sahl(engine):
+    with engine["doctrine"](engine["SAHL"]):
+        yield engine
+
+
+# Sahl Fig. 10 (Ch.3, 25-27): Moon 10 Gemini separates from Mercury 8 Leo
+# and connects with Jupiter 13 Pisces, carrying Mercury's light.
+def test_fig10_transfer_of_light(sahl):
+    fig = pdata(Moon=(70, MOON), Mercury=(128, MERC), Jupiter=(343, JUP))
+    rows = sahl["evaluate_transfers_of_light"](fig)
+    assert _has(rows, Type="I", Carrier="Moon", **{"Separates From": "Mercury", "Connects To": "Jupiter"}), rows
+
+
+def test_fig10_control_moon_not_yet_past_mercury(sahl):
+    # Moon 6 Gemini is still APPLYING to Mercury's sextile degree (8 Gemini):
+    # nothing has been separated from, so nothing is carried.
+    fig = pdata(Moon=(66, MOON), Mercury=(128, MERC), Jupiter=(343, JUP))
+    rows = sahl["evaluate_transfers_of_light"](fig)
+    assert not _has(rows, Carrier="Moon", **{"Separates From": "Mercury"}), rows
+
+
+# Sahl Fig. 11 (Ch.3, 29-30): Venus 10 Aries and Moon 12 Taurus, not
+# looking at each other, both connect with Jupiter 15 Cancer.
+def test_fig11_collection_of_light(sahl):
+    fig = pdata(Venus=(10, VENUS), Moon=(42, MOON), Jupiter=(105, JUP))
+    rows = sahl["evaluate_collections_of_light"](fig)
+    assert _has(rows, Collector="Jupiter", Collects="Moon & Venus"), rows
+
+
+def test_fig11_control_both_separating_from_jupiter(sahl):
+    # Jupiter at 8 Cancer: Venus's square (10 Cancer) and the Moon's
+    # sextile (12 Cancer) are both already past him -- separating, not
+    # connecting, so he collects nothing.
+    fig = pdata(Venus=(10, VENUS), Moon=(42, MOON), Jupiter=(98, JUP))
+    rows = sahl["evaluate_collections_of_light"](fig)
+    assert not _has(rows, Collector="Jupiter"), rows
+
+
+# Sahl Fig. 12 (Ch.3, 32-34): Mercury 10 Cancer, Mars 13 Aries, Jupiter
+# 15 Pisces -- Mars's square is nearer than Jupiter's trine by 2 degrees.
+def test_fig12_cutting_the_light(sahl):
+    fig = pdata(Mercury=(100, MERC), Mars=(13, MARS), Jupiter=(345, JUP))
+    rows = sahl["evaluate_cutting_the_light"](fig, None)
+    assert _has(rows, Type="III", Planet="Mercury", **{"Yields To": "Mars", "Other Contact": "Jupiter",
+                                                        "Because": "nearer by 2.0 deg"}), rows
+
+
+def test_fig12_control_jupiter_nearer(sahl):
+    # Mars 20 Aries: his square now lands at 20 Cancer, 10 degrees off,
+    # against Jupiter's trine at 15 Cancer, 5 off. Mercury does not yield
+    # to Mars.
+    fig = pdata(Mercury=(100, MERC), Mars=(20, MARS), Jupiter=(345, JUP))
+    rows = sahl["evaluate_cutting_the_light"](fig, None)
+    assert not _has(rows, Planet="Mercury", **{"Yields To": "Mars"}), rows
+
+
+# Sahl Fig. 13 / Abu Fig. 130: Moon 8, Mars 10, Saturn 12 Gemini.
+def test_fig13_intervention(sahl):
+    fig = pdata(Moon=(68, MOON), Mars=(70, MARS), Saturn=(72, SAT))
+    rows = sahl["evaluate_blocking"](fig)
+    assert _has(rows, Type="I (Intervention)", Blocked="Moon", **{"Blocked By": "Mars", "From Reaching": "Saturn"}), rows
+
+
+def test_fig13_control_mars_past_saturn(sahl):
+    # Mars 13 Gemini: the heavy planet no longer holds the most degrees and
+    # Mars is separating from him -- nothing stands between Moon and Saturn.
+    fig = pdata(Moon=(68, MOON), Mars=(73, MARS), Saturn=(72, SAT))
+    rows = sahl["evaluate_blocking"](fig)
+    assert not _has(rows, Type="I (Intervention)"), rows
+
+
+# Sahl Fig. 14 / Abu Fig. 131: Moon 10 Scorpio opposes Saturn 23 Taurus;
+# Mars 15 Taurus joins Saturn by body first (8 degrees against her 13).
+def test_fig14_nullification(sahl):
+    fig = pdata(Moon=(220, MOON), Mars=(45, MARS), Saturn=(53, SAT))
+    rows = sahl["evaluate_blocking"](fig)
+    assert _has(rows, Type="II (Nullification)", Blocked="Moon", **{"Blocked By": "Mars", "From Reaching": "Saturn"}), rows
+
+
+def test_fig14_control_mars_past_saturn(sahl):
+    # Mars 25 Taurus has passed Saturn: "if it goes beyond that, its
+    # connection is valid" (40).
+    fig = pdata(Moon=(220, MOON), Mars=(55, MARS), Saturn=(53, SAT))
+    rows = sahl["evaluate_blocking"](fig)
+    assert not _has(rows, Type="II (Nullification)"), rows
+
+
+# Sahl Fig. 15 (Ch.3, 45-48): Moon 10 Taurus uniting with Mars 20 Taurus
+# while connecting with Venus 15 Cancer; the union is not cut by the ray.
+def test_fig15_union_precedence(sahl):
+    fig = pdata(Moon=(40, MOON), Mars=(50, MARS), Venus=(105, VENUS))
+    rows = sahl["evaluate_cutting_the_light"](fig, None)
+    assert _has(rows, Type="Nullification (44-48)", Planet="Moon", **{"Yields To": "Mars", "Other Contact": "Venus"}), rows
+
+
+def test_fig15_control_moon_past_mars(sahl):
+    # Mars 5 Taurus: the Moon has left him, so there is no union to outrank
+    # her connection with Venus.
+    fig = pdata(Moon=(40, MOON), Mars=(35, MARS), Venus=(105, VENUS))
+    rows = sahl["evaluate_cutting_the_light"](fig, None)
+    assert not _has(rows, Type="Nullification (44-48)", Planet="Moon"), rows
+
+
+# Sahl Fig. 25 (Ch.3, 119-123): Moon 10 Taurus between Mars 8 and Saturn
+# 17 Taurus, both legs within seven degrees.
+def test_fig25_enclosure(sahl):
+    fig = pdata(Mars=(38, MARS), Moon=(40, MOON), Saturn=(47, SAT))
+    rows = sahl["evaluate_enclosure"](fig)
+    assert _has(rows, Planet="Moon", **{"Enclosed By": "Infortunes", "Separating From": "Mars", "Connecting To": "Saturn",
+                                        "Severity": "More powerful/unfortunate (within 7°)"}), rows
+
+
+def test_fig25_control_moon_before_both(sahl):
+    # Moon 6 Taurus is applying to Mars AND Saturn: she separates from
+    # neither, so she is not between them.
+    fig = pdata(Mars=(38, MARS), Moon=(36, MOON), Saturn=(47, SAT))
+    rows = sahl["evaluate_enclosure"](fig)
+    assert not _has(rows, Planet="Moon", **{"Enclosed By": "Infortunes"}), rows
+
+
+# Directed agency: a retrograde Mars closing on Venus is the applicant and
+# hands over to her, though he is the heavier planet (VII.5, 24 and 120).
+def test_retrograde_heavier_applicant_hands_over(sahl):
+    fig = pdata(Venus=(10, -0.2), Mars=(17, -0.8))
+    row = sahl["_pairwise_configurations"](fig)[0]
+    assert row["motion"] == "Applying" and row["applicant"] == "Mars"
+    handed = sahl["evaluate_handing_over"](fig, "Diurnal")
+    assert _has(handed, Type="Management", Planet="Mars", **{"Hands Over To": "Venus"}), handed
+
+
+def test_control_venus_sundered_from_mars_hands_nothing_over(sahl):
+    # Venus 26 Aries is 9 degrees past Mars, beyond her 7-degree light:
+    # "sundered from it" (Ch.3, 11), so no longer connected and nothing is
+    # handed over. (At 7 degrees she would still be connected under 10.)
+    fig = pdata(Venus=(26, VENUS), Mars=(17, MARS))
+    row = sahl["_pairwise_configurations"](fig)[0]
+    assert row["motion"] == "Separating" and not sahl["_is_connected_sahl"](row)
+    assert not _has(sahl["evaluate_handing_over"](fig, "Diurnal"), Type="Management")
+
+
+def test_applying_separating_agrees_with_a_finite_step(engine):
+    import random
+    rng = random.Random(20260906)
+    pairs = engine["_pairwise_configurations"]
+    for _ in range(2000):
+        a, b = rng.uniform(0, 360), rng.uniform(0, 360)
+        va, vb = rng.uniform(-1.5, 14.5), rng.uniform(-1.5, 14.5)
+        row = pairs(pdata(Venus=(a, va), Mars=(b, vb)))[0]
+        if row["aspect_name"] == "Aversion":
+            continue
+        dt = 1e-5
+        a2, b2 = (a + va * dt) % 360, (b + vb * dt) % 360
+        raw = abs(a2 - b2)
+        after = abs(min(raw, 360 - raw) - row["target"])
+        expected = "Applying" if after <= abs(row["deviation"]) else "Separating"
+        assert row["motion"] == expected, (a, b, va, vb, row)
+
+
+# =========================================================================
+# Connection thresholds at limit - e, limit, limit + e.
+# =========================================================================
+
+EPS = 0.01
+SPEEDS = {"Sun": 1.0, "Moon": MOON, "Mercury": MERC, "Venus": VENUS, "Mars": MARS, "Jupiter": JUP}
+
+
+def _sahl_row(engine, actor, d):
+    """`actor` in Aries applying by trine to Saturn 20 Leo, d degrees short."""
+    fig = pdata(**{actor: (20 - d, SPEEDS[actor]), "Saturn": (140, SAT)})
+    row = engine["_pairwise_configurations"](fig)[0]
+    assert row["motion"] == "Applying" and row["applicant"] == actor
+    return row
+
+
+@pytest.mark.parametrize("actor", list(SPEEDS))
+def test_sahl_applying_orb_is_the_actors_own_light(engine, actor):
+    orb = engine["PLANETARY_ORBS"][actor]
+    connected = engine["_is_connected_sahl"]
+    assert connected(_sahl_row(engine, actor, orb - EPS))
+    assert connected(_sahl_row(engine, actor, orb))
+    assert not connected(_sahl_row(engine, actor, orb + EPS))
+
+
+def test_sahl_orb_belongs_to_a_heavier_applicant_too(engine):
+    """Saturn overtaking a slower Jupiter is the applicant; his 9 degrees
+    govern, not Jupiter's."""
+    for d, expect in ((9 - EPS, True), (9.0, True), (9 + EPS, False)):
+        fig = pdata(Saturn=(20 - d, 0.05), Jupiter=(140, 0.02))
+        row = engine["_pairwise_configurations"](fig)[0]
+        assert row["applicant"] == "Saturn" and row["motion"] == "Applying"
+        assert engine["_is_connected_sahl"](row) is expect, d
+
+
+def test_sahl_same_sign_separation_ends_at_half_the_light_body(engine):
+    """Ch.3, 10: separated when the light one departs by 'one-half of its
+    body -- and that is its light'. Moon past Saturn in one sign: 12."""
+    for d, expect in ((12 - EPS, True), (12.0, True), (12 + EPS, False)):
+        row = engine["_pairwise_configurations"](pdata(Saturn=(10, SAT), Moon=(10 + d, MOON)))[0]
+        assert row["motion"] == "Separating" and row["signs_apart"] == 0
+        assert engine["_is_connected_sahl"](row) is expect, d
+
+
+def test_sahl_cross_sign_separation_ends_at_one_degree(engine):
+    """Ch.3, 9: 'until it separates from the planet by a full degree'."""
+    for d, expect in ((1 - EPS, True), (1.0, True), (1 + EPS, False)):
+        row = engine["_pairwise_configurations"](pdata(Moon=(10 + d, MOON), Saturn=(130, SAT)))[0]
+        assert row["motion"] == "Separating" and row["signs_apart"] == 4
+        assert engine["_is_connected_sahl"](row) is expect, d
+
+
+def test_abu_assembly_window_is_fifteen(engine):
+    for d, expect in ((15 - EPS, True), (15.0, True), (15 + EPS, False)):
+        row = engine["_pairwise_configurations"](pdata(Moon=(0, MOON), Saturn=(d, SAT)))[0]
+        assert row["assembly"] and row["motion"] == "Applying"
+        assert engine["_is_connected_abu_mashar"](row) is expect, d
+
+
+def test_abu_aspect_window_is_twelve_for_every_pair(engine):
+    for actor in SPEEDS:
+        for d, expect in ((12 - EPS, True), (12.0, True), (12 + EPS, False)):
+            assert engine["_is_connected_abu_mashar"](_sahl_row(engine, actor, d)) is expect, (actor, d)
+
+
+def test_abu_connection_ends_one_minute_past_exact(engine):
+    m = 1.0 / 60.0
+    for d, expect in ((m - 1e-6, True), (m + 1e-6, False)):
+        row = engine["_pairwise_configurations"](pdata(Moon=(10 + d, MOON), Saturn=(130, SAT)))[0]
+        assert row["motion"] == "Separating"
+        assert engine["_is_connected_abu_mashar"](row) is expect, d
