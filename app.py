@@ -5782,13 +5782,16 @@ def evaluate_victors(planetary_data, ascendant_lon, lot_of_fortune, syzygy_lon, 
         grid.append({'Row': 'Totals', **{p: str(totals[p]) for p in columns}})
 
         victor = max(columns, key=lambda p: totals[p])
-        runners = sorted(columns, key=lambda p: -totals[p])
         tied = [p for p in columns if totals[p] == totals[victor]]
+        # The runner-up is the first planet STRICTLY below the top score.
+        # sorted()[1] used to hand back a co-winner whenever the top was
+        # tied, so a tie read as "Saturn / Jupiter, runner-up Jupiter".
+        lower = [p for p in sorted(columns, key=lambda p: -totals[p]) if totals[p] < totals[victor]]
         results[scheme_name] = {
             'grid': grid,
             'victor': ' / '.join(tied) if len(tied) > 1 else victor,
             'total': totals[victor],
-            'runner_up': f"{runners[1]} ({totals[runners[1]]})" if len(runners) > 1 else '-',
+            'runner_up': f"{lower[0]} ({totals[lower[0]]})" if lower else '-',
             'tied': len(tied) > 1,
         }
     return results

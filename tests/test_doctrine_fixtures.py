@@ -45,3 +45,42 @@ def test_public_geometry_helpers_accept_360(engine):
     assert engine["get_wsh_house"](360.0, 0.0) == 1
     assert engine["get_wsh_house"](30.0, 360.0) == 2
     assert engine["get_essential_rulers"](360.0)["sign"] == "Aries"
+
+
+# --- CODE-16: a tied victor's runner-up ----------------------------------
+
+def _no_rulers(_lon):
+    return {"domicile": "-", "exaltation": "-", "triplicity_day": "-", "triplicity_night": "-",
+            "triplicity_participating": "-", "term": "-", "face": "-"}
+
+
+def test_victor_tie_reports_a_strictly_lower_runner_up(engine):
+    """Saturn and Jupiter both in house 1 (12 points), everyone else in
+    house 6 (1 point): the victor is the tie, and the runner-up must be a
+    planet BELOW it, not the other co-winner."""
+    saved = engine["get_essential_rulers"], engine["get_wsh_house"]
+    try:
+        engine["get_essential_rulers"] = _no_rulers
+        engine["get_wsh_house"] = lambda lon, asc: 1 if lon < 60 else 6
+        seven = pdata(Saturn=0, Jupiter=30, Mars=60, Sun=90, Venus=120, Mercury=150, Moon=180)
+        results = engine["evaluate_victors"](seven, 0, 0, 0, "Diurnal", {"Day Lord": None, "Hour Lord": None})
+    finally:
+        engine["get_essential_rulers"], engine["get_wsh_house"] = saved
+    for scheme, v in results.items():
+        assert v["tied"], scheme
+        assert set(v["victor"].split(" / ")) == {"Saturn", "Jupiter"}, scheme
+        runner = v["runner_up"].split(" (")[0]
+        assert runner not in ("Saturn", "Jupiter"), f"{scheme}: runner-up is a co-winner: {v['runner_up']}"
+        assert v["runner_up"].endswith("(1)"), scheme
+
+
+def test_victor_runner_up_is_dash_when_everyone_ties(engine):
+    saved = engine["get_essential_rulers"], engine["get_wsh_house"]
+    try:
+        engine["get_essential_rulers"] = _no_rulers
+        engine["get_wsh_house"] = lambda lon, asc: 1
+        seven = pdata(Saturn=0, Jupiter=1, Mars=2, Sun=3, Venus=4, Mercury=5, Moon=6)
+        results = engine["evaluate_victors"](seven, 0, 0, 0, "Diurnal", {"Day Lord": None, "Hour Lord": None})
+    finally:
+        engine["get_essential_rulers"], engine["get_wsh_house"] = saved
+    assert all(v["runner_up"] == "-" for v in results.values())
