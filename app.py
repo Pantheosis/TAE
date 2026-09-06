@@ -6751,7 +6751,7 @@ if location_query and lat is not None and lon is not None:
                                                     'Ascendant + (shorter arc between Fortune and Spirit)  [not in the sources]')
                 row['Standing'] = r['Standing']
                 classical_rows.append(row)
-            st.dataframe(pd.DataFrame(classical_rows), hide_index=True, width='stretch')
+            st.dataframe(pd.DataFrame(classical_rows), hide_index=True, width='stretch', height=_rows_height(len(classical_rows)))
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
                 st.markdown('Fortune and Exaltation are attested in Sahl; Spirit is named by Sahl (the Lot of the Invisible) but its Moon-to-Sun formula comes from the course tables, as its Standing says. All three carry their provenance in the Topical Lots table below. BASIS IS NOT: no Lot of Basis appears anywhere in the material this project has, and the construction used takes the unsigned shorter arc between Fortune and Spirit, discarding the direction the pair actually stands in. It is kept because it has always been here, and marked rather than presented as settled.')
             st.subheader('Topical Lots (Sahl, On Nativities)', help="Sahl's topical Lots, each with its own provenance. He gives several of them MORE THAN ONCE, with formulas that genuinely conflict, and Dykes' apparatus does not silently reconcile them -- so neither does this table.")
