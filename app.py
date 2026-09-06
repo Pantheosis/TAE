@@ -42,24 +42,54 @@ SAVED_CHARTS_PATH = _user_data_dir() / "saved_charts.json"
 # before this change doesn't have to move it by hand.
 _LEGACY_SAVED_CHARTS_PATH = Path(__file__).parent / "saved_charts.json"
 
+def _validate_chart_mapping(charts):
+    """The saved-charts file is {chart name: entry dict}. Valid JSON is not
+    enough: '[]' parsed fine and then crashed the sidebar at .keys(). Only
+    the shape the UI actually indexes is checked -- a mapping of string
+    names to mapping entries -- so an older entry missing a field still
+    loads."""
+    if not isinstance(charts, dict):
+        raise ValueError(f"saved charts root must be a mapping, got {type(charts).__name__}")
+    for name, entry in charts.items():
+        if not isinstance(name, str) or not isinstance(entry, dict):
+            raise ValueError(f"saved chart {name!r} is not a name -> mapping entry")
+    return charts
+
+def _read_chart_mapping(path):
+    """The validated mapping in `path`, or None if it is unreadable,
+    malformed, or the wrong shape."""
+    try:
+        return _validate_chart_mapping(json.loads(path.read_text()))
+    except (json.JSONDecodeError, OSError, ValueError):
+        return None
+
+def _write_text_atomically(path, text):
+    """Write to a sibling temp file and os.replace() it over the target, so
+    a crash or full disk mid-write leaves the previous file intact rather
+    than a truncated one that loses every saved chart."""
+    tmp = path.with_name(path.name + '.tmp')
+    tmp.write_text(text)
+    os.replace(tmp, path)
+
 def load_saved_charts():
     if not SAVED_CHARTS_PATH.exists() and _LEGACY_SAVED_CHARTS_PATH.exists():
-        try:
-            SAVED_CHARTS_PATH.write_text(_LEGACY_SAVED_CHARTS_PATH.read_text())
-        except OSError:
-            pass
+        legacy = _read_chart_mapping(_LEGACY_SAVED_CHARTS_PATH)
+        if legacy is not None:
+            try:
+                _write_text_atomically(SAVED_CHARTS_PATH, json.dumps(legacy, indent=2))
+            except OSError:
+                pass
     if SAVED_CHARTS_PATH.exists():
-        try:
-            return json.loads(SAVED_CHARTS_PATH.read_text())
-        except (json.JSONDecodeError, OSError):
-            return {}
+        charts = _read_chart_mapping(SAVED_CHARTS_PATH)
+        return {} if charts is None else charts
     return {}
 
 def write_saved_charts(charts):
     try:
-        SAVED_CHARTS_PATH.write_text(json.dumps(charts, indent=2))
+        _validate_chart_mapping(charts)
+        _write_text_atomically(SAVED_CHARTS_PATH, json.dumps(charts, indent=2))
         return True
-    except OSError:
+    except (OSError, ValueError):
         return False
 
 # ==========================================

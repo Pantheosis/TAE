@@ -84,3 +84,63 @@ def test_victor_runner_up_is_dash_when_everyone_ties(engine):
     finally:
         engine["get_essential_rulers"], engine["get_wsh_house"] = saved
     assert all(v["runner_up"] == "-" for v in results.values())
+
+
+# --- CODE-11: saved-chart persistence -------------------------------------
+
+@pytest.fixture
+def chart_paths(engine, tmp_path):
+    saved = engine["SAVED_CHARTS_PATH"], engine["_LEGACY_SAVED_CHARTS_PATH"]
+    engine["SAVED_CHARTS_PATH"] = tmp_path / "saved_charts.json"
+    engine["_LEGACY_SAVED_CHARTS_PATH"] = tmp_path / "legacy" / "saved_charts.json"
+    try:
+        yield engine["SAVED_CHARTS_PATH"], engine["_LEGACY_SAVED_CHARTS_PATH"]
+    finally:
+        engine["SAVED_CHARTS_PATH"], engine["_LEGACY_SAVED_CHARTS_PATH"] = saved
+
+
+ENTRY = {"date_string": "1240-05-23", "time_string": "14:30:00", "location_query": "Florence",
+         "lat": 43.7792, "lon": 11.2463}
+
+
+@pytest.mark.parametrize("text", ["[]", "null", "3", '"x"', '{"a": 1}', '{"a": []}', "{not json"])
+def test_loader_rejects_non_mapping_roots_and_entries(engine, chart_paths, text):
+    path, _legacy = chart_paths
+    path.write_text(text)
+    assert engine["load_saved_charts"]() == {}
+
+
+def test_loader_round_trips_a_valid_mapping(engine, chart_paths):
+    assert engine["write_saved_charts"]({"Florence": ENTRY}) is True
+    assert engine["load_saved_charts"]() == {"Florence": ENTRY}
+    assert not list(chart_paths[0].parent.glob("*.tmp")), "temp file left behind"
+
+
+def test_writer_refuses_a_non_mapping_and_keeps_the_old_file(engine, chart_paths):
+    engine["write_saved_charts"]({"Florence": ENTRY})
+    assert engine["write_saved_charts"]([]) is False
+    assert engine["load_saved_charts"]() == {"Florence": ENTRY}
+
+
+def test_write_replaces_atomically(engine, chart_paths, monkeypatch):
+    """If the replace step fails the previous file must be untouched."""
+    import os
+    engine["write_saved_charts"]({"Florence": ENTRY})
+    before = chart_paths[0].read_text()
+
+    def boom(_src, _dst):
+        raise OSError("disk full")
+    monkeypatch.setattr(os, "replace", boom)
+    assert engine["write_saved_charts"]({"Other": ENTRY}) is False
+    assert chart_paths[0].read_text() == before
+
+
+def test_legacy_migration_validates_and_copies(engine, chart_paths):
+    path, legacy = chart_paths
+    legacy.parent.mkdir()
+    legacy.write_text("[]")
+    assert engine["load_saved_charts"]() == {}
+    assert not path.exists(), "a malformed legacy file must not be migrated"
+    legacy.write_text('{"Old": %s}' % __import__("json").dumps(ENTRY))
+    assert engine["load_saved_charts"]() == {"Old": ENTRY}
+    assert path.exists()
