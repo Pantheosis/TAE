@@ -17,3 +17,6 @@ saved_charts.json
 .idea/
 .vscode/
 Python-*.tar.xz
+
+# Test scratch (saved-charts redirect during pytest)
+tests/.xdg-scratch/

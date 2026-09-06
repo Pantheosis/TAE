@@ -1,8 +1,18 @@
-streamlit
+# Pinned to the contents of /home/apothic/almuten_engine/.venv (Python 3.14),
+# the interpreter the app and its test suite are run with. Only packages the
+# code imports directly are listed; pip resolves their dependencies.
+streamlit==1.62.0
+pyswisseph==2.10.3.2
+pandas==3.0.5
+timezonefinder==8.3.0
+pytz==2026.3.post1
+
+# Test suite (tests/): streamlit.testing.v1.AppTest, headless.
+pytest==9.1.1
+
+# Desktop launcher only (desktop_launcher.py, icon.py, the PyInstaller build).
+# Not installed in the venv above, so they cannot be pinned from it.
 pywebview
+pillow
 PySide6; sys_platform == "win32"
 qtpy; sys_platform == "win32"
-pyswisseph
-pandas
-timezonefinder
-pytz
