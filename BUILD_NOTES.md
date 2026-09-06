@@ -81,15 +81,13 @@ you're distributing beyond yourself/trusted users.
   size. If you want a much smaller build and can tolerate coarser timezone
   boundaries, `TimezoneFinderL` is a lighter drop-in alternative — not
   something I'd swap in without you asking, since it trades accuracy for size.
-- **geopy / Nominatim:** this requires live internet access at runtime —
-  packaging doesn't make the app work offline, it just removes the need to
-  install Python/dependencies. Keep that expectation in mind. Also, the
-  public Nominatim endpoint has a fair-use policy (identifiable user-agent,
-  reasonable request rate) — fine for personal use, worth reading their
-  usage policy if you ever distribute this to many people.
-- **certifi:** frozen builds sometimes fail geopy's HTTPS calls with SSL
-  verification errors if certifi's CA bundle isn't bundled — `build.spec`
-  includes it explicitly as a safeguard.
+- **Geocoding is offline.** Place lookup reads the bundled `atlas.db`
+  (SQLite, ~24 MB, listed in `build.spec`'s `datas`), so the packaged app
+  needs no internet access and no geopy/Nominatim or certifi -- neither is
+  a dependency any more, and neither is in `requirements*.txt` or the spec.
+  If you ever swap the atlas for a live geocoder, both of those come back:
+  a network requirement at runtime, and certifi's CA bundle for frozen
+  HTTPS calls.
 
 ## 5. Building for both platforms without owning both machines
 PyInstaller does not cross-compile — a build run on Linux/Mac cannot

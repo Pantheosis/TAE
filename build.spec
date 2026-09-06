@@ -164,5 +164,5 @@ if sys.platform == "darwin":
         coll,
         name="TraditionalAstrologyEngine.app",
         icon="app_icon.icns",
-        bundle_identifier="com.yourname.traditionalastrologyengine",
+        bundle_identifier="org.almuten.traditionalastrologyengine",
     )
