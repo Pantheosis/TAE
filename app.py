@@ -6785,6 +6785,67 @@ if location_query and lat is not None and lon is not None:
 
         def page_sources():
             st.header("Sources and coverage")
+            # The full comparison of the two connection tests. It was the
+            # Connection rule radio's tooltip; the radio (Configurations page)
+            # now carries a one-line help and points here.
+            st.subheader("Connection rule: Sahl and Abu Ma'shar")
+            st.markdown(
+                "Which author's rule decides whether a pair counts as Connected. The two agree that "
+                "looking is sign-to-sign and connecting is degree-to-degree, but they part company at "
+                "the sign boundary and on what activates a connection.\n\n"
+                "**Sahl** (The Introduction Ch.3, 6-21): the applying planet's OWN light governs "
+                "(15/12/9/8/7 by planet), so the test is asymmetric. A planet at the end of a sign that "
+                "is not connecting with anything, whose light strikes into the next sign, IS connected "
+                "to the first planet there by body (20-21) -- even though the two do not see each other.\n\n"
+                "A DISSENTING READING is recorded in the code but not implemented. Sahl 13 says that with "
+                "15 degrees between THE SUN and a planet 'he has already shone his light, and he is connected "
+                "with [the planet]' -- and the Sun is the HEAVIER body there -- while 18 closes the list of "
+                "lights with 'they are connected ONE TO THE OTHER'. Against that, 19 states the test itself in "
+                "terms of the mover ('it already struck WITH ITS OWN LIGHT'), and Abu Ma'shar, using the same "
+                "orb table, needs the asymmetry: with Saturn and the Moon within 12 degrees 'Saturn is in the "
+                "power of the Moon's body while the Moon is NOT YET in the power of Saturn's' (VII.4, 7). The "
+                "asymmetric reading is kept; the reciprocal one would move about 5% of applying pairs, and only "
+                "half of those involve the Sun.\n\n"
+                "**Abu Ma'shar** (Great Introduction VII.4-5): two flat distances instead -- assembly "
+                "within 15 degrees in one sign (VII.4, 3), aspects within 12 degrees of exact (VII.5, 27, "
+                "since aspect rays have no bodies of their own). No out-of-sign connection at all: across "
+                "a boundary the bodies merely 'mix their natures in a weak way' (VII.5, 14).\n\n"
+                "This governs only the tables that deliberately present BOTH authors -- the aspect grid, "
+                "reception, blocking, cutting. Each author's own tables are computed under "
+                "that author's rule whatever this is set to; the Configurations page has its own "
+                "control for which author you want to SEE."
+            )
+            # The five readings the sources leave open. Each control sits on
+            # the page and table it changes with a one-line help; the full
+            # text of each, as it stood in the sidebar, is here.
+            st.subheader("Configurable readings")
+            st.markdown(
+                "**Five-degree carryover at all twelve cusps** (Configurations page, Strength of the Planets) -- "
+                "Sahl states the rule for the stakes twice (Aphorism #44, 88; On Nativities 1.22, 9) "
+                "and once for every house (On Nativities 1.18, 19: 'and likewise in all of the houses'). "
+                "Off = stakes only. Flips the Sahl 83 verdict for about 6% of placements. "
+                "Affects: Strength of the Planets, testimony 83.\n\n"
+                "**VII.6, 27/45 'eastern/western relative to the Sun'** (Configurations page, Planetary Condition) -- "
+                "'hemisphere': the whole half, excluding the rays (VII.2, 2; VII.6, 34). 'VII.2 band': only "
+                "the easternizing band 15/18 to 90 degrees (VII.2, 14-21) and the westernizing band 90 down to "
+                "15 degrees (VII.2, 29-31). Superiors: 52% vs 25% of placements. "
+                "Affects: Planetary Condition (27, 45).\n\n"
+                "**Moon under the rays to 15 degrees (Sahl, On Nativities 1.19, 6)** (Chart page, Planetary Positions) -- "
+                "Abu Ma'shar VII.2, 61 and 72-73 give 12; Sahl gives 15 for the Moon's fitness as releaser. "
+                "Affects: the Solar phase column of Planetary Positions; on the Configurations page, "
+                "Weakness of the Planets (93), Planetary Condition and Corruption of the Moon.\n\n"
+                "**Domain (hayz)** (Dignities page, Sect table) -- "
+                "Abu Ma'shar VII.1, 37 / VII.6, 13: sign gender fixed to the planet's own. Masha'allah, "
+                "On Nativities 1.23, 17: a male planet by day above the earth in a male sign, by night under "
+                "the earth in a FEMALE sign; feminine planets by hemisphere only. "
+                "Affects: the Sect table and Dignity Evaluation on the Dignities page, and Planetary Condition (13) "
+                "on the Configurations page.\n\n"
+                "**House-based Lots measure to the** (Lots page, Topical Lots) -- "
+                "'The second place', 'the degree of the eighth place', 'the ninth' (On Nativities 2.15, 1; "
+                "8.6, 1; 9.1, 9). Whole-sign: the Ascendant's degree carried into that sign. Quadrant: the "
+                "Alchabitius cusp. "
+                "Affects: Topical Lots."
+            )
             with st.expander("Coverage: what these sources contain that this app does not", expanded=False):
                 st.caption(
                     "Named explicitly so the absence is a stated scope limit rather than an "
