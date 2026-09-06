@@ -57,7 +57,8 @@ reference for the Calculation table in §4.A2.
 - Line numbers in this brief are as of `b8d3f59`. Each item also gives a grep
   anchor; trust the anchor over the number.
 - Launch config: `/home/apothic/almuten_engine/.claude/launch.json`, name
-  `traditional-astrology-engine`, port 8501, venv `Executable/.venv`. Start it with
+  `traditional-astrology-engine`, port 8501, venv `/home/apothic/almuten_engine/.venv` (the same one
+  `requirements.txt` pins and the test suite uses). Start it with
   the preview tooling, never with a foreground `streamlit run`. If port 8501 is
   already held by another session's server, just navigate to
   `http://localhost:8501` — it hot-reloads on file save.
