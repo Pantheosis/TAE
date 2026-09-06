@@ -3323,12 +3323,14 @@ def calculate_classical_lots(asc, sun, moon, sect):
         'Lot of Fortune': fortune,
         'Lot of Spirit': spirit,
         'Lot of Exaltation': exaltation,
-        'Lot of Basis (EXTERNAL -- unattested anywhere in this corpus)': basis,
+        'Lot of Basis': basis,
     }
     result = []
     for name, lon_val in lots.items():
         result.append({
             'Lot Name': name,
+            'Standing': ('EXTERNAL -- unattested in this corpus' if 'Basis' in name
+                          else 'attested in Sahl'),
             'Position': get_degree_string(lon_val),
             'WS place': get_wsh_house(lon_val, asc),
             'Sign Dispositor': SIGN_TO_DOMICILE.get(get_zodiac_sign(lon_val), '-'),
@@ -5592,8 +5594,9 @@ def evaluate_planets_in_houses(planetary_data, abu_mashar_condition, ascendant_l
         results.append({
             'Planet': planet,
             'Placed in (WS place)': wsh_house,
-            'Net (app heuristic)': net,
+            'Net': net,
             'Lean': lean,
+            'Standing': 'app arithmetic, not a source verdict',
             'If Well Placed': PLANETS_IN_HOUSES[wsh_house][planet]['Good'],
             'If Badly Placed': PLANETS_IN_HOUSES[wsh_house][planet]['Bad'],
         })
@@ -6006,7 +6009,7 @@ if location_query and lat is not None and lon is not None:
         # which is what turns seventeen "No X found" headings into four.
         def _finding(bucket, title, citation, data, glance=None, notes=None):
             if not data:
-                bucket.append(title[0].lower() + title[1:].replace(' Of ', ' of ').replace(' Light', ' light'))
+                bucket.append(title)
                 return
             st.subheader(title, help=glance)
             if citation:
@@ -6042,7 +6045,30 @@ if location_query and lat is not None and lon is not None:
             st.subheader('Planetary Positions', help="The seven classical planets' ecliptic (tropical) longitude at the moment of birth, in sign and degree.")
             # True planets only — angles, nodes, and Lot of Fortune
             # now live in the "Calculated Points" table alongside it.
-            pos_list = [{"Planet": p, "Position": get_degree_string(d['longitude'])} for p, d in p_data.items() if p != 'North Node']
+            # The Lesson 3 homework asks for sign/degree/minute AND absolute
+            # longitude, whole-sign place, quadrant division, and whether the
+            # planet is direct or retrograde -- all of which this app already
+            # computes and none of which it showed on the table a student
+            # reaches for first. Lesson 16's solar phase is here for the same
+            # reason.
+            pos_list = []
+            for p, d in p_data.items():
+                if p == 'North Node':
+                    continue
+                lon_p = d['longitude']
+                q = get_effective_house(lon_p, chart_data['houses'])
+                phase, side, elong = solar_phase(p, lon_p, p_data['Sun']['longitude'])
+                acc_p = accidental[p]
+                pos_list.append({
+                    "Planet": p,
+                    "Position": get_degree_string(lon_p),
+                    "Absolute": f"{lon_p:.4f}\u00b0",
+                    "WS place": get_wsh_house(lon_p, chart_data['ascendant']),
+                    "Quadrant": f"{q} ({'advancing' if q in ANGLE_HOUSES | SUCCEDENT_HOUSES else 'withdrawing'})",
+                    "Motion": ('Retrograde' if acc_p['Retrograde']
+                               else 'Stationary' if acc_p['Stationary'] else 'Direct'),
+                    "Solar phase": (f"{phase}, {side}" if phase and side else (phase or '\u2013')),
+                })
             st.dataframe(pd.DataFrame(pos_list), hide_index=True, width='stretch')
             st.subheader('Calculated Points', help="Non-planetary chart points: the four angles (Ascendant, Midheaven, Descendant, Imum Coeli), the Moon's Nodes, and the Lot of Fortune (a sect-dependent formula combining the Sun, Moon, and Ascendant).")
             north_node_lon = p_data['North Node']['longitude']
@@ -6058,7 +6084,7 @@ if location_query and lat is not None and lon is not None:
             }
             calc_list = [{"Point": name, "Position": get_degree_string(lon_val)} for name, lon_val in calculated_points.items()]
             st.dataframe(pd.DataFrame(calc_list), hide_index=True, width='stretch')
-            st.subheader('House Cusps (Alchabitius)', help='The twelve quadrant house cusps computed by the Alchabitius (semi-arc) system -- shown alongside the Whole-Sign houses used everywhere else in this app, since some techniques call for quadrant division specifically.')
+            st.subheader('Quadrant divisions (Alchabitius)', help='The twelve quadrant house cusps computed by the Alchabitius (semi-arc) system -- shown alongside the Whole-Sign houses used everywhere else in this app, since some techniques call for quadrant division specifically.')
             house_list = [{"House": i+1, "Cusp": get_degree_string(chart_data['houses'][i])} for i in range(12)]
             st.dataframe(pd.DataFrame(house_list), hide_index=True, width='stretch')
             _finding(_gap, 'Special Degrees & Conditions', None, special_degrees,
@@ -6102,6 +6128,7 @@ if location_query and lat is not None and lon is not None:
                     dignity_list.append({
                         "Planet": p,
                         "Net": ess['Essential Score'] + acc['Accidental Score'],
+                            "Standing": "app scoring model",
                         "Ess": ess['Essential Score'],
                         "Acc": acc['Accidental Score'],
                         "Essential Dignities": ", ".join(ess['Essential Labels']) if ess['Essential Labels'] else "-",
@@ -6165,18 +6192,37 @@ if location_query and lat is not None and lon is not None:
                               glance='Manner I: a planet connects with a retrograde planet or one under the rays -- it "returns to it what it accepted," corrupting the question.',
                               notes='Manner II: an angular (faster) planet hands over to a cadent (slower) one -- the matter has a beginning but no end.')
                     _absent(_gap)
+                # The Handy Tables give Lesson 17 ONE table here, headed
+                # "Prevented connections" and listing blocking, resistance,
+                # cutting #1, escape, revoking and cutting #2 together. This
+                # showed them as separate tables, so a student could not lay
+                # the app beside the course's own page. Merged on the shape
+                # they share -- who is prevented, from what, by whom -- with
+                # the source kept per row.
+                prevented = []
+                for r in blocking_data:
+                    prevented.append({'Kind': r['Type'], 'Planet': r['Blocked'],
+                                       'Prevented From': r['From Reaching'],
+                                       'By': r['Blocked By'], 'Because': '',
+                                       'Source': 'Sahl Ch.3, 31-48; VII.5, 90-94'})
+                for r in cutting_data:
+                    prevented.append({'Kind': 'Cutting ' + r['Type'], 'Planet': r['Planet'],
+                                       'Prevented From': r.get('Other Contact', ''),
+                                       'By': r.get('Yields To', ''),
+                                       'Because': r.get('Because', ''),
+                                       'Source': "Sahl Ch.3, 31-34 and 44-48; VII.5, 120-125"})
+                # The Handy Tables' own "Prevented connections" also lists
+                # revoking, resistance and escape -- but those are Abu
+                # Ma'shar's (VII.5, 117-119), and pulling them in here would
+                # put his material inside a Sahl group and undo the author
+                # separation. They stay on his side, under Forward-looking
+                # conditions. This is a deliberate divergence from the
+                # course's single table, and the only one in this grouping.
                 with st.container(border=True):
                     st.markdown("**Prevented connections** — Ch.3, 31-48, the Handy Tables' own grouping for Lesson 17")
-                    _finding(_gap, 'Candidate Blocking Patterns', "Sahl, The Introduction Ch.3, 31-48: Intervention & Nullification; Abu Ma'shar VII.5, 90-94", blocking_data,
-                              glance='A third planet gets to the heavy planet first, so the connection heading there does not complete.',
-                              notes='INTERVENTION: three planets in one sign, the heavy one at the highest degree, and the middle one stands between the lightest and its target until it passes by. NULLIFICATION: one planet aspects a heavy planet from another sign while a lighter planet already in that sign is joining it by body -- and arrives first. Where the ray has less arc left to travel than the body does, the ray prevails instead and no blocking is reported (Ch.3, 40; VII.5, 94).\n\nCalled CANDIDATE patterns because both authors are describing horary charts with a querent and a quesited already nominated. With no topical significators chosen, a row says the pattern exists between those three planets -- not that a particular sought matter is obstructed.\n\nSahl\'s own third blocking type, "Cutting the Light," is Type III of the Cutting the Light table below rather than shown here.')
-                    _finding(_gap, 'Cutting the Light', "Sahl, The Introduction Ch.3, 31-34: Type III; Abu Ma'shar VII.5, 120-125: Types I-II", cutting_data,
-                              glance='Two different outcomes, kept apart. TYPE III is a CUTTING: a nearer degree-connection intercepts a more distant one, per Sahl 32 ("the connection with it is BEFORE the connection with the lord of the sought thing") and Abu Ma\'shar\'s Fig. 142.',
-                              notes='Which one wins is decided by Sahl\'s own PRECEDENCE, not by nearness alone: "a connection does not nullify a uniting, but a uniting does NULLIFY a connection, while an aspect does not cut an aspect, and a uniting cuts an aspect" (Ch.3, 44). The note there ranks the three kinds -- (1) a uniting, i.e. a conjunction by degree; (2) a connection by degree from another sign; (3) an aspect by sign only -- and adds that degree-based connections can cut each other while aspects by sign cannot. Nearness only breaks ties within a rank, and the BECAUSE column says which applied.\n\nSahl works it himself at 46-48 (Fig. 15): Moon 10 Taurus, Mars 20 Taurus, Venus 15 Cancer. "Her connection with Venus is PRIOR to her uniting with Mars, but the Moon is uniting [with Mars], and that is stronger than an aspect and a connection." The Venus sextile is 5 degrees from exact against the Mars union\'s 10, so nearness alone gives the opposite of Sahl\'s verdict; the precedence rule changes the winner for about 7% of planets holding two or more applying contacts.\n\nTypes I and II are Abu Ma\'shar\'s later addition, and each requires its own full sequence of dated events.\n\nTYPE I (121-22): a planet in the SECOND SIGN from the applicant stations retrograde, re-enters the applicant\'s sign, and conjoins it BY DEGREE -- all before the applicant reaches its original target. The note on 121 reads that last verb as conjoining by degree, "rather than the looser assembling."\n\nTYPE II (123-24): the planet being applied to reaches a heavier planet first and moves on, leaving the applicant to land on that heavier planet instead. "Mercury wants to connect with Venus. But before he can do that, she connects with Mars and then continues on. Then Mercury is left with the conjunction of Mars, which was not what he wanted."')
-                    if blocking_data:
-                        st.dataframe(pd.DataFrame(blocking_data), hide_index=True, width='stretch')
-                    else:
-                        st.write("No candidate blocking patterns found.")
+                    _finding(_gap, 'Prevented connections', "Sahl, The Introduction Ch.3, 31-48; Abu Ma'shar, Great Introduction VII.5, 117-125", prevented,
+
+                             glance="Sahl's ways of stopping a connection before it completes, in one table as the Handy Tables give them: intervention, nullification and the cuttings. Abu Ma'shar's revoking, resistance and escape are in his own section.")
                     _finding(_gap, 'Wildness', 'Sahl, The Introduction Ch.3, 64: "Banished"; Abu Ma\'shar VII.5, 79-82', wildness_data,
                               glance='A planet in Aversion to all six other classical planets -- unable to be seen or aspected by anyone, though it may still be "reached" via the lord of whatever bound (term) it occupies.',
                               notes='Sahl\'s own term is "banished"; this Aversion-based definition is a later refinement of it.')
@@ -6208,8 +6254,9 @@ if location_query and lat is not None and lon is not None:
                             # str, not int-or-'': a column mixing the two is an
                             # object column that Arrow rejects.
                             "Moon Defects": str(cond['Moon Defects']) if cond['Moon Defects'] else '',
-                            "Net (heuristic)": cond['Net'],
-                            "Verdict (heuristic)": cond['Condition'],
+                            "Net": cond['Net'],
+                            "Verdict": cond['Condition'],
+                            "Standing": "app arithmetic, not VII.6",
                             "Good Fortune / Strength": ", ".join(cond['Positive Labels']) if cond['Positive Labels'] else "-",
                             "Weakness / Misfortune": ", ".join(cond['Negative Labels']) if cond['Negative Labels'] else "-",
                         })
