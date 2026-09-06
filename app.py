@@ -504,6 +504,15 @@ DOMAIN_RULE_OPTIONS = ("Abu Ma'shar", "Masha'allah")   # the sidebar radio and t
 DOMAIN_RULE = DOMAIN_RULE_OPTIONS[0]
 DIURNAL_SECT_PLANETS = {'Sun', 'Jupiter', 'Saturn'}
 NOCTURNAL_SECT_PLANETS = {'Moon', 'Venus', 'Mars'}
+
+def planet_sect_is_diurnal(planet, lon, sun_lon):
+    """The planet's own sect. Mercury's follows his solar phase: west of the
+    Sun (a morning riser) is diurnal, east of it nocturnal. This is the one
+    test behind Strength testimony 85 and the Sect table on the Dignities
+    page, so the two cannot disagree."""
+    if planet == 'Mercury':
+        return (((lon - sun_lon + 180.0) % 360.0) - 180.0) < 0
+    return planet in DIURNAL_SECT_PLANETS
 MASCULINE_SIGNS = {'Aries', 'Gemini', 'Leo', 'Libra', 'Sagittarius', 'Aquarius'}
 FEMININE_SIGNS = {'Taurus', 'Cancer', 'Virgo', 'Scorpio', 'Capricorn', 'Pisces'}
 # Mean daily motions (deg/day), used only to gauge "swift" vs. an average pace
@@ -4473,13 +4482,7 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
             # earlier version reused accidental[]['Hayz'], which additionally
             # demands the right side of the horizon and a sign of matching
             # gender, and so under-reported the testimony.
-            if planet == 'Mercury':
-                sun_lon = planetary_data['Sun']['longitude']
-                planet_is_diurnal = (((lon - sun_lon + 180.0) % 360.0) - 180.0) < 0
-            elif planet in DIURNAL_SECT_PLANETS:
-                planet_is_diurnal = True
-            else:
-                planet_is_diurnal = False
+            planet_is_diurnal = planet_sect_is_diurnal(planet, lon, planetary_data['Sun']['longitude'])
             if planet_is_diurnal == (sect == 'Diurnal'):
                 labels.append('In its own glow, i.e. of the sect (85)')
 
@@ -6446,22 +6449,72 @@ if location_query and lat is not None and lon is not None:
             for p, data in p_data.items():
                 if p == 'North Node': continue
                 rulers = get_essential_rulers(data['longitude'])
+                # The planet's own claim at its position, from the labels the
+                # dignity evaluation already computed, without the app's
+                # point weights ("Domicile (+5)" -> "Domicile").
+                own = [re.sub(r'\s*\([+-]\d+\)', '', lbl) for lbl in essential[p]['Essential Labels']]
                 lordship_list.append({
                     "Planet": p,
+                    "Position": get_degree_string(data['longitude']),
                     "Sign Dispositor": rulers['domicile'],
                     "Exaltation Lord": rulers['exaltation'],
                     "Triplicity lord": rulers[triplicity_key],
                     "Bound lord": rulers['term'],
                     "Face lord": rulers['face'],
+                    "Own dignity here": ", ".join(own) if own else ("Peregrine" if essential[p]['Peregrine'] else "-"),
                 })
             st.dataframe(pd.DataFrame(lordship_list), hide_index=True, width='stretch')
+            # ---- Sect (Lesson 10) ----------------------------------------
+            # The planet's own sect (85's test), its hemisphere, whether it is
+            # of the chart's sect, and domain (hayz) under the rule chosen
+            # beside the table. The chart's sect itself is the Chart page's
+            # header metric.
+            st.subheader('Sect', help="Each planet's own sect, whether it stands above the horizon, whether it agrees with the chart's sect (Sahl's testimony 85), and whether it is in its domain (hayz) under the Domain rule chosen beside the table.")
+            sect_col, domain_col = st.columns([3, 1])
+            with domain_col:
+                _reading_radio("Domain (hayz)", DOMAIN_RULE_OPTIONS, "domain_rule", "_domain_rule",
+                               help="Abu Ma'shar VII.1, 37 / VII.6, 13: sign gender fixed to the planet's own; "
+                                    "Masha'allah, On Nativities 1.23, 17: gender follows the hemisphere. "
+                                    "Affects: this Sect table, Dignity Evaluation below, and Planetary Condition "
+                                    "(13) on the Configurations page. Full text on the Sources page.")
+            with sect_col:
+                sect_rows = []
+                for p, data in p_data.items():
+                    if p == 'North Node': continue
+                    own_diurnal = planet_sect_is_diurnal(p, data['longitude'], p_data['Sun']['longitude'])
+                    above = (data['longitude'] - chart_data['ascendant']) % 360 > 180.0
+                    sect_rows.append({
+                        "Planet": p,
+                        "Planet's sect": 'Diurnal' if own_diurnal else 'Nocturnal',
+                        "Above horizon": 'Yes' if above else 'No',
+                        "Of the chart's sect": 'Yes' if own_diurnal == (sect == 'Diurnal') else 'No',
+                        "Domain (hayz)": 'Yes' if accidental[p]['Hayz'] else 'No',
+                    })
+                st.dataframe(pd.DataFrame(sect_rows), hide_index=True, width='stretch', height=_rows_height(len(sect_rows)))
+            st.caption("Sect: Sahl, The Introduction Ch.3, 85. Domain: Abu Ma'shar VII.1, 37 and VII.6, 13 "
+                       "(or Masha'allah, On Nativities 1.23, 17, per the switch).")
             st.subheader('Topical Planets in Houses', help="Each planet's Whole-Sign house placement with BOTH Rhetorius/PN4 readings for that pairing, good and bad.")
             st.caption('Rhetorius & PN4')
-            st.dataframe(pd.DataFrame(planets_in_houses_data), hide_index=True, width='stretch')
+            st.dataframe(pd.DataFrame(planets_in_houses_data, columns=['Planet', 'Placed in (WS place)', 'Lean']),
+                         hide_index=True, width='content', height=_rows_height(len(planets_in_houses_data)))
+            # The readings wrap in st.table; the structural columns stay above.
+            with st.expander("Rhetorius / PN4 readings for these placements"):
+                st.table(pd.DataFrame(planets_in_houses_data,
+                                      columns=['Planet', 'Net', 'Standing', 'If Well Placed', 'If Badly Placed']),
+                         hide_index=True)
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
                 st.markdown("Neither is chosen for you. The only thing available to choose with is the Net from the Planetary Condition table, and that number is this app's own arithmetic -- Abu Ma'shar enumerates the VII.6 conditions, never totals them, gives no weighting and no tie rule. An invented score silently picking one of two classical delineations turns a convenience into a verdict.\n\nThe Net is shown as a LEAN instead, and reads Indeterminate within a margin of one, which is the width of a single testimony: those charts sit one label away from the opposite reading, and should be judged on the condition counts and the labels rather than on the number.")
             st.subheader("Topical House Lords (Masha'allah)", help='For each of the twelve topical houses, its domicile lord\'s own Whole-Sign placement, and Masha\'allah\'s delineation for that [placed-in, rules] pairing -- the classical way of reading what a house\'s ruler is "doing" elsewhere in the chart.')
-            st.dataframe(pd.DataFrame(house_lords_data), hide_index=True, width='stretch')
+            # Averse: the lord sits in the 2nd, 6th, 8th or 12th sign from the
+            # house it rules, so it does not see its own place.
+            lords_rows = [{**{k: v for k, v in r.items() if k != "Masha'allah Signification"},
+                           'Averse to its place': 'Yes' if (r['Placed in (WS place)'] - r['Topical House']) % 12 in (1, 5, 7, 11) else 'No'}
+                          for r in house_lords_data]
+            st.dataframe(pd.DataFrame(lords_rows), hide_index=True, width='content', height=_rows_height(len(lords_rows)))
+            with st.expander("Masha'allah readings for lord placements"):
+                st.table(pd.DataFrame(house_lords_data,
+                                      columns=['Topical House', 'Domicile Lord', 'Placed in (WS place)', "Masha'allah Signification"]),
+                         hide_index=True)
             with st.expander("Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", expanded=False):
                 dignity_list = []
                 for p in essential.keys():
@@ -6471,7 +6524,6 @@ if location_query and lat is not None and lon is not None:
                     dignity_list.append({
                         "Planet": p,
                         "Net": ess['Essential Score'] + acc['Accidental Score'],
-                            "Standing": "app scoring model",
                         "Ess": ess['Essential Score'],
                         "Acc": acc['Accidental Score'],
                         "Essential Dignities": ", ".join(ess['Essential Labels']) if ess['Essential Labels'] else "-",
@@ -6490,7 +6542,7 @@ if location_query and lat is not None and lon is not None:
                     f"12° east / 15° west, and {MOON_RAYS_ORB:.0f}° for the Moon; in the heart within 16' "
                     "(VII.2, 7-9, from the Sun's own apparent diameter). Sahl elsewhere says one whole "
                     "degree for the heart, and that reading is used where his own testimonies are "
-                    f"scored. **Domain/hayz** follows the sidebar's Domain switch, currently {DOMAIN_RULE}: "
+                    f"scored. **Domain/hayz** follows the Domain switch beside the Sect table above, currently {DOMAIN_RULE}: "
                     + ("VII.1, 37-39 and VII.6, 13 -- the planet's own sect need not match the chart's; "
                        "the hemisphere requirement is what flips with it."
                        if DOMAIN_RULE == DOMAIN_RULE_OPTIONS[0] else
