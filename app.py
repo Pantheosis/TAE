@@ -9,6 +9,7 @@ from timezonefinder import TimezoneFinder
 import pytz
 from pathlib import Path
 import math
+import re
 import json
 import sqlite3
 import os
@@ -1284,6 +1285,11 @@ def _is_connected(row):
     """Whether the pair is Connected under the doctrine currently in force."""
     return CONNECTION_PROFILES[CONNECTION_PROFILE](row)
 
+def _rules_differ(row):
+    """'Yes' where Sahl's and Abu Ma'shar's connection tests disagree on
+    this pair -- the aspects table's way of making the rule switch visible."""
+    return 'Yes' if _is_connected_sahl(row) != _is_connected_abu_mashar(row) else ''
+
 def _is_separating_in_nature(row):
     """Abu Ma'shar's window for "separating from" a planet, which is NOT
     his connection window. VII.5, 34 ends a connection at 1' past exact, so
@@ -1363,16 +1369,21 @@ def evaluate_ptolemaic_aspects(planetary_data):
                 note = 'In Power (out-of-sign)'
             if row['sahl_body_connection']:
                 note = f"Body connection: {row['body_connection_from']} \u2192 {row['body_connection_to']} (Sahl 20-21)"
+            # Same keys, same order, as the configured rows below: pandas
+            # takes the first row's order, so a chart whose first pair was
+            # an aversion used to get a different column order.
             aspects.append({
                 'Light Planet': light_name,
                 'Aspect': 'Aversion',
                 'Heavy Planet': heavy_name,
+                'Applying Planet': '\u2013',
                 'Motion': '\u2013',
                 'Orientation': '\u2013',
                 'Exact Orb Dist': '\u2013',
                 'Bodies': _body_overlap_label(row),
                 'Strength': note,
                 'Connected': 'Yes' if _is_connected(row) else 'No',
+                'Rules differ': _rules_differ(row),
             })
             continue
 
@@ -1436,6 +1447,7 @@ def evaluate_ptolemaic_aspects(planetary_data):
             'Bodies': _body_overlap_label(row),
             'Strength': strength,
             'Connected': 'Yes' if connected else 'No',
+            'Rules differ': _rules_differ(row),
         })
 
     return aspects
@@ -4508,7 +4520,8 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
                 labels.append(f"In a matching-gender ({gender.lower()}) {' and '.join(_parts)} (88)")
 
             if labels:
-                results.append({'Planet': planet, 'Strength Testimonies': ', '.join(labels), 'Count': len(labels)})
+                results.append({'Planet': planet, 'Strength Testimonies': ', '.join(labels), 'Count': len(labels),
+                                'Labels': labels})
         return results
 
 def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendant_lon, sect):
@@ -4639,7 +4652,8 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
                 labels.append('Inverted, in the seventh sign from its own house (100)')
 
             if labels:
-                results.append({'Planet': planet, 'Weakness Testimonies': ', '.join(labels), 'Count': len(labels)})
+                results.append({'Planet': planet, 'Weakness Testimonies': ', '.join(labels), 'Count': len(labels),
+                                'Labels': labels})
         return results
 
 def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential, accidental, jd, ascendant_lon, sim=None):
@@ -6204,14 +6218,18 @@ if location_query and lat is not None and lon is not None:
         # A finding with nothing to report is not given a heading at all --
         # it is collected and named in one line at the foot of its group,
         # which is what turns seventeen "No X found" headings into four.
-        def _finding(bucket, title, citation, data, glance=None, notes=None):
+        def _finding(bucket, title, citation, data, glance=None, notes=None, columns=None, height=None):
             if not data:
                 bucket.append(title)
                 return
             st.subheader(title, help=glance)
             if citation:
                 st.caption(citation)
-            st.dataframe(pd.DataFrame(data), hide_index=True, width='stretch')
+            # columns= pins the order (pandas otherwise takes the first
+            # row's); height= shows every row of a table meant to be read
+            # whole, instead of st.dataframe's ten-row inner scroll.
+            st.dataframe(pd.DataFrame(data, columns=columns), hide_index=True, width='stretch',
+                         **({'height': height} if height is not None else {}))
             if notes:
                 with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
                     st.markdown(notes)
@@ -6244,6 +6262,44 @@ if location_query and lat is not None and lon is not None:
             st.radio(label, options, index=options.index(stored) if stored in options else 0,
                      key=widget_key, horizontal=True, help=help)
             return _persist(widget_key, store_key, options[0])
+
+        # Strength and Weakness as tick grids: one row per planet, one column
+        # per numbered testimony, ticked where the planet's Labels cite that
+        # paragraph. The labels end in "(78)" ... "(100)", or "(84; ...)",
+        # "(95, ...)" where a citation follows; the first such number is the
+        # paragraph. The sentence form stays under the grid as the answer key.
+        STRENGTH_COLUMNS = [('78', '78 excellent place'), ('79', '79 own dignity'), ('80', '80 direct'),
+                            ('81', '81 not in infortune stakes'), ('82', '82 not with fallen'),
+                            ('83', '83 advancing'), ('84', '84 eastern, masculine'), ('85', '85 of sect'),
+                            ('86', '86 fixed sign'), ('87', '87 heart of Sun'), ('88', '88 gender match')]
+        WEAKNESS_COLUMNS = [('91', '91 falling, averse ASC'), ('92', '92 retrograde'), ('93', '93 under rays'),
+                            ('94', '94 connects infortune'), ('95', '95 enclosed'), ('96', '96 own fall'),
+                            ('97', '97 averse / lost receiver'), ('98', '98 alien'), ('99', '99 with nodes'),
+                            ('100', '100 inverted')]
+        _PARAGRAPH = re.compile(r'\((\d{2,3})(?=[;,)])')
+
+        def _tick_grid(bucket, title, citation, data, text_key, columns, glance=None, notes=None):
+            if not data:
+                bucket.append(title)
+                return
+            st.subheader(title, help=glance)
+            if citation:
+                st.caption(citation)
+            grid = []
+            for row in data:
+                cited = {m.group(1) for m in map(_PARAGRAPH.search, row['Labels']) if m}
+                cells = {'Planet': row['Planet']}
+                for num, header in columns:
+                    cells[header] = '\u2713' if num in cited else ''
+                cells['Count'] = row['Count']
+                grid.append(cells)
+            st.dataframe(pd.DataFrame(grid), hide_index=True, width='stretch', height=_rows_height(len(grid)))
+            with st.expander("Answer key: testimonies in words"):
+                st.dataframe(pd.DataFrame(data, columns=['Planet', text_key, 'Count']),
+                             hide_index=True, width='stretch', height=_rows_height(len(data)))
+            if notes:
+                with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
+                    st.markdown(notes)
 
         # Table heights: st.dataframe shows about ten rows and then scrolls
         # inside itself. A table meant to be read whole gets its own height.
@@ -6447,20 +6503,34 @@ if location_query and lat is not None and lon is not None:
             st.caption("Lessons 14-17. Sahl's Introduction Ch.2-3 is the course text; "
                        "Abu Ma'shar's Great Introduction VII is supplementary.")
             _gap = []
-            view = st.segmented_control(
-                "Show", ["Sahl (course text)", "Abu Ma'shar (supplement)", "Both"],
-                default="Sahl (course text)", key="configurations_view",   # survives navigation
-                help="Each author's tables are computed under that author's OWN rule "
-                     "whatever this is set to -- it selects what is shown, not how it "
-                     "is judged. The sidebar Connection rule still governs the few "
-                     "tables that deliberately present both authors.")
+            show_col, rule_col = st.columns([2, 1])
+            with show_col:
+                view = st.segmented_control(
+                    "Show", ["Sahl (course text)", "Abu Ma'shar (supplement)", "Both"],
+                    default=st.session_state.get("_configurations_view", "Sahl (course text)"),
+                    key="configurations_view",
+                    help="Each author's tables are computed under that author's OWN rule "
+                         "whatever this is set to -- it selects what is shown, not how it "
+                         "is judged. The Connection rule beside this control governs the few "
+                         "tables that deliberately present both authors.")
+                view = _persist("configurations_view", "_configurations_view", "Sahl (course text)")
+            with rule_col:
+                # Governs only the dual-author tables; each author's own
+                # tables pin their own rule (see doctrine()). The essay
+                # comparing the two rules is on the Sources page.
+                _reading_radio("Connection test used in the shared tables", CONNECTION_PROFILES.keys(),
+                               "connection_rule", "_connection_rule",
+                               help="Which author's test decides Connected in the aspects, reception and "
+                                    "prevented-connections tables. Sahl: the applying planet's own light. "
+                                    "Abu Ma'shar: 15° in one sign, 12° for aspects. Full comparison on the Sources page.")
             show_sahl = view in (None, "Sahl (course text)", "Both")
             show_abu = view in ("Abu Ma'shar (supplement)", "Both")
             if show_sahl:
                 _finding(_gap, "Aspects, aversions and connections",
                          f"Sahl, The Introduction Ch.2, 50-60 and Ch.3, 6-21 — {CONNECTION_PROFILE} rule in force", aspects,
+                          columns=['Light Planet', 'Aspect', 'Heavy Planet', 'Applying Planet', 'Motion', 'Orientation', 'Exact Orb Dist', 'Bodies', 'Strength', 'Connected', 'Rules differ'], height=_rows_height(len(aspects)),
                           glance='Four separate facts about each pair, kept apart rather than collapsed into one verdict. LOOKING is the whole-sign configuration (Union/Sextile/Square/Trine/Opposition, or Aversion if none applies) -- sign to sign.',
-                          notes='MOTION and EXACT ORB DIST are the degree-to-degree approach. BODIES is whether each planet falls inside the other\'s sphere of power, which is asymmetric because the spheres differ in size: Abu Ma\'shar VII.4, 7 notes that Saturn sits inside the Moon\'s body from 12 degrees while she only enters his at a little under 9. CONNECTED is the active author\'s verdict -- switch the Connection rule in the sidebar to see where they disagree.\n\nSTRENGTH is two different measures. For an assembly it is the source\'s own: whose body reaches whose (VII.4, 5-8) and whether they share a bound. For an aspect it is marked "(app scale)", because VII.5, 4 grades looking as a continuum with no cutoffs anywhere -- "the strongest thing there is in its looking is the degree related most closely by number to the degree of its own sign, and if the aspect was far from these degrees, its aspect will be weaker." The thirds are this app\'s own scanning aid; the measurement itself is the Exact Orb Dist column.\n\nLIGHT and HEAVY are the standing classes both authors name as nouns (Saturn heaviest through the Moon lightest), not a reading of momentary speed: they are fixed, and a planet slowing toward its station does not thereby become heavy.\n\nAPPLYING PLANET is the separate, directed fact: which one is actually closing the aspect. Normally it is the lighter, and Ch.3, 6 assumes as much ("a light, quick star GOING STRAIGHTAWAY TO a heavy star ... FEWER IN DEGREES than the heavy one"). Retrogradation reverses it, and both authors say so rather than leaving it to be inferred -- Abu Ma\'shar VII.5, 24 ("the connection of one of them with the other ... will be BY RETROGRADATION"), VII.5, 120 ("the light one IN MORE DEGREES goes retrograde and connects with the heavy one"), and the note on VII.5, 130 (Saturn "could never be received because he is too slow to connect with anyone, UNLESS BY RETROGRADATION"). The cause is named in this column whenever the heavier planet is the one applying, which happens for about 4% of configured pairs. Reception, transfer, collection, returning, revoking, emptiness of course and enclosure all read this column, not the light/heavy one.')
+                          notes='MOTION and EXACT ORB DIST are the degree-to-degree approach. BODIES is whether each planet falls inside the other\'s sphere of power, which is asymmetric because the spheres differ in size: Abu Ma\'shar VII.4, 7 notes that Saturn sits inside the Moon\'s body from 12 degrees while she only enters his at a little under 9. CONNECTED is the active author\'s verdict -- switch the Connection rule at the top of this page to see where they disagree; RULES DIFFER marks the pairs where the two tests disagree.\n\nSTRENGTH is two different measures. For an assembly it is the source\'s own: whose body reaches whose (VII.4, 5-8) and whether they share a bound. For an aspect it is marked "(app scale)", because VII.5, 4 grades looking as a continuum with no cutoffs anywhere -- "the strongest thing there is in its looking is the degree related most closely by number to the degree of its own sign, and if the aspect was far from these degrees, its aspect will be weaker." The thirds are this app\'s own scanning aid; the measurement itself is the Exact Orb Dist column.\n\nLIGHT and HEAVY are the standing classes both authors name as nouns (Saturn heaviest through the Moon lightest), not a reading of momentary speed: they are fixed, and a planet slowing toward its station does not thereby become heavy.\n\nAPPLYING PLANET is the separate, directed fact: which one is actually closing the aspect. Normally it is the lighter, and Ch.3, 6 assumes as much ("a light, quick star GOING STRAIGHTAWAY TO a heavy star ... FEWER IN DEGREES than the heavy one"). Retrogradation reverses it, and both authors say so rather than leaving it to be inferred -- Abu Ma\'shar VII.5, 24 ("the connection of one of them with the other ... will be BY RETROGRADATION"), VII.5, 120 ("the light one IN MORE DEGREES goes retrograde and connects with the heavy one"), and the note on VII.5, 130 (Saturn "could never be received because he is too slow to connect with anyone, UNLESS BY RETROGRADATION"). The cause is named in this column whenever the heavier planet is the one applying, which happens for about 4% of configured pairs. Reception, transfer, collection, returning, revoking, emptiness of course and enclosure all read this column, not the light/heavy one.')
                 with st.container(border=True):
                     st.markdown("**Connection group** — Ch.3, 24-30 and 119-123")
                     _finding(_gap, 'Transfer of Light', "Sahl, The Introduction Ch.3, 24-27; Type II is Abu Ma'shar, Great Introduction VII.5, 84-85", transfers,
@@ -6475,10 +6545,11 @@ if location_query and lat is not None and lon is not None:
                     _finding(_gap, 'Handing Over', 'Sahl, The Introduction Ch.3, 70-76', handing_over_data,
                               glance='Three grades of one phenomenon, per connected pair: Management is the baseline (any connection at all); Power is added when the giving planet is itself in its own house, exaltation, or triplicity; Nature is added when the planet it connects with is the ruler')
                     _finding(_gap, f"Reception — {CONNECTION_PROFILE} rule", None, reception_data,
-                              glance='Who receives whom, on what dignity, which way round, and how strongly. The two authors differ on every one of those, so the active Connection rule in the sidebar governs here too.',
+                              glance='Who receives whom, on what dignity, which way round, and how strongly. The two authors differ on every one of those, so the Connection rule at the top of this page governs here too.',
                               notes='SAHL (Ch.3, 49-55) runs one way only -- the connecting planet stands in a dignity of the planet it connects with, and so is received by it (52: the Moon in Aries connecting with Mars, "he receives her because Aries is his house"). House or exaltation is perfect reception; triplicity alone is expressly ranked below it (50); bound counts only paired with triplicity, which Sahl credits to Masha\'allah (54-55). Face never appears, and a connection is always required.\n\nABU MA\'SHAR (VII.5, 129-133) is wider on every axis: all five dignities count (129), reception also runs in REVERSE where the accepting planet sits in the connector\'s dignity (130, which exists because Saturn is otherwise too slow to ever be received), house/exaltation is strongest (131), a lone minor dignity is weak unless two of bound/triplicity/face combine into a complete reception (132), and reception can hold by looking with no connection at all (133).\n\nSahl has two further forms, both under his profile only. 56, RECEPTION AT ONE REMOVE: "if the Moon was connecting with a planet and that planet was connecting with the lord of the house of the Moon or its exaltation, then the Moon is received" -- the note there calls it "like a transfer of light which indirectly allows for reception." Both legs are read in Sahl\'s directed sense of connecting (6: "going straightaway to ... going towards"), since separating is his separate term at 22.\n\n57, AFTER THE SIGN CHANGE: "if the Moon was empty in course, and then she passed over into the next sign and connected with the lord of her first sign, it is JUST LIKE RECEPTION; and if she connected with a planet OTHER than [that], IT UNDERMINES HER." Both halves appear -- the undermining is a finding, not a blank.\n\nAn empty table is NOT non-reception -- that is a separate set of hostile configurations, in the table below.')
                     _finding(_gap, 'Non-reception', 'Sahl, The Introduction Ch.3, 58-62', non_reception_data,
-                              glance="Five named ways a connection is refused rather than received -- a distinct finding from simply lacking reception: (I) the connected-to planet holds no dignity claim at all in the connecting planet's sign; (II) the connecting planet is in the other's sign of")
+                              glance="Five named ways a connection is refused rather than received (Sahl, The Introduction Ch.3, 58-62), a distinct finding from simply lacking reception; the Kind column numbers them and the notes spell each one out.",
+                              notes="Sahl's A -> B model: A is the connecting (applying) planet, B the planet it connects with.\n\nKind I (58): B holds no essential dignity at all at A's position -- B is alien in A's sign, so A is not recognised.\n\nKind II (59-60): A stands in B's own sign of fall, \"like one who comes to it from the house of its enemies.\"\n\nKind III (61): A is in its OWN fall and B has no house or exaltation there to rescue it -- \"as though the one asking is offering defeat.\"\n\nKind IV (62): B is in its own fall, which brings the connection down whatever A's condition.\n\nKind V (62): B sits in A's own sign of fall.")
                     _finding(_gap, 'Returning', 'Sahl, The Introduction Ch.3, 65-69', returning_data,
                               glance='Manner I: a planet connects with a retrograde planet or one under the rays -- it "returns to it what it accepted," corrupting the question.',
                               notes='Manner II: an angular (faster) planet hands over to a cadent (slower) one -- the matter has a beginning but no end.')
@@ -6492,19 +6563,19 @@ if location_query and lat is not None and lon is not None:
                 # the source kept per row.
                 prevented = []
                 for r in blocking_data:
+                    # Sahl Ch.3, 35-48; VII.5, 90-94 -- cited in the caption.
                     prevented.append({'Kind': r['Type'], 'Planet': r['Blocked'],
                                        'Prevented From': r['From Reaching'],
-                                       'By': r['Blocked By'], 'Because': '',
-                                       'Source': 'Sahl Ch.3, 35-48; VII.5, 90-94'})
+                                       'By': r['Blocked By'], 'Because': ''})
                 for r in cutting_data:
                     prevented.append({'Kind': 'Cutting ' + r['Type'], 'Planet': r['Planet'],
                                        'Prevented From': r.get('Other Contact', ''),
                                        'By': r.get('Yields To', ''),
-                                       'Because': r.get('Because', ''),
                                        # Types I and II are Abu Ma'shar's own (VII.5, 121-124);
-                                       # only Type III and the nullification are in Sahl.
-                                       'Source': ("Abu Ma'shar VII.5, 121-124 (not in Sahl)" if r['Type'] in ('I', 'II')
-                                                  else "Sahl Ch.3, 31-34 and 44-48; VII.5, 120, 125")})
+                                       # only Type III and the nullification are in Sahl
+                                       # (Ch.3, 31-34 and 44-48; VII.5, 120, 125). Both are
+                                       # cited in the table's caption.
+                                       'Because': r.get('Because', '')})
                 # The Handy Tables' own "Prevented connections" also lists
                 # revoking, resistance and escape -- but those are Abu
                 # Ma'shar's (VII.5, 117-119), and pulling them in here would
@@ -6523,12 +6594,14 @@ if location_query and lat is not None and lon is not None:
                     _absent(_gap)
                 with st.container(border=True):
                     st.markdown("**Strength and weakness** — Ch.3, 77-112")
-                    _finding(_gap, 'Strength of the Planets', 'Sahl, The Introduction Ch.3, 78-88', strength_data,
-                              glance="The eleven testimonies of a planet's strength at the time of judgment -- excellent place, own dignity, direct, out of the whole-sign angles of an infortune, not tied to a fallen or falling planet, advancing, an eastern masculine planet, in its own glow, a",
-                              notes='Testimonies 78 and 83 look similar but are different measurements. 78 is whole-sign, narrowed to the six places that LOOK at the Ascendant. 83, advancing, is DYNAMIC -- read against the Alchabitius quadrant cusps, since the note on 83 says the word means "dynamically angular or succeedent, i.e. by primary motion with respect to the angular axes, and not by whole sign." A planet leaving an angle is withdrawing even while its whole sign is still angular, so the two disagree for about a third of placements.\n\n83 also carries Sahl\'s FIVE-DEGREE RULE: "the planet will not be falling from the stake unless it was 5 degrees distant from its rear -- I mean, if the stake was 10 degrees of Aries, then every planet which has less than 5 degrees between it and the stake is truly counted as being in the stake" (Fifty Aphorisms #44, 88), which he states again in On Nativities Ch.1.22, 9. A planet a few degrees short of an angle is therefore angular, not cadent; the row says so when that is why it qualifies. It moves about 5% of placements, all of them cadent-to-angular. Sahl states the rule twice for the stakes and once for every house (On Nativities 1.18, 19: "and likewise in all of the houses"); the stakes reading is the default, and the sidebar\'s "Five-degree carryover at all twelve cusps" selects the other, which flips the verdict for about 6% of placements.\n\nDistinct from the Abu Ma\'shar-based Planetary Condition table, which scores a broader, later scheme.')
-                    _finding(_gap, 'Weakness of the Planets', 'Sahl, The Introduction Ch.3, 91-100', weakness_data,
-                              glance="The ten testimonies of a planet's weakness at the time of judgment -- falling and averse to the Ascendant (i.e.",
-                              notes="the 6th or 12th), retrograde, under the rays, connecting with an infortune by assembly/square/opposition, enclosed between both infortunes, in its own fall, connecting with a falling planet or separating from a would-be receiver, alien (no house/exaltation/triplicity where it sits), with the Node and no latitude, or inverted (in detriment). Distinct from the Abu Ma'shar-based Planetary Condition table above, which scores a broader, later scheme.")
+                    _tick_grid(_gap, 'Strength of the Planets', 'Sahl, The Introduction Ch.3, 78-88', strength_data,
+                               'Strength Testimonies', STRENGTH_COLUMNS,
+                               glance="The eleven testimonies of a planet's strength at the time of judgment (Sahl, The Introduction Ch.3, 78-88), one column per testimony; the answer key under the grid spells each one out in words.",
+                               notes='Testimonies 78 and 83 look similar but are different measurements. 78 is whole-sign, narrowed to the six places that LOOK at the Ascendant. 83, advancing, is DYNAMIC -- read against the Alchabitius quadrant cusps, since the note on 83 says the word means "dynamically angular or succeedent, i.e. by primary motion with respect to the angular axes, and not by whole sign." A planet leaving an angle is withdrawing even while its whole sign is still angular, so the two disagree for about a third of placements.\n\n83 also carries Sahl\'s FIVE-DEGREE RULE: "the planet will not be falling from the stake unless it was 5 degrees distant from its rear -- I mean, if the stake was 10 degrees of Aries, then every planet which has less than 5 degrees between it and the stake is truly counted as being in the stake" (Fifty Aphorisms #44, 88), which he states again in On Nativities Ch.1.22, 9. A planet a few degrees short of an angle is therefore angular, not cadent; the row says so when that is why it qualifies. It moves about 5% of placements, all of them cadent-to-angular. Sahl states the rule twice for the stakes and once for every house (On Nativities 1.18, 19: "and likewise in all of the houses"); the stakes reading is the default, and the "Five-degree carryover at all twelve cusps" switch beside this table selects the other, which flips the verdict for about 6% of placements.\n\nDistinct from the Abu Ma\'shar-based Planetary Condition table, which scores a broader, later scheme.')
+                    _tick_grid(_gap, 'Weakness of the Planets', 'Sahl, The Introduction Ch.3, 91-100', weakness_data,
+                               'Weakness Testimonies', WEAKNESS_COLUMNS,
+                               glance="The ten testimonies of a planet's weakness at the time of judgment (Sahl, The Introduction Ch.3, 91-100), one column per testimony; the answer key under the grid spells each one out in words.",
+                               notes="The ten (91-100): falling and averse to the Ascendant (the 6th or 12th), retrograde, under the rays, connecting with an infortune by assembly, square or opposition, enclosed between both infortunes, in its own fall, connecting with a falling planet or separating from a would-be receiver, alien (no house, exaltation or triplicity where it sits), with the Node and no latitude, or inverted (in detriment). Distinct from the Abu Ma'shar-based Planetary Condition table in his view, which scores a broader, later scheme.")
                     _finding(_gap, 'Corruption of the Moon', 'Sahl, The Introduction Ch.3, 103-112', moon_corruption_data,
                               glance="Sahl's own ten defects of the Moon, item [16] of his sixteen -- a different list from Abu Ma'shar's eleven corruptions in the Planetary Condition table.",
                               notes="Sahl's ten (103-112): burned within 12 degrees of the Sun; in her own fall or connecting with a planet in its own fall; approaching the Sun's opposition within 12 degrees; assembled with, square or opposed by an infortune, or enclosed between the two; with the Head or Tail in one sign under 12 degrees; in Gemini or in the sign's last bound; falling from the stakes or connecting with a planet that is; in the burned path, the end of Libra and beginning of Scorpio; wild, empty of course; slow, or waning in light.\n\nAbu Ma'shar's eleven (VII.6, 63-74) are not a variant of this list. He has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear there. His list is scored in the Planetary Condition table, this one is not scored anywhere.")
@@ -6536,7 +6609,7 @@ if location_query and lat is not None and lon is not None:
             if show_abu:
                 with st.container(border=True):
                     st.markdown("**Abu Ma'shar, Great Introduction VII.5-6**")
-                    st.subheader('Planetary Condition', help="Each planet checked against the conditions Abu Ma'shar lists in Great Introduction VII.6, kept in his own four groups -- good fortune (1-20), strength (21-29), weakness (30-46), misfortune (47-62) -- plus, for the Moon only, HIS OWN eleven")
+                    st.subheader('Planetary Condition', help="Each planet checked against Abu Ma'shar's conditions in Great Introduction VII.6, kept in his own four groups: good fortune (1-20), strength (21-29), weakness (30-46), misfortune (47-62), plus, for the Moon only, HIS OWN eleven corruptions (63-74).")
                     st.caption("Abu Ma'shar VII.6")
                     condition_list = []
                     for p, cond in abu_mashar_condition.items():
@@ -6551,22 +6624,23 @@ if location_query and lat is not None and lon is not None:
                             # str, not int-or-'': a column mixing the two is an
                             # object column that Arrow rejects.
                             "Moon Defects": str(cond['Moon Defects']) if cond['Moon Defects'] else '',
-                            "Net": cond['Net'],
-                            "Verdict": cond['Condition'],
-                            "Standing": "app arithmetic, not VII.6",
                             "Good Fortune / Strength": ", ".join(cond['Positive Labels']) if cond['Positive Labels'] else "-",
                             "Weakness / Misfortune": ", ".join(cond['Negative Labels']) if cond['Negative Labels'] else "-",
+                            # Last, and labelled app arithmetic in the caption:
+                            # VII.6 never totals its conditions.
+                            "Net": cond['Net'],
+                            "Verdict": cond['Condition'],
                         })
                     df_condition = pd.DataFrame(condition_list).sort_values(by="Net", ascending=False)
                     st.dataframe(df_condition, hide_index=True, width='stretch')
                     st.caption(
                         ":orange[**Net and Verdict are this app's heuristic, not Abu Ma'shar's.**] He enumerates these "
                         "conditions; he nowhere adds them up, and VII.6 gives no weighting and no tie rule. They are kept "
-                        "only because the Rhetorius/PN4 delineations below have to pick one of two readings. Read the four "
+                        "only because the Rhetorius/PN4 delineations on the Dignities page have to pick one of two readings. Read the four "
                         "counts and the labels themselves in preference to the single number."
                     )
                     with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-                        st.markdown("corruptions of her (63-74) shown as their own count rather than folded in with the rest. Sahl's ten (The Introduction Ch.3, 103-112) are a different list, not a variant reading of this one, and have their own table, Corruption of the Moon, in the Sahl view: Abu Ma'shar has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear here.\n\nThe four counts and the labels are the report. NET and VERDICT are a convenience of this app and NOT Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They exist because the Rhetorius/PN4 delineations in Topical Planets in Houses have to choose between a good and a bad reading.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's eleven corruptions contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once.\n\nEnclosure here is Abu Ma'shar's own (56-62) -- by degree within 7 degrees either side counting rays as well as bodies, by sign in the 2nd and 12th, or separating from one encloser and connecting with the other -- and it can be DISSOLVED: the degree type when the Sun or a fortune casts a ray within 7 degrees of the enclosed planet (60), the sign type by any look from them (61). The standalone Enclosure table in the Connection group of the Sahl view is Sahl's separate version.\n\nThe by-sign type counts an encloser's RAYS as well as its body, which is what 58 says twice. Be aware that this makes it common: it fires on roughly 43% of placements, because a planet's rays reach eight of the twelve signs. A bodies-only variant at about 2% exists in the code (SIGN_ENCLOSURE_BODIES_ONLY) but is this project's own conjecture, not the text, so it is off.")
+                        st.markdown("The Moon's eleven corruptions (63-74) are shown as their own count rather than folded in with the rest. Sahl's ten (The Introduction Ch.3, 103-112) are a different list, not a variant reading of this one, and have their own table, Corruption of the Moon, in the Sahl view: Abu Ma'shar has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear here.\n\nThe four counts and the labels are the report. NET and VERDICT are a convenience of this app and NOT Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They exist because the Rhetorius/PN4 delineations in Topical Planets in Houses have to choose between a good and a bad reading.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's eleven corruptions contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once.\n\nEnclosure here is Abu Ma'shar's own (56-62) -- by degree within 7 degrees either side counting rays as well as bodies, by sign in the 2nd and 12th, or separating from one encloser and connecting with the other -- and it can be DISSOLVED: the degree type when the Sun or a fortune casts a ray within 7 degrees of the enclosed planet (60), the sign type by any look from them (61). The standalone Enclosure table in the Connection group of the Sahl view is Sahl's separate version.\n\nThe by-sign type counts an encloser's RAYS as well as its body, which is what 58 says twice. Be aware that this makes it common: it fires on roughly 43% of placements, because a planet's rays reach eight of the twelve signs. A bodies-only variant at about 2% exists in the code (SIGN_ENCLOSURE_BODIES_ONLY) but is this project's own conjecture, not the text, so it is off.")
                     _finding(_gap, 'Reflection of Light', "Abu Ma'shar, Great Introduction VII.5, 87-89", reflections,
                               glance="Collection or Transfer specifically between two planets that are in Aversion to each other, not just unconnected -- since Aversion pairs can't see each other at all, a third planet is the only way their natures can interact.")
                     _finding(_gap, 'Favor & Recompense', "Abu Ma'shar VII.5, 126-128", favor_recompense_data,
