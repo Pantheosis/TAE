@@ -5877,6 +5877,32 @@ st.set_page_config(
     layout="wide",
 )
 
+# --- Structure: the course's own order, with a lesson gate ----------------
+# This was grouped by KIND OF COMPUTATION -- chart, then dignity, then
+# connections -- while TNAC is taught by lesson, and sixteen of the
+# thirty-one tables are Lesson 17 material sitting in a single subtab with
+# no structure of their own. That mismatch is why the tables read as a wall
+# rather than as a sequence.
+#
+# Pages follow the syllabus. The gate hides what the course has not reached,
+# so the app grows alongside it; everything is still computed, and the gate
+# defaults to the whole syllabus. Its stops are the pages: each label names
+# the lessons a page covers, and the number is the threshold that page
+# checks. Rendered first so it sits directly under the page navigation,
+# which st.navigation always draws at the top of the sidebar.
+LESSONS = [("Lessons 3-5: chart and calculation", 5),
+           ("Lessons 9-13: dignities, sect, places", 9),
+           ("Lessons 14-17: configurations", 14),
+           ("Lesson 18: Lots", 18),
+           ("Lessons 19-20: lunation and victors", 19),
+           ("Part 2: timing", 99)]
+gate = dict(LESSONS)[st.sidebar.selectbox(
+    "Show material through", options=[l for l, _ in LESSONS], index=len(LESSONS) - 1,
+    key="lesson_gate",
+    help="A study aid, not a filter on correctness -- everything is still "
+         "computed. It only hides what the course has not covered yet. Move "
+         "it forward as you progress.")]
+
 st.sidebar.header("Calculation Parameters")
 
 if "saved_charts" not in st.session_state:
@@ -6036,66 +6062,24 @@ except ValueError:
     st.sidebar.error("Invalid Target Date syntax.")
     st.stop()
 
-st.sidebar.markdown("---")
-st.sidebar.header("Doctrine", help="Applies only to the tables that show both authors side by side.")
-CONNECTION_PROFILE = st.sidebar.radio(
-    "Connection rule",
-    list(CONNECTION_PROFILES.keys()),
-    help=(
-        "Which author's rule decides whether a pair counts as Connected. The two agree that "
-        "looking is sign-to-sign and connecting is degree-to-degree, but they part company at "
-        "the sign boundary and on what activates a connection.\n\n"
-        "**Sahl** (The Introduction Ch.3, 6-21): the applying planet's OWN light governs "
-        "(15/12/9/8/7 by planet), so the test is asymmetric. A planet at the end of a sign that "
-        "is not connecting with anything, whose light strikes into the next sign, IS connected "
-        "to the first planet there by body (20-21) -- even though the two do not see each other.\n\n"
-        "A DISSENTING READING is recorded in the code but not implemented. Sahl 13 says that with "
-        "15 degrees between THE SUN and a planet 'he has already shone his light, and he is connected "
-        "with [the planet]' -- and the Sun is the HEAVIER body there -- while 18 closes the list of "
-        "lights with 'they are connected ONE TO THE OTHER'. Against that, 19 states the test itself in "
-        "terms of the mover ('it already struck WITH ITS OWN LIGHT'), and Abu Ma'shar, using the same "
-        "orb table, needs the asymmetry: with Saturn and the Moon within 12 degrees 'Saturn is in the "
-        "power of the Moon's body while the Moon is NOT YET in the power of Saturn's' (VII.4, 7). The "
-        "asymmetric reading is kept; the reciprocal one would move about 5% of applying pairs, and only "
-        "half of those involve the Sun.\n\n"
-        "**Abu Ma'shar** (Great Introduction VII.4-5): two flat distances instead -- assembly "
-        "within 15 degrees in one sign (VII.4, 3), aspects within 12 degrees of exact (VII.5, 27, "
-        "since aspect rays have no bodies of their own). No out-of-sign connection at all: across "
-        "a boundary the bodies merely 'mix their natures in a weak way' (VII.5, 14).\n\n"
-        "This governs only the tables that deliberately present BOTH authors -- the aspect grid, "
-        "reception, blocking, cutting. Each author's own tables are computed under "
-        "that author's rule whatever this is set to; the Configurations page has its own "
-        "control for which author you want to SEE."
-    ),
-)
+# --- Configurable readings: read here, set on the pages ------------------
+# The Connection rule and the five readings the sources leave open are set
+# by controls on the page and table each one affects (Configurations, Chart,
+# Dignities, Lots), and remembered across navigation in a store key that
+# _persist() keeps up to date. They are READ here, at the top level, because
+# the engine functions below run before any page function does and read
+# these globals at call time. The widget key is preferred when present: on
+# the rerun a change triggers, the widget already carries the new value
+# while the store still holds the old one.
+def _reading(widget_key, store_key, default):
+    return st.session_state.get(widget_key, st.session_state.get(store_key, default))
 
-# Readings the sources leave open. Each default follows the narrower or
-# original statement; the alternative is the other author's, or the same
-# author's other statement, and is named at the constant it sets.
-with st.sidebar.expander("Configurable readings", expanded=False):
-    FIVE_DEGREE_ALL_CUSPS = st.checkbox(
-        "Five-degree carryover at all twelve cusps", value=False,
-        help="Sahl states the rule for the stakes twice (Aphorism #44, 88; On Nativities 1.22, 9) "
-             "and once for every house (On Nativities 1.18, 19: 'and likewise in all of the houses'). "
-             "Off = stakes only. Flips the Sahl 83 verdict for about 6% of placements.")
-    EASTERN_RULE = st.radio(
-        "VII.6, 27/45 'eastern/western relative to the Sun'", list(EASTERN_RULE_OPTIONS),
-        help="'hemisphere': the whole half, excluding the rays (VII.2, 2; VII.6, 34). 'VII.2 band': only "
-             "the easternizing band 15/18 to 90 degrees (VII.2, 14-21) and the westernizing band 90 down to "
-             "15 degrees (VII.2, 29-31). Superiors: 52% vs 25% of placements.")
-    MOON_RAYS_ORB = 15.0 if st.checkbox(
-        "Moon under the rays to 15 degrees (Sahl, On Nativities 1.19, 6)", value=False,
-        help="Abu Ma'shar VII.2, 61 and 72-73 give 12; Sahl gives 15 for the Moon's fitness as releaser.") else 12.0
-    DOMAIN_RULE = st.radio(
-        "Domain (hayz)", list(DOMAIN_RULE_OPTIONS),
-        help="Abu Ma'shar VII.1, 37 / VII.6, 13: sign gender fixed to the planet's own. Masha'allah, "
-             "On Nativities 1.23, 17: a male planet by day above the earth in a male sign, by night under "
-             "the earth in a FEMALE sign; feminine planets by hemisphere only.")
-    LOT_HOUSE_CUSP = st.radio(
-        "House-based Lots measure to the", list(LOT_HOUSE_CUSP_OPTIONS),
-        help="'The second place', 'the degree of the eighth place', 'the ninth' (On Nativities 2.15, 1; "
-             "8.6, 1; 9.1, 9). Whole-sign: the Ascendant's degree carried into that sign. Quadrant: the "
-             "Alchabitius cusp.")
+CONNECTION_PROFILE = _reading("connection_rule", "_connection_rule", "Sahl")
+FIVE_DEGREE_ALL_CUSPS = _reading("five_degree_all_cusps", "_five_degree_all_cusps", False)
+EASTERN_RULE = _reading("eastern_rule", "_eastern_rule", EASTERN_RULE_OPTIONS[0])
+MOON_RAYS_ORB = 15.0 if _reading("moon_rays_15", "_moon_rays_15", False) else 12.0
+DOMAIN_RULE = _reading("domain_rule", "_domain_rule", DOMAIN_RULE_OPTIONS[0])
+LOT_HOUSE_CUSP = _reading("lot_house_cusp", "_lot_house_cusp", LOT_HOUSE_CUSP_OPTIONS[0])
 
 
 if location_query and lat is not None and lon is not None:
@@ -6205,31 +6189,6 @@ if location_query and lat is not None and lon is not None:
 
         st.title("Traditional Astrology Engine")
 
-        # --- Structure: the course's own order, with a lesson gate --------
-        # This was grouped by KIND OF COMPUTATION -- chart, then dignity,
-        # then connections -- while TNAC is taught by lesson, and sixteen of
-        # the thirty-one tables are Lesson 17 material sitting in a single
-        # subtab with no structure of their own. That mismatch is why the
-        # tables read as a wall rather than as a sequence.
-        #
-        # Pages follow the syllabus. The gate hides what the course has not
-        # reached, so the app grows alongside it; everything is still
-        # computed, and the gate defaults to the whole syllabus.
-        LESSONS = [("Lesson 5 - chart and astronomy", 5),
-                   ("Lesson 9 - dignities", 9),
-                   ("Lesson 12 - places", 12),
-                   ("Lesson 16 - configurations", 16),
-                   ("Lesson 17 - Sahl's sixteen", 17),
-                   ("Lesson 18 - Lots", 18),
-                   ("Lesson 20 - victors", 20),
-                   ("Part 2 - prediction", 99)]
-        st.sidebar.markdown("---")
-        gate = dict(LESSONS)[st.sidebar.select_slider(
-            "Show material through", options=[l for l, _ in LESSONS], value=LESSONS[-1][0],
-            help="A study aid, not a filter on correctness -- everything is still "
-                 "computed. It only hides what the course has not covered yet. Move "
-                 "it forward as you progress.")]
-
         # --- one finding, at three depths ---------------------------------
         # Provenance used to live in help= because that was the nearest
         # container, and 31 tooltips grew to 22,771 characters of citations,
@@ -6261,6 +6220,30 @@ if location_query and lat is not None and lon is not None:
             if bucket:
                 st.caption("Not present in this chart: " + ", ".join(bucket) + ".")
                 del bucket[:]
+
+        # Streamlit drops a widget's state when the widget is not rendered
+        # on a run, which is why a page-level control resets after
+        # navigating away even with a key. _persist() copies the widget's
+        # value into a store key that survives navigation; the widget takes
+        # st.session_state.get(store_key, default) as its default, so the
+        # page and the engine (which read the same store at the top level)
+        # agree on the first render.
+        def _persist(widget_key, store_key, default):
+            """Render-independent memory for a page widget. Call AFTER the widget."""
+            if widget_key in st.session_state:
+                st.session_state[store_key] = st.session_state[widget_key]
+            return st.session_state.get(store_key, default)
+
+        def _reading_checkbox(label, widget_key, store_key, help=None):
+            st.checkbox(label, value=st.session_state.get(store_key, False), key=widget_key, help=help)
+            return _persist(widget_key, store_key, False)
+
+        def _reading_radio(label, options, widget_key, store_key, help=None):
+            options = list(options)
+            stored = st.session_state.get(store_key, options[0])
+            st.radio(label, options, index=options.index(stored) if stored in options else 0,
+                     key=widget_key, horizontal=True, help=help)
+            return _persist(widget_key, store_key, options[0])
 
         # Table heights: st.dataframe shows about ten rows and then scrolls
         # inside itself. A table meant to be read whole gets its own height.
@@ -6657,11 +6640,11 @@ if location_query and lat is not None and lon is not None:
         pages = [st.Page(page_chart, url_path="chart", title="Chart", icon=":material/explore:", default=True)]
         if gate >= 9:
             pages.append(st.Page(page_dignities, url_path="dignities", title="Dignities and places", icon=":material/shield:"))
-        if gate >= 16:
+        if gate >= 14:
             pages.append(st.Page(page_configurations, url_path="configurations", title="Configurations", icon=":material/hub:"))
         if gate >= 18:
             pages.append(st.Page(page_lots, url_path="lots", title="Lots", icon=":material/functions:"))
-        if gate >= 20:
+        if gate >= 19:
             pages.append(st.Page(page_victors, url_path="victors", title="Lunation and victors", icon=":material/trophy:"))
         if gate >= 99:
             pages.append(st.Page(page_timing, url_path="timing", title="Timing", icon=":material/schedule:"))
