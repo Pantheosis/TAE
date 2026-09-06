@@ -3409,12 +3409,19 @@ def calculate_classical_lots(asc, sun, moon, sect):
         'Lot of Exaltation': exaltation,
         'Lot of Basis': basis,
     }
+    # Standing is read from LOT_DEFINITIONS, the one place each Lot's
+    # provenance is stated, so this table cannot disagree with the Topical
+    # Lots table below it (it did: Spirit's formula is the course tables',
+    # not Sahl's, and this string still said "attested in Sahl").
+    standing_by_id = {d['id']: d['confidence'] for d in LOT_DEFINITIONS}
+    classical_ids = {'Lot of Fortune': 'fortune', 'Lot of Spirit': 'spirit',
+                     'Lot of Exaltation': 'exaltation'}
     result = []
     for name, lon_val in lots.items():
         result.append({
             'Lot Name': name,
             'Standing': ('EXTERNAL -- unattested in this corpus' if 'Basis' in name
-                          else 'attested in Sahl'),
+                          else standing_by_id[classical_ids[name]]),
             'Position': get_degree_string(lon_val),
             'WS place': get_wsh_house(lon_val, asc),
             'Sign Dispositor': SIGN_TO_DOMICILE.get(get_zodiac_sign(lon_val), '-'),
@@ -6377,7 +6384,7 @@ if location_query and lat is not None and lon is not None:
             _gap = []
             view = st.segmented_control(
                 "Show", ["Sahl (course text)", "Abu Ma'shar (supplement)", "Both"],
-                default="Sahl (course text)",
+                default="Sahl (course text)", key="configurations_view",   # survives navigation
                 help="Each author's tables are computed under that author's OWN rule "
                      "whatever this is set to -- it selects what is shown, not how it "
                      "is judged. The sidebar Connection rule still governs the few "
@@ -6505,7 +6512,7 @@ if location_query and lat is not None and lon is not None:
             st.subheader('Classical Lots', help='Arabic Parts: sect-dependent formulas combining two planets or points with the Ascendant to derive a new sensitive degree tied to a specific topic (e.g. Fortune = body/livelihood, Spirit = mind/action).')
             st.dataframe(pd.DataFrame(classical_lots), hide_index=True, width='stretch')
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-                st.markdown('Fortune, Spirit and Exaltation are attested in Sahl and carry their provenance in the Topical Lots table below. BASIS IS NOT: no Lot of Basis appears anywhere in the material this project has, and the construction used takes the unsigned shorter arc between Fortune and Spirit, discarding the direction the pair actually stands in. It is kept because it has always been here, and marked rather than presented as settled.')
+                st.markdown('Fortune and Exaltation are attested in Sahl; Spirit is named by Sahl (the Lot of the Invisible) but its Moon-to-Sun formula comes from the course tables, as its Standing says. All three carry their provenance in the Topical Lots table below. BASIS IS NOT: no Lot of Basis appears anywhere in the material this project has, and the construction used takes the unsigned shorter arc between Fortune and Spirit, discarding the direction the pair actually stands in. It is kept because it has always been here, and marked rather than presented as settled.')
             st.subheader('Topical Lots (Sahl, On Nativities)', help="Sahl's topical Lots, each with its own provenance. He gives several of them MORE THAN ONCE, with formulas that genuinely conflict, and Dykes' apparatus does not silently reconcile them -- so neither does this table.")
             st.dataframe(pd.DataFrame(topical_lots), hide_index=True, width='stretch')
 
