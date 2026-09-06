@@ -3841,14 +3841,17 @@ NOT_IMPLEMENTED_COVERAGE = [
      "with pp. 452-453. Latitude is available in the chart data but unused for "
      "connection."),
     ("Abu Ma'shar VII.5, 53-77", "Natural connections by equal ascensions, equal "
-     "daylight, and sign affinity. Needs the sign categories of VI.5-VI.6, which are "
-     "not in this corpus."),
+     "daylight, and sign affinity. VII.5 itself supplies what is needed: the "
+     "equal-ascension pairs at 56, the degree rule and its motion at 62, the "
+     "equal-daylight pairs at 67-68, and the affinities at 76-77. Computable from "
+     "this corpus; not yet built."),
     ("Abu Ma'shar VII.5, 97-100", "Handing over TWO NATURES. The Sahl handing-over "
      "table is not a substitute."),
     ("Abu Ma'shar VII.5, 104-116", "The full returning tree, with its suitability and "
      "corruption grades. Only Sahl's two manners (Ch.3, 65-69) are implemented."),
     ("Abu Ma'shar VII.5, 134", "Two of the four harmonious-sign bases -- equal "
-     "ascensions and equal length of day -- for the same VI.5-VI.6 reason."),
+     "ascensions and equal length of day. The sign pairs are given in VII.5, 56 and "
+     "67-68 (this corpus); waiting on the 53-77 relation above."),
     ("Abu Ma'shar VII.6, 13 and 36", "The masculine and feminine DEGREES, alongside "
      "the signs. No table for them in this corpus."),
     ("Abu Ma'shar VII.6, 52", "Each planet's OWN nodes (\"their own Dragons\"). Only "

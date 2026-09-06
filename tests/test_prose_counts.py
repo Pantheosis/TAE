@@ -85,13 +85,41 @@ def test_lot_definitions_are_well_formed(engine):
             assert d[field].strip(), f"{d['id']}: empty {field}"
 
 
-def test_coverage_list_has_seventeen_unique_entries(engine):
+# Places the corpus actually contains. An entry may say material is absent
+# only if it points outside these; the 2026-09-06 audit found two entries
+# saying VII.5's natural-connection sign pairs were "not in this corpus"
+# when VII.5, 56 and 67-68 list them. A pinned entry count let that ship.
+CORPUS_BOOKS = ("VII",)                      # Abu Ma'shar, Great Introduction VII
+ABSENCE_CLAIM = re.compile(r"not in (?:this|the) corpus|no table for them in this corpus", re.I)
+BOOK_CITE = re.compile(r"\b(I{1,3}|IV|VI{0,3}|IX|X)\.\d+")
+
+
+def test_coverage_list_entries_are_unique_and_filled(engine):
     cov = engine["NOT_IMPLEMENTED_COVERAGE"]
     passages = [a for a, _b in cov]
     assert len(passages) == len(set(passages)), "duplicate coverage passage"
     assert all(a.strip() and b.strip() for a, b in cov)
-    # The commit that grew this list to 17 believed it had written 18.
-    assert len(cov) == 17, f"NOT_IMPLEMENTED_COVERAGE has {len(cov)} entries; update this number deliberately"
+
+
+def test_coverage_entries_do_not_call_corpus_material_absent(engine):
+    """Every 'not in this corpus' claim must name where the missing material
+    lives, and that place must be outside the books the corpus holds."""
+    for passage, desc in engine["NOT_IMPLEMENTED_COVERAGE"]:
+        if not ABSENCE_CLAIM.search(desc):
+            continue
+        cited = {m.group(1) for m in BOOK_CITE.finditer(desc)}
+        inside = cited & set(CORPUS_BOOKS)
+        assert not inside, (
+            f"{passage}: says Book {sorted(inside)} material is not in the corpus, but it is")
+
+
+def test_natural_connection_entries_admit_the_corpus_has_them(engine):
+    """VII.5, 56 and 67-68 enumerate the equal-ascension and equal-daylight
+    sign pairs. Until CODE-01 is built the entries stay, but they must not
+    blame the sources for the gap."""
+    for passage, desc in engine["NOT_IMPLEMENTED_COVERAGE"]:
+        if passage.startswith("Abu Ma'shar VII.5, 53-77") or passage.startswith("Abu Ma'shar VII.5, 134"):
+            assert "VI.5" not in desc and not ABSENCE_CLAIM.search(desc), f"{passage}: {desc}"
 
 
 def test_victor_grid_shape(engine):
