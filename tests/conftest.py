@@ -9,9 +9,9 @@ The app is one 6,500-line file: engine first, Streamlit UI from the marker
   headless: no browser, no port. One call renders ONE page (Streamlit runs
   the script once per page), so tests parametrise over pages.
 
-Everything here uses the absolute path of the real app. There is a stale
-``app.py`` one directory above ``Executable/`` that a relative path or a cwd
-reset would silently pick up instead.
+The app is located relative to this file, so the suite runs from any
+checkout or CI runner. (It used to hard-code the developer's absolute path
+to dodge a stale ``app.py`` one directory up; that file is gone.)
 """
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ from pathlib import Path
 
 import pytest
 
-EXECUTABLE_DIR = Path("/home/apothic/almuten_engine/Executable")
+EXECUTABLE_DIR = Path(__file__).resolve().parents[1]
 APP_PATH = EXECUTABLE_DIR / "app.py"
 UI_MARKER = "# 4. STREAMLIT UI INTEGRATION"
 FIXTURE_DIR = Path(__file__).parent / "fixtures"
