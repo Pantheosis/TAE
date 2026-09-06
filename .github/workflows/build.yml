@@ -20,11 +20,16 @@ jobs:
 
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          # 3.14 to match the venv the pins were resolved on and the
+          # test suite runs on. Building on 3.12 meant the shipped
+          # binary used an interpreter nothing had ever tested against.
+          python-version: '3.14'
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          # requirements-desktop.txt includes requirements.txt, so the
+          # binary is built against the same pins the tests run on.
+          pip install -r requirements-desktop.txt
           pip install pyinstaller pyinstaller-hooks-contrib
 
       - name: Build with PyInstaller
