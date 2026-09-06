@@ -116,13 +116,13 @@ def test_coverage_entries_do_not_call_corpus_material_absent(engine):
             f"{passage}: says Book {sorted(inside)} material is not in the corpus, but it is")
 
 
-def test_natural_connection_entries_admit_the_corpus_has_them(engine):
-    """VII.5, 56 and 67-68 enumerate the equal-ascension and equal-daylight
-    sign pairs. Until CODE-01 is built the entries stay, but they must not
-    blame the sources for the gap."""
-    for passage, desc in engine["NOT_IMPLEMENTED_COVERAGE"]:
-        if passage.startswith("Abu Ma'shar VII.5, 53-77") or passage.startswith("Abu Ma'shar VII.5, 134"):
-            assert "VI.5" not in desc and not ABSENCE_CLAIM.search(desc), f"{passage}: {desc}"
+def test_natural_connections_are_built_and_only_the_omitted_pairs_remain(engine):
+    """VII.5, 53-77 is implemented (evaluate_abu_natural_connections); the
+    coverage list may name only what the text itself leaves out."""
+    passages = [a for a, _b in engine["NOT_IMPLEMENTED_COVERAGE"]]
+    assert not any(a in ("Abu Ma'shar VII.5, 53-77", "Abu Ma'shar VII.5, 134") for a in passages)
+    omitted = [b for a, b in engine["NOT_IMPLEMENTED_COVERAGE"] if a.startswith("Abu Ma'shar VII.5, 67-77")]
+    assert len(omitted) == 1 and "Aquarius-Scorpio" in omitted[0] and "not added" in omitted[0]
 
 
 def test_victor_grid_shape(engine):

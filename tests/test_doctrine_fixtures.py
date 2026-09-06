@@ -563,3 +563,90 @@ def test_sahl_rows_keep_his_own_single_grade(sahl):
     fig = pdata(Moon=(15, MOON), Mars=(75, MARS))
     rows = _rec(sahl["evaluate_reception"](fig, "Diurnal"), "Mars", "Moon")
     assert rows[0]["Grade"] == "Perfect" and "Overall class" not in rows[0], rows
+
+
+# --- CODE-01: Abu Ma'shar's natural connections (VII.5, 53-77) -------------
+
+def _nat(engine, fig):
+    return engine["evaluate_abu_natural_connections"](fig)
+
+
+def test_5_aries_25_pisces_is_an_exact_equal_ascension_connection(engine):
+    """57: 'when a planet is in the first degree of Aries, then it is in the
+    nature of a planet which is at the last degree of Pisces' -- complements
+    within the sign, so 5 Aries meets 25 Pisces."""
+    fig = pdata(Venus=(5, VENUS), Mars=(355, 0.6))
+    rows = _nat(engine, fig)
+    assert len(rows) == 1, rows
+    r = rows[0]
+    assert r["Family"].startswith("Equal ascensions") and r["Motion"] == "Exact" and r["From exact"] == "0.0°"
+    assert r["Affinity (76-77)"] == "natural sextile (77)"       # Pisces-Aries
+    assert r["Ordinary aspect"] == "Aversion", "the signs still do not look at each other"
+
+
+def test_equal_ascension_motion_follows_both_speeds(engine):
+    """62: the counterpart degree runs backwards as its planet runs
+    forwards. Mars 24 Pisces is short of Venus's counterpart (25) and both
+    are direct: applying. At 26 he is past it: separating."""
+    applying = _nat(engine, pdata(Venus=(5, VENUS), Mars=(354, 0.6)))[0]
+    separating = _nat(engine, pdata(Venus=(5, VENUS), Mars=(356, 0.6)))[0]
+    assert applying["Motion"] == "Applying" and applying["From exact"] == "1.0°"
+    assert separating["Motion"] == "Separating"
+    # Venus retrograde, faster than Mars is direct: the sum of speeds
+    # reverses, and so does the verdict.
+    reversed_ = _nat(engine, pdata(Venus=(5, -1.0), Mars=(354, 0.6)))[0]
+    assert reversed_["Motion"] == "Separating"
+
+
+def test_12_gemini_18_cancer_is_an_exact_equal_daylight_connection(engine):
+    """68: 'the planet which is in 12° of Gemini is in the power of the
+    degree of the planet which is in 18° of Cancer'."""
+    rows = _nat(engine, pdata(Moon=(72, MOON), Saturn=(108, SAT)))
+    assert len(rows) == 1 and rows[0]["Family"].startswith("Equal daylight") and rows[0]["Motion"] == "Exact", rows
+    assert rows[0]["Affinity (76-77)"] == "natural sextile (77)"
+    assert rows[0]["Ordinary aspect"] == "Aversion"
+
+
+def test_natural_opposition_pair_keeps_its_ordinary_aversion(engine):
+    """76: Gemini with Capricorn is a 'natural connection by opposition';
+    it is not an Opposition, and the aspect grid must not grow one."""
+    fig = pdata(Venus=(70, VENUS), Mars=(290, MARS))       # 10 Gemini / 20 Capricorn
+    rows = _nat(engine, fig)
+    assert rows[0]["Affinity (76-77)"] == "natural opposition (76)" and rows[0]["Motion"] == "Exact"
+    pair = engine["_pairwise_configurations"](fig)[0]
+    assert pair["aspect_name"] == "Aversion"
+    assert all(r["Ordinary aspect"] == "Aversion" for r in rows)
+
+
+def test_control_unlisted_sign_pairs_have_no_natural_connection(engine):
+    assert _nat(engine, pdata(Venus=(5, VENUS), Mars=(35, MARS))) == []    # Aries / Taurus
+    assert _nat(engine, pdata(Venus=(5, VENUS), Mars=(15, MARS))) == []    # same sign
+    # Aquarius / Scorpio: the antiscia family has it, 67-75 does not.
+    assert _nat(engine, pdata(Venus=(305, VENUS), Mars=(235, MARS))) == []
+
+
+def test_134_acceptance_by_equal_ascensions_reaches_an_averse_pair(abu):
+    fig = pdata(Venus=(5, VENUS), Mars=(355, 0.6))
+    rows = [r for r in abu["evaluate_reception"](fig, "Diurnal") if "(134)" in r["Direction"]]
+    assert rows and "equal ascensions" in rows[0]["Via"], rows
+    assert rows[0]["Overall class"] == "Below middling (142)"
+
+
+def test_134_acceptance_by_equal_daylight(abu):
+    fig = pdata(Moon=(72, MOON), Saturn=(108, SAT))
+    rows = [r for r in abu["evaluate_reception"](fig, "Diurnal") if "(134)" in r["Direction"]]
+    assert rows and "equal daylight" in rows[0]["Via"], rows
+
+
+def test_134_same_lord_signs_accept_across_an_aversion(abu):
+    """Aries and Scorpio are both Mars's and in aversion: 134's 'two signs
+    belonging to one planet', which the aversion skip used to swallow."""
+    fig = pdata(Sun=(5, 1.0), Moon=(215, MOON))
+    rows = [r for r in abu["evaluate_reception"](fig, "Diurnal") if "(134)" in r["Direction"]]
+    assert rows and "both signs of Mars" in rows[0]["Via"], rows
+
+
+def test_natural_connections_are_not_in_sahl(sahl):
+    # Sahl's 56-57 read the Moon, so his evaluator needs her in the chart.
+    fig = pdata(Venus=(5, VENUS), Mars=(355, 0.6), Moon=(200, MOON))
+    assert not any("(134)" in r.get("Direction", "") for r in sahl["evaluate_reception"](fig, "Diurnal"))

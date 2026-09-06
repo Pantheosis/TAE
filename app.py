@@ -1706,6 +1706,122 @@ def evaluate_abu_wildness(planetary_data):
             results.append(row)
     return results
 
+# --- Natural connections (Abu Ma'shar, VII.5, 53-77) ----------------------
+# "Another type of connection and separation [even] without the planets'
+# looking at each other is said to be a 'natural connection and
+# separation'" (53), "and it is of two types" (55). Each is a family of
+# SIGN PAIRS whose degrees correspond, so that a planet in one sign "is
+# in the nature of the degree of" a planet in the other, and connects or
+# separates with it as the degrees meet or part. The corresponding degree
+# is the complement within the sign: "when a planet is in the first
+# degree of Aries, then it is in the nature of a planet which is at the
+# last degree of Pisces" (57); "the planet which is in 12° of Gemini is
+# in the nature of the degree of the planet which is in 18° of
+# Capricorn" (62).
+#
+# Both lists are exactly as Abu Ma'shar enumerates them here. The
+# equal-daylight family is the antiscia (note 162), which as a complete
+# scheme also pairs Aquarius with Scorpio -- but 67-75 does not say so,
+# and the notes on 76-77 record two further pairs he "omits". None of
+# those is added: the standing rule of this file is the text in hand over
+# what the family implies, and the coverage note names them as unbuilt.
+EQUAL_ASCENSION_PAIRS = {                                  # 56
+    frozenset({'Aries', 'Pisces'}), frozenset({'Taurus', 'Aquarius'}),
+    frozenset({'Gemini', 'Capricorn'}), frozenset({'Cancer', 'Sagittarius'}),
+    frozenset({'Leo', 'Scorpio'}), frozenset({'Virgo', 'Libra'}),
+}
+EQUAL_DAYLIGHT_PAIRS = {                                   # 67-75
+    frozenset({'Gemini', 'Cancer'}), frozenset({'Taurus', 'Leo'}),
+    frozenset({'Aries', 'Virgo'}), frozenset({'Libra', 'Pisces'}),
+    frozenset({'Sagittarius', 'Capricorn'}),
+}
+# 76-77 name four of each family's pairs as bridging an ordinary aversion:
+# "the connection of the planet which is in Gemini with the degree of the
+# planet which is in Capricorn ... is called a 'natural connection by
+# opposition'" (76); "the one in Gemini with the one in Cancer ... is
+# called the 'natural connection by sextile'" (77).
+NATURAL_OPPOSITION_PAIRS = {
+    frozenset({'Gemini', 'Capricorn'}), frozenset({'Sagittarius', 'Cancer'}),
+    frozenset({'Aries', 'Virgo'}), frozenset({'Libra', 'Pisces'}),
+}
+NATURAL_SEXTILE_PAIRS = {
+    frozenset({'Gemini', 'Cancer'}), frozenset({'Virgo', 'Libra'}),
+    frozenset({'Sagittarius', 'Capricorn'}), frozenset({'Pisces', 'Aries'}),
+}
+
+def _natural_family(sign_a, sign_b):
+    """The natural-connection family of a sign pair, or None."""
+    pair = frozenset({sign_a, sign_b})
+    if pair in EQUAL_ASCENSION_PAIRS:
+        return 'Equal ascensions (56-66)'
+    if pair in EQUAL_DAYLIGHT_PAIRS:
+        return 'Equal daylight (67-75)'
+    return None
+
+def _counterpart_degree(lon):
+    """The degree of the partner sign that corresponds to `lon`'s degree in
+    its own: the complement within the sign (57, 62). 0.0 pairs with 30.0,
+    the sign's last degree at its far edge."""
+    return 30.0 - (lon % 30.0)
+
+def evaluate_abu_natural_connections(planetary_data):
+    """Abu Ma'shar's natural connections (VII.5, 53-77) -- a relation of its
+    own, neither a Ptolemaic aspect nor a dignity. Every pair standing in
+    one of the enumerated sign pairs is reported, with how far the second
+    planet stands from the first's counterpart degree, and whether the
+    two are closing or parting.
+
+    Motion follows 62 -- "so when it passes beyond 12° of Gemini, then it
+    has separated from it and comes to be in the nature of the planet
+    which is in less than 18° of Capricorn" -- so the counterpart degree
+    moves AGAINST its planet's own motion, and the gap between the second
+    planet and it closes at the SUM of the two speeds. Two direct planets
+    are therefore applying only while the second is still short of the
+    counterpart, and separating once past it; a retrograde planet reverses
+    its own contribution.
+
+    Abu Ma'shar gives no orb here: a planet in Aries is always in the
+    nature of SOME degree of Pisces (57-59), and the connection completes
+    where the degrees coincide. The row reports the distance and the
+    student judges; nothing is suppressed by an invented window. The
+    ordinary whole-sign relation is repeated on the row precisely so that
+    an Aries/Pisces pair reads as both in natural connection and in
+    aversion: 53 says "without the planets' looking at each other", and no
+    out-of-sign aspect is created anywhere from this."""
+    rows = _pairwise_configurations(planetary_data)
+    results = []
+    for row in rows:
+        a, b = row['p1'], row['p2']
+        lon_a, lon_b = planetary_data[a]['longitude'], planetary_data[b]['longitude']
+        sign_a, sign_b = get_zodiac_sign(lon_a), get_zodiac_sign(lon_b)
+        if sign_a == sign_b:
+            continue
+        family = _natural_family(sign_a, sign_b)
+        if family is None:
+            continue
+        counterpart = SIGN_ORDER.index(sign_b) * 30.0 + _counterpart_degree(lon_a)
+        deviation = ((lon_b - counterpart + 180.0) % 360.0) - 180.0
+        rate = planetary_data[a]['speed_in_lon'] + planetary_data[b]['speed_in_lon']
+        if abs(deviation) <= 1.0 / 60.0:
+            motion = 'Exact'
+        elif deviation * rate < 0:
+            motion = 'Applying'
+        else:
+            motion = 'Separating'
+        pair = frozenset({sign_a, sign_b})
+        affinity = ('natural opposition (76)' if pair in NATURAL_OPPOSITION_PAIRS
+                    else 'natural sextile (77)' if pair in NATURAL_SEXTILE_PAIRS else '')
+        results.append({
+            'Pair': f'{a} & {b}', 'Family': family,
+            'Degrees': (f"{a} {lon_a % 30:.1f}\u00b0 {sign_a[:3]} \u2194 {_counterpart_degree(lon_a):.1f}\u00b0 {sign_b[:3]}; "
+                        f"{b} at {lon_b % 30:.1f}\u00b0 {sign_b[:3]}"),
+            'From exact': f'{abs(deviation):.1f}\u00b0', 'Motion': motion,
+            'Affinity (76-77)': affinity,
+            'Ordinary aspect': row['aspect_name'],
+            'Standing': 'direct: sign pairs and degree rule as enumerated',
+        })
+    return results
+
 def evaluate_reflections_of_light(planetary_data, ascendant_lon):
     """Reflection of light (VII.5, 87-89, Figs. 128-129): the Collection/
     Transfer patterns specifically for two planets that are themselves in
@@ -2947,9 +3063,6 @@ def evaluate_reception(planetary_data, sect, sim=None):
                     'Via': via, 'Dignity quality': quality, 'Overall class': overall,
                     'Mode': 'Natural, from all signs',
                 })
-            if asp == 'Aversion':
-                continue
-
             # 134: "if one of the two planets was in the TRINE of the other
             # (or in its SEXTILE), or in two signs of equal ascensions, or
             # in two signs whose length of the day is one [and the same],
@@ -2957,10 +3070,17 @@ def evaluate_reception(planetary_data, sect, sim=None):
             # one of the two will 'receive' its associate due to the
             # agreement of the nature of these signs with each other."
             #
-            # Two of the four are computable here. Equal ascensions and
-            # equal daylight are the sign categories of VI.5-VI.6, which
-            # this project does not have -- they are named in the coverage
-            # note rather than guessed at.
+            # All four bases are computable: the equal-ascension and
+            # equal-daylight sign pairs are enumerated in VII.5 itself (56
+            # and 67-75; EQUAL_ASCENSION_PAIRS, EQUAL_DAYLIGHT_PAIRS). This
+            # runs BEFORE the aversion skip, because 134 is acceptance
+            # without looking -- the note on it: planets "in harmonious
+            # signs" -- and most of these pairs do not look at each other:
+            # Aries/Pisces, Gemini/Cancer and the same-lord pairs Aries/
+            # Scorpio and Cancer/Leo are all in aversion (note 157 on 53:
+            # "some of the signs of equal ascensions below do look at each
+            # other", i.e. most do not). An earlier version skipped aversion
+            # first, which silently confined 134 to configured pairs.
             harmonious = []
             if asp in ('Trine', 'Sextile'):
                 harmonious.append(f'{asp.lower()}')
@@ -2971,6 +3091,11 @@ def evaluate_reception(planetary_data, sect, sim=None):
             if (sign_of[a] != sign_of[b]
                     and SIGN_TO_DOMICILE.get(sign_of[a]) == SIGN_TO_DOMICILE.get(sign_of[b])):
                 harmonious.append(f'both signs of {SIGN_TO_DOMICILE.get(sign_of[a])}')
+            sign_pair = frozenset({sign_of[a], sign_of[b]})
+            if sign_pair in EQUAL_ASCENSION_PAIRS:
+                harmonious.append('signs of equal ascensions (56)')
+            if sign_pair in EQUAL_DAYLIGHT_PAIRS:
+                harmonious.append('signs of equal daylight (67-75)')
             if harmonious:
                 results.append({
                     'Receiver': f'{a} & {b}', 'Received': 'each other',
@@ -2979,6 +3104,8 @@ def evaluate_reception(planetary_data, sect, sim=None):
                     'Dignity quality': 'Not a dignity basis: harmonious signs (134)',
                     'Overall class': 'Below middling (142)', 'Mode': 'Not a dignity reception',
                 })
+            if asp == 'Aversion':
+                continue
 
             # 135: "the fortunes receive each other due to the moderation
             # of their natures, while Mars and Saturn each receive the
@@ -3994,18 +4121,17 @@ NOT_IMPLEMENTED_COVERAGE = [
      "at equal latitude with one eclipsing the other, and two further kinds. Recovered "
      "with pp. 452-453. Latitude is available in the chart data but unused for "
      "connection."),
-    ("Abu Ma'shar VII.5, 53-77", "Natural connections by equal ascensions, equal "
-     "daylight, and sign affinity. VII.5 itself supplies what is needed: the "
-     "equal-ascension pairs at 56, the degree rule and its motion at 62, the "
-     "equal-daylight pairs at 67-68, and the affinities at 76-77. Computable from "
-     "this corpus; not yet built."),
+    ("Abu Ma'shar VII.5, 67-77, the pairs the notes say he omits", "The natural "
+     "connections are built from the sign pairs 56 and 67-75 enumerate. Three pairs "
+     "the complete schemes contain are NOT in his lists and are not added: "
+     "Aquarius-Scorpio (the antiscia family; 67-75 stops at five pairs), and the "
+     "'agreeing in manner' affinities Aries-Scorpio, Taurus-Libra (note 163) and "
+     "Aquarius-Capricorn (note 164). Adding them would be inference from the family, "
+     "not from the text in hand."),
     ("Abu Ma'shar VII.5, 97-100", "Handing over TWO NATURES. The Sahl handing-over "
      "table is not a substitute."),
     ("Abu Ma'shar VII.5, 104-116", "The full returning tree, with its suitability and "
      "corruption grades. Only Sahl's two manners (Ch.3, 65-69) are implemented."),
-    ("Abu Ma'shar VII.5, 134", "Two of the four harmonious-sign bases -- equal "
-     "ascensions and equal length of day. The sign pairs are given in VII.5, 56 and "
-     "67-68 (this corpus); waiting on the 53-77 relation above."),
     ("Abu Ma'shar VII.6, 13 and 36", "The masculine and feminine DEGREES, alongside "
      "the signs. No table for them in this corpus."),
     ("Abu Ma'shar VII.6, 52", "Each planet's OWN nodes (\"their own Dragons\"). Only "
@@ -6368,6 +6494,7 @@ if location_query and lat is not None and lon is not None:
             p_data, chart_data['houses'], sect, essential, accidental, chart_data['julian_day'], chart_data['ascendant'], sim
         )
         banishment_data = evaluate_sahl_banishment(p_data)
+        natural_connections = evaluate_abu_natural_connections(p_data)
         wildness_data = evaluate_abu_wildness(p_data)
         reflections = evaluate_reflections_of_light(p_data, chart_data['ascendant'])
         blocking_data = evaluate_blocking(p_data)
@@ -6934,6 +7061,10 @@ if location_query and lat is not None and lon is not None:
                     )
                     with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
                         st.markdown("The Moon's eleven corruptions (63-74) are shown as their own count rather than folded in with the rest. Sahl's ten (The Introduction Ch.3, 103-112) are a different list, not a variant reading of this one, and have their own table, Corruption of the Moon, in the Sahl view: Abu Ma'shar has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear here.\n\nThe four counts and the labels are the report. NET and VERDICT are a convenience of this app and NOT Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They exist because the Rhetorius/PN4 delineations in Topical Planets in Houses have to choose between a good and a bad reading.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's eleven corruptions contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once.\n\nEnclosure here is Abu Ma'shar's own (56-62) -- by degree within 7 degrees either side counting rays as well as bodies, by sign in the 2nd and 12th, or separating from one encloser and connecting with the other -- and it can be DISSOLVED: the degree type when the Sun or a fortune casts a ray within 7 degrees of the enclosed planet (60), the sign type by any look from them (61). The standalone Enclosure table in the Connection group of the Sahl view is Sahl's separate version.\n\nThe by-sign type counts an encloser's RAYS as well as its body, which is what 58 says twice. Be aware that this makes it common: it fires on roughly 43% of placements, because a planet's rays reach eight of the twelve signs. A bodies-only variant at about 2% exists in the code (SIGN_ENCLOSURE_BODIES_ONLY) but is this project's own conjecture, not the text, so it is off.")
+                    _finding(_gap, 'Natural connections', "Abu Ma'shar, Great Introduction VII.5, 53-77", natural_connections,
+                              columns=['Pair', 'Family', 'Degrees', 'From exact', 'Motion', 'Affinity (76-77)', 'Ordinary aspect', 'Standing'],
+                              glance='"Another type of connection and separation [even] without the planets\' looking at each other" (53): pairs standing in signs of equal ascensions (56) or of equal daylight (67-75), whose degrees correspond as complements within the sign -- 12 Gemini to 18 Capricorn (62). A relation of its own, not an aspect and not a dignity: the Ordinary aspect column keeps saying Aversion where that is what the signs are.',
+                              notes='EQUAL ASCENSIONS (56): "Aries and Pisces, Taurus and Aquarius, Gemini and Capricorn, Cancer and Sagittarius, Leo and Scorpio, and Virgo and Libra." EQUAL DAYLIGHT (67-75), the antiscia: Gemini-Cancer, Taurus-Leo, Aries-Virgo, Libra-Pisces, Sagittarius-Capricorn, exactly as he lists them -- Aquarius-Scorpio completes the standard scheme but is not enumerated here and is not added (see the coverage note on the Sources page).\n\nDEGREES: "when a planet is in the first degree of Aries, then it is in the nature of a planet which is at the last degree of Pisces" (57); "the planet which is in 12° of Gemini is in the nature of the degree of the planet which is in 18° of Capricorn: so when it passes beyond 12° of Gemini, then it has separated from it" (62). So the counterpart degree runs backwards as the planet runs forwards, and MOTION is read from both speeds together. He gives no orb: every planet in Aries is in the nature of some degree of Pisces, so every pair in a listed sign pair is shown with its distance from exact.\n\nAFFINITY: 76-77 single out four pairs of each family as bridging an ordinary aversion -- Gemini-Capricorn, Sagittarius-Cancer, Aries-Virgo, Libra-Pisces "is called a natural connection by opposition" (76); Gemini-Cancer, Virgo-Libra, Sagittarius-Capricorn, Pisces-Aries "the natural connection by sextile" (77). The notes there record that he omits Aries-Scorpio, Taurus-Libra and Aquarius-Capricorn; they are not added.\n\nThe same sign pairs are one of 134\'s four bases of acceptance, in the Reception table under his rule.')
                     _finding(_gap, 'Wildness', "Abu Ma'shar, Great Introduction VII.5, 79-82", wildness_data,
                               glance='A planet in whole-sign Aversion to all six other classical planets -- "in a sign such that absolutely no planet looks at it" (79) -- though it may still be "reached" via the lord of whatever bound it occupies (80-81).',
                               notes='Whole-sign and independent of degree. Sahl\'s "banished" (Ch.3, 64) is a different test, about live connections rather than signs, and has its own table in his view.')
