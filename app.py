@@ -6345,8 +6345,10 @@ if location_query and lat is not None and lon is not None:
                     "Pages follow the course's lesson order. Sahl's *Introduction* is the course "
                     "text; Abu Ma'shar's *Great Introduction* VII is the supplement."
                 )
-                hdr1, hdr2 = st.columns(2)
-                hdr3, hdr4 = st.columns(2)
+                # Two metrics per row: three across truncates "Mercury".
+                hdr1 = st.container()          # full width: the value is a long word
+                hdr2, hdr3 = st.columns(2)
+                hdr4, _ = st.columns(2)
                 # Lesson 5 asks "conjunctional or preventional?"; the full
                 # syzygy table stays on the victors page, gated at Lesson 19.
                 # The label is "Preventional (Full Moon)": the first word is
@@ -6377,7 +6379,8 @@ if location_query and lat is not None and lon is not None:
             gst_hours = swe.sidtime(chart_data['julian_day'])
             lst_hours = (gst_hours + lon / 15.0) % 24.0
             calc_rows = [
-                {"Quantity": "Local time and standard", "Value": f"{local_dt:%Y-%m-%d %H:%M:%S} {tz_name}"},
+                {"Quantity": "Local time", "Value": f"{local_dt:%Y-%m-%d %H:%M:%S}"},
+                {"Quantity": "Time standard", "Value": tz_name},
                 {"Quantity": "Universal time (line 8)", "Value": f"{dt_utc:%Y-%m-%d %H:%M:%S} UT"},
                 {"Quantity": "Julian Day", "Value": f"{chart_data['julian_day']:.4f}"},
                 {"Quantity": "Greenwich sidereal time at birth (line 11)", "Value": _hms(gst_hours)},
@@ -6389,10 +6392,10 @@ if location_query and lat is not None and lon is not None:
             ]
             st.dataframe(pd.DataFrame(calc_rows), hide_index=True, width='content')
             st.caption("Matches the Lesson 5 worksheet: lines 8, 11, 13, 14, 15 and Step 2–3 results.")
-            pos_col, moon_col = st.columns([3, 1])
+            pos_col, moon_col = st.columns([2, 1], vertical_alignment="center")
             pos_col.subheader('Planetary Positions', help="The seven classical planets' ecliptic (tropical) longitude at the moment of birth, in sign and degree.")
             with moon_col:
-                _reading_checkbox("Moon under the rays to 15 degrees", "moon_rays_15", "_moon_rays_15",
+                _reading_checkbox("Moon under the rays to 15°", "moon_rays_15", "_moon_rays_15",
                                   help="Sahl, On Nativities 1.19, 6 gives 15 degrees for the Moon; Abu Ma'shar VII.2, 61 "
                                        "and 72-73 give 12. Affects: the Solar phase column here, and on the Configurations "
                                        "page Weakness (93), Planetary Condition and Corruption of the Moon. Full text on the Sources page.")
