@@ -2772,11 +2772,28 @@ def evaluate_reception(planetary_data, sect, sim=None):
     with no connection at all, "except that reception by connection is more
     powerful" (133).
 
+    Abu Ma'shar grades on TWO AXES, and they are returned as two columns.
+    129-133 grade the LOCAL BASIS: "the strongest of them is the lord of
+    the house or exaltation" (131), a lone minor dignity "is weak unless it
+    brings together the bound and triplicity, or the bound and face, or the
+    triplicity and face: for that will be a complete reception" (132).
+    136-142 then class reception GLOBALLY as strong, middling, or below,
+    and there house and exaltation sit with the rest: "a [2] middling
+    reception is the planets' reception of each other from the house,
+    exaltation, bound, triplicity, or face" (140); "if two met [together]
+    from this, or each one of them received its associate, it is a strong
+    reception" (141); the natural acceptances of 134-135 are "[3] below
+    that" (142), and 137 and 139 are named strong forms. So a lone domicile
+    reception is the strongest local basis AND globally middling -- both
+    true, and an earlier version wrote only the first as its Grade. The
+    rows carry 'Dignity quality' (129-133) and 'Overall class' (136-142);
+    Sahl's rows keep his one 'Grade' (49-55), which is his own scale.
+
     Returns one row per reception found, naming the receiver, the planet
-    received, which way round it runs, the dignities it rests on, its grade
-    and whether it holds by connection or only by looking -- so the
-    evidence is inspectable rather than reduced to a single flag. Mutual
-    reception is reported as its own row.
+    received, which way round it runs, the dignities it rests on, its
+    class(es) and whether it holds by connection or only by looking -- so
+    the evidence is inspectable rather than reduced to a single flag.
+    Mutual reception is reported as its own row.
 
     Absence of a row here is NOT Sahl's non-reception: that is a set of
     specific hostile configurations (58-62), computed separately in
@@ -2799,18 +2816,34 @@ def evaluate_reception(planetary_data, sect, sim=None):
         return found
 
     def grade(found):
+        """Sahl's single scale (49-55)."""
         if 'house' in found or 'exaltation' in found:
-            return 'Perfect' if sahl else 'Strongest (131)'
-        if sahl:
-            # 50 ranks triplicity below perfect; bound only counts paired
-            # with triplicity, on Masha'allah's authority (54-55).
-            if 'triplicity' in found and 'bound' in found:
-                return "Complete, triplicity with bound (54-55, Masha'allah)"
-            if 'triplicity' in found:
-                return 'Lesser, triplicity alone (50)'
-            return None                                   # bound alone is not reception for Sahl
+            return 'Perfect'
+        # 50 ranks triplicity below perfect; bound only counts paired
+        # with triplicity, on Masha'allah's authority (54-55).
+        if 'triplicity' in found and 'bound' in found:
+            return "Complete, triplicity with bound (54-55, Masha'allah)"
+        if 'triplicity' in found:
+            return 'Lesser, triplicity alone (50)'
+        return None                                       # bound alone is not reception for Sahl
+
+    def abu_axes(found):
+        """Abu Ma'shar's two classifications of a dignity reception, as
+        (dignity_quality per 129-133, overall_class per 136-142)."""
+        majors = [d for d in found if d in ('house', 'exaltation')]
         minors = [d for d in found if d in ('bound', 'triplicity', 'face')]
-        return 'Complete (132)' if len(minors) >= 2 else 'Weak, one minor dignity alone (132)'
+        if majors:
+            quality = f"Strongest basis, {' and '.join(majors)} (131)"
+        elif len(minors) >= 2:
+            quality = f"Complete, {' with '.join(minors)} (132)"
+        else:
+            quality = f"Weak, {minors[0]} alone (132)"
+        # 140 lists all five dignities as middling; 141 promotes "two met
+        # together from this" to strong. Which dignities makes no
+        # difference to this axis -- that is what the other axis is for.
+        overall = ('Strong (141): two dignities together' if len(found) >= 2
+                   else 'Middling (140): one dignity')
+        return quality, overall
 
     for row in rows:
         if row['aspect_name'] == 'Aversion' and not _sahl_body_row(row):
@@ -2847,24 +2880,32 @@ def evaluate_reception(planetary_data, sect, sim=None):
         found_here = []
         for receiver, received, direction in directions:
             found = claims(received, receiver)
-            g = grade(found) if found else None
-            if not g:
+            if not found:
                 continue
+            row = {'Receiver': receiver, 'Received': received, 'Direction': direction,
+                   'Via': ', '.join(found)}
+            if sahl:
+                g = grade(found)
+                if not g:
+                    continue
+                row['Grade'] = g
+            else:
+                row['Dignity quality'], row['Overall class'] = abu_axes(found)
+            row['Mode'] = mode
             found_here.append(receiver)
-            results.append({
-                'Receiver': receiver, 'Received': received, 'Direction': direction,
-                'Via': ', '.join(found), 'Grade': g, 'Mode': mode,
-            })
+            results.append(row)
         if len(found_here) == 2:
-            results.append({
-                'Receiver': f'{applicant} & {accepter}', 'Received': 'each other',
-                'Direction': 'Mutual', 'Via': '–',
-                # 141: "if ... each one of them received its associate, it is
-                # a strong reception" -- Abu Ma'shar grades mutuality; Sahl
-                # does not name it.
-                'Grade': 'Mutual reception' if sahl else 'Strong -- mutual (141)',
-                'Mode': mode,
-            })
+            row = {'Receiver': f'{applicant} & {accepter}', 'Received': 'each other',
+                   'Direction': 'Mutual', 'Via': '–'}
+            if sahl:
+                row['Grade'] = 'Mutual reception'           # Sahl does not name it
+            else:
+                # 141: "if ... each one of them received its associate, it
+                # is a strong reception."
+                row['Dignity quality'] = 'Each stands in a dignity of the other'
+                row['Overall class'] = 'Strong (141): mutual'
+            row['Mode'] = mode
+            results.append(row)
 
     if not sahl:
         # --- 134-142: the recovered acceptance material ------------------
@@ -2888,18 +2929,23 @@ def evaluate_reception(planetary_data, sect, sim=None):
             # the row in 32% of charts.
             if {a, b} == {'Sun', 'Moon'}:
                 if asp == 'Opposition':
-                    grade, via = 'Detestable (137)', 'from the opposition'
+                    # 137's own word, kept rather than forced onto the
+                    # strong/middling/below ladder.
+                    overall, via = 'Detestable (137): from the opposition', 'from the opposition'
+                    quality = 'By nature, her glow is from him (137)'
                 else:
                     sun_claims = _dispositors(planetary_data['Moon']['longitude'], sect) & {'Sun'}
                     doubled = bool(sun_claims)
-                    grade = 'Strong (137)' + (', doubled by sign (138)' if doubled else '')
+                    overall = 'Strong (137)' + (', doubled by sign (138)' if doubled else '')
+                    quality = 'By nature, her glow is from him (137)' + (' and by sign (138)' if doubled else '')
                     via = 'her glow is from him' + (', and he has a claim where she stands' if doubled else '')
                     if asp == 'Aversion':
                         via += ' (signs in aversion; 137 says from all signs)'
                 results.append({
                     'Receiver': 'Sun', 'Received': 'Moon',
                     'Direction': 'Reception by nature (137-138)',
-                    'Via': via, 'Grade': grade, 'Mode': 'Natural, from all signs',
+                    'Via': via, 'Dignity quality': quality, 'Overall class': overall,
+                    'Mode': 'Natural, from all signs',
                 })
             if asp == 'Aversion':
                 continue
@@ -2930,7 +2976,8 @@ def evaluate_reception(planetary_data, sect, sim=None):
                     'Receiver': f'{a} & {b}', 'Received': 'each other',
                     'Direction': 'Acceptance by harmonious signs (134)',
                     'Via': ', '.join(harmonious),
-                    'Grade': 'Below middling (142)', 'Mode': 'Not a dignity reception',
+                    'Dignity quality': 'Not a dignity basis: harmonious signs (134)',
+                    'Overall class': 'Below middling (142)', 'Mode': 'Not a dignity reception',
                 })
 
             # 135: "the fortunes receive each other due to the moderation
@@ -2941,14 +2988,16 @@ def evaluate_reception(planetary_data, sect, sim=None):
                     'Receiver': f'{a} & {b}', 'Received': 'each other',
                     'Direction': 'Acceptance by nature, the two fortunes (135)',
                     'Via': 'moderation of their natures',
-                    'Grade': 'Below middling (142)', 'Mode': 'Not a dignity reception',
+                    'Dignity quality': 'Not a dignity basis: nature (135)',
+                    'Overall class': 'Below middling (142)', 'Mode': 'Not a dignity reception',
                 })
             if {a, b} == INFORTUNES and asp in ('Conjunction', 'Sextile', 'Trine'):
                 results.append({
                     'Receiver': f'{a} & {b}', 'Received': 'each other',
                     'Direction': 'Acceptance, the two infortunes (135)',
                     'Via': f'{asp.lower()} only -- 135 allows assembly, sextile and trine',
-                    'Grade': 'Below middling (142)', 'Mode': 'Not a dignity reception',
+                    'Dignity quality': 'Not a dignity basis: nature (135)',
+                    'Overall class': 'Below middling (142)', 'Mode': 'Not a dignity reception',
                 })
 
             # 137-138: "the majority of [strong reception] belongs to the
@@ -2970,7 +3019,8 @@ def evaluate_reception(planetary_data, sect, sim=None):
                         'Receiver': 'Mercury', 'Received': y,
                         'Direction': 'Reception in Virgo (139)',
                         'Via': 'house and exaltation together',
-                        'Grade': 'Strong (139)', 'Mode': 'By dignity',
+                        'Dignity quality': 'Strongest basis, house and exaltation (131)',
+                        'Overall class': 'Strong (139)', 'Mode': 'By dignity',
                     })
         return results
 
@@ -4964,7 +5014,7 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
                     if planet in rec['Receiver'].split(' & '):
                         positive.append(f"Mutual reception with {[x for x in rec['Receiver'].split(' & ') if x != planet][0]}")
                 elif rec['Received'] == planet:
-                    positive.append(f"Received by {rec['Receiver']} ({rec['Grade'].split(' (')[0].lower()}, via {rec['Via']})")
+                    positive.append(f"Received by {rec['Receiver']} ({rec['Overall class'].split(':')[0].lower()}, via {rec['Via']})")
                 elif rec['Receiver'] == planet:
                     positive.append(f"Receives {rec['Received']} into its own {rec['Via']}")
             if acc['Hayz']:
@@ -6780,7 +6830,7 @@ if location_query and lat is not None and lon is not None:
                               glance='Three grades of one phenomenon, per connected pair: Management is the baseline (any connection at all); Power is added when the giving planet is itself in its own house, exaltation, or triplicity; Nature is added when the planet it connects with is the ruler')
                     _finding(_gap, f"Reception — {CONNECTION_PROFILE} rule", None, reception_data,
                               glance='Who receives whom, on what dignity, which way round, and how strongly. The two authors differ on every one of those, so the Connection rule at the top of this page governs here too.',
-                              notes='SAHL (Ch.3, 49-55) runs one way only -- the connecting planet stands in a dignity of the planet it connects with, and so is received by it (52: the Moon in Aries connecting with Mars, "he receives her because Aries is his house"). House or exaltation is perfect reception; triplicity alone is expressly ranked below it (50); bound counts only paired with triplicity, which Sahl credits to Masha\'allah (54-55). Face never appears, and a connection is always required.\n\nABU MA\'SHAR (VII.5, 129-133) is wider on every axis: all five dignities count (129), reception also runs in REVERSE where the accepting planet sits in the connector\'s dignity (130, which exists because Saturn is otherwise too slow to ever be received), house/exaltation is strongest (131), a lone minor dignity is weak unless two of bound/triplicity/face combine into a complete reception (132), and reception can hold by looking with no connection at all (133).\n\nSahl has two further forms, both under his profile only. 56, RECEPTION AT ONE REMOVE: "if the Moon was connecting with a planet and that planet was connecting with the lord of the house of the Moon or its exaltation, then the Moon is received" -- the note there calls it "like a transfer of light which indirectly allows for reception." Both legs are read in Sahl\'s directed sense of connecting (6: "going straightaway to ... going towards"), since separating is his separate term at 22.\n\n57, AFTER THE SIGN CHANGE: "if the Moon was empty in course, and then she passed over into the next sign and connected with the lord of her first sign, it is JUST LIKE RECEPTION; and if she connected with a planet OTHER than [that], IT UNDERMINES HER." Both halves appear -- the undermining is a finding, not a blank.\n\nAn empty table is NOT non-reception -- that is a separate set of hostile configurations, in the table below.')
+                              notes='SAHL (Ch.3, 49-55) runs one way only -- the connecting planet stands in a dignity of the planet it connects with, and so is received by it (52: the Moon in Aries connecting with Mars, "he receives her because Aries is his house"). House or exaltation is perfect reception; triplicity alone is expressly ranked below it (50); bound counts only paired with triplicity, which Sahl credits to Masha\'allah (54-55). Face never appears, and a connection is always required.\n\nABU MA\'SHAR (VII.5, 129-133) is wider on every axis: all five dignities count (129), reception also runs in REVERSE where the accepting planet sits in the connector\'s dignity (130, which exists because Saturn is otherwise too slow to ever be received), house/exaltation is strongest (131), a lone minor dignity is weak unless two of bound/triplicity/face combine into a complete reception (132), and reception can hold by looking with no connection at all (133).\n\nHe then classes reception a SECOND way, and under his rule the table shows both. DIGNITY QUALITY is 129-133, the local basis. OVERALL CLASS is 136-142: "a [2] middling reception is the planets\' reception of each other from the house, exaltation, bound, triplicity, or face" (140) -- house and exaltation included -- while "if two met [together] from this, or each one of them received its associate, it is a strong reception" (141); the natural acceptances of 134-135 are "[3] below that" (142); the Moon received by the Sun (137) and a planet received by Mercury from Virgo (139) are his named strong forms, and the Sun receiving the Moon from the opposition keeps his own word, "detestable" (137). A lone domicile reception is therefore the strongest basis AND globally middling: both are true, and they are different questions.\n\nSahl has two further forms, both under his profile only. 56, RECEPTION AT ONE REMOVE: "if the Moon was connecting with a planet and that planet was connecting with the lord of the house of the Moon or its exaltation, then the Moon is received" -- the note there calls it "like a transfer of light which indirectly allows for reception." Both legs are read in Sahl\'s directed sense of connecting (6: "going straightaway to ... going towards"), since separating is his separate term at 22.\n\n57, AFTER THE SIGN CHANGE: "if the Moon was empty in course, and then she passed over into the next sign and connected with the lord of her first sign, it is JUST LIKE RECEPTION; and if she connected with a planet OTHER than [that], IT UNDERMINES HER." Both halves appear -- the undermining is a finding, not a blank.\n\nAn empty table is NOT non-reception -- that is a separate set of hostile configurations, in the table below.')
                     _finding(_gap, 'Non-reception', 'Sahl, The Introduction Ch.3, 58-62', non_reception_data,
                               glance="Five named ways a connection is refused rather than received (Sahl, The Introduction Ch.3, 58-62), a distinct finding from simply lacking reception; the Kind column numbers them and the notes spell each one out.",
                               notes="Sahl's A -> B model: A is the connecting (applying) planet, B the planet it connects with.\n\nKind I (58): B holds no essential dignity at all at A's position -- B is alien in A's sign, so A is not recognised.\n\nKind II (59-60): A stands in B's own sign of fall, \"like one who comes to it from the house of its enemies.\"\n\nKind III (61): A is in its OWN fall and B has no house or exaltation there to rescue it -- \"as though the one asking is offering defeat.\"\n\nKind IV (62): B is in its own fall, which brings the connection down whatever A's condition.\n\nKind V (62): B sits in A's own sign of fall.")

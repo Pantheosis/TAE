@@ -489,3 +489,77 @@ def test_both_banished_and_wild_in_full_aversion(engine):
 
 def test_the_shared_wildness_evaluator_is_gone(engine):
     assert "evaluate_wildness" not in engine
+
+
+# --- CODE-02: Abu Ma'shar's two reception axes -----------------------------
+
+@pytest.fixture
+def abu(engine):
+    with engine["doctrine"](engine["ABU_MASHAR"]):
+        yield engine
+
+
+def _rec(rows, receiver, received):
+    return [r for r in rows if r.get("Receiver") == receiver and r.get("Received") == received]
+
+
+def test_lone_domicile_reception_is_strongest_basis_and_globally_middling(abu):
+    # Moon 15 Aries (Mars's house; face Sun, bound Mercury) sextile to
+    # Mars 15 Gemini: Mars receives her by house alone.
+    fig = pdata(Moon=(15, MOON), Mars=(75, MARS))
+    rows = _rec(abu["evaluate_reception"](fig, "Diurnal"), "Mars", "Moon")
+    assert len(rows) == 1 and rows[0]["Via"] == "house", rows
+    assert rows[0]["Dignity quality"] == "Strongest basis, house (131)"
+    assert rows[0]["Overall class"].startswith("Middling (140)")
+    assert "Grade" not in rows[0]
+
+
+def test_house_with_bound_is_strong_at_141(abu):
+    # Moon 22 Aries: Mars's house AND his bound (20-25).
+    fig = pdata(Moon=(22, MOON), Mars=(82, MARS))
+    rows = _rec(abu["evaluate_reception"](fig, "Diurnal"), "Mars", "Moon")
+    assert rows[0]["Via"] == "house, bound", rows
+    assert rows[0]["Dignity quality"] == "Strongest basis, house (131)"
+    assert rows[0]["Overall class"].startswith("Strong (141)")
+
+
+def test_one_minor_dignity_is_weak_locally_and_middling_globally(abu):
+    # Moon 2 Aries trine Jupiter 2 Leo, day chart: Jupiter holds only the
+    # bound (0-6 Aries) where she stands.
+    fig = pdata(Moon=(2, MOON), Jupiter=(122, JUP))
+    rows = _rec(abu["evaluate_reception"](fig, "Diurnal"), "Jupiter", "Moon")
+    assert rows[0]["Via"] == "bound", rows
+    assert rows[0]["Dignity quality"] == "Weak, bound alone (132)"
+    assert rows[0]["Overall class"].startswith("Middling (140)")
+
+
+def test_two_minor_dignities_are_complete_locally_and_strong_globally(abu):
+    # Moon 8 Taurus sextile Mercury 8 Cancer, day chart: Mercury holds the
+    # bound (8-14) and the face (0-10) of Taurus; she holds Cancer, so the
+    # reception is also mutual.
+    fig = pdata(Moon=(38, MOON), Mercury=(98, MERC))
+    rows = abu["evaluate_reception"](fig, "Diurnal")
+    m = _rec(rows, "Mercury", "Moon")[0]
+    assert m["Via"] == "bound, face" and m["Dignity quality"] == "Complete, bound with face (132)", m
+    assert m["Overall class"].startswith("Strong (141)")
+    mutual = [r for r in rows if r["Direction"] == "Mutual"]
+    assert mutual and mutual[0]["Overall class"] == "Strong (141): mutual"
+
+
+def test_sun_moon_opposition_keeps_detestable_off_the_ladder(abu):
+    fig = pdata(Sun=(0, 1.0), Moon=(185, MOON))       # 5 Libra, applying to the opposition
+    rows = _rec(abu["evaluate_reception"](fig, "Diurnal"), "Sun", "Moon")
+    assert rows[0]["Overall class"].startswith("Detestable (137)"), rows
+
+
+def test_harmonious_acceptance_is_below_middling(abu):
+    fig = pdata(Venus=(5, VENUS), Jupiter=(125, JUP))     # trine, and the two fortunes
+    rows = abu["evaluate_reception"](fig, "Diurnal")
+    natural = [r for r in rows if r["Mode"] == "Not a dignity reception"]
+    assert natural and all(r["Overall class"] == "Below middling (142)" for r in natural), rows
+
+
+def test_sahl_rows_keep_his_own_single_grade(sahl):
+    fig = pdata(Moon=(15, MOON), Mars=(75, MARS))
+    rows = _rec(sahl["evaluate_reception"](fig, "Diurnal"), "Mars", "Moon")
+    assert rows[0]["Grade"] == "Perfect" and "Overall class" not in rows[0], rows
