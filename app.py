@@ -6319,34 +6319,45 @@ if location_query and lat is not None and lon is not None:
 
         # The wheel is a square SVG scaled to the iframe. html/body at 100%
         # with overflow hidden removes the inner scrollbar the default body
-        # margin used to cause. 500 px keeps it inside a 720 px viewport
-        # with the title and captions above it.
-        WHEEL_HEIGHT = 500
+        # margin used to cause. Measured at 1280x720: the title, page header
+        # and lesson caption end 306 px down, so 400 px is the most that is
+        # fully visible on load without scrolling. The orientation text and
+        # the header metrics sit beside it rather than above it for the
+        # same reason.
+        WHEEL_HEIGHT = 400
 
         def page_chart():
             st.header("Chart")
             st.caption("Lessons 3-5: chart identification, measurement, astronomy.")
-            st.caption(
-                "A TNAC study companion: work the homework by hand, then check it here and "
-                "see the doctrine applied to a real chart.  \n"
-                "Enter a chart in the sidebar; saved charts load from the top of it.  \n"
-                "Pages follow the course's lesson order. Sahl's *Introduction* is the course "
-                "text; Abu Ma'shar's *Great Introduction* VII is the supplement."
-            )
             _gap = []
             # Looking at the chart is the primary act, so the wheel comes first.
-            st.iframe(
-                '<html><head><style>html,body{margin:0;height:100%;overflow:hidden;'
-                f'background:#fff}}</style></head><body>{svg_code}</body></html>',
-                height=WHEEL_HEIGHT)
-            hdr1, hdr2, hdr3, hdr4 = st.columns([1.6, 1, 1, 1])
-            # Lesson 5 asks "conjunctional or preventional?"; the full syzygy
-            # table stays on the victors page, gated at Lesson 19.
-            hdr1.metric("Prenatal lunation", syzygy['event_label'])
-            hdr1.caption(f"{get_degree_string(syzygy['syzygy_longitude'])} · House {syzygy['natal_house']}")
-            hdr2.metric("Sect", sect)
-            hdr3.metric("Lord of the Day", chronocrats['Day Lord'])
-            hdr4.metric("Lord of the Hour", chronocrats['Hour Lord'])
+            wheel_col, side_col = st.columns([1, 1])
+            with wheel_col:
+                st.iframe(
+                    '<html><head><style>html,body{margin:0;height:100%;overflow:hidden;'
+                    f'background:#fff}}</style></head><body>{svg_code}</body></html>',
+                    height=WHEEL_HEIGHT)
+            with side_col:
+                st.caption(
+                    "A TNAC study companion: work the homework by hand, then check it here and "
+                    "see the doctrine applied to a real chart.  \n"
+                    "Enter a chart in the sidebar; saved charts load from the top of it.  \n"
+                    "Pages follow the course's lesson order. Sahl's *Introduction* is the course "
+                    "text; Abu Ma'shar's *Great Introduction* VII is the supplement."
+                )
+                hdr1, hdr2 = st.columns(2)
+                hdr3, hdr4 = st.columns(2)
+                # Lesson 5 asks "conjunctional or preventional?"; the full
+                # syzygy table stays on the victors page, gated at Lesson 19.
+                # The label is "Preventional (Full Moon)": the first word is
+                # the metric, the rest goes in the caption with the position
+                # and place, since the value would otherwise be cut off.
+                _event, _, _kind = syzygy['event_label'].partition(' ')
+                hdr1.metric("Prenatal lunation", _event)
+                hdr1.caption(f"{_kind} at {get_degree_string(syzygy['syzygy_longitude'])} · House {syzygy['natal_house']}")
+                hdr2.metric("Sect", sect)
+                hdr3.metric("Lord of the Day", chronocrats['Day Lord'])
+                hdr4.metric("Lord of the Hour", chronocrats['Hour Lord'])
             if chronocrats.get('Approximate'):
                 st.caption(
                     "⚠️ **The Lord of the Hour here is not a temporal hour.** No sunrise "
