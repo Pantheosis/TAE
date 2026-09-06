@@ -1666,9 +1666,19 @@ def evaluate_sahl_banishment(planetary_data):
                 closest = 'in aversion to every planet'
             else:
                 other = nearest['p2'] if nearest['p1'] == p else nearest['p1']
-                actor = nearest['applicant'] or nearest['light_name']
+                # Name the test the near-miss fails: the applicant's own
+                # light (19), half the light one's body in one sign (10),
+                # or the full degree across signs (9).
+                if nearest['motion'] == 'Applying':
+                    actor = nearest['applicant'] or nearest['light_name']
+                    why = f"outside {actor}'s light of {PLANETARY_ORBS.get(actor, 7.0):.0f}\u00b0 (19)"
+                elif nearest['signs_apart'] == 0:
+                    light = nearest['light_name']
+                    why = f"past half of {light}'s body, {PLANETARY_ORBS.get(light, 7.0):.0f}\u00b0 (10)"
+                else:
+                    why = 'past the full degree of separation across signs (9)'
                 closest = (f"{other}: {nearest['aspect_name'].lower()} by sign, {abs(nearest['deviation']):.1f}\u00b0 from exact "
-                           f"and {nearest['motion'].lower()}, outside {actor}'s light of {PLANETARY_ORBS.get(actor, 7.0):.0f}\u00b0")
+                           f"and {nearest['motion'].lower()}, {why}")
             results.append({'Planet': p, 'Closest configured planet': closest})
         return results
 

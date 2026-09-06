@@ -459,8 +459,21 @@ def test_banished_but_not_wild_when_signs_trine_without_a_connection(engine):
     fig = pdata(Moon=(0, MOON), Mars=(149, MARS))
     banished = engine["evaluate_sahl_banishment"](fig)
     assert {r["Planet"] for r in banished} == {"Moon", "Mars"}, banished
-    assert "29.0" in next(r for r in banished if r["Planet"] == "Moon")["Closest configured planet"]
+    moon = next(r for r in banished if r["Planet"] == "Moon")["Closest configured planet"]
+    assert "29.0" in moon and "Moon's light of 12" in moon and "(19)" in moon
     assert engine["evaluate_abu_wildness"](fig) == []
+
+
+def test_banished_row_names_the_separation_rule_it_fails(engine):
+    # Mars 1.1 degrees past his sextile to Saturn across signs: 9's full
+    # degree is the test, not his 8-degree light.
+    fig = pdata(Mars=(31.1, MARS), Saturn=(90, SAT))
+    row = next(r for r in engine["evaluate_sahl_banishment"](fig) if r["Planet"] == "Mars")
+    assert "separating" in row["Closest configured planet"] and "(9)" in row["Closest configured planet"], row
+    # Same sign: 10's half-body.
+    fig = pdata(Moon=(25, MOON), Saturn=(10, SAT))
+    row = next(r for r in engine["evaluate_sahl_banishment"](fig) if r["Planet"] == "Moon")
+    assert "(10)" in row["Closest configured planet"] and "Moon's body, 12" in row["Closest configured planet"], row
 
 
 def test_wild_but_not_banished_with_an_out_of_sign_body_connection(engine):
