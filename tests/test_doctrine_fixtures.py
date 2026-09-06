@@ -419,3 +419,31 @@ def test_fig14_live_connection_is_named_as_such(sahl):
     fig = pdata(Moon=(230, MOON), Mars=(52, MARS), Saturn=(59, SAT))   # 9 degrees from exact
     row = next(r for r in sahl["evaluate_blocking"](fig) if r["Type"] == "II (Nullification)")
     assert row["Standing"] == "live connection"
+
+
+# --- CODE-08: the Moon's ten defects vote once per paragraph ---------------
+
+def test_moon_defects_count_unique_testimonies_not_matches(engine):
+    """Moon 0 Scorpio (her fall, the burned path) connecting with Venus in
+    Virgo and Mercury in Pisces (both in their own falls) which are also
+    both cadent: 104 and 109 are each met by two planets. Every clause is
+    reported; the count is the number of paragraphs, not of clauses."""
+    fig = pdata(Moon=(210, MOON), Venus=(155, VENUS), Mercury=(335, MERC), Sun=(0, 1.0), North_Node=(80, 0.0))
+    rec = engine["evaluate_corruption_of_the_moon"](fig, 0.0, "Diurnal")
+    t = rec["testimonies"]
+    assert list(t) == list(range(103, 113))
+    assert len(t[104]["clauses"]) == 3 and len(t[109]["clauses"]) == 2, t
+    assert t[104]["matched"] and t[109]["matched"] and t[110]["matched"]
+    assert rec["unique_testimony_count"] == sum(x["matched"] for x in t.values())
+    assert rec["matching_instances"] == sum(len(x["clauses"]) for x in t.values())
+    assert rec["matching_instances"] > rec["unique_testimony_count"]
+    assert rec["unique_testimony_count"] <= 10
+    assert rec["labels"] == engine["_corruption_of_the_moon_labels"](fig, 0.0, "Diurnal")
+    assert sum("(104)" in l for l in rec["labels"]) == 3
+
+
+def test_moon_defects_control_clean_moon(engine):
+    # Moon 5 Taurus, waxing, fast, angular, no infortune in sight.
+    fig = pdata(Moon=(35, 14.0), Sun=(0, 1.0), Jupiter=(155, JUP), North_Node=(200, 0.0))
+    rec = engine["evaluate_corruption_of_the_moon"](fig, 30.0, "Diurnal")
+    assert rec["unique_testimony_count"] == 0 and rec["labels"] == [], rec

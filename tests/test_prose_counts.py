@@ -36,7 +36,10 @@ def test_abu_mashar_moon_corruptions_eleven():
 
 
 def test_sahl_moon_defects_ten():
-    labels = cited_paragraphs(function_source("_corruption_of_the_moon_labels"), 103, 112)
+    # Each clause is recorded as hit(<paragraph>, text); the paragraph is
+    # the testimony ID, not a suffix parsed back out of the label.
+    src = function_source("evaluate_corruption_of_the_moon")
+    labels = {int(n) for n in re.findall(r"\bhit\((\d{3}),", src)} | cited_paragraphs(src, 103, 112)
     assert labels == set(range(103, 113)), f"Sahl Moon labels cite {sorted(labels)}"
     assert prose_number(r"Sahl's (\w+) \(The Introduction Ch\.3, 103-112\)") == len(labels)
 

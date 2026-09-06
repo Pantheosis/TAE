@@ -5552,7 +5552,9 @@ def _abu_mashar_moon_corruption(planetary_data, ascendant_lon, jd=None):
 
         return labels
 
-def _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect):
+MOON_DEFECT_IDS = (103, 104, 105, 106, 107, 108, 109, 110, 111, 112)
+
+def evaluate_corruption_of_the_moon(planetary_data, ascendant_lon, sect):
     """The ten defects of the Moon (Sahl, The Introduction Ch.3, 103-112).
     Replaces an earlier version built from Abu Ma'shar's own, differently-
     numbered eleven-item list (Great Introduction VII.6, 63-74) without
@@ -5579,14 +5581,40 @@ def _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect):
     was left as-is.
 
     Shown as its own table, Corruption of the Moon, in the Sahl view of the
-    Configurations page."""
+    Configurations page.
+
+    Returns one record per numbered testimony, 103-112, so the count is
+    "how many of Sahl's ten" and never "how many clauses matched". 104
+    ("in her own fall, OR connecting with a star in its fall") and 109
+    ("falling from the stakes, OR connecting with a planet falling") can
+    each be satisfied by several planets at once, and 112 by slowness and
+    waning together; an earlier version appended one label per match and
+    counted the labels, so a list announced as ten defects could exceed
+    ten and one paragraph could vote three times. Every clause is still
+    reported, under its paragraph:
+
+        {'testimonies': {103: {'matched': False, 'clauses': []},
+                         104: {'matched': True, 'clauses': ['In her own fall, Scorpio',
+                                                             'Connecting with Venus, itself in its own fall']},
+                         ...},
+         'unique_testimony_count': 3,      # of ten -- the only number to score with
+         'matching_instances': 5,          # every clause that matched, for the record
+         'labels': ['In her own fall, Scorpio (104)', ...]}"""
     with doctrine(SAHL):
         moon = planetary_data['Moon']
         lon, speed = moon['longitude'], moon['speed_in_lon']
         sun_lon = planetary_data['Sun']['longitude']
         sign = get_zodiac_sign(lon)
         rows = _pairwise_configurations(planetary_data)
+        testimonies = {n: {'matched': False, 'clauses': []} for n in MOON_DEFECT_IDS}
         labels = []
+
+        def hit(n, clause, cite=None):
+            """Record one matching clause under testimony n. The label keeps
+            the paragraph number for the table; the count does not read it."""
+            testimonies[n]['matched'] = True
+            testimonies[n]['clauses'].append(clause)
+            labels.append(f'{clause} ({cite or n})')
 
         def connected_row(other):
             return next((r for r in rows if {r['p1'], r['p2']} == {'Moon', other}), None)
@@ -5594,12 +5622,12 @@ def _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect):
         # [1] (103) Burned, within 12 degrees of the Sun, front or behind.
         sun_dist = abs(((lon - sun_lon + 180) % 360) - 180)
         if sun_dist <= 12.0:
-            labels.append('Burned, within 12 degrees of the Sun (103)')
+            hit(103, 'Burned, within 12 degrees of the Sun')
 
         # [2] (104) In the degrees of her own fall (Scorpio), or connecting
         # with a planet in ITS own fall.
         if sign in FALLS.get('Moon', []):
-            labels.append('In her own fall, Scorpio (104)')
+            hit(104, 'In her own fall, Scorpio')
         for other in planetary_data:
             if other in ('Moon', 'North Node'):
                 continue
@@ -5607,14 +5635,14 @@ def _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect):
             if r and r['aspect_name'] != 'Aversion' and _is_connected(r):
                 other_sign = get_zodiac_sign(planetary_data[other]['longitude'])
                 if other_sign in FALLS.get(other, []):
-                    labels.append(f'Connecting with {other}, itself in its own fall (104)')
+                    hit(104, f'Connecting with {other}, itself in its own fall')
 
         # [3] (105) Opposed to the Sun, within 12 degrees, not yet having
         # reached the exact opposition (still approaching, not past it).
         opp_target = (sun_lon + 180.0) % 360.0
         signed_to_opp = ((opp_target - lon + 180) % 360) - 180
         if 0 <= signed_to_opp <= 12.0:
-            labels.append("Approaching the Sun's opposition, within 12 degrees (105)")
+            hit(105, "Approaching the Sun's opposition, within 12 degrees")
 
         # [4] (106) Assembled with an infortune, or looking at it from a
         # square or opposition (sextile/trine don't count here) -- or enclosed
@@ -5624,11 +5652,11 @@ def _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect):
                and 'Moon' in (row['p1'], row['p2'])
                and (row['p1'] in INFORTUNES or row['p2'] in INFORTUNES)
                for row in rows):
-            labels.append('Assembled with, square, or opposed by an infortune (106)')
+            hit(106, 'Assembled with, square, or opposed by an infortune')
         blocking_pairs = {(row['Blocked'], row['From Reaching']) for row in evaluate_blocking(planetary_data)}
         is_enc, severe, _sep, _con = _sahl_enclosed('Moon', INFORTUNES, rows, blocking_pairs)
         if is_enc:
-            labels.append('Enclosed between the two infortunes (106, 119-123)' + (', severe' if severe else ''))
+            hit(106, 'Enclosed between the two infortunes' + (', severe' if severe else ''), cite='106, 119-123')
 
         # [5] (107) With the Head or Tail, IN ONE SIGN, less than 12 degrees
         # between them -- same-sign co-presence (Sahl's own "connection" shape)
@@ -5638,7 +5666,7 @@ def _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect):
         south_node_lon = (north_node_lon + 180.0) % 360.0
         for node_lon in (north_node_lon, south_node_lon):
             if get_zodiac_sign(node_lon) == sign and abs(((lon - node_lon + 180) % 360) - 180) < 12.0:
-                labels.append('With the Head or Tail, in one sign and under 12 degrees (107)')
+                hit(107, 'With the Head or Tail, in one sign and under 12 degrees')
                 break
 
         # [6] (108) In the twelfth sign from her own house (Gemini, since her
@@ -5648,9 +5676,9 @@ def _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect):
         # bound elsewhere in the sign (e.g. Aries' 20-25 degree bound is
         # Mars's but isn't the sign's last one).
         if sign == 'Gemini':
-            labels.append("In Gemini, the twelfth sign from her own house (108)")
+            hit(108, "In Gemini, the twelfth sign from her own house")
         if _in_last_bound(lon):
-            labels.append("In the last degrees of the sign, the infortunes' bound (108)")
+            hit(108, "In the last degrees of the sign, the infortunes' bound")
 
         # [7] (109) "Falling from the stakes, or connecting with a planet
         # falling from the stakes" -- a plain disjunction, verbatim. (A prior
@@ -5659,36 +5687,47 @@ def _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect):
         # appears nowhere in 109; reverted.)
         moon_house = get_wsh_house(lon, ascendant_lon)
         if moon_house in CADENT_HOUSES:
-            labels.append('Falling from the stakes (109)')
+            hit(109, 'Falling from the stakes')
         for other in planetary_data:
             if other in ('Moon', 'North Node'):
                 continue
             r = connected_row(other)
             if r and r['aspect_name'] != 'Aversion' and _is_connected(r):
                 if get_wsh_house(planetary_data[other]['longitude'], ascendant_lon) in CADENT_HOUSES:
-                    labels.append(f'Connecting with {other}, itself falling from the stakes (109)')
+                    hit(109, f'Connecting with {other}, itself falling from the stakes')
 
         # [8] (110) In the burned path -- Sahl's own wording narrows this to
         # the end of Libra and the beginning of Scorpio specifically (not the
         # full two signs), matching the alternate 19-Libra-to-3-Scorpio band
         # footnoted there.
         if HARSH_BURNED_PATH[0] <= lon < HARSH_BURNED_PATH[1]:
-            labels.append('In the burned path, end of Libra/beginning of Scorpio (110)')
+            hit(110, 'In the burned path, end of Libra/beginning of Scorpio')
 
         # [9] (111) Wild -- empty of course, not connecting with any planet.
         # Sahl's own present-tense definition (not Abu Ma'shar's later,
         # prospective sharpening used elsewhere in this file).
         if not any((row['applicant'] or row['light_name']) == 'Moon' and row['motion'] == 'Applying' and _is_connected(row) for row in rows):
-            labels.append('Wild, empty of course (111)')
+            hit(111, 'Wild, empty of course')
 
         # [10] (112) Slow in course, or waning in light (past full, heading
         # back toward new).
         if 0 <= speed < AVERAGE_DAILY_MOTION['Moon']:
-            labels.append('Slow in course (112)')
+            hit(112, 'Slow in course')
         if 180.0 < ((lon - sun_lon) % 360.0) < 360.0:
-            labels.append('Waning in light (112)')
+            hit(112, 'Waning in light')
 
-        return labels
+        return {
+            'testimonies': testimonies,
+            'unique_testimony_count': sum(t['matched'] for t in testimonies.values()),
+            'matching_instances': len(labels),
+            'labels': labels,
+        }
+
+def _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect):
+    """The flat label list, one per matching clause. For display; the
+    testimony count is evaluate_corruption_of_the_moon()['unique_testimony_count']."""
+    return evaluate_corruption_of_the_moon(planetary_data, ascendant_lon, sect)['labels']
+
 
 def evaluate_house_lords(planetary_data, ascendant_lon):
     """For each Whole Sign topical house (1-12), find its domicile lord and
@@ -6246,9 +6285,17 @@ if location_query and lat is not None and lon is not None:
         non_reception_data = evaluate_non_reception(p_data, sect)
         strength_data = evaluate_strength_of_planets(p_data, essential, accidental, chart_data['ascendant'], sect, chart_data['houses'])
         weakness_data = evaluate_weakness_of_planets(p_data, essential, accidental, chart_data['ascendant'], sect)
-        _moon_defects = _corruption_of_the_moon_labels(p_data, chart_data['ascendant'], sect)
-        moon_corruption_data = ([{'Planet': 'Moon', 'Defects': ', '.join(_moon_defects), 'Count': len(_moon_defects)}]
-                                if _moon_defects else [])
+        _moon = evaluate_corruption_of_the_moon(p_data, chart_data['ascendant'], sect)
+        # Count is "how many of Sahl's ten testimonies", never the number of
+        # clauses that matched: 104 and 109 can each be met by several
+        # planets, and a list of ten must not add up to twelve.
+        moon_corruption_data = ([{'Planet': 'Moon',
+                                  'Defects': ', '.join(_moon['labels'])
+                                  + (f"  [{_moon['matching_instances']} clauses across "
+                                     f"{_moon['unique_testimony_count']} of the ten testimonies]"
+                                     if _moon['matching_instances'] > _moon['unique_testimony_count'] else ''),
+                                  'Count': _moon['unique_testimony_count']}]
+                                if _moon['labels'] else [])
         returning_data = evaluate_returning(p_data, accidental, chart_data['ascendant'])
         revoking_data = evaluate_revoking(p_data, sim)
         resistance_data = evaluate_resistance(p_data, sim)
