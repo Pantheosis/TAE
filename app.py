@@ -6761,10 +6761,19 @@ if location_query and lat is not None and lon is not None:
             st.dataframe(pd.DataFrame(syzygy_rows), hide_index=True, width='stretch')
             st.subheader('Victor of the Chart', help="Ibn Ezra's worksheet reproduced cell for cell, so it can be checked against a hand-filled sheet. The seven planets are the columns.")
             st.caption("ibn Ezra's victor #1, 1485/1537")
-            for scheme_name, res in victors_data.items():
+            # The two same-tradition pairings are the grids a student fills
+            # in; the two off-diagonal pairings are the cross-check.
+            def _victor_grid(scheme_name, res):
                 st.markdown(f"**{scheme_name}** — victor: **{res['victor']}** ({res['total']}), runner-up {res['runner_up']}"
                             + ("  \n:orange[Tied at the top — the sheet does not break ties.]" if res['tied'] else ""))
-                st.dataframe(pd.DataFrame(res['grid']), hide_index=True, width='stretch')
+                st.dataframe(pd.DataFrame(res['grid']), hide_index=True, width='stretch', height=_rows_height(len(res['grid'])))
+            for scheme_name, res in victors_data.items():
+                if 'matched preset' in scheme_name:
+                    _victor_grid(scheme_name, res)
+            with st.expander("Cross-check: the two unmatched weight/place pairings"):
+                for scheme_name, res in victors_data.items():
+                    if 'matched preset' not in scheme_name:
+                        _victor_grid(scheme_name, res)
 
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
                 st.markdown('The first five rows score each planet\'s essential-dignity claim AT THAT POINT\'S degree -- Sun, Moon, Ascendant, Lot of Fortune, and the prenatal New/Full Moon. Then Lord of the Day (+7), Lord of the Hour (+6) and Places are added ONCE each, not per point; Places is keyed the other way round, by the candidate planet\'s own Whole-Sign house. Every column is summed into Totals, and the single highest total is the chart\'s victor.\n\nTWO INDEPENDENT AXES, and all four combinations are shown. The dignity weights are Older (al-Tabari/Masha\'allah, Bound 3 > Triplicity 2) or Newer (al-Qabisi/Abu Ma\'shar, Triplicity 3 > Bound 2); the Places wheel is ibn Ezra\'s own or Masha\'allah\'s. Nothing in the source says which wheel goes with which weighting, so pairing each with the wheel of its own named tradition is a reading, not a fact -- those two are labelled "matched preset" and the two off-diagonal combinations, previously not computed at all, are shown beside them. Where all four agree the victor is robust; where they part, the disagreement is the finding. Ibn Ezra\'s later victor #2 (1507) replaces the two chronocrator rows with a Superiors row scored only for Saturn, Jupiter and Mars; its weight is not given in the course materials, so it is not implemented rather than guessed.')
