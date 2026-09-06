@@ -6305,9 +6305,13 @@ if location_query and lat is not None and lon is not None:
                     st.markdown(notes)
 
         # Table heights: st.dataframe shows about ten rows and then scrolls
-        # inside itself. A table meant to be read whole gets its own height.
+        # inside itself. A table meant to be read whole gets its own height:
+        # 35 px per row and header, 3 px of border, and 12 px for the
+        # horizontal scrollbar a wide table (the aspects grid, the tick
+        # grids) draws -- measured at 1280 px, where without it those
+        # tables were 9 px short and still scrolled.
         def _rows_height(n):
-            return 35 * (n + 1) + 3
+            return 35 * (n + 1) + 15
 
         def _hms(hours):
             total = int(round((hours % 24.0) * 3600))
@@ -6713,7 +6717,7 @@ if location_query and lat is not None and lon is not None:
                             "Verdict": cond['Condition'],
                         })
                     df_condition = pd.DataFrame(condition_list).sort_values(by="Net", ascending=False)
-                    st.dataframe(df_condition, hide_index=True, width='stretch')
+                    st.dataframe(df_condition, hide_index=True, width='stretch', height=_rows_height(len(df_condition)))
                     st.caption(
                         ":orange[**Net and Verdict are this app's heuristic, not Abu Ma'shar's.**] He enumerates these "
                         "conditions; he nowhere adds them up, and VII.6 gives no weighting and no tie rule. They are kept "
