@@ -489,6 +489,16 @@ def evaluate_essential_dignities(planetary_data, sect):
 
 # --- Accidental dignity reference tables ---------------------------------
 JOY_HOUSES = {'Mercury': 1, 'Moon': 3, 'Venus': 5, 'Mars': 6, 'Sun': 9, 'Jupiter': 11, 'Saturn': 12}
+# Which author's domain (hayz) rule is in force. "Abu Ma'shar" is VII.1,
+# 37 / VII.6, 13 (sign gender fixed to the planet's own). "Masha'allah" is
+# On Nativities 1.23, 17: "in its own glow (and that is if the planet was
+# male, by day above the earth in a male sign, and by night under the earth
+# IN A FEMALE SIGN; and if it was feminine, by night it is above the earth
+# and by day under the earth)" -- the sign's gender follows the hemisphere,
+# and no sign is required of the feminine planets. Dykes' note there calls
+# it "at odds with later accounts". Sidebar switch; Abu Ma'shar's is the
+# default because the VII.6 table this feeds is his.
+DOMAIN_RULE = "Abu Ma'shar"
 DIURNAL_SECT_PLANETS = {'Sun', 'Jupiter', 'Saturn'}
 NOCTURNAL_SECT_PLANETS = {'Moon', 'Venus', 'Mars'}
 MASCULINE_SIGNS = {'Aries', 'Gemini', 'Leo', 'Libra', 'Sagittarius', 'Aquarius'}
@@ -515,15 +525,13 @@ HOUSE_ORDINAL = {1: '1st', 2: '2nd', 3: '3rd', 4: '4th', 5: '5th', 6: '6th', 7: 
 #                    (VII.2, 11-13; On Nativities 1.22, 3 and 6)
 #   Venus, Mercury   burned to 7 deg,  under the rays to 12 deg east,
 #                    15 deg west (VII.2, 40, 48, 51-52; On Nativities
-#                    1.22, 7-8). NOTE: the burned figure is an INFERENCE.
-#                    VII.2, 37 is where it should be stated and the scan
-#                    is illegible there -- the OCR carries an editorial
-#                    marker at that point. 7 comes from 40, "when they
-#                    are distant from [the Sun] at a full 7 degrees in
-#                    longitude, then they have passed beyond burning",
-#                    and 44-45 gives 6 on the direct branch, which Dykes
-#                    flags as probably an error for 7. Treat as sound but
-#                    not as a reading.
+#                    1.22, 7-8). VII.2, 37 is now legible in the OCR and
+#                    states it outright: "called 'burned' until there comes
+#                    to be up to 7 degrees between them and the Sun"; 40
+#                    repeats it ("at a full 7 degrees in longitude, then
+#                    they have passed beyond burning"). 44 gives 6 on the
+#                    direct-eastern approach, which Dykes flags as probably
+#                    an error for 7.
 #   Moon             burned to 6 deg,  under the rays to 12 deg
 #                    (VII.2, 60-61 and 72-74)
 #
@@ -551,6 +559,12 @@ SOLAR_RAYS_ORB = {
     'Saturn': (15.0, 15.0), 'Jupiter': (15.0, 15.0), 'Mars': (18.0, 15.0),
     'Venus': (12.0, 15.0), 'Mercury': (12.0, 15.0), 'Moon': (12.0, 12.0),
 }
+# The Moon's 12 degrees is Abu Ma'shar's (VII.2, 61 and 72-73). Sahl gives
+# 15 in On Nativities 1.19, 6: "if the Moon was under the rays, she will not
+# be fit ... (and that is if there was 15 degrees between her and the Sun,
+# in front of him and behind him)" -- On Nativities 1.22 covers only the
+# five planets, so the Moon has two witnesses that disagree. Sidebar switch.
+MOON_RAYS_ORB = 12.0
 # The seven-day setting allowance (VII.2, 30-31; On Nativities 1.22, 2-4).
 # VII.2, 30 gives the two figures separately: the superiors do not cease
 # to be "westernizing" "until there are 22 degrees between Saturn and
@@ -559,6 +573,11 @@ SOLAR_RAYS_ORB = {
 # Mars carried 22 here, which is his figure from Sahl's On Nativities 1.22
 # table, not from the chapter this constant cites.
 SOLAR_SETTING_DEGREES = {'Saturn': 22.0, 'Jupiter': 22.0, 'Mars': 18.0}
+# How VII.6, 27 and 45 read "eastern/western relative to the Sun" for the
+# superiors: 'hemisphere' (the half, excluding the rays) or 'VII.2 band'
+# (the easternizing/westernizing bands VII.2, 14-21 and 29-31 name). Set
+# from the sidebar; see the comment at the test.
+EASTERN_RULE = 'hemisphere'
 # "In the heart." Abu Ma'shar fixes this at 16', reasoning from the Sun's
 # own apparent diameter of about 32' (VII.2, 7-9), and Dykes notes that
 # al-Biruni has 16' as well. Sahl instead says "with him in one degree"
@@ -584,7 +603,7 @@ def solar_phase(planet, lon, sun_lon):
     burned = SOLAR_BURNED_ORB.get(planet, (8.5, 8.5))[idx]
     if elongation <= burned:
         return 'Burned', side, elongation
-    rays = SOLAR_RAYS_ORB.get(planet, (15.0, 15.0))[idx]
+    rays = MOON_RAYS_ORB if planet == 'Moon' else SOLAR_RAYS_ORB.get(planet, (15.0, 15.0))[idx]
     if elongation <= rays:
         return 'Under the rays', side, elongation
     setting = SOLAR_SETTING_DEGREES.get(planet)
@@ -674,7 +693,19 @@ def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None):
         # required him to be in feminine signs -- a reading no text states.
         mars_is_masculine_but_nocturnal = (planet == 'Mars')
         is_hayz = contrary_domain = False
-        if planet_is_diurnal is not None:
+        if planet_is_diurnal is not None and DOMAIN_RULE == "Masha'allah":
+            # On Nativities 1.23, 17 (see DOMAIN_RULE). Gender, not sect:
+            # Mars is male, with no exception stated.
+            planet_is_male = mars_is_masculine_but_nocturnal or planet_is_diurnal
+            if planet_is_male:
+                horizon_ok = is_above_horizon if is_diurnal_chart else not is_above_horizon
+                gender_ok = (current_sign in MASCULINE_SIGNS) if is_diurnal_chart else (current_sign in FEMININE_SIGNS)
+            else:
+                horizon_ok = not is_above_horizon if is_diurnal_chart else is_above_horizon
+                gender_ok = True          # no sign condition is stated for the feminine planets
+            is_hayz = horizon_ok and gender_ok
+            contrary_domain = (not horizon_ok) and (not gender_ok)
+        elif planet_is_diurnal is not None:
             if planet_is_diurnal:
                 horizon_ok = is_above_horizon if is_diurnal_chart else not is_above_horizon
             else:
@@ -1243,6 +1274,22 @@ def _is_connected(row):
     """Whether the pair is Connected under the doctrine currently in force."""
     return CONNECTION_PROFILES[CONNECTION_PROFILE](row)
 
+def _is_separating_in_nature(row):
+    """Abu Ma'shar's window for "separating from" a planet, which is NOT
+    his connection window. VII.5, 34 ends a connection at 1' past exact, so
+    under his profile _is_connected() is False for every separating pair --
+    which left VII.6, 4 ("separating from a fortune and connecting with a
+    fortune") and the separating/connecting form of VII.6, 57 unreachable:
+    one hit in 1,680 sampled placements. His own text gives the window:
+    after separating, "one of them will be 'in the nature' of its partner
+    so long as it is in the sign in which they united" (VII.5, 17), and for
+    rays, "the one of them will remain in the light of the other so long as
+    the quick one is in that sign it is in" (VII.5, 35). A configured,
+    separating pair at the chart moment is therefore still "separating
+    from" until a sign changes, which is the same reading _sahl_enclosed()
+    already takes for Sahl's Fig. 25."""
+    return row['aspect_name'] != 'Aversion' and row['motion'] == 'Separating'
+
 @contextmanager
 def doctrine(author):
     """Pin the connection rule for the duration of one author's own table.
@@ -1798,7 +1845,13 @@ def evaluate_handing_over(planetary_data, sect):
 
             results.append({'Type': 'Management', 'Planet': fast, 'Hands Over To': slow})
 
-            if fast in fast_power_claims:
+            # 70 names "house, exaltation, or triplicity"; 75-76 then restrict
+            # the Moon: "if the Moon was in Taurus or Cancer, she hands over
+            # power and management. And in signs other than these two, she
+            # only hands over management." The narrower, later statement
+            # governs her; the other six keep 70.
+            moon_power_ok = (fast != 'Moon') or (fast in fast_own_dispositors)
+            if fast in fast_power_claims and moon_power_ok:
                 results.append({'Type': 'Power', 'Planet': fast, 'Hands Over To': slow})
 
             if slow in fast_own_dispositors:
@@ -2677,7 +2730,11 @@ def evaluate_reception(planetary_data, sect, sim=None):
         if len(found_here) == 2:
             results.append({
                 'Receiver': f'{applicant} & {accepter}', 'Received': 'each other',
-                'Direction': 'Mutual', 'Via': '–', 'Grade': 'Mutual reception',
+                'Direction': 'Mutual', 'Via': '–',
+                # 141: "if ... each one of them received its associate, it is
+                # a strong reception" -- Abu Ma'shar grades mutuality; Sahl
+                # does not name it.
+                'Grade': 'Mutual reception' if sahl else 'Strong -- mutual (141)',
                 'Mode': mode,
             })
 
@@ -2693,10 +2750,31 @@ def evaluate_reception(planetary_data, sect, sim=None):
         sign_of = {p: get_zodiac_sign(d['longitude']) for p, d in planetary_data.items()
                     if p != 'North Node'}
         for row in rows:
-            if row['aspect_name'] == 'Aversion':
-                continue
             a, b = row['p1'], row['p2']
             asp = row['aspect_name']
+
+            # 137-138 come FIRST because they hold in aversion too: "he
+            # receives her FROM ALL SIGNS, since her glow is from him". The
+            # rest of this block needs a configuration; the Sun-Moon natural
+            # reception does not, and skipping aversion rows before it lost
+            # the row in 32% of charts.
+            if {a, b} == {'Sun', 'Moon'}:
+                if asp == 'Opposition':
+                    grade, via = 'Detestable (137)', 'from the opposition'
+                else:
+                    sun_claims = _dispositors(planetary_data['Moon']['longitude'], sect) & {'Sun'}
+                    doubled = bool(sun_claims)
+                    grade = 'Strong (137)' + (', doubled by sign (138)' if doubled else '')
+                    via = 'her glow is from him' + (', and he has a claim where she stands' if doubled else '')
+                    if asp == 'Aversion':
+                        via += ' (signs in aversion; 137 says from all signs)'
+                results.append({
+                    'Receiver': 'Sun', 'Received': 'Moon',
+                    'Direction': 'Reception by nature (137-138)',
+                    'Via': via, 'Grade': grade, 'Mode': 'Natural, from all signs',
+                })
+            if asp == 'Aversion':
+                continue
 
             # 134: "if one of the two planets was in the TRINE of the other
             # (or in its SEXTILE), or in two signs of equal ascensions, or
@@ -2712,7 +2790,12 @@ def evaluate_reception(planetary_data, sect, sim=None):
             harmonious = []
             if asp in ('Trine', 'Sextile'):
                 harmonious.append(f'{asp.lower()}')
-            if SIGN_TO_DOMICILE.get(sign_of[a]) == SIGN_TO_DOMICILE.get(sign_of[b]):
+            # "TWO signs belonging to one planet" -- Aries/Scorpio, Taurus/
+            # Libra and so on. Equal lords with equal signs is an assembly,
+            # which 134 does not list; without the inequality this fired on
+            # every same-sign pair (26% of 134 rows in a sample).
+            if (sign_of[a] != sign_of[b]
+                    and SIGN_TO_DOMICILE.get(sign_of[a]) == SIGN_TO_DOMICILE.get(sign_of[b])):
                 harmonious.append(f'both signs of {SIGN_TO_DOMICILE.get(sign_of[a])}')
             if harmonious:
                 results.append({
@@ -2747,19 +2830,7 @@ def evaluate_reception(planetary_data, sect, sim=None):
             # her connection with him is from a sign in which he has a
             # claim, that is TWO RECEPTIONS: a reception by nature, and a
             # reception by sign."
-            if {a, b} == {'Sun', 'Moon'}:
-                if asp == 'Opposition':
-                    grade, via = 'Detestable (137)', 'from the opposition'
-                else:
-                    sun_claims = _dispositors(planetary_data['Moon']['longitude'], sect) & {'Sun'}
-                    doubled = bool(sun_claims)
-                    grade = 'Strong (137)' + (', doubled by sign (138)' if doubled else '')
-                    via = 'her glow is from him' + (', and he has a claim where she stands' if doubled else '')
-                results.append({
-                    'Receiver': 'Sun', 'Received': 'Moon',
-                    'Direction': 'Reception by nature (137-138)',
-                    'Via': via, 'Grade': grade, 'Mode': 'Natural, from all signs',
-                })
+            # (137-138 handled at the top of the loop, before the aversion skip.)
 
             # 139: "if Mercury received a planet from out of Virgo, that is
             # also a strong reception." The note reads "from out of" as the
@@ -2994,8 +3065,18 @@ def get_house_number(longitude, cusps):
 # #44). Two independent witnesses to the same rule.
 FIVE_DEGREE_CARRYOVER = 5.0
 ANGLE_CUSP_INDICES = (0, 3, 6, 9)  # the four stakes, in swe.houses order
+# Whether the carryover applies at all twelve cusps or at the stakes only.
+# Sahl states it twice for the stakes (Aphorism #44, 88; On Nativities
+# 1.22, 9) and once for every house -- On Nativities 1.18, 19: "if there
+# were 5 degrees between a planet and the degree of the Ascendant from
+# behind it ... its strength will be in the Ascendant, and it will be fit
+# for releasing; AND LIKEWISE IN ALL OF THE HOUSES" (Dykes: "This is
+# Ptolemy's 5-degree rule"). The stakes reading stays the default because
+# two of the three statements give it; the switch flips the advancing
+# verdict of Sahl 83 for about 6% of placements, all succedent-to-cadent.
+FIVE_DEGREE_ALL_CUSPS = False
 
-def get_effective_house(longitude, cusps, angles_only=True):
+def get_effective_house(longitude, cusps, angles_only=None):
     """Quadrant house with the five-degree carryover applied: a planet
     within 5 degrees before a cusp is counted as already in that house.
 
@@ -3009,16 +3090,19 @@ def get_effective_house(longitude, cusps, angles_only=True):
     yet have; until then this is a longitude proxy and is named as one
     wherever it is reported. It affects Sahl 83 and Abu Ma'shar 39 and 42.
 
-    Both source statements are about the stakes specifically -- neither
-    says "any cusp" -- and the transitions they describe (12th into 1st,
-    3rd into 4th, 6th into 7th, 9th into 10th) are exactly the cadent-to-
+    Two of Sahl's three statements are about the stakes (Aphorism #44, 88;
+    On Nativities 1.22, 9), and the transitions they describe (12th into
+    1st, 3rd into 4th, 6th into 7th, 9th into 10th) are the cadent-to-
     angular ones, which is why the rule is phrased as not FALLING from the
-    stake. So angles_only=True is the literal reading and the default;
-    later authors generalise it to all twelve cusps, which the parameter
-    allows without pretending Sahl said it.
+    stake. The third, On Nativities 1.18, 19, ends "and likewise in all of
+    the houses". angles_only defaults to the stakes reading via
+    FIVE_DEGREE_ALL_CUSPS; the all-cusps reading is Sahl's too, not a later
+    generalisation, and is one switch away.
 
     get_house_number() is deliberately left alone and still returns strict
     cusp membership. The two are separate facts and both are kept."""
+    if angles_only is None:
+        angles_only = not FIVE_DEGREE_ALL_CUSPS
     raw = get_house_number(longitude, cusps)
     next_idx = raw % 12                       # cusp that ENDS the raw house
     if angles_only and next_idx not in ANGLE_CUSP_INDICES:
@@ -3374,20 +3458,32 @@ def calculate_classical_lots(asc, sun, moon, sect):
 # Saturn to the Moon". Where prose and table disagree, the prose is used
 # and the disagreement is noted.
 #
-# A point may be a planet, 'Ascendant', 'cuspN' (a quadrant cusp),
-# 'lordN' (the domicile lord of the Nth whole-sign house), or another Lot
-# by id. Lots that feed other Lots are listed before them.
+# A point may be a planet, 'Ascendant', 'cuspN' (the Nth place -- see
+# LOT_HOUSE_CUSP), 'lordN' (the domicile lord of the Nth whole-sign house),
+# or another Lot by id. Lots that feed other Lots are listed before them.
+#
+# "The second place", "the degree of the eighth place", "the ninth" (2.15,
+# 1; 8.6, 1; 9.1, 9): the text is whole-sign throughout, and Dykes' note 207
+# on 4.14 glosses the assets Lot as "from the lord of the second to the
+# second". In whole signs the degree of the Nth place is the Ascendant's
+# own degree carried into the Nth sign; the quadrant cusp is the other
+# reading, and was the only one computed until now. Sidebar switch.
+LOT_HOUSE_CUSP = 'whole-sign place'
 LOT_DEFINITIONS = [
     dict(id='fortune', topic='Fortune', name='Lot of Fortune',
          start='Sun', end='Moon', project='Ascendant', reverse_at_night=True,
          source='Sahl, On Nativities Ch. 1.37, 1 (and throughout)',
-         confidence='settled', note='"The Ascendant of the Moon" (2.1, 1).'),
+         confidence='settled',
+         note='"The Ascendant of the Moon" (1.37, 1); the Sun-to-Moon formula, reversed at '
+              "night, is Dykes' note 494 on 1.37, 3 -- Sahl's own sentence 2 gives an "
+              'hour-based construction instead.'),
     dict(id='spirit', topic='Spirit', name='Lot of Spirit',
          start='Moon', end='Sun', project='Ascendant', reverse_at_night=True,
-         source='Sahl, On Nativities Ch. 11.2, 4-6',
-         confidence='settled',
-         note='Sahl calls this the Lot of the Invisible, later Spirituality; '
-              'the notes on Ch. 11.2, 73 and Ch. 12.1, 5 confirm the identity.'),
+         source='TNAC Handy Tables Lesson 18 (Moon to Sun, Asc, reversed by night); named in Sahl, On Nativities Ch. 11.2, 4-6',
+         confidence='attested by name in Sahl; formula from the course tables',
+         note='Sahl names it the Lot of the Invisible, later Spirituality (notes on Ch. 9.5, '
+              '73 and Ch. 11.1, 5 confirm the identity) but nowhere in the corpus states '
+              'the formula; the Moon-to-Sun construction is the Handy Tables\'.'),
     # The night formula is not the day formula reversed: it changes BOTH
     # ends. "By day from the degree of the Sun to the degree of HIS
     # exaltation ... and by night from the degree of the MOON to the degree
@@ -3519,12 +3615,18 @@ LOT_DEFINITIONS = [
          note="The Greek Lot of action. Dykes' Fig. 63 names it Work in Sahl and BA, "
               "\"managers, viziers, and Sultans\" in Abu Ma'shar VIII.4."),
     dict(id='work_expedition', topic='Work', name='Lot of work (expedition)',
-         start='Saturn', end='Moon', project='Ascendant', reverse_at_night=True,
+         start='Saturn', end='Moon', project='Ascendant', reverse_at_night=False,
          source='Sahl, On Nativities Ch. 10.2.5, 1',
-         confidence='variant (one of three); night reversal per Dykes',
-         note='Sahl gives it "by day and night", but the note rules on the calculation: '
-              '"Paul instructs us to reverse it by night, but Abu Ma\'shar says not to. WE '
-              'SHOULD FOLLOW PAUL." A military Lot in Dorotheus, Paul and Theophilus.'),
+         confidence='variant (one of three); Sahl\'s text, unreversed',
+         note='Sahl: "Calculate BY DAY AND NIGHT from Saturn to the Moon" -- no reversal, and '
+              'Abu Ma\'shar agrees. Dykes\' note prefers Paul ("Paul instructs us to reverse it '
+              'by night, but Abu Ma\'shar says not to. We should follow Paul"); the row below '
+              'gives that reading, so both are visible.'),
+    dict(id='work_expedition_paul', topic='Work', name='Lot of work (expedition, reversed by night -- Paul)',
+         start='Saturn', end='Moon', project='Ascendant', reverse_at_night=True,
+         source="Sahl, On Nativities Ch. 10.2.5, 1 (Dykes' note 165)",
+         confidence="Dykes' preference against Sahl's text",
+         note='Identical to the row above by day; differs only at night.'),
     dict(id='work_authority', topic='Work', name="Lot of authority, work and craft (Masha'allah)",
          start='Sun', end='Saturn', project='Ascendant', reverse_at_night=False,
          source="Sahl, On Nativities Ch. 10.2.5, 4-14 (Masha'allah)",
@@ -3606,7 +3708,10 @@ def _lot_point(name, planetary_data, asc, cusps, sect, resolved):
         # Sun's is 19 Aries, the Moon's 3 Taurus.
         return 19.0 if sect == 'Diurnal' else 33.0
     if name.startswith('cusp'):
-        return cusps[int(name[4:]) - 1]
+        n = int(name[4:])
+        if LOT_HOUSE_CUSP == 'quadrant cusp':
+            return cusps[n - 1]
+        return (asc + 30.0 * (n - 1)) % 360.0
     if name.startswith('lord'):
         house = int(name[4:])
         sign = get_zodiac_sign(((int(asc // 30) + house - 1) % 12) * 30.0 + 15.0)
@@ -3652,8 +3757,10 @@ def calculate_topical_lots(planetary_data, asc, cusps, sect):
             'Position': get_degree_string(lon),
             'WS place': get_wsh_house(lon, asc),
             'Lord': SIGN_TO_DOMICILE.get(get_zodiac_sign(lon), '-'),
-            'Formula': f"{d['project']} + ({end} - {start})"
-                        + ('' if not d['reverse_at_night'] else f'  [{arc} order]'),
+            'Formula': (f"{d['project']} + ({end} - {start})"
+                        + ('' if not d['reverse_at_night'] else f'  [{arc} order]')
+                        + (f'  [{LOT_HOUSE_CUSP}]' if 'cusp' in (start, end, d['project'])
+                           or start.startswith('cusp') or end.startswith('cusp') else '')),
             'Standing': d['confidence'],
             'Source': d['source'],
             'Editor’s note': d['note'],
@@ -3687,11 +3794,33 @@ NOT_IMPLEMENTED_COVERAGE = [
      "the Moon's are computed."),
     ("Abu Ma'shar VII.7", "The casting of rays according to Ptolemy. The chapter "
      "begins on a page not photographed."),
-    ("Abu Ma'shar VI.26, 3", "The sentence defining the quadrants and saying what "
-     "makes one ADVANCING. Figure 90 labels houses 4-6 and 10-12 advancing, where "
-     "Sahl 83 is implemented as angular-or-succedent; the two differ for about half "
-     "of all placements, and the text that would settle it is cut off in both the OCR "
-     "and the photograph. The quadrant GENDERS are settled -- Figure 90 confirms them."),
+    ("Abu Ma'shar VII.3, 2 / VI.26, 3", "The ADVANCING AND WITHDRAWING QUADRANTS as a "
+     "condition in its own right (ASC to MC and DSC to IC advancing: primary motion "
+     "toward the meridian). Read from the margin of the Figure 90 reshoot and Dykes' "
+     "note on On Nativities 10.3; distinct from Sahl 83, which is his own Ch.3, 4. "
+     "Recorded as ADVANCING_BY_QUADRANT_FIG90, not yet scored."),
+    ("Abu Ma'shar VII.5, 32-33", "Mixing of natures BY RAY across a sign boundary "
+     "(Fig. 121: Moon 29 59' Aquarius, Saturn's trine ray at 1 Pisces). Only the "
+     "body-to-body case of VII.4, 13-14 is reported."),
+    ("Sahl, On Nativities Ch. 1.20-1.23", "The RELEASER and HOUSE-MASTER (hyleg and "
+     "alcocoden), with 1.20, 2's ranking of the five lords -- \"the lord of the bound, "
+     "then the lord of the house, then the lord of the exaltation, then the lord of "
+     "the triplicity, then the lord of the image\" -- and the years granted."),
+    ("Sahl, On Nativities Ch. 1.18, 20-22", "DISTRIBUTION through the bounds by "
+     "ascensions: \"for each degree (of the degrees of ascensions) a year, and for "
+     "every 5' a month, and for every 1' six days, and for every 10'' a day.\" The "
+     "Timing page's 1 degree/year is labelled as not this."),
+    ("Sahl, On Nativities Ch. 2.13, 48-51", "The three 15-degree ASCENSIONAL bands "
+     "past a stake, grading good fortune; also Aphorism #45 (misstated there per "
+     "Dykes' note 57)."),
+    ("Sahl, On Nativities Ch. 2.2", "The THIRTY FIXED STARS for eminence, with "
+     "positions for Sahl's epoch (needs precession)."),
+    ("Sahl, On Nativities Ch. 2.6 and 4.9", "Uses of the TWELFTH-PARTS beyond the "
+     "Moon's (luminaries, Ascendant, infortunes)."),
+    ("Sahl, On Nativities: further Lots", "Constitution (1.34, 13, recovered p. 358, "
+     "'foundation' uncertain); male/female (3.12, 20); Venus to the 7th place "
+     "(7.1, 10 and 145); Sun to Moon projected from Venus (7.4, 8); religion "
+     "(9.5, 3, identity disputed); riding animals (12.2 fn. 18)."),
 ]
 
 # --- Special Degrees & Conditions ----------------------------------------
@@ -3817,28 +3946,35 @@ PREFERRED_DOMICILE = {'Saturn': 'Aquarius', 'Jupiter': 'Sagittarius', 'Mars': 'S
 MASCULINE_QUADRANT_HOUSES = {4, 5, 6, 10, 11, 12}
 FEMININE_QUADRANT_HOUSES = {1, 2, 3, 7, 8, 9}
 
-# OPEN QUESTION, raised by the same figure. Fig. 90 labels those two
-# masculine quadrants ADVANCING and the two feminine ones WITHDRAWING --
-# so on its reading advancing is houses 4-6 and 10-12. Sahl 83 is
-# implemented here as dynamically angular OR SUCCEDENT, which is houses
-# 1, 2, 4, 5, 7, 8, 10 and 11. The two sets differ on six of the twelve
-# houses and would change the advancing verdict for about half of all
-# placements.
+# RESOLVED (audit of 2026-09-06). Fig. 90 also labels the two masculine
+# quadrants ADVANCING and the two feminine ones WITHDRAWING, which looked
+# like a conflict with Sahl 83 (angular or succedent: 1, 2, 4, 5, 7, 8, 10,
+# 11). It is not one; they are two different conditions sharing an English
+# word.
 #
-# The conflict is not resolvable from what this project holds. Figure 90
-# belongs to VI.26, a different chapter from Sahl's 83, and VI.26, 3 --
-# the sentence that would define the quadrants and say what makes one
-# advancing -- is cut off in the OCR and in the photograph of the figure
-# alike. Reading the figure's own geometry does not settle it either: a
-# planet in the upper-left quadrant is approaching the Midheaven, which
-# fits "advancing", but one in the upper-right is approaching the
-# Descendant and is labelled withdrawing, so the criterion is not simply
-# nearness to the next angle.
+# The reshoot of Fig. 90 is rotated 90 degrees, and its right margin carries
+# the line-beginnings of VI.26, 3, which read (top to bottom): "3 Now |
+# rants whic | Ascendan | heaven, | setting to | called "a | eastern, |
+# while th | which ar | to the set | fourth t | are calle | feminine |
+# left." 4 (" -- i.e. the quadrants from the Ascendant to midheaven and
+# from the setting to the fourth are called "advancing ... eastern", those
+# from the midheaven to the setting and from the fourth to the Ascendant
+# "... feminine ... left". The figure's dashed arrows run ASC -> MC and
+# DSC -> IC: primary motion carrying a planet TOWARD THE MERIDIAN. Dykes
+# states the same criterion at On Nativities 10.3 fn. 231: "the eastern
+# quarter from the Ascendant to the Midheaven is advancing, while the
+# quarter from the Midheaven to the Descendant is declining or retreating."
 #
-# 83 is therefore left as it is. Changing half of all placements on an
-# inference drawn from another chapter's diagram is not warranted; the
-# page carrying VI.26, 3 needs to be read first.
-ADVANCING_BY_QUADRANT_FIG90 = {4, 5, 6, 10, 11, 12}   # not used; recorded
+# Abu Ma'shar lists the two as separate conditions himself -- VII.3, 2-5:
+# "The first is if one is in the advancing and withdrawing quadrants of the
+# circle. The second is if it is in one of the houses ... which are the
+# stakes. The third ... follows a stake. The fourth ... the withdrawing
+# houses." Sahl defines HIS word at Ch.3, 4, "advancement, it is if a
+# planet was in a stake or what follows a stake", and his Figure 9 shades
+# exactly sectors 1, 2, 4, 5, 7, 8, 10, 11 with the axes as boundaries. So
+# 83 is right as implemented, and the quadrant set below is Abu Ma'shar's
+# own condition (VII.3, 2), recorded for when it is scored in its own right.
+ADVANCING_BY_QUADRANT_FIG90 = {4, 5, 6, 10, 11, 12}   # Abu Ma'shar VII.3, 2 / VI.26, 3; not Sahl 83
 
 # Approximate geocentric distance range (AU) per planet, used only as a
 # modern proxy for "rising up in the circle of the apogee" (VII.6, 23) --
@@ -3946,7 +4082,7 @@ def _abu_mashar_enclosed(planet, enclosing_set, planetary_data, rows, orb=7.0):
         # other -- Sahl's own shape, which Abu Ma'shar folds in here.
         for sep_t, con_t in ((members[0], members[1]), (members[1], members[0])):
             sep = any((r['applicant'] or r['light_name']) == planet and (r['receiver'] or r['heavy_name']) == sep_t
-                       and r['motion'] == 'Separating' and _is_connected(r) for r in rows)
+                       and _is_separating_in_nature(r) for r in rows)
             con = any((r['applicant'] or r['light_name']) == planet and (r['receiver'] or r['heavy_name']) == con_t
                        and r['motion'] == 'Applying' and _is_connected(r) for r in rows)
             if sep and con:
@@ -4180,9 +4316,13 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
             # this as "not in whole-sign angles of infortune," so assembly,
             # square and opposition count and sextile/trine do not. (An
             # earlier version counted any non-Aversion configuration.)
+            # The infortune must be the OTHER planet in the pair. Testing
+            # "either member is an infortune" made Mars and Saturn fail 81
+            # against any partner at all, since each is itself an infortune
+            # -- 59% of their placements lost a testimony Sahl grants them.
             infortune_contact = any(
                 r['aspect_name'] in ('Conjunction', 'Square', 'Opposition')
-                and (r['p1'] in INFORTUNES or r['p2'] in INFORTUNES)
+                and (({r['p1'], r['p2']} - {planet}) & INFORTUNES)
                 for r in rows if planet in (r['p1'], r['p2'])
             )
             if not infortune_contact:
@@ -4256,7 +4396,12 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
                 signed_from_sun = ((lon - sun_lon + 180.0) % 360.0) - 180.0
                 visible_floor = 15.0 if planet == 'Mars' else 6.0
                 if signed_from_sun < 0 and abs(signed_from_sun) >= visible_floor:
-                    labels.append('Masculine planet, eastern and risen (84)')
+                    # Not "risen": 6 degrees is On Nativities 1.22, 1's nine-day
+                    # allowance ("considered to be eastern"), inside the 15
+                    # degrees this same table calls under the rays (93). Mars's
+                    # 15 is Dykes' inference at 1.22 fn. 174, not text.
+                    labels.append(f'Masculine planet, eastern, {visible_floor:.0f}+ deg from the Sun '
+                                  f'(84; "considered eastern", On Nativities 1.22, 1)')
 
             # (85) "In their own glow: that is, a masculine planet in the day,
             # and a feminine planet in the night." The translator's footnote
@@ -4437,7 +4582,7 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
             south_node_lon = (north_node_lon + 180.0) % 360.0
             node_dist = min(abs(((lon - north_node_lon + 180) % 360) - 180), abs(((lon - south_node_lon + 180) % 360) - 180))
             if node_dist < 12.0 and abs(lat) < 1.0:
-                labels.append('With the Head or Tail, without latitude (99, 12 deg orb not in the source)')
+                labels.append('With the Head or Tail, without latitude (99; 12 deg orb from Ch.3, 107 and On Nativities 1.21, 12)')
 
             # (100) Inverted: in the seventh sign from its own house (Detriment).
             if ess['Detriment']:
@@ -4579,7 +4724,8 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             # enclosure (separating from one infortune, connecting with the
             # other) and belongs to the misfortune list, not this one.
             separating_fortune = any(
-                (r['applicant'] or r['light_name']) == planet and (r['receiver'] or r['heavy_name']) in FORTUNES and r['motion'] == 'Separating' and _is_connected(r)
+                (r['applicant'] or r['light_name']) == planet and (r['receiver'] or r['heavy_name']) in FORTUNES
+                and _is_separating_in_nature(r)
                 for r in rows
             )
             if separating_fortune and connected_to(planet, FORTUNES):
@@ -4607,7 +4753,19 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             # decreasing. "Number" is the equation-table term of VII.1, 23-25,
             # which Dykes' note there says has no direct astrological import, so
             # it is not required. An earlier version accepted swiftness alone.
-            increasing_in_light = data.get('speed_in_dist', 0.0) < 0
+            #
+            # For the MOON "increasing in light" is her glow, not her distance:
+            # VII.2, 62-71 measure her conditions by "one-fourth of [her] glow",
+            # and Sahl Ch.3, 112 has "decreasing in light (and that is [at] the
+            # end of the [lunar] month)". The distance test agreed with waxing
+            # in 47.5% of sampled charts -- chance. (VII.1, 22 allows the same
+            # synodic sense for the superiors "in the manner that is said about
+            # the Moon", but calls the apogee sense "the one agreed upon", so
+            # the planets keep it.)
+            if planet == 'Moon':
+                increasing_in_light = 0.0 < (lon - planetary_data['Sun']['longitude']) % 360.0 < 180.0
+            else:
+                increasing_in_light = data.get('speed_in_dist', 0.0) < 0
             if acc['Swift'] and increasing_in_light:
                 positive.append('Swift and increasing in light (9)')
             halb = ess['Domicile'] or ess['Exalt'] or ess['Triplicity'] or ess['Term'] or ess['Face'] or acc['Joy']
@@ -4774,7 +4932,24 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             # AT HIM FROM THE SEXTILE IT IS STRONGER FOR THEM)" -- cross-cited
             # to VII.2, 17-18, where the sextile is exactly the outer edge of
             # "proper, strong easternization."
-            if is_superior and is_eastern_of_sun:
+            #
+            # "Eastern relative to the Sun" is read as the hemisphere (VII.2, 2
+            # calls the whole half "on the right side"), but never while under
+            # the rays: VII.2, 14 reserves "easternizing" for after the 15/18
+            # degrees are complete, and VII.6, 34 already counts the rays as
+            # weakness. EASTERN_RULE = 'VII.2 band' narrows both 27 and 45 to
+            # the bands VII.2 actually names (15/18 to 90 degrees eastern;
+            # 90 down to 15 degrees western, 29-31). Hemisphere fires on 52% of
+            # superior placements, the band on 25%.
+            _e_lim, _w_lim = SOLAR_RAYS_ORB.get(planet, (15.0, 15.0))
+            _elong = abs(signed_from_sun)
+            if EASTERN_RULE == 'VII.2 band':
+                eastern_27 = is_eastern_of_sun and _e_lim <= _elong <= 90.0
+                western_45 = (not is_eastern_of_sun) and _w_lim <= _elong <= 90.0
+            else:
+                eastern_27 = is_eastern_of_sun and _elong >= _e_lim
+                western_45 = (not is_eastern_of_sun) and _elong >= _w_lim
+            if is_superior and eastern_27:
                 if configured_to(planet, {'Sun'}, {'Sextile'}):
                     positive.append('Superior, eastern of the Sun, by sextile (27)')
                 else:
@@ -4910,9 +5085,13 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             # forward simulation when available; falls back to Sahl's own
             # present-tense proxy (no currently-Applying-and-Connected pair)
             # when sim wasn't supplied.
-            if sim is not None:
+            # A planet with no sign exit inside the horizon cannot be judged
+            # prospectively -- the search is censored, not negative -- so it
+            # takes the present-tense proxy instead of being called empty
+            # because nothing perfected in 200 days.
+            if sim is not None and sim['events'][planet]['sign_exits']:
                 sign_exits = sim['events'][planet]['sign_exits']
-                exit_day = sign_exits[0] if sign_exits else sim['horizon_days']
+                exit_day = sign_exits[0]
                 empty_of_course = True
                 for other in planetary_data:
                     if other in (planet, 'North Node'):
@@ -4944,7 +5123,7 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
                     negative.append('Exile/peregrine, empty of course (44)')
                 else:
                     negative.append('Exile/peregrine (44)')
-            if is_superior and not is_eastern_of_sun:
+            if is_superior and western_45:
                 negative.append('Superior, western of the Sun (45)')
             if is_superior and not in_masculine_quadrant:
                 negative.append('Superior, in a feminine quadrant (45)')
@@ -4961,8 +5140,12 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             # "The beginning of their easternization" is where VII.2, 40-41 puts
             # it: from leaving the burned band until strong easternization at
             # 12 deg, not the flat 15 deg an earlier version used.
+            # VII.2, 40: the beginning is AFTER burning -- "when they are
+            # distant from [the Sun] at a full 7 degrees ... they come to the
+            # beginning of their advancement towards easternization" -- so the
+            # burned band is excluded.
             inf_46 = ([ 'beginning of easternization' ]
-                      if is_eastern_of_sun and abs(signed_from_sun) < SOLAR_RAYS_ORB[planet][0] else []) + \
+                      if is_eastern_of_sun and SOLAR_BURNED_ORB[planet][0] <= abs(signed_from_sun) < SOLAR_RAYS_ORB[planet][0] else []) + \
                      ([ 'masculine quadrant' ] if in_masculine_quadrant else [])
             if is_inferior and inf_46:
                 negative.append(f"Inferior, {' and '.join(inf_46)} (46)")
@@ -5178,24 +5361,30 @@ def _abu_mashar_moon_corruption(planetary_data, ascendant_lon, jd=None):
         signed_sun = ((lon - sun_lon + 180.0) % 360.0) - 180.0
         elongation = abs(signed_sun)
 
-        # [1] (64) Eclipsed. A lunar eclipse needs her near the Sun's exact
-        # opposition AND near a node; a solar eclipse is the Moon's conjunction
-        # under the same node condition. Swiss Ephemeris is asked directly when
-        # a julian day is available, and the geometry is the fallback.
+        # [1] (64) "If she is eclipsed." A LUNAR eclipse in progress at the
+        # birth moment, asked of the ephemeris globally: lun_eclipse_when()
+        # gives the next eclipse's contact times, and the Moon is eclipsed
+        # while the moment lies inside them. The earlier version asked
+        # lun_eclipse_how() at geoposition (0, 0, 0), which reports 0 whenever
+        # the eclipse is below the horizon AT GREENWICH, and then fell back to
+        # a 12-degree node/syzygy window that also counted SOLAR eclipses
+        # (where she eclipses rather than is eclipsed) -- it labelled 3 of 240
+        # sampled charts against 0 real eclipses. A penumbral-only passage is
+        # reported as such rather than silently equated with the umbral kind.
         north_node_lon = planetary_data['North Node']['longitude']
         node_dist = min(abs(((lon - north_node_lon + 180) % 360) - 180),
                         abs(((lon - (north_node_lon + 180.0) + 180) % 360) - 180))
-        eclipsed = False
         if jd is not None:
             try:
-                # retflag > 0 means an eclipse is in progress at this moment.
-                eclipsed = swe.lun_eclipse_how(jd, [0.0, 0.0, 0.0])[0] > 0
+                _r, _t = swe.lun_eclipse_when(jd - 3.0, swe.FLG_SWIEPH, 0, False)
+                _umbral = bool(_t[2] and _t[3] and _t[2] <= jd <= _t[3])
+                _penumbral = bool(_t[6] and _t[7] and _t[6] <= jd <= _t[7])
+                if _umbral:
+                    labels.append('Eclipsed (64)')
+                elif _penumbral:
+                    labels.append('Eclipsed, penumbral only (64)')
             except Exception:
-                eclipsed = False
-        if not eclipsed:
-            eclipsed = node_dist <= 12.0 and (elongation >= 168.0 or elongation <= 12.0)
-        if eclipsed:
-            labels.append('Eclipsed (64)')
+                pass
 
         # [2] (65) Under the rays: 12 degrees between her and the Sun's body,
         # "in the front or in the rear."
@@ -5862,6 +6051,34 @@ CONNECTION_PROFILE = st.sidebar.radio(
     ),
 )
 
+# Readings the sources leave open. Each default follows the narrower or
+# original statement; the alternative is the other author's, or the same
+# author's other statement, and is named at the constant it sets.
+with st.sidebar.expander("Configurable readings", expanded=False):
+    FIVE_DEGREE_ALL_CUSPS = st.checkbox(
+        "Five-degree carryover at all twelve cusps", value=False,
+        help="Sahl states the rule for the stakes twice (Aphorism #44, 88; On Nativities 1.22, 9) "
+             "and once for every house (On Nativities 1.18, 19: 'and likewise in all of the houses'). "
+             "Off = stakes only. Flips the Sahl 83 verdict for about 6% of placements.")
+    EASTERN_RULE = st.radio(
+        "VII.6, 27/45 'eastern/western relative to the Sun'", ['hemisphere', 'VII.2 band'],
+        help="'hemisphere': the whole half, excluding the rays (VII.2, 2; VII.6, 34). 'VII.2 band': only "
+             "the easternizing band 15/18 to 90 degrees (VII.2, 14-21) and the westernizing band 90 down to "
+             "15 degrees (VII.2, 29-31). Superiors: 52% vs 25% of placements.")
+    MOON_RAYS_ORB = 15.0 if st.checkbox(
+        "Moon under the rays to 15 degrees (Sahl, On Nativities 1.19, 6)", value=False,
+        help="Abu Ma'shar VII.2, 61 and 72-73 give 12; Sahl gives 15 for the Moon's fitness as releaser.") else 12.0
+    DOMAIN_RULE = st.radio(
+        "Domain (hayz)", ["Abu Ma'shar", "Masha'allah"],
+        help="Abu Ma'shar VII.1, 37 / VII.6, 13: sign gender fixed to the planet's own. Masha'allah, "
+             "On Nativities 1.23, 17: a male planet by day above the earth in a male sign, by night under "
+             "the earth in a FEMALE sign; feminine planets by hemisphere only.")
+    LOT_HOUSE_CUSP = st.radio(
+        "House-based Lots measure to the", ['whole-sign place', 'quadrant cusp'],
+        help="'The second place', 'the degree of the eighth place', 'the ninth' (On Nativities 2.15, 1; "
+             "8.6, 1; 9.1, 9). Whole-sign: the Ascendant's degree carried into that sign. Quadrant: the "
+             "Alchabitius cusp.")
+
 
 if location_query and lat is not None and lon is not None:
     st.sidebar.success(f"**Resolved:** {lat:.4f}, {lon:.4f}")
@@ -6064,7 +6281,9 @@ if location_query and lat is not None and lon is not None:
                     "Position": get_degree_string(lon_p),
                     "Absolute": f"{lon_p:.4f}\u00b0",
                     "WS place": get_wsh_house(lon_p, chart_data['ascendant']),
-                    "Quadrant": f"{q} ({'advancing' if q in ANGLE_HOUSES | SUCCEDENT_HOUSES else 'withdrawing'})",
+                    # Sahl's sense (Ch.3, 4-5: stake or succedent vs. falling), not
+                    # Abu Ma'shar's quadrant term of VI.26, 3.
+                    "Quadrant": f"{q} ({'advancing' if q in ANGLE_HOUSES | SUCCEDENT_HOUSES else 'retreating'} -- Sahl Ch.3, 4-5)",
                     "Motion": ('Retrograde' if acc_p['Retrograde']
                                else 'Stationary' if acc_p['Stationary'] else 'Direct'),
                     "Solar phase": (f"{phase}, {side}" if phase and side else (phase or '\u2013')),
@@ -6260,7 +6479,7 @@ if location_query and lat is not None and lon is not None:
                             "Good Fortune / Strength": ", ".join(cond['Positive Labels']) if cond['Positive Labels'] else "-",
                             "Weakness / Misfortune": ", ".join(cond['Negative Labels']) if cond['Negative Labels'] else "-",
                         })
-                    df_condition = pd.DataFrame(condition_list).sort_values(by="Net (heuristic)", ascending=False)
+                    df_condition = pd.DataFrame(condition_list).sort_values(by="Net", ascending=False)
                     st.dataframe(df_condition, hide_index=True, width='stretch')
                     st.caption(
                         ":orange[**Net and Verdict are this app's heuristic, not Abu Ma'shar's.**] He enumerates these "
