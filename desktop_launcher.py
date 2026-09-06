@@ -96,6 +96,15 @@ def _run_as_streamlit_server(port: str):
         "--server.address", "127.0.0.1",
         "--server.headless", "true",
         "--global.developmentMode", "false",
+        # A frozen build has no .streamlit/config.toml: build.spec bundles
+        # app.py, atlas.db and app_icon.ico and nothing else, and Streamlit
+        # reads project config from the CWD anyway, which is wherever the
+        # user launched the binary from. The dev run gets toolbarMode from
+        # /home/apothic/almuten_engine/.streamlit/config.toml only because
+        # the server happens to start in that directory. Passed as a flag
+        # so the packaged app hides the toolbar too -- flags outrank both
+        # config files and environment variables.
+        "--client.toolbarMode", "minimal",
     ]
     sys.exit(stcli.main())
 
