@@ -6707,11 +6707,34 @@ if location_query and lat is not None and lon is not None:
             st.header("Lots")
             st.caption("Lesson 18.")
             st.subheader('Classical Lots', help='Arabic Parts: sect-dependent formulas combining two planets or points with the Ascendant to derive a new sensitive degree tied to a specific topic (e.g. Fortune = body/livelihood, Spirit = mind/action).')
-            st.dataframe(pd.DataFrame(classical_lots), hide_index=True, width='stretch')
+            # Formula from the same LOT_DEFINITIONS text the Topical Lots
+            # table carries (via calculate_topical_lots), so the two cannot
+            # differ; Basis has no definition row and says so.
+            formula_by_lot = {r['Lot']: r['Formula'] for r in topical_lots}
+            classical_rows = []
+            for r in classical_lots:
+                row = {k: v for k, v in r.items() if k != 'Standing'}
+                row['Formula'] = formula_by_lot.get(r['Lot Name'],
+                                                    'Ascendant + (shorter arc between Fortune and Spirit)  [not in the sources]')
+                row['Standing'] = r['Standing']
+                classical_rows.append(row)
+            st.dataframe(pd.DataFrame(classical_rows), hide_index=True, width='stretch')
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
                 st.markdown('Fortune and Exaltation are attested in Sahl; Spirit is named by Sahl (the Lot of the Invisible) but its Moon-to-Sun formula comes from the course tables, as its Standing says. All three carry their provenance in the Topical Lots table below. BASIS IS NOT: no Lot of Basis appears anywhere in the material this project has, and the construction used takes the unsigned shorter arc between Fortune and Spirit, discarding the direction the pair actually stands in. It is kept because it has always been here, and marked rather than presented as settled.')
             st.subheader('Topical Lots (Sahl, On Nativities)', help="Sahl's topical Lots, each with its own provenance. He gives several of them MORE THAN ONCE, with formulas that genuinely conflict, and Dykes' apparatus does not silently reconcile them -- so neither does this table.")
-            st.dataframe(pd.DataFrame(topical_lots), hide_index=True, width='stretch')
+            _reading_radio("House-based Lots measure to the", LOT_HOUSE_CUSP_OPTIONS, "lot_house_cusp", "_lot_house_cusp",
+                           help="'The second place', 'the degree of the eighth place', 'the ninth' (On Nativities 2.15, 1; "
+                                "8.6, 1; 9.1, 9): the Ascendant's degree carried into that sign, or the Alchabitius cusp. "
+                                "Affects: this table only. Full text on the Sources page.")
+            # Fortune, Spirit and Exaltation are in the Classical Lots table
+            # above, with the same Formula; the provenance columns are in the
+            # expander so the table itself is the worksheet.
+            topical_rows = [r for r in topical_lots if r['Lot'] not in ('Lot of Fortune', 'Lot of Spirit', 'Lot of Exaltation')]
+            st.dataframe(pd.DataFrame(topical_rows, columns=['Topic', 'Lot', 'Position', 'WS place', 'Lord', 'Formula', 'Active']),
+                         hide_index=True, width='stretch', height=_rows_height(len(topical_rows)))
+            with st.expander("Provenance and standing per Lot"):
+                st.table(pd.DataFrame(topical_rows, columns=['Topic', 'Lot', 'Standing', 'Source', 'Editor’s note']),
+                         hide_index=True)
 
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
                 st.markdown('The STANDING column records his editorial position in his own words where he states one.\n\nFour kinds of case. SAHL HIMSELF RULES: of the two sibling Lots, "both of the Lots are correct, so work with them both together" (3.11, 4) -- neither is subordinate. DYKES NAMES HIS CHOICE: of the three witnesses to the Lot of enemies, "I have used M here"; on the night reversal of the Saturn-Moon work Lot, "Paul instructs us to reverse it by night, but Abu Ma\'shar says not to. We should follow Paul." DYKES MARKS ONE STANDARD: on children, "the usual calculation ... is that of Hermes." DYKES ONLY TABULATES: three Lots for work, after noting that "Sahl quietly switches to Masha\'allah\'s treatise on Lots ... without telling us that the formula is different."\n\nEvery formula is taken from the running prose or a footnote, never from one of the summary tables, whose glyph columns the OCR mangles -- Fig. 63\'s row for Ch. 10.2.5 renders as Mercury-Venus where the body text plainly reads "from Saturn to the Moon."\n\nNote the Lot of death is projected FROM SATURN, not from the Ascendant.')
