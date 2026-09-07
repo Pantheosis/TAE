@@ -188,219 +188,294 @@ def get_degree_string(longitude):
     minute = int((longitude % 1) * 60)
     return f"{deg:02d}° {sign[:3]} {minute:02d}'"
 
-def generate_hybrid_svg(chart_data, location_query, lat, lon, dt_local, tz_name):
-    size = 900
-    cx, cy = 450, 450
-    r_outer = 410
-    r_zodiac = 345
-    r_houses = 210
-    r_inner = 110
-    
+# ---- The chart wheel ---------------------------------------------------
+# Redesigned 2026-09-07 (brief: WHEEL_REDESIGN_2026-09-07.md, decisions
+# D1-D10). generate_hybrid_svg() is a pure function -- no Streamlit calls --
+# returning an SVG string that the Chart page shows through st.image(), which
+# wraps it in Streamlit's own fullscreen control, the same expand arrows the
+# tables carry. Inside an <img> the SVG has no page CSS, web fonts or scripts,
+# so everything here is attributes and system fonts.
+#
+# Rings, outside in: a rim band with the WHOLE-SIGN place numbers; the sign
+# band with the glyphs, shaded by triplicity, and a one-degree scale on its
+# inner edge; the planet zone, where each point's label runs radially --
+# glyph, degree, sign, minute, and a black retrograde mark -- as the owner's
+# reference charts draw it; a narrow ring with the ALCHABITIUS house numbers;
+# and the hub, which names the chart. The rising sign's boundary sits at
+# 9 o'clock (D1: the app's own convention, kept), so whole-sign places fall on
+# the twelve clock positions. Alchabitius cusps stay dashed (the app's
+# convention) and now run from the quadrant ring to the degree scale.
+WHEEL_LAYOUT_OPTIONS = ('Square', 'Wide')
+WHEEL_SIZE = 1000                     # viewBox of the square wheel
+WHEEL_WIDE_WIDTH = 1760               # the wide variant: wheel plus a positions panel
+_R_RIM, _R_WS_IN, _R_SIGN_IN = 492, 462, 402
+_R_GLYPH, _R_DEG, _R_SIGN, _R_MIN, _R_RX = 344, 306, 272, 242, 214
+_R_Q_OUT, _R_Q_IN = 152, 122
+LABEL_MIN_SEP = 10.5                  # degrees between neighbouring label stacks
+LABEL_STAGGER = 30                    # px inward for alternate members of a crowded run
+# One tint per triplicity (D3): fire, earth, air, water; sign i uses i % 4.
+TRIPLICITY_TINT = ('#f7f7f7', '#dedede', '#ededed', '#cdcdcd')
+_WHEEL_FONT = "'Noto Sans Symbols', 'Segoe UI Symbol', 'DejaVu Sans', sans-serif"
+_CUSP_COLOUR = '#a94442'
+_AXIS_COLOUR = {0: '#0000cc', 6: '#0000cc', 9: '#1e7b1e', 3: '#1e7b1e'}   # horizon blue, meridian green (D4)
+_VS = '︎'                        # text-presentation selector: never an emoji
+SIGN_GLYPHS = ['♈', '♉', '♊', '♋', '♌', '♍',
+               '♎', '♏', '♐', '♑', '♒', '♓']
+POINT_GLYPHS = {'Sun': '☉', 'Moon': '☽', 'Mercury': '☿', 'Venus': '♀',
+                'Mars': '♂', 'Jupiter': '♃', 'Saturn': '♄',
+                'North Node': '☊', 'South Node': '☋', 'Lot of Fortune': '⊗'}
+
+
+def _spread_labels(bearings, min_sep=LABEL_MIN_SEP):
+    """Push neighbouring bearings apart on the circle until every adjacent
+    pair is at least min_sep degrees apart. bearings are in ascending order
+    around the circle; that circular order is preserved and the result
+    comes back in the same order. Input already separated is unchanged.
+
+    The sequence is unwrapped to a monotone one first and the gaps kept
+    SIGNED, so a pair pushed apart cannot leapfrog its neighbours (a
+    modular gap would read the overshoot as a wide gap and leave the order
+    scrambled). A negative gap is a violation like any other and is pushed
+    open on the next sweep."""
+    n = len(bearings)
+    if n < 2:
+        return [b % 360.0 for b in bearings]
+    min_sep = min(min_sep, 0.9 * 360.0 / n)       # n labels must fit the circle
+    pos = [bearings[0] % 360.0]
+    for b in bearings[1:]:
+        b = b % 360.0
+        while b < pos[-1]:
+            b += 360.0
+        pos.append(b)
+    for _ in range(1000):
+        moved = False
+        for k in range(n):
+            j = (k + 1) % n
+            gap = (pos[j] + (360.0 if j == 0 else 0.0)) - pos[k]
+            if gap < min_sep - 1e-6:
+                push = (min_sep - gap) / 2.0
+                pos[k] -= push
+                pos[j] += push
+                moved = True
+        if not moved:
+            break
+    return [p % 360.0 for p in pos]
+
+
+def _stagger_offsets(true_bearings, shown_bearings, step=LABEL_STAGGER):
+    """Within each run of consecutive displaced labels, every other one
+    steps inward by `step` px, as Solar Fire does for stellia."""
+    displaced = [abs(((s - t + 180.0) % 360.0) - 180.0) > 0.05 for s, t in zip(shown_bearings, true_bearings)]
+    offsets = [0] * len(displaced)
+    k = 0
+    while k < len(displaced):
+        if displaced[k]:
+            end = k
+            while end < len(displaced) and displaced[end]:
+                end += 1
+            for n, idx in enumerate(range(k, end)):
+                offsets[idx] = step if n % 2 else 0
+            k = end
+        else:
+            k += 1
+    return offsets
+
+
+def _wheel_dm(longitude):
+    """Degree and minute within the sign, minutes truncated exactly as
+    get_degree_string() truncates them, so the wheel and the tables agree."""
+    longitude = longitude % 360.0
+    return int(longitude % 30), int((longitude % 1) * 60)
+
+
+def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_local, tz_name,
+                        wide=False, chronocrats=None):
+    size = WHEEL_SIZE
+    cx = cy = size / 2.0
     asc = chart_data['ascendant']
-    asc_sign_start = math.floor(asc / 30) * 30
-    
-    svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {size} {size}" width="100%" height="100%" style="background-color: #ffffff; color: #000000; font-family: \'Noto Sans Symbols\', \'Segoe UI Symbol\', \'DejaVu Sans\', sans-serif;">']
-    
-    svg.append(f'<circle cx="{cx}" cy="{cy}" r="{r_outer}" fill="none" stroke="#000000" stroke-width="3"/>')
-    svg.append(f'<circle cx="{cx}" cy="{cy}" r="{r_zodiac}" fill="none" stroke="#000000" stroke-width="2"/>')
-    svg.append(f'<circle cx="{cx}" cy="{cy}" r="{r_houses}" fill="none" stroke="#000000" stroke-width="1.5"/>')
-    svg.append(f'<circle cx="{cx}" cy="{cy}" r="{r_inner}" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>')
-
-    def lon_to_angle(longitude):
-        return (longitude - asc_sign_start + 180) % 360
-
-    def polar_to_cartesian(r, angle_deg):
-        rad = math.radians(angle_deg)
-        return cx + r * math.cos(rad), cy - r * math.sin(rad)
-
-    signs_text = ['\u2648\uFE0E', '\u2649\uFE0E', '\u264A\uFE0E', '\u264B\uFE0E', '\u264C\uFE0E', '\u264D\uFE0E',
-                  '\u264E\uFE0E', '\u264F\uFE0E', '\u2650\uFE0E', '\u2651\uFE0E', '\u2652\uFE0E', '\u2653\uFE0E']
-
-    # 1. Whole Sign Boundary Sectors with explicit text symbols
-    for i in range(12):
-        sign_start_lon = (asc_sign_start + i * 30) % 360
-        angle_start = lon_to_angle(sign_start_lon)
-        
-        x1, y1 = polar_to_cartesian(r_houses, angle_start)
-        x2, y2 = polar_to_cartesian(r_outer, angle_start)
-        svg.append(f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="#000000" stroke-width="1.5"/>')
-
-        mid_lon = sign_start_lon + 15
-        mid_angle = lon_to_angle(mid_lon)
-        
-        lx, ly = polar_to_cartesian((r_outer + r_zodiac) / 2, mid_angle)
-        sign_idx = int((sign_start_lon // 30))
-        svg.append(f'<text x="{lx}" y="{ly}" text-anchor="middle" dominant-baseline="central" font-size="16" font-weight="bold" fill="#000000">{signs_text[sign_idx]}</text>')
-
-        hx_lab, hy_lab = polar_to_cartesian((r_houses + r_inner + 30) / 2, mid_angle)
-        svg.append(f'<text x="{hx_lab}" y="{hy_lab}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="bold" fill="#000000">{i+1}</text>')
-
-        for d in range(5, 30, 5):
-            tick_lon = sign_start_lon + d
-            t_angle = lon_to_angle(tick_lon)
-            t1_x, t1_y = polar_to_cartesian(r_zodiac, t_angle)
-            t2_x, t2_y = polar_to_cartesian(r_zodiac + 6, t_angle)
-            svg.append(f'<line x1="{t1_x}" y1="{t1_y}" x2="{t2_x}" y2="{t2_y}" stroke="#000000" stroke-width="0.75"/>')
-
-    # 2. Quadrant House Cusp Lines (Alchabitius)
+    mc = chart_data['mc']
     cusps = chart_data['houses']
+    asc_sign = int((asc % 360.0) // 30)
+    angles = (asc, mc, (asc + 180.0) % 360.0, (mc + 180.0) % 360.0)
+
+    def ang(longitude):
+        # D1: the rising sign's boundary at 9 o'clock, zodiac counter-clockwise.
+        return (longitude - asc_sign * 30 + 180.0) % 360.0
+
+    def xy(r, a):
+        t = math.radians(a)
+        return cx + r * math.cos(t), cy - r * math.sin(t)
+
+    def sector(r_in, r_out, a0, a1):
+        x0o, y0o = xy(r_out, a0); x1o, y1o = xy(r_out, a1)
+        x0i, y0i = xy(r_in, a0); x1i, y1i = xy(r_in, a1)
+        large = 1 if (a1 - a0) % 360 > 180 else 0
+        return (f'M{x0o:.1f},{y0o:.1f} A{r_out},{r_out} 0 {large} 0 {x1o:.1f},{y1o:.1f} '
+                f'L{x1i:.1f},{y1i:.1f} A{r_in},{r_in} 0 {large} 1 {x0i:.1f},{y0i:.1f} Z')
+
+    def line(x0, y0, x1, y1, stroke, width, dash=None):
+        d = f' stroke-dasharray="{dash}"' if dash else ''
+        return f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x1:.1f}" y2="{y1:.1f}" stroke="{stroke}" stroke-width="{width}"{d}/>'
+
+    def text(x, y, s, px, weight='normal', fill='#000', anchor='middle'):
+        return (f'<text x="{x:.1f}" y="{y:.1f}" text-anchor="{anchor}" dominant-baseline="central" '
+                f'font-size="{px}" font-weight="{weight}" fill="{fill}">{s}</text>')
+
+    def sign_glyph(longitude):
+        return SIGN_GLYPHS[int((longitude % 360.0) // 30)] + _VS
+
+    width = WHEEL_WIDE_WIDTH if wide else size
+    svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {size}" width="{width}" height="{size}" '
+           f'style="font-family:{_WHEEL_FONT}">',
+           f'<rect width="{width}" height="{size}" fill="#ffffff"/>']
+
+    # 1. Sign band shaded by triplicity, sign glyphs, whole-sign place
+    #    numbers on the rim, boundary spokes through both bands.
+    for i in range(12):
+        a0, a1 = ang(i * 30), ang(i * 30 + 30)
+        svg.append(f'<path d="{sector(_R_SIGN_IN, _R_WS_IN, a0, a1)}" fill="{TRIPLICITY_TINT[i % 4]}"/>')
+        svg.append(f'<path d="{sector(_R_WS_IN, _R_RIM, a0, a1)}" fill="#ffffff"/>')
+        # An angle box (step 4) sits wherever the Ascendant or MC falls in its
+        # sign; a glyph within 7 degrees of one steps 8 degrees aside.
+        glyph_lon = i * 30 + 15
+        for angle_lon in angles:
+            gap = ((angle_lon - glyph_lon + 180.0) % 360.0) - 180.0
+            if abs(gap) < 7.0:
+                glyph_lon = i * 30 + 15 - (8 if gap > 0 else -8)
+        gx, gy = xy((_R_SIGN_IN + _R_WS_IN) / 2, ang(glyph_lon))
+        svg.append(text(gx, gy, SIGN_GLYPHS[i] + _VS, 30))
+        hx, hy = xy((_R_WS_IN + _R_RIM) / 2, ang(i * 30 + 15))
+        svg.append(text(hx, hy, str((i - asc_sign) % 12 + 1), 17, 'bold'))
+        x0, y0 = xy(_R_SIGN_IN, a0); x1, y1 = xy(_R_RIM, a0)
+        svg.append(line(x0, y0, x1, y1, '#000000', 1.2))
+
+    # 2. Degree scale on the inner edge of the sign band: 1, 5 and 10 degrees.
+    for d in range(360):
+        ln = 14 if d % 10 == 0 else 10 if d % 5 == 0 else 5
+        x0, y0 = xy(_R_SIGN_IN, ang(d)); x1, y1 = xy(_R_SIGN_IN + ln, ang(d))
+        svg.append(line(x0, y0, x1, y1, '#000000', 0.9 if ln > 5 else 0.5))
+    for r, w in ((_R_RIM, 2.5), (_R_WS_IN, 1.2), (_R_SIGN_IN, 1.6), (_R_Q_OUT, 1.2), (_R_Q_IN, 1.6)):
+        svg.append(f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="#000000" stroke-width="{w}"/>')
+
+    # 3. Alchabitius cusps, dashed as before but reaching the degree scale;
+    #    the four stakes solid and coloured. House numbers at mid-house on
+    #    the quadrant ring.
     for i, cusp_lon in enumerate(cusps):
-        c_angle = lon_to_angle(cusp_lon)
-        hx, hy = polar_to_cartesian(r_inner, c_angle)
-        hx_out, hy_out = polar_to_cartesian(r_houses, c_angle)
-        svg.append(f'<line x1="{hx}" y1="{hy}" x2="{hx_out}" y2="{hy_out}" stroke="#a94442" stroke-width="1.5" stroke-dasharray="4"/>')
-        
-        px_t1, py_t1 = polar_to_cartesian(r_houses, c_angle)
-        px_t2, py_t2 = polar_to_cartesian(r_houses - 6, c_angle)
-        svg.append(f'<line x1="{px_t1}" y1="{py_t1}" x2="{px_t2}" y2="{py_t2}" stroke="#a94442" stroke-width="2"/>')
+        x0, y0 = xy(_R_Q_IN, ang(cusp_lon)); x1, y1 = xy(_R_SIGN_IN, ang(cusp_lon))
+        if i in _AXIS_COLOUR:
+            svg.append(line(x0, y0, x1, y1, _AXIS_COLOUR[i], 2.6))
+        else:
+            svg.append(line(x0, y0, x1, y1, _CUSP_COLOUR, 1.4, '6 4'))
+        mid = cusp_lon + ((cusps[(i + 1) % 12] - cusp_lon) % 360.0) / 2.0
+        mx, my = xy((_R_Q_OUT + _R_Q_IN) / 2, ang(mid))
+        svg.append(text(mx, my, str(i + 1), 14, 'bold', _CUSP_COLOUR))
 
-    glyph_map = {
-        'Sun': '\u2609\uFE0E', 'Moon': '\u263D\uFE0E', 'Mercury': '\u263F\uFE0E', 'Venus': '\u2640\uFE0E',
-        'Mars': '\u2642\uFE0E', 'Jupiter': '\u2643\uFE0E', 'Saturn': '\u2644\uFE0E', 'North Node': '\u260A\uFE0E',
-        'Ascendant': 'Asc', 'Midheaven': 'MC', 'Descendant': 'Des', 'IC': 'IC',
-        'Lot of Fortune': '\u2297\uFE0E'
-    }
+    # 4. Angle boxes on the sign band: degree over minute, in the axis colour.
+    for angle_lon, colour in zip(angles, ('#0000cc', '#1e7b1e', '#0000cc', '#1e7b1e')):
+        d, m = _wheel_dm(angle_lon)
+        bx, by = xy((_R_SIGN_IN + _R_WS_IN) / 2, ang(angle_lon))
+        svg.append(f'<rect x="{bx - 19:.1f}" y="{by - 17:.1f}" width="38" height="34" rx="3" '
+                   f'fill="#ffffff" stroke="{colour}" stroke-width="1.2"/>')
+        svg.append(text(bx, by - 8, f'{d:02d}°', 13, 'bold', colour))
+        svg.append(text(bx, by + 8, f"{m:02d}'", 13, 'bold', colour))
 
+    # 5. Points. The seven planets and the north node from the ephemeris, the
+    #    south node opposite it with the same motion (D2), the Lot of Fortune
+    #    with no motion. A retrograde mark goes on any point whose longitude
+    #    speed is negative, nodes included (D9): the true node has direct
+    #    spells and is shown as it moves.
     p_data = chart_data['planetary_data']
-    all_points = list({
-        **p_data,
-        'Ascendant': {'longitude': chart_data['ascendant'], 'speed_in_lon': 1.0},
-        'Midheaven': {'longitude': chart_data['mc'], 'speed_in_lon': 1.0},
-        'Descendant': {'longitude': chart_data['descendant'], 'speed_in_lon': 1.0},
-        'IC': {'longitude': chart_data['ic'], 'speed_in_lon': 1.0},
-        'Lot of Fortune': {'longitude': chart_data['lot_of_fortune'], 'speed_in_lon': 1.0}
-    }.items())
+    node = p_data['North Node']
+    points = [(name, d['longitude'], d.get('speed_in_lon', 0.0)) for name, d in p_data.items()]
+    points.append(('South Node', (node['longitude'] + 180.0) % 360.0, node.get('speed_in_lon', 0.0)))
+    points.append(('Lot of Fortune', chart_data['lot_of_fortune'], None))
+    points.sort(key=lambda p: ang(p[1]))
+    true_bearings = [ang(p[1]) for p in points]
+    shown = _spread_labels(true_bearings)
+    offsets = _stagger_offsets(true_bearings, shown)
+    for (name, lon_val, speed), a_true, a_shown, off in zip(points, true_bearings, shown, offsets):
+        # A tick on the ring at the true degree, a hairline from it to the glyph.
+        x0, y0 = xy(_R_SIGN_IN, a_true); x1, y1 = xy(_R_SIGN_IN - 10, a_true)
+        svg.append(line(x0, y0, x1, y1, '#000000', 1.6))
+        x2, y2 = xy(_R_GLYPH - off + 22, a_shown)
+        svg.append(line(x1, y1, x2, y2, '#666666', 0.8))
+        d, m = _wheel_dm(lon_val)
+        gx, gy = xy(_R_GLYPH - off, a_shown); svg.append(text(gx, gy, POINT_GLYPHS.get(name, name[:2]) + _VS, 34))
+        dx_, dy_ = xy(_R_DEG - off, a_shown); svg.append(text(dx_, dy_, f'{d:02d}°', 18, 'bold'))
+        sx, sy = xy(_R_SIGN - off, a_shown); svg.append(text(sx, sy, sign_glyph(lon_val), 19))
+        mx, my = xy(_R_MIN - off, a_shown); svg.append(text(mx, my, f"{m:02d}'", 15))
+        if speed is not None and speed < 0:
+            rx, ry = xy(_R_RX - off, a_shown); svg.append(text(rx, ry, '℞' + _VS, 15))   # black (D6)
 
-    all_points.sort(key=lambda x: x[1]['longitude'])
+    # 6. Hub: the chart's name first (D5 supplies "Transits" when none was
+    #    given), then when, where, and the systems in force. User strings
+    #    are escaped: a name or place with & or < would otherwise break the
+    #    whole wheel.
+    svg.append(f'<circle cx="{cx}" cy="{cy}" r="{_R_Q_IN - 1}" fill="#ffffff"/>')
+    name = str(chart_name)
+    if len(name) > 30:
+        name = name[:29] + '…'
+    name_px = 17 if len(name) <= 16 else 14 if len(name) <= 22 else 11
+    lat_s = f"{int(abs(lat))}°{int((abs(lat) % 1) * 60):02d}′{'N' if lat >= 0 else 'S'}"
+    lon_s = f"{int(abs(lon))}°{int((abs(lon) % 1) * 60):02d}′{'E' if lon >= 0 else 'W'}"
+    hub_lines = [
+        (escape(name), name_px, 'bold'),
+        (f'{dt_local.day} {dt_local:%b} {dt_local.year}  {dt_local:%H:%M}', 12, 'normal'),
+        (escape(str(tz_name)), 11, 'normal'),
+        (escape(str(location_query)), 12, 'normal'),
+        (f'{lat_s}  {lon_s}', 11, 'normal'),
+        (chart_data['sect'], 12, 'bold'),
+        ('Whole sign · Alchabitius', 10, 'normal'),
+        ('Tropical · True node', 10, 'normal'),
+    ]
+    y = cy - 7 * len(hub_lines)
+    for s, px, w in hub_lines:
+        svg.append(text(cx, y, s, px, w))
+        y += 14
 
-    ANGLE_NAMES = {'Ascendant', 'Midheaven', 'Descendant', 'IC'}
-    angle_colors = {'Ascendant': '#0000ff', 'Descendant': '#0000ff', 'Midheaven': '#228b22', 'IC': '#228b22'}
+    # 7. The wide variant: a positions panel beside the wheel, so a full-
+    #    window view uses the window's width as well as its height (D10).
+    if wide:
+        x0 = size + 40
+        svg.append(text(x0, 60, 'Positions', 22, 'bold', anchor='start'))
+        for dx, h in ((0, 'Point'), (150, 'Position'), (330, 'WS place'), (460, 'Quadrant'), (590, 'Motion')):
+            svg.append(text(x0 + dx, 100, h, 15, 'bold', '#444444', anchor='start'))
+        svg.append(line(x0, 112, x0 + 680, 112, '#000000', 1))
+        y = 140
+        for name_, lon_val, speed in sorted(points, key=lambda p: list(POINT_GLYPHS).index(p[0]) if p[0] in POINT_GLYPHS else 99):
+            d, m = _wheel_dm(lon_val)
+            if speed is None:
+                motion = '–'
+            else:
+                motion = '℞' + _VS + ' retrograde' if speed < 0 else 'direct'
+            svg.append(text(x0, y, POINT_GLYPHS.get(name_, '') + _VS, 22, anchor='start'))
+            svg.append(text(x0 + 34, y, name_, 16, anchor='start'))
+            svg.append(text(x0 + 150, y, f'{d:02d}° {sign_glyph(lon_val)} {m:02d}′', 16, anchor='start'))
+            svg.append(text(x0 + 330, y, str(get_wsh_house(lon_val, asc)), 16, anchor='start'))
+            svg.append(text(x0 + 460, y, str(get_effective_house(lon_val, cusps)), 16, anchor='start'))
+            svg.append(text(x0 + 590, y, motion, 15, anchor='start'))
+            y += 36
+        y += 20
+        svg.append(text(x0, y, 'Angles and cusps (Alchabitius)', 18, 'bold', anchor='start'))
+        y += 34
+        for i, cusp_lon in enumerate(cusps):
+            d, m = _wheel_dm(cusp_lon)
+            label = {0: 'Asc', 3: 'IC', 6: 'Des', 9: 'MC'}.get(i, '')
+            col = x0 + (0 if i < 6 else 340)
+            yy = y + (i % 6) * 32
+            svg.append(text(col, yy, f'{i + 1:2d}', 15, 'bold', _CUSP_COLOUR, anchor='start'))
+            svg.append(text(col + 40, yy, f'{d:02d}° {sign_glyph(cusp_lon)} {m:02d}′', 15, anchor='start'))
+            if label:
+                svg.append(text(col + 190, yy, label, 15, 'bold', _AXIS_COLOUR[i], anchor='start'))
+        y += 6 * 32 + 20
+        sect_line = f"Sect: {chart_data['sect']}"
+        if chronocrats:
+            sect_line += (f" · Lord of the day: {escape(str(chronocrats.get('Day Lord', '')))}"
+                          f" · Lord of the hour: {escape(str(chronocrats.get('Hour Lord', '')))}")
+        svg.append(text(x0, y, sect_line, 15, anchor='start'))
 
-    # --- Anti-collision label layout --------------------------------------
-    # Points within CLUSTER_GAP degrees of each other are grouped into a
-    # cluster. Earlier this stacked members purely along the RADIUS — but
-    # that barely separates labels near the Ascendant/Descendant side of
-    # the wheel, where the ring runs almost horizontal on screen, so a 25px
-    # radius change is nearly all sideways and almost no vertical (the
-    # symptom: Asc's label piling directly on top of Lot of Fortune's).
-    # Instead, each cluster's anchor member is placed at LAYER_TOP along
-    # its true radial direction, and every subsequent member is stacked a
-    # fixed number of *screen* pixels below the anchor — guaranteeing real
-    # vertical separation no matter where on the ring the cluster sits.
-    # Angles (Asc/MC/Des/IC) take priority for the anchor slot when they
-    # share a cluster with a planet/node/Lot of Fortune, since they're
-    # conventionally labeled right at the ring regardless of what else is
-    # nearby.
-    CLUSTER_GAP = 6.0
-    LAYER_TOP = r_zodiac - 40
-    STACK_DY = 30
-
-    clusters = []
-    for planet, data in all_points:
-        lon_val = data['longitude']
-        if clusters and (lon_val - clusters[-1][-1][1]['longitude']) < CLUSTER_GAP:
-            clusters[-1].append((planet, data))
-        else:
-            clusters.append([(planet, data)])
-    # Longitude wraps at 360°; merge the first/last cluster if they abut
-    if len(clusters) > 1:
-        first_lon = clusters[0][0][1]['longitude']
-        last_lon = clusters[-1][-1][1]['longitude']
-        if (first_lon + 360 - last_lon) < CLUSTER_GAP:
-            clusters[0] = clusters[-1] + clusters[0]
-            clusters.pop()
-
-    label_pos = {}
-    for cluster in clusters:
-        cluster_sorted = sorted(cluster, key=lambda pd: 0 if pd[0] in ANGLE_NAMES else 1)
-        anchor_angle = lon_to_angle(cluster_sorted[0][1]['longitude'])
-        anchor_px, anchor_py = polar_to_cartesian(LAYER_TOP, anchor_angle)
-        for i, (planet, data) in enumerate(cluster_sorted):
-            label_pos[planet] = (anchor_px, anchor_py + i * STACK_DY)
-
-    # Axis Highlights — stop just short of each label instead of running
-    # the full way to the ring and straight through the text sitting on it.
-    for pt_key, pt_lon, pt_color in [
-        ('Ascendant', chart_data['ascendant'], angle_colors['Ascendant']),
-        ('Midheaven', chart_data['mc'], angle_colors['Midheaven']),
-        ('Descendant', chart_data['descendant'], angle_colors['Descendant']),
-        ('IC', chart_data['ic'], angle_colors['IC']),
-    ]:
-        pt_angle = lon_to_angle(pt_lon)
-        label_px, label_py = label_pos[pt_key]
-        label_r = math.hypot(label_px - cx, label_py - cy)
-        line_end_r = min(label_r + 20, r_zodiac)
-        px1, py1 = polar_to_cartesian(r_inner, pt_angle)
-        px2, py2 = polar_to_cartesian(line_end_r, pt_angle)
-        svg.append(f'<line x1="{px1}" y1="{py1}" x2="{px2}" y2="{py2}" stroke="{pt_color}" stroke-width="2" stroke-dasharray="2"/>')
-
-    for planet, data in all_points:
-        lon_val = data['longitude']
-        speed = data.get('speed_in_lon', 1.0)
-        is_rx = speed < 0 and planet not in ({'Sun', 'Moon', 'North Node'} | ANGLE_NAMES)
-
-        p_angle = lon_to_angle(lon_val)
-        px, py = label_pos[planet]
-        tz_x, tz_y = polar_to_cartesian(r_zodiac, p_angle)
-
-        # Small dot marks the point's true position on the zodiac ring.
-        # The leader line stops ~18px short of the label instead of
-        # running all the way to it, so the line never cuts through text.
-        svg.append(f'<circle cx="{tz_x}" cy="{tz_y}" r="3" fill="#000000"/>')
-        dxv, dyv = px - tz_x, py - tz_y
-        dist = math.hypot(dxv, dyv)
-        if dist > 20:
-            t = (dist - 18) / dist
-            lx_end, ly_end = tz_x + dxv * t, tz_y + dyv * t
-            svg.append(f'<line x1="{tz_x}" y1="{tz_y}" x2="{lx_end}" y2="{ly_end}" stroke="#999999" stroke-width="0.75" stroke-dasharray="2"/>')
-
-        sign_idx = int(lon_val // 30) % 12
-        deg = int(lon_val % 30)
-        minute = int((lon_val % 1) * 60)
-        rx_tag = " Rx" if is_rx else ""
-        symbol = glyph_map.get(planet, planet[:3])
-
-        if planet in ANGLE_NAMES:
-            # Angle labels (Asc/MC/Des/IC) are short text abbreviations, not
-            # single glyphs, so they get a modest size that matches the
-            # planet glyphs visually instead of towering over them. They're
-            # also nudged to the side of their own axis spoke (left-aligned,
-            # offset right) rather than centered directly on top of it.
-            label_color = angle_colors.get(planet, '#000000')
-            svg.append(
-                f'<text x="{px+10}" y="{py-6}" text-anchor="start" fill="{label_color}">'
-                f'<tspan font-size="14" font-weight="bold">{symbol}</tspan></text>'
-                f'<text x="{px+10}" y="{py+9}" text-anchor="start" fill="{label_color}">'
-                f'<tspan font-size="11" font-weight="bold">{deg:02d}\u00b0 {signs_text[sign_idx]} {minute:02d}\'</tspan></text>'
-            )
-        else:
-            # Two-line stacked label (glyph+degree over sign+minutes) is far
-            # more compact than one long horizontal string, so clustered
-            # points stay readable.
-            svg.append(
-                f'<text x="{px}" y="{py-6}" text-anchor="middle" fill="#000000">'
-                f'<tspan font-size="19" font-weight="bold">{symbol}</tspan>'
-                f'<tspan font-size="12" font-weight="bold" dx="3">{deg:02d}\u00b0</tspan></text>'
-                f'<text x="{px}" y="{py+9}" text-anchor="middle" fill="#000000">'
-                f'<tspan font-size="12" font-weight="bold">{signs_text[sign_idx]} {minute:02d}\'{rx_tag}</tspan></text>'
-            )
-
-    # Central Metadata Hub
-    svg.append(f'<text x="{cx}" y="{cy - 55}" text-anchor="middle" font-size="13" font-weight="bold" fill="#000000">Whole-Sign Hybrid Chart</text>')
-    # User-supplied text goes through XML escaping before it reaches the
-    # markup. A place name containing & or < would otherwise produce
-    # malformed XML and silently break the whole wheel, and the string is
-    # free-form: it comes from the City Search box or a saved chart's
-    # stored label.
-    svg.append(f'<text x="{cx}" y="{cy - 35}" text-anchor="middle" font-size="11" fill="#000000">{escape(str(location_query))}</text>')
-    svg.append(f'<text x="{cx}" y="{cy - 20}" text-anchor="middle" font-size="10" fill="#000000">Lat: {lat:.4f}° | Lon: {lon:.4f}°</text>')
-    svg.append(f'<text x="{cx}" y="{cy - 5}" text-anchor="middle" font-size="10" fill="#000000">{dt_local.strftime("%Y-%m-%d %H:%M")} [{escape(str(tz_name))}]</text>')
-    svg.append(f'<text x="{cx}" y="{cy + 15}" text-anchor="middle" font-size="10" font-weight="bold" fill="#000000">Sect: {chart_data["sect"]}</text>')
-    svg.append(f'<text x="{cx}" y="{cy + 30}" text-anchor="middle" font-size="10" fill="#000000">Layout: Whole Sign + Alchabitius Cusps</text>')
-    svg.append(f'<text x="{cx}" y="{cy + 45}" text-anchor="middle" font-size="10" fill="#000000">Zodiac: Tropical</text>')
-    
     svg.append('</svg>')
-    return "".join(svg)
+    return ''.join(svg)
 
 # ==========================================
 # 3. DIGNITY & ASPECT EVALUATORS
@@ -6553,7 +6628,19 @@ if location_query and lat is not None and lon is not None:
         planets_in_houses_data = evaluate_planets_in_houses(p_data, abu_mashar_condition, chart_data['ascendant'])
         time_lords_data = calculate_time_lords(chart_data['ascendant'], input_date, target_date)
 
-        svg_code = generate_hybrid_svg(chart_data, location_query, lat, lon, local_dt, tz_name)
+        # The hub names the chart: the saved chart picked in the sidebar, else
+        # the name typed for saving, else "Transits" (owner's decision D5,
+        # 2026-09-07: an unnamed chart cast for a date is a transit chart).
+        # Loading a saved chart and then editing its date keeps the saved
+        # name; accepted. Both wheel layouts are built here, since the page
+        # picks one with a control of its own and the strings are cheap.
+        _picked = st.session_state.get("chart_picker")
+        chart_name = (_picked if _picked and _picked != "-- New Chart --"
+                      else new_chart_name.strip() or "Transits")
+        svg_code = generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, local_dt, tz_name,
+                                       chronocrats=chronocrats)
+        svg_wide = generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, local_dt, tz_name,
+                                       wide=True, chronocrats=chronocrats)
 
         st.title("Traditional Astrology Engine")
 
@@ -6672,26 +6759,34 @@ if location_query and lat is not None and lon is not None:
             total = int(round((degrees % 360.0) * 3600))
             return f"{total // 3600}° {(total % 3600) // 60:02d}' {total % 60:02d}\""
 
-        # The wheel is a square SVG scaled to the iframe. html/body at 100%
-        # with overflow hidden removes the inner scrollbar the default body
-        # margin used to cause. Measured at 1280x720: the title, page header
-        # and lesson caption end 306 px down, so 400 px is the most that is
-        # fully visible on load without scrolling. The orientation text and
-        # the header metrics sit beside it rather than above it for the
-        # same reason.
-        WHEEL_HEIGHT = 400
 
         def page_chart():
             st.header("Chart")
-            st.caption("Lessons 3-5: chart identification, measurement, astronomy.")
+            cap_col, lay_col = st.columns([3, 1], vertical_alignment="bottom")
+            cap_col.caption("Lessons 3-5: chart identification, measurement, astronomy.")
+            with lay_col:
+                wheel_layout = _reading_radio(
+                    "Wheel layout", WHEEL_LAYOUT_OPTIONS, "wheel_layout", "_wheel_layout",
+                    help="Square: the wheel beside the header metrics. Wide: the wheel with a "
+                         "positions panel across the page. Hover either and use the expand "
+                         "arrows for a full-window view.")
             _gap = []
             # Looking at the chart is the primary act, so the wheel comes first.
-            wheel_col, side_col = st.columns([1, 1])
-            with wheel_col:
-                st.iframe(
-                    '<html><head><style>html,body{margin:0;height:100%;overflow:hidden;'
-                    f'background:#fff}}</style></head><body>{svg_code}</body></html>',
-                    height=WHEEL_HEIGHT)
+            # st.image shows the SVG through Streamlit's own fullscreen wrapper,
+            # the same expand arrows the tables carry; the iframe it replaced
+            # (2026-09-07) had none. The square wheel keeps the 400 px measured
+            # on 2026-09-06 as the most that is fully visible on load at
+            # 1280x720, with the orientation text and header metrics beside
+            # it; the wide variant runs the full page width and scrolls, and
+            # is there for the full-window view, which a square can only fill
+            # to the window's height.
+            if wheel_layout == WHEEL_LAYOUT_OPTIONS[1]:
+                st.image(svg_wide, width='stretch')
+                side_col = st.container()
+            else:
+                wheel_col, side_col = st.columns([1, 1])
+                with wheel_col:
+                    st.image(svg_code, width=400)
             with side_col:
                 st.caption(
                     "A TNAC study companion: work the homework by hand, then check it here and "
