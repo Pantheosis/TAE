@@ -9,9 +9,12 @@
 pywebview==6.2.1
 pillow==12.3.0
 
-# Windows-only, and DELIBERATELY UNPINNED. These have no Linux install to read
-# a version from -- pywebview's Qt backend uses PyQt6 here and PySide6 there --
-# so pinning them would mean inventing numbers. Take the versions from the
-# "Install dependencies" step of the next Actions run and pin them here.
-PySide6; sys_platform == "win32"
-qtpy; sys_platform == "win32"
+# Windows-only: pywebview's Qt backend uses PyQt6 on Linux and PySide6 there,
+# so these have no local install to read a version from. Pinned instead from
+# the "Install dependencies" step of the 2026-09-06 Actions build, which
+# resolved them on the real windows-latest runner under CPython 3.14.7.
+# shiboken6 is deliberately NOT listed: PySide6's own metadata requires
+# shiboken6==6.11.2 exactly, so a second pin here would only be something
+# else to forget when PySide6 moves.
+PySide6==6.11.2; sys_platform == "win32"
+qtpy==2.4.3; sys_platform == "win32"
