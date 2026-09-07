@@ -3087,7 +3087,8 @@ def evaluate_reception(planetary_data, sect, sim=None):
             # without looking -- the note on it: planets "in harmonious
             # signs" -- and most of these pairs do not look at each other:
             # Aries/Pisces, Gemini/Cancer and the same-lord pairs Aries/
-            # Scorpio and Cancer/Leo are all in aversion (note 157 on 53:
+            # Scorpio, Taurus/Libra and Capricorn/Aquarius are all in
+            # aversion (note 157 on 53:
             # "some of the signs of equal ascensions below do look at each
             # other", i.e. most do not). An earlier version skipped aversion
             # first, which silently confined 134 to configured pairs.
