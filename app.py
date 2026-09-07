@@ -6806,21 +6806,24 @@ if location_query and lat is not None and lon is not None:
                     "Pages follow the course's lesson order. Sahl's *Introduction* is the course "
                     "text; Abu Ma'shar's *Great Introduction* VII is the supplement."
                 )
-                # Two metrics per row: three across truncates "Mercury".
-                hdr1 = st.container()          # full width: the value is a long word
-                hdr2, hdr3 = st.columns(2)
-                hdr4, _ = st.columns(2)
-                # Lesson 5 asks "conjunctional or preventional?"; the full
-                # syzygy table stays on the victors page, gated at Lesson 19.
-                # The label is "Preventional (Full Moon)": the first word is
-                # the metric, the rest goes in the caption with the position
-                # and place, since the value would otherwise be cut off.
-                _event, _, _kind = syzygy['event_label'].partition(' ')
-                hdr1.metric("Prenatal lunation", _event)
-                hdr1.caption(f"{_kind} at {get_degree_string(syzygy['syzygy_longitude'])} · House {syzygy['natal_house']}")
-                hdr2.metric("Sect", sect)
-                hdr3.metric("Lord of the Day", chronocrats['Day Lord'])
-                hdr4.metric("Lord of the Hour", chronocrats['Hour Lord'])
+            # The four header metrics run in one row under the wheel, the full
+            # page width (owner, 2026-09-07: stacked beside the wheel they left
+            # the right-hand column mostly empty). The lunation column is
+            # wider because its value is a long word: "Conjunctional" at the
+            # metric size needs about 260 px, and an even quarter of the page
+            # at 1280 px is less than that.
+            hdr1, hdr2, hdr3, hdr4 = st.columns([1.5, 1, 1, 1])
+            # Lesson 5 asks "conjunctional or preventional?"; the full
+            # syzygy table stays on the victors page, gated at Lesson 19.
+            # The label is "Preventional (Full Moon)": the first word is
+            # the metric, the rest goes in the caption with the position
+            # and place, since the value would otherwise be cut off.
+            _event, _, _kind = syzygy['event_label'].partition(' ')
+            hdr1.metric("Prenatal lunation", _event)
+            hdr1.caption(f"{_kind} at {get_degree_string(syzygy['syzygy_longitude'])} · House {syzygy['natal_house']}")
+            hdr2.metric("Sect", sect)
+            hdr3.metric("Lord of the Day", chronocrats['Day Lord'])
+            hdr4.metric("Lord of the Hour", chronocrats['Hour Lord'])
             if chronocrats.get('Approximate'):
                 st.caption(
                     "⚠️ **The Lord of the Hour here is not a temporal hour.** No sunrise "

@@ -14,7 +14,10 @@ tests); `LABEL_MIN_SEP` is 10.5°. Verified in the browser at 1280×720: the
 square wheel is fully visible on load, the fullscreen arrows expand it, the
 Wide layout fills the window width with the positions panel, the 1240 chart's
 Gemini stellium and the 1982 chart's Scorpio cluster read, the hub names the
-loaded chart and reads "Transits" otherwise. A throwaway prototype was built in the session scratchpad to prove
+loaded chart and reads "Transits" otherwise. A later request the same day moved
+the four header metrics into one full-width row under the wheel (lunation column
+wider, so "Conjunctional" never truncates), leaving only the layout control and
+the briefing text beside the wheel. A throwaway prototype was built in the session scratchpad to prove
 the three uncertain points; its code is in Appendix A so the record survives.
 
 Owner's request (verbatim in spirit): a more robust, more legible wheel, closer to
