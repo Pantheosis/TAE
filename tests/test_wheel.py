@@ -137,4 +137,7 @@ def test_chart_page_names_the_wheel_and_offers_both_layouts():
     assert 'st.session_state.get("chart_picker")' in src
     assert "st.image(svg_code, width=400)" in src and "st.image(svg_wide, width='stretch')" in src
     assert "st.iframe(" not in src, "the iframe had no fullscreen control; st.image has"
-    assert '_reading_radio(\n                    "Wheel layout", WHEEL_LAYOUT_OPTIONS' in src
+    assert '"Wheel layout", WHEEL_LAYOUT_OPTIONS, "wheel_layout", "_wheel_layout"' in src
+    # The layout is decided from the control's state before the control is
+    # drawn, so the control can sit beside the square wheel, not above it.
+    assert 'st.session_state.get(\n                "wheel_layout", st.session_state.get("_wheel_layout"' in src

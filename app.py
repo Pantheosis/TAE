@@ -6762,14 +6762,7 @@ if location_query and lat is not None and lon is not None:
 
         def page_chart():
             st.header("Chart")
-            cap_col, lay_col = st.columns([3, 1], vertical_alignment="bottom")
-            cap_col.caption("Lessons 3-5: chart identification, measurement, astronomy.")
-            with lay_col:
-                wheel_layout = _reading_radio(
-                    "Wheel layout", WHEEL_LAYOUT_OPTIONS, "wheel_layout", "_wheel_layout",
-                    help="Square: the wheel beside the header metrics. Wide: the wheel with a "
-                         "positions panel across the page. Hover either and use the expand "
-                         "arrows for a full-window view.")
+            st.caption("Lessons 3-5: chart identification, measurement, astronomy.")
             _gap = []
             # Looking at the chart is the primary act, so the wheel comes first.
             # st.image shows the SVG through Streamlit's own fullscreen wrapper,
@@ -6780,13 +6773,31 @@ if location_query and lat is not None and lon is not None:
             # it; the wide variant runs the full page width and scrolls, and
             # is there for the full-window view, which a square can only fill
             # to the window's height.
+            #
+            # The layout is read from the control's state BEFORE the control
+            # is drawn, so the control can sit beside the square wheel rather
+            # than above it (a row above the wheel pushed its foot 24 px below
+            # the fold at 1280x720). The widget key holds the new value from
+            # the start of the rerun that a click causes; the store key keeps
+            # it across pages.
+            def _layout_control():
+                return _reading_radio(
+                    "Wheel layout", WHEEL_LAYOUT_OPTIONS, "wheel_layout", "_wheel_layout",
+                    help="Square: the wheel beside the header metrics. Wide: the wheel with a "
+                         "positions panel across the page. Hover either and use the expand "
+                         "arrows for a full-window view.")
+            wheel_layout = st.session_state.get(
+                "wheel_layout", st.session_state.get("_wheel_layout", WHEEL_LAYOUT_OPTIONS[0]))
             if wheel_layout == WHEEL_LAYOUT_OPTIONS[1]:
+                _layout_control()
                 st.image(svg_wide, width='stretch')
                 side_col = st.container()
             else:
                 wheel_col, side_col = st.columns([1, 1])
                 with wheel_col:
                     st.image(svg_code, width=400)
+                with side_col:
+                    _layout_control()
             with side_col:
                 st.caption(
                     "A TNAC study companion: work the homework by hand, then check it here and "
