@@ -663,3 +663,64 @@ def test_natural_connections_are_not_in_sahl(sahl):
     # Sahl's 56-57 read the Moon, so his evaluator needs her in the chart.
     fig = pdata(Venus=(5, VENUS), Mars=(355, 0.6), Moon=(200, MOON))
     assert not any("(134)" in r.get("Direction", "") for r in sahl["evaluate_reception"](fig, "Diurnal"))
+
+
+# --- The Egyptian bounds table, pinned sign by sign ----------------------
+# TNAC Handy Tables from Part 1, p. 1, "Table of Egyptian bounds" (Dykes
+# 2023), transcribed cell by cell from a 300-dpi render on 2026-09-07. The
+# upper limit is exclusive: "0-5 59'" is (6, lord). Until that date the
+# table in app.py had two adjacent lords transposed in Gemini (6-17) and in
+# Aquarius (0-13), and nothing here noticed because the bound assertions
+# above are all in Aries and Taurus. This literal is the whole table, so a
+# transposition anywhere fails on the sign it is in.
+CANONICAL_EGYPTIAN_BOUNDS = {
+    'Aries':       [(6, 'Jupiter'), (12, 'Venus'),   (20, 'Mercury'), (25, 'Mars'),    (30, 'Saturn')],
+    'Taurus':      [(8, 'Venus'),   (14, 'Mercury'), (22, 'Jupiter'), (27, 'Saturn'),  (30, 'Mars')],
+    'Gemini':      [(6, 'Mercury'), (12, 'Jupiter'), (17, 'Venus'),   (24, 'Mars'),    (30, 'Saturn')],
+    'Cancer':      [(7, 'Mars'),    (13, 'Venus'),   (19, 'Mercury'), (26, 'Jupiter'), (30, 'Saturn')],
+    'Leo':         [(6, 'Jupiter'), (11, 'Venus'),   (18, 'Saturn'),  (24, 'Mercury'), (30, 'Mars')],
+    'Virgo':       [(7, 'Mercury'), (17, 'Venus'),   (21, 'Jupiter'), (28, 'Mars'),    (30, 'Saturn')],
+    'Libra':       [(6, 'Saturn'),  (14, 'Mercury'), (21, 'Jupiter'), (28, 'Venus'),   (30, 'Mars')],
+    'Scorpio':     [(7, 'Mars'),    (11, 'Venus'),   (19, 'Mercury'), (24, 'Jupiter'), (30, 'Saturn')],
+    'Sagittarius': [(12, 'Jupiter'), (17, 'Venus'),  (21, 'Mercury'), (26, 'Saturn'),  (30, 'Mars')],
+    'Capricorn':   [(7, 'Mercury'), (14, 'Jupiter'), (22, 'Venus'),   (26, 'Saturn'),  (30, 'Mars')],
+    'Aquarius':    [(7, 'Mercury'), (13, 'Venus'),   (20, 'Jupiter'), (25, 'Mars'),    (30, 'Saturn')],
+    'Pisces':      [(12, 'Venus'),  (16, 'Jupiter'), (19, 'Mercury'), (28, 'Mars'),    (30, 'Saturn')],
+}
+
+
+@pytest.mark.parametrize("sign", list(CANONICAL_EGYPTIAN_BOUNDS))
+def test_egyptian_bounds_match_the_course_table_sign_by_sign(engine, sign):
+    assert [tuple(t) for t in engine["EGYPTIAN_TERMS"][sign]] == CANONICAL_EGYPTIAN_BOUNDS[sign], sign
+
+
+def test_egyptian_bounds_table_has_exactly_the_twelve_signs_and_no_gaps(engine):
+    table = engine["EGYPTIAN_TERMS"]
+    assert set(table) == set(CANONICAL_EGYPTIAN_BOUNDS)
+    for sign, bounds in table.items():
+        limits = [limit for limit, _lord in bounds]
+        assert limits == sorted(limits) and limits[-1] == 30, sign
+        # Five bounds, one per non-luminary, each lord once.
+        assert sorted(lord for _l, lord in bounds) == ["Jupiter", "Mars", "Mercury", "Saturn", "Venus"], sign
+
+
+def test_sahl_example_6_mercury_at_aquarius_5_is_in_his_own_bound(engine):
+    # On Nativities Ch. 10.2.7, 22: "look at Mercury, how he is in the honor
+    # guard of the Sun and his right side, IN HIS OWN BOUND, eastern" --
+    # Mercury at Aquarius 5 degrees. The engine returned Venus here from the
+    # initial commit until 2026-09-07.
+    assert engine["get_essential_rulers"](305.0)["term"] == "Mercury"
+
+
+def test_sahl_example_6_control_aquarius_8_is_venus_not_mercury(engine):
+    # Negative control: the next bound up is Venus's (7-13). A table that
+    # simply made all of early Aquarius Mercury's would pass the test above
+    # and fail this one.
+    assert engine["get_essential_rulers"](308.0)["term"] == "Venus"
+
+
+def test_gemini_transposition_is_gone_with_control(engine):
+    # Gemini 8 is Jupiter's bound (6-12); Gemini 13 is Venus's (12-17). The
+    # transposed table gave the reverse.
+    assert engine["get_essential_rulers"](68.0)["term"] == "Jupiter"
+    assert engine["get_essential_rulers"](73.0)["term"] == "Venus"

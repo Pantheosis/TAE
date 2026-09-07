@@ -152,7 +152,6 @@
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
-   ["Favor & Recompense", ["Planet", "Condition", "Favored By"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
   "configurations/Both": [
@@ -172,7 +171,6 @@
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
-   ["Favor & Recompense", ["Planet", "Condition", "Favored By"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
   "configurations/Sahl (course text)": [
