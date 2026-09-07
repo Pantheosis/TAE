@@ -114,8 +114,13 @@ def calculate_traditional_chart(dt_utc, lat, lon):
     jd = swe.julday(year, month, day, hour, cal_flag)
 
     # The seven planets' ephemeris ids are PLANET_SWE_IDS, defined once with
-    # the VII.6 material; the chart adds the mean Node.
-    targets = {**PLANET_SWE_IDS, 'North Node': swe.MEAN_NODE}
+    # the VII.6 material; the chart adds the TRUE Node (owner's decision of
+    # 2026-09-07, matching the reference charts; the mean node sat 1-2 degrees
+    # off them). The true node's speed is carried like a planet's, and it is
+    # not always retrograde: it has short direct spells, which the wheel
+    # reports as they are rather than assuming the mean node's constant
+    # backward motion.
+    targets = {**PLANET_SWE_IDS, 'North Node': swe.TRUE_NODE}
     
     planetary_data = {}
     for name, obj_id in targets.items():
