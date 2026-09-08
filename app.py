@@ -6640,6 +6640,91 @@ def evaluate_planets_in_houses(planetary_data, abu_mashar_condition, ascendant_l
 
 # --- Chronocrator Matrix (Time Lords): Profections & Distributions -------
 
+# --- The planetary years (Abu Ma'shar VII.8, Figure 146) -- DISPLAY ONLY --
+# Decision D-3 (2026-09-08): On Times stays under the Revolutions deferral
+# for implementation, because every rule it gives is contradicted by
+# another passage and PN IV is the only source that could break the ties.
+# The one thing admitted now is this table with the two placement rules
+# beside it, both labelled, neither applied to anything. Figure 146 was
+# rebuilt 2026-09-07 and is doubly verified: every cell matches the prose
+# restatement at VII.8, 3-8, and the fardar column sums to the 75 years
+# the text itself totals (VII.8, 3). Pinned in tests/test_base_tables.py.
+PLANETARY_YEARS = {
+    'Saturn':  {'fardar': 11, 'lesser': 30, 'middle': 43.5, 'greater': 57,  'mighty': 265},
+    'Jupiter': {'fardar': 12, 'lesser': 12, 'middle': 45.5, 'greater': 79,  'mighty': 427},
+    'Mars':    {'fardar': 7,  'lesser': 15, 'middle': 40.5, 'greater': 66,  'mighty': 284},
+    'Sun':     {'fardar': 10, 'lesser': 19, 'middle': 39.5, 'greater': 120, 'mighty': 1461},
+    'Venus':   {'fardar': 8,  'lesser': 8,  'middle': 45,   'greater': 82,  'mighty': 1151},
+    'Mercury': {'fardar': 13, 'lesser': 20, 'middle': 48,   'greater': 76,  'mighty': 480},
+    'Moon':    {'fardar': 9,  'lesser': 25, 'middle': 39.5, 'greater': 108, 'mighty': 520},
+}
+NODE_FARDAR_YEARS = {'Head': 3, 'Tail': 2}
+
+def evaluate_planetary_years_display(planetary_data, cusps, ascendant_lon, sect, essential):
+    """Figure 146 beside each planet's placement, with what the two
+    placement rules in the corpus would grant it -- shown, not applied.
+
+    On Times Ch. 4, 7 (of the ruler of the releaser): "if the ruler was in
+    a stake, eastern, it grants its greater years; or if it was in what
+    follows the stakes, it grants its middle years; and if it was falling,
+    it grants its lesser years." Stake/succedent/falling by the app's
+    quadrant place with the five-degree carryover, as elsewhere.
+
+    On Nativities 1.20 (of the house-master): 10 "in the Ascendant or in the
+    Midheaven, or in the sign of the west, or the eleventh, enhanced by what
+    I explained [7-9: in its own share, eastern, direct, of the sect] ...
+    the greater years"; 11 "under the earth, eastern, in one of its shares,
+    enhanced ... its greater years"; 16 "in the second or eighth ... its
+    middle years"; 17 "in the house of hope or the fifth, and was not in
+    something of its shares, and was not eastern ... its middle years".
+    Whole signs, as 10 says "sign of the west". Where neither sentence
+    reaches a placement the column says so rather than inventing a value.
+    The two rules disagree on where the greater years are granted (04 §3
+    #2), which is one reason D-3 keeps them on the page and out of the
+    engine."""
+    rows = []
+    sun_lon = planetary_data['Sun']['longitude']
+    for planet in ('Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon'):
+        lon = planetary_data[planet]['longitude']
+        years = PLANETARY_YEARS[planet]
+        ws = get_wsh_house(lon, ascendant_lon)
+        q = get_effective_house(lon, cusps)
+        ess = essential.get(planet, {})
+        in_share = any(ess.get(k) for k in ('Domicile', 'Exalt', 'Triplicity', 'Term', 'Face'))
+        if planet == 'Sun':
+            side = '-'
+        else:
+            side = solar_phase(planet, lon, sun_lon)[1] or '-'
+        eastern = side == 'eastern'
+        # On Times 4, 7
+        if q in ANGLE_HOUSES:
+            times = 'greater (in a stake, eastern; 4, 7)' if eastern else 'in a stake but not eastern: 4, 7 gives no value'
+        elif q in SUCCEDENT_HOUSES:
+            times = 'middle (follows the stakes; 4, 7)'
+        else:
+            times = 'lesser (falling; 4, 7)'
+        # On Nativities 1.20
+        under_earth = q in (1, 2, 3, 4, 5, 6)
+        if ws in (1, 10, 7, 11):
+            nat = 'greater if enhanced (1.20, 10)' + ('' if (in_share and eastern) else ' -- not enhanced here (7-9)')
+            if ws == 11 and not in_share and not eastern:
+                nat = 'middle (11th, not in a share, not eastern; 1.20, 17)'
+        elif under_earth and eastern and in_share:
+            nat = 'greater (under the earth, eastern, in a share; 1.20, 11)'
+        elif ws in (2, 8):
+            nat = 'middle (1.20, 16)'
+        elif ws == 5 and not in_share and not eastern:
+            nat = 'middle (5th, not in a share, not eastern; 1.20, 17)'
+        else:
+            nat = 'not stated in 1.20'
+        rows.append({
+            'Planet': planet, 'Lesser': years['lesser'], 'Middle': years['middle'], 'Greater': years['greater'],
+            'Mighty': years['mighty'], 'Fardar': years['fardar'],
+            'WS place': ws, 'Quadrant place': q, 'Side of the Sun': side, 'In a share': 'yes' if in_share else 'no',
+            'On Times 4, 7 would grant': times, 'On Nativities 1.20 would grant': nat,
+        })
+    return rows
+
 def calculate_time_lords(ascendant_lon, birth_date, target_date):
     """Annual Profection (Lord of the Year) and a symbolic 1-degree-per-year
     direction of the Ascendant through the Egyptian bounds.
@@ -7028,6 +7113,7 @@ if location_query and lat is not None and lon is not None:
                                          syzygy['syzygy_longitude'], sect, chronocrats)
         planets_in_houses_data = evaluate_planets_in_houses(p_data, abu_mashar_condition, chart_data['ascendant'])
         time_lords_data = calculate_time_lords(chart_data['ascendant'], input_date, target_date)
+        planetary_years_data = evaluate_planetary_years_display(p_data, chart_data['houses'], chart_data['ascendant'], sect, essential)
 
         # The hub names the chart: the saved chart picked in the sidebar, else
         # the name typed for saving, else "Transits" (owner's decision D5,
@@ -7722,6 +7808,21 @@ if location_query and lat is not None and lon is not None:
             st.caption("Part 2: prediction.")
             st.subheader('Chronocrator Matrix (Active Time Lords)', help='Two rows: the lord of the year by annual profection, and the Egyptian bound lord of the Ascendant directed symbolically at one degree per year -- which is not a distribution, as its label says.')
             st.dataframe(pd.DataFrame(time_lords_data), hide_index=True, width='stretch')
+            st.subheader("Planetary years (Abu Ma'shar VII.8, Figure 146) -- display only",
+                         help="The lesser, middle, greater and mighty years and the fardar of each planet, beside its placement and what "
+                              "the two placement rules in the corpus would grant it. Nothing here is applied: the releaser, house-master "
+                              "and every timing technique stay deferred until Persian Nativities IV is read (decision D-3).")
+            st.dataframe(pd.DataFrame(planetary_years_data), hide_index=True, width='stretch', height=_rows_height(len(planetary_years_data)))
+            with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
+                st.markdown("Figure 146 (VII.8, p. 487), verified against the prose restatement at VII.8, 3-8 and the fardar total the text "
+                            "gives (\"that is 75 years\", VII.8, 3: 10+8+13+9+11+12+7+3+2, the Head 3 and the Tail 2 included). "
+                            "**On Times Ch. 4, 7:** \"if the ruler was in a stake, eastern, it grants its greater years; or if it was in what "
+                            "follows the stakes, it grants its middle years; and if it was falling, it grants its lesser years.\" "
+                            "**On Nativities 1.20, 10-17:** greater in the Ascendant, Midheaven, sign of the west or eleventh when enhanced (10), "
+                            "or under the earth, eastern, in a share (11); middle in the second or eighth (16), or in the eleventh or fifth "
+                            "when not in a share and not eastern (17). The two disagree on where the greater years are granted "
+                            "(synthesis/04_timing_open_questions.md §3 #2); fn. 151 adds al-Tabari's reduction to the lesser years when "
+                            "alien and western. Which planet is the ruler or house-master is the deferred question, so no row is chosen.")
 
         def page_sources():
             st.header("Sources and coverage")

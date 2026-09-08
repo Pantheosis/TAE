@@ -297,3 +297,25 @@ def test_d2_control_abu_mashars_profile_keeps_the_same_pair_received(engine):
     with engine["doctrine"](engine["ABU_MASHAR"]):
         rec = [(r.get("Received"), r.get("Receiver")) for r in engine["evaluate_reception"](p, sect)]
     assert ("Moon", "Venus") in rec, rec
+
+
+# --- D-3: the planetary years shown beside the two placement rules, applied to nothing
+def test_d3_years_display_reads_both_rules_and_names_the_silence(engine):
+    c = _fixture_chart(engine, "1240-05-23")
+    p, sect = c["planetary_data"], c["sect"]
+    ess = engine["evaluate_essential_dignities"](p, sect)
+    rows = engine["evaluate_planetary_years_display"](p, c["houses"], c["ascendant"], sect, ess)
+    assert [r["Planet"] for r in rows] == ["Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]
+    for r in rows:
+        assert r["On Times 4, 7 would grant"].startswith(("greater", "middle", "lesser", "in a stake but not eastern"))
+        assert r["On Nativities 1.20 would grant"].startswith(("greater", "middle", "not stated"))
+        assert (r["Lesser"], r["Greater"]) == (engine["PLANETARY_YEARS"][r["Planet"]]["lesser"], engine["PLANETARY_YEARS"][r["Planet"]]["greater"])
+
+
+def test_d3_control_nothing_in_the_engine_applies_the_years(engine):
+    # Display only: the constant is read by the display evaluator and by
+    # nothing else in the engine half.
+    from conftest import engine_source
+    import re
+    uses = [m.start() for m in re.finditer(r"PLANETARY_YEARS\b", engine_source())]
+    assert len(uses) == 2, uses   # the definition and the display evaluator

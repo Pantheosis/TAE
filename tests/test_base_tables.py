@@ -264,6 +264,51 @@ def test_v22_literals_match_the_corpus_figures_63_and_64():
     assert _ordinal_table(text, "Figure 64 (Ab", "| Sign | Ordinal | Cardinal | Sign", 2) == ELEVATION_FIG64
 
 
+# --- Planetary years: Abu Ma'shar Figure 146 (VII.8), corpus, p. 487 ---
+# Display only (D-3). The literal is checked against the corpus table and
+# against the text's own checksum: the fardars total 75 years (VII.8, 3).
+PLANETARY_YEARS_FIG146 = {
+    'Saturn':  (11, 30, 43.5, 57, 265),
+    'Jupiter': (12, 12, 45.5, 79, 427),
+    'Mars':    (7, 15, 40.5, 66, 284),
+    'Sun':     (10, 19, 39.5, 120, 1461),
+    'Venus':   (8, 8, 45, 82, 1151),
+    'Mercury': (13, 20, 48, 76, 480),
+    'Moon':    (9, 25, 39.5, 108, 520),
+}
+
+
+@pytest.mark.parametrize("planet", PLANETS)
+def test_planetary_years_match_figure_146(engine, planet):
+    y = engine["PLANETARY_YEARS"][planet]
+    assert (y['fardar'], y['lesser'], y['middle'], y['greater'], y['mighty']) == PLANETARY_YEARS_FIG146[planet], planet
+
+
+def test_fardars_total_the_75_years_the_text_gives(engine):
+    total = sum(v['fardar'] for v in engine["PLANETARY_YEARS"].values()) + sum(engine["NODE_FARDAR_YEARS"].values())
+    assert total == 75 and engine["NODE_FARDAR_YEARS"] == {'Head': 3, 'Tail': 2}
+
+
+@pytest.mark.skipif(not BOOK_VII.is_file(), reason="corpus not on this machine (CI)")
+def test_planetary_years_literal_matches_the_corpus_figure_146():
+    lines = BOOK_VII.read_text().splitlines()
+    end = next(i for i, l in enumerate(lines) if l.startswith("**Figure 146"))
+    start = max(i for i in range(end) if lines[i].startswith("|      | *Fard"))
+    glyph = dict(zip('♄♃♂☉♀☿☽', ['Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon']))
+    got, nodes = {}, {}
+    for l in lines[start + 2:end]:
+        if not l.startswith("|"):
+            continue
+        cells = [c.strip() for c in l.strip().strip("|").split("|")]
+        def num(x):
+            return float(x.replace(" 1/2", ".5")) if x else None
+        if cells[0] in glyph:
+            got[glyph[cells[0]]] = tuple(num(c) for c in cells[1:6])
+        elif cells[0] in ("Head", "Tail"):
+            nodes[cells[0]] = int(cells[1])
+    assert got == PLANETARY_YEARS_FIG146 and nodes == {'Head': 3, 'Tail': 2}
+
+
 # --- Joys, genders, quadruplicity, places: Sahl's Introduction ---
 def test_joys_match_introduction_ch3_128(engine):
     # "Mercury rejoices in the Ascendant, the Moon rejoices in the third,
