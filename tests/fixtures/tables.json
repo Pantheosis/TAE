@@ -5,7 +5,10 @@
    ["Planetary Positions", ["Planet", "Position", "Absolute", "WS place", "Sees ASC", "Quadrant", "Motion", "Solar phase"]],
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
-   ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]]
+   ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
+   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]],
+   ["Special Degrees & Conditions", ["Context", "Order, strongest first"]],
+   ["Special Degrees & Conditions", ["Scheme", "Places"]]
   ],
   "configurations/Abu Ma'shar (supplement)": [
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
@@ -81,7 +84,10 @@
    ["Calculation", ["Quantity", "Value"]],
    ["Planetary Positions", ["Planet", "Position", "Absolute", "WS place", "Sees ASC", "Quadrant", "Motion", "Solar phase"]],
    ["Calculated Points", ["Point", "Position"]],
-   ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]]
+   ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
+   ["Quadrant divisions (Alchabitius)", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]],
+   ["Quadrant divisions (Alchabitius)", ["Context", "Order, strongest first"]],
+   ["Quadrant divisions (Alchabitius)", ["Scheme", "Places"]]
   ],
   "configurations/Abu Ma'shar (supplement)": [
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
@@ -148,7 +154,10 @@
    ["Planetary Positions", ["Planet", "Position", "Absolute", "WS place", "Sees ASC", "Quadrant", "Motion", "Solar phase"]],
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
-   ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]]
+   ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
+   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]],
+   ["Special Degrees & Conditions", ["Context", "Order, strongest first"]],
+   ["Special Degrees & Conditions", ["Scheme", "Places"]]
   ],
   "configurations/Abu Ma'shar (supplement)": [
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
@@ -225,7 +234,10 @@
    ["Planetary Positions", ["Planet", "Position", "Absolute", "WS place", "Sees ASC", "Quadrant", "Motion", "Solar phase"]],
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
-   ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]]
+   ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
+   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]],
+   ["Special Degrees & Conditions", ["Context", "Order, strongest first"]],
+   ["Special Degrees & Conditions", ["Scheme", "Places"]]
   ],
   "configurations/Abu Ma'shar (supplement)": [
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
@@ -298,7 +310,10 @@
    ["Planetary Positions", ["Planet", "Position", "Absolute", "WS place", "Sees ASC", "Quadrant", "Motion", "Solar phase"]],
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
-   ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]]
+   ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
+   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]],
+   ["Special Degrees & Conditions", ["Context", "Order, strongest first"]],
+   ["Special Degrees & Conditions", ["Scheme", "Places"]]
   ],
   "configurations/Abu Ma'shar (supplement)": [
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
@@ -367,7 +382,10 @@
    ["Planetary Positions", ["Planet", "Position", "Absolute", "WS place", "Sees ASC", "Quadrant", "Motion", "Solar phase"]],
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
-   ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]]
+   ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
+   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]],
+   ["Special Degrees & Conditions", ["Context", "Order, strongest first"]],
+   ["Special Degrees & Conditions", ["Scheme", "Places"]]
   ],
   "configurations/Abu Ma'shar (supplement)": [
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],

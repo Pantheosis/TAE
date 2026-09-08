@@ -69,3 +69,73 @@ def test_d5_control_abu_mashar_keeps_his_own_19_to_3_span(engine):
     # VII.6, 40's harsher band stays where the table is his.
     assert engine["HARSH_BURNED_PATH"] == (199.0, 213.0)
     assert "burned place" not in _special(engine, 100.0)
+
+
+# --- D-7 / C-11: the contradicted sign categories, two readings by work ---
+def test_d7_four_footed_differs_by_work(engine):
+    assert "Leo" in engine["FOUR_FOOTED"]["On Nativities"]
+    assert "Leo" not in engine["FOUR_FOOTED"]["Introduction"]
+    assert "Capricorn" in engine["FOUR_FOOTED"]["Introduction"]
+    assert "Capricorn" not in engine["FOUR_FOOTED"]["On Nativities"]
+
+
+def test_d7_control_no_merged_four_footed_list_exists(engine):
+    # No reading may contain BOTH Leo and Capricorn; that union is in
+    # neither witness.
+    for reading in engine["FOUR_FOOTED"].values():
+        assert not {"Leo", "Capricorn"} <= set(reading)
+
+
+def test_d7_voice_virgo_flips_class_between_works(engine):
+    assert "Virgo" in engine["VOICE"]["Introduction"]["half a voice"]
+    assert "Virgo" in engine["VOICE"]["On Nativities"]["powerful voice"]
+    for work, classes in engine["VOICE"].items():
+        listed = [sg for signs in classes.values() for sg in signs]
+        assert sorted(listed) == sorted(set(listed)) and len(listed) == 12, work
+
+
+def test_d7_barren_lists_differ_and_the_reported_opinion_is_kept_apart(engine):
+    b = engine["BARREN"]
+    assert "Aries" in b["Introduction"] and "Aries" not in b["On Nativities"]
+    assert "Sagittarius" in b["On Nativities"] and "Sagittarius" not in b["Introduction"]
+    assert b["On Nativities (some scholars, 1.38, 17)"] == ["Capricorn", "Aquarius"]
+    assert engine["MANY_CHILDREN"] == ["Cancer", "Scorpio", "Pisces"]
+
+
+def test_d7_sign_categories_shows_both_readings_for_virgo(engine):
+    row = engine["sign_categories"]("Virgo")
+    assert row["Voice (Intro)"] == "half a voice" and row["Voice (Nat.)"] == "powerful voice"
+    assert row["Barren (Intro)"] == "yes" and row["Barren (Nat.)"] == "yes"
+
+
+# --- D-8 / C-20: two dignity orderings, never merged ----------------------
+def test_d8_dignity_orderings_are_kept_separate_by_context(engine):
+    order = engine["DIGNITY_ORDER"]
+    q = next(v for k, v in order.items() if k.startswith("Questions Ch. 13, 7"))
+    n = next(v for k, v in order.items() if k.startswith("On Nativities 1.20, 2"))
+    assert q == ["house", "triplicity", "bound", "face"]
+    assert n == ["bound", "house", "exaltation", "triplicity", "image"]
+
+
+def test_d8_control_the_questions_chain_gains_no_exaltation_slot(engine):
+    q = next(v for k, v in engine["DIGNITY_ORDER"].items() if k.startswith("Questions Ch. 13, 7"))
+    assert "exaltation" not in q
+
+
+# --- D-9 / C-09: the good-place schemes and the printed 7-place order -----
+def test_d9_seven_place_ranking_is_the_printed_order_and_says_so(engine):
+    schemes = engine["GOOD_PLACE_SCHEMES"]
+    seven = next(v for k, v in schemes.items() if k.startswith("Seven praised places"))
+    assert seven == [1, 10, 7, 4, 11, 9, 5]
+    note = engine["SEVEN_PLACE_RANKING_NOTE"]
+    assert "11, 5, 9" in note and "conflation" in note
+
+
+def test_d9_control_the_other_schemes_are_not_merged_into_the_ranking(engine):
+    schemes = engine["GOOD_PLACE_SCHEMES"]
+    eight = next(v for k, v in schemes.items() if k.startswith("Eight places"))
+    assert sorted(eight["stakes"] + eight["what follows the stakes"] + eight["falling from the stakes"]) == list(range(1, 13))
+    six = next(v for k, v in schemes.items() if k.startswith("Six excellent"))
+    assert set(six) == engine["EXCELLENT_PLACES"] == {1, 4, 5, 7, 10, 11}
+    sun = next(v for k, v in schemes.items() if k.startswith("Excellent places for the Sun"))
+    assert sorted(sun) == [1, 10, 11]

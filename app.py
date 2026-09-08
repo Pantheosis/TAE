@@ -4372,6 +4372,88 @@ WELLED_DEGREES = {
 DARK_SIGNS = {'Libra', 'Capricorn'}
 BURNED_PLACE_SIGNS = ('Libra', 'Scorpio')
 
+# --- Sahl's sign categories where his two works disagree (C-11 / D-7) ----
+# One reading per work, never a union: the union is in neither witness
+# (synthesis/03_changes.md #2; decision D-7, 2026-09-08). Introduction =
+# The Introduction Ch. 1; Nativities = On Nativities Ch. 1.38.
+#   Four-footed. Intro 1, 13: "Aries, Taurus, and the beginning of
+#   Capricorn, and the end of Sagittarius." Nat. 1.38, 1: "Aries, Leo,
+#   Taurus have four feet; and the <first> half of Sagittarius has two
+#   feet, and the other has four feet." Leo is in one, Capricorn in the
+#   other. Values give the extent of the sign the text names.
+FOUR_FOOTED = {
+    'Introduction':  {'Aries': 'whole', 'Taurus': 'whole', 'Capricorn': 'the beginning', 'Sagittarius': 'the end'},
+    'On Nativities': {'Aries': 'whole', 'Leo': 'whole', 'Taurus': 'whole', 'Sagittarius': 'the second half'},
+}
+#   Voice. Intro 1, 20-22, three classes; Nat. 1.38, 25-28, four. Virgo
+#   is "half a voice" in one and "powerful voice" in the other.
+VOICE = {
+    'Introduction': {
+        'full voice': ['Aries', 'Taurus', 'Gemini', 'Leo', 'Libra', 'Sagittarius'],
+        'half a voice': ['Capricorn', 'Aquarius', 'Virgo'],
+        'no voice': ['Cancer', 'Scorpio', 'Pisces'],
+    },
+    'On Nativities': {
+        'powerful voice': ['Gemini', 'Virgo', 'Libra'],
+        'balanced voice': ['Aries', 'Taurus', 'Leo', 'Sagittarius'],
+        'weak voice': ['Capricorn', 'Aquarius'],
+        'no voice': ['Cancer', 'Scorpio', 'Pisces'],       # "Cancer and its triplicity"
+    },
+}
+#   Barren. Intro 1, 23: "signs of barrenness, few in children: and they
+#   are Aries, Leo, and Virgo." Nat. 1.38, 16: "The barren ones: Leo,
+#   Virgo, and Sagittarius"; 17: "Some scholars said that Capricorn and
+#   Aquarius are barren" (a reported opinion, kept apart). Many children
+#   agrees in both (Intro 1, 24; Nat. 1.38, 14): Cancer, Scorpio, Pisces.
+BARREN = {
+    'Introduction': ['Aries', 'Leo', 'Virgo'],
+    'On Nativities': ['Leo', 'Virgo', 'Sagittarius'],
+    'On Nativities (some scholars, 1.38, 17)': ['Capricorn', 'Aquarius'],
+}
+MANY_CHILDREN = ['Cancer', 'Scorpio', 'Pisces']
+SIGN_CATEGORY_SOURCES = {
+    'Four-footed': ('Introduction Ch. 1, 13', 'On Nativities 1.38, 1'),
+    'Voice': ('Introduction Ch. 1, 20-22', 'On Nativities 1.38, 25-28'),
+    'Barren': ('Introduction Ch. 1, 23', 'On Nativities 1.38, 16-17'),
+    'Many children': ('Introduction Ch. 1, 24', 'On Nativities 1.38, 14'),
+    'Dark': ('Introduction Ch. 1, 18', 'On Nativities 1.38, 8'),
+    'Burned place': ('Introduction Ch. 1, 19', 'On Nativities 1.38, 9'),
+}
+
+def sign_categories(sign):
+    """Every category label a sign carries, one column per work where the
+    works disagree, so a reader sees both readings and no merged one."""
+    def voice_class(work):
+        return next((cls for cls, signs in VOICE[work].items() if sign in signs), '-')
+    return {
+        'Four-footed (Intro)': FOUR_FOOTED['Introduction'].get(sign, '-'),
+        'Four-footed (Nat.)': FOUR_FOOTED['On Nativities'].get(sign, '-'),
+        'Voice (Intro)': voice_class('Introduction'),
+        'Voice (Nat.)': voice_class('On Nativities'),
+        'Barren (Intro)': 'yes' if sign in BARREN['Introduction'] else '-',
+        'Barren (Nat.)': ('yes' if sign in BARREN['On Nativities']
+                          else 'some scholars' if sign in BARREN['On Nativities (some scholars, 1.38, 17)'] else '-'),
+        'Many children (both)': 'yes' if sign in MANY_CHILDREN else '-',
+        'Dark (both)': 'yes' if sign in DARK_SIGNS else '-',
+        'Burned place, no degrees (both)': 'yes' if sign in BURNED_PLACE_SIGNS else '-',
+    }
+
+# --- Dignity orderings, kept apart by context (C-20 / D-8) ---------------
+# "the triplicity is below the house, and likewise the bound below the
+# triplicity, and the face below the bound" (Questions Ch. 13, 7 -- a
+# planet's rank; exaltation is not placed). "the stronger of them is the
+# lord of the bound, then the lord of the house, then the lord of the
+# exaltation, then the lord of the triplicity, then the lord of the image"
+# (On Nativities 1.20, 2 -- house-master selection). Glossary p. 777 lists
+# domicile > exaltation > triplicity > bound > face. The bound is first in
+# one and third in another; they answer different questions and are never
+# merged (decision D-8). VICTOR_WEIGHTS (the almuten) is a fourth thing.
+DIGNITY_ORDER = {
+    'Questions Ch. 13, 7 (a planet\'s rank)': ['house', 'triplicity', 'bound', 'face'],
+    'On Nativities 1.20, 2 (house-master selection)': ['bound', 'house', 'exaltation', 'triplicity', 'image'],
+    'Glossary p. 777 (general listing)': ['house', 'exaltation', 'triplicity', 'bound', 'face'],
+}
+
 def evaluate_special_degrees(planetary_data):
     """Flags planets in Sahl's dark signs, in the two signs of his burned
     place (no degrees -- see DARK_SIGNS above), in a classical welled
@@ -4822,6 +4904,31 @@ def _averse_to_ascendant(lon, ascendant_lon):
 # six good places." Distinct from bare advancement (4, 83), which is every
 # stake and succeedent place with no visibility qualifier.
 EXCELLENT_PLACES = {1, 4, 5, 7, 10, 11}
+
+# --- The good-place schemes, each labelled for what it is FOR (C-09 / D-9)
+# Eight places, "for a planet in itself" (glossary p. 771): "Four of them
+# are called the 'stakes' ... 33 four of them are said to be what follows
+# the stakes ... 35 four of them are said to be falling from the stakes"
+# (Introduction Ch. 2, 31-36, Fig. 5). Seven praised places, ranked, "for
+# the native": Ascendant, Midheaven, seventh, fourth, eleventh, ninth,
+# fifth (Ch. 2, 37-44, Figs. 6-7). Six excellent places: EXCELLENT_PLACES
+# above (Ch. 3, 78). And Choices Ch. 9, 12: "in an excellent place, in the
+# Ascendant, eleventh, or tenth" -- corroborating the glossary's hedge and
+# demoting the 7th and 4th. Never merged into one house-strength number.
+GOOD_PLACE_SCHEMES = {
+    'Eight places, for a planet in itself (Intro Ch. 2, 31-36)': {
+        'stakes': [1, 10, 7, 4], 'what follows the stakes': [2, 5, 8, 11], 'falling from the stakes': [3, 6, 9, 12]},
+    'Seven praised places, ranked, for the native (Intro Ch. 2, 37-44)': [1, 10, 7, 4, 11, 9, 5],
+    'Six excellent places (Intro Ch. 3, 78)': sorted(EXCELLENT_PLACES),
+    'Excellent places for the Sun (Choices Ch. 9, 12)': [1, 11, 10],
+}
+# The tail of the ranking is a conflation (fn. 42): manuscript B reads
+# "... 11, 5, 9"; H and L read "... 11, 9, 5"; the printed text takes H/L's
+# order plus B's note that the ninth is the Sun's joy (42, itself B-only).
+# Kept as printed, labelled (decision D-9, low-medium confidence).
+SEVEN_PLACE_RANKING_NOTE = ("Printed order (manuscripts H and L: ... 11, 9, 5). Manuscript B reads ... 11, 5, 9; "
+                            "the printed text takes H/L's order plus B's note that the ninth is the Sun's joy "
+                            "(Introduction Ch. 2, 42, fn. 42) -- Dykes' conflation, kept as printed.")
 
 def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendant_lon, sect, natal_houses):
     """Strength of the Planets (Sahl, The Introduction Ch.3, 78-88): the
@@ -7058,6 +7165,21 @@ if location_query and lat is not None and lon is not None:
                       glance='Flags planets in Sahl\'s dark signs (Libra, Capricorn), in the two signs of his burned place ("the end of Libra and the beginning of Scorpio" -- he gives no degrees; Abu Ma\'shar\'s 19 Libra-3 Scorpio is applied only in his own Planetary Condition table), in a welled degree of their sign (Abu Ma\'shar, Great Introduction V.21, Fig. 62), or in one of Sahl\'s two sign-boundary conditions.',
                       notes='ENTERING: "every planet which is at the beginning of a sign is weak until it is firmly established in it and comes to be 5 degrees within it" (Fifty Aphorisms #44, 87), repeated in On Nativities Ch.1.22, 9. This is the other half of the five-degree rule that also governs advancement.\n\nLEAVING: "if a planet came to be in the last degree of the sign, then its strength has already gone away from that sign, and its strength is in the next sign ... like a man putting his foot on the threshold of his door. And if a planet was in the twenty-ninth degree, then indeed the strength of the planet IS in that sign" (Fifty Aphorisms #15, 31-33) -- so the 29th degree still counts and only the 30th has left.')
             _absent(_gap)
+            with st.expander("Sahl's categories by work: sign categories, dignity orderings, good places", icon=":material/menu_book:"):
+                st.caption("Where The Introduction and On Nativities disagree, both readings are shown and neither is merged "
+                           "(decisions D-7, D-8, D-9). Sources: " + "; ".join(f"{k}: {a} / {b}" for k, (a, b) in SIGN_CATEGORY_SOURCES.items()) + ".")
+                cat_rows = []
+                for p, d in list(p_data.items()) + [('Ascendant', {'longitude': chart_data['ascendant']})]:
+                    if p == 'North Node':
+                        continue
+                    sign_p = get_zodiac_sign(d['longitude'])
+                    cat_rows.append({'Point': p, 'Sign': sign_p, **sign_categories(sign_p)})
+                st.dataframe(pd.DataFrame(cat_rows), hide_index=True, width='stretch', height=_rows_height(len(cat_rows)))
+                st.dataframe(pd.DataFrame([{'Context': k, 'Order, strongest first': ' > '.join(v)} for k, v in DIGNITY_ORDER.items()]),
+                             hide_index=True, width='stretch')
+                st.dataframe(pd.DataFrame([{'Scheme': k, 'Places': (', '.join(f"{g}: {p}" for g, p in v.items()) if isinstance(v, dict) else str(v))}
+                                           for k, v in GOOD_PLACE_SCHEMES.items()]), hide_index=True, width='stretch')
+                st.caption(SEVEN_PLACE_RANKING_NOTE)
 
         def page_dignities():
             st.header("Dignities and places")
