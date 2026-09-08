@@ -45,6 +45,12 @@ CHARTS = {
     "1240-05-26": "Reflection of Light and Favor & Recompense",
     "1240-09-18": "dense Returning and Prevented connections",
     "1240-10-05": "retreating quadrants, a retrograde planet",
+    # Added 2026-09-07 when the Egyptian-bounds fix emptied Favor & Recompense
+    # on 1240-05-26 (its only row had come from the transposed Gemini bound).
+    # The Sun at 21 Capricorn (degree 22, a Well degree) with Saturn, its
+    # domicile lord, connected -- a Saturn-helped Favor, which no other chart
+    # has; the others' Favor rows were all Jupiter-helped.
+    "1240-01-04": "Favor & Recompense (Sun in a Well, favored by Saturn)",
 }
 FLORENCE = (43.7792, 11.2463)
 LOCAL_TIME = time(14, 30)
