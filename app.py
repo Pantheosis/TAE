@@ -4325,11 +4325,17 @@ NOT_IMPLEMENTED_COVERAGE = [
 # --- Special Degrees & Conditions ----------------------------------------
 
 # Classical "wells" (pitted degrees) by sign, per Abu Ma'shar, The Great
-# Introduction to Astrology V.21 (Dykes translation, Fig. 98).
+# Introduction to Astrology V.21, Fig. 62 (Dykes translation, p. 308 of Abu
+# Ma'shar's own volume -- the pagination is not Sahl's). Ordinal degrees as
+# the figure prints them ("the 6th, 11th, 17th ..."); the code tests
+# int(lon % 30) + 1 against them. Corrected 2026-09-08 against the corpus
+# capture of V.21: Aries gained 29, Gemini's 13 became 12, Pisces gained 28
+# (the earlier text cited Fig. 98, which is "Speed relative to apogee").
+# Pinned cell by cell in tests/test_base_tables.py.
 WELLED_DEGREES = {
-    'Aries': [6, 11, 17, 23],
+    'Aries': [6, 11, 17, 23, 29],
     'Taurus': [5, 13, 18, 24, 25, 26],
-    'Gemini': [2, 13, 17, 26, 30],
+    'Gemini': [2, 12, 17, 26, 30],
     'Cancer': [12, 17, 23, 26, 30],
     'Leo': [6, 13, 15, 22, 23, 28],
     'Virgo': [8, 13, 16, 21, 25],
@@ -4338,7 +4344,7 @@ WELLED_DEGREES = {
     'Sagittarius': [7, 12, 15, 24, 27, 30],
     'Capricorn': [2, 7, 17, 22, 24, 28],
     'Aquarius': [1, 12, 17, 23, 29],
-    'Pisces': [4, 9, 24, 27],
+    'Pisces': [4, 9, 24, 27, 28],
 }
 
 def evaluate_special_degrees(planetary_data):

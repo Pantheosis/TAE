@@ -86,7 +86,7 @@ the OCR could not. What would move: one displayed string.
 
 | Table | What it feeds | Finding |
 |---|---|---|
-| **`WELLED_DEGREES`** (`app.py:4307`) | "Welled Degree" in Special Degrees; `in_well` in **Favor & Recompense** (the new 1240‑01‑04 fixture row exists because Capricorn 22 is in this list) | Cited in the code to *"Abū Ma'shar V.21 (Dykes), Fig. 98"*. **In this corpus Figure 98 is "Speed relative to apogee"** (`abu_mashar_book_vii.md:76`) and V.21 is not present — fn. 203 only points to it (*"For the wells, see Ch. V.21"*). The glossary defines welled degrees (p. 797) without a table; the Handy Tables and Reference Guide have none. **Unverifiable here, and the citation is wrong as written.** This is the exact condition that let the bounds error live. Highest priority to source: photograph *Great Introduction* V.21's table (the book is the one the aspects/conditions captures came from). |
+| **`WELLED_DEGREES`** (`app.py:4307`) | "Welled Degree" in Special Degrees; `in_well` in **Favor & Recompense** (the new 1240‑01‑04 fixture row exists because Capricorn 22 is in this list) | Cited in the code to *"Abū Ma'shar V.21 (Dykes), Fig. 98"*. **In this corpus Figure 98 is "Speed relative to apogee"** (`abu_mashar_book_vii.md:76`) and V.21 is not present — fn. 203 only points to it (*"For the wells, see Ch. V.21"*). The glossary defines welled degrees (p. 797) without a table; the Handy Tables and Reference Guide have none. **Unverifiable here, and the citation is wrong as written.** This is the exact condition that let the bounds error live. Highest priority to source: photograph *Great Introduction* V.21's table (the book is the one the aspects/conditions captures came from). **Resolved 2026-09-08:** V.21 was photographed and is in the corpus (Abū Ma'shar pp. 303–310, Figures 59–64). The table is **Figure 62** (`abu_mashar_book_vii.md`, p. 308 of Abū Ma'shar's volume); the chapter citation was right and only the figure number was wrong. Nine signs matched; Aries lacked 29, Gemini had 13 for 12, Pisces lacked 28 — corrected in `app.py` and pinned cell by cell in `tests/test_base_tables.py` (`WELLS_FIG62`, plus a corpus re-derivation test). |
 | faces (`CHALDEAN_ORDER` algorithm) | face lord everywhere | Convention only; pinned as the standard sequence so it cannot drift, but no corpus or course table confirms it. |
 | `PLANET_GENDER` (`:4748`) | Strength testimony 87 | Reference Guide genders: Saturn *"Masculine (but sometimes viewed as neutral or feminine)"*, **Mercury *"Masculine, but perhaps varies"*** — the code leaves Mercury `None` ("left unassigned rather than guessed"). Documented divergence, not an error; the owner's call whether the Guide's "masculine" should apply. |
 | `GEOCENTRIC_DISTANCE_RANGE` (`:4489`) | apogee proxy (VII.6, 23) | Modern proxy, already labelled as such in the code. |
@@ -105,7 +105,7 @@ the OCR could not. What would move: one displayed string.
 
 ## 5. Could not verify
 
-- `WELLED_DEGREES` (above).
+- ~~`WELLED_DEGREES` (above).~~ Pinned 2026-09-08 against Figure 62 (V.21).
 - The Reference Guide's own transcription of Rhetorius/PN4 — it is the course's table, taken as
   authority; PN4 is not in the corpus.
 - Handy p. 32 (joys mapped onto exaltations) is an image; the joys were pinned to the corpus instead.

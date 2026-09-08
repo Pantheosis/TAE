@@ -15,7 +15,17 @@ are not pinned here; they are listed in synthesis/08_base_table_audit.md.
 """
 from __future__ import annotations
 
+import os
+import re
+from pathlib import Path
+
 import pytest
+
+# The corpus is only on the owner's machine; the re-derivation tests below
+# skip without it (same convention as test_abu_mashar_citations.py).
+CORPUS_DIR = Path(os.environ.get(
+    "CORPUS_DIR", Path.home() / "Desktop" / "Fifty Aphorism OCR Project" / "consolidated_texts"))
+BOOK_VII = CORPUS_DIR / "abu_mashar_book_vii.md"
 
 SIGNS = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
          'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces']
@@ -115,6 +125,80 @@ def test_brightness_degrees_match_figure_61_sign_by_sign(engine, sign):
     spans = BRIGHTNESS_FIG61[sign]
     assert spans[0][0] == 0 and spans[-1][1] == 29
     assert all(spans[i + 1][0] == spans[i][1] + 1 for i in range(len(spans) - 1)), "gap or overlap"
+
+
+# --- Wells: Abu Ma'shar Figure 62 (V.21), corpus, p. 308 of Abu Ma'shar's
+# own volume (Great Introduction Book V, pp. 303-310, captured 2026-09-08).
+# Ordinal degrees as the figure prints them ("the 6th, 11th, 17th ..."),
+# which is what app.py tests with int(lon % 30) + 1. Until this pin the
+# table was cited to Figure 98 (which is "Speed relative to apogee") and
+# held three defects -- Aries lacked 29, Gemini had 13 for 12, Pisces
+# lacked 28 -- that no test could see because nothing compared it to a
+# source. Transcribed from the corpus table, not from app.py.
+WELLS_FIG62 = {
+    'Aries':       [6, 11, 17, 23, 29],
+    'Taurus':      [5, 13, 18, 24, 25, 26],
+    'Gemini':      [2, 12, 17, 26, 30],
+    'Cancer':      [12, 17, 23, 26, 30],
+    'Leo':         [6, 13, 15, 22, 23, 28],
+    'Virgo':       [8, 13, 16, 21, 25],
+    'Libra':       [1, 7, 20, 30],
+    'Scorpio':     [9, 10, 17, 22, 23, 27],
+    'Sagittarius': [7, 12, 15, 24, 27, 30],
+    'Capricorn':   [2, 7, 17, 22, 24, 28],
+    'Aquarius':    [1, 12, 17, 23, 29],
+    'Pisces':      [4, 9, 24, 27, 28],
+}
+
+GLYPH_TO_SIGN = dict(zip('♈♉♊♋♌♍♎♏♐♑♒♓', SIGNS))
+
+
+@pytest.mark.parametrize("sign", SIGNS)
+def test_wells_match_figure_62_sign_by_sign(engine, sign):
+    assert list(engine["WELLED_DEGREES"][sign]) == WELLS_FIG62[sign], sign
+
+
+def test_wells_table_has_exactly_the_twelve_signs_in_ordinal_form(engine):
+    table = engine["WELLED_DEGREES"]
+    assert set(table) == set(SIGNS)
+    for sign, degrees in table.items():
+        assert degrees == sorted(set(degrees)), sign
+        assert all(1 <= d <= 30 for d in degrees), sign
+
+
+def parse_figure_62(text):
+    """Figure 62 as the corpus prints it: a two-sided table of Sign |
+    Ordinal | Cardinal, continuation rows carrying an empty sign cell.
+    The ordinal and cardinal columns are cross-checked ("12th" must sit
+    beside "11°-11°59'"), so a row whose two columns disagree fails here
+    rather than being read one way or the other."""
+    lines = text.splitlines()
+    end = next(i for i, l in enumerate(lines) if l.startswith("Figure 62 (Ab"))
+    start = max(i for i in range(end) if lines[i].startswith("| Sign | Ordinal | Cardinal | Sign"))
+    table, current = {}, [None, None]
+    for line in lines[start + 2:end]:
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        assert len(cells) == 6, cells
+        for side in (0, 1):
+            sign, ordinal, cardinal = cells[3 * side:3 * side + 3]
+            if sign:
+                current[side] = GLYPH_TO_SIGN[sign]
+                table.setdefault(current[side], [])
+            if not ordinal:
+                continue
+            n = int(re.match(r"(\d+)", ordinal).group(1))
+            lo, hi = re.match(r"0?(\d+)°-0?(\d+)°59'", cardinal).groups()
+            assert int(lo) == int(hi) == n - 1, (current[side], ordinal, cardinal)
+            table[current[side]].append(n)
+    return table
+
+
+@pytest.mark.skipif(not BOOK_VII.is_file(), reason="corpus not on this machine (CI): "
+                    "the vendored WELLS_FIG62 literal is what the pin above uses")
+def test_wells_literal_matches_the_corpus_figure_62():
+    assert parse_figure_62(BOOK_VII.read_text()) == WELLS_FIG62
 
 
 # --- Joys, genders, quadruplicity, places: Sahl's Introduction ---
