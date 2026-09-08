@@ -4454,6 +4454,58 @@ DIGNITY_ORDER = {
     'Glossary p. 777 (general listing)': ['house', 'exaltation', 'triplicity', 'bound', 'face'],
 }
 
+# --- Abu Ma'shar's two V.22 degree tables (decisions D-20, D-21) ----------
+# Display only, labelled a supplement: nothing in Sahl and none of VII.6's
+# conditions reads either table, so neither enters any verdict. Ordinal
+# degrees as the figures print them, tested with int(lon % 30) + 1 like
+# the wells. Pinned cell by cell in tests/test_base_tables.py.
+#   Figure 63, V.22, 1-2: "when planets indicate the native's good fortune
+#   by means of their positions, and the Moon or the Lot of Fortune is in
+#   these degrees, or [these degrees] are exactly on the Ascendant, then
+#   they will increase in the native's good fortune. And if they indicate
+#   downfall, then these will instigate some motion towards high rank and
+#   power." Seven degrees, 1.9% of the zodiac.
+GOOD_FORTUNE_DEGREES = {'Taurus': [15, 27, 30], 'Leo': [3, 5], 'Scorpio': [7], 'Aquarius': [20]}
+#   Figure 64, V.22, 4: "if the Ascendant was one of these degrees ... or
+#   the Sun by day or the Moon by night was in one of them, and they were
+#   in an excellent position of the circle, and the planets of the root of
+#   the nativity indicated good fortune, then they will make him attain
+#   nobility and the houses of kings." Thirty-one degrees, 8.6% of the
+#   zodiac. The two preconditions cannot be tabulated and are shown as a
+#   caveat. Aquarius 17 is also a well (V.21, Fig. 62); Leo 5 and
+#   Aquarius 20 are in both tables. The text reconciles none of this.
+ELEVATION_DEGREES = {
+    'Aries': [19], 'Taurus': [3], 'Gemini': [11], 'Cancer': [1, 2, 3, 14, 15],
+    'Leo': [5, 7, 17], 'Virgo': [2, 12, 20], 'Libra': [3, 5, 21], 'Scorpio': [12, 20],
+    'Sagittarius': [13, 20], 'Capricorn': [12, 13, 14, 20], 'Aquarius': [7, 16, 17, 20], 'Pisces': [12, 20],
+}
+
+def evaluate_book_v_degrees(planetary_data, ascendant_lon, fortune_lon, sect):
+    """The points each V.22 table names, checked against its degrees:
+    Figure 63 for the Moon, the Lot of Fortune and the Ascendant; Figure 64
+    for the Ascendant and the luminary of the sect. A row per hit, and no
+    row is a verdict -- see GOOD_FORTUNE_DEGREES above."""
+    luminary = 'Sun' if sect == 'Diurnal' else 'Moon'
+    checks = [
+        ('Moon', planetary_data['Moon']['longitude'], GOOD_FORTUNE_DEGREES, 'Increasing in good fortune (V.22, 1-2; Fig. 63)'),
+        ('Lot of Fortune', fortune_lon, GOOD_FORTUNE_DEGREES, 'Increasing in good fortune (V.22, 1-2; Fig. 63)'),
+        ('Ascendant', ascendant_lon, GOOD_FORTUNE_DEGREES, 'Increasing in good fortune (V.22, 1-2; Fig. 63)'),
+        ('Ascendant', ascendant_lon, ELEVATION_DEGREES, 'Elevation and power (V.22, 4; Fig. 64)'),
+        (f'{luminary} (luminary of the sect)', planetary_data[luminary]['longitude'], ELEVATION_DEGREES,
+         'Elevation and power (V.22, 4; Fig. 64)'),
+    ]
+    results = []
+    for point, lon, table, label in checks:
+        sign = get_zodiac_sign(lon)
+        degree_1_based = int(lon % 30) + 1
+        if degree_1_based in table.get(sign, []):
+            caveat = ('the text adds "in an excellent position of the circle" and a fortunate root, neither tabulated'
+                      if table is ELEVATION_DEGREES else 'an amplifier of a good fortune already shown, not a testimony')
+            if table is ELEVATION_DEGREES and degree_1_based in WELLED_DEGREES.get(sign, []):
+                caveat += '; this degree is also a well (V.21)'
+            results.append({'Point': point, 'Position': get_degree_string(lon), 'Table': label, 'Caveat': caveat})
+    return results
+
 def evaluate_special_degrees(planetary_data):
     """Flags planets in Sahl's dark signs, in the two signs of his burned
     place (no degrees -- see DARK_SIGNS above), in a classical welled
@@ -6904,6 +6956,7 @@ if location_query and lat is not None and lon is not None:
         classical_lots = calculate_classical_lots(chart_data['ascendant'], p_data['Sun']['longitude'], p_data['Moon']['longitude'], sect)
         topical_lots = calculate_topical_lots(p_data, chart_data['ascendant'], chart_data['houses'], sect)
         special_degrees = evaluate_special_degrees(p_data)
+        book_v_degrees_data = evaluate_book_v_degrees(p_data, chart_data['ascendant'], chart_data['lot_of_fortune'], sect)
         house_lords_data = evaluate_house_lords(p_data, chart_data['ascendant'])
         victors_data = evaluate_victors(p_data, chart_data['ascendant'], chart_data['lot_of_fortune'],
                                          syzygy['syzygy_longitude'], sect, chronocrats)
@@ -7500,6 +7553,9 @@ if location_query and lat is not None and lon is not None:
                               glance="Collection or Transfer specifically between two planets that are in Aversion to each other, not just unconnected -- since Aversion pairs can't see each other at all, a third planet is the only way their natures can interact.")
                     _finding(_gap, 'Favor & Recompense', "Abu Ma'shar VII.5, 126-128", favor_recompense_data,
                               glance='A planet in its own Fall or a welled/pitted degree, pulled out of that weak condition by a connecting dispositor (Favor). Recompense is the same planet later returning the favor, found by simulating the chart forward.')
+                    _finding(_gap, 'Book V degrees (supplement, display only)', "Abu Ma'shar, Great Introduction V.22, Figs. 63-64", book_v_degrees_data,
+                              glance='Two degree tables from Book V that no condition in VII.6 and nothing in Sahl reads: the seven "degrees increasing in good fortune" (for the Moon, the Lot of Fortune and the Ascendant) and the thirty-one "degrees of elevation and power" (for the Ascendant and the luminary of the sect). Shown when a named point falls in one; never scored.',
+                              notes='V.22, 1-2: "when planets indicate the native\'s good fortune by means of their positions, and the Moon or the Lot of Fortune is in these degrees, or [these degrees] are exactly on the Ascendant, then they will increase in the native\'s good fortune. And if they indicate downfall, then these will instigate some motion towards high rank and power." V.22, 4: "if the Ascendant was one of these degrees ... or the Sun by day or the Moon by night was in one of them, and they were in an excellent position of the circle, and the planets of the root of the nativity indicated good fortune, then they will make him attain nobility and the houses of kings." Ordinal degrees, as in the wells. Leo 5 and Aquarius 20 are in both tables; Aquarius 17 is a degree of elevation and a well. Decisions D-20 and D-21 (2026-09-08), decided together.')
                     _finding(_gap, 'Forward-Looking Conditions', 'Revoking, Resistance, Escape — next 200 days', forward_looking_data,
                               glance='Conditions describing what happens as the chart moves forward in time (up to ~200 days), not the birth moment alone.',
                               notes='Each chapter prescribes an ORDERED SEQUENCE of events, and a row appears only when every step in that sequence actually occurs against the ephemeris -- the day columns show when. A condition not found inside 200 days is reported as not found, never as a negative finding.\n\nREVOKING (117): "a planet is connecting with a planet, but BEFORE IT REACHES IT, it retrogrades away from it." The window is now birth to the applicant\'s first station: perfection inside it means nothing was revoked.\n\nRESISTANCE (118): a light planet ahead of a heavier one by degree stations retrograde, reaches that heavier one BY RETROGRADATION, goes past it, and a third planet lighter still -- one that wanted the heavy planet -- meets the retrograde one instead. All five steps are required and timed.\n\nESCAPE (119): the planet being applied to leaves its sign first; the applicant then follows across the SAME boundary on its own next crossing, and is captured by a body it meets in the new sign. Dykes\' note on Fig. 139 is the picture: Mercury slips from Virgo into Libra, Venus follows, and Saturn\'s body catches her there.')

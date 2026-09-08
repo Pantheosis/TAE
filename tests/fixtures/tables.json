@@ -318,7 +318,8 @@
   "configurations/Abu Ma'shar (supplement)": [
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
-   ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]]
+   ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]],
+   ["Book V degrees (supplement, display only)", ["Point", "Position", "Table", "Caveat"]]
   ],
   "configurations/Both": [
    ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
@@ -335,7 +336,8 @@
    ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
-   ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]]
+   ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]],
+   ["Book V degrees (supplement, display only)", ["Point", "Position", "Table", "Caveat"]]
   ],
   "configurations/Sahl (course text)": [
    ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],

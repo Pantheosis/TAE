@@ -202,6 +202,68 @@ def test_wells_literal_matches_the_corpus_figure_62():
     assert parse_figure_62(BOOK_VII.read_text()) == WELLS_FIG62
 
 
+# --- Abu Ma'shar Figures 63 and 64 (V.22), corpus, p. 309, captured
+# 2026-09-08. Ordinal degrees, as the figures print them; Figure 64's
+# three ranged entries (Cancer 1st-3rd and 14th-15th, Capricorn 12th-14th,
+# Aquarius 16th-17th) are expanded. Display-only tables (D-20, D-21).
+GOOD_FORTUNE_FIG63 = {'Taurus': [15, 27, 30], 'Leo': [3, 5], 'Scorpio': [7], 'Aquarius': [20]}
+ELEVATION_FIG64 = {
+    'Aries': [19], 'Taurus': [3], 'Gemini': [11], 'Cancer': [1, 2, 3, 14, 15],
+    'Leo': [5, 7, 17], 'Virgo': [2, 12, 20], 'Libra': [3, 5, 21], 'Scorpio': [12, 20],
+    'Sagittarius': [13, 20], 'Capricorn': [12, 13, 14, 20], 'Aquarius': [7, 16, 17, 20], 'Pisces': [12, 20],
+}
+
+
+def test_good_fortune_degrees_match_figure_63(engine):
+    assert engine["GOOD_FORTUNE_DEGREES"] == GOOD_FORTUNE_FIG63
+    assert sum(len(v) for v in GOOD_FORTUNE_FIG63.values()) == 7
+
+
+@pytest.mark.parametrize("sign", SIGNS)
+def test_elevation_degrees_match_figure_64_sign_by_sign(engine, sign):
+    assert list(engine["ELEVATION_DEGREES"][sign]) == ELEVATION_FIG64[sign], sign
+
+
+def test_elevation_degrees_have_thirty_one_entries_and_the_two_collisions_the_text_leaves(engine):
+    assert sum(len(v) for v in ELEVATION_FIG64.values()) == 31
+    both = {(s, d) for s, ds in GOOD_FORTUNE_FIG63.items() for d in ds} & {(s, d) for s, ds in ELEVATION_FIG64.items() for d in ds}
+    assert both == {("Leo", 5), ("Aquarius", 20)}
+    assert 17 in engine["WELLED_DEGREES"]["Aquarius"] and 17 in ELEVATION_FIG64["Aquarius"]
+
+
+def _ordinal_table(text, caption_prefix, header_prefix, sides):
+    """A Sign | Ordinal | Cardinal table (one- or two-sided) as the corpus
+    prints it, ordinal cross-checked against cardinal, ranges expanded."""
+    lines = text.splitlines()
+    end = next(i for i, l in enumerate(lines) if l.startswith(caption_prefix))
+    start = max(i for i in range(end) if lines[i].startswith(header_prefix))
+    table, current = {}, [None] * sides
+    for line in lines[start + 2:end]:
+        if not line.startswith("|") or re.match(r"^\|[-\s|]+$", line):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        for side in range(sides):
+            sign, ordinal, cardinal = cells[3 * side:3 * side + 3]
+            if sign:
+                current[side] = GLYPH_TO_SIGN[sign]
+                table.setdefault(current[side], [])
+            if not ordinal:
+                continue
+            n1, n2 = re.match(r"(\d+)\w{2}(?:-(\d+)\w{2})?", ordinal).groups()
+            n1 = int(n1); n2 = int(n2) if n2 else n1
+            lo, hi = map(int, re.match(r"0?(\d+)°-0?(\d+)°59'", cardinal).groups())
+            assert (lo, hi) == (n1 - 1, n2 - 1), (current[side], ordinal, cardinal)
+            table[current[side]].extend(range(n1, n2 + 1))
+    return table
+
+
+@pytest.mark.skipif(not BOOK_VII.is_file(), reason="corpus not on this machine (CI)")
+def test_v22_literals_match_the_corpus_figures_63_and_64():
+    text = BOOK_VII.read_text()
+    assert _ordinal_table(text, "Figure 63 (Ab", "| Sign | Ordinal | Increasing", 1) == GOOD_FORTUNE_FIG63
+    assert _ordinal_table(text, "Figure 64 (Ab", "| Sign | Ordinal | Cardinal | Sign", 2) == ELEVATION_FIG64
+
+
 # --- Joys, genders, quadruplicity, places: Sahl's Introduction ---
 def test_joys_match_introduction_ch3_128(engine):
     # "Mercury rejoices in the Ascendant, the Moon rejoices in the third,

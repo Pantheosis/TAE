@@ -178,3 +178,27 @@ def test_d6_control_the_lord_is_not_counted_against_itself_and_rows_keep_the_rea
     assert engine["mashaallah_condition"](8, "Mars", p, 5.0)[0] == "met"
     rows = engine["evaluate_house_lords"](p, 5.0)
     assert len(rows) == 12 and all("Masha'allah's condition" in r and "Masha'allah Signification" in r for r in rows)
+
+
+# --- D-20 / D-21: the V.22 tables, display only, on the points the text names
+def test_d20_fig63_reads_the_moon_fortune_and_ascendant_only(engine):
+    p = _chart(Sun=100.0, Moon=44.5, Mercury=10.0, Venus=20.0, Mars=59.5, Jupiter=200.0, Saturn=250.0)
+    # Moon at Taurus 15 (ordinal) hits; Mars at Taurus 30 does not count.
+    rows = engine["evaluate_book_v_degrees"](p, 5.0, 35.0, "Diurnal")
+    assert [r["Point"] for r in rows if "Fig. 63" in r["Table"]] == ["Moon"]
+
+
+def test_d21_fig64_reads_the_ascendant_and_the_sect_luminary(engine):
+    # Sun at Libra 3 by day hits; the same Sun by night does not, the Moon does.
+    p = _chart(Sun=182.5, Moon=316.5, Mercury=10.0, Venus=20.0, Mars=100.0, Jupiter=200.0, Saturn=250.0)   # Moon at Aquarius 17
+    day = engine["evaluate_book_v_degrees"](p, 5.0, 100.0, "Diurnal")
+    night = engine["evaluate_book_v_degrees"](p, 5.0, 100.0, "Nocturnal")
+    assert [r["Point"] for r in day if "Fig. 64" in r["Table"]] == ["Sun (luminary of the sect)"]
+    assert [r["Point"] for r in night if "Fig. 64" in r["Table"]] == ["Moon (luminary of the sect)"]
+    assert "also a well" in next(r for r in night if r["Point"].startswith("Moon"))["Caveat"]   # Aquarius 17
+
+
+def test_d21_control_no_row_is_a_verdict(engine):
+    p = _chart(Sun=182.5, Moon=44.5, Mercury=10.0, Venus=20.0, Mars=100.0, Jupiter=200.0, Saturn=250.0)
+    for r in engine["evaluate_book_v_degrees"](p, 5.0, 100.0, "Diurnal"):
+        assert set(r) == {"Point", "Position", "Table", "Caveat"} and r["Caveat"]
