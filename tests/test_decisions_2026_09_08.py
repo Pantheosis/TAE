@@ -271,7 +271,7 @@ def test_d13_control_a_malefic_that_rules_nothing_is_never_softened(engine, monk
     assert any("opposed by an infortune" in l for l in labels), labels
 
 
-# --- D-2: refusal wins over a minor-dignity reception, under Sahl only ----
+# --- D-2: refusal wins under Sahl only -- Kind II suppresses, Kind IV brings down
 def _fixture_chart(engine, date):
     from datetime import datetime, timedelta
     y, m, d = map(int, date.split("-"))
@@ -279,24 +279,52 @@ def _fixture_chart(engine, date):
     return engine["calculate_traditional_chart"](dt, 43.7792, 11.2463)
 
 
-def test_d2_fixture_1240_10_05_moon_to_venus_is_refused_not_received_under_sahl(engine):
+def test_d2_fixture_1240_10_05_venus_in_her_fall_receives_the_moon_by_house_brought_down(engine):
+    # Venus at 26 Virgo (her fall) receives the Moon from 22 Taurus by house
+    # and triplicity -- a PERFECT reception (49) met by a Kind IV (62). 62
+    # says "brings it down and diminishes", not "does not accept", so the
+    # row stays and is marked. This pins the breadth: a major-dignity
+    # reception is not deleted by Kind IV.
     c = _fixture_chart(engine, "1240-10-05")
     p, sect = c["planetary_data"], c["sect"]
     with engine["doctrine"](engine["SAHL"]):
         kinds = {(r["Kind"][:2].strip(), r["Connecting"], r["With"]) for r in engine["evaluate_non_reception"](p, sect)}
-        rec = [(r.get("Received"), r.get("Receiver")) for r in engine["evaluate_reception"](p, sect)]
-    assert any(k in (("II", "Moon", "Venus"), ("IV", "Moon", "Venus")) for k in kinds), kinds
-    assert ("Moon", "Venus") not in rec, rec
+        rec = [r for r in engine["evaluate_reception"](p, sect) if (r.get("Received"), r.get("Receiver")) == ("Moon", "Venus")]
+    assert ("IV", "Moon", "Venus") in kinds and ("II", "Moon", "Venus") not in kinds, kinds
+    assert len(rec) == 1 and "house" in rec[0]["Via"], rec
+    assert rec[0]["Grade"].startswith("Perfect") and "brought down" in rec[0]["Grade"] and "(62)" in rec[0]["Grade"], rec
 
 
-def test_d2_control_abu_mashars_profile_keeps_the_same_pair_received(engine):
+def test_d2_kind_ii_suppresses_the_only_reception_it_can_meet_a_minor_one(engine):
+    # Sahl's own case (Questions Ch. 1, 63): Mercury connecting with Mars
+    # from Cancer, Mars's fall, where Mars holds triplicity and bound.
+    # Kind II refuses; no reception row survives. (The same pair is held
+    # in test_sahl_question_chart.py on the figure's own positions.)
+    p = _real_chart(engine, Mercury=91.5, Mars=38.0, Sun=40.0, Moon=200.0, Venus=60.0, Jupiter=250.0, Saturn=300.0)
+    with engine["doctrine"](engine["SAHL"]):
+        kinds = {(r["Kind"][:2].strip(), r["Connecting"], r["With"]) for r in engine["evaluate_non_reception"](p, "Nocturnal")}
+        rec = [(r.get("Received"), r.get("Receiver")) for r in engine["evaluate_reception"](p, "Nocturnal")]
+    assert ("II", "Mercury", "Mars") in kinds, kinds
+    assert ("Mercury", "Mars") not in rec, rec
+
+
+def test_d2_control_no_planet_has_house_or_exaltation_in_its_own_fall(engine):
+    # Why Kind II can only ever meet a minor reception: the fall sign is
+    # never the receiver's house or exaltation.
+    for planet, falls in engine["FALLS"].items():
+        for sign in falls:
+            assert planet != engine["SIGN_TO_DOMICILE"].get(sign), (planet, sign)
+            assert engine["EXALTATIONS"].get(planet, ("",))[0] != sign, (planet, sign)
+
+
+def test_d2_control_abu_mashars_profile_keeps_the_same_pair_received_unmarked(engine):
     # Figure 143 reads these configurations as favor, not refusal: his
     # doctrine, his profile, untouched by D-2.
     c = _fixture_chart(engine, "1240-10-05")
     p, sect = c["planetary_data"], c["sect"]
     with engine["doctrine"](engine["ABU_MASHAR"]):
-        rec = [(r.get("Received"), r.get("Receiver")) for r in engine["evaluate_reception"](p, sect)]
-    assert ("Moon", "Venus") in rec, rec
+        rec = [r for r in engine["evaluate_reception"](p, sect) if (r.get("Received"), r.get("Receiver")) == ("Moon", "Venus")]
+    assert rec and not any("brought down" in str(v) for r in rec for v in r.values()), rec
 
 
 # --- D-3: the planetary years shown beside the two placement rules, applied to nothing

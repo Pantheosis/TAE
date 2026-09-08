@@ -50,7 +50,7 @@ left as they were argued.
 | # | Answer taken | What landed | Commit |
 |---|---|---|---|
 | D-1 | Build it, static, labelled Ptolemy's | `cast_rays_by_ascension` / `evaluate_rays_by_ascension` (VII.7, 3–22; the ¶18/¶21 anchor flip taken as written and exposed as an argument); a Configurations table under the Abū Ma'shar view; nothing directs it in time; Aph. #45 and *Nat.* 2.13 remain unbuilt | `25d4214` |
-| D-2 | Refusal wins | `evaluate_reception` drops, under Sahl only, rows refused by non-reception Kind II/IV; the strict xfail un-marked; 1240-10-05's only Sahl reception row was the refused pair | `f0ab0b5` |
+| D-2 | Refusal wins | `evaluate_reception` drops, under Sahl only, rows refused by non-reception Kind II and marks Kind IV rows "brought down (62)"; the strict xfail un-marked; scope settled by kind in the second pass (see the D-2 implementation note) | `f0ab0b5`, second pass below |
 | D-3 | Implementation deferred, reading in scope | Figure 146 on the Timing page as a display-only table with *Times* 4, 7 and *Nat.* 1.20 beside it, applied to nothing | `75267d0` |
 | D-4 | Reverse | `reverse_at_night=True`, note rewritten | `d295ec0` |
 | D-5 | None as Sahl's; keep 19–3 where Abū Ma'shar's; retire 15–15 | `DARK_SIGNS`, `BURNED_PLACE_SIGNS`, labels without degrees; the Via Combusta flag gone (C-04 done) | `0eeb089` |
@@ -165,6 +165,28 @@ chart is the strongest evidence this corpus produces, and Ch. 1, 40–41 states 
 The one reservation: it is a horary chart, and Abū Ma'shar's Figure 143 (fn. 205) treats these very
 configurations as *favor* rather than refusal — a different author's different doctrine, which the
 Abū Ma'shar profile can keep.
+
+**Implementation note (2026-09-08, second pass).** The first implementation (`f0ab0b5`) removed
+every reception for a pair refused by Kind II *or* Kind IV, while its three descriptions said
+"a minor-dignity reception"; on 1240-10-05 it removed Venus's **perfect** reception of the Moon
+(Venus in Virgo, her fall, the Moon in Taurus, her house). Settled from the text rather than
+from either wording, the rule is **by kind, not by grade**:
+
+- **Kind II (59–60)** — *"like one who comes to it from the house of its enemies, not accepting
+  it nor approaching it"* — is a refusal, and every reception it can meet is minor by
+  construction, since no planet has its house or exaltation in the sign of its own fall. The
+  reception row is suppressed. This is ¶63's case.
+- **Kind IV (62)** — *"if a star connected with a planet in its own fall … it brings it down
+  and diminishes what comes to it from that"* — is a diminution, not a refusal, and 49's perfect
+  reception is not revoked by it. The reception row **stays, marked "brought down (62)"** in its
+  Grade. 1240-10-05's Sahl reception table therefore returns.
+
+So the rule as implemented is *narrower* than the approved wording on Kind IV (nothing is
+removed) and exactly it on Kind II. One thing outside D-2's scope, recorded and not done:
+**Kind III (61)** with *Questions* 1, 41 (*"connecting with a planet from their own fall: it does
+not accept them"*) is also a refusal in Sahl's words, and a Māshā'allāh triplicity-and-bound
+reception can coexist with it (the Moon in Scorpio connecting with Venus); the engine still
+lists both. That is a fresh ⟨CHOICE⟩ for the owner, not a change made here.
 
 ---
 

@@ -3008,9 +3008,10 @@ def evaluate_reception(planetary_data, sect, sim=None):
     132 confirms the attribution). Face never appears. A connection is
     required throughout.
 
-    Under Sahl's profile a non-reception of Kind II or IV for the same
-    pair suppresses the reception row (refusal wins; see the note at the
-    end of the function and synthesis/13_open_decisions.md D-2).
+    Under Sahl's profile a non-reception of Kind II for the same pair
+    suppresses the reception row (refusal wins), and one of Kind IV marks
+    it brought down (62's own word); see the note at the end of the
+    function and synthesis/13_open_decisions.md D-2.
 
     Sahl gives two further forms after that, both previously unimplemented
     and both now here (they are his own, so they run under his profile
@@ -3439,22 +3440,43 @@ def evaluate_reception(planetary_data, sect, sim=None):
                     'Grade': f'Reached on day {best_day:.0f}', 'Mode': 'By connection',
                 })
     if sahl and results:
-        # REFUSAL WINS (decision D-2, 2026-09-08). A connection made from the
-        # receiver's fall (Kind II, 59-60) or to a receiver in its own fall
-        # (Kind IV, 62) is refused, and a minor-dignity reception the same
-        # pair would otherwise earn (triplicity with bound, 54-55) is not
-        # listed beside it. Sahl's own chart: Mercury leaving Gemini
-        # "was connecting with Mars, and he does not accept [Mercury]"
-        # (Questions Ch. 1, 63; fn. 27 -> Ch. 1, 40, "connecting with Mars
-        # from Cancer"), although Mars is Cancer's night triplicity lord and
-        # holds its first bound; and Ch. 3, 51 on the contrary of reception:
-        # the astrologer "does not acknowledge it, he does not accept it."
-        # Sahl's profile only -- Abu Ma'shar's Figure 143 reads the same
-        # configurations as favor (VII.5, 126-128), his own doctrine.
-        refused = {(r['Connecting'], r['With']) for r in evaluate_non_reception(planetary_data, sect)
-                   if str(r['Kind']).startswith(('II ', 'IV '))}
-        if refused:
-            results = [r for r in results if (r.get('Received'), r.get('Receiver')) not in refused]
+        # REFUSAL WINS (decision D-2, 2026-09-08; scope settled from the
+        # text the same day). Sahl's profile only -- Abu Ma'shar's Figure
+        # 143 reads the same configurations as favor (VII.5, 126-128).
+        #
+        # Kind II (59-60), the connection made FROM the receiver's fall:
+        # "like one who comes to it from the house of its enemies, NOT
+        # ACCEPTING IT nor approaching it." A refusal, so the reception the
+        # same pair would otherwise earn is not listed. It can only ever be
+        # a minor one (triplicity with bound, 54-55): no planet has its
+        # house or exaltation in the sign of its own fall. Sahl's own
+        # chart: Mercury leaving Gemini "was connecting with Mars, and he
+        # does not accept [Mercury]" (Questions Ch. 1, 63; fn. 27 -> Ch. 1,
+        # 40, "connecting with Mars from Cancer"), although Mars is
+        # Cancer's night triplicity lord and holds its first bound; and
+        # Ch. 3, 51 on the contrary of reception: "he does not acknowledge
+        # it, he does not accept it."
+        #
+        # Kind IV (62), the receiver in ITS OWN fall, is worded as a
+        # diminution, not a refusal: "it brings it down and diminishes what
+        # comes to it from that." The receiver may hold its house or
+        # exaltation at the applicant's place (Venus in Virgo receiving the
+        # Moon from Taurus), and 49's "perfect reception" is not revoked by
+        # 62 -- so the row stays, marked brought down. (Kind III, 61, with
+        # Questions 1, 41's "it does not accept them", is not part of D-2
+        # and is left as it was: recorded in 13_open_decisions.md.)
+        non = evaluate_non_reception(planetary_data, sect)
+        refused = {(r['Connecting'], r['With']) for r in non if str(r['Kind']).startswith('II ')}
+        brought_down = {(r['Connecting'], r['With']) for r in non if str(r['Kind']).startswith('IV ')}
+        kept = []
+        for r in results:
+            pair = (r.get('Received'), r.get('Receiver'))
+            if pair in refused:
+                continue
+            if pair in brought_down:
+                r = {**r, 'Grade': f"{r.get('Grade', '')}; brought down, the receiver in its own fall (62)".lstrip('; ')}
+            kept.append(r)
+        results = kept
     return results
 
 def evaluate_non_reception(planetary_data, sect):
@@ -7751,10 +7773,10 @@ if location_query and lat is not None and lon is not None:
                     _finding(_gap, 'Handing Over', 'Sahl, The Introduction Ch.3, 70-76', handing_over_data,
                               glance='Three grades of one phenomenon, per connected pair: Management is the baseline (any connection at all); Power is added when the giving planet is itself in its own house, exaltation, or triplicity; Nature is added when the planet it connects with is the ruler')
                     _finding(_gap, f"Reception — {CONNECTION_PROFILE} rule", None, reception_data,
-                              glance='Who receives whom, on what dignity, which way round, and how strongly. The two authors differ on every one of those, so the Connection rule at the top of this page governs here too. Under Sahl\'s rule a pair refused by non-reception Kind II or IV (the connection made from, or to a planet in, the receiver\'s fall) is not also listed as received: refusal wins, as on Sahl\'s own chart (Questions Ch. 1, 63 with 40-41).',
+                              glance='Who receives whom, on what dignity, which way round, and how strongly. The two authors differ on every one of those, so the Connection rule at the top of this page governs here too. Under Sahl\'s rule a pair refused by non-reception Kind II (the connection made from the receiver\'s fall) is not also listed as received -- refusal wins, as on Sahl\'s own chart (Questions Ch. 1, 63 with 40-41) -- and a pair of Kind IV (the receiver in its own fall) keeps its row marked brought down, which is 62\'s own word.',
                               notes='SAHL (Ch.3, 49-55) runs one way only -- the connecting planet stands in a dignity of the planet it connects with, and so is received by it (52: the Moon in Aries connecting with Mars, "he receives her because Aries is his house"). House or exaltation is perfect reception; triplicity alone is expressly ranked below it (50); bound counts only paired with triplicity, which Sahl credits to Masha\'allah (54-55). Face never appears, and a connection is always required.\n\nABU MA\'SHAR (VII.5, 129-133) is wider on every axis: all five dignities count (129), reception also runs in REVERSE where the accepting planet sits in the connector\'s dignity (130, which exists because Saturn is otherwise too slow to ever be received), house/exaltation is strongest (131), a lone minor dignity is weak unless two of bound/triplicity/face combine into a complete reception (132), and reception can hold by looking with no connection at all (133).\n\nHe then classes reception a SECOND way, and under his rule the table shows both. DIGNITY QUALITY is 129-133, the local basis. OVERALL CLASS is 136-142: "a [2] middling reception is the planets\' reception of each other from the house, exaltation, bound, triplicity, or face" (140) -- house and exaltation included -- while "if two met [together] from this, or each one of them received its associate, it is a strong reception" (141); the natural acceptances of 134-135 are "[3] below that" (142); the Moon received by the Sun (137) and a planet received by Mercury from Virgo (139) are his named strong forms, and the Sun receiving the Moon from the opposition keeps his own word, "detestable" (137). A lone domicile reception is therefore the strongest basis AND globally middling: both are true, and they are different questions.\n\nSahl has two further forms, both under his profile only. 56, RECEPTION AT ONE REMOVE: "if the Moon was connecting with a planet and that planet was connecting with the lord of the house of the Moon or its exaltation, then the Moon is received" -- the note there calls it "like a transfer of light which indirectly allows for reception." Both legs are read in Sahl\'s directed sense of connecting (6: "going straightaway to ... going towards"), since separating is his separate term at 22.\n\n57, AFTER THE SIGN CHANGE: "if the Moon was empty in course, and then she passed over into the next sign and connected with the lord of her first sign, it is JUST LIKE RECEPTION; and if she connected with a planet OTHER than [that], IT UNDERMINES HER." Both halves appear -- the undermining is a finding, not a blank.\n\nAn empty table is NOT non-reception -- that is a separate set of hostile configurations, in the table below.')
                     _finding(_gap, 'Non-reception', 'Sahl, The Introduction Ch.3, 58-62', non_reception_data,
-                              glance="Five named ways a connection is refused rather than received (Sahl, The Introduction Ch.3, 58-62), a distinct finding from simply lacking reception; the Kind column numbers them and the notes spell each one out. Kinds II and IV override a minor-dignity reception for the same pair under Sahl's rule (Questions Ch. 1, 63 with 40-41; decision D-2).",
+                              glance="Five named ways a connection is refused rather than received (Sahl, The Introduction Ch.3, 58-62), a distinct finding from simply lacking reception; the Kind column numbers them and the notes spell each one out. Under Sahl's rule Kind II overrides any reception for the same pair (only a minor one is possible there; Questions Ch. 1, 63 with 40-41), and Kind IV marks the pair's reception brought down without removing it (62; decision D-2).",
                               notes="Sahl's A -> B model: A is the connecting (applying) planet, B the planet it connects with.\n\nKind I (58): B holds no essential dignity at all at A's position -- B is alien in A's sign, so A is not recognised.\n\nKind II (59-60): A stands in B's own sign of fall, \"like one who comes to it from the house of its enemies.\"\n\nKind III (61): A is in its OWN fall and B has no house or exaltation there to rescue it -- \"as though the one asking is offering defeat.\"\n\nKind IV (62): B is in its own fall, which brings the connection down whatever A's condition.\n\nKind V (62): B sits in A's own sign of fall.")
                     _finding(_gap, 'Returning', 'Sahl, The Introduction Ch.3, 65-69', returning_data,
                               glance='Manner I: a planet connects with a retrograde planet or one under the rays -- it "returns to it what it accepted," corrupting the question.',
