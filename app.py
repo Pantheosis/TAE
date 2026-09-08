@@ -2189,12 +2189,13 @@ def evaluate_blocking(planetary_data):
 
 def evaluate_handing_over(planetary_data, sect):
     """Handing Over (Sahl, The Introduction Ch.3, 70-76): three grades of
-    one phenomenon, not independent subtypes. Management (76, "any
-    application or connection hands over management") is the unconditional
+    one phenomenon, not independent subtypes. Management (76, "in signs other
+    than these two, she only hands over management"; fn. 90: "any application
+    or connection hands over management") is the unconditional
     baseline for every Connected pair. Power (70-72) is additionally
     granted when the applying planet is itself in its own house,
     exaltation, or triplicity at the time of connecting. Nature (73-74,
-    confirmed by the worked example's own footnote -- "that is, in
+    confirmed by the worked example's own parenthesis at 74 -- "that is, in
     reception") is additionally granted when the applying planet is
     connecting with the dispositor -- by house or exaltation only,
     matching Reception's own "perfect" scope (49-50), not triplicity -- of
