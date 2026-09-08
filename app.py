@@ -4406,10 +4406,14 @@ NOT_IMPLEMENTED_COVERAGE = [
 # Introduction to Astrology V.21, Fig. 62 (Dykes translation, p. 308 of Abu
 # Ma'shar's own volume -- the pagination is not Sahl's). Ordinal degrees as
 # the figure prints them ("the 6th, 11th, 17th ..."); the code tests
-# int(lon % 30) + 1 against them. Corrected 2026-09-08 against the corpus
-# capture of V.21: Aries gained 29, Gemini's 13 became 12, Pisces gained 28
-# (the earlier text cited Fig. 98, which is "Speed relative to apogee").
-# Pinned cell by cell in tests/test_base_tables.py.
+# int(lon % 30) + 1 against them. Corrected 2026-09-08 against the owner's
+# photographs of V.21 (p. 308), not the OCR capture: Aries gained 29,
+# Gemini's 13 became 12, Pisces gained 28; confirmed a third time the same
+# day against Fig. 62's own page image, all 62 cells. (The earlier text
+# cited Fig. 98, which in Abu Ma'shar's volume is "Speed relative to
+# apogee" -- but Persian Nativities IV's Fig. 98 IS the wells table, so
+# name the volume before "correcting" this.) Pinned cell by cell in
+# tests/test_base_tables.py.
 WELLED_DEGREES = {
     'Aries': [6, 11, 17, 23, 29],
     'Taurus': [5, 13, 18, 24, 25, 26],
