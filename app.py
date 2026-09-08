@@ -849,8 +849,16 @@ def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None):
         # VII.1, 37 points the same way ("Mars will stand out because he is
         # a MALE, NOCTURNAL planet"), and the Course Glossary defines Domain
         # as "in a sign of ITS OWN GENDER and also in its preferred
-        # hemisphere". An earlier version flipped him on both tests, which
-        # required him to be in feminine signs -- a reading no text states.
+        # hemisphere". Sahl's own glossary (Vol. I p. 777, Domain; p. 782,
+        # Halb and Hayyiz) is a second witness in the corpus itself, and it
+        # keeps the two conditions apart: HALB is "for diurnal planets, when
+        # they are in the same hemisphere as the Sun ... for nocturnal
+        # planets, when they are in the hemisphere opposite the Sun";
+        # HAYYIZ/DOMAIN is "technically equivalent to halb, except that the
+        # planet is also in a sign of its own gender". That split is what
+        # DOMAIN_RULE_OPTIONS exposes. An earlier version flipped him on both
+        # tests, which required him to be in feminine signs -- a reading no
+        # text states.
         mars_is_masculine_but_nocturnal = (planet == 'Mars')
         is_hayz = contrary_domain = False
         if planet_is_diurnal is not None and DOMAIN_RULE == DOMAIN_RULE_OPTIONS[1]:
@@ -4745,7 +4753,10 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
     place" is whole-sign and is narrowed by which places LOOK at the
     Ascendant (six of them, per its own footnote). 83's "advancing" is
     dynamic -- measured against the quadrant cusps, per the note on 83 and
-    the course glossary -- and takes this function's natal_houses argument.
+    Sahl's glossary (Vol. I p. 771, Advancement: "dynamically angular or
+    succeedent, i.e. moving by primary motion toward an axial degree"; the
+    course glossary has the same entry) -- and takes this function's
+    natal_houses argument.
     On a sample of 414 charts the two readings of advancement disagree for
     a third of all planet placements.
 
@@ -4817,10 +4828,11 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
                 other_house = get_wsh_house(planetary_data[other]['longitude'], ascendant_lon)
                 other_sign = get_zodiac_sign(planetary_data[other]['longitude'])
                 # Sahl's "falling away from the Ascendant" is AVERSION, not
-                # cadency. The Course Glossary's own Cadent entry says so:
+                # cadency. Sahl's glossary (Vol. I p. 774, Cadent) says so:
                 # "3rd, 6th, 9th, 12th. But see also FALLING AWAY FROM, WHICH
                 # IS EQUIVALENT TO AVERSION" -- and its Aversion entry is the
-                # 2nd, 6th, 8th and 12th. Sahl keeps the two apart himself at
+                # 2nd, 6th, 8th and 12th (the Course Glossary carries the same
+                # two entries verbatim). Sahl keeps the two apart himself at
                 # 91, "falling from the stakes AND not looking at the
                 # Ascendant: and that is in the sixth and the twelfth", which
                 # this file already reads correctly. Reading it as cadency
@@ -4839,8 +4851,10 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
             # is dynamically angular or succeedent, i.e. by primary motion
             # with respect to the angular axes, and not by whole sign"; Sahl's
             # own Figure 9 for 4-5 is captioned "understood dynamically," and
-            # the course glossary defines advancement as "moving by primary
-            # motion toward an axial degree."
+            # Sahl's glossary (Vol. I p. 771, Advancement) defines it as
+            # "dynamically angular or succeedent, i.e. moving by primary
+            # motion toward an axial degree" -- the course glossary's entry
+            # is the same text.
             #
             # Primary motion carries a planet 1 -> 12 -> 11 -> 10: out of an
             # angle into the cadent house, moving AWAY from the axis it just
@@ -4865,9 +4879,11 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
             # eastern side. Sahl gives the floors himself in On Nativities 1.22,
             # 1: with 6 degrees between Saturn or Jupiter and the Sun "they are
             # considered to be eastern ... BUT IF THEY WERE LESS THAN THAT, THEY
-            # WILL NOT BE FIT"; Mars at 15 degrees (1.22, 3 and its note). The
-            # Course Glossary's Eastern (2) is "outside the Sun's rays and
-            # visible." An earlier version tested only which side of the Sun the
+            # WILL NOT BE FIT"; Mars at 15 degrees (1.22, 3 and its note).
+            # Sahl's glossary (Vol. I p. 778, Eastern and western) sense (2)
+            # is "to be outside the Sun's rays and visible (eastern) or under
+            # them and invisible (western)"; the Course Glossary's Eastern (2)
+            # is the same entry. An earlier version tested only which side of the Sun the
             # planet stood on, so 11.5% of eastern superiors took this testimony
             # while burned or under the rays.
             if planet in ('Saturn', 'Jupiter', 'Mars'):
