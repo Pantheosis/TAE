@@ -743,6 +743,21 @@ SOLAR_RAYS_ORB = {
 # in front of him and behind him)" -- On Nativities 1.22 covers only the
 # five planets, so the Moon has two witnesses that disagree. Sidebar switch.
 MOON_RAYS_ORB = 12.0
+# Mars going under the rays on the WESTERN side: 15 degrees is Abu
+# Ma'shar's (VII.2, 30-31, the default); Sahl's table has him westernize
+# at 18 (On Nativities 1.22, and fn. 175 works his western figure to about
+# 18). Both give 18 east. Chart-page switch like the Moon's; decision
+# D-15, 2026-09-08. Rare: a 3-degree band on one planet.
+MARS_WEST_RAYS_18 = False
+
+def solar_rays_orb(planet):
+    """(east, west) under-the-rays limits with both switches applied."""
+    if planet == 'Moon':
+        return (MOON_RAYS_ORB, MOON_RAYS_ORB)
+    east, west = SOLAR_RAYS_ORB.get(planet, (15.0, 15.0))
+    if planet == 'Mars' and MARS_WEST_RAYS_18:
+        west = 18.0
+    return (east, west)
 # The seven-day setting allowance (VII.2, 30-31; On Nativities 1.22, 2-4).
 # VII.2, 30 gives the two figures separately: the superiors do not cease
 # to be "westernizing" "until there are 22 degrees between Saturn and
@@ -782,7 +797,7 @@ def solar_phase(planet, lon, sun_lon):
     burned = SOLAR_BURNED_ORB.get(planet, (8.5, 8.5))[idx]
     if elongation <= burned:
         return 'Burned', side, elongation
-    rays = MOON_RAYS_ORB if planet == 'Moon' else SOLAR_RAYS_ORB.get(planet, (15.0, 15.0))[idx]
+    rays = solar_rays_orb(planet)[idx]
     if elongation <= rays:
         return 'Under the rays', side, elongation
     setting = SOLAR_SETTING_DEGREES.get(planet)
@@ -5653,7 +5668,7 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             # the bands VII.2 actually names (15/18 to 90 degrees eastern;
             # 90 down to 15 degrees western, 29-31). Hemisphere fires on 52% of
             # superior placements, the band on 25%.
-            _e_lim, _w_lim = SOLAR_RAYS_ORB.get(planet, (15.0, 15.0))
+            _e_lim, _w_lim = solar_rays_orb(planet)
             _elong = abs(signed_from_sun)
             if EASTERN_RULE == EASTERN_RULE_OPTIONS[1]:
                 eastern_27 = is_eastern_of_sun and _e_lim <= _elong <= 90.0
@@ -5857,7 +5872,7 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             # beginning of their advancement towards easternization" -- so the
             # burned band is excluded.
             inf_46 = ([ 'beginning of easternization' ]
-                      if is_eastern_of_sun and SOLAR_BURNED_ORB[planet][0] <= abs(signed_from_sun) < SOLAR_RAYS_ORB[planet][0] else []) + \
+                      if is_eastern_of_sun and SOLAR_BURNED_ORB[planet][0] <= abs(signed_from_sun) < solar_rays_orb(planet)[0] else []) + \
                      ([ 'masculine quadrant' ] if in_masculine_quadrant else [])
             if is_inferior and inf_46:
                 negative.append(f"Inferior, {' and '.join(inf_46)} (46)")
@@ -6845,6 +6860,7 @@ CONNECTION_PROFILE = _reading("connection_rule", "_connection_rule", "Sahl")
 FIVE_DEGREE_ALL_CUSPS = _reading("five_degree_all_cusps", "_five_degree_all_cusps", False)
 EASTERN_RULE = _reading("eastern_rule", "_eastern_rule", EASTERN_RULE_OPTIONS[0])
 MOON_RAYS_ORB = 15.0 if _reading("moon_rays_15", "_moon_rays_15", False) else 12.0
+MARS_WEST_RAYS_18 = bool(_reading("mars_west_18", "_mars_west_18", False))
 DOMAIN_RULE = _reading("domain_rule", "_domain_rule", DOMAIN_RULE_OPTIONS[0])
 LOT_HOUSE_CUSP = _reading("lot_house_cusp", "_lot_house_cusp", LOT_HOUSE_CUSP_OPTIONS[0])
 
@@ -7198,6 +7214,11 @@ if location_query and lat is not None and lon is not None:
                                   help="Sahl, On Nativities 1.19, 6 gives 15 degrees for the Moon; Abu Ma'shar VII.2, 61 "
                                        "and 72-73 give 12. Affects: the Solar phase column here, and on the Configurations "
                                        "page Weakness (93), Planetary Condition and Corruption of the Moon. Full text on the Sources page.")
+                _reading_checkbox("Mars under the rays to 18° west", "mars_west_18", "_mars_west_18",
+                                  help="Sahl's table (On Nativities 1.22; fn. 175) has Mars westernize at 18 degrees; "
+                                       "Abu Ma'shar VII.2, 30-31 puts him under the rays at 15 on the western side. Both "
+                                       "give 18 east. Affects: the Solar phase column here and every test that reads it "
+                                       "(Weakness 93, Planetary Condition 27/34/45). Decision D-15.")
             # True planets only — angles, nodes, and Lot of Fortune
             # now live in the "Calculated Points" table alongside it.
             # The Lesson 3 homework asks for sign/degree/minute AND absolute
@@ -7693,6 +7714,10 @@ if location_query and lat is not None and lon is not None:
                 "Abu Ma'shar VII.2, 61 and 72-73 give 12; Sahl gives 15 for the Moon's fitness as releaser. "
                 "Affects: the Solar phase column of Planetary Positions; on the Configurations page, "
                 "Weakness of the Planets (93), Planetary Condition and Corruption of the Moon.\n\n"
+                "**Mars under the rays to 18 degrees west (Sahl, On Nativities 1.22)** (Chart page, Planetary Positions) -- "
+                "Abu Ma'shar VII.2, 30-31 has Mars under the rays at 15 on the western side; Sahl's table has him "
+                "westernize at 18 (fn. 175). Both agree on 18 east. Affects: the Solar phase column and every test that "
+                "reads it; a 3-degree band on one planet.\n\n"
                 "**Domain (hayz)** (Dignities page, Sect table) -- "
                 "Abu Ma'shar VII.1, 37 / VII.6, 13: sign gender fixed to the planet's own. Masha'allah, "
                 "On Nativities 1.23, 17: a male planet by day above the earth in a male sign, by night under "

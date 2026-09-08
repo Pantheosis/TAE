@@ -202,3 +202,27 @@ def test_d21_control_no_row_is_a_verdict(engine):
     p = _chart(Sun=182.5, Moon=44.5, Mercury=10.0, Venus=20.0, Mars=100.0, Jupiter=200.0, Saturn=250.0)
     for r in engine["evaluate_book_v_degrees"](p, 5.0, 100.0, "Diurnal"):
         assert set(r) == {"Point", "Position", "Table", "Caveat"} and r["Caveat"]
+
+
+# --- D-15: Mars's western orb, 15 by default, 18 by switch ---------------
+def test_d15_mars_west_orb_defaults_to_abu_mashars_15_and_switches_to_sahls_18(engine, monkeypatch):
+    assert engine["MARS_WEST_RAYS_18"] is False
+    assert engine["solar_rays_orb"]("Mars") == (18.0, 15.0)
+    monkeypatch.setitem(engine, "MARS_WEST_RAYS_18", True)
+    assert engine["solar_rays_orb"]("Mars") == (18.0, 18.0)
+
+
+def test_d15_a_mars_16_degrees_west_changes_phase_only_under_the_switch(engine, monkeypatch):
+    # Mars 16 degrees west of the Sun (rising after him): westernizing at
+    # 15, under the rays at 18.
+    off = engine["solar_phase"]("Mars", 116.0, 100.0)
+    monkeypatch.setitem(engine, "MARS_WEST_RAYS_18", True)
+    on = engine["solar_phase"]("Mars", 116.0, 100.0)
+    assert off[1] == on[1] == "western"
+    assert on[0] == "Under the rays" and off[0] != "Under the rays", (off, on)
+
+
+def test_d15_control_the_eastern_orb_and_the_other_planets_are_untouched(engine, monkeypatch):
+    monkeypatch.setitem(engine, "MARS_WEST_RAYS_18", True)
+    assert engine["solar_rays_orb"]("Mars")[0] == 18.0
+    assert engine["solar_rays_orb"]("Saturn") == (15.0, 15.0) and engine["solar_rays_orb"]("Venus") == (12.0, 15.0)

@@ -1,14 +1,14 @@
-"""The switch matrix. Six page controls rewrite module globals -- the
-Connection rule radio and the five configurable readings, each on the page
-it affects and read at the top level from a persisted store key -- and the
-Configurations page has a three-way view. Every combination must render
+"""The switch matrix. The page controls in conftest.SWITCHES rewrite module
+globals -- the Connection rule radio and the configurable readings, each
+on the page it affects and read at the top level from a persisted store
+key -- and the Configurations page has a three-way view. Every combination must render
 without exception on every chart. This is the check that would have
 caught the KeyError: 'Net (heuristic)' (a renamed column, seen only under
 the Abu Ma'shar view).
 
 The Configurations page under the "Both" view executes the union of the
-Sahl and Abu Ma'shar code paths, so the full 2**6 = 64-state cross-product
-runs there. The other pages read at most one or two of the switches, so
+Sahl and Abu Ma'shar code paths, so the full 2**len(SWITCHES) cross-product
+runs there (64 states with six switches; each added switch doubles it). The other pages read at most one or two of the switches, so
 each is rendered once per single-switch alternative instead of 64 times.
 """
 from itertools import product
@@ -18,7 +18,7 @@ import pytest
 from conftest import CHARTS, PAGES, SWITCHES, assert_no_exception, find_page_widget, make_app, slot_name
 
 SWITCH_NAMES = list(SWITCHES)
-MATRIX = list(product(*(SWITCHES[n][1] for n in SWITCH_NAMES)))   # 64 states
+MATRIX = list(product(*(SWITCHES[n][1] for n in SWITCH_NAMES)))   # 2**len(SWITCHES) states
 
 
 def _state_id(values):

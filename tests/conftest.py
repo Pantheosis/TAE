@@ -60,7 +60,8 @@ LOCAL_TIME = time(14, 30)
 PAGES = ["chart", "dignities", "configurations", "lots", "victors", "timing", "sources"]
 CONFIG_VIEWS = ["Sahl (course text)", "Abu Ma'shar (supplement)", "Both"]
 
-# The six configurable readings. Since the 2026-09-06 UI restructure each
+# The configurable readings (one entry per switch; the matrix test
+# takes their cross-product, so each new switch doubles it). Since the 2026-09-06 UI restructure each
 # control renders on the page and table it affects, and the engine reads
 # its value at the top level from a store key that _persist() keeps across
 # navigation. Tests set the STORE key through session_state before the run
@@ -73,6 +74,7 @@ SWITCHES = {
     "five_degree": ("_five_degree_all_cusps", [False, True], "configurations", "Both", "checkbox", "Five-degree carryover"),
     "eastern": ("_eastern_rule", ["hemisphere", "VII.2 band"], "configurations", "Both", "radio", "VII.6, 27/45"),
     "moon_rays": ("_moon_rays_15", [False, True], "chart", None, "checkbox", "Moon under the rays"),
+    "mars_west": ("_mars_west_18", [False, True], "chart", None, "checkbox", "Mars under the rays"),
     "domain": ("_domain_rule", ["Abu Ma'shar", "Masha'allah"], "dignities", None, "radio", "Domain (hayz)"),
     "lot_cusp": ("_lot_house_cusp", ["whole-sign place", "quadrant cusp"], "lots", None, "radio", "House-based Lots"),
 }
