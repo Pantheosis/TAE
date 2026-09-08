@@ -847,8 +847,10 @@ def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None):
         # sign; but if it was female, then by day it is below the earth (and
         # by night above the earth), in a female sign -- except for Mars
         # alone, because he is contrary to what we said" (Great Introduction
-        # VII.1, 37), and again at VII.6, 13. Al-Qabisi I.78 has the same
-        # (Dykes' note on VII.6, 13). The chart's sect does NOT have to match
+        # VII.1, 37), and again at VII.6, 13. Al-Qabisi I.78 has the
+        # hemisphere-by-sect half only (Dykes' note 222 on VII.6, 10, glossing
+        # halb; the note on 13 itself just points back to VII.1, 37-39). The
+        # chart's sect does NOT have to match
         # the planet's: the HEMISPHERE requirement is what flips with it, so
         # a diurnal planet below the earth in a masculine sign is in its
         # domain in a nocturnal chart. An earlier version additionally
@@ -1177,9 +1179,9 @@ def _pairwise_configurations(planetary_data):
         # the assembly both of the two planets will be retrograde, or one of
         # them will be retrograde and the other direct: the connection of
         # one of them with the other, and its separation from it, will be BY
-        # RETROGRADATION" (VII.5, 24). His Cutting the Light turns on it --
+        # RETROGRADATION" (VII.5, 24). His Resistance turns on it --
         # "the light one IN MORE DEGREES goes retrograde and connects with
-        # the heavy one through its retrogradation" (VII.5, 120), reversing
+        # the heavy one through its retrogradation" (VII.5, 118), reversing
         # 6's fewer-degrees clause outright -- and Fig. 138's Resistance has
         # Venus retrograde connecting with Mercury, who is lighter than she
         # is. Dykes' note on VII.5, 130 makes the consequence explicit:
@@ -4260,7 +4262,8 @@ def calculate_topical_lots(planetary_data, asc, cusps, sect):
 NOT_IMPLEMENTED_COVERAGE = [
     ("Abu Ma'shar VII.5, 29-31", "Priority among several planets connecting from a "
      "single degree and minute, decided by claims in the handing-over sign, with the "
-     "bound lord breaking ties. Recovered with p. 452; computable, not yet built."),
+     "bound lord breaking ties. Sentences 29-31 are on pp. 450-451; 32-39 came with the "
+     "p. 452 recovery. Computable, not yet built."),
     ("Abu Ma'shar VII.5, 38-52", "Connection by LATITUDE, in three kinds -- assembly "
      "at equal latitude with one eclipsing the other, and two further kinds. Recovered "
      "with pp. 452-453. Latitude is available in the chart data but unused for "
@@ -4416,7 +4419,7 @@ def _brightness_category(lon):
             return category
     return 'Bright'  # unreachable if the table is complete, kept as a safe default
 
-# Great Introduction VII.3, 19-20: for the five non-luminaries, the domicile
+# Great Introduction VII.6, 19-20: for the five non-luminaries, the domicile
 # in which their nature is "moderated" (simply fortunate) versus the other,
 # "contrary" domicile (suitable, but of a lesser grade).
 PREFERRED_DOMICILE = {'Saturn': 'Aquarius', 'Jupiter': 'Sagittarius', 'Mars': 'Scorpio', 'Venus': 'Taurus', 'Mercury': 'Virgo'}
@@ -7163,7 +7166,7 @@ if location_query and lat is not None and lon is not None:
                          f"Sahl, The Introduction Ch.2, 50-60 and Ch.3, 6-21 — {CONNECTION_PROFILE} rule in force", aspects,
                           columns=['Light Planet', 'Aspect', 'Heavy Planet', 'Applying Planet', 'Motion', 'Orientation', 'Exact Orb Dist', 'Bodies', 'Strength', 'Connected', 'Rules differ'], height=_rows_height(len(aspects)),
                           glance='Four separate facts about each pair, kept apart rather than collapsed into one verdict. LOOKING is the whole-sign configuration (Union/Sextile/Square/Trine/Opposition, or Aversion if none applies) -- sign to sign.',
-                          notes='MOTION and EXACT ORB DIST are the degree-to-degree approach. BODIES is whether each planet falls inside the other\'s sphere of power, which is asymmetric because the spheres differ in size: Abu Ma\'shar VII.4, 7 notes that Saturn sits inside the Moon\'s body from 12 degrees while she only enters his at a little under 9. CONNECTED is the active author\'s verdict -- switch the Connection rule at the top of this page to see where they disagree; RULES DIFFER marks the pairs where the two tests disagree.\n\nSTRENGTH is two different measures. For an assembly it is the source\'s own: whose body reaches whose (VII.4, 5-8) and whether they share a bound. For an aspect it is marked "(app scale)", because VII.5, 4 grades looking as a continuum with no cutoffs anywhere -- "the strongest thing there is in its looking is the degree related most closely by number to the degree of its own sign, and if the aspect was far from these degrees, its aspect will be weaker." The thirds are this app\'s own scanning aid; the measurement itself is the Exact Orb Dist column.\n\nLIGHT and HEAVY are the standing classes both authors name as nouns (Saturn heaviest through the Moon lightest), not a reading of momentary speed: they are fixed, and a planet slowing toward its station does not thereby become heavy.\n\nAPPLYING PLANET is the separate, directed fact: which one is actually closing the aspect. Normally it is the lighter, and Ch.3, 6 assumes as much ("a light, quick star GOING STRAIGHTAWAY TO a heavy star ... FEWER IN DEGREES than the heavy one"). Retrogradation reverses it, and both authors say so rather than leaving it to be inferred -- Abu Ma\'shar VII.5, 24 ("the connection of one of them with the other ... will be BY RETROGRADATION"), VII.5, 120 ("the light one IN MORE DEGREES goes retrograde and connects with the heavy one"), and the note on VII.5, 130 (Saturn "could never be received because he is too slow to connect with anyone, UNLESS BY RETROGRADATION"). The cause is named in this column whenever the heavier planet is the one applying, which happens for about 4% of configured pairs. Reception, transfer, collection, returning, revoking, emptiness of course and enclosure all read this column, not the light/heavy one.')
+                          notes='MOTION and EXACT ORB DIST are the degree-to-degree approach. BODIES is whether each planet falls inside the other\'s sphere of power, which is asymmetric because the spheres differ in size: Abu Ma\'shar VII.4, 7 notes that Saturn sits inside the Moon\'s body from 12 degrees while she only enters his at a little under 9. CONNECTED is the active author\'s verdict -- switch the Connection rule at the top of this page to see where they disagree; RULES DIFFER marks the pairs where the two tests disagree.\n\nSTRENGTH is two different measures. For an assembly it is the source\'s own: whose body reaches whose (VII.4, 5-8) and whether they share a bound. For an aspect it is marked "(app scale)", because VII.5, 4 grades looking as a continuum with no cutoffs anywhere -- "the strongest thing there is in its looking is the degree related most closely by number to the degree of its own sign, and if the aspect was far from these degrees, its aspect will be weaker." The thirds are this app\'s own scanning aid; the measurement itself is the Exact Orb Dist column.\n\nLIGHT and HEAVY are the standing classes both authors name as nouns (Saturn heaviest through the Moon lightest), not a reading of momentary speed: they are fixed, and a planet slowing toward its station does not thereby become heavy.\n\nAPPLYING PLANET is the separate, directed fact: which one is actually closing the aspect. Normally it is the lighter, and Ch.3, 6 assumes as much ("a light, quick star GOING STRAIGHTAWAY TO a heavy star ... FEWER IN DEGREES than the heavy one"). Retrogradation reverses it, and both authors say so rather than leaving it to be inferred -- Abu Ma\'shar VII.5, 24 ("the connection of one of them with the other ... will be BY RETROGRADATION"), VII.5, 118 ("the light one IN MORE DEGREES goes retrograde and connects with the heavy one"), and the note on VII.5, 130 (Saturn "could never be received because he is too slow to connect with anyone, UNLESS BY RETROGRADATION"). The cause is named in this column whenever the heavier planet is the one applying, which happens for about 4% of configured pairs. Reception, transfer, collection, returning, revoking, emptiness of course and enclosure all read this column, not the light/heavy one.')
                 with st.container(border=True):
                     st.markdown("**Connection group** — Ch.3, 24-30 and 119-123")
                     _finding(_gap, 'Transfer of Light', "Sahl, The Introduction Ch.3, 24-27; Type II is Abu Ma'shar, Great Introduction VII.5, 84-85", transfers,
