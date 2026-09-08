@@ -544,6 +544,12 @@ SIGN_ELEMENT = {
 SIGN_TO_DOMICILE = {sign: planet for planet, signs in DOMICILES.items() for sign in signs}
 SIGN_TO_EXALTATION = {sign: planet for planet, signs in EXALTATIONS.items() for sign in signs}
 
+# PLANETS_IN_HOUSES below follows the Guide cell for cell except the
+# 9th-house Mercury PN4 halves, which the Guide (p. 34) prints against its
+# own headings (Good: "Bad reports and journeys ..."; Bad: "Good journeys,
+# true visions ..."). The code keeps the evident content and
+# tests/test_prose_tables.py pins it that way: decision D-16 (2026-09-08),
+# content over columns, to be re-checked if PN4 itself enters the corpus.
 # Masha'allah's delineations for a topical house's lord, keyed by
 # [placed_in_house][lord_of_house] (i.e. outer key = the WSH house the lord
 # is physically placed in, inner key = the topical house it rules).
@@ -4057,10 +4063,14 @@ LOT_DEFINITIONS = [
          note='"Taken from Mercury to the Moon by day, and by night the reverse."'),
     dict(id='death', topic='Death', name='Lot of death',
          start='Moon', end='cusp8', project='Saturn', reverse_at_night=False,
-         source='Sahl, On Nativities Ch. 8.6, 1',
-         confidence='settled',
-         note='PROJECTED FROM SATURN, not the Ascendant: "taken by night and day from the '
-              'Moon to the degree of the eighth place, AND CAST OUT FROM SATURN."'),
+         source="Sahl, On Nativities Ch. 8.6, 1 (Saturn is Dykes' emendation, fn. 89)",
+         confidence="Dykes' emendation against Sahl's manuscripts (D-11, 2026-09-08)",
+         note='Projected from Saturn as printed: "taken by night and day from the Moon to the '
+              'degree of the eighth place, and cast out from Saturn." That "Saturn" is an '
+              'emendation -- fn. 89: "Reading with the Masha\'allah MSS for \'Ascendant\'. This '
+              'is the Lot as reported by Dorotheus (Carmen IV.3, 16)" -- so Sahl\'s own manuscripts '
+              'read the Ascendant, and Masha\'allah, Dorotheus and the edition read Saturn. Kept, '
+              'and labelled; the two projections differ in sign on about 93% of charts.'),
     dict(id='killer', topic='Death', name='Lot of the killer',
          start='lord1', end='Moon', project='Ascendant', reverse_at_night=True,
          source='Sahl, On Nativities Ch. 8.2, 17',
@@ -4092,15 +4102,14 @@ LOT_DEFINITIONS = [
          confidence="Dykes' preference against Sahl's text",
          note='Identical to the row above by day; differs only at night.'),
     dict(id='work_authority', topic='Work', name="Lot of authority, work and craft (Masha'allah)",
-         start='Sun', end='Saturn', project='Ascendant', reverse_at_night=False,
-         source="Sahl, On Nativities Ch. 10.2.5, 4-14 (Masha'allah)",
-         confidence='variant (one of three)',
-         note='Sahl switches treatises mid-chapter without saying so. The note: '
-              'Masha\'allah "defines this in the same way as the Lot of fathers '
-              '(Sun-Saturn)". Identical in form to the Lot of the father. Sahl\'s Fig. 63 (On Nativities) in the '
-              'current OCR reads Sun-Saturn and marks it (R), reversed at night, as 4.14, 1 '
-              'reverses the father Lot; this row does not reverse -- an open CHOICE recorded '
-              'in synthesis/10_on_nativities_citation_audit.md.'),
+         start='Sun', end='Saturn', project='Ascendant', reverse_at_night=True,
+         source="Sahl, On Nativities Ch. 10.2.5, 4-14 (Masha'allah); Dykes' fn. 166",
+         confidence='variant (one of three); reversed at night by decision D-4 (2026-09-08)',
+         note='Sahl switches treatises mid-chapter without saying so, and his text at 10.2.5, 4-14 '
+              'gives no formula: the Sun-Saturn identification is Dykes\' fn. 166, Masha\'allah '
+              '"defines this in the same way as the Lot of fathers (Sun-Saturn)". The father Lot '
+              'reverses at night (4.14, 1) and Sahl\'s Fig. 63 (On Nativities) marks this one (R), '
+              'so it reverses here too (synthesis/13_open_decisions.md D-4).'),
     dict(id='friends', topic='Friends', name='Lot of friends',
          start='Moon', end='Mercury', project='Ascendant', reverse_at_night=True,
          source='Sahl, On Nativities Ch. 11, 5 (the chapter preamble) and Ch. 11.1, 29',
@@ -5132,7 +5141,7 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
             south_node_lon = (north_node_lon + 180.0) % 360.0
             node_dist = min(abs(((lon - north_node_lon + 180) % 360) - 180), abs(((lon - south_node_lon + 180) % 360) - 180))
             if node_dist < 12.0 and abs(lat) < 1.0:
-                labels.append('With the Head or Tail, without latitude (99; 12 deg orb from Ch.3, 107 and On Nativities 1.21, 12)')
+                labels.append('With the Head or Tail, without latitude (99; 12 deg orb for either node, Ch.3, 107 and VII.6, 52)')
 
             # (100) Inverted: in the seventh sign from its own house (Detriment).
             if ess['Detriment']:
@@ -7349,7 +7358,7 @@ if location_query and lat is not None and lon is not None:
                          hide_index=True)
 
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-                st.markdown('The STANDING column records his editorial position in his own words where he states one.\n\nFour kinds of case. SAHL HIMSELF RULES: of the two sibling Lots, "both of the Lots are correct, so work with them both together" (3.11, 4) -- neither is subordinate. DYKES NAMES HIS CHOICE: of the three witnesses to the Lot of enemies, "I have used M here"; on the night reversal of the Saturn-Moon work Lot, "Paul instructs us to reverse it by night, but Abu Ma\'shar says not to. We should follow Paul." DYKES MARKS ONE STANDARD: on children, "the usual calculation ... is that of Hermes." DYKES ONLY TABULATES: three Lots for work, after noting that "Sahl quietly switches to Masha\'allah\'s treatise on Lots ... without telling us that the formula is different."\n\nEvery formula is taken from the running prose or a footnote, never from one of the summary tables, whose glyph columns the OCR mangles -- in Sahl\'s Fig. 63 (On Nativities; Abu Ma\'shar\'s Fig. 63 is a different table), the row for Ch. 10.2.5 renders as Mercury-Venus where the body text plainly reads "from Saturn to the Moon."\n\nNote the Lot of death is projected FROM SATURN, not from the Ascendant.')
+                st.markdown('The STANDING column records his editorial position in his own words where he states one.\n\nFour kinds of case. SAHL HIMSELF RULES: of the two sibling Lots, "both of the Lots are correct, so work with them both together" (3.11, 4) -- neither is subordinate. DYKES NAMES HIS CHOICE: of the three witnesses to the Lot of enemies, "I have used M here"; on the night reversal of the Saturn-Moon work Lot, "Paul instructs us to reverse it by night, but Abu Ma\'shar says not to. We should follow Paul." DYKES MARKS ONE STANDARD: on children, "the usual calculation ... is that of Hermes." DYKES ONLY TABULATES: three Lots for work, after noting that "Sahl quietly switches to Masha\'allah\'s treatise on Lots ... without telling us that the formula is different."\n\nEvery formula is taken from the running prose or a footnote, never from one of the summary tables, whose glyph columns the OCR mangles -- in Sahl\'s Fig. 63 (On Nativities; Abu Ma\'shar\'s Fig. 63 is a different table), the row for Ch. 10.2.5 renders as Mercury-Venus where the body text plainly reads "from Saturn to the Moon."\n\nNote the Lot of death is projected from Saturn by Dykes\' emendation (fn. 89, with Masha\'allah\'s manuscripts and Dorotheus); Sahl\'s own manuscripts read the Ascendant.')
         def page_victors():
             st.header("Lunation and victors")
             st.caption("Lessons 19-20.")
