@@ -4360,10 +4360,23 @@ WELLED_DEGREES = {
     'Pisces': [4, 9, 24, 27, 28],
 }
 
+# Sahl's two sign categories, stated identically in two works (C-04):
+# "of them are signs which are said to be dark, and they are Libra and
+# Capricorn" (Introduction Ch. 1, 18; On Nativities 1.38, 8 the same), and
+# "a place called the 'burned place,' and it is the end of Libra and the
+# beginning of Scorpio" (Introduction Ch. 1, 19; On Nativities 1.38, 9).
+# Sahl gives the burned place NO degrees; the 15 Libra-15 Scorpio span
+# this app once flagged is in no source in hand, and the 19
+# Libra-3 Scorpio span is Abu Ma'shar's own (VII.6, 40, HARSH_BURNED_PATH
+# below, used only where the table is his). Decision D-5, 2026-09-08.
+DARK_SIGNS = {'Libra', 'Capricorn'}
+BURNED_PLACE_SIGNS = ('Libra', 'Scorpio')
+
 def evaluate_special_degrees(planetary_data):
-    """Flags planets in the Via Combusta (15 Libra-15 Scorpio), a classical
-    welled/pitted degree of their current sign, or one of Sahl's two
-    sign-boundary conditions.
+    """Flags planets in Sahl's dark signs, in the two signs of his burned
+    place (no degrees -- see DARK_SIGNS above), in a classical welled
+    degree of their current sign, or in one of Sahl's two sign-boundary
+    conditions.
 
     The boundary pair is the other half of the five-degree rule and its
     mirror at the far end of the sign:
@@ -4386,10 +4399,12 @@ def evaluate_special_degrees(planetary_data):
         lon = data['longitude']
         conditions = []
 
-        if 195.0 <= lon <= 225.0:
-            conditions.append("Via Combusta (external convention, not from these sources)")
-
         sign = get_zodiac_sign(lon)
+        if sign in DARK_SIGNS:
+            conditions.append("Dark sign (Intro Ch. 1, 18; Nat. 1.38, 8)")
+        if sign in BURNED_PLACE_SIGNS:
+            conditions.append('In the burned place\'s signs -- "the end of Libra and the beginning of '
+                              'Scorpio", no degrees given (Intro Ch. 1, 19; Nat. 1.38, 9)')
         degree_1_based = int(lon % 30) + 1
         if degree_1_based in WELLED_DEGREES.get(sign, []):
             conditions.append("Welled Degree")
@@ -5959,8 +5974,8 @@ def _abu_mashar_moon_corruption(planetary_data, ascendant_lon, jd=None):
                           else 'Southern in latitude (70)')
 
         # [8] (71) In the burned path, "and that is Libra and Scorpio" -- the
-        # whole two signs here, wider than the 15 Libra to 15 Scorpio span the
-        # Via Combusta table uses.
+        # whole two signs here, wider than VII.6, 40's harsher 19 Libra to
+        # 3 Scorpio band (HARSH_BURNED_PATH).
         if sign in ('Libra', 'Scorpio'):
             labels.append('In the burned path, Libra or Scorpio (71)')
 
@@ -7040,7 +7055,7 @@ if location_query and lat is not None and lon is not None:
                 house_list = [{"House": i+1, "Cusp": get_degree_string(chart_data['houses'][i])} for i in range(12)]
                 st.dataframe(pd.DataFrame(house_list), hide_index=True, width='content', height=_rows_height(12))
             _finding(_gap, 'Special Degrees & Conditions', None, special_degrees,
-                      glance='Flags planets in the Via Combusta (15 Libra-15 Scorpio, a historically "burnt" span), a classical welled/pitted degree of their current sign (Abu Ma\'shar, Great Introduction V.21), or one of Sahl\'s two sign-boundary conditions.',
+                      glance='Flags planets in Sahl\'s dark signs (Libra, Capricorn), in the two signs of his burned place ("the end of Libra and the beginning of Scorpio" -- he gives no degrees; Abu Ma\'shar\'s 19 Libra-3 Scorpio is applied only in his own Planetary Condition table), in a welled degree of their sign (Abu Ma\'shar, Great Introduction V.21, Fig. 62), or in one of Sahl\'s two sign-boundary conditions.',
                       notes='ENTERING: "every planet which is at the beginning of a sign is weak until it is firmly established in it and comes to be 5 degrees within it" (Fifty Aphorisms #44, 87), repeated in On Nativities Ch.1.22, 9. This is the other half of the five-degree rule that also governs advancement.\n\nLEAVING: "if a planet came to be in the last degree of the sign, then its strength has already gone away from that sign, and its strength is in the next sign ... like a man putting his foot on the threshold of his door. And if a planet was in the twenty-ninth degree, then indeed the strength of the planet IS in that sign" (Fifty Aphorisms #15, 31-33) -- so the 29th degree still counts and only the 30th has left.')
             _absent(_gap)
 

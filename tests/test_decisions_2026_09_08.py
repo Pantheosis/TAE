@@ -39,3 +39,33 @@ def test_d12_node_orb_label_cites_ch3_107_and_vii6_52_not_nativities_1_21(engine
     m = re.search(r"With the Head or Tail, without latitude \(99;[^)]*\)", engine_source())
     assert m and "Ch.3, 107" in m.group(0) and "VII.6, 52" in m.group(0), m
     assert "1.21, 12" not in m.group(0)
+
+
+# --- D-5 / C-04: Sahl's dark signs and his burned place without degrees --
+def test_d5_dark_signs_are_libra_and_capricorn(engine):
+    assert engine["DARK_SIGNS"] == {"Libra", "Capricorn"}
+
+
+def test_d5_control_scorpio_is_not_a_dark_sign(engine):
+    # Scorpio adjoins the burned place and is NOT a dark sign in either
+    # witness; the two categories are separate (C-04).
+    assert "Scorpio" not in engine["DARK_SIGNS"]
+
+
+def _special(engine, lon):
+    rows = engine["evaluate_special_degrees"]({"Sun": {"longitude": lon}})
+    return rows[0]["Condition"] if rows else ""
+
+
+def test_d5_burned_place_is_a_sign_label_with_no_degree_test(engine):
+    # 2 Libra and 25 Scorpio both carry the label: Sahl's "end of Libra and
+    # beginning of Scorpio" comes with no degrees, so none may be invented.
+    assert "burned place" in _special(engine, 182.0)
+    assert "burned place" in _special(engine, 235.0)
+    assert "no degrees given" in _special(engine, 182.0)
+
+
+def test_d5_control_abu_mashar_keeps_his_own_19_to_3_span(engine):
+    # VII.6, 40's harsher band stays where the table is his.
+    assert engine["HARSH_BURNED_PATH"] == (199.0, 213.0)
+    assert "burned place" not in _special(engine, 100.0)

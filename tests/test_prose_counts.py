@@ -230,9 +230,12 @@ def test_forward_horizon_is_quoted_correctly(engine):
     assert f"next {horizon} days" in ui and f"up to ~{horizon} days" in ui and f"inside {horizon} days" in ui
 
 
-def test_via_combusta_span_matches_prose():
-    assert "195.0 <= lon <= 225.0" in function_source("evaluate_special_degrees")
-    assert "Via Combusta (15 Libra-15 Scorpio" in ui_source()
+def test_no_via_combusta_span_is_attributed_anywhere():
+    # D-5 (2026-09-08): Sahl gives the burned place no degrees, and the
+    # 15 Libra-15 Scorpio span is in no source in hand. Neither half of
+    # the file may reintroduce it.
+    assert "195.0 <= lon" not in function_source("evaluate_special_degrees")
+    assert "Via Combusta" not in engine_source() and "Via Combusta" not in ui_source()
 
 
 # --- Switch option literals ----------------------------------------------
