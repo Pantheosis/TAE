@@ -1,0 +1,246 @@
+"""Every base lookup table in the engine half, pinned cell by cell against a
+literal copy of its canonical authority (2026-09-08 audit, synthesis/08).
+
+The Egyptian bounds carried two transposed rows from the initial commit
+through three audits and 748 tests, because no test compared the table to
+its source -- only the code's own reading of it. These tests are the
+missing comparison: each literal below was transcribed from the authority
+named in its comment, not from app.py, and is compared entry by entry, so
+a transposition anywhere in a table fails on the cell it is in.
+
+Authorities, in the order the audit prefers: the corpus (Sahl and Abu
+Ma'shar in consolidated_texts/), then the TNAC Handy Tables from Part 1
+(Dykes 2023), then a stated convention. Tables with NO authority in either
+are not pinned here; they are listed in synthesis/08_base_table_audit.md.
+"""
+from __future__ import annotations
+
+import pytest
+
+SIGNS = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+         'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces']
+PLANETS = ['Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon']
+
+
+# --- Dignities: Handy Tables p. 1, "Houses (inner), Exaltations (outer)" ---
+# Corpus witnesses for the exaltation degrees: Abu Ma'shar VII.6, 40 "from
+# 19 Libra up to 3 Scorpio, because those are the fall of the luminaries";
+# Questions Ch. 1, 42 "3 of Scorpio (which is her fall)".
+DOMICILES = {'Sun': ['Leo'], 'Moon': ['Cancer'], 'Mercury': ['Gemini', 'Virgo'], 'Venus': ['Taurus', 'Libra'],
+             'Mars': ['Aries', 'Scorpio'], 'Jupiter': ['Sagittarius', 'Pisces'], 'Saturn': ['Capricorn', 'Aquarius']}
+EXALTATIONS = {'Sun': ['Aries'], 'Moon': ['Taurus'], 'Mercury': ['Virgo'], 'Venus': ['Pisces'],
+               'Mars': ['Capricorn'], 'Jupiter': ['Cancer'], 'Saturn': ['Libra']}
+# Handy p. 1 "Standard exaltations" column (the Hermes column differs by a degree for five planets).
+EXALTATION_DEGREES_STANDARD = {'Saturn': ('Libra', 21), 'Jupiter': ('Cancer', 15), 'Mars': ('Capricorn', 28),
+                               'Sun': ('Aries', 19), 'Venus': ('Pisces', 27), 'Mercury': ('Virgo', 15), 'Moon': ('Taurus', 3)}
+
+
+def _opposite(sign):
+    return SIGNS[(SIGNS.index(sign) + 6) % 12]
+
+
+@pytest.mark.parametrize("planet", PLANETS)
+def test_domicile_exaltation_detriment_fall_match_handy_p1(engine, planet):
+    assert engine["DOMICILES"][planet] == DOMICILES[planet]
+    assert engine["EXALTATIONS"][planet] == EXALTATIONS[planet]
+    assert engine["DETRIMENTS"][planet] == [_opposite(s) for s in DOMICILES[planet]]
+    assert engine["FALLS"][planet] == [_opposite(s) for s in EXALTATIONS[planet]]
+
+
+def test_the_engine_uses_the_standard_exaltation_degrees_of_the_luminaries(engine):
+    # The only exaltation degrees the engine uses are the sect light's, in
+    # the Lot of Exaltation (On Nativities 4.1, 6): Sun 19 Aries, Moon 3 Taurus.
+    assert engine["_lot_point"]("exaltation_degree", {}, 0.0, [], "Diurnal", {}) == 19.0
+    assert engine["_lot_point"]("exaltation_degree", {}, 0.0, [], "Nocturnal", {}) == 30.0 + 3.0
+
+
+# --- Triplicities: Sahl, Introduction Ch. 1, 35-41 and Figure 4; Handy p. 1 ---
+TRIPLICITY = {'Fire': {'Day': 'Sun', 'Night': 'Jupiter', 'Participating': 'Saturn'},
+              'Earth': {'Day': 'Venus', 'Night': 'Moon', 'Participating': 'Mars'},
+              'Air': {'Day': 'Saturn', 'Night': 'Mercury', 'Participating': 'Jupiter'},
+              'Water': {'Day': 'Venus', 'Night': 'Mars', 'Participating': 'Moon'}}
+SIGN_ELEMENT = {'Aries': 'Fire', 'Leo': 'Fire', 'Sagittarius': 'Fire', 'Taurus': 'Earth', 'Virgo': 'Earth',
+                'Capricorn': 'Earth', 'Gemini': 'Air', 'Libra': 'Air', 'Aquarius': 'Air',
+                'Cancer': 'Water', 'Scorpio': 'Water', 'Pisces': 'Water'}
+
+
+@pytest.mark.parametrize("element", list(TRIPLICITY))
+def test_triplicity_lords_match_sahl_figure_4(engine, element):
+    assert engine["TRIPLICITY"][element] == TRIPLICITY[element]
+
+
+def test_sign_elements_match_introduction_ch1_14_17(engine):
+    assert engine["SIGN_ELEMENT"] == SIGN_ELEMENT
+
+
+# --- Faces: the Chaldean faces (convention; no table in corpus or course) ---
+# Standard sequence from Aries 0: Mars, Sun, Venus, Mercury, Moon, Saturn,
+# Jupiter, repeating. Derived in app.py from CHALDEAN_ORDER; pinned as the
+# 36 lords it must produce so the derivation cannot drift.
+CHALDEAN_FACES = ['Mars', 'Sun', 'Venus', 'Mercury', 'Moon', 'Saturn', 'Jupiter'] * 6
+
+
+@pytest.mark.parametrize("index", range(36))
+def test_face_lords_follow_the_chaldean_order_from_aries(engine, index):
+    assert engine["get_essential_rulers"](index * 10 + 5.0)["face"] == CHALDEAN_FACES[index]
+
+
+def test_chaldean_order_literal(engine):
+    assert engine["CHALDEAN_ORDER"] == ['Mars', 'Sun', 'Venus', 'Mercury', 'Moon', 'Saturn', 'Jupiter']
+
+
+# --- Degrees of brightness: Abu Ma'shar Figure 61 (V.20), corpus, verified
+# cell by cell against the p. 306 photograph in the OCR pass. Ranges are
+# 0-based degree-in-sign, inclusive; each width in the figure's code (e.g.
+# "3K") equals end - start + 1.
+BRIGHTNESS_FIG61 = {
+    'Aries':       [(0, 2, 'Dusky'), (3, 7, 'Dark'), (8, 15, 'Dusky'), (16, 19, 'Bright'), (20, 23, 'Dark'), (24, 28, 'Bright'), (29, 29, 'Dark')],
+    'Taurus':      [(0, 2, 'Dusky'), (3, 9, 'Dark'), (10, 11, 'Empty'), (12, 19, 'Bright'), (20, 24, 'Empty'), (25, 27, 'Bright'), (28, 29, 'Dusky')],
+    'Gemini':      [(0, 6, 'Bright'), (7, 9, 'Dusky'), (10, 14, 'Bright'), (15, 16, 'Empty'), (17, 22, 'Bright'), (23, 29, 'Dusky')],
+    'Cancer':      [(0, 6, 'Dusky'), (7, 11, 'Bright'), (12, 13, 'Dusky'), (14, 17, 'Bright'), (18, 19, 'Dark'), (20, 27, 'Bright'), (28, 29, 'Dark')],
+    'Leo':         [(0, 6, 'Bright'), (7, 9, 'Dusky'), (10, 15, 'Dark'), (16, 20, 'Empty'), (21, 29, 'Bright')],
+    'Virgo':       [(0, 4, 'Dusky'), (5, 8, 'Bright'), (9, 10, 'Empty'), (11, 16, 'Bright'), (17, 20, 'Dark'), (21, 27, 'Bright'), (28, 29, 'Empty')],
+    'Libra':       [(0, 4, 'Bright'), (5, 9, 'Dusky'), (10, 17, 'Bright'), (18, 20, 'Dusky'), (21, 27, 'Bright'), (28, 29, 'Empty')],
+    'Scorpio':     [(0, 2, 'Dusky'), (3, 7, 'Bright'), (8, 13, 'Empty'), (14, 19, 'Bright'), (20, 21, 'Dark'), (22, 26, 'Bright'), (27, 29, 'Dusky')],
+    'Sagittarius': [(0, 8, 'Bright'), (9, 11, 'Dusky'), (12, 18, 'Bright'), (19, 22, 'Dark'), (23, 29, 'Dusky')],
+    'Capricorn':   [(0, 6, 'Dusky'), (7, 9, 'Bright'), (10, 14, 'Dark'), (15, 18, 'Bright'), (19, 20, 'Dusky'), (21, 24, 'Empty'), (25, 29, 'Bright')],
+    'Aquarius':    [(0, 3, 'Dark'), (4, 8, 'Bright'), (9, 12, 'Dusky'), (13, 20, 'Bright'), (21, 24, 'Empty'), (25, 29, 'Bright')],
+    'Pisces':      [(0, 5, 'Dusky'), (6, 11, 'Bright'), (12, 17, 'Dusky'), (18, 21, 'Bright'), (22, 24, 'Empty'), (25, 27, 'Bright'), (28, 29, 'Dusky')],
+}
+
+
+@pytest.mark.parametrize("sign", SIGNS)
+def test_brightness_degrees_match_figure_61_sign_by_sign(engine, sign):
+    assert [tuple(t) for t in engine["BRIGHTNESS_DEGREES"][sign]] == BRIGHTNESS_FIG61[sign], sign
+    spans = BRIGHTNESS_FIG61[sign]
+    assert spans[0][0] == 0 and spans[-1][1] == 29
+    assert all(spans[i + 1][0] == spans[i][1] + 1 for i in range(len(spans) - 1)), "gap or overlap"
+
+
+# --- Joys, genders, quadruplicity, places: Sahl's Introduction ---
+def test_joys_match_introduction_ch3_128(engine):
+    # "Mercury rejoices in the Ascendant, the Moon rejoices in the third,
+    # Venus rejoices in the fifth, Mars rejoices in the sixth, the Sun
+    # rejoices in the ninth, Jupiter rejoices in the eleventh, and Saturn
+    # rejoices in the twelfth."
+    assert engine["JOY_HOUSES"] == {'Mercury': 1, 'Moon': 3, 'Venus': 5, 'Mars': 6, 'Sun': 9, 'Jupiter': 11, 'Saturn': 12}
+
+
+def test_sign_genders_alternate_from_aries_introduction_ch1_2_3(engine):
+    assert engine["MASCULINE_SIGNS"] == set(SIGNS[0::2])
+    assert engine["FEMININE_SIGNS"] == set(SIGNS[1::2])
+
+
+def test_fixed_signs_introduction_ch1_9(engine):
+    assert engine["FIXED_SIGNS"] == {'Taurus', 'Leo', 'Scorpio', 'Aquarius'}
+
+
+def test_excellent_places_are_the_six_of_introduction_ch3_78(engine):
+    # "in the stakes or what follows them, of the places which look at the
+    # Ascendant"; fn. 92: "allows only six good places, by leaving out the
+    # ninth". The 2nd and 8th follow a stake but are in aversion.
+    assert engine["EXCELLENT_PLACES"] == {1, 4, 5, 7, 10, 11}
+
+
+def test_malefic_houses_introduction_ch2_46_47(engine):
+    # 8th "intense misfortune"; 6th and 12th "the most bad of the places".
+    assert engine["MALEFIC_HOUSES"] == {6, 8, 12}
+
+
+def test_preferred_domiciles_introduction_ch3_129(engine):
+    assert engine["PREFERRED_DOMICILE"] == {'Saturn': 'Aquarius', 'Jupiter': 'Sagittarius', 'Mars': 'Scorpio',
+                                            'Venus': 'Taurus', 'Mercury': 'Virgo'}
+
+
+def test_sect_of_the_planets(engine):
+    assert engine["DIURNAL_SECT_PLANETS"] == {'Sun', 'Jupiter', 'Saturn'}
+    assert engine["NOCTURNAL_SECT_PLANETS"] == {'Moon', 'Venus', 'Mars'}
+
+
+# --- Bodies and weights ---
+def test_planetary_orbs_match_sahl_ch3_13_17_and_handy_p28(engine):
+    # "the body of the Sun is 30 ... 15 ... the light of the Moon is 12 ...
+    # Saturn and Jupiter (each one) is 9 ... Mars is 8 ... Venus and Mercury
+    # (each one of them) is 7".
+    assert engine["PLANETARY_ORBS"] == {'Sun': 15.0, 'Moon': 12.0, 'Saturn': 9.0, 'Jupiter': 9.0,
+                                        'Mars': 8.0, 'Venus': 7.0, 'Mercury': 7.0}
+
+
+def test_weight_order_is_the_chaldean_order_heaviest_first(engine):
+    assert engine["WEIGHT_ORDER"] == PLANETS
+
+
+# Handy p. 2 "Average daily speeds", in degrees/minutes/seconds.
+AVERAGE_DAILY_SPEED_HANDY = {'Saturn': (0, 2, 1), 'Jupiter': (0, 4, 59), 'Mars': (0, 31, 27), 'Sun': (0, 59, 8),
+                             'Venus': (1, 12, 0), 'Mercury': (1, 23, 0), 'Moon': (13, 10, 36)}
+
+
+@pytest.mark.parametrize("planet", PLANETS)
+def test_average_daily_motion_matches_handy_p2_within_two_arcseconds(engine, planet):
+    d, m, s = AVERAGE_DAILY_SPEED_HANDY[planet]
+    assert abs(engine["AVERAGE_DAILY_MOTION"][planet] - (d + m / 60 + s / 3600)) <= 2 / 3600 + 1e-9
+
+
+# --- Planetary days and hours: Handy p. 35 ---
+def test_day_lords_match_handy_p35_hour_one(engine):
+    # Python weekday(): Monday=0. Sunday Sun, Monday Moon, Tuesday Mars,
+    # Wednesday Mercury, Thursday Jupiter, Friday Venus, Saturday Saturn.
+    assert engine["DAY_LORD_BY_WEEKDAY"] == {0: 'Moon', 1: 'Mars', 2: 'Mercury', 3: 'Jupiter', 4: 'Venus', 5: 'Saturn', 6: 'Sun'}
+
+
+HANDY_P35 = """Q R U S V T W|T W Q R U S V|S V T W Q R U|R U S V T W Q|W Q R U S V T|V T W Q R U S|U S V T W Q R|Q R U S V T W|T W Q R U S V|S V T W Q R U|R U S V T W Q|W Q R U S V T|V T W Q R U S|U S V T W Q R|Q R U S V T W|T W Q R U S V|S V T W Q R U|R U S V T W Q|W Q R U S V T|V T W Q R U S|U S V T W Q R|Q R U S V T W|T W Q R U S V|S V T W Q R U"""
+GLYPH = {'Q': 'Sun', 'R': 'Moon', 'U': 'Mars', 'S': 'Mercury', 'V': 'Jupiter', 'T': 'Venus', 'W': 'Saturn'}
+DAYS_SUNDAY_FIRST = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn']
+
+
+def test_planetary_hours_cycle_reproduces_handy_p35_all_168_cells(engine):
+    # Hour n of a day is n-1 steps down the Chaldean order from the day
+    # lord; the 24 rows of p. 35 (12 diurnal from sunrise, 12 nocturnal
+    # from sunset) for all seven days.
+    order = engine["CHALDEAN_HOUR_ORDER"]
+    for h, row in enumerate(HANDY_P35.split("|")):
+        for d, glyph in enumerate(row.split()):
+            expected = order[(order.index(DAYS_SUNDAY_FIRST[d]) + h) % 7]
+            assert GLYPH[glyph] == expected, (h + 1, DAYS_SUNDAY_FIRST[d])
+
+
+# --- Solar phase orbs: Abu Ma'shar VII.2 ---
+def test_solar_orbs_match_great_introduction_vii_2(engine):
+    # 11: Saturn and Jupiter burned within 6, Mars within 10; 37/40: the
+    # inferiors burned to 7; 60/74: the Moon to 6. 13: under the rays to
+    # 15 (Sat/Jup) and 18 (Mars) in the east; 31: 15 in the west; 40/44:
+    # inferiors 12 east; 48/51: 15 west; 61/72: Moon 12. 30: westernizing
+    # until 22 (Sat/Jup) and 18 (Mars).
+    assert engine["SOLAR_BURNED_ORB"] == {'Saturn': (6.0, 6.0), 'Jupiter': (6.0, 6.0), 'Mars': (10.0, 10.0),
+                                          'Venus': (7.0, 7.0), 'Mercury': (7.0, 7.0), 'Moon': (6.0, 6.0)}
+    assert engine["SOLAR_RAYS_ORB"] == {'Saturn': (15.0, 15.0), 'Jupiter': (15.0, 15.0), 'Mars': (18.0, 15.0),
+                                        'Venus': (12.0, 15.0), 'Mercury': (12.0, 15.0), 'Moon': (12.0, 12.0)}
+    assert engine["SOLAR_SETTING_DEGREES"] == {'Saturn': 22.0, 'Jupiter': 22.0, 'Mars': 18.0}
+    assert engine["CAZIMI_ORB"] == 16.0 / 60.0            # VII.2, 7
+    assert engine["HARSH_BURNED_PATH"] == (199.0, 213.0)   # VII.6, 40: 19 Libra to 3 Scorpio
+
+
+# --- Natural connections: Abu Ma'shar VII.5 ---
+def _pairs(*ps):
+    return {frozenset(p) for p in ps}
+
+
+def test_natural_connection_pairs_match_vii_5(engine):
+    # 56 (equal ascensions), 68-73 (equal daylight), 76 (by opposition), 77 (by sextile).
+    assert engine["EQUAL_ASCENSION_PAIRS"] == _pairs(('Aries', 'Pisces'), ('Taurus', 'Aquarius'), ('Gemini', 'Capricorn'),
+                                                     ('Cancer', 'Sagittarius'), ('Leo', 'Scorpio'), ('Virgo', 'Libra'))
+    assert engine["EQUAL_DAYLIGHT_PAIRS"] == _pairs(('Gemini', 'Cancer'), ('Taurus', 'Leo'), ('Aries', 'Virgo'),
+                                                    ('Libra', 'Pisces'), ('Sagittarius', 'Capricorn'))
+    assert engine["NATURAL_OPPOSITION_PAIRS"] == _pairs(('Gemini', 'Capricorn'), ('Sagittarius', 'Cancer'),
+                                                        ('Aries', 'Virgo'), ('Libra', 'Pisces'))
+    assert engine["NATURAL_SEXTILE_PAIRS"] == _pairs(('Gemini', 'Cancer'), ('Virgo', 'Libra'),
+                                                     ('Sagittarius', 'Capricorn'), ('Pisces', 'Aries'))
+
+
+# --- Structural guards on the two prose tables (their text is audited by
+# hand against the TNAC Reference Guide; see synthesis/08) ---
+def test_prose_tables_have_full_shape(engine):
+    ml, ph = engine["MASHAALLAH_LORDS"], engine["PLANETS_IN_HOUSES"]
+    assert set(ml) == set(range(1, 13)) and all(set(ml[h]) == set(range(1, 13)) for h in ml)
+    assert set(ph) == set(range(1, 13))
+    assert all(set(ph[h]) == set(PLANETS) and all(set(v) == {'Good', 'Bad'} for v in ph[h].values()) for h in ph)
