@@ -4451,6 +4451,34 @@ FEMININE_QUADRANT_HOUSES = {1, 2, 3, 7, 8, 9}
 # exactly sectors 1, 2, 4, 5, 7, 8, 10, 11 with the axes as boundaries. So
 # 83 is right as implemented, and the quadrant set below is Abu Ma'shar's
 # own condition (VII.3, 2), recorded for when it is scored in its own right.
+#
+# Sahl knew the quadrant scheme too, and names a rival to it. On Times
+# Ch. 1, 10-11 gives the quadrants -- "a planet is in what is between the
+# Ascendant and the Midheaven, and what is opposite that (and that is what
+# is between the setting and the stake of the earth): and this position of
+# the circle indicates quickness ... [the other two] slowness and delay,
+# ACCORDING TO THE STATEMENT OF THE ANCIENTS" -- then 12-13 gives
+# Masha'allah's HEMISPHERES, "he differs from them in that: he makes the
+# quick place of the circle be what begins its rise ... (and it is what is
+# from the degree of the fourth), [then] turned back towards the Midheaven",
+# and 14 takes Masha'allah's side: "And that is the closest of the two
+# statements, in [its] analogy" (fn. 7: "most appropriate, most resembling
+# the truth"). Figure 44 draws both wheels. Sahl then USES the hemisphere
+# division in another work, On Choices Ch. 6, 16-17: treat from the head
+# to the navel "when the Moon is in what is between the stake of the earth,
+# so rising up to the Midheaven ... the highest region of the circle", and
+# below the navel when she is "between the tenth, declining towards the
+# stake of the earth ... the lowest part of the circle". (Ch. 6, 30's
+# "declining from the Midheaven toward the stake of the earth" shares the
+# vocabulary only.)
+#
+# None of that moves 83 or the set below. On Times Ch. 1 is about the
+# QUICKNESS OF TIMING and On Choices Ch. 6 about a bodily correspondence;
+# neither says the hemisphere division governs advancing-as-strength, so
+# it is recorded here as a third scheme in the sources, not scored. Where
+# the 2026-09-07 review (synthesis/05, Tier 3) and the report it reviewed
+# (synthesis/04, A4) differ, it is only on whether Ch. 6, 30 counts as a
+# use of the scheme; this comment follows the review and cites 16-17 alone.
 ADVANCING_BY_QUADRANT_FIG90 = {4, 5, 6, 10, 11, 12}   # Abu Ma'shar VII.3, 2 / VI.26, 3; not Sahl 83
 
 # Approximate geocentric distance range (AU) per planet, used only as a
