@@ -134,7 +134,8 @@ def test_brightness_degrees_match_figure_61_sign_by_sign(engine, sign):
 # table was cited to Figure 98 (which is "Speed relative to apogee") and
 # held three defects -- Aries lacked 29, Gemini had 13 for 12, Pisces
 # lacked 28 -- that no test could see because nothing compared it to a
-# source. Transcribed from the corpus table, not from app.py.
+# source. Transcribed from the corpus table, not from app.py, and then
+# verified cell by cell (62 cells) against the p. 308 photograph.
 WELLS_FIG62 = {
     'Aries':       [6, 11, 17, 23, 29],
     'Taurus':      [5, 13, 18, 24, 25, 26],
