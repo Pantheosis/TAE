@@ -1,15 +1,19 @@
 # Open decisions — everything deferred across the seven passes, in one sitting's worth
 
-`main` @ `70e6ce2`, 1024 passed / 2 xfailed. Written 2026-09-08. **Nothing decided, nothing
-implemented**; `app.py` and the tests are untouched. Line numbers are `main`'s.
+`main` @ `33208e1`, 1038 passed / 2 xfailed. Written 2026-09-08 against `70e6ce2` and refreshed the
+same day after the wells fix and the Book V excerpt pass merged: D-10 marked resolved, D-19–D-21
+added, D-4's figure named by volume, `app.py` line numbers re-mapped to `33208e1`. **Nothing
+decided, nothing implemented**; `app.py` and the tests are untouched. Line numbers are `main`'s.
 
 Frequencies are measured over **400 random charts** (years 1200–2000, latitudes −50° to +60°,
 seed 20260908) plus the six fixture charts, 2,842 planet placements in all; the script is
 reproducible from `synthesis/`'s description below each figure. "Placements" means one planet in
 one chart; "charts" means whole charts.
 
-Eighteen items. The owner named fifteen; three more came from sweeping the artifacts (**D-16**,
-**D-17**, **D-18**). Ordered by what each unblocks, most first.
+Twenty-one items, one of them resolved. The owner named fifteen; three came from sweeping the
+artifacts (**D-16**, **D-17**, **D-18**); three more (**D-19**–**D-21**) came from the Book V
+excerpt (`01_abu_mashar_book_v_excerpt.md`). Ordered by what each unblocks, most first; the later
+additions are appended, not renumbered.
 
 ## Summary table
 
@@ -24,7 +28,7 @@ Eighteen items. The owner named fifteen; three more came from sweeping the artif
 | **D-7** | Expose the contradicted sign categories as two readings by work? | **Yes, never merged** | high | small | C-11, App. B ¶7/¶33 (C-17) |
 | **D-8** | Keep two dignity orderings (house-master vs general) as separate constants? | **Yes, never merged** | high | small | C-20, any dignity-rank display |
 | **D-9** | The 7-place ranking: printed order (…11, 9, 5) or manuscript B's (…11, 5, 9)? | **Printed, labelled as Dykes's conflation** | low-medium | one line | C-09 |
-| **D-10** | Photograph *Great Introduction* V.21 to attest `WELLED_DEGREES`? | **Yes** | high | a shoot | Favor & Recompense's provenance; the `1240-01-04` fixture |
+| **D-10** | ~~Photograph *Great Introduction* V.21 to attest `WELLED_DEGREES`?~~ | **RESOLVED 2026-09-08** — shot, transcribed as Fig. 62, three engine cells corrected, pinned | — | done | — |
 | **D-11** | Project the Lot of death from Saturn (Dykes's emendation) or from the Ascendant (Sahl's MSS)? | **Saturn, labelled as an emendation; switch optional** | medium-high | one line | — (93% of charts change sign) |
 | **D-12** | Keep the 12° orb for the Head (as for the Tail)? | **Yes; fix the citation only** | high | one string | — |
 | **D-13** | Soften a malefic that rules the Ascendant (*Choices* 1, 12)? | **Switch, default off** | high | one function | C-15 |
@@ -33,6 +37,9 @@ Eighteen items. The owner named fifteen; three more came from sweeping the artif
 | **D-16** | 9th-house Mercury: follow the Guide's printed columns or its content? | **Content (current); annotate** | medium | one string | — |
 | **D-17** | Per-topic reassignment of the angles: caveat or implement? | **Caveat only** | high | note | C-23 |
 | **D-18** | Which spear-bearing definition, if any? | **None yet; read the course material first** | high | subsystem | the spear-bearing report items |
+| **D-19** | Read Fig. 59's male/female degrees into VII.6 conditions 13/36 ("male sign *or* male degrees")? | **No — leave as a coverage gap** | medium | one table + two `or`s | — (widens a Good Fortune vote; the table disagrees with the sign's gender on 51.7% of degrees) |
+| **D-20** | Flag Fig. 63's seven "degrees increasing in good fortune" (Moon, Fortune, Ascendant)? | **Display-only flag, supplement-labelled; decide with D-21** | low-medium | one table + three tests | — (7.6% of charts) |
+| **D-21** | Flag Fig. 64's thirty-one "degrees of elevation and power" (Ascendant, sect luminary)? | **Same as D-20, or neither; decide with D-20** | low-medium | one table + two tests | — (18.5% of charts; one fixture) |
 
 Items that were once open and are **not**, so they do not reappear below: exaltation degrees
 (Standard, `08` §4); the convertible-sign speed rankings (neither, `03` #11); "upright" stakes
@@ -56,7 +63,7 @@ the masters of the stars have mentioned the casting of the planets' rays, althou
 have differed from the others. And we will state their disagreement about it in another book …
 we will state what Ptolemy … said."*
 
-**Engine today.** `app.py:4283–4291`: recorded in `NOT_IMPLEMENTED_COVERAGE` as complete text
+**Engine today.** `app.py:4291–4299`: recorded in `NOT_IMPLEMENTED_COVERAGE` as complete text
 lacking only the tables it presupposes (VII.7 fns. 250–251, all computable). Aspects are zodiacal
 throughout (`_pairwise_configurations`, `:1035`).
 
@@ -140,8 +147,8 @@ procedures in Ch. 4 are unadjudicated (`04` §3 #3), and *Nat.* 1.20, 10 contrad
 where the greater years are granted (`04` §3 #2). `00_inventory.md` raised exactly this: *"a
 decision will be needed on whether Sahl-only timing counts as in scope."*
 
-**Engine today.** The Timing page (`:7381`) shows the annual profection and a symbolic 1°/year
-direction labelled *"NOT a distribution"* (`:6391`). Nothing from *On Times* is implemented.
+**Engine today.** The Timing page (`:7392`) shows the annual profection and a symbolic 1°/year
+direction labelled *"NOT a distribution"* (`:6402`). Nothing from *On Times* is implemented.
 
 **What changes.** "In scope" would admit: the sign-type time units (*Times* 2, 2–7), the
 granting rule (4, 7), the lesser-years conversion (11, 24), the hemisphere quick/slow scheme
@@ -164,15 +171,17 @@ with *Times* 4, 7's placement rule beside *Nat.* 1.20, 10's, both labelled.
 **Question.** Should `LOT_DEFINITIONS['work_authority']` (Sun→Saturn, projected from the
 Ascendant) reverse by night?
 
-**Both sides.** For reversal: Figure 63 in the current OCR reads **☉→♄, ASC (R)**
-(`abu_mashar_book_vii.md` — no: `on_nativities.md:12194`); Dykes's fn. 166 says Māshā'allāh
+**Both sides.** For reversal: **Sahl's Figure 63** (*On Nativities*, "Lots of action or work",
+`on_nativities.md:12194` — not Abū Ma'shar's Figure 63, the V.22 degrees increasing in good
+fortune, which entered the corpus on 2026-09-08) in the current OCR reads **☉→♄, ASC (R)**;
+Dykes's fn. 166 says Māshā'allāh
 *"defines this in the same way as the Lot of fathers (Sun-Saturn)"*, and the Lot of the father is
 *"by day from the Sun to Saturn and by night from Saturn to the Sun"* (*Nat.* 4.14, 1). Against:
 Sahl's own text at 10.2.5, 4–14 gives **no formula at all** — the Sun→Saturn identification is
-entirely Dykes's apparatus — and Fig. 63's (R) column has been wrong before (an earlier OCR read its
+entirely Dykes's apparatus — and Sahl's Fig. 63's (R) column has been wrong before (an earlier OCR read its
 glyphs as Mercury→Venus; `10` §3 row c).
 
-**Engine today.** `app.py:4092–4103`: `reverse_at_night=False`, with the note recording the open
+**Engine today.** `app.py:4094–4105`: `reverse_at_night=False`, with the note recording the open
 point.
 
 **What changes.** The Lot moves on **every nocturnal chart** (50% of charts) — its **sign changes
@@ -183,7 +192,7 @@ in 90% of those, 46% of all charts**. One row of the Topical Lots table; no othe
 **Unblocks.** Nothing queued; it corrects a displayed value.
 
 **Recommendation.** **Reverse — high confidence.** Both witnesses for the formula (fn. 166 and
-Fig. 63) reverse it, and the only argument against is that the figure's column has erred before —
+Sahl's Fig. 63) reverse it, and the only argument against is that the figure's column has erred before —
 but the prose footnote agrees with it here.
 
 ---
@@ -202,10 +211,10 @@ was from 19° Libra up to 3° Scorpio, because those are the fall of the luminar
 the Moon's corruption 71 uses the whole signs). *Choices* Ch. 9, 41 adds *"in Libra, if she went
 beyond 10°"* — a third datum matching neither span.
 
-**Engine today.** Three things at once: `HARSH_BURNED_PATH = (199, 213)` (`:4765`) used inside the
-Abū Ma'shar table (VII.6, 40, `:5572`) and the Moon's corruption (`:6111`); a "Via Combusta
+**Engine today.** Three things at once: `HARSH_BURNED_PATH = (199, 213)` (`:4775`) used inside the
+Abū Ma'shar table (VII.6, 40, `:5583`) and the Moon's corruption (`:6122`); a "Via Combusta
 15 Libra–15 Scorpio" flag in Special Degrees labelled *"external convention, not from these
-sources"* (`:4345–4371`, `:7023`); and no Sahl burned-place category (C-04 unimplemented).
+sources"* (`:4355–4381`, `:7034`); and no Sahl burned-place category (C-04 unimplemented).
 
 **What changes.** Measured over placements: **15–15 fires on 9.6%, 19–3 on 4.3%, the two whole
 signs on 18.7%**. (a) no span: the Sahl category is a label on Libra/Scorpio placements with no
@@ -237,7 +246,7 @@ likewise 7.1, 217; 9.4, 35; 10.2.4, 13; 11.1, 28; 12.1, 47; 4.11, 24. The Refere
 existing; the question is only whether the Guide's silence licenses dropping it.
 
 **Engine today.** `MASHAALLAH_LORDS` and `PLANETS_IN_HOUSES` are displayed unconditionally
-(`:6340–6341`, `:7091–7102`).
+(`:6351–6352`, `:7102–7113`).
 
 **What changes.** Measured with whole-sign aspects (infortune with the lord or square/opposite;
 fortune with it or in any aspect): **only 10% of house-lord rows (482 of 4,872) meet the
@@ -315,7 +324,7 @@ and the corpus says so.
 order **plus** B's note that the ninth is the Sun's joy — a conflation Dykes made. The ninth's
 joy (Ch. 2, 42) is itself B-only (C-10).
 
-**Engine today.** No 7-place scheme; `EXCELLENT_PLACES` is Ch. 3, 78's six (`:4790`).
+**Engine today.** No 7-place scheme; `EXCELLENT_PLACES` is Ch. 3, 78's six (`:4800`).
 
 **What changes.** The order of two entries in a display; no number.
 
@@ -328,7 +337,9 @@ confidence**; two manuscripts against one, but the printed text is not any manus
 
 ---
 
-## D-10 — Photograph *Great Introduction* V.21 for `WELLED_DEGREES`?
+## D-10 — ~~Photograph *Great Introduction* V.21 for `WELLED_DEGREES`?~~ RESOLVED 2026-09-08
+
+*The entry below is kept as written on the morning of 2026-09-08; the resolution follows it.*
 
 **Question.** Shoot Book V.21 (a part of the volume never covered) to attest the wells table, or
 leave the constant labelled unattested?
@@ -339,7 +350,7 @@ Tables have no wells table; both glossaries define the term without degrees; the
 (Dykes, Fig. 98)"* is false — Fig. 98 is *"Speed relative to apogee"*. VII.5 fn. 203 confirms the
 wells are in V.21. Against a shoot: cost and the fact that the values may well be right.
 
-**Engine today.** `WELLED_DEGREES` (`:4329`) feeds Special Degrees (`:4375`) and Favor & Recompense
+**Engine today.** `WELLED_DEGREES` (`:4339`) feeds Special Degrees (`:4385`) and Favor & Recompense
 (`:2928`, `:2960`); the `1240-01-04` fixture exists because it marks Capricorn 22 a Well.
 
 **What changes.** Measured: **16.9% of placements sit in a Well** — so a wrong cell changes a
@@ -352,6 +363,20 @@ the honest label is "unattested".
 
 **Recommendation.** **Shoot it — high confidence.** It is the only load-bearing table with no
 authority in hand, and the fix is a page.
+
+**Resolution (2026-09-08).** Shot, transcribed and used the same day. Chapters V.19–V.22 (Abū
+Ma'shar's volume pp. 303–310, Figures 59–64) are now in `abu_mashar_book_vii.md`; the wells table is
+**Figure 62** (p. 308). The comparison found **three errors in the engine**, all on the code's side:
+Aries lacked 29, Gemini had 13 for 12, Pisces lacked 28 — corrected, and the table is pinned cell by
+cell (`tests/test_base_tables.py`, `WELLS_FIG62`, with a corpus re-derivation test and a check of
+every cell against the photograph). The verdict above was **wrong in the important respect**: the
+citation was false only about the **figure number** (Fig. 98 is "Speed relative to apogee"); the
+chapter reference V.21 was right all along, and the values were Abū Ma'shar's (the six-entry
+Capricorn row matched exactly). The "no authority" reading came from searching for a table that
+was not yet photographed. With the corrected table **17.4%** of placements sit in a Well (16.9%
+above); the only fixture effect is that 1240-05-25's Sun at Gemini 12 is now a Well (Favor &
+Recompense gains a Jupiter-helped Recompense row) and 1240-05-26's Sun at Gemini 13 no longer is.
+Nothing remains to decide. Record: `01_abu_mashar_book_v_excerpt.md` §3, `08_base_table_audit.md`.
 
 ---
 
@@ -366,7 +391,7 @@ place, and cast out from Saturn"* (*Nat.* 8.6, 1). fn. 89: *"Reading with the M�
 witnesses (Māshā'allāh's own treatise, Dorotheus, Dykes's edition); the Ascendant has Sahl's two
 manuscripts.
 
-**Engine today.** `:4056–4061`: `project='Saturn'`, presented as the text's ("PROJECTED FROM
+**Engine today.** `:4058–4063`: `project='Saturn'`, presented as the text's ("PROJECTED FROM
 SATURN, not the Ascendant").
 
 **What changes.** The Lot's **sign changes in 93% of charts** between the two projections. One row
@@ -392,7 +417,7 @@ Dragon], and between them are 12° or less"* (VII.6, 52; the Sun's own orb is 4�
 Tail only: *"if it was with the Tail, being distant from it by 12°"* (*Nat.* 1.21, 12), while ¶11
 gives the Head no orb — and 1.21 is about the house-master's *years*, not weakness.
 
-**Engine today.** `:5121–5124`: 12° for either node with |latitude| < 1°, citing Ch. 3, 107 **and**
+**Engine today.** `:5131–5134`: 12° for either node with |latitude| < 1°, citing Ch. 3, 107 **and**
 1.21, 12.
 
 **What changes.** Nothing numeric under the recommendation. If the Head were dropped: **3.6% of
@@ -416,7 +441,7 @@ for him, since [one] may be the lord of the original Ascendant"* (*Choices* Ch. 
 sentences later: *"the infortunes are unjust in nature … there is no escape from their injustice"*
 (*Choices* Ch. 1, 16–17).
 
-**Engine today.** `FORTUNES`/`INFORTUNES` are fixed sets (`:4395–4396`); every malefic test is
+**Engine today.** `FORTUNES`/`INFORTUNES` are fixed sets (`:4405–4406`); every malefic test is
 absolute.
 
 **What changes.** A malefic rules the Ascendant in **32% of charts** (Aries, Scorpio, Capricorn,
@@ -442,7 +467,7 @@ matters from the place of retreat and withdrawal"* (*Questions* Ch. 1, 18–20).
 horary frame and never restates it for nativities; the strength testimony (83) is unconditional in
 *Intro* Ch. 3, 83.
 
-**Engine today.** Testimony 83 "Advancing" is an unconditional positive (`:4923–4925`); no
+**Engine today.** Testimony 83 "Advancing" is an unconditional positive (`:4933–4935`); no
 topical modifier exists.
 
 **What changes.** Measured: **29% of all placements are withdrawing**; the lord of the 3rd, 9th or
@@ -563,6 +588,103 @@ the possible arbiter has not been opened, and it is the cheapest next step.
 
 ---
 
+## D-19 — Read Figure 59's male/female degrees into VII.6 conditions 13 and 36?
+
+**Question.** Should "in their domains" (13) and its contrary (36) test the male/female **degrees**
+of Figure 59 as well as the sign's gender, as the text's "or" says?
+
+**Both sides.** For: VII.6, 13 — *"a male one is in a male sign **or male degrees**, by day above
+the earth and by night below the earth"* (fn. 223 → VII.1, 37–39); VII.6, 36 — *"the male ones are
+in a female sign, **or in the female degrees** by day, under the earth"* (fn. 229). The table is now
+in the corpus (V.19, ¶2 = Figure 59, p. 304). Against: V.19 gives **three** schemes — the table
+(¶2; fn. 109: constructed by Dykes from Abū Ma'shar's listed widths, *"very similar to … Firmicus
+Maternus in Mathesis IV.23"*), halves-and-quarters (¶3–4), and twelfth-parts (¶5–6, fn. 106:
+Valens) — and ¶8 only says *"whenever two or three of these indications coincide … it is stronger
+for it"*, with fn. 108 (Dykes's apparatus): *"Abū Ma'shar does not take a stance on which one is
+correct."* V.19, 1 frames the degrees as topical (*"a nativity or question about males"*), not as a
+general dignity. Māshā'allāh's domain rule (*Nat.* 1.23, 17, the sidebar alternative) uses signs
+only.
+
+**Engine today.** Signs only: `app.py:885` (Māshā'allāh rule) and `:900` (Abū Ma'shar rule);
+the coverage list at `:4285–4288` and the VII.6 docstring at `:5203` record the degrees as
+unimplemented.
+
+**What changes.** Condition 13 (a Good Fortune vote) and the sign half of 36's contrary-domain test
+become satisfiable by degree. The table's gender differs from the sign's on **51.7% of degrees**
+(ten of its twelve rows open masculine, five of them female signs), so "sign *or* degree" fires 13
+on far more placements than "sign"; the three schemes are unanimous on only **35.6%** of the
+zodiac. Frequencies from `01_abu_mashar_book_v_excerpt.md` §1.
+
+**Cost.** One 12-row table in the shape of `BRIGHTNESS_DEGREES` (`:4410`) and an `or` in each of
+the two gender tests; a sub-choice of scheme (the table alone, or ¶8's majority of three).
+
+**Unblocks.** Nothing queued.
+
+**Recommendation.** **No — leave as a coverage gap; medium confidence.** VII.6 borrows a table
+whose author declines to choose among three versions of it; widening a vote on the engine's own
+initiative is the wrong direction. If built, use the table only and label it Fig. 59.
+
+---
+
+## D-20 — Flag Figure 63's seven "degrees increasing in good fortune"?
+
+**Question.** Should the Moon, the Lot of Fortune and the Ascendant be flagged when they fall in
+one of V.22's seven degrees (Taurus 15, 27, 30; Leo 3, 5; Scorpio 7; Aquarius 20)?
+
+**Both sides.** For: V.22, 1–2 — *"when planets indicate the native's good fortune by means of
+their positions, and the Moon or the Lot of Fortune is in these degrees, or [these degrees] are
+exactly on the Ascendant, then they will increase in the native's good fortune. And if they
+indicate downfall, then these will instigate some motion towards high rank and power."* It is Abū
+Ma'shar's own volume, the condition is self-contained, and the table is cheap. Against: it is
+reported as *"the ancients claimed"*; **no other text in the corpus cites it** — none of VII.6's
+seventy-four conditions, and nothing in Sahl — so under the course-first policy it can enter no
+verdict; Leo 5 and Aquarius 20 are also in Figure 64, and six of the seven are Bright in Fig. 61.
+
+**Engine today.** Nothing (`evaluate_special_degrees`, `:4354`, flags Via Combusta, Wells and the
+sign boundaries only).
+
+**What changes.** A display-only row on **7.6% of charts** (Moon 2.5%, Fortune 2.2%, Ascendant
+3.0%); **no fixture chart** is affected on the three named points, so `tables.json` is untouched.
+
+**Cost.** One 4-row table and three membership tests, in Special Degrees or on the Lots page.
+
+**Unblocks.** Nothing queued.
+
+**Recommendation.** **Display-only flag, labelled supplement, no scoring; low–medium confidence.
+Decide together with D-21** — flagging one V.22 table and not the other would be odd.
+
+---
+
+## D-21 — Flag Figure 64's thirty-one "degrees of elevation and power"?
+
+**Question.** Should the Ascendant and the sect luminary (Sun by day, Moon by night) be flagged
+when they fall in one of V.22's thirty-one degrees of elevation and power?
+
+**Both sides.** For: V.22, 4 — *"if the Ascendant was one of these degrees … or the Sun by day or
+the Moon by night was in one of them, and they were in an excellent position of the circle, and the
+planets of the root of the nativity indicated good fortune, then they will make him attain
+nobility and the houses of kings."* Against: the two preconditions (*"an excellent position"*, a
+fortunate *"root of the nativity"*) are judgements the engine does not make and the table cannot
+carry; **Aquarius 17 is both a well (V.21, Fig. 62) and a degree of elevation (V.22, Fig. 64)** —
+verified in the source — so one degree would carry "Welled Degree" and "elevation" on the same
+row; and, as for D-20, nothing else in the corpus consumes it.
+
+**Engine today.** Nothing.
+
+**What changes.** A display-only row on **18.5% of charts** (Ascendant 8.4%, Sun 6.2%, Moon 4.7%).
+One fixture is affected: **1240-09-18**, diurnal, Sun at Libra 3 — one extra Special Degrees row,
+no change to `tables.json`'s structure.
+
+**Cost.** One 12-row table and two membership tests; the two preconditions shown as caveats.
+
+**Unblocks.** Nothing queued.
+
+**Recommendation.** **Same as D-20, or neither; low–medium confidence. Decide together with
+D-20.** Weaker than D-20 because the promise is conditional on two untabulated judgements and
+because of the Aquarius 17 collision.
+
+---
+
 ## Method note for the frequencies
 
 Charts: 400 random (`random.Random(20260908)`; year 1200–2000, day 1–28, hour 0–24, latitude −50 to
@@ -571,4 +693,5 @@ Florence. Burned-path and Node figures are over the seven planets' placements (2
 Māshā'allāh condition used whole-sign aspects (infortune conjunct/square/opposite the lord; fortune
 in any aspect). The ¶63 overlap ran `evaluate_non_reception` and `evaluate_reception` under
 `doctrine(SAHL)` and matched Kind II/IV pairs against reception rows by (received, receiver). No
-engine code was changed to obtain any figure.
+engine code was changed to obtain any figure. D-19–D-21's figures are from the same 406 charts via
+`01_abu_mashar_book_v_excerpt.md`'s `bookv_check.py` (Figures 59–64 parsed from the corpus).
