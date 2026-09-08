@@ -4330,7 +4330,22 @@ NOT_IMPLEMENTED_COVERAGE = [
     ("Abu Ma'shar VII.6, 13 and 36", "The masculine and feminine DEGREES, alongside "
      "the signs. The table is Fig. 59 (V.19, p. 304 of Abu Ma'shar's volume, in the "
      "corpus since 2026-09-08); fn. 108 there says he takes no stance among three "
-     "schemes. Not implemented."),
+     "schemes. Not implemented by decision D-19 (2026-09-08): the table disagrees with "
+     "the sign's gender on half the zodiac, the three schemes agree on a third of it, and "
+     "reading 'or male degrees' into 13 and 36 would widen a vote the author would not "
+     "commit to."),
+    ("Sahl, On Questions Ch. 1, 18-20", "ADVANCEMENT MATCHED TO THE NATURE OF THE MATTER: "
+     "'if the question was about the nature of retreating, such as travel, moving, a detained "
+     "person's exit from his prison, and being released from sorrows, then look for these "
+     "matters from the place of retreat and withdrawal.' Stated for questions and never "
+     "restated for nativities; testimony 83 stays unconditional (Introduction Ch. 3, 83). "
+     "Decision D-14 (2026-09-08): a note, not a topical modifier."),
+    ("Sahl, On Questions Ch. 6, 2 and 7.7, 91-101 (Figures 37-41)", "PER-TOPIC REASSIGNMENT "
+     "OF THE ANGLES -- 'the Ascendant indicates the doctor, the Midheaven indicates the sick "
+     "person, the seventh sign indicates the illness, and the fourth sign indicates the "
+     "medicine' -- and a twelve-house scheme for war. Horary, and in tension with the fixed "
+     "house meanings of Introduction Ch. 2, 4-29, which no text reconciles. Decision D-17 "
+     "(2026-09-08): caveat only; this engine's house meanings are one topic's assignment."),
     ("Abu Ma'shar VII.6, 52", "Each planet's OWN nodes (\"their own Dragons\"). Only "
      "the Moon's are computed."),
     ("Abu Ma'shar VII.7", "Ptolemy's CASTING OF THE RAYS by ascensions, complete at 1-22 "
