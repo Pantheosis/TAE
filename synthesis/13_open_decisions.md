@@ -10,7 +10,7 @@ seed 20260908) plus the six fixture charts, 2,842 planet placements in all; the 
 reproducible from `synthesis/`'s description below each figure. "Placements" means one planet in
 one chart; "charts" means whole charts.
 
-Twenty-one items, one of them resolved. The owner named fifteen; three came from sweeping the
+Twenty-two items, one of them resolved. The owner named fifteen; three came from sweeping the
 artifacts (**D-16**, **D-17**, **D-18**); three more (**D-19**–**D-21**) came from the Book V
 excerpt (`01_abu_mashar_book_v_excerpt.md`). Ordered by what each unblocks, most first; the later
 additions are appended, not renumbered.
@@ -40,6 +40,7 @@ additions are appended, not renumbered.
 | **D-19** | Read Fig. 59's male/female degrees into VII.6 conditions 13/36 ("male sign *or* male degrees")? | **No — leave as a coverage gap** | medium | one table + two `or`s | — (widens a Good Fortune vote; the table disagrees with the sign's gender on 51.7% of degrees) |
 | **D-20** | Flag Fig. 63's seven "degrees increasing in good fortune" (Moon, Fortune, Ascendant)? | **Display-only flag, supplement-labelled; decide with D-21** | low-medium | one table + three tests | — (7.6% of charts) |
 | **D-21** | Flag Fig. 64's thirty-one "degrees of elevation and power" (Ascendant, sect luminary)? | **Same as D-20, or neither; decide with D-20** | low-medium | one table + two tests | — (18.5% of charts; one fixture) |
+| **D-22** | Does non-reception Kind III (the applicant in its own fall, the receiver without house or exaltation there) also refuse a coexisting triplicity reception? | **Yes — suppress, as Kind II does** | medium-high | one line | — (2.8% of Sahl reception rows, 4.2% of charts; no fixture) |
 
 ## Implementation record (2026-09-08, branch `decisions-impl-2026-09-08`)
 
@@ -70,6 +71,7 @@ left as they were argued.
 | D-19 | No | coverage entry says so | `5438995` |
 | D-20 | Display-only flag | `GOOD_FORTUNE_DEGREES`, `evaluate_book_v_degrees` | `49864d2` |
 | D-21 | Same | `ELEVATION_DEGREES`, same function; Aquarius 17's well collision in the caveat | `49864d2` |
+| D-22 | *open* | added 2026-09-08 from the D-2 second pass; nothing implemented | — |
 
 Every value change was measured on the six fixture charts before it landed and the
 `tables.json` diff read against the prediction each time. Two switches were added, so the
@@ -743,6 +745,61 @@ because of the Aquarius 17 collision.
 
 ---
 
+## D-22 — Non-reception Kind III: does it refuse a coexisting triplicity reception?
+
+**Question.** When the applicant stands in its **own** fall and the receiver holds no house or
+exaltation there (Kind III, Ch. 3, 61), but does hold the triplicity (with or without the bound),
+so that Māshā'allāh's reception fires beside the refusal — is the reception suppressed, as Kind
+II's is since D-2?
+
+**Both sides.** For suppression:
+
+> "Now if the indicator was in its fall, and it is connecting with a planet [and] that planet
+> did not have a share in the position of the indicator (that is, by house or exaltation), it
+> will not see it as fit for anything, as though the one asking is offering defeat, and it will
+> not be recognized." — *Introduction* Ch. 3, 61
+
+> "And likewise if they were connecting with a planet from their own fall: **it does not accept
+> them**, it indicates the vexation of the owner of the question in what he wants to do with it,
+> and that his sought matter will not be accomplished." — *Questions* Ch. 1, 41
+
+The verbs are Kind II's ("not recognized", "does not accept"), not Kind IV's "brings it down".
+Dykes's fn. 22 on *Questions* 1, 41 ties the two passages together and states the exception that
+61's parenthesis makes: *"this also requires that the other planet not have any dignity in the
+connecting planets' sign — otherwise this would be a case of reception."* Against suppression:
+that footnote says "any dignity", while 61's own parenthesis says *"by house or exaltation"* —
+on Dykes's reading a triplicity would already rescue the pair and Kind III would not fire at all;
+on Sahl's parenthesis it fires, and the triplicity reception (50: *"below this reception"*; 54–55
+with the bound) is the only thing left standing beside a sentence that says "it will not see it
+as fit for anything". Sahl gives no precedence between 54–55 and 61 in so many words.
+
+**Engine today.** `evaluate_non_reception` raises Kind III on 61's own parenthesis — house or
+exaltation only, at `app.py:3539` — and `evaluate_reception` lists the triplicity reception
+beside it; the D-2 precedence at `app.py:3469` reads Kinds II and IV only.
+
+**What changes.** Measured on the 406 charts: Kind III fires in **20% of charts** (127 rows), and
+a reception for the same pair coexists with it in **17 reception rows (2.8% of Sahl's), in 4.2% of
+charts** — fifteen of them "Lesser, triplicity alone (50)", two "Complete, triplicity with bound".
+**No fixture chart** carries one, so `tables.json` would not move; a Kind III fixture would have
+to be added deliberately, as 1240-01-04 was for Favor. Under suppression those seventeen rows go;
+under the alternative nothing changes.
+
+**Cost.** One line: add `'III '` to the refused prefixes in the D-2 block (and its three
+descriptions), plus a fixture chart.
+
+**Unblocks.** Nothing queued; it completes D-2's rule across the three refusal kinds (I is
+already exclusive of reception by construction; V is the mirror of II and cannot meet one).
+
+**Recommendation.** **Suppress — medium-high confidence.** 61 and *Questions* 1, 41 use refusal
+language, the same as Kind II's, and 61's "as though the one asking is offering defeat" is
+harsher than 59's "house of its enemies", not milder; the one hesitation is that the Kind III
+fires on Sahl's parenthesis while Dykes's footnote reads "any dignity", so the engine's Kind III
+is already the stricter of two readings and this would compound it. If the owner prefers
+Dykes's reading, the change is to Kind III's test instead (triplicity rescues), and the overlap
+disappears the other way.
+
+---
+
 ## Method note for the frequencies
 
 Charts: 400 random (`random.Random(20260908)`; year 1200–2000, day 1–28, hour 0–24, latitude −50 to
@@ -751,5 +808,6 @@ Florence. Burned-path and Node figures are over the seven planets' placements (2
 Māshā'allāh condition used whole-sign aspects (infortune conjunct/square/opposite the lord; fortune
 in any aspect). The ¶63 overlap ran `evaluate_non_reception` and `evaluate_reception` under
 `doctrine(SAHL)` and matched Kind II/IV pairs against reception rows by (received, receiver). No
-engine code was changed to obtain any figure. D-19–D-21's figures are from the same 406 charts via
+engine code was changed to obtain any figure. D-22's Kind III overlap ran the same two Sahl
+evaluators over the same 406 charts (`kind3_freq.py`). D-19–D-21's figures are from the same 406 charts via
 `01_abu_mashar_book_v_excerpt.md`'s `bookv_check.py` (Figures 59–64 parsed from the corpus).
