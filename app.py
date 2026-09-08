@@ -6279,10 +6279,48 @@ def _corruption_of_the_moon_labels(planetary_data, ascendant_lon, sect):
     return evaluate_corruption_of_the_moon(planetary_data, ascendant_lon, sect)['labels']
 
 
+def mashaallah_condition(house_i, lord, planetary_data, ascendant_lon):
+    """Masha'allah's operating condition for his lord-of-the-Nth readings,
+    stated at the end of every such section: "Work in this chapter if the
+    lord of the third and the third [itself] were free of the infortunes,
+    and the fortunes do not witness" (On Nativities 3.10, 14; likewise
+    4.11, 24; 6.3.4, 24; 7.1, 217; 9.4, 35; 10.2.4, 13; 11.1, 28; 12.1, 47).
+    Whole-sign, as the house is: an infortune is "on" the house or its lord
+    by assembly, square or opposition (Sahl's own affliction set elsewhere,
+    Ch. 3, 119-123 and 106); a fortune "witnesses" by any whole-sign aspect
+    or assembly. The lord itself is not counted against itself. Returns
+    ('met', '') or ('not met', why). Decision D-6, 2026-09-08: shown as a
+    column, never used as a filter -- the condition holds on roughly one
+    house-lord row in ten."""
+    asc_idx = int(ascendant_lon // 30)
+    house_idx = (asc_idx + house_i - 1) % 12
+    lord_idx = int(planetary_data[lord]['longitude'] // 30)
+    ordinal = {1: 'st', 2: 'nd', 3: 'rd'}.get(house_i if house_i < 20 else house_i % 10, 'th')
+    house_name = f"the {house_i}{ordinal}"
+    reasons = []
+    for other, data in planetary_data.items():
+        if other == 'North Node' or other == lord:
+            continue
+        other_idx = int(data['longitude'] // 30)
+        if other in INFORTUNES:
+            for target, name in ((house_idx, house_name), (lord_idx, f'its lord {lord}')):
+                rel = (other_idx - target) % 12
+                if rel in (0, 3, 6, 9):
+                    how = {0: 'with', 3: 'square', 6: 'opposite', 9: 'square'}[rel]
+                    reasons.append(f'{other} {how} {name}')
+        elif other in FORTUNES:
+            for target, name in ((house_idx, house_name), (lord_idx, f'its lord {lord}')):
+                rel = (other_idx - target) % 12
+                if rel not in (1, 5, 7, 11):
+                    how = {0: 'with', 2: 'sextile', 3: 'square', 4: 'trine', 6: 'opposite', 8: 'trine', 9: 'square', 10: 'sextile'}[rel]
+                    reasons.append(f'{other} witnesses {name} ({how})')
+    return ('met', '') if not reasons else ('not met', '; '.join(reasons))
+
 def evaluate_house_lords(planetary_data, ascendant_lon):
     """For each Whole Sign topical house (1-12), find its domicile lord and
     the WSH house that lord is physically placed in, then look up
-    Masha'allah's delineation for that [placed_in][ruled_house] pairing."""
+    Masha'allah's delineation for that [placed_in][ruled_house] pairing,
+    with his own operating condition (mashaallah_condition) beside it."""
     asc_idx = int(ascendant_lon // 30)
     results = []
     for house_i in range(1, 13):
@@ -6296,12 +6334,14 @@ def evaluate_house_lords(planetary_data, ascendant_lon):
         lord_lon = planetary_data[domicile_lord]['longitude']
         placed_in = get_wsh_house(lord_lon, ascendant_lon)
         text = MASHAALLAH_LORDS.get(placed_in, {}).get(house_i, '-')
+        status, why = mashaallah_condition(house_i, domicile_lord, planetary_data, ascendant_lon)
 
         results.append({
             'Topical House': house_i,
             'Cusp Sign': cusp_sign,
             'Domicile Lord': domicile_lord,
             'Placed in (WS place)': placed_in,
+            "Masha'allah's condition": status if not why else f'{status}: {why}',
             "Masha'allah Signification": text,
         })
     return results
@@ -7252,6 +7292,11 @@ if location_query and lat is not None and lon is not None:
                            'Averse to its place': 'Yes' if (r['Placed in (WS place)'] - r['Topical House']) % 12 in (1, 5, 7, 11) else 'No'}
                           for r in house_lords_data]
             st.dataframe(pd.DataFrame(lords_rows), hide_index=True, width='content', height=_rows_height(len(lords_rows)))
+            st.caption("Masha'allah's condition is his own, stated at the end of every lord-of-the-Nth section: \"Work in this chapter "
+                       "if the lord of the third and the third [itself] were free of the infortunes, and the fortunes do not witness\" "
+                       "(On Nativities 3.10, 14; likewise 4.11, 24; 6.3.4, 24; 7.1, 217; 9.4, 35; 10.2.4, 13; 11.1, 28; 12.1, 47). "
+                       "Whole-sign: an infortune with, square or opposite the house or its lord; a fortune in any aspect or assembly. "
+                       "It is met on about one row in ten; the readings are shown regardless, with the column saying whether he would apply them.")
             with st.expander("Masha'allah readings for lord placements"):
                 st.table(pd.DataFrame(house_lords_data,
                                       columns=['Topical House', 'Domicile Lord', 'Placed in (WS place)', "Masha'allah Signification"]),

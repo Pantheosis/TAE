@@ -139,3 +139,42 @@ def test_d9_control_the_other_schemes_are_not_merged_into_the_ranking(engine):
     assert set(six) == engine["EXCELLENT_PLACES"] == {1, 4, 5, 7, 10, 11}
     sun = next(v for k, v in schemes.items() if k.startswith("Excellent places for the Sun"))
     assert sorted(sun) == [1, 10, 11]
+
+
+# --- D-6: Masha'allah's operating condition, as a column -----------------
+def _chart(**lons):
+    return {k: {"longitude": v, "latitude": 0.0, "speed": 1.0} for k, v in lons.items()}
+
+
+def test_d6_condition_is_met_when_nothing_afflicts_or_witnesses(engine):
+    # Aries rising; the 3rd is Gemini, lord Mercury in Leo. Saturn and Mars
+    # in Aries (sextile the house, trine the lord -- neither counts as an
+    # affliction); Jupiter and Venus in Capricorn, averse to Gemini AND Leo.
+    p = _chart(Mercury=125.0, Saturn=15.0, Mars=20.0, Jupiter=275.0, Venus=280.0, Sun=10.0, Moon=40.0)
+    assert engine["mashaallah_condition"](3, "Mercury", p, 5.0) == ("met", "")
+
+
+def test_d6_an_infortune_square_the_house_breaks_it_and_names_itself(engine):
+    p = _chart(Mercury=125.0, Saturn=155.0, Mars=20.0, Jupiter=275.0, Venus=280.0, Sun=10.0, Moon=40.0)
+    status, why = engine["mashaallah_condition"](3, "Mercury", p, 5.0)
+    assert status == "not met" and why == "Saturn square the 3rd", why
+
+
+def test_d6_a_fortune_witnessing_the_lord_by_trine_breaks_it(engine):
+    # Jupiter in Sagittarius: opposite the house and trine its lord.
+    p = _chart(Mercury=125.0, Saturn=15.0, Mars=20.0, Jupiter=245.0, Venus=280.0, Sun=10.0, Moon=40.0)
+    status, why = engine["mashaallah_condition"](3, "Mercury", p, 5.0)
+    assert status == "not met" and "Jupiter witnesses its lord Mercury (trine)" in why
+    assert "Jupiter witnesses the 3rd (opposite)" in why
+
+
+def test_d6_control_the_lord_is_not_counted_against_itself_and_rows_keep_the_reading(engine):
+    # Scorpio's lord Mars: Mars is an infortune but not an affliction of his
+    # own house. And the column is added beside the reading, not in place
+    # of it -- the condition is a column, never a filter.
+    # Saturn in Aries (averse to Scorpio), Jupiter in Sagittarius and Venus
+    # in Libra (both averse to Scorpio, where house and lord sit).
+    p = _chart(Mars=215.0, Saturn=15.0, Jupiter=245.0, Venus=185.0, Sun=10.0, Moon=40.0, Mercury=125.0)
+    assert engine["mashaallah_condition"](8, "Mars", p, 5.0)[0] == "met"
+    rows = engine["evaluate_house_lords"](p, 5.0)
+    assert len(rows) == 12 and all("Masha'allah's condition" in r and "Masha'allah Signification" in r for r in rows)
