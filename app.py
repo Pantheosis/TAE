@@ -4578,6 +4578,32 @@ def evaluate_special_degrees(planetary_data):
 FORTUNES = {'Jupiter', 'Venus'}
 INFORTUNES = {'Saturn', 'Mars'}
 
+# Chart-relative infortune (C-15 / decision D-13, 2026-09-08). Choices Ch.
+# 1, 12: "that infortune was good for him, because the infortunes are
+# perhaps more fitting for him, since [one] may be the lord of the
+# original Ascendant." Four sentences later Sahl says the opposite of the
+# infortunes in general (1, 16-17: "unjust in nature ... there is no
+# escape from their injustice"), so this is a SWITCH and it is OFF by
+# default. When on, the malefic that rules the Ascendant is not counted
+# as an infortune in the tests that read INFORTUNES as "an affliction by
+# an infortune": Sahl's enclosure, strength gate and weakness 94-95, Abu
+# Ma'shar's 3, 47-50 and enclosure, and the Moon's lists (67-68, 106 and
+# her enclosure). It stays a malefic where its own nature is meant (the
+# two infortunes accepting each other, 135; the Head/Tail polarity, 51).
+# Sahl gives no partial grade, so the softening is whole: the fitting
+# infortune is simply not an infortune for the chart.
+FITTING_INFORTUNE = False
+SOFTENED_INFORTUNE = None
+
+def fitting_infortune(ascendant_lon):
+    """The malefic that rules the Ascendant sign, or None."""
+    lord = SIGN_TO_DOMICILE.get(get_zodiac_sign(ascendant_lon))
+    return lord if lord in INFORTUNES else None
+
+def effective_infortunes():
+    """INFORTUNES less the fitting one, when the switch has named it."""
+    return INFORTUNES - {SOFTENED_INFORTUNE} if SOFTENED_INFORTUNE else set(INFORTUNES)
+
 # Great Introduction V.20, Figs. 60-61: bright/dusky/empty/dark degrees by
 # sign, transcribed as (start, end, category) ranges (degree-in-sign, 0-29).
 BRIGHTNESS_DEGREES = {
@@ -4930,7 +4956,7 @@ def evaluate_enclosure(planetary_data):
         for planet in planetary_data:
             if planet == 'North Node':
                 continue
-            for label, enclosing_set in (('Infortunes', INFORTUNES), ('Fortunes', FORTUNES)):
+            for label, enclosing_set in (('Infortunes', effective_infortunes()), ('Fortunes', FORTUNES)):
                 is_enc, severe, sep, con = _sahl_enclosed(planet, enclosing_set, rows, blocking_pairs)
                 if is_enc:
                     results.append({
@@ -5070,7 +5096,7 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
             # -- 59% of their placements lost a testimony Sahl grants them.
             infortune_contact = any(
                 r['aspect_name'] in ('Conjunction', 'Square', 'Opposition')
-                and (({r['p1'], r['p2']} - {planet}) & INFORTUNES)
+                and (({r['p1'], r['p2']} - {planet}) & effective_infortunes())
                 for r in rows if planet in (r['p1'], r['p2'])
             )
             if not infortune_contact:
@@ -5274,14 +5300,14 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
                 if r['aspect_name'] not in ('Conjunction', 'Square', 'Opposition') or planet not in (r['p1'], r['p2']):
                     continue
                 other = r['p2'] if r['p1'] == planet else r['p1']
-                if other in INFORTUNES and _is_connected(r):
+                if other in effective_infortunes() and _is_connected(r):
                     _hit94.append(other)
             if _hit94:
                 labels.append(f"Connecting with {' and '.join(sorted(_hit94))} by assembly, square, or opposition (94)")
 
             # (95) Enclosed between the two infortunes -- separating from one,
             # connecting with the other (Sahl's own Enclosure, 119-123).
-            is_enc, severe, sep, con = _sahl_enclosed(planet, INFORTUNES, rows, blocking_pairs)
+            is_enc, severe, sep, con = _sahl_enclosed(planet, effective_infortunes(), rows, blocking_pairs)
             if is_enc:
                 labels.append(f'Enclosed between the infortunes, separating from {sep} and connecting to {con} (95, 119-123)')
 
@@ -5466,7 +5492,7 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             # the right gate.
             if connected_to(planet, FORTUNES, {'Conjunction', 'Sextile', 'Square', 'Trine'}):
                 positive.append('Aspect/assembly with a fortune (2)')
-            if averted_from(planet, INFORTUNES):
+            if averted_from(planet, effective_infortunes()):
                 positive.append('Infortunes averted (3)')
             # 4: "Or they are separating from a FORTUNE and connecting with a
             # fortune" -- surrounded by benefics in time. An earlier version
@@ -5895,14 +5921,14 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             # so both malefics were permanently near an infortune by definition.
             close_to_infortune = any(
                 r['aspect_name'] != 'Aversion' and planet in (r['p1'], r['p2'])
-                and ({r['p1'], r['p2']} - {planet}) & INFORTUNES
+                and ({r['p1'], r['p2']} - {planet}) & effective_infortunes()
                 and abs(r['deviation']) < bound_width
                 for r in rows
             )
             if close_to_infortune:
                 negative.append(f'Connected to an infortune, within a bound ({bound_width:.0f} deg) (47-48)')
             term_lord = get_essential_rulers(lon)['term']
-            if SIGN_TO_DOMICILE.get(sign) in INFORTUNES or term_lord in INFORTUNES:
+            if SIGN_TO_DOMICILE.get(sign) in effective_infortunes() or term_lord in effective_infortunes():
                 negative.append('In the bound/house of an infortune (49)')
             for other in planetary_data:
                 if other in (planet, 'North Node'):
@@ -5917,7 +5943,7 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
                 # by anybody, so being received by a fortune elsewhere in the
                 # chart suppressed an overcoming by Saturn. The escape is that
                 # THIS infortune receives it.
-                if other in INFORTUNES and forward in (10, 11):
+                if other in effective_infortunes() and forward in (10, 11):
                     received_by_other = any(
                         rec['Receiver'] == other and rec['Received'] == planet
                         or (rec['Direction'] == 'Mutual'
@@ -5980,7 +6006,7 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
             # here rather than inferred from list length -- an earlier version
             # inferred it, and filed every dissolved enclosure under Strength.
             n_positive_through_strength = len(positive)
-            is_enc, enc_kind, dissolver = _abu_mashar_enclosed(planet, INFORTUNES, planetary_data, rows)
+            is_enc, enc_kind, dissolver = _abu_mashar_enclosed(planet, effective_infortunes(), planetary_data, rows)
             if is_enc:
                 if dissolver:
                     positive.append(f'Enclosure by the infortunes dissolved by {dissolver} (60-61)')
@@ -6125,7 +6151,7 @@ def _abu_mashar_moon_corruption(planetary_data, ascendant_lon, jd=None):
 
         # [4] (67) "With the infortunes or they were looking at her" -- assembly
         # or aspect, and the looking half is whole-sign by its own wording.
-        for infortune in sorted(INFORTUNES):
+        for infortune in sorted(effective_infortunes()):
             row = next((r for r in rows if {r['p1'], r['p2']} == {'Moon', infortune}), None)
             if row and row['aspect_name'] != 'Aversion':
                 labels.append(f"With or looked at by {infortune} (67)")
@@ -6135,7 +6161,7 @@ def _abu_mashar_moon_corruption(planetary_data, ascendant_lon, jd=None):
         # falling in a sign those two rule.
         tp_sign = _twelfth_part_sign(lon)
         tp_lord = SIGN_TO_DOMICILE.get(tp_sign)
-        if tp_lord in INFORTUNES:
+        if tp_lord in effective_infortunes():
             labels.append(f'In the twelfth-part of {tp_lord} ({tp_sign}) (68)')
 
         # [6] (69) With the Head or Tail within 12 degrees.
@@ -6267,11 +6293,11 @@ def evaluate_corruption_of_the_moon(planetary_data, ascendant_lon, sect):
         # other -- Sahl's own Enclosure test, 119-123).
         if any(row['aspect_name'] in ('Conjunction', 'Square', 'Opposition')
                and 'Moon' in (row['p1'], row['p2'])
-               and (row['p1'] in INFORTUNES or row['p2'] in INFORTUNES)
+               and (row['p1'] in effective_infortunes() or row['p2'] in effective_infortunes())
                for row in rows):
             hit(106, 'Assembled with, square, or opposed by an infortune')
         blocking_pairs = {(row['Blocked'], row['From Reaching']) for row in evaluate_blocking(planetary_data)}
-        is_enc, severe, _sep, _con = _sahl_enclosed('Moon', INFORTUNES, rows, blocking_pairs)
+        is_enc, severe, _sep, _con = _sahl_enclosed('Moon', effective_infortunes(), rows, blocking_pairs)
         if is_enc:
             hit(106, 'Enclosed between the two infortunes' + (', severe' if severe else ''), cite='106, 119-123')
 
@@ -6861,6 +6887,7 @@ FIVE_DEGREE_ALL_CUSPS = _reading("five_degree_all_cusps", "_five_degree_all_cusp
 EASTERN_RULE = _reading("eastern_rule", "_eastern_rule", EASTERN_RULE_OPTIONS[0])
 MOON_RAYS_ORB = 15.0 if _reading("moon_rays_15", "_moon_rays_15", False) else 12.0
 MARS_WEST_RAYS_18 = bool(_reading("mars_west_18", "_mars_west_18", False))
+FITTING_INFORTUNE = bool(_reading("fitting_infortune", "_fitting_infortune", False))
 DOMAIN_RULE = _reading("domain_rule", "_domain_rule", DOMAIN_RULE_OPTIONS[0])
 LOT_HOUSE_CUSP = _reading("lot_house_cusp", "_lot_house_cusp", LOT_HOUSE_CUSP_OPTIONS[0])
 
@@ -6924,6 +6951,8 @@ if location_query and lat is not None and lon is not None:
         chart_data = calculate_traditional_chart(dt_utc, lat, lon)
         p_data = chart_data['planetary_data']
         sect = chart_data['sect']
+        # D-13: named here, before any evaluator runs, since they read it.
+        SOFTENED_INFORTUNE = fitting_infortune(chart_data['ascendant']) if FITTING_INFORTUNE else None
 
         essential = evaluate_essential_dignities(p_data, sect)
         accidental = evaluate_accidental_dignities(p_data, chart_data['houses'], sect, chart_data['julian_day'])
@@ -7436,6 +7465,16 @@ if location_query and lat is not None and lon is not None:
                                help="Which author's test decides Connected in the aspects, reception and "
                                     "prevented-connections tables. Sahl: the applying planet's own light. "
                                     "Abu Ma'shar: 15° in one sign, 12° for aspects. Full comparison on the Sources page.")
+            _reading_checkbox("Fitting infortune: the malefic that rules the Ascendant is not counted as an infortune (Choices Ch. 1, 12)",
+                              "fitting_infortune", "_fitting_infortune",
+                              help="Sahl, Choices Ch. 1, 12: \"that infortune was good for him, because the infortunes are "
+                                   "perhaps more fitting for him, since [one] may be the lord of the original Ascendant\" -- "
+                                   "against his own 1, 16-17, so off by default. When on, that malefic drops out of every "
+                                   "'afflicted by an infortune' test in these tables (Sahl's enclosure, strength and weakness "
+                                   "94-95; Abu Ma'shar's 3, 47-50 and enclosure; the Moon's 67-68 and 106). Decision D-13.")
+            if FITTING_INFORTUNE:
+                st.caption(f"Fitting infortune in force: {SOFTENED_INFORTUNE} rules the Ascendant and is not counted as an infortune."
+                           if SOFTENED_INFORTUNE else "Fitting infortune switched on, but no malefic rules this Ascendant -- nothing changes.")
             show_sahl = view in (None, "Sahl (course text)", "Both")
             show_abu = view in ("Abu Ma'shar (supplement)", "Both")
             if show_sahl:
@@ -7718,6 +7757,10 @@ if location_query and lat is not None and lon is not None:
                 "Abu Ma'shar VII.2, 30-31 has Mars under the rays at 15 on the western side; Sahl's table has him "
                 "westernize at 18 (fn. 175). Both agree on 18 east. Affects: the Solar phase column and every test that "
                 "reads it; a 3-degree band on one planet.\n\n"
+                "**Fitting infortune (Sahl, Choices Ch. 1, 12)** (Configurations page, beside the Connection test) -- "
+                "\"the infortunes are perhaps more fitting for him, since [one] may be the lord of the original Ascendant\"; "
+                "off by default because 1, 16-17 says the opposite. When on, the malefic ruling the Ascendant is not an "
+                "infortune for any affliction test; it keeps its nature where that is what is meant.\n\n"
                 "**Domain (hayz)** (Dignities page, Sect table) -- "
                 "Abu Ma'shar VII.1, 37 / VII.6, 13: sign gender fixed to the planet's own. Masha'allah, "
                 "On Nativities 1.23, 17: a male planet by day above the earth in a male sign, by night under "

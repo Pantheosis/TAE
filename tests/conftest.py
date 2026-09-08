@@ -77,6 +77,7 @@ SWITCHES = {
     "mars_west": ("_mars_west_18", [False, True], "chart", None, "checkbox", "Mars under the rays"),
     "domain": ("_domain_rule", ["Abu Ma'shar", "Masha'allah"], "dignities", None, "radio", "Domain (hayz)"),
     "lot_cusp": ("_lot_house_cusp", ["whole-sign place", "quadrant cusp"], "lots", None, "radio", "House-based Lots"),
+    "fitting": ("_fitting_infortune", [False, True], "configurations", "Both", "checkbox", "Fitting infortune"),
 }
 
 

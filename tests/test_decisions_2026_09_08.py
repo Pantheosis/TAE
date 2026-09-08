@@ -146,6 +146,17 @@ def _chart(**lons):
     return {k: {"longitude": v, "latitude": 0.0, "speed": 1.0} for k, v in lons.items()}
 
 
+def _real_chart(engine, **lons):
+    """A fully-keyed planetary_data from the ephemeris, with the named
+    longitudes overridden -- for evaluators that read speed, latitude and
+    the rest, which the bare _chart() helper does not carry."""
+    from datetime import datetime
+    p = engine["calculate_traditional_chart"](datetime(1240, 5, 23, 12, 0), 43.7792, 11.2463)["planetary_data"]
+    for k, v in lons.items():
+        p[k]["longitude"] = v
+    return p
+
+
 def test_d6_condition_is_met_when_nothing_afflicts_or_witnesses(engine):
     # Aries rising; the 3rd is Gemini, lord Mercury in Leo. Saturn and Mars
     # in Aries (sextile the house, trine the lord -- neither counts as an
@@ -226,3 +237,35 @@ def test_d15_control_the_eastern_orb_and_the_other_planets_are_untouched(engine,
     monkeypatch.setitem(engine, "MARS_WEST_RAYS_18", True)
     assert engine["solar_rays_orb"]("Mars")[0] == 18.0
     assert engine["solar_rays_orb"]("Saturn") == (15.0, 15.0) and engine["solar_rays_orb"]("Venus") == (12.0, 15.0)
+
+
+# --- D-13: the fitting infortune, a switch that is off by default ---------
+def test_d13_fitting_infortune_names_the_malefic_ruling_the_ascendant(engine):
+    assert engine["fitting_infortune"](275.0) == "Saturn"      # Capricorn rising
+    assert engine["fitting_infortune"](215.0) == "Mars"        # Scorpio rising
+    assert engine["fitting_infortune"](95.0) is None           # Cancer rising
+
+
+def test_d13_control_off_by_default_and_the_full_set_stands(engine):
+    assert engine["FITTING_INFORTUNE"] is False and engine["SOFTENED_INFORTUNE"] is None
+    assert engine["effective_infortunes"]() == {"Saturn", "Mars"} == engine["INFORTUNES"]
+
+
+def test_d13_when_named_the_fitting_infortune_leaves_the_moons_106_alone(engine, monkeypatch):
+    # Capricorn rising; the Moon at 5 Aries is squared by Saturn at 5 Cancer.
+    p = _real_chart(engine, Sun=100.0, Moon=5.0, Mercury=110.0, Venus=120.0, Mars=130.0, Jupiter=250.0, Saturn=95.0)
+    before = engine["evaluate_corruption_of_the_moon"](p, 275.0, "Diurnal")["labels"]
+    assert any("(106)" in l or "opposed by an infortune" in l for l in before), before
+    monkeypatch.setitem(engine, "SOFTENED_INFORTUNE", "Saturn")
+    after = engine["evaluate_corruption_of_the_moon"](p, 275.0, "Diurnal")["labels"]
+    assert not any("opposed by an infortune" in l for l in after), after
+    assert engine["effective_infortunes"]() == {"Mars"}
+
+
+def test_d13_control_a_malefic_that_rules_nothing_is_never_softened(engine, monkeypatch):
+    # The switch names the Ascendant's ruler only: with Cancer rising there
+    # is nothing to soften, and Saturn's square still counts.
+    p = _real_chart(engine, Sun=100.0, Moon=5.0, Mercury=110.0, Venus=120.0, Mars=130.0, Jupiter=250.0, Saturn=95.0)
+    monkeypatch.setitem(engine, "SOFTENED_INFORTUNE", engine["fitting_infortune"](95.0))
+    labels = engine["evaluate_corruption_of_the_moon"](p, 95.0, "Diurnal")["labels"]
+    assert any("opposed by an infortune" in l for l in labels), labels
