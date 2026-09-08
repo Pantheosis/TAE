@@ -4254,8 +4254,15 @@ NOT_IMPLEMENTED_COVERAGE = [
      "the signs. No table for them in this corpus."),
     ("Abu Ma'shar VII.6, 52", "Each planet's OWN nodes (\"their own Dragons\"). Only "
      "the Moon's are computed."),
-    ("Abu Ma'shar VII.7", "The casting of rays according to Ptolemy. The chapter "
-     "begins on a page not photographed."),
+    ("Abu Ma'shar VII.7", "Ptolemy's CASTING OF THE RAYS by ascensions, complete at 1-22 "
+     "(pp. 485-487): the planet's distance from the stakes in hours (4-13), the ray found "
+     "from the right and oblique ascensions and corrected by that distance (14-19), left "
+     "rays added to the position NEAREST the planet (18) and right rays to the more "
+     "DISTANT (21). What is not in this corpus is the tables the chapter presupposes: the "
+     "hourly times (fn. 250, 'special tables in the Almagest') and the ascensions-to-degrees "
+     "inverse tables (fn. 251) -- both computable from spherical astronomy. 22: 'as for the "
+     "opposition, [a planet] casts its ray into the opposition of its sign, in the same "
+     "degree and minute' -- no tables needed, and the whole-sign opposition already reported."),
     ("Abu Ma'shar VII.3, 2 / VI.26, 3", "The ADVANCING AND WITHDRAWING QUADRANTS as a "
      "condition in its own right (ASC to MC and DSC to IC advancing: primary motion "
      "toward the meridian). Read from the margin of the Figure 90 reshoot and Dykes' "
