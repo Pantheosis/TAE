@@ -3904,7 +3904,8 @@ def calculate_classical_lots(asc, sun, moon, sect):
 #   Theophilus, whereas THE USUAL CALCULATION (from Jupiter to Saturn by
 #   day, and reversed by night) is that of Hermes."
 #
-#   DYKES ONLY TABULATES. Three Lots for work (his Fig. 63), after: "Sahl
+#   DYKES ONLY TABULATES. Three Lots for work (his Fig. 63 in Sahl's On
+#   Nativities -- not Abu Ma'shar's Fig. 63, the V.22 degrees), after: "Sahl
 #   quietly switches to Masha'allah's treatise on Lots ... and now he is
 #   substituting another one WITHOUT TELLING US that the formula is
 #   different! So we now have three different Lots, ostensibly for the same
@@ -3913,7 +3914,8 @@ def calculate_classical_lots(asc, sun, moon, sect):
 # NOTE ON THE SOURCE TEXT. Every formula here is taken from the running
 # prose or a footnote, never from one of the summary tables. An earlier
 # OCR mangled their glyph columns; the current one (read 2026-09-08) has
-# Fig. 63 reading Mercury->Mars, Saturn->Moon and Sun->Saturn, all marked
+# Sahl's Fig. 63 (On Nativities, Lots of action or work) reading
+# Mercury->Mars, Saturn->Moon and Sun->Saturn, all marked
 # (R), so the table agrees with the prose on the bodies and differs only
 # in marking the Saturn-Moon Lot reversed where 10.2.5, 1 says "by day
 # and night". Where prose and table disagree, the prose is used and the
@@ -4074,7 +4076,7 @@ LOT_DEFINITIONS = [
          start='Mercury', end='Mars', project='Ascendant', reverse_at_night=True,
          source='Sahl, On Nativities Ch. 10.1.1, 14',
          confidence='variant (one of three)',
-         note="The Greek Lot of action. Dykes' Fig. 63 names it Work in Sahl and BA, "
+         note="The Greek Lot of action. Dykes' Fig. 63 in Sahl's On Nativities names it Work in Sahl and BA, "
               "\"managers, viziers, and Sultans\" in Abu Ma'shar VIII.4."),
     dict(id='work_expedition', topic='Work', name='Lot of work (expedition)',
          start='Saturn', end='Moon', project='Ascendant', reverse_at_night=False,
@@ -4095,7 +4097,7 @@ LOT_DEFINITIONS = [
          confidence='variant (one of three)',
          note='Sahl switches treatises mid-chapter without saying so. The note: '
               'Masha\'allah "defines this in the same way as the Lot of fathers '
-              '(Sun-Saturn)". Identical in form to the Lot of the father. Fig. 63 in the '
+              '(Sun-Saturn)". Identical in form to the Lot of the father. Sahl\'s Fig. 63 (On Nativities) in the '
               'current OCR reads Sun-Saturn and marks it (R), reversed at night, as 4.14, 1 '
               'reverses the father Lot; this row does not reverse -- an open CHOICE recorded '
               'in synthesis/10_on_nativities_citation_audit.md.'),
@@ -4281,7 +4283,9 @@ NOT_IMPLEMENTED_COVERAGE = [
     ("Abu Ma'shar VII.5, 104-116", "The full returning tree, with its suitability and "
      "corruption grades. Only Sahl's two manners (Ch.3, 65-69) are implemented."),
     ("Abu Ma'shar VII.6, 13 and 36", "The masculine and feminine DEGREES, alongside "
-     "the signs. No table for them in this corpus."),
+     "the signs. The table is Fig. 59 (V.19, p. 304 of Abu Ma'shar's volume, in the "
+     "corpus since 2026-09-08); fn. 108 there says he takes no stance among three "
+     "schemes. Not implemented."),
     ("Abu Ma'shar VII.6, 52", "Each planet's OWN nodes (\"their own Dragons\"). Only "
      "the Moon's are computed."),
     ("Abu Ma'shar VII.7", "Ptolemy's CASTING OF THE RAYS by ascensions, complete at 1-22 "
@@ -5196,7 +5200,8 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
 
     Still not implemented, for want of a source in hand rather than by
     choice: the masculine and feminine DEGREES that 13 and 36 name
-    alongside the signs (no table for them in the available material), and
+    alongside the signs (the table is now in the corpus as Fig. 59, V.19,
+    but is not read here), and
     52's "their own Dragons" -- each planet's own nodes, where only the
     Moon's are computed here."""
     with doctrine(ABU_MASHAR):
@@ -7344,7 +7349,7 @@ if location_query and lat is not None and lon is not None:
                          hide_index=True)
 
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-                st.markdown('The STANDING column records his editorial position in his own words where he states one.\n\nFour kinds of case. SAHL HIMSELF RULES: of the two sibling Lots, "both of the Lots are correct, so work with them both together" (3.11, 4) -- neither is subordinate. DYKES NAMES HIS CHOICE: of the three witnesses to the Lot of enemies, "I have used M here"; on the night reversal of the Saturn-Moon work Lot, "Paul instructs us to reverse it by night, but Abu Ma\'shar says not to. We should follow Paul." DYKES MARKS ONE STANDARD: on children, "the usual calculation ... is that of Hermes." DYKES ONLY TABULATES: three Lots for work, after noting that "Sahl quietly switches to Masha\'allah\'s treatise on Lots ... without telling us that the formula is different."\n\nEvery formula is taken from the running prose or a footnote, never from one of the summary tables, whose glyph columns the OCR mangles -- Fig. 63\'s row for Ch. 10.2.5 renders as Mercury-Venus where the body text plainly reads "from Saturn to the Moon."\n\nNote the Lot of death is projected FROM SATURN, not from the Ascendant.')
+                st.markdown('The STANDING column records his editorial position in his own words where he states one.\n\nFour kinds of case. SAHL HIMSELF RULES: of the two sibling Lots, "both of the Lots are correct, so work with them both together" (3.11, 4) -- neither is subordinate. DYKES NAMES HIS CHOICE: of the three witnesses to the Lot of enemies, "I have used M here"; on the night reversal of the Saturn-Moon work Lot, "Paul instructs us to reverse it by night, but Abu Ma\'shar says not to. We should follow Paul." DYKES MARKS ONE STANDARD: on children, "the usual calculation ... is that of Hermes." DYKES ONLY TABULATES: three Lots for work, after noting that "Sahl quietly switches to Masha\'allah\'s treatise on Lots ... without telling us that the formula is different."\n\nEvery formula is taken from the running prose or a footnote, never from one of the summary tables, whose glyph columns the OCR mangles -- in Sahl\'s Fig. 63 (On Nativities; Abu Ma\'shar\'s Fig. 63 is a different table), the row for Ch. 10.2.5 renders as Mercury-Venus where the body text plainly reads "from Saturn to the Moon."\n\nNote the Lot of death is projected FROM SATURN, not from the Ascendant.')
         def page_victors():
             st.header("Lunation and victors")
             st.caption("Lessons 19-20.")

@@ -1,9 +1,12 @@
 # Phase 1 — Sahl, *The Introduction*, Chapter 3: On the explanation of being & corruption (complete)
 
-Source: `sahl_introduction_ch3.md`, Sahl Vol. I pp. 52–75, sentences 2–132, Figures 9–29, plus a
-standalone capture of Ch. V.20 (bright/dark degrees, Figure 60) whose full table is **Figure 61 in
-`abu_mashar_book_vii.md` at Abū Ma'shar's p. 306**, not Sahl's. Read end to end on 2026-09-08
-before any `app.py` citation was opened. Companion: `12_sahl_ch3_and_aphorisms_citation_audit.md`.
+Source: `sahl_introduction_ch3.md`, Sahl Vol. I pp. 52–75, sentences 2–132, Figures 9–29. When
+this was written the file also carried a standalone capture of Ch. V.20 (bright/dark degrees,
+Figure 60) whose full table is **Figure 61 in `abu_mashar_book_vii.md` at Abū Ma'shar's p. 306**,
+not Sahl's; later on 2026-09-08 that capture was moved out of the Sahl file to
+`abu_mashar_book_vii.md` (Abū Ma'shar p. 305, within the V.19–V.22 excerpt, pp. 303–310), so
+"Figure 60" below now resolves there. Read end to end on 2026-09-08 before any `app.py` citation
+was opened. Companion: `12_sahl_ch3_and_aphorisms_citation_audit.md`.
 
 **Heading conventions.** One chapter heading (`### Chapter [3:]`), then sentence numbers 2–132,
 plain or bold, in one continuous sequence. ⚠ **¶99 is used twice**: `:360` *"99 And, if a planet
@@ -347,7 +350,10 @@ and as **gender** at 85 (fn. 97 calls 85 the error).
 
 Four classes (¶1), effects (¶2–4), Figure 60 key. fn. 110 (as corrected 2026-09-07): the
 sign-by-sign table is **Figure 61 in `abu_mashar_book_vii.md`, Abū Ma'shar's p. 306** —
-`BRIGHTNESS_DEGREES` was pinned against it in the base-tables pass.
+`BRIGHTNESS_DEGREES` was pinned against it in the base-tables pass. *2026-09-08, later:* the
+supplement itself (Figure 60, p. 305) no longer lives in `sahl_introduction_ch3.md`; it sits with
+Figure 61 in `abu_mashar_book_vii.md` under the V.19–V.22 excerpt. Nothing in this section
+depends on which file holds it.
 
 ---
 
