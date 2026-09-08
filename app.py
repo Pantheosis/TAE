@@ -681,18 +681,23 @@ HOUSE_ORDINAL = {1: '1st', 2: '2nd', 3: '3rd', 4: '4th', 5: '5th', 6: '6th', 7: 
 # --- Solar phase: the sources' own orbs ----------------------------------
 # Abu Ma'shar walks the whole synodic cycle planet by planet (Great
 # Introduction VII.2): seventeen conditions for the superiors (6-34),
-# sixteen for the inferiors (35-57), sixteen for the Moon (58-74). Sahl
-# gives the same breakpoints independently in On Nativities Ch.1.22, 1-8,
-# and Dykes' table there reports al-Biruni SS481-82 agreeing as well, so
-# these are not one author's idiosyncrasy:
+# sixteen for the inferiors (35-57), sixteen for the Moon (58-74). Sahl's
+# On Nativities Ch.1.22, 1-8 (and Dykes' table there, which reports
+# al-Biruni SS481-82 agreeing) gives the UNDER-THE-RAYS figures
+# independently -- 15 for Saturn and Jupiter, 18 east for Mars, 12 east /
+# 15 west for Venus and Mercury -- so those are not one author's
+# idiosyncrasy. Sahl gives no "burned" boundary at all (his 6 is the
+# nine-day "considered eastern" floor of 1.22, 1), and his table has Mars
+# WESTERNIZING AT 18, not 15; the burn figures and Mars's 15 west are Abu
+# Ma'shar's alone (synthesis/10_on_nativities_citation_audit.md):
 #
 #   Saturn, Jupiter  burned to 6 deg,  under the rays to 15 deg
-#                    (VII.2, 11-13; On Nativities 1.22, 1 and 6)
+#                    (VII.2, 11-13; the 15 also On Nativities 1.22, 1 and 6)
 #   Mars             burned to 10 deg, under the rays to 18 deg east
-#                    (VII.2, 11-13; On Nativities 1.22, 3 and 6)
+#                    (VII.2, 11-13; the 18 also On Nativities 1.22, 3 and 6)
 #   Venus, Mercury   burned to 7 deg,  under the rays to 12 deg east,
-#                    15 deg west (VII.2, 40, 48, 51-52; On Nativities
-#                    1.22, 7-8). VII.2, 37 is now legible in the OCR and
+#                    15 deg west (VII.2, 40, 48, 51-52; the 12/15 also On
+#                    Nativities 1.22, 7-8). VII.2, 37 is now legible in the OCR and
 #                    states it outright: "called 'burned' until there comes
 #                    to be up to 7 degrees between them and the Sun"; 40
 #                    repeats it ("at a full 7 degrees in longitude, then
@@ -3903,18 +3908,20 @@ def calculate_classical_lots(asc, sun, moon, sect):
 #   topic." All three are shown.
 #
 # NOTE ON THE SOURCE TEXT. Every formula here is taken from the running
-# prose or a footnote, never from one of the summary tables: the OCR
-# mangles their glyph columns. Fig. 63's row for Ch. 10.2.5 renders as
-# "Mercury -> Venus" where the body text at 10.2.5, 1 plainly reads "from
-# Saturn to the Moon". Where prose and table disagree, the prose is used
-# and the disagreement is noted.
+# prose or a footnote, never from one of the summary tables. An earlier
+# OCR mangled their glyph columns; the current one (read 2026-09-08) has
+# Fig. 63 reading Mercury->Mars, Saturn->Moon and Sun->Saturn, all marked
+# (R), so the table agrees with the prose on the bodies and differs only
+# in marking the Saturn-Moon Lot reversed where 10.2.5, 1 says "by day
+# and night". Where prose and table disagree, the prose is used and the
+# disagreement is noted.
 #
 # A point may be a planet, 'Ascendant', 'cuspN' (the Nth place -- see
 # LOT_HOUSE_CUSP), 'lordN' (the domicile lord of the Nth whole-sign house),
 # or another Lot by id. Lots that feed other Lots are listed before them.
 #
 # "The second place", "the degree of the eighth place", "the ninth" (2.15,
-# 1; 8.6, 1; 9.1, 9): the text is whole-sign throughout, and Dykes' note 207
+# 1; 8.6, 1; Ch. 9, 9): the text is whole-sign throughout, and Dykes' note 207
 # on 4.14 glosses the assets Lot as "from the lord of the second to the
 # second". In whole signs the degree of the Nth place is the Ascendant's
 # own degree carried into the Nth sign; the quadrant cusp is the other
@@ -3934,7 +3941,7 @@ LOT_DEFINITIONS = [
          source='TNAC Handy Tables Lesson 18 (Moon to Sun, Asc, reversed by night); named in Sahl, On Nativities Ch. 11.2, 4-6',
          confidence='attested by name in Sahl; formula from the course tables',
          note='Sahl names it the Lot of the Invisible, later Spirituality (notes on Ch. 9.5, '
-              '73 and Ch. 11.1, 5 confirm the identity) but nowhere in the corpus states '
+              '73 and Ch. 11, 5 -- the chapter preamble -- confirm the identity) but nowhere in the corpus states '
               'the formula; the Moon-to-Sun construction is the Handy Tables\'.'),
     # The night formula is not the day formula reversed: it changes BOTH
     # ends. "By day from the degree of the Sun to the degree of HIS
@@ -3972,7 +3979,7 @@ LOT_DEFINITIONS = [
          start='Mercury', end='Jupiter', project='Ascendant', reverse_at_night=False,
          source='Sahl, On Nativities Ch. 3.11, 3',
          confidence='settled, used alongside the other',
-         note='"Taken by night and day." The note on Ch. 3.1.2, 1 adds that in Dorotheus '
+         note='"Taken by night and day." Dykes\' note 121 on Ch. 3.11, 3 adds that in Dorotheus '
               'this one is specifically for the NUMBER of siblings.'),
     dict(id='father', topic='Father', name='Lot of the father',
          start='Sun', end='Saturn', project='Ascendant', reverse_at_night=True,
@@ -4014,17 +4021,17 @@ LOT_DEFINITIONS = [
               'Jupiter-Saturn form instead. The conflict is in the sources.'),
     dict(id='children_timing', topic='Children', name='Lot of the timing of children',
          start='Mars', end='Jupiter', project='Ascendant', reverse_at_night=False,
-         source='Sahl, On Nativities Ch. 5.2, 2 and 8',
+         source='Sahl, On Nativities Ch. 5.3, 2 and 8',
          confidence='attested',
          note='A separate Lot for WHEN, not how many: "when Jupiter reaches this Lot in '
               'his course and transit."'),
     dict(id='marriage_men', topic='Marriage', name="Lot of men's marriage",
          start='Saturn', end='Venus', project='Ascendant', reverse_at_night=False,
-         source='Sahl, On Nativities Ch. 7.1, 223 and Ch. 7.4, 44',
+         source='Sahl, On Nativities Ch. 7.1, 223 and Ch. 7.2, 44',
          confidence='settled', note='Stated twice, identically.'),
     dict(id='marriage_women', topic='Marriage', name="Lot of women's marriage",
          start='Venus', end='Saturn', project='Ascendant', reverse_at_night=False,
-         source='Sahl, On Nativities Ch. 7.1, 224 and Ch. 7.4, 44',
+         source='Sahl, On Nativities Ch. 7.1, 224 and Ch. 7.2, 44',
          confidence='settled', note='Stated twice, identically.'),
     dict(id='passion', topic='Marriage', name='Lot of passion (Eros)',
          start='fortune', end='spirit', project='Ascendant', reverse_at_night=True,
@@ -4057,7 +4064,7 @@ LOT_DEFINITIONS = [
               'reverse), and is cast out from the Ascendant."'),
     dict(id='travel', topic='Travel', name='Lot of travel',
          start='lord9', end='cusp9', project='Ascendant', reverse_at_night=False,
-         source='Sahl, On Nativities Ch. 9.1, 9',
+         source='Sahl, On Nativities Ch. 9, 9 (the chapter preamble; restated at 9.3, 4 and 9.4, 37)',
          confidence='settled',
          note='"Taken by night and day from the lord of the ninth to the ninth."'),
     dict(id='work_action', topic='Work', name='Lot of work (action / praxis)',
@@ -4085,24 +4092,27 @@ LOT_DEFINITIONS = [
          confidence='variant (one of three)',
          note='Sahl switches treatises mid-chapter without saying so. The note: '
               'Masha\'allah "defines this in the same way as the Lot of fathers '
-              '(Sun-Saturn)". Identical in form to the Lot of the father; Fig. 63\'s glyph '
-              'column reads Sun-Mercury, but the prose is followed here.'),
+              '(Sun-Saturn)". Identical in form to the Lot of the father. Fig. 63 in the '
+              'current OCR reads Sun-Saturn and marks it (R), reversed at night, as 4.14, 1 '
+              'reverses the father Lot; this row does not reverse -- an open CHOICE recorded '
+              'in synthesis/10_on_nativities_citation_audit.md.'),
     dict(id='friends', topic='Friends', name='Lot of friends',
          start='Moon', end='Mercury', project='Ascendant', reverse_at_night=True,
-         source='Sahl, On Nativities Ch. 11.1, 5',
+         source='Sahl, On Nativities Ch. 11, 5 (the chapter preamble) and Ch. 11.1, 29',
          confidence='settled',
-         note='The note on Ch. 10.2.9 identifies it: "the Moon-Mercury Lot (projected from '
+         note='Dykes\' note 72 on Ch. 9.5, 3 identifies it: \"the Moon-Mercury Lot (projected from '
               'the Ascendant, reversed by night), which is identical to Dorotheus\'s Lot '
-              'of friendship."'),
+              'of friendship." In the Ch. 11 preamble the Moon-to-Mercury words are Dykes\' '
+              'bracketed supplement; Sahl states the formula in his own words at 11.1, 29.'),
     dict(id='desire', topic='Friends', name='Lot of desire',
          start='fortune', end='spirit', project='Ascendant', reverse_at_night=True,
-         source='Sahl, On Nativities Ch. 11.4, 5',
+         source='Sahl, On Nativities Ch. 11.2, 4-5',
          confidence='attested; identical in form to the Lot of passion',
          note='"By day from the Lot of Fortune to the Lot of Spirituality ... and by night '
               'the converse."'),
     dict(id='necessity', topic='Friends', name='Lot of necessity',
          start='spirit', end='fortune', project='Ascendant', reverse_at_night=True,
-         source="Sahl, On Nativities Ch. 11.5 (Dykes' note 62)",
+         source="Sahl, On Nativities Ch. 11.4, 18 (Dykes' note 62)",
          confidence='attested',
          note='"This is the opposite of the Lot of Eros: by day from the Lot of Spirit to '
               'the Lot of Fortune (and by night the reverse)."'),
@@ -4303,7 +4313,7 @@ NOT_IMPLEMENTED_COVERAGE = [
     ("Sahl, On Nativities Ch. 2.6 and 4.9", "Uses of the TWELFTH-PARTS beyond the "
      "Moon's (luminaries, Ascendant, infortunes)."),
     ("Sahl, On Nativities: further Lots", "Constitution (1.34, 13, recovered p. 358, "
-     "'foundation' uncertain); male/female (3.12, 20); Venus to the 7th place "
+     "'foundation' uncertain); male/female (3.13, 20); Venus to the 7th place "
      "(7.1, 10 and 145); Sun to Moon projected from Venus (7.4, 8); religion "
      "(9.5, 3, identity disputed); riding animals (12.2 fn. 18)."),
 ]
@@ -7105,8 +7115,9 @@ if location_query and lat is not None and lon is not None:
                 st.caption(
                     "The point weights are this app's own ranking convenience -- no source in hand "
                     "totals these conditions. The geometry each test uses is sourced. **Solar phase** "
-                    "follows Abu Ma'shar's walk through the synodic cycle (VII.2), which Sahl gives "
-                    "independently in *On Nativities* 1.22 and al-Biruni corroborates: burned to "
+                    "follows Abu Ma'shar's walk through the synodic cycle (VII.2); Sahl's *On Nativities* "
+                    "1.22 and al-Biruni give the under-the-rays figures independently (Sahl states no burn "
+                    "boundary, and his Mars westernizes at 18°, not 15°): burned to "
                     "6° for Saturn and Jupiter, 10° for Mars, 7° for Venus and Mercury, "
                     "6° for the Moon; under the rays to 15°, 18° east / 15° west, "
                     f"12° east / 15° west, and {MOON_RAYS_ORB:.0f}° for the Moon; in the heart within 16' "
@@ -7310,7 +7321,7 @@ if location_query and lat is not None and lon is not None:
             st.subheader('Topical Lots (Sahl, On Nativities)', help="Sahl's topical Lots, each with its own provenance. He gives several of them MORE THAN ONCE, with formulas that genuinely conflict, and Dykes' apparatus does not silently reconcile them -- so neither does this table.")
             _reading_radio("House-based Lots measure to the", LOT_HOUSE_CUSP_OPTIONS, "lot_house_cusp", "_lot_house_cusp",
                            help="'The second place', 'the degree of the eighth place', 'the ninth' (On Nativities 2.15, 1; "
-                                "8.6, 1; 9.1, 9): the Ascendant's degree carried into that sign, or the Alchabitius cusp. "
+                                "8.6, 1; Ch. 9, 9): the Ascendant's degree carried into that sign, or the Alchabitius cusp. "
                                 "Affects: this table only. Full text on the Sources page.")
             # Fortune, Spirit and Exaltation are in the Classical Lots table
             # above, with the same Formula; the provenance columns are in the
@@ -7428,7 +7439,7 @@ if location_query and lat is not None and lon is not None:
                 "on the Configurations page.\n\n"
                 "**House-based Lots measure to the** (Lots page, Topical Lots) -- "
                 "'The second place', 'the degree of the eighth place', 'the ninth' (On Nativities 2.15, 1; "
-                "8.6, 1; 9.1, 9). Whole-sign: the Ascendant's degree carried into that sign. Quadrant: the "
+                "8.6, 1; Ch. 9, 9). Whole-sign: the Ascendant's degree carried into that sign. Quadrant: the "
                 "Alchabitius cusp. "
                 "Affects: Topical Lots."
             )
