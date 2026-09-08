@@ -99,7 +99,7 @@ matches.
 - The `:1011` claim that Sahl's lights are "identical" to Fig. 105 is verified on the numbers; the
   Sun's is stated as a 30° body (¶13) with 15° each side, which is the same fact.
 
-## 5. Corrections applied (wording only, line count unchanged)
+## 5. Corrections applied (wording only)
 
 | Line | Before | After |
 |---|---|---|
