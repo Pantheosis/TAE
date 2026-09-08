@@ -41,6 +41,42 @@ additions are appended, not renumbered.
 | **D-20** | Flag Fig. 63's seven "degrees increasing in good fortune" (Moon, Fortune, Ascendant)? | **Display-only flag, supplement-labelled; decide with D-21** | low-medium | one table + three tests | — (7.6% of charts) |
 | **D-21** | Flag Fig. 64's thirty-one "degrees of elevation and power" (Ascendant, sect luminary)? | **Same as D-20, or neither; decide with D-20** | low-medium | one table + two tests | — (18.5% of charts; one fixture) |
 
+## Implementation record (2026-09-08, branch `decisions-impl-2026-09-08`)
+
+The owner accepted every recommendation as written ("No disagreements with your
+recommendations, proceed"). What each answer became, with its commit; the sections below are
+left as they were argued.
+
+| # | Answer taken | What landed | Commit |
+|---|---|---|---|
+| D-1 | Build it, static, labelled Ptolemy's | `cast_rays_by_ascension` / `evaluate_rays_by_ascension` (VII.7, 3–22; the ¶18/¶21 anchor flip taken as written and exposed as an argument); a Configurations table under the Abū Ma'shar view; nothing directs it in time; Aph. #45 and *Nat.* 2.13 remain unbuilt | `25d4214` |
+| D-2 | Refusal wins | `evaluate_reception` drops, under Sahl only, rows refused by non-reception Kind II/IV; the strict xfail un-marked; 1240-10-05's only Sahl reception row was the refused pair | `f0ab0b5` |
+| D-3 | Implementation deferred, reading in scope | Figure 146 on the Timing page as a display-only table with *Times* 4, 7 and *Nat.* 1.20 beside it, applied to nothing | `75267d0` |
+| D-4 | Reverse | `reverse_at_night=True`, note rewritten | `d295ec0` |
+| D-5 | None as Sahl's; keep 19–3 where Abū Ma'shar's; retire 15–15 | `DARK_SIGNS`, `BURNED_PLACE_SIGNS`, labels without degrees; the Via Combusta flag gone (C-04 done) | `0eeb089` |
+| D-6 | Column, not filter | `mashaallah_condition` beside every Topical House Lords row, naming what breaks it; not applied to the Rhetorius/PN4 table | `6353a26` |
+| D-7 | Two readings, never merged | `FOUR_FOOTED`, `VOICE`, `BARREN`, `MANY_CHILDREN`, `sign_categories()` (C-11 done) | `72351f4` |
+| D-8 | Keep both | `DIGNITY_ORDER` with three context-labelled orderings (C-20 done) | `72351f4` |
+| D-9 | Printed order, labelled | `GOOD_PLACE_SCHEMES` and `SEVEN_PLACE_RANKING_NOTE` (C-09's schemes as constants; no scoring) | `72351f4` |
+| D-10 | resolved earlier | — | `ea34231` (wells branch) |
+| D-11 | Keep Saturn, labelled | source/confidence/note and the Sources sentence say emendation | `d295ec0` |
+| D-12 | Keep 12° for both | label cites Ch. 3, 107 and VII.6, 52 | `d295ec0` |
+| D-13 | Switch, default off | `fitting_infortune`, `effective_infortunes()` at thirteen affliction sites; Configurations checkbox | `c263519` |
+| D-14 | Note only | coverage entry | `5438995` |
+| D-15 | Keep 15, add the switch | `solar_rays_orb()` accessor, `MARS_WEST_RAYS_18`, Chart-page checkbox | `82b1672` |
+| D-16 | Content, annotated | comment on the Guide wording | `d295ec0` |
+| D-17 | Caveat only | coverage entry | `5438995` |
+| D-18 | None yet | nothing built | — |
+| D-19 | No | coverage entry says so | `5438995` |
+| D-20 | Display-only flag | `GOOD_FORTUNE_DEGREES`, `evaluate_book_v_degrees` | `49864d2` |
+| D-21 | Same | `ELEVATION_DEGREES`, same function; Aquarius 17's well collision in the caveat | `49864d2` |
+
+Every value change was measured on the six fixture charts before it landed and the
+`tables.json` diff read against the prediction each time. Two switches were added, so the
+switch matrix doubled twice (64 → 256 states); the full suite is correspondingly slower. The
+pins live in `tests/test_decisions_2026_09_08.py` (one or more per item, with a negative control
+each) and, for the tables, in `tests/test_base_tables.py`.
+
 Items that were once open and are **not**, so they do not reappear below: exaltation degrees
 (Standard, `08` §4); the convertible-sign speed rankings (neither, `03` #11); "upright" stakes
 (Sahl's, C-21); the sixth antiscia pair (never, `03` #1); `MOON_RAYS_ORB`, `DOMAIN_RULE`,
