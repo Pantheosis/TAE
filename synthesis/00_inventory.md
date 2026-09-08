@@ -13,7 +13,7 @@ different printed volume from Sahl's *Volume I*. They overlap numerically with S
 *On Nativities* (pp. 255–749) by coincidence. **Figure numbers collide the same way**: Sahl
 Vol. I runs Figures 1–71; Abū Ma'shar's volume has its own Figure 61 and Figures 90, 98–146.
 "Figure 61" is ambiguous without naming the volume (Sahl Fig. 61 = "Frequency of illness,"
-Sahl p. 574, in `on_nativities.md`; Abū Ma'shar Fig. 61 = the aspect-conditions table, GI p. 306,
+Sahl p. 574, in `on_nativities.md`; Abū Ma'shar Fig. 61 = the degrees of brightness, V.20, GI p. 306 [corrected 2026-09-08; an earlier draft here said "the aspect-conditions table"],
 in `abu_mashar_book_vii.md`). Paragraph numbers restart per chapter in every work.
 
 ## The table
