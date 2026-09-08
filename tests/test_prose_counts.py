@@ -5,7 +5,9 @@ Each test reads the prose from the UI half of app.py and the structure from
 the engine half. When a phrase is reworded the test fails on the phrase, by
 design: the count and the sentence are one fact and get edited together.
 """
+import os
 import re
+from pathlib import Path
 
 import pytest
 
@@ -96,6 +98,24 @@ CORPUS_BOOKS = ("VII",)                      # Abu Ma'shar, Great Introduction V
 ABSENCE_CLAIM = re.compile(r"not in (?:this|the) corpus|no table for them in this corpus", re.I)
 BOOK_CITE = re.compile(r"\b(I{1,3}|IV|VI{0,3}|IX|X)\.\d+")
 
+# A second, distinct kind of absence claim: that the TEXT of the cited
+# passage itself is missing (a page not photographed, a figure not in the
+# photo set) rather than a table the text refers to. The VII.7 entry said
+# "begins on a page not photographed" for four days after VII.7 landed in
+# the corpus, and the test above never looked at it: its gate matched
+# neither phrase, and the book token lives in the passage, not the
+# description. Every book in CORPUS_BOOKS is photographed end to end
+# (CORPUS_MANIFEST.md), so such a claim about one of them is false on its
+# face -- no corpus file is needed to decide it, which is why this can run
+# in CI. test_page_absence_claims_agree_with_the_corpus_when_present goes
+# further when the corpus is on disk.
+PAGE_ABSENCE = re.compile(
+    r"not photographed|photo set|page not|begins on (?:a|the following) page"
+    r"|not (?:legible|included)|illegible|missing page|not yet (?:photographed|scanned)", re.I)
+CORPUS_DIR = Path(os.environ.get(
+    "CORPUS_DIR", Path.home() / "Desktop" / "Fifty Aphorism OCR Project" / "consolidated_texts"))
+CORPUS_FILES = {"VII": "abu_mashar_book_vii.md"}
+
 
 def test_coverage_list_entries_are_unique_and_filled(engine):
     cov = engine["NOT_IMPLEMENTED_COVERAGE"]
@@ -114,6 +134,40 @@ def test_coverage_entries_do_not_call_corpus_material_absent(engine):
         inside = cited & set(CORPUS_BOOKS)
         assert not inside, (
             f"{passage}: says Book {sorted(inside)} material is not in the corpus, but it is")
+
+
+def test_coverage_entries_do_not_call_a_photographed_passage_missing(engine):
+    """A coverage entry may not say the cited passage's own text is absent
+    (unphotographed, not in the photo set) when the passage is in a book
+    the corpus holds complete. The book is read from the passage, where
+    the citation actually lives."""
+    for passage, desc in engine["NOT_IMPLEMENTED_COVERAGE"]:
+        if not PAGE_ABSENCE.search(desc):
+            continue
+        cited = {m.group(1) for m in BOOK_CITE.finditer(passage + " " + desc)}
+        inside = cited & set(CORPUS_BOOKS)
+        assert not inside, (
+            f"{passage}: says its text is unphotographed/missing, but Book {sorted(inside)} "
+            f"is complete in the corpus -- {desc!r}")
+
+
+@pytest.mark.skipif(not CORPUS_DIR.is_dir(), reason="corpus not on this machine (CI): the "
+                    "book-list test above still guards the claim")
+def test_page_absence_claims_agree_with_the_corpus_when_present(engine):
+    """With the corpus on disk, check the chapter heading itself: every
+    passage cited as 'Abu Ma'shar VII.N' must have a '### Chapter VII.N'
+    heading in the OCR, whatever the description says. Catches the next
+    stale marker even if it uses a phrase PAGE_ABSENCE does not know."""
+    text = (CORPUS_DIR / CORPUS_FILES["VII"]).read_text(encoding="utf-8")
+    headings = set(re.findall(r"^### Chapter (VII\.\d+)", text, re.M))
+    assert headings, "no VII chapter headings found -- wrong file?"
+    for passage, desc in engine["NOT_IMPLEMENTED_COVERAGE"]:
+        m = re.match(r"Abu Ma'shar (VII\.\d+)", passage)
+        if not m:
+            continue
+        assert m.group(1) in headings, f"{passage}: no '### Chapter {m.group(1)}' heading in the corpus"
+        assert not PAGE_ABSENCE.search(desc), (
+            f"{passage}: chapter {m.group(1)} is in the corpus, yet the entry says {desc!r}")
 
 
 def test_natural_connections_are_built_and_only_the_omitted_pairs_remain(engine):
