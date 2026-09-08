@@ -269,3 +269,31 @@ def test_d13_control_a_malefic_that_rules_nothing_is_never_softened(engine, monk
     monkeypatch.setitem(engine, "SOFTENED_INFORTUNE", engine["fitting_infortune"](95.0))
     labels = engine["evaluate_corruption_of_the_moon"](p, 95.0, "Diurnal")["labels"]
     assert any("opposed by an infortune" in l for l in labels), labels
+
+
+# --- D-2: refusal wins over a minor-dignity reception, under Sahl only ----
+def _fixture_chart(engine, date):
+    from datetime import datetime, timedelta
+    y, m, d = map(int, date.split("-"))
+    dt = datetime(y, m, d, 14, 30) - timedelta(hours=11.2463 / 15.0)
+    return engine["calculate_traditional_chart"](dt, 43.7792, 11.2463)
+
+
+def test_d2_fixture_1240_10_05_moon_to_venus_is_refused_not_received_under_sahl(engine):
+    c = _fixture_chart(engine, "1240-10-05")
+    p, sect = c["planetary_data"], c["sect"]
+    with engine["doctrine"](engine["SAHL"]):
+        kinds = {(r["Kind"][:2].strip(), r["Connecting"], r["With"]) for r in engine["evaluate_non_reception"](p, sect)}
+        rec = [(r.get("Received"), r.get("Receiver")) for r in engine["evaluate_reception"](p, sect)]
+    assert any(k in (("II", "Moon", "Venus"), ("IV", "Moon", "Venus")) for k in kinds), kinds
+    assert ("Moon", "Venus") not in rec, rec
+
+
+def test_d2_control_abu_mashars_profile_keeps_the_same_pair_received(engine):
+    # Figure 143 reads these configurations as favor, not refusal: his
+    # doctrine, his profile, untouched by D-2.
+    c = _fixture_chart(engine, "1240-10-05")
+    p, sect = c["planetary_data"], c["sect"]
+    with engine["doctrine"](engine["ABU_MASHAR"]):
+        rec = [(r.get("Received"), r.get("Receiver")) for r in engine["evaluate_reception"](p, sect)]
+    assert ("Moon", "Venus") in rec, rec

@@ -127,15 +127,16 @@ def test_63_on_leaving_mercury_connects_with_mars_who_does_not_accept_him(engine
     assert ("II (59-60)", "Mercury", "Mars") in kinds, kinds
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "Known disagreement, recorded 2026-09-07: for the same pair the engine also lists "
-    "'Mars receives Mercury via triplicity, bound' (Masha'allah's form, Introduction "
-    "Ch. 3, 54-55), because Mars is the night triplicity lord of Cancer and holds its "
-    "first bound. Sahl's verdict on his own chart is 'he does not accept [Mercury]' "
-    "(Questions Ch. 1, 63), and Ch. 1, 40-41 makes connection from the receiver's fall "
-    "a refusal. Which rule wins is a doctrinal decision the engine has not made; when "
-    "it does, this xfail flips and must be resolved deliberately."))
 def test_63_control_the_engine_does_not_also_report_mars_receiving_mercury(engine, venus):
+    # Was a strict xfail from 2026-09-07 to 2026-09-08: for the same pair the
+    # engine also listed 'Mars receives Mercury via triplicity, bound'
+    # (Masha'allah's form, Introduction Ch. 3, 54-55), because Mars is the
+    # night triplicity lord of Cancer and holds its first bound. Decision
+    # D-2 (synthesis/13_open_decisions.md): refusal wins under Sahl's
+    # profile -- his verdict on his own chart is "he does not accept
+    # [Mercury]" (Questions Ch. 1, 63), and Ch. 1, 40-41 makes connection
+    # from the receiver's fall a refusal. The xfail was un-marked
+    # deliberately when evaluate_reception gained the precedence check.
     p = sahl_chart(venus, mercury=91.5)
     with engine["doctrine"](engine["SAHL"]):
         rec = [r for r in engine["evaluate_reception"](p, "Nocturnal")
