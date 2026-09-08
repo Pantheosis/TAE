@@ -4348,15 +4348,6 @@ NOT_IMPLEMENTED_COVERAGE = [
      "(2026-09-08): caveat only; this engine's house meanings are one topic's assignment."),
     ("Abu Ma'shar VII.6, 52", "Each planet's OWN nodes (\"their own Dragons\"). Only "
      "the Moon's are computed."),
-    ("Abu Ma'shar VII.7", "Ptolemy's CASTING OF THE RAYS by ascensions, complete at 1-22 "
-     "(pp. 485-487): the planet's distance from the stakes in hours (4-13), the ray found "
-     "from the right and oblique ascensions and corrected by that distance (14-19), left "
-     "rays added to the position NEAREST the planet (18) and right rays to the more "
-     "DISTANT (21). What is not in this corpus is the tables the chapter presupposes: the "
-     "hourly times (fn. 250, 'special tables in the Almagest') and the ascensions-to-degrees "
-     "inverse tables (fn. 251) -- both computable from spherical astronomy. 22: 'as for the "
-     "opposition, [a planet] casts its ray into the opposition of its sign, in the same "
-     "degree and minute' -- no tables needed, and the whole-sign opposition already reported."),
     ("Abu Ma'shar VII.3, 2 / VI.26, 3", "The ADVANCING AND WITHDRAWING QUADRANTS as a "
      "condition in its own right (ASC to MC and DSC to IC advancing: primary motion "
      "toward the meridian). Read from the margin of the Figure 90 reshoot and Dykes' "
@@ -4375,7 +4366,8 @@ NOT_IMPLEMENTED_COVERAGE = [
      "Timing page's 1 degree/year is labelled as not this."),
     ("Sahl, On Nativities Ch. 2.13, 48-51", "The three 15-degree ASCENSIONAL bands "
      "past a stake, grading good fortune; also Aphorism #45 (misstated there per "
-     "Dykes' note 57)."),
+     "Dykes' note 57). The ascensional apparatus now exists (VII.7, decision D-1: "
+     "cast_rays_by_ascension and its helpers); neither consumer is built yet."),
     ("Sahl, On Nativities Ch. 2.2", "The THIRTY FIXED STARS for eminence, with "
      "positions for Sahl's epoch (needs precession)."),
     ("Sahl, On Nativities Ch. 2.6 and 4.9", "Uses of the TWELFTH-PARTS beyond the "
@@ -4504,6 +4496,145 @@ DIGNITY_ORDER = {
     'On Nativities 1.20, 2 (house-master selection)': ['bound', 'house', 'exaltation', 'triplicity', 'image'],
     'Glossary p. 777 (general listing)': ['house', 'exaltation', 'triplicity', 'bound', 'face'],
 }
+
+# --- Casting the rays by ascensions: Ptolemy's method as reported by Abu
+# Ma'shar (Great Introduction VII.7, 1-22) -- decision D-1, 2026-09-08 ----
+#
+# A STATIC chart quantity: where a planet's sextile, square and trine rays
+# fall at the moment of the chart once the ascensions of the birth latitude
+# are taken into account, beside the zodiacal aspect VII.5 uses. Nothing
+# here advances a point through time; the releaser, distributions and the
+# rest of the timing apparatus stay deferred (D-3). VII.7, 1-2 says the
+# tradition disagrees and that this is Ptolemy's account ("we will state
+# what Ptolemy ... said"), so it is labelled his, not Abu Ma'shar's own.
+#
+# The chapter presupposes tables it does not give (fn. 250: the hourly
+# times, "special tables in the Almagest"; fn. 251: the ascension-to-degree
+# inverses), all computable from spherical astronomy and computed here:
+# right ascension and declination of an ecliptic degree (swe.cotrans), the
+# ascensional difference for the latitude, the oblique ascension RA - AD,
+# and the diurnal hourly time (90 + AD) / 6 in degrees of right ascension
+# per seasonal hour; the hourly time of the opposite degree is the
+# nocturnal one, (90 - AD) / 6.
+#
+# One thing the text leaves open: 18 adds the correction to the candidate
+# position NEAREST the planet (left rays), 21 to the more DISTANT (right
+# rays). Whether that flip is geometry or a copyist's is not said
+# (01_abu_mashar_vii_7_to_9.md B5), so cast_rays_by_ascension() takes an
+# anchor argument -- 'as written' (the default), 'nearest', 'distant' --
+# and the tests hold all three. 22: the opposition needs none of this,
+# "in the same degree and minute".
+RAY_ASPECTS = (('Left sextile', 60.0), ('Left square', 90.0), ('Left trine', 120.0),
+               ('Right sextile', -60.0), ('Right square', -90.0), ('Right trine', -120.0))
+RAY_ANCHOR_OPTIONS = ('as written', 'nearest', 'distant')
+
+def _ra_decl(lon, obliquity):
+    """Right ascension and declination of an ecliptic degree (latitude 0)."""
+    ra, decl, _r = swe.cotrans((lon % 360.0, 0.0, 1.0), -obliquity)
+    return ra % 360.0, decl
+
+def _ascensional_difference(decl, geo_lat):
+    x = math.tan(math.radians(geo_lat)) * math.tan(math.radians(decl))
+    return math.degrees(math.asin(max(-1.0, min(1.0, x))))
+
+def _oblique_ascension(lon, obliquity, geo_lat):
+    ra, decl = _ra_decl(lon, obliquity)
+    return (ra - _ascensional_difference(decl, geo_lat)) % 360.0
+
+def _hourly_time(lon, obliquity, geo_lat):
+    """Diurnal hourly time of the degree: a sixth of its diurnal semi-arc,
+    in degrees of right ascension per seasonal hour (fn. 250)."""
+    _ra, decl = _ra_decl(lon, obliquity)
+    return (90.0 + _ascensional_difference(decl, geo_lat)) / 6.0
+
+def _lon_with_right_ascension(ra, obliquity):
+    """The ecliptic degree whose right ascension is ra (fn. 251's inverse)."""
+    r = math.radians(ra % 360.0)
+    return math.degrees(math.atan2(math.sin(r), math.cos(r) * math.cos(math.radians(obliquity)))) % 360.0
+
+def _lon_with_oblique_ascension(oa, obliquity, geo_lat):
+    """The ecliptic degree whose oblique ascension at this latitude is oa:
+    a coarse scan, then bisection on the signed circular difference."""
+    def diff(lon):
+        return ((_oblique_ascension(lon, obliquity, geo_lat) - oa + 180.0) % 360.0) - 180.0
+    best = min(range(0, 360), key=lambda d: abs(diff(float(d))))
+    lo, hi = best - 1.0, best + 1.0
+    dlo = diff(lo)
+    for _ in range(40):
+        mid = (lo + hi) / 2.0
+        dm = diff(mid)
+        if (dm < 0) == (dlo < 0):
+            lo, dlo = mid, dm
+        else:
+            hi = mid
+    return ((lo + hi) / 2.0) % 360.0
+
+def _hours_from_stake(lon, armc, obliquity, geo_lat):
+    """VII.7, 3-13: the planet's quadrant and its distance in seasonal hours
+    from the stake the text measures from. Returns (quadrant, stake, hours)."""
+    ra, _decl = _ra_decl(lon, obliquity)
+    h_day = _hourly_time(lon, obliquity, geo_lat)                 # "the portions of the hours of the degree of the planet"
+    h_night = _hourly_time((lon + 180.0) % 360.0, obliquity, geo_lat)   # "... of the degree of the opposition of the planet"
+    d = (ra - armc) % 360.0                                       # right circle of the planet less that of the Midheaven
+    if d < 6.0 * h_day:                                            # 4-5: between the Midheaven and the Ascendant
+        return 'Midheaven to Ascendant', 'Midheaven', d / h_day
+    if d < 180.0:                                                  # 6-8: between the Ascendant and the stake of the earth
+        return 'Ascendant to stake of the earth', 'Ascendant', (d - 6.0 * h_day) / h_night
+    d2 = d - 180.0                                                 # measured from the stake of the earth
+    if d2 < 6.0 * h_night:                                         # 9-10: between the stake of the earth and the setting
+        return 'Stake of the earth to setting', 'Stake of the earth', d2 / h_night
+    return 'Setting to Midheaven', 'Stake of the setting', (d2 - 6.0 * h_night) / h_day   # 11-13
+
+def _circular_distance(a, b):
+    return abs(((a - b + 180.0) % 360.0) - 180.0)
+
+def cast_rays_by_ascension(lon, armc, obliquity, geo_lat, anchor='as written'):
+    """VII.7, 14-22 for one planet. Each aspect gives a dict with the
+    zodiacal ray, the two candidate positions (from the right ascensions,
+    14, and from the ascensions of the city, 15), the hours of distance
+    from the stake, and the ascensional ray: the two candidates when they
+    agree (16), otherwise the anchor moved towards the other candidate by
+    a sixth of their excess for every hour of distance (17-19, 21)."""
+    quadrant, stake, hours = _hours_from_stake(lon, armc, obliquity, geo_lat)
+    ra, _decl = _ra_decl(lon, obliquity)
+    oa = _oblique_ascension(lon, obliquity, geo_lat)
+    out = {}
+    for name, arc in RAY_ASPECTS:
+        from_ra = _lon_with_right_ascension(ra + arc, obliquity)
+        from_oa = _lon_with_oblique_ascension(oa + arc, obliquity, geo_lat)
+        excess = _circular_distance(from_ra, from_oa)
+        if excess < 1e-9:
+            ray = from_ra
+        else:
+            near, far = sorted((from_ra, from_oa), key=lambda x: _circular_distance(x, lon))
+            use_nearest = {'as written': arc > 0, 'nearest': True, 'distant': False}[anchor]
+            base, other = (near, far) if use_nearest else (far, near)
+            step = (excess / 6.0) * hours
+            direction = 1.0 if ((other - base) % 360.0) <= 180.0 else -1.0
+            ray = (base + direction * min(step, excess)) % 360.0
+        out[name] = {'zodiacal': (lon + arc) % 360.0, 'from right ascensions (14)': from_ra,
+                     'from the city\'s ascensions (15)': from_oa, 'ascensional': ray,
+                     'hours': hours, 'quadrant': quadrant, 'stake': stake}
+    out['Opposition'] = {'zodiacal': (lon + 180.0) % 360.0, 'ascensional': (lon + 180.0) % 360.0,
+                         'from right ascensions (14)': None, 'from the city\'s ascensions (15)': None,
+                         'hours': hours, 'quadrant': quadrant, 'stake': stake}
+    return out
+
+def evaluate_rays_by_ascension(planetary_data, armc, obliquity, geo_lat, anchor='as written'):
+    """One row per planet and aspect: the zodiacal ray beside Ptolemy's
+    ascensional one, and how far apart they are."""
+    rows = []
+    for planet, data in planetary_data.items():
+        if planet == 'North Node':
+            continue
+        cast = cast_rays_by_ascension(data['longitude'], armc, obliquity, geo_lat, anchor)
+        for name, _arc in RAY_ASPECTS + (('Opposition', 180.0),):
+            r = cast[name]
+            rows.append({'Planet': planet, 'Ray': name, 'Zodiacal ray': get_degree_string(r['zodiacal']),
+                         'Ascensional ray (VII.7)': get_degree_string(r['ascensional']),
+                         'Apart': f"{_circular_distance(r['zodiacal'], r['ascensional']):.2f}°",
+                         'Hours from stake': f"{r['hours']:.2f} from the {r['stake']}"})
+    return rows
 
 # --- Abu Ma'shar's two V.22 degree tables (decisions D-20, D-21) ----------
 # Display only, labelled a supplement: nothing in Sahl and none of VII.6's
@@ -7123,6 +7254,7 @@ if location_query and lat is not None and lon is not None:
         topical_lots = calculate_topical_lots(p_data, chart_data['ascendant'], chart_data['houses'], sect)
         special_degrees = evaluate_special_degrees(p_data)
         book_v_degrees_data = evaluate_book_v_degrees(p_data, chart_data['ascendant'], chart_data['lot_of_fortune'], sect)
+        rays_by_ascension_data = evaluate_rays_by_ascension(p_data, chart_data['armc'], chart_data['obliquity'], lat)
         house_lords_data = evaluate_house_lords(p_data, chart_data['ascendant'])
         victors_data = evaluate_victors(p_data, chart_data['ascendant'], chart_data['lot_of_fortune'],
                                          syzygy['syzygy_longitude'], sect, chronocrats)
@@ -7735,6 +7867,11 @@ if location_query and lat is not None and lon is not None:
                               glance="Collection or Transfer specifically between two planets that are in Aversion to each other, not just unconnected -- since Aversion pairs can't see each other at all, a third planet is the only way their natures can interact.")
                     _finding(_gap, 'Favor & Recompense', "Abu Ma'shar VII.5, 126-128", favor_recompense_data,
                               glance='A planet in its own Fall or a welled/pitted degree, pulled out of that weak condition by a connecting dispositor (Favor). Recompense is the same planet later returning the favor, found by simulating the chart forward.')
+                    _finding(_gap, "Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)",
+                              "Abu Ma'shar, Great Introduction VII.7, 1-22", rays_by_ascension_data,
+                              glance="Where each planet's sextile, square and trine rays fall once the ascensions of this latitude are taken into account, beside the zodiacal aspect the rest of these tables use. A static quantity of the chart, not a direction; VII.7, 1-2 attributes the method to Ptolemy. Nothing else reads it yet.",
+                              notes="VII.7, 3-13: the planet's distance from the nearest stake in seasonal hours, from the right ascensions and the hourly times of its degree (or of the opposite degree on the nocturnal side). 14-15: two candidate ray positions, one from the right ascensions, one from the ascensions of the city (fn. 252: the oblique ascensions). 16-19: when they differ, a sixth of the excess for every hour of distance is added to the candidate NEAREST the planet (left rays); 20-21: for right rays the same, to the more DISTANT candidate. The nearest/distant flip is in the text and unexplained; the function takes it as written and can be asked for either reading. 22: \"as for the opposition, [a planet] casts its ray into the opposition of its sign, in the same degree and minute.\" The tables the chapter presupposes (fn. 250-251) are computed from the obliquity and the latitude. Decision D-1 (2026-09-08).",
+                              height=_rows_height(len(rays_by_ascension_data)))
                     _finding(_gap, 'Book V degrees (supplement, display only)', "Abu Ma'shar, Great Introduction V.22, Figs. 63-64", book_v_degrees_data,
                               glance='Two degree tables from Book V that no condition in VII.6 and nothing in Sahl reads: the seven "degrees increasing in good fortune" (for the Moon, the Lot of Fortune and the Ascendant) and the thirty-one "degrees of elevation and power" (for the Ascendant and the luminary of the sect). Shown when a named point falls in one; never scored.',
                               notes='V.22, 1-2: "when planets indicate the native\'s good fortune by means of their positions, and the Moon or the Lot of Fortune is in these degrees, or [these degrees] are exactly on the Ascendant, then they will increase in the native\'s good fortune. And if they indicate downfall, then these will instigate some motion towards high rank and power." V.22, 4: "if the Ascendant was one of these degrees ... or the Sun by day or the Moon by night was in one of them, and they were in an excellent position of the circle, and the planets of the root of the nativity indicated good fortune, then they will make him attain nobility and the houses of kings." Ordinal degrees, as in the wells. Leo 5 and Aquarius 20 are in both tables; Aquarius 17 is a degree of elevation and a well. Decisions D-20 and D-21 (2026-09-08), decided together.')

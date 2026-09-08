@@ -319,3 +319,85 @@ def test_d3_control_nothing_in_the_engine_applies_the_years(engine):
     import re
     uses = [m.start() for m in re.finditer(r"PLANETARY_YEARS\b", engine_source())]
     assert len(uses) == 2, uses   # the definition and the display evaluator
+
+
+# --- D-1: Ptolemy's casting of the rays by ascensions (VII.7), a static quantity
+EPS = 23.44
+ARMC = 100.0
+LAT = 43.7792
+
+
+def test_d1_inverse_lookups_recover_the_degree(engine):
+    for lon in (5.0, 95.0, 187.5, 271.0, 359.0):
+        ra, _d = engine["_ra_decl"](lon, EPS)
+        assert abs(engine["_lon_with_right_ascension"](ra, EPS) - lon) < 1e-6
+        oa = engine["_oblique_ascension"](lon, EPS, LAT)
+        assert engine["_circular_distance"](engine["_lon_with_oblique_ascension"](oa, EPS, LAT), lon) < 1e-4
+
+
+def test_d1_at_the_equator_the_two_candidates_agree_and_no_hours_are_needed(engine):
+    # Oblique ascension equals right ascension at latitude 0, so 16 applies:
+    # "the rays of the planet are in that degree and minute", whatever the
+    # hours of distance and whichever anchor.
+    for anchor in engine["RAY_ANCHOR_OPTIONS"]:
+        cast = engine["cast_rays_by_ascension"](130.0, ARMC, EPS, 0.0, anchor)
+        for name, arc in engine["RAY_ASPECTS"]:
+            r = cast[name]
+            assert abs(r["from right ascensions (14)"] - r["from the city's ascensions (15)"]) < 1e-6
+            assert abs(r["ascensional"] - r["from right ascensions (14)"]) < 1e-6
+
+
+def test_d1_the_opposition_is_exempt_in_the_same_degree_and_minute(engine):
+    cast = engine["cast_rays_by_ascension"](130.25, ARMC, EPS, LAT)
+    assert abs(cast["Opposition"]["ascensional"] - 310.25) < 1e-9
+    assert cast["Opposition"]["ascensional"] == cast["Opposition"]["zodiacal"]
+
+
+def test_d1_hours_lie_within_a_quadrant_and_the_stake_matches(engine):
+    for lon in range(0, 360, 15):
+        q, stake, hours = engine["_hours_from_stake"](float(lon), ARMC, EPS, LAT)
+        assert 0.0 <= hours <= 6.0 + 1e-9, (lon, q, hours)
+        assert (q, stake) in {("Midheaven to Ascendant", "Midheaven"), ("Ascendant to stake of the earth", "Ascendant"),
+                              ("Stake of the earth to setting", "Stake of the earth"), ("Setting to Midheaven", "Stake of the setting")}
+
+
+def test_d1_a_planet_on_the_midheaven_has_no_hours_and_keeps_the_anchor(engine):
+    lon = engine["_lon_with_right_ascension"](ARMC, EPS)
+    cast = engine["cast_rays_by_ascension"](lon, ARMC, EPS, LAT, "nearest")
+    r = cast["Left square"]
+    assert r["hours"] < 1e-6 and r["stake"] == "Midheaven"
+    near = min((r["from right ascensions (14)"], r["from the city's ascensions (15)"]),
+               key=lambda x: engine["_circular_distance"](x, lon))
+    assert abs(r["ascensional"] - near) < 1e-9
+
+
+def test_d1_as_written_is_nearest_for_left_rays_and_distant_for_right_rays(engine):
+    lon = 130.0
+    written = engine["cast_rays_by_ascension"](lon, ARMC, EPS, LAT, "as written")
+    nearest = engine["cast_rays_by_ascension"](lon, ARMC, EPS, LAT, "nearest")
+    distant = engine["cast_rays_by_ascension"](lon, ARMC, EPS, LAT, "distant")
+    for name, arc in engine["RAY_ASPECTS"]:
+        same = nearest if arc > 0 else distant
+        assert written[name]["ascensional"] == same[name]["ascensional"], name
+    # The two readings really differ somewhere at this latitude, which is
+    # why the text's flip matters.
+    assert any(abs(nearest[n]["ascensional"] - distant[n]["ascensional"]) > 0.01 for n, _a in engine["RAY_ASPECTS"])
+
+
+def test_d1_control_the_ray_stays_within_the_span_of_its_two_candidates(engine):
+    # The correction interpolates between the candidates; it never
+    # overshoots the far one (17-19: a sixth of the excess per hour, and
+    # hours never exceed six).
+    for lon in range(0, 360, 20):
+        cast = engine["cast_rays_by_ascension"](float(lon), ARMC, EPS, LAT)
+        for name, _arc in engine["RAY_ASPECTS"]:
+            r = cast[name]
+            a, b, x = r["from right ascensions (14)"], r["from the city's ascensions (15)"], r["ascensional"]
+            span = engine["_circular_distance"](a, b)
+            assert engine["_circular_distance"](x, a) <= span + 1e-6 and engine["_circular_distance"](x, b) <= span + 1e-6
+
+
+def test_d1_rows_cover_seven_planets_and_seven_rays(engine):
+    c = _fixture_chart(engine, "1240-05-23")
+    rows = engine["evaluate_rays_by_ascension"](c["planetary_data"], c["armc"], c["obliquity"], LAT)
+    assert len(rows) == 49 and {r["Ray"] for r in rows} == {n for n, _a in engine["RAY_ASPECTS"]} | {"Opposition"}

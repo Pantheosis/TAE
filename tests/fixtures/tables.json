@@ -15,6 +15,7 @@
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
    ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]],
+   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
   "configurations/Both": [
@@ -36,6 +37,7 @@
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
    ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]],
+   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
   "configurations/Sahl (course text)": [
@@ -93,6 +95,7 @@
   "configurations/Abu Ma'shar (supplement)": [
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
+   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
   "configurations/Both": [
@@ -109,6 +112,7 @@
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
+   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
   "configurations/Sahl (course text)": [
@@ -166,6 +170,7 @@
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
    ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]],
+   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
   "configurations/Both": [
@@ -187,6 +192,7 @@
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
    ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]],
+   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
   "configurations/Sahl (course text)": [
@@ -246,6 +252,7 @@
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
+   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
   "configurations/Both": [
@@ -265,6 +272,7 @@
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
+   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
   "configurations/Sahl (course text)": [
@@ -323,6 +331,7 @@
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
    ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]],
+   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Book V degrees (supplement, display only)", ["Point", "Position", "Table", "Caveat"]]
   ],
   "configurations/Both": [
@@ -341,6 +350,7 @@
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
    ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]],
+   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Book V degrees (supplement, display only)", ["Point", "Position", "Table", "Caveat"]]
   ],
   "configurations/Sahl (course text)": [
@@ -398,7 +408,8 @@
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
-   ["Favor & Recompense", ["Planet", "Condition", "Favored By"]]
+   ["Favor & Recompense", ["Planet", "Condition", "Favored By"]],
+   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]]
   ],
   "configurations/Both": [
    ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
@@ -418,7 +429,8 @@
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
    ["Reflection of Light", ["Reflection Type", "Detail"]],
-   ["Favor & Recompense", ["Planet", "Condition", "Favored By"]]
+   ["Favor & Recompense", ["Planet", "Condition", "Favored By"]],
+   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]]
   ],
   "configurations/Sahl (course text)": [
    ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
