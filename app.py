@@ -4556,8 +4556,21 @@ DIGNITY_ORDER = {
 # right ascension and declination of an ecliptic degree (swe.cotrans), the
 # ascensional difference for the latitude, the oblique ascension RA - AD,
 # and the diurnal hourly time (90 + AD) / 6 in degrees of right ascension
-# per seasonal hour; the hourly time of the opposite degree is the
-# nocturnal one, (90 - AD) / 6.
+# per seasonal hour; the nocturnal hourly time is (90 - AD) / 6, derived
+# from the SAME ascensional difference so the two semi-arcs close to 180
+# exactly (computing the nocturnal one from the opposite degree is not
+# exactly antisymmetric in floating point, and the sliver it left open
+# once divided by a zero semi-arc; fixed 2026-09-08).
+#
+# Domain. The ascension-to-degree inverse is closed-form and unique only
+# where every ecliptic degree rises and sets, |latitude| + obliquity < 90.
+# Beyond that some degrees are circumpolar, the oblique ascension is not
+# injective (at 70N three longitudes share OA = 0 and two of them never
+# cross the horizon), and at the critical latitude itself the mapping has a
+# flat interval. There _lon_with_oblique_ascension() returns None and the
+# rays table says the method does not apply, in the file's [UNCERTAIN --]
+# style, rather than printing a fabricated ray. Owner's call to overturn
+# (2026-09-08).
 #
 # One thing the text leaves open: 18 adds the correction to the candidate
 # position NEAREST the planet (left rays), 21 to the more DISTANT (right
@@ -4583,11 +4596,20 @@ def _oblique_ascension(lon, obliquity, geo_lat):
     ra, decl = _ra_decl(lon, obliquity)
     return (ra - _ascensional_difference(decl, geo_lat)) % 360.0
 
-def _hourly_time(lon, obliquity, geo_lat):
-    """Diurnal hourly time of the degree: a sixth of its diurnal semi-arc,
-    in degrees of right ascension per seasonal hour (fn. 250)."""
+def _semiarcs(lon, obliquity, geo_lat):
+    """Diurnal and nocturnal semi-arcs of the degree, in degrees of right
+    ascension, from ONE ascensional difference: 90 + AD and 180 - (90 + AD),
+    so that they close to 180 exactly in floating point. A sixth of each is
+    the hourly time (fn. 250), in degrees of right ascension per seasonal
+    hour."""
     _ra, decl = _ra_decl(lon, obliquity)
-    return (90.0 + _ascensional_difference(decl, geo_lat)) / 6.0
+    diurnal = 90.0 + _ascensional_difference(decl, geo_lat)
+    return diurnal, 180.0 - diurnal
+
+def _ascensional_method_applies(obliquity, geo_lat):
+    """Where every ecliptic degree rises and sets, so the oblique ascension
+    has a unique inverse (see the domain note above RAY_ASPECTS)."""
+    return abs(geo_lat) + obliquity < 90.0
 
 def _lon_with_right_ascension(ra, obliquity):
     """The ecliptic degree whose right ascension is ra (fn. 251's inverse)."""
@@ -4595,37 +4617,48 @@ def _lon_with_right_ascension(ra, obliquity):
     return math.degrees(math.atan2(math.sin(r), math.cos(r) * math.cos(math.radians(obliquity)))) % 360.0
 
 def _lon_with_oblique_ascension(oa, obliquity, geo_lat):
-    """The ecliptic degree whose oblique ascension at this latitude is oa:
-    a coarse scan, then bisection on the signed circular difference."""
-    def diff(lon):
-        return ((_oblique_ascension(lon, obliquity, geo_lat) - oa + 180.0) % 360.0) - 180.0
-    best = min(range(0, 360), key=lambda d: abs(diff(float(d))))
-    lo, hi = best - 1.0, best + 1.0
-    dlo = diff(lo)
-    for _ in range(40):
-        mid = (lo + hi) / 2.0
-        dm = diff(mid)
-        if (dm < 0) == (dlo < 0):
-            lo, dlo = mid, dm
-        else:
-            hi = mid
-    return ((lo + hi) / 2.0) % 360.0
+    """The ecliptic degree whose oblique ascension at this latitude is oa
+    (fn. 251's inverse), in closed form:
+        tan(lon) = sin(oa) / (cos(eps) cos(oa) - sin(eps) tan(phi)),
+    exact to 2e-13 degrees over |phi| <= 65 (tests/test_spherical_math.py).
+    Returns None outside the domain |phi| + eps < 90, where the inverse is
+    not unique and sometimes does not exist. The scan-and-bisect this
+    replaced assumed the 1-degree cell with the smallest sampled residual
+    bracketed a sign change; above the polar circle it can miss a narrow
+    branch and return a degree six degrees off (found 2026-09-08)."""
+    if not _ascensional_method_applies(obliquity, geo_lat):
+        return None
+    a, e, p = math.radians(oa % 360.0), math.radians(obliquity), math.radians(geo_lat)
+    return math.degrees(math.atan2(math.sin(a), math.cos(e) * math.cos(a) - math.sin(e) * math.tan(p))) % 360.0
 
 def _hours_from_stake(lon, armc, obliquity, geo_lat):
     """VII.7, 3-13: the planet's quadrant and its distance in seasonal hours
     from the stake the text measures from. Returns (quadrant, stake, hours)."""
     ra, _decl = _ra_decl(lon, obliquity)
-    h_day = _hourly_time(lon, obliquity, geo_lat)                 # "the portions of the hours of the degree of the planet"
-    h_night = _hourly_time((lon + 180.0) % 360.0, obliquity, geo_lat)   # "... of the degree of the opposition of the planet"
+    # The day and night semi-arcs from one ascensional difference: "the
+    # portions of the hours of the degree of the planet" and "of the degree
+    # of the opposition of the planet", which are 90 + AD and 90 - AD. The
+    # classification uses the semi-arcs themselves as boundaries.
+    arc_day, arc_night = _semiarcs(lon, obliquity, geo_lat)
+    h_day, h_night = arc_day / 6.0, arc_night / 6.0
     d = (ra - armc) % 360.0                                       # right circle of the planet less that of the Midheaven
-    if d < 6.0 * h_day:                                            # 4-5: between the Midheaven and the Ascendant
-        return 'Midheaven to Ascendant', 'Midheaven', d / h_day
+    if d >= 360.0:                                                 # a tiny negative remainder rounds to exactly 360.0
+        d = 0.0
+
+    def hours(arc, hourly):
+        # A zero semi-arc (a degree that never rises, or never sets, at this
+        # latitude) is a quadrant of no extent: a planet classified into it
+        # stands at its stake. Degenerate, and said so rather than divided.
+        return 0.0 if hourly == 0.0 else arc / hourly
+
+    if d < arc_day:                                                # 4-5: between the Midheaven and the Ascendant
+        return 'Midheaven to Ascendant', 'Midheaven', hours(d, h_day)
     if d < 180.0:                                                  # 6-8: between the Ascendant and the stake of the earth
-        return 'Ascendant to stake of the earth', 'Ascendant', (d - 6.0 * h_day) / h_night
+        return 'Ascendant to stake of the earth', 'Ascendant', hours(d - arc_day, h_night)
     d2 = d - 180.0                                                 # measured from the stake of the earth
-    if d2 < 6.0 * h_night:                                         # 9-10: between the stake of the earth and the setting
-        return 'Stake of the earth to setting', 'Stake of the earth', d2 / h_night
-    return 'Setting to Midheaven', 'Stake of the setting', (d2 - 6.0 * h_night) / h_day   # 11-13
+    if d2 < arc_night:                                             # 9-10: between the stake of the earth and the setting
+        return 'Stake of the earth to setting', 'Stake of the earth', hours(d2, h_night)
+    return 'Setting to Midheaven', 'Stake of the setting', hours(d2 - arc_night, h_day)   # 11-13
 
 def _circular_distance(a, b):
     return abs(((a - b + 180.0) % 360.0) - 180.0)
@@ -4644,8 +4677,11 @@ def cast_rays_by_ascension(lon, armc, obliquity, geo_lat, anchor='as written'):
     for name, arc in RAY_ASPECTS:
         from_ra = _lon_with_right_ascension(ra + arc, obliquity)
         from_oa = _lon_with_oblique_ascension(oa + arc, obliquity, geo_lat)
-        excess = _circular_distance(from_ra, from_oa)
-        if excess < 1e-9:
+        if from_oa is None:
+            # Outside the method's domain (see the note above RAY_ASPECTS):
+            # no second candidate, so no ray. None, never a guessed degree.
+            ray = None
+        elif (excess := _circular_distance(from_ra, from_oa)) < 1e-9:
             ray = from_ra
         else:
             near, far = sorted((from_ra, from_oa), key=lambda x: _circular_distance(x, lon))
@@ -4662,9 +4698,16 @@ def cast_rays_by_ascension(lon, armc, obliquity, geo_lat, anchor='as written'):
                          'hours': hours, 'quadrant': quadrant, 'stake': stake}
     return out
 
+RAYS_OUT_OF_DOMAIN = ("[UNCERTAIN -- Ptolemy's ascensional method does not apply at this latitude: "
+                      "|latitude| + obliquity is 90 or more, so some ecliptic degrees never rise or set and "
+                      "the ascensions of the city (VII.7, 15) have no unique inverse; no ray is given]")
+
 def evaluate_rays_by_ascension(planetary_data, armc, obliquity, geo_lat, anchor='as written'):
     """One row per planet and aspect: the zodiacal ray beside Ptolemy's
-    ascensional one, and how far apart they are."""
+    ascensional one, and how far apart they are. Outside the method's
+    domain the ascensional cell carries RAYS_OUT_OF_DOMAIN; the opposition
+    row (22, "in the same degree and minute") needs no ascensions and is
+    given at every latitude."""
     rows = []
     for planet, data in planetary_data.items():
         if planet == 'North Node':
@@ -4672,9 +4715,13 @@ def evaluate_rays_by_ascension(planetary_data, armc, obliquity, geo_lat, anchor=
         cast = cast_rays_by_ascension(data['longitude'], armc, obliquity, geo_lat, anchor)
         for name, _arc in RAY_ASPECTS + (('Opposition', 180.0),):
             r = cast[name]
+            if r['ascensional'] is None:
+                ascensional, apart = RAYS_OUT_OF_DOMAIN, '--'
+            else:
+                ascensional = get_degree_string(r['ascensional'])
+                apart = f"{_circular_distance(r['zodiacal'], r['ascensional']):.2f}°"
             rows.append({'Planet': planet, 'Ray': name, 'Zodiacal ray': get_degree_string(r['zodiacal']),
-                         'Ascensional ray (VII.7)': get_degree_string(r['ascensional']),
-                         'Apart': f"{_circular_distance(r['zodiacal'], r['ascensional']):.2f}°",
+                         'Ascensional ray (VII.7)': ascensional, 'Apart': apart,
                          'Hours from stake': f"{r['hours']:.2f} from the {r['stake']}"})
     return rows
 
