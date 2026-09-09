@@ -6913,6 +6913,17 @@ def evaluate_planets_in_houses(planetary_data, abu_mashar_condition, ascendant_l
 # rebuilt 2026-09-07 and is doubly verified: every cell matches the prose
 # restatement at VII.8, 3-8, and the fardar column sums to the 75 years
 # the text itself totals (VII.8, 3). Pinned in tests/test_base_tables.py.
+#
+# THE MIDDLE COLUMN USES TWO CONSTRUCTIONS, which is why the luminaries look
+# anomalous and must not be "corrected" to a single rule. The five planets take
+# the ordinary mean of least and great -- Saturn (30+57)/2 = 43.5, Jupiter
+# (12+79)/2 = 45.5, Mars (15+66)/2 = 40.5, Venus (8+82)/2 = 45, Mercury
+# (20+76)/2 = 48. The two luminaries halve the great year first:
+# (least + great/2)/2, giving the Sun (19+60)/2 = 39.5 and the Moon
+# (25+54)/2 = 39.5, not the 69.5 and 66.5 an ordinary mean would give. The
+# second construction is stated outright at Valens VII.5; established by an
+# independent source reconstruction, 2026-09-09, after two earlier passes here
+# had assumed one rule for all seven and read the luminaries as an error.
 PLANETARY_YEARS = {
     'Saturn':  {'fardar': 11, 'lesser': 30, 'middle': 43.5, 'greater': 57,  'mighty': 265},
     'Jupiter': {'fardar': 12, 'lesser': 12, 'middle': 45.5, 'greater': 79,  'mighty': 427},
