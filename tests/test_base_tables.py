@@ -174,7 +174,7 @@ def parse_figure_62(text):
     beside "11°-11°59'"), so a row whose two columns disagree fails here
     rather than being read one way or the other."""
     lines = text.splitlines()
-    end = next(i for i, l in enumerate(lines) if l.startswith("Figure 62 (Ab"))
+    end = next(i for i, l in enumerate(lines) if l.startswith("Figure 62 (Gr. Intr.)"))
     start = max(i for i in range(end) if lines[i].startswith("| Sign | Ordinal | Cardinal | Sign"))
     table, current = {}, [None, None]
     for line in lines[start + 2:end]:
@@ -260,8 +260,8 @@ def _ordinal_table(text, caption_prefix, header_prefix, sides):
 @pytest.mark.skipif(not BOOK_VII.is_file(), reason="corpus not on this machine (CI)")
 def test_v22_literals_match_the_corpus_figures_63_and_64():
     text = BOOK_VII.read_text()
-    assert _ordinal_table(text, "Figure 63 (Ab", "| Sign | Ordinal | Increasing", 1) == GOOD_FORTUNE_FIG63
-    assert _ordinal_table(text, "Figure 64 (Ab", "| Sign | Ordinal | Cardinal | Sign", 2) == ELEVATION_FIG64
+    assert _ordinal_table(text, "Figure 63 (Gr. Intr.)", "| Sign | Ordinal | Increasing", 1) == GOOD_FORTUNE_FIG63
+    assert _ordinal_table(text, "Figure 64 (Gr. Intr.)", "| Sign | Ordinal | Cardinal | Sign", 2) == ELEVATION_FIG64
 
 
 # --- Planetary years: Abu Ma'shar Figure 146 (VII.8), corpus, p. 487 ---
@@ -292,7 +292,7 @@ def test_fardars_total_the_75_years_the_text_gives(engine):
 @pytest.mark.skipif(not BOOK_VII.is_file(), reason="corpus not on this machine (CI)")
 def test_planetary_years_literal_matches_the_corpus_figure_146():
     lines = BOOK_VII.read_text().splitlines()
-    end = next(i for i, l in enumerate(lines) if l.startswith("**Figure 146"))
+    end = next(i for i, l in enumerate(lines) if l.startswith("**Figure 146 (Gr. Intr.)"))
     start = max(i for i in range(end) if lines[i].startswith("|      | *Fard"))
     glyph = dict(zip('♄♃♂☉♀☿☽', ['Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon']))
     got, nodes = {}, {}

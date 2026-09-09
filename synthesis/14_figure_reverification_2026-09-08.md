@@ -49,6 +49,12 @@ Caption labelling — a separate edit, tables untouched: `on_nativities.md` capt
 other side of each collision. The book's own list of figures in `sahl_frontmatter_reference.md` is left
 as the page prints it.
 
+> **Superseded later the same day.** The label was moved from the author axis to the volume axis and
+> extended to the whole corpus: all 128 captions in `consolidated_texts/` now read `(Sahl I)` or
+> `(Gr. Intr.)`, and PN IV's 141 read `(PN IV)`. "(Abū Ma'shar)" could not stand, because *Persian
+> Nativities IV* is his as well — it does not separate *Gr. Intr.* Fig. 98 from PN IV Fig. 98, which is
+> the collision this file was written about. See `consolidated_texts/DOCTRINAL_CAVEATS.md`.
+
 Record: a dated paragraph appended to `consolidated_texts/DOCTRINAL_CAVEATS.md`.
 
 ## Fixture discipline
