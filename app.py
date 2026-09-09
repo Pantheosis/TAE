@@ -145,9 +145,25 @@ def calculate_traditional_chart(dt_utc, lat, lon):
     descendant = (ascendant + 180.0) % 360.0
     ic = (mc + 180.0) % 360.0
     
-    sun_long = planetary_data['Sun']['longitude']
+    # True obliquity of the ecliptic at the moment (Lesson 5 worksheet
+    # line 15); computed here because sect needs it below.
+    obliquity = swe.calc_ut(jd, swe.ECL_NUT)[0][0]
 
-    is_diurnal = (sun_long - ascendant) % 360 > 180.0
+    # Sect from the Sun's ALTITUDE, not from its ecliptic longitude against
+    # the Ascendant. The old test, (Sun - Ascendant) % 360 > 180, asked
+    # whether the Sun's ecliptic degree lies in the eastern or western
+    # half-zodiac, which agrees with the horizon at ordinary latitudes but
+    # not near the poles (2026-01-01 00:00 UT at 70S: Sun three degrees up,
+    # read as Nocturnal) nor exactly on the horizon, where the Sun's own
+    # ecliptic latitude decides. Geocentric, no refraction, no parallax:
+    # sin(alt) = sin(phi) sin(delta) + cos(phi) cos(delta) cos(H), with H
+    # the hour angle ARMC - RA and RA/delta from the Sun's actual
+    # longitude, latitude and distance (swe.cotrans). Fixed 2026-09-08.
+    sun = planetary_data['Sun']
+    sun_ra, sun_decl, _r = swe.cotrans((sun['longitude'], sun['latitude'], sun['distance']), -obliquity)
+    _p, _d, _h = map(math.radians, (lat, sun_decl, ascmc[2] - sun_ra))
+    sun_sin_alt = math.sin(_p) * math.sin(_d) + math.cos(_p) * math.cos(_d) * math.cos(_h)
+    is_diurnal = sun_sin_alt > 0.0
     sect = 'Diurnal' if is_diurnal else 'Nocturnal'
 
     # From its LOT_DEFINITIONS row, like every other Lot in the file.
@@ -167,7 +183,7 @@ def calculate_traditional_chart(dt_utc, lat, lon):
         # meridian from the same houses call, and the true obliquity of the
         # ecliptic at the moment. Read by the Chart page's Calculation table.
         'armc': ascmc[2],
-        'obliquity': swe.calc_ut(jd, swe.ECL_NUT)[0][0],
+        'obliquity': obliquity,
     }
 
 # ==========================================
