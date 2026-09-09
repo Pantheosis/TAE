@@ -745,7 +745,7 @@ because of the Aquarius 17 collision.
 
 ---
 
-## D-22 — Non-reception Kind III: does it refuse a coexisting triplicity reception?
+## D-22 — Non-reception Kind III: does it refuse a coexisting triplicity reception? — **DECIDED 2026-09-08: it refuses**
 
 **Question.** When the applicant stands in its **own** fall and the receiver holds no house or
 exaltation there (Kind III, Ch. 3, 61), but does hold the triplicity (with or without the bound),
@@ -799,6 +799,31 @@ Dykes's reading, the change is to Kind III's test instead (triplicity rescues), 
 disappears the other way.
 
 ---
+
+**Decision (2026-09-08): suppress.** Kind III now joins Kind II in the D-2 refusal set at
+`app.py:3492` — `startswith(('II ', 'III '))`. The deciding point is the verbs: 61's "it will
+not be recognized" and *Questions* 1, 41's "**it does not accept them**" are Kind II's words,
+not Kind IV's "brings it down and diminishes". A refusal removes the row; a diminution
+annotates it. Sahl gives no precedence between 54–55 and 61 in so many words, so the rule is
+carried across from D-2 rather than derived afresh.
+
+61's own parenthesis is followed, not Dykes' fn. 22. The footnote reads the exemption as "any
+dignity", on which Kind III would never fire beside a reception at all; 61 says "by house or
+exaltation", on which it fires and the triplicity is what gets suppressed. That disagreement is
+real and is left recorded here rather than resolved.
+
+**Verified.** Zero of the six fixture charts carry a Kind III pair that also earns a reception —
+checked directly before the change, so `tables.json` was predicted not to move, and did not.
+Measured on 400 consecutive 1240 charts, the overlap occurs in **1.2%**. Pinned by three tests
+in `tests/test_decisions_2026_09_08.py`: the suppression itself (1240-01-18, Moon→Venus,
+"Lesser, triplicity alone (50)"); the interaction where Kind III and Kind IV fire on the *same*
+pair and the refusal must win outright rather than leave an annotated row (1240-09-19); and a
+negative control that the suppression is keyed to the refused pair and not the chart — fixture
+chart 1240-10-05 has two Kind III rows of its own and keeps its unrelated Moon/Venus reception.
+
+No fixture chart was added. The Favor precedent (1240-01-04) needed one because it added rows to
+render; this removes a row, and adding a whole chart's tables to pin one absence would cost more
+diff than it earns.
 
 ## D-23 — Rays by ascension above the polar circle: refuse, or return a value anyway? — **DECIDED 2026-09-08: refuse**
 

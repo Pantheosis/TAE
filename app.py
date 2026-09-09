@@ -3485,11 +3485,26 @@ def evaluate_reception(planetary_data, sect, sim=None):
         # comes to it from that." The receiver may hold its house or
         # exaltation at the applicant's place (Venus in Virgo receiving the
         # Moon from Taurus), and 49's "perfect reception" is not revoked by
-        # 62 -- so the row stays, marked brought down. (Kind III, 61, with
-        # Questions 1, 41's "it does not accept them", is not part of D-2
-        # and is left as it was: recorded in 13_open_decisions.md.)
+        # 62 -- so the row stays, marked brought down.
+        #
+        # Kind III (61) refuses too (decision D-22, 2026-09-08). The
+        # applicant stands in its OWN fall and the receiver holds no house
+        # or exaltation there: "it will not see it as fit for anything, as
+        # though the one asking is offering defeat, and it will not be
+        # recognized" (Ch. 3, 61), and in Sahl's other work "it DOES NOT
+        # ACCEPT THEM ... his sought matter will not be accomplished"
+        # (Questions Ch. 1, 41). Those are Kind II's verbs -- "not
+        # recognized", "does not accept" -- not Kind IV's "brings it down",
+        # so it suppresses rather than annotates. What it can suppress is
+        # only ever minor: 61's own parenthesis exempts house and
+        # exaltation, leaving the triplicity (50) with or without the bound
+        # (54-55). Dykes' fn. 22 on Questions 1, 41 reads the exemption
+        # wider -- "any dignity" -- on which Kind III would not fire here at
+        # all; 61's parenthesis is followed instead, and the disagreement is
+        # recorded in 13_open_decisions.md under D-22.
         non = evaluate_non_reception(planetary_data, sect)
-        refused = {(r['Connecting'], r['With']) for r in non if str(r['Kind']).startswith('II ')}
+        refused = {(r['Connecting'], r['With']) for r in non
+                   if str(r['Kind']).startswith(('II ', 'III '))}
         brought_down = {(r['Connecting'], r['With']) for r in non if str(r['Kind']).startswith('IV ')}
         kept = []
         for r in results:

@@ -429,3 +429,56 @@ def test_d1_rows_cover_seven_planets_and_seven_rays(engine):
     c = _fixture_chart(engine, "1240-05-23")
     rows = engine["evaluate_rays_by_ascension"](c["planetary_data"], c["armc"], c["obliquity"], LAT)
     assert len(rows) == 49 and {r["Ray"] for r in rows} == {n for n, _a in engine["RAY_ASPECTS"]} | {"Opposition"}
+
+
+# --- D-22 (decided 2026-09-08): Kind III refuses a coexisting reception -----
+# Sahl's Kind III (Ch. 3, 61) uses Kind II's verbs -- "it will not be
+# recognized", and in Questions Ch. 1, 41 "it does not accept them" -- not
+# Kind IV's "brings it down". So it suppresses the reception the same pair
+# would otherwise earn, rather than annotating it. What it can suppress is
+# only ever minor: 61's parenthesis exempts house and exaltation, leaving
+# the triplicity (50) with or without the bound (54-55).
+
+def _reception_pairs(engine, date):
+    from datetime import datetime
+    y, m, d = (int(x) for x in date.split('-'))
+    chart = engine["calculate_traditional_chart"](datetime(y, m, d, 12, 0), 51.5, -0.12)
+    rows = engine["evaluate_reception"](chart['planetary_data'], chart['sect'])
+    return {(r.get('Received'), r.get('Receiver')) for r in rows}
+
+
+def _kind_pairs(engine, date, prefix):
+    from datetime import datetime
+    y, m, d = (int(x) for x in date.split('-'))
+    chart = engine["calculate_traditional_chart"](datetime(y, m, d, 12, 0), 51.5, -0.12)
+    rows = engine["evaluate_non_reception"](chart['planetary_data'], chart['sect'])
+    return {(r['Connecting'], r['With']) for r in rows if str(r['Kind']).startswith(prefix)}
+
+
+def test_d22_kind_three_suppresses_the_reception_it_refuses(engine):
+    """1240-01-18: the Moon connects with Venus from her own fall, Venus
+    holding neither house nor exaltation there but the triplicity. Before
+    D-22 the engine listed 'Lesser, triplicity alone (50)' beside the
+    refusal; it must not now."""
+    assert ('Moon', 'Venus') in _kind_pairs(engine, '1240-01-18', 'III ')
+    assert ('Moon', 'Venus') not in _reception_pairs(engine, '1240-01-18')
+
+
+def test_d22_refusal_beats_the_kind_iv_annotation(engine):
+    """1240-09-19 carries Kind III and Kind IV on the same pair. A refusal
+    removes the row, so there is nothing left to mark 'brought down' -- the
+    two rules must not both fire and leave an annotated row standing."""
+    assert ('Moon', 'Venus') in _kind_pairs(engine, '1240-09-19', 'III ')
+    assert ('Moon', 'Venus') in _kind_pairs(engine, '1240-09-19', 'IV ')
+    assert ('Moon', 'Venus') not in _reception_pairs(engine, '1240-09-19')
+
+
+def test_d22_leaves_non_kind_three_receptions_alone(engine):
+    """The suppression is keyed to the refused pair, not to the chart. On
+    1240-01-18 two other receptions stand, and 1240-10-05 -- a fixture chart
+    with two Kind III rows of its own -- keeps its Moon/Venus reception
+    because that pair is not one of them."""
+    assert ('Moon', 'Mars') in _reception_pairs(engine, '1240-01-18')
+    assert ('Venus', 'Jupiter') in _reception_pairs(engine, '1240-01-18')
+    assert ('Moon', 'Venus') in _reception_pairs(engine, '1240-10-05')
+    assert ('Moon', 'Venus') not in _kind_pairs(engine, '1240-10-05', 'III ')
