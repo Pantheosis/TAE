@@ -800,6 +800,49 @@ disappears the other way.
 
 ---
 
+## D-23 — Rays by ascension above the polar circle: refuse, or return a value anyway? — **DECIDED 2026-09-08: refuse**
+
+**Question.** `cast_rays_by_ascension` inverts the ascensions of the city (VII.7, 15) to place
+each ray. Where `|latitude| + obliquity >= 90` that inverse does not exist uniquely: some
+ecliptic degrees never rise or set, and the forward function is not one-to-one. At latitude 70°
+with obliquity 23.4392911° the pre-fix code returned oblique ascension 0° for longitudes 0°, 90°
+**and** 270°, two of which have no ordinary horizon crossing at all. At the exact critical
+latitude the mapping has a flat interval, so even a zero residual would not establish uniqueness.
+Should the engine return its best guess, or decline?
+
+**Why it arose.** The old scan-and-bisect inverse did not merely become imprecise there — it
+returned confidently wrong answers. Verified: `_lon_with_oblique_ascension(35.0, 23.4392911,
+70.0)` returned 301.0 where the true root is 120.756, a residual of **−6.58°**; the second case
+was −3.22° off. Both are silent. An external audit found them, and both were reproduced here
+before any fix.
+
+**Decision.** `_lon_with_oblique_ascension` returns `None` outside the domain, and the rays table
+prints `RAYS_OUT_OF_DOMAIN` (`app.py:4715`) in the ascensional cell:
+
+> [UNCERTAIN -- Ptolemy's ascensional method does not apply at this latitude: |latitude| +
+> obliquity is 90 or more, so some ecliptic degrees never rise or set and the ascensions of the
+> city (VII.7, 15) have no unique inverse; no ray is given]
+
+The **zodiacal** ray is unaffected and still shown; only the ascensional column declines. Inside
+the domain the closed form `atan2(sin a, cos ε·cos a − sin ε·tan φ)` is exact to 1.7e-13°,
+verified independently over 93,960 cases.
+
+**Reasoning.** A wrong ray reads as authoritative; an absent one reads as absent. This matches
+what the file already does with `[UNCERTAIN -- ...]` in `PLANETS_IN_HOUSES` where the Reference
+Guide prints a bare "?", and it is the same instinct as `DOCTRINAL_CAVEATS.md`: record that the
+source or the method gives out, rather than papering over the gap. Ptolemy's own chapter
+presupposes tables it does not supply (fn. 250, 251); it never claims the method reaches the
+poles.
+
+**What changes.** Nothing at any inhabited latitude used in the fixtures — the domain bound is
+|lat| ≳ 66.5°. Tromsø, Fairbanks and Murmansk charts lose the ascensional column and keep the
+zodiacal one. Pinned in `tests/test_spherical_math.py:202`.
+
+**Cost.** Already implemented, merged at `d8421d3`.
+
+
+---
+
 ## Method note for the frequencies
 
 Charts: 400 random (`random.Random(20260908)`; year 1200–2000, day 1–28, hour 0–24, latitude −50 to
