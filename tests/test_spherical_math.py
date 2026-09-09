@@ -245,3 +245,74 @@ def test_b3_sect_agrees_with_the_altitude_test_at_ordinary_latitudes(engine):
 def test_b3_the_chart_still_reports_the_obliquity_it_used(engine):
     chart = engine["calculate_traditional_chart"](datetime(1240, 5, 23, 13, 45), 43.7792, 11.2463)
     assert abs(chart["obliquity"] - swe.calc_ut(chart["julian_day"], swe.ECL_NUT)[0][0]) < 1e-12
+
+
+# --- B3 continued: the prenatal syzygy's "above the horizon" ----------------
+# The same ecliptic proxy decided which luminary was up at a Preventional
+# syzygy and the syzygy chart's own sect. For the Moon the proxy is wrong
+# at ORDINARY latitudes too, since its ecliptic latitude reaches five
+# degrees: within a few degrees of the horizon the proxy and the altitude
+# disagree (46 of 3,000 random charts at |lat| <= 60; 16 Preventional
+# syzygy degrees moved). The Sun never disagreed in that sweep.
+
+def _syzygy_flags(jd, lat, lon):
+    """Independent altitude test for both luminaries at the syzygy moment."""
+    _, ascmc = swe.houses(jd, lat, lon, b"B")
+    obliquity = swe.calc_ut(jd, swe.ECL_NUT)[0][0]
+    out = {}
+    for name, body in (("Sun", swe.SUN), ("Moon", swe.MOON)):
+        r = swe.calc_ut(jd, body)[0]
+        ra, dec, _d = swe.cotrans((r[0], r[1], r[2]), -obliquity)
+        p, d, h = map(math.radians, (lat, dec, ascmc[2] - ra))
+        out[name] = (math.sin(p) * math.sin(d) + math.cos(p) * math.cos(d) * math.cos(h) > 0.0, r[0])
+    return out
+
+
+def _old_proxy_pick(jd, lat, lon):
+    _, ascmc = swe.houses(jd, lat, lon, b"B")
+    sun, moon = swe.calc_ut(jd, swe.SUN)[0][0], swe.calc_ut(jd, swe.MOON)[0][0]
+    sun_up, moon_up = (sun - ascmc[0]) % 360.0 > 180.0, (moon - ascmc[0]) % 360.0 > 180.0
+    return sun if (sun_up and not moon_up) else moon
+
+
+SYZYGY_FLIPS = [
+    # (birth UT, lat, lon, luminary the altitude rule picks): Preventional
+    # births whose syzygy degree the old proxy got wrong.
+    # Polar: the Sun up and the Moon down by altitude; the proxy read the
+    # Moon up and defaulted to it.
+    (datetime(1375, 10, 15, 20, 20, 57), -74.96408391086848, -0.08166520555499801, "Sun"),
+    # Ordinary latitude: BOTH luminaries a hair above the horizon (the Moon
+    # by its own ecliptic latitude), so the rule defaults to the Moon; the
+    # proxy read the Moon down and chose the Sun.
+    (datetime(1740, 12, 15, 3, 17, 20), -58.744603212943986, -71.45233155269433, "Moon"),
+]
+
+
+@pytest.mark.parametrize("dt,lat,lon,picked", SYZYGY_FLIPS)
+def test_b3_preventional_syzygy_takes_the_luminary_that_is_really_up(engine, dt, lat, lon, picked):
+    chart = engine["calculate_traditional_chart"](dt, lat, lon)
+    s = engine["calculate_prenatal_syzygy"](chart["julian_day"], lat, lon, chart["houses"])
+    assert s["event_type"] == "Preventional"
+    flags = _syzygy_flags(s["jd_syzygy"], lat, lon)
+    expect = "Sun" if (flags["Sun"][0] and not flags["Moon"][0]) else "Moon"
+    assert expect == picked
+    assert abs(s["syzygy_longitude"] - flags[picked][1]) < 1e-9
+    assert s["sect_diurnal"] == flags["Sun"][0]
+    old = _old_proxy_pick(s["jd_syzygy"], lat, lon)
+    assert abs(((old - s["syzygy_longitude"] + 180.0) % 360.0) - 180.0) > 1.0   # the old code chose the other luminary
+
+
+def test_b3_syzygy_flags_agree_with_the_altitude_test_at_ordinary_latitudes(engine):
+    rng = random.Random(20260908)
+    start = datetime(1200, 1, 1)
+    span = (datetime(2100, 1, 1) - start).total_seconds()
+    for _ in range(600):
+        dt = (start + timedelta(seconds=rng.uniform(0.0, span))).replace(microsecond=0)
+        lat, lon = rng.uniform(-60.0, 60.0), rng.uniform(-180.0, 180.0)
+        chart = engine["calculate_traditional_chart"](dt, lat, lon)
+        s = engine["calculate_prenatal_syzygy"](chart["julian_day"], lat, lon, chart["houses"])
+        flags = _syzygy_flags(s["jd_syzygy"], lat, lon)
+        assert s["sect_diurnal"] == flags["Sun"][0], (dt, lat, lon)
+        if s["event_type"] == "Preventional":
+            expect = flags["Sun"][1] if (flags["Sun"][0] and not flags["Moon"][0]) else flags["Moon"][1]
+            assert abs(s["syzygy_longitude"] - expect) < 1e-9, (dt, lat, lon)

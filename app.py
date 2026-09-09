@@ -97,6 +97,18 @@ def write_saved_charts(charts):
 # ==========================================
 
 @st.cache_data(max_entries=32, show_spinner=False)
+def _sin_altitude(ecl_lon, ecl_lat, distance, obliquity, armc, geo_lat):
+    """Sine of a body's geocentric altitude above the horizon of geo_lat:
+    sin(alt) = sin(phi) sin(delta) + cos(phi) cos(delta) cos(H), with the
+    hour angle H = ARMC - RA and RA/delta from the body's actual ecliptic
+    longitude, latitude and distance (swe.cotrans). No refraction, no
+    parallax. Positive is above the horizon. This, not the ecliptic proxy
+    (lon - Ascendant) % 360 > 180, decides sect and which luminary was up:
+    the proxy inverts near the poles and on the horizon (fixed 2026-09-08)."""
+    ra, decl, _r = swe.cotrans((ecl_lon, ecl_lat, distance), -obliquity)
+    p, d, h = map(math.radians, (geo_lat, decl, armc - ra))
+    return math.sin(p) * math.sin(d) + math.cos(p) * math.cos(d) * math.cos(h)
+
 def calculate_traditional_chart(dt_utc, lat, lon):
     year, month, day = dt_utc.year, dt_utc.month, dt_utc.day
     hour = dt_utc.hour + dt_utc.minute/60.0 + dt_utc.second/3600.0
@@ -149,21 +161,16 @@ def calculate_traditional_chart(dt_utc, lat, lon):
     # line 15); computed here because sect needs it below.
     obliquity = swe.calc_ut(jd, swe.ECL_NUT)[0][0]
 
-    # Sect from the Sun's ALTITUDE, not from its ecliptic longitude against
-    # the Ascendant. The old test, (Sun - Ascendant) % 360 > 180, asked
-    # whether the Sun's ecliptic degree lies in the eastern or western
-    # half-zodiac, which agrees with the horizon at ordinary latitudes but
-    # not near the poles (2026-01-01 00:00 UT at 70S: Sun three degrees up,
-    # read as Nocturnal) nor exactly on the horizon, where the Sun's own
-    # ecliptic latitude decides. Geocentric, no refraction, no parallax:
-    # sin(alt) = sin(phi) sin(delta) + cos(phi) cos(delta) cos(H), with H
-    # the hour angle ARMC - RA and RA/delta from the Sun's actual
-    # longitude, latitude and distance (swe.cotrans). Fixed 2026-09-08.
+    # Sect from the Sun's ALTITUDE (_sin_altitude above), not from its
+    # ecliptic longitude against the Ascendant. The old test, (Sun -
+    # Ascendant) % 360 > 180, asked whether the Sun's ecliptic degree lies
+    # in the eastern or western half-zodiac, which agrees with the horizon
+    # at ordinary latitudes but not near the poles (2026-01-01 00:00 UT at
+    # 70S: Sun three degrees up, read as Nocturnal) nor exactly on the
+    # horizon, where the Sun's own ecliptic latitude decides. Fixed
+    # 2026-09-08.
     sun = planetary_data['Sun']
-    sun_ra, sun_decl, _r = swe.cotrans((sun['longitude'], sun['latitude'], sun['distance']), -obliquity)
-    _p, _d, _h = map(math.radians, (lat, sun_decl, ascmc[2] - sun_ra))
-    sun_sin_alt = math.sin(_p) * math.sin(_d) + math.cos(_p) * math.cos(_d) * math.cos(_h)
-    is_diurnal = sun_sin_alt > 0.0
+    is_diurnal = _sin_altitude(sun['longitude'], sun['latitude'], sun['distance'], obliquity, ascmc[2], lat) > 0.0
     sect = 'Diurnal' if is_diurnal else 'Nocturnal'
 
     # From its LOT_DEFINITIONS row, like every other Lot in the file.
@@ -3735,10 +3742,17 @@ def calculate_prenatal_syzygy(jd_natal, lat, lon, natal_houses):
     # to determine (a) which luminary was above the horizon for a
     # Preventional birth, and (b) the sect of the syzygy chart itself for
     # triplicity assignment.
+    # Above the horizon by ALTITUDE (_sin_altitude), from each luminary's
+    # full ecliptic position at the syzygy moment; the ecliptic proxy this
+    # replaced could invert near the poles and, for the Moon, whose
+    # ecliptic latitude reaches five degrees, within a few degrees of the
+    # horizon at any latitude (fixed 2026-09-08, with the chart's sect).
     _, ascmc_syzygy = swe.houses(jd_syzygy, lat, lon, b'B')
-    asc_syzygy = ascmc_syzygy[0]
-    sun_above_horizon = (sun_lon - asc_syzygy) % 360 > 180.0
-    moon_above_horizon = (moon_lon - asc_syzygy) % 360 > 180.0
+    obliquity_syzygy = swe.calc_ut(jd_syzygy, swe.ECL_NUT)[0][0]
+    sun_res = swe.calc_ut(jd_syzygy, swe.SUN)[0]
+    moon_res = swe.calc_ut(jd_syzygy, swe.MOON)[0]
+    sun_above_horizon = _sin_altitude(sun_res[0], sun_res[1], sun_res[2], obliquity_syzygy, ascmc_syzygy[2], lat) > 0.0
+    moon_above_horizon = _sin_altitude(moon_res[0], moon_res[1], moon_res[2], obliquity_syzygy, ascmc_syzygy[2], lat) > 0.0
     is_diurnal_syzygy = sun_above_horizon
 
     if event_type == 'Conjunctional':
