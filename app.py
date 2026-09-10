@@ -9676,6 +9676,49 @@ def pn4_completed_years(birth_date, target_date):
         years -= 1
     return max(years, 0)
 
+def pn4_birthday(birth_date, age):
+    """The `age`-th civil anniversary of the birth: the first day on which
+    pn4_completed_years(birth_date, day) == age. A 29 February birthday
+    falls on 1 March in a common year, which is the first day the count
+    of II.3, 1 turns."""
+    year = birth_date.year + int(age)
+    try:
+        return birth_date.replace(year=year)
+    except ValueError:
+        return birth_date.replace(year=year, month=3, day=1)
+
+def pn4_ordinal(n):
+    """1st, 2nd, 3rd, 4th ... 11th, 12th, 13th, 21st, 42nd."""
+    n = int(n)
+    if 10 <= n % 100 <= 20:
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
+# --- The sidebar's parsers (pure, so the harness can pin them) -------------
+TIME_STANDARD_OPTIONS = ("LMT (Local Mean Time)", "Standard time (pytz)", "Manual UTC offset")
+TARGET_MODE_OPTIONS = ("Date", "Age")
+
+def parse_iso_date(text):
+    """A date from 'YYYY-MM-DD', or None. Years 1-9999; the calendar the
+    digits belong to is decided by calculate_traditional_chart."""
+    try:
+        return datetime.strptime(str(text).strip(), "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        return None
+
+def parse_lat_lon(text):
+    """'45.37, -84.95' typed into the place box, as (lat, lon), or None if
+    the text is not two numbers in range."""
+    m = re.fullmatch(r"\s*([-+]?\d+(?:\.\d+)?)\s*[, ]\s*([-+]?\d+(?:\.\d+)?)\s*", str(text))
+    if not m:
+        return None
+    lat, lon = float(m.group(1)), float(m.group(2))
+    if abs(lat) > 90.0 or abs(lon) > 180.0:
+        return None
+    return lat, lon
+
 def _pn4_seg_degree(segment, ascendant_lon, chart_data, geo_lat):
     """The zodiacal degree the direction stands on at the start of a
     segment: the arc is in oblique ascension, so the degree comes back
@@ -10017,7 +10060,7 @@ gate = dict(LESSONS)[st.sidebar.selectbox(
          "computed. It only hides what the course has not covered yet. Move "
          "it forward as you progress.")]
 
-st.sidebar.header("Calculation Parameters")
+st.sidebar.header("Nativity")
 
 if "saved_charts" not in st.session_state:
     st.session_state["saved_charts"] = load_saved_charts()
@@ -10037,6 +10080,27 @@ def _apply_selected_chart():
                 st.session_state["time_input_key"] = time(h, m, s)
             except (ValueError, KeyError):
                 pass
+        # The time standard (2026-09-10). An entry saved before it was
+        # stored is flagged rather than silently cast at LMT: the owner's
+        # reference nativity, recorded EST, loaded forty minutes wrong.
+        if entry.get("time_standard") in TIME_STANDARD_OPTIONS:
+            st.session_state["time_standard_key"] = entry["time_standard"]
+            st.session_state.pop("_loaded_without_standard", None)
+        else:
+            st.session_state["_loaded_without_standard"] = name
+        if entry.get("utc_offset") is not None:
+            st.session_state["utc_offset_key"] = float(entry["utc_offset"])
+        # The target of the Timing page, both the store the engine reads
+        # and the page widgets, so the page shows what was loaded.
+        if entry.get("target_mode") in TARGET_MODE_OPTIONS:
+            for key in ("target_mode", "_target_mode"):
+                st.session_state[key] = entry["target_mode"]
+            if entry.get("target_date"):
+                for key in ("target_date", "_target_date"):
+                    st.session_state[key] = entry["target_date"]
+            if entry.get("target_age") is not None:
+                for key in ("target_age", "_target_age"):
+                    st.session_state[key] = int(entry["target_age"])
         if entry.get("lat") is not None and entry.get("lon") is not None:
             # Restore via Manual Coordinate Entry, using the saved lat/lon
             # directly, rather than re-running a City Search text query --
@@ -10072,26 +10136,70 @@ if del_col.button("\U0001F5D1", help="Delete the selected saved chart"):
         write_saved_charts(st.session_state["saved_charts"])
         st.rerun()
 
-date_string = st.sidebar.text_input("Local Date (YYYY-MM-DD)", "1240-05-23", key="date_input_key")
-try:
-    parsed_datetime = datetime.strptime(date_string, "%Y-%m-%d")
-    input_date = parsed_datetime.date()
-except ValueError:
-    st.sidebar.error("Invalid syntax. Enforce YYYY-MM-DD format (e.g., 1240-05-23).")
-    st.stop()
+# --- Configurable readings: read here, set on the pages ------------------
+# The Connection rule and the five readings the sources leave open are set
+# by controls on the page and table each one affects (Configurations, Chart,
+# Dignities, Lots), and remembered across navigation in a store key that
+# _persist() keeps up to date. They are READ here, at the top level, because
+# the engine functions below run before any page function does and read
+# these globals at call time. The widget key is preferred when present: on
+# the rerun a change triggers, the widget already carries the new value
+# while the store still holds the old one. The target of the Timing page
+# (2026-09-10) is read the same way, further down.
+def _reading(widget_key, store_key, default):
+    return st.session_state.get(widget_key, st.session_state.get(store_key, default))
 
-input_time = st.sidebar.time_input("Local Time", time(14, 30), key="time_input_key")
+# The date is typed, not picked (UI evaluation 2026-09-10, A.1): a calendar
+# popup is the wrong control for 1240, and the harness sets this key as a
+# string. A malformed date no longer stops the script -- which took the
+# page list with it -- but keeps the last good date and says so.
+date_string = st.sidebar.text_input(
+    "Date (YYYY-MM-DD)", "1240-05-23", key="date_input_key",
+    help="The civil date of birth. Before 1582-10-15 the digits are read as a JULIAN-calendar date, "
+         "as Solar Fire and astro.com read them; from that day on, Gregorian. Years before 1000 "
+         "are typed with their leading zeros (0787-08-10).")
+_parsed = parse_iso_date(date_string)
+if _parsed is None:
+    input_date = st.session_state.get("_date_last_good", datetime(1240, 5, 23).date())
+    st.sidebar.error(f"Date must be YYYY-MM-DD, e.g. 1240-05-23. Showing {input_date:%Y-%m-%d}.")
+else:
+    input_date = _parsed
+    st.session_state["_date_last_good"] = input_date
+_cal_note = ("Julian calendar (before the reform of 1582-10-15)"
+             if (input_date.year, input_date.month, input_date.day) < (1582, 10, 15) else "Gregorian calendar")
 
+# To the second: the engine reads seconds, and a rectified time has them.
+input_time = st.sidebar.time_input("Time", time(14, 30), key="time_input_key", step=timedelta(seconds=1))
+
+# The time standard gets a key, so it is saved with the chart (F1 of the
+# 2026-09-10 evaluation: the saved reference nativity, recorded EST, was
+# loading at LMT, forty minutes wrong). The resolved offset is shown in the
+# box directly under it, before the chart is cast, not at the sidebar's foot.
 time_standard = st.sidebar.selectbox(
-    "Time standard",
-    ["LMT (Local Mean Time)", "Standard time (pytz)"],
-    help="Use LMT for historical charts prior to the late 19th century, when local mean time was the civil standard and modern timezone boundaries didn't yet exist. Standard time relies on a timezone's principal-city offset, which can be several minutes off from a birthplace's true solar longitude.",
-)
+    "Time standard", TIME_STANDARD_OPTIONS, key="time_standard_key",
+    help="LMT (local mean time) for charts before standard time was adopted (late 19th century): the "
+         "offset is the longitude at 4 minutes a degree. Standard time: the named zone at the "
+         "birthplace, with daylight saving as the zone's own history records it. Manual: type the "
+         "offset the birth record states, east positive (EST is -5, CDT is -5, IST is +5.5).")
+utc_offset_manual = None
+if time_standard == TIME_STANDARD_OPTIONS[2]:
+    utc_offset_manual = st.sidebar.number_input(
+        "UTC offset (hours, east positive)", min_value=-14.0, max_value=14.0, value=0.0, step=0.25,
+        format="%.2f", key="utc_offset_key")
+time_standard_box = st.sidebar.empty()
+time_standard_box.caption(_cal_note)
+if st.session_state.get("_loaded_without_standard"):
+    st.sidebar.warning(f"'{st.session_state['_loaded_without_standard']}' was saved before the time "
+                       "standard was stored with a chart. Check it, then save the chart again.")
 
-st.sidebar.markdown("---")
-st.sidebar.header("Location Data")
+st.sidebar.header("Birthplace")
 
-manual_coords = st.sidebar.checkbox("Manual Coordinate Entry", key="manual_coords_key")
+# One control in effect (evaluation A.3): the search box also accepts a
+# typed "latitude, longitude" pair; the toggle exposes the coordinate
+# fields themselves, which is also how a saved chart is restored (the
+# loader writes these three keys, as the harness does).
+manual_coords = st.sidebar.toggle("Enter coordinates directly", key="manual_coords_key",
+                                  help="Or type them into the search box as 'latitude, longitude'.")
 
 if manual_coords:
     lat = st.sidebar.number_input("Latitude", value=43.7698, format="%.4f", key="manual_lat_key")
@@ -10111,9 +10219,13 @@ if manual_coords:
         location_query = f"Manual [{lat:.4f}, {lon:.4f}]"
 else:
     default_loc = st.session_state.get('location_input_key', 'Florence')
-    city_search = st.sidebar.text_input("City Search", default_loc, key="location_input_key")
-
-    if city_search:
+    city_search = st.sidebar.text_input("City, or latitude, longitude", default_loc, key="location_input_key",
+                                        placeholder="Florence  |  45.3733, -84.9553")
+    _typed = parse_lat_lon(city_search) if city_search else None
+    if _typed:
+        lat, lon = _typed
+        location_query = f"Manual [{lat:.4f}, {lon:.4f}]"
+    elif city_search:
         db_path = Path(__file__).parent / "atlas.db"
         if db_path.exists():
             with sqlite3.connect(db_path) as conn:
@@ -10148,45 +10260,50 @@ else:
             lat, lon, location_query = None, None, None
     else:
         lat, lon, location_query = None, None, None
+location_box = st.sidebar.empty()
 
-new_chart_name = st.sidebar.text_input("Chart Name (for saving)", value="", placeholder="e.g. Test Chart 1240")
-if st.sidebar.button("\U0001F4BE Save This Chart"):
+# --- The target of the Timing page: an age or a date -----------------------
+# Set on the Timing page, where it is used (the owner's instinct, 2026-09-10),
+# and remembered in store keys like the readings; read here because the
+# bundle below is computed before the page runs. "Age 42" is the 42nd
+# birthday; a date shows its completed years beside it on the page. Saved
+# with the chart.
+_today = datetime.now().date()
+target_mode = _reading("target_mode", "_target_mode", TARGET_MODE_OPTIONS[0])
+_date_target = parse_iso_date(_reading("target_date", "_target_date", _today.isoformat())) or _today
+if target_mode == TARGET_MODE_OPTIONS[1]:
+    target_age = max(0, int(_reading("target_age", "_target_age", pn4_completed_years(input_date, _date_target))))
+    target_date = pn4_birthday(input_date, target_age)
+    # The other reading follows, so switching the mode carries the target over.
+    st.session_state["_target_date"] = target_date.isoformat()
+else:
+    target_date = _date_target
+    target_age = pn4_completed_years(input_date, target_date)
+    st.session_state["_target_age"] = target_age
+
+new_chart_name = st.sidebar.text_input("Chart name (for saving)", value="", placeholder="e.g. Test Chart 1240")
+if st.sidebar.button("\U0001F4BE Save this chart"):
     trimmed_name = new_chart_name.strip()
     if trimmed_name:
         st.session_state["saved_charts"][trimmed_name] = {
             "date_string": date_string,
             "time_string": input_time.strftime("%H:%M:%S"),
+            "time_standard": time_standard,
+            "utc_offset": utc_offset_manual,
             "location_query": location_query,
             "lat": lat,
             "lon": lon,
+            "target_mode": target_mode,
+            "target_date": target_date.isoformat(),
+            "target_age": target_age,
         }
         if write_saved_charts(st.session_state["saved_charts"]):
+            st.session_state.pop("_loaded_without_standard", None)
             st.sidebar.success(f"Saved '{trimmed_name}'.")
         else:
             st.sidebar.error("Could not write saved_charts.json to disk.")
     else:
         st.sidebar.warning("Enter a name before saving.")
-
-st.sidebar.markdown("---")
-
-target_date_string = st.sidebar.text_input("Target Date for Prediction (YYYY-MM-DD)", datetime.now().strftime("%Y-%m-%d"))
-try:
-    target_date = datetime.strptime(target_date_string, "%Y-%m-%d").date()
-except ValueError:
-    st.sidebar.error("Invalid Target Date syntax.")
-    st.stop()
-
-# --- Configurable readings: read here, set on the pages ------------------
-# The Connection rule and the five readings the sources leave open are set
-# by controls on the page and table each one affects (Configurations, Chart,
-# Dignities, Lots), and remembered across navigation in a store key that
-# _persist() keeps up to date. They are READ here, at the top level, because
-# the engine functions below run before any page function does and read
-# these globals at call time. The widget key is preferred when present: on
-# the rerun a change triggers, the widget already carries the new value
-# while the store still holds the old one.
-def _reading(widget_key, store_key, default):
-    return st.session_state.get(widget_key, st.session_state.get(store_key, default))
 
 CONNECTION_PROFILE = _reading("connection_rule", "_connection_rule", "Sahl")
 FIVE_DEGREE_ALL_CUSPS = _reading("five_degree_all_cusps", "_five_degree_all_cusps", False)
@@ -10203,11 +10320,11 @@ PN4_MONTHLY_TURN = _reading("pn4_monthly_turn", "_pn4_monthly_turn", PN4_MONTHLY
 
 
 if location_query and lat is not None and lon is not None:
-    st.sidebar.success(f"**Resolved:** {lat:.4f}, {lon:.4f}")
-
     local_dt = datetime.combine(input_date, input_time)
+    tz_name = None
+    zone_note = ""
 
-    if time_standard == "LMT (Local Mean Time)":
+    if time_standard == TIME_STANDARD_OPTIONS[0]:
         # 15 degrees of longitude = 1 hour of time. East is +, West is -.
         offset_hours = lon / 15.0
         dt_utc = local_dt - timedelta(hours=offset_hours)
@@ -10217,7 +10334,15 @@ if location_query and lat is not None and lon is not None:
             f"{abs(int(offset_hours)):02d}:{int((abs(offset_hours) * 60) % 60):02d}:{int((abs(offset_hours) * 3600) % 60):02d}"
         )
         utc_offset_hours = offset_hours
-        st.sidebar.info(f"**Time standard:** Exact LMT\n**UTC offset:** {offset_str}")
+        time_standard_box.info(f"**Exact LMT** · UTC offset {offset_str}  \n"
+                               f"UT {dt_utc:%Y-%m-%d %H:%M:%S} · {_cal_note}")
+    elif time_standard == TIME_STANDARD_OPTIONS[2]:
+        utc_offset_hours = float(utc_offset_manual or 0.0)
+        dt_utc = local_dt - timedelta(hours=utc_offset_hours)
+        _tot = int(round(abs(utc_offset_hours) * 3600))
+        tz_name = f"UTC{'+' if utc_offset_hours >= 0 else '-'}{_tot // 3600:02d}:{(_tot % 3600) // 60:02d}"
+        time_standard_box.info(f"**Manual offset** {tz_name}  \n"
+                               f"UT {dt_utc:%Y-%m-%d %H:%M:%S} · {_cal_note}")
     else:
         tf = TimezoneFinder()
         tz_name = tf.timezone_at(lng=lon, lat=lat)
@@ -10231,14 +10356,14 @@ if location_query and lat is not None and lon is not None:
             try:
                 localized_dt = local_tz.localize(local_dt, is_dst=None)
             except pytz.exceptions.AmbiguousTimeError:
-                st.sidebar.error(
+                time_standard_box.error(
                     f"**{local_dt:%Y-%m-%d %H:%M}** happens twice in {tz_name} "
-                    "(daylight-saving fall-back). Choose LMT, or enter a time "
+                    "(daylight-saving fall-back). Choose LMT or a manual offset, or enter a time "
                     "outside the repeated hour."
                 )
                 st.stop()
             except pytz.exceptions.NonExistentTimeError:
-                st.sidebar.error(
+                time_standard_box.error(
                     f"**{local_dt:%Y-%m-%d %H:%M}** does not exist in {tz_name} "
                     "(the clocks jump over it at daylight-saving spring-forward). "
                     "Check the recorded time."
@@ -10251,11 +10376,12 @@ if location_query and lat is not None and lon is not None:
             utc_offset_hours = _off.total_seconds() / 3600.0
             _sign = '+' if utc_offset_hours >= 0 else '-'
             _tot = int(abs(_off.total_seconds()))
-            st.sidebar.info(
-                f"**Timezone:** {tz_name}\n**UTC offset:** "
-                f"{_sign}{_tot // 3600:02d}:{(_tot % 3600) // 60:02d}"
-                f"\n**UTC time:** {dt_utc:%Y-%m-%d %H:%M:%S}"
+            time_standard_box.info(
+                f"**{tz_name}** · UTC offset {_sign}{_tot // 3600:02d}:{(_tot % 3600) // 60:02d}"
+                f" ({localized_dt.tzname()})  \nUT {dt_utc:%Y-%m-%d %H:%M:%S} · {_cal_note}"
             )
+            zone_note = f" · {tz_name}"
+    location_box.success(f"**{escape(str(location_query))}**  \n{lat:.4f}, {lon:.4f}{zone_note}")
 
     if tz_name:
         chart_data = calculate_traditional_chart(dt_utc, lat, lon)
@@ -11020,6 +11146,41 @@ if location_query and lat is not None and lon is not None:
                        "*On the Revolutions of the Years of Nativities* (*Persian Nativities* IV), "
                        "cited as Book.chapter, sentence. What that book does not settle is listed "
                        "at the foot of the page rather than filled in.")
+
+            # --- The year under examination (2026-09-10) ----------------------
+            # The target lives here, where it is used, not in the sidebar with
+            # the nativity. Its store keys are read at the top level (the
+            # bundle is computed before this page runs); the widgets here
+            # write them through _persist, as the readings do.
+            st.subheader("The year under examination",
+                         help="Every table on this page keys on completed civil anniversaries (II.3, 1: "
+                              "\"for every year the native has completed\"). Set the year as an age or as a "
+                              "date; the other is read back beside it. Remembered across pages and saved "
+                              "with the chart.")
+            t_mode, t_value, t_read = st.columns([1, 1.4, 2.6])
+            with t_mode:
+                _reading_radio("Target by", TARGET_MODE_OPTIONS, "target_mode", "_target_mode",
+                               help="Age: the completed years, i.e. the birthday that opens the year. "
+                                    "Date: any civil date; its completed years are shown beside it.")
+            with t_value:
+                if target_mode == TARGET_MODE_OPTIONS[1]:
+                    # No upper bound: the default chart is 1240, and "past the
+                    # table" is a state the page reports, not an error.
+                    st.number_input("Age (completed years)", min_value=0, value=int(target_age), step=1,
+                                    key="target_age")
+                    _persist("target_age", "_target_age", target_age)
+                else:
+                    st.text_input("Target date (YYYY-MM-DD)", value=target_date.isoformat(), key="target_date")
+                    _persist("target_date", "_target_date", target_date.isoformat())
+                    if parse_iso_date(st.session_state.get("target_date", target_date.isoformat())) is None:
+                        st.caption(f"Not a YYYY-MM-DD date; using {target_date:%Y-%m-%d}.")
+            with t_read:
+                _sr_dt = pn4_datetime_from_jd(pn4['jd_sr'])
+                st.markdown(
+                    f"**{target_date:%Y-%m-%d}** -- age **{target_age}** completed "
+                    f"(born {input_date:%Y-%m-%d}; the {pn4_ordinal(target_age)} birthday opens this year).  \n"
+                    f"The revolution of the year fell on **{_sr_dt:%Y-%m-%d}** UT; the target is in month "
+                    f"**{pn4['month']}** of 12.")
 
             st.subheader("The revolution of the year",
                          help="I.2, 1: a revolution is the moment the Sun comes back to \"his position in which he was "
