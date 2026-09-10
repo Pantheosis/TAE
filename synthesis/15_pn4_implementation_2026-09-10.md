@@ -524,6 +524,51 @@ differences are stated in the row.
 generalisation; the delineations. The next prompt, per the brief, is indicators 5–19 of the
 year (II.1, 10–24) — of which #5 is now built.
 
+### 4g. II.1, 11–24: indicators 6–19, the fact each one reads — built 2026-09-10, second session
+
+Technique 6 of the continuation brief, put to the owner with the four-point prompt. Chosen as
+recommended: **the positional nine computed, the other four as honest rows** — over applying the
+static connection test to the revolution for #7 and #15 without II.22's condition.
+
+**Re-checked in the corpus before writing:**
+
+| Citation | What it had to support | Held? |
+|---|---|---|
+| **II.1, 11–25** + fn 8–23 | the fourteen indicators, their chapters, the ranking | yes |
+| **V.1, 1–3** | transits to rooted positions graded: the degree, the bound, the sign | yes |
+| **VI.3, 1–5** | the revolution's Ascendant and lord; the terminal sign and the revolution's Ascendant as one natal house, with a revolution planet in it | yes |
+| **VI.4, 1–3** | the year reaching a sign with a natal planet, "or that sign was the Ascendant of the revolution" | yes |
+| **VI.5, 1–4** | the three places: natal Ascendant, terminal sign, revolution's Ascendant | yes |
+| **VI.6, 1–2** + fn 128; **3–7** + fn 129 | the three lords "relative to its place" = relative to its own Ascendant; the lords' connections | yes |
+| **VII.9, 1** | the Head and Tail against the same three places | yes |
+| **VIII.1** | the planets in their own or another's house and bound | yes |
+| **II.22, 1–4** | the Moon's connections "so long as she is in her own sign"; void → the lord of her house | yes |
+
+**Stated, not presupposed.** Every row reads a fact the sentences name. What is NOT computed, and
+each row says: #7 and #15 need a connection read in the revolution, and II.22's condition is that
+it perfects before the Moon leaves her sign, which the engine's static natal-chart test does not
+encode; #16 and #17 follow the year's transits, which the engine does not track. Nothing here
+delineates: II.6–21, V, VI.3–6, VII.9 and VIII.1–15 are the judgments and are not built.
+
+**What was built.** `_pn4_transit_grade` (V.1, 2–3), `_pn4_house_from`, `pn4_further_indicators`
+— fourteen rows in II.1, 25's order with `#`, `Indicator`, `Reads`, `Source`; the bundle carries
+`further_rows`; one section, one table and a caption under the indicators table.
+
+**What pins it.** Five fixtures: fourteen rows numbered 6–19 with the four honest rows saying
+what they omit; V.1's three grades (20.5, 23 and 27 Aries against natal 20 Aries) and a quiet
+revolution reading "none, even by sign"; fn 128's own example (revolution Ascendant Scorpio, Mars
+in Capricorn: house 3 from Scorpio); VI.3, 3's coincidence and VI.4's natal planets in the
+terminal sign; VI.5's three-place counting for a planet and VII.9's for the Head and Tail, with
+VIII's own-house/own-bound reading (Mars at 0 Aquarius: Saturn's house, Mercury's bound).
+
+**Verification.** Doctrine fixtures 201 (were 196). `tables.json` **+6 / −0**. Full suite
+**2514 passed**, five of them new; `test_base_tables.py` 121 / 0. Rendered in the browser.
+
+**Left undone, on purpose.** The connections of #7 and #15; the year's transits of #16 and #17;
+all delineation. The next prompt, per the brief, is the governor (IX.9, 1–10; IX.2, 4–7), which
+can only be partial because one of its eight indicators is the distributor from the longevity
+releaser.
+
 ### Refused at the poles
 
 `pn4_distribution_from_ascendant` returns `None` where |latitude| + obliquity ≥ 90°, on the

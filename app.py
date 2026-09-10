@@ -7843,6 +7843,156 @@ def pn4_turning_rows(chart_data, completed_years):
                         PN4_TURNING_DIRECTION_REFUSED))
     return rows
 
+# --- II.1, 11-24: indicators 6-19 of the year, the FACT each one reads ----
+# II.1, 5-24 list nineteen indicators and II.1, 25 ranks them. The first
+# five are computed above. Of the rest, each READS a fact from the root
+# and the revolution and then judges it in a chapter of its own; the
+# facts are computed here, the judgments are not. Three kinds:
+#   positional (6, 8, 9, 10, 12, 13, 14, 18, 19): a lookup on charts
+#     already cast;
+#   connection-dependent (7, 15): II.22, 1-4 wants the Moon's connection
+#     to perfect "so long as she is in her own sign", and VI.6, 3-7 the
+#     house lords' connections in the revolution; the engine's connection
+#     test is a static one for the natal chart under the Configurations
+#     page's rule and does not encode II.22's condition -- NOT computed,
+#     and the row says so;
+#   through the year (16, 17): continuous transits -- NOT tracked.
+# Decided by the owner 2026-09-10 (positional nine, honest rows for the
+# other four). Nothing here delineates.
+
+def _pn4_transit_grade(sr_lon, natal_lon):
+    """V.1, 2-3: a planet in the revolution "reaches its own rooted
+    degree", or "the bound which it was in at the root", or "[only] that
+    sign in which it was". None if not even the sign."""
+    if get_zodiac_sign(sr_lon) != get_zodiac_sign(natal_lon):
+        return None
+    if abs((sr_lon - natal_lon + 180.0) % 360.0 - 180.0) < 1.0:
+        return 'degree'
+    if pn4_bound_lord(sr_lon) == pn4_bound_lord(natal_lon):
+        return 'bound'
+    return 'sign'
+
+def _pn4_house_from(lon, from_lon):
+    """Whole-sign house of `lon` counted from the sign of `from_lon`."""
+    return get_wsh_house(lon, from_lon)
+
+def pn4_further_indicators(chart_data, sr, year_lon):
+    """Indicators 6-19 of the year (II.1, 11-24): one row each, the fact
+    it reads computed where it is a lookup on the root and the
+    revolution, and stated as not computed where it is not."""
+    natal, rev = chart_data['planetary_data'], sr['planetary_data']
+    n_asc, r_asc = chart_data['ascendant'], sr['ascendant']
+    year_sign = get_zodiac_sign(year_lon)
+    lord = lambda lon: SIGN_TO_DOMICILE.get(get_zodiac_sign(lon), '-')
+    places = (('natal Ascendant', n_asc), ('sign of the terminal point', year_lon),
+              ('Ascendant of the revolution', r_asc))
+
+    def planets_in_sign(data, sign):
+        return [p for p in PN4_SEVEN if p in data and get_zodiac_sign(data[p]['longitude']) == sign]
+
+    rows = []
+    # 6
+    rows.append({'#': 6, 'Indicator': 'The Ascendant of the revolution, and its lord',
+                 'Reads': f"{get_zodiac_sign(r_asc)} ({get_degree_string(r_asc)}), lord {lord(r_asc)}",
+                 'Source': 'II.1, 11; VI.3, 1-2'})
+    # 7
+    moon = rev['Moon']['longitude']
+    rows.append({'#': 7, 'Indicator': 'The Moon and the planets she connects with in her sign; if void, the lord of her house',
+                 'Reads': f"the revolution's Moon in {get_zodiac_sign(moon)} ({get_degree_string(moon)}), lord of her house "
+                          f"{lord(moon)}; her connections within the sign are NOT computed -- II.22, 1-4 need the "
+                          f"connection to perfect before she leaves the sign, which the engine's static test does not encode",
+                 'Source': 'II.1, 12; II.22, 1-4'})
+    # 8
+    transits = []
+    for p in PN4_SEVEN:
+        if p not in rev:
+            continue
+        for q in PN4_SEVEN:
+            if q not in natal:
+                continue
+            grade = _pn4_transit_grade(rev[p]['longitude'], natal[q]['longitude'])
+            if grade:
+                transits.append(f"{p} on {'its own' if p == q else 'natal ' + q} place, by {grade}")
+    rows.append({'#': 8, 'Indicator': "Transits over rooted positions, one planet's or another's",
+                 'Reads': '; '.join(transits) if transits else 'none, even by sign',
+                 'Source': 'II.1, 13; V.1, 1-3'})
+    # 9
+    ly = lord(year_lon)
+    ly_lon = rev.get(ly, {}).get('longitude')
+    rows.append({'#': 9, 'Indicator': 'The lord of the year in one of the twelve houses of the revolution',
+                 'Reads': (f"{ly} in house {_pn4_house_from(ly_lon, r_asc)} of the revolution "
+                           f"({get_zodiac_sign(ly_lon)}, {get_degree_string(ly_lon)})") if ly_lon is not None else '-',
+                 'Source': 'II.1, 14; II.6, II.9, II.12, II.15, II.18, II.21'})
+    # 10
+    parts = []
+    for label, from_lon in places:
+        L = lord(from_lon)
+        L_lon = rev.get(L, {}).get('longitude')
+        if L_lon is not None:
+            parts.append(f"lord of the {label} ({L}): house {_pn4_house_from(L_lon, from_lon)} from {get_zodiac_sign(from_lon)}")
+    rows.append({'#': 10, 'Indicator': "The three lords relative to their own places, in the revolution",
+                 'Reads': '; '.join(parts), 'Source': 'II.1, 15; VI.6, 1-2 (fn 128: relative to its own Ascendant)'})
+    # 11
+    rows.append({'#': 11, 'Indicator': 'The turning of the planets and the twelve houses',
+                 'Reads': 'the turning table below', 'Source': 'II.1, 16; VI.2'})
+    # 12
+    h_year, h_rasc = _pn4_house_from(year_lon, n_asc), _pn4_house_from(r_asc, n_asc)
+    in_year = planets_in_sign(rev, year_sign)
+    in_rasc = planets_in_sign(rev, get_zodiac_sign(r_asc))
+    rows.append({'#': 12, 'Indicator': "The terminal sign or the revolution's Ascendant on a natal house, with a revolution planet in it",
+                 'Reads': (f"terminal sign {year_sign} = natal house {h_year}, revolution planets there: "
+                           f"{', '.join(in_year) or 'none'}; revolution Ascendant {get_zodiac_sign(r_asc)} = natal house "
+                           f"{h_rasc}, revolution planets there: {', '.join(in_rasc) or 'none'}; "
+                           f"{'the two are ONE house (VI.3, 3)' if h_year == h_rasc else 'two different houses'}"),
+                 'Source': 'II.1, 17; VI.3, 3-5'})
+    # 13
+    rows.append({'#': 13, 'Indicator': "The terminal sign or the revolution's Ascendant on a natal planet",
+                 'Reads': (f"natal planets in the terminal sign {year_sign}: {', '.join(planets_in_sign(natal, year_sign)) or 'none'}; "
+                           f"in the revolution's Ascendant {get_zodiac_sign(r_asc)}: "
+                           f"{', '.join(planets_in_sign(natal, get_zodiac_sign(r_asc))) or 'none'}"),
+                 'Source': 'II.1, 18; VI.4, 1-3'})
+    # 14
+    moves = []
+    for p in PN4_SEVEN:
+        if p in natal and p in rev:
+            nh = _pn4_house_from(natal[p]['longitude'], n_asc)
+            rh = [_pn4_house_from(rev[p]['longitude'], from_lon) for _l, from_lon in places]
+            moves.append(f"{p}: natal {nh} -> {rh[0]} / {rh[1]} / {rh[2]}")
+    rows.append({'#': 14, 'Indicator': 'A natal planet in another house in the revolution, from the three places',
+                 'Reads': '; '.join(moves) + ' (natal house -> from the natal Ascendant / the terminal sign / the revolution Ascendant)',
+                 'Source': 'II.1, 19; VI.5, 1-4'})
+    # 15
+    rows.append({'#': 15, 'Indicator': 'The connections of the lords of the houses with each other',
+                 'Reads': "NOT computed: VI.6, 3-7 read the lords' connections in the revolution; the engine's connection "
+                          "test is a static one for the natal chart under the Configurations page's rule",
+                 'Source': 'II.1, 20; VI.6, 3-7'})
+    # 16, 17
+    rows.append({'#': 16, 'Indicator': "Each planet's shifting through the houses, bounds, bodies, rays, twelfth-parts and Lots during the year",
+                 'Reads': 'NOT tracked: the year\'s transits are not followed', 'Source': 'II.1, 21; Books V, VI, VIII'})
+    rows.append({'#': 17, 'Indicator': 'The connections of the planets with each other during the year',
+                 'Reads': 'NOT tracked: the year\'s transits are not followed', 'Source': 'II.1, 22; VI.6; Book VII'})
+    # 18
+    dign = []
+    for p in PN4_SEVEN:
+        if p in rev:
+            L, B = lord(rev[p]['longitude']), pn4_bound_lord(rev[p]['longitude'])
+            dign.append(f"{p} in {get_zodiac_sign(rev[p]['longitude'])} ({'own house' if L == p else 'house of ' + L}; "
+                        f"{'own bound' if B == p else 'bound of ' + B})")
+    rows.append({'#': 18, 'Indicator': "Each planet in its own house or another's, its own bound or another's",
+                 'Reads': '; '.join(dign), 'Source': 'II.1, 23; VIII.1-15'})
+    # 19
+    node = rev.get('North Node', {}).get('longitude')
+    if node is not None:
+        head = [str(_pn4_house_from(node, f)) for _l, f in places]
+        tail = [str(_pn4_house_from(node + 180.0, f)) for _l, f in places]
+        reads = (f"Head in {get_zodiac_sign(node)}, houses {' / '.join(head)}; Tail in "
+                 f"{get_zodiac_sign(node + 180.0)}, houses {' / '.join(tail)} (from the natal Ascendant / the terminal "
+                 f"sign / the revolution Ascendant)")
+    else:
+        reads = '-'
+    rows.append({'#': 19, 'Indicator': 'The Head and Tail', 'Reads': reads, 'Source': 'II.1, 24; VII.9, 1'})
+    return rows
+
 def pn4_fardar_at_age(age_years, sect):
     """The fardar lord and sub-lord at an age.
 
@@ -8387,6 +8537,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'orb': orb, 'orb_rows': orb_rows, 'natal_hour_lord': natal_hour_lord,
         'hour_approximate': hour_approximate,
         'turning_rows': pn4_turning_rows(chart_data, age),
+        'further_rows': pn4_further_indicators(chart_data, sr, year['longitude']),
         'age': age, 'month': month, 'jd_sr': jd_sr, 'jd_mr': jd_mr,
         'sr': sr, 'mr': mr, 'year': year, 'ninth': ninth, 'fardar': fardar,
         'segments': segments, 'current': current, 'ages': ages,
@@ -9506,6 +9657,21 @@ if location_query and lat is not None and lon is not None:
                               "distribution is the stronger (III.2, 2-3) -- the two are indexed to different scopes, "
                               "which is how PN IV resolves the corpus disagreement.")
             st.dataframe(pd.DataFrame(pn4['year_rows']), hide_index=True, width='stretch')
+
+            st.subheader("Indicators 6-19: the fact each one reads",
+                         help="II.1, 11-24 list the remaining fourteen indicators, in II.1, 25's order of strength. "
+                              "Each reads a fact from the root and the revolution and judges it in a chapter of its "
+                              "own; the facts are computed here, the judgments are not. Nine are lookups on the two "
+                              "charts. #7 and #15 need a connection to be read in the revolution, which the engine's "
+                              "static test does not do, and #16 and #17 follow the year's transits, which are not "
+                              "tracked -- those four rows say so.")
+            st.dataframe(pd.DataFrame(pn4['further_rows']), hide_index=True, width='stretch',
+                         height=_rows_height(14))
+            st.caption("Facts, not judgments: the delineation chapters behind these rows (II.6-21, V.1-8, VI.3-6, "
+                       "VII.9, VIII.1-15) are not built. #8 grades a transit as V.1, 2-3 does -- the degree, the "
+                       "bound, or only the sign. #10 counts each lord from its own Ascendant (fn 128). #14 and #19 "
+                       "count from the three places VI.5, 1 names. #12 and #13 read both the terminal sign and the "
+                       "revolution's Ascendant, as VI.3-4 do.")
 
             st.subheader("The lord of the orb (VI.1)",
                          help="VI.1, 4: \"the lord of the hour in which the native was born\" is assigned to the "

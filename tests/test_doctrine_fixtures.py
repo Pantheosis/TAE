@@ -1536,6 +1536,96 @@ def test_pn4_turning_lots_are_paired_to_dykes_footnotes_and_say_where_they_diffe
     assert len([r for r in lots if "fn 26 reverses" in r["Point"]]) == 2
 
 
+# --- II.1, 11-24: indicators 6-19, the fact each reads (built 2026-09-10) --
+
+def _two_charts(engine, natal=None, rev=None, n_asc=5.0, r_asc=95.0, year_lon=None):
+    """A root and a revolution for pn4_further_indicators, planets given
+    as longitudes. The Node is carried like the engine's chart."""
+    base = dict(Sun=100.0, Moon=200.0, Mercury=110.0, Venus=130.0, Mars=300.0, Jupiter=250.0, Saturn=20.0)
+    n = dict(base); n.update(natal or {})
+    r = dict(base); r.update(rev or {})
+    root = {"planetary_data": pdata(**n), "ascendant": n_asc, "houses": [], "sect": "Diurnal"}
+    root["planetary_data"]["North Node"] = {"longitude": r.pop("North_Node", 40.0), "latitude": 0.0, "distance": 1.0,
+                                           "speed_in_lon": -0.05, "speed_in_lat": 0.0, "speed_in_dist": 0.0}
+    sr = {"planetary_data": pdata(**r), "ascendant": r_asc, "houses": [], "sect": "Diurnal"}
+    sr["planetary_data"]["North Node"] = dict(root["planetary_data"]["North Node"])
+    return root, sr, (year_lon if year_lon is not None else n_asc)
+
+
+def _rows(engine, **kw):
+    root, sr, year_lon = _two_charts(engine, **kw)
+    return {r["#"]: r for r in engine["pn4_further_indicators"](root, sr, year_lon)}
+
+
+def test_pn4_further_indicators_are_fourteen_in_ii_1_25s_order(engine):
+    """II.1, 11-24: indicators 6 to 19, one row each, in the ranking's
+    order. The four that are not lookups say what they do not compute."""
+    rows = _rows(engine)
+    assert sorted(rows) == list(range(6, 20))
+    assert "NOT computed" in rows[7]["Reads"] and "II.22" in rows[7]["Reads"]
+    assert "NOT computed" in rows[15]["Reads"]
+    assert rows[16]["Reads"].startswith("NOT tracked") and rows[17]["Reads"].startswith("NOT tracked")
+
+
+def test_pn4_transit_over_rooted_position_is_graded_as_v_1_2_3(engine):
+    """V.1, 2-3: a planet in the revolution "reaches its own rooted
+    degree", or "the bound which it was in at the root", or "[only] that
+    sign". Saturn natal 20 Aries (Mars's bound 20-25): the revolution's
+    Saturn at 20.5 is by degree, at 23 by bound, at 27 (Saturn's bound)
+    by sign, and at 35 not at all."""
+    grade = engine["_pn4_transit_grade"]
+    assert grade(20.5, 20.0) == "degree"
+    assert grade(23.0, 20.0) == "bound"
+    assert grade(27.0, 20.0) == "sign"
+    assert grade(35.0, 20.0) is None
+    rows = _rows(engine, rev=dict(Saturn=23.0, Mars=100.4))       # Mars on natal Sun's degree
+    assert "Saturn on its own place, by bound" in rows[8]["Reads"]
+    assert "Mars on natal Sun place, by degree" in rows[8]["Reads"]
+    quiet = _rows(engine, rev=dict(Sun=40.0, Moon=70.0, Mercury=75.0, Venus=160.0, Mars=220.0, Jupiter=280.0, Saturn=340.0))
+    assert quiet[8]["Reads"] == "none, even by sign"
+
+
+def test_pn4_three_lords_are_counted_from_their_own_ascendants(engine):
+    """VI.6, 1 with fn 128: "relative to its own Ascendant. So if the
+    Ascendant of the revolution was Scorpio, see where Mars falls in the
+    revolutionary houses, relative to Scorpio." Revolution Ascendant 5
+    Scorpio, Mars at 10 Capricorn: house 3 from Scorpio."""
+    rows = _rows(engine, r_asc=215.0, rev=dict(Mars=280.0))
+    assert "lord of the Ascendant of the revolution (Mars): house 3 from Scorpio" in rows[10]["Reads"]
+    # natal Ascendant 5 Aries, its lord Mars at 10 Capricorn: house 10 from Aries
+    assert "lord of the natal Ascendant (Mars): house 10 from Aries" in rows[10]["Reads"]
+
+
+def test_pn4_coincidence_of_terminal_sign_and_revolution_ascendant(engine):
+    """VI.3, 3: "if the sign of the terminal point and the Ascendant of
+    the revolution were a single house of the rooted circle". Terminal
+    sign Cancer (natal house 4 from Aries) and revolution Ascendant 5
+    Cancer: one house; with the revolution Ascendant in Leo, two."""
+    one = _rows(engine, year_lon=95.0, r_asc=97.0)
+    assert "natal house 4" in one[12]["Reads"] and "ONE house" in one[12]["Reads"]
+    assert "revolution planets there: Sun, Mercury" in one[12]["Reads"]          # 10 and 20 Cancer
+    two = _rows(engine, year_lon=95.0, r_asc=125.0)
+    assert "two different houses" in two[12]["Reads"]
+    # VI.4, 1: natal planets in the terminal sign
+    assert one[13]["Reads"].startswith("natal planets in the terminal sign Cancer: Sun, Mercury")
+
+
+def test_pn4_house_shift_and_nodes_count_from_the_three_places(engine):
+    """VI.5, 1: the three places are the natal Ascendant, the sign of the
+    terminal point, and the revolution's Ascendant; VII.9, 1 reads the
+    Head and Tail against the same three. Natal Ascendant Aries,
+    terminal sign Cancer, revolution Ascendant Libra: the Sun at 10
+    Cancer is natal house 4, then 4 / 1 / 10; the Head at 10 Taurus is
+    houses 2 / 11 / 8 and the Tail 8 / 5 / 2."""
+    rows = _rows(engine, year_lon=95.0, r_asc=185.0)
+    assert "Sun: natal 4 -> 4 / 1 / 10" in rows[14]["Reads"]
+    assert "Head in Taurus, houses 2 / 11 / 8; Tail in Scorpio, houses 8 / 5 / 2" in rows[19]["Reads"]
+    # VIII: own house or another's, own bound or another's -- Mars 0 Aquarius is
+    # in Saturn's house and Mercury's bound (Egyptian Aquarius 0-7)
+    assert "Mars in Aquarius (house of Saturn; bound of Mercury)" in rows[18]["Reads"]
+    assert "Jupiter in Sagittarius (own house;" in rows[18]["Reads"]
+
+
 def test_pn4_indicator_two_against_abu_mashars_worked_months(engine):
     """IX.1, 15-16 works indicator #2 out month by month for a year that
     terminates at Cancer: "the lord of its first ninth-part is the Moon,
