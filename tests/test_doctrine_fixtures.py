@@ -13,6 +13,8 @@ Ma'shar, Great Introduction VII (Dykes) unless stated.
 """
 from __future__ import annotations
 
+from datetime import datetime, timedelta
+
 import pytest
 
 
@@ -1066,6 +1068,117 @@ def test_pn4_distribution_segments_are_contiguous_and_ordered(engine):
         assert a["to"] > a["from"]
 
 
+# --- III.1, 12: the meridian, by right ascension (built 2026-09-10) -------
+# PN IV works no example of a meridian direction -- III.1, 19-45 directs
+# the Ascendant only -- so nothing below is the author's arithmetic. These
+# pin the measure (right ascension, not oblique), the domain (every
+# latitude), the IC's relation to the MC, and the editor's animation check.
+
+def _angdiff(a, b):
+    return (a - b + 180.0) % 360.0 - 180.0
+
+
+def test_pn4_meridian_distribution_is_measured_in_right_ascension(engine):
+    """III.1, 12: "what is in the Midheaven or the fourth is directed by
+    the ascensions of the right sphere". From 0 Aries (right ascension 0)
+    the Sun's body at 0 Cancer -- the solstice, right ascension exactly 90
+    at any obliquity -- is met at 90.0 years; and every segment opens on
+    the degree whose right ascension is the arc, by the inverse.
+
+    The negative control is the Ascendant's own distribution from the same
+    degree: in oblique ascension at 43.78 N the same body is met about 65
+    years in, so a meridian run that agreed with it would be using the
+    wrong sphere."""
+    points = pdata(Sun=90.0)
+    segs = engine["pn4_distribution_from_meridian"](points, 0.0, 23.44, "Midheaven")
+    assert segs[0]["from"] == 0.0 and segs[0]["distributor"] == "Jupiter"     # 0 Aries, Egyptian
+    met = [s for s in segs if s["partner"] == "Sun" and s["partner_aspect"] == "body"]
+    assert met and met[0]["from"] == pytest.approx(90.0, abs=1e-9)
+    inverse = engine["_lon_with_right_ascension"]
+    for seg in segs:
+        assert _angdiff(inverse(seg["from"], 23.44), seg["from_lon"]) == pytest.approx(0.0, abs=1e-8)
+
+    asc = engine["pn4_distribution_from_ascendant"](points, 0.0, 23.44, 43.78)
+    met_asc = [s for s in asc if s["partner"] == "Sun" and s["partner_aspect"] == "body"]
+    assert abs(met_asc[0]["from"] - 90.0) > 20.0
+
+
+def test_pn4_meridian_distribution_does_not_refuse_at_the_poles(engine):
+    """Right ascension has no latitude in it and the meridian crosses the
+    ecliptic at every latitude, so III.1, 12's meridian direction has no
+    undefined domain: D-23's refusal is about inverting the OBLIQUE
+    ascension, which it never does. The Ascendant's run refuses at 78 N;
+    the meridian's takes no latitude and tiles its whole span."""
+    points = pdata(Sun=100.0, Moon=200.0, Mars=300.0)
+    assert engine["pn4_distribution_from_ascendant"](points, 110.0, 23.44, 78.0) is None
+    for point in engine["PN4_MERIDIAN_POINTS"]:
+        segs = engine["pn4_distribution_from_meridian"](points, 110.0, 23.44, point)
+        assert segs[0]["from"] == 0.0 and segs[-1]["to"] == 120.0
+        for a, b in zip(segs, segs[1:]):
+            assert a["to"] == pytest.approx(b["from"], abs=1e-12)
+            assert a["to"] > a["from"]
+
+
+def test_pn4_the_fourth_is_the_midheaven_run_half_a_turn_on(engine):
+    """Fn 14: "the fourth" is the IC itself, the point opposite the
+    Midheaven. Opposite points are 180 apart in right ascension, so every
+    boundary the fourth's direction crosses in its first 180 years is one
+    the Midheaven's direction crosses exactly 180 years later, on the same
+    degree, with the same distributor taking over."""
+    points = pdata(Sun=100.0, Moon=200.0, Mars=300.0, Saturn=15.0)
+    mc = engine["pn4_distribution_from_meridian"](points, 47.0, 23.44, "Midheaven", span_years=360.0)
+    ic = engine["pn4_distribution_from_meridian"](points, 47.0, 23.44, "Fourth (IC)", span_years=180.0)
+    assert ic[0]["from_lon"] == pytest.approx(227.0)
+    for seg in ic[1:]:
+        twins = [s for s in mc if abs(s["from"] - (seg["from"] + 180.0)) < 1e-6]
+        assert len(twins) == 1, seg
+        assert twins[0]["distributor"] == seg["distributor"]
+        assert _angdiff(twins[0]["from_lon"], seg["from_lon"]) == pytest.approx(0.0, abs=1e-9)
+
+
+def test_pn4_meridian_refuses_the_descendant(engine):
+    """Fn 15: "Abu Ma'shar has omitted the Descendant" from III.1, 12's
+    three positions. The engine directs the two points the sentence names
+    and nothing else by right ascension."""
+    with pytest.raises(ValueError):
+        engine["pn4_distribution_from_meridian"](pdata(Sun=90.0), 0.0, 23.44, "Descendant")
+
+
+def test_pn4_meridian_direction_against_dykes_four_minutes_a_degree(engine):
+    """The editor's check, since the author gives none. Appendix A (p. 673):
+    "the celestial sphere rotates 1 degree for every 4 minutes of clock
+    time" (fn 1: "actually 3m 59.34s"), so "animate the MC ... multiply
+    the age by 4 and add those minutes to the birth time, to see where the
+    MC lands at that age". Cast the chart, advance the clock by that much
+    per year, and the Midheaven swe.houses reports for the later moment
+    must be the degree the engine directs the Midheaven to -- and lie in
+    the bound of the engine's distributor for that age. swe.houses'
+    meridian is an independent path from the cotrans the engine uses."""
+    cast = engine["calculate_traditional_chart"]
+    birth, lat, lon = datetime(1985, 3, 20, 14, 30), 51.5, -0.12
+    root = cast(birth, lat, lon)
+    segs = engine["pn4_distribution_from_meridian"](root["planetary_data"], root["mc"], root["obliquity"])
+    ra_mc = engine["_ra_decl"](root["mc"], root["obliquity"])[0]
+    for age in (17.97, 42.0, 100.0):
+        later = cast(birth + timedelta(seconds=age * (3 * 60 + 59.34)), lat, lon)
+        directed = engine["_lon_with_right_ascension"](ra_mc + age, root["obliquity"])
+        assert _angdiff(later["mc"], directed) == pytest.approx(0.0, abs=0.01)
+        seg = engine["pn4_distribution_at_age"](segs, age)
+        assert seg["distributor"] == engine["pn4_bound_lord"](later["mc"])
+
+
+def test_pn4_segment_from_lon_agrees_with_the_ascension_inverse(engine):
+    """Every segment records the degree it opened on (from_lon), and the
+    page's Ascendant row still recovers that degree by inverting the
+    oblique ascension (_pn4_seg_degree). Two routes to one number; they
+    must agree on every segment or one of them is wrong."""
+    points = pdata(Sun=100.0, Moon=200.0, Mars=300.0, Venus=15.0)
+    segs = engine["pn4_distribution_from_ascendant"](points, 110.0, 23.44, 43.78)
+    for seg in segs:
+        got = engine["_pn4_seg_degree"](seg, 110.0, {"obliquity": 23.44}, 43.78)
+        assert _angdiff(got, seg["from_lon"]) == pytest.approx(0.0, abs=1e-8)
+
+
 def test_pn4_indicator_two_against_abu_mashars_worked_months(engine):
     """IX.1, 15-16 works indicator #2 out month by month for a year that
     terminates at Cancer: "the lord of its first ninth-part is the Moon,
@@ -1122,13 +1235,16 @@ def test_pn4_printed_reference_tables_derive_from_the_rules(engine):
     assert [r["A degree is"] for r in engine["PN4_UNIT_ROWS"]] == [
         "years", "months and days", "days and hours"]
     state = {r["Point directed"]: r["In this engine"] for r in engine["PN4_ASCENSION_ROWS"]}
-    # III.1, 12's three cases do not fail alike and the table must not say
-    # they do: one is built, one is stated by Abu Ma'shar and not built,
-    # one has no stated method at all. Exactly one may claim to be applied,
-    # and it must be the Ascendant -- the only point this engine directs.
-    # Building the meridian distribution means changing this line too.
-    assert [k for k, v in state.items() if v == "applied"] == ["Ascendant, and things in it"]
-    assert state["Midheaven, or the fourth"] == "stated by III.1, 12; not built"
+    # III.1, 12's three cases do not stand alike and the table must not say
+    # they do: two are built (since 2026-09-10), each for the DEGREE of its
+    # point and not for the planets in it; the third has no stated method
+    # at all. A row may claim "applied" only for what the engine directs,
+    # so directing a planet on an angle, or building the third case, means
+    # changing these strings too.
+    applied = {k: v for k, v in state.items() if v.startswith("applied")}
+    assert sorted(applied) == ["Ascendant, and things in it", "Midheaven, or the fourth"]
+    assert applied["Ascendant, and things in it"] == "applied to the degree of the Ascendant"
+    assert applied["Midheaven, or the fourth"] == "applied to the degrees of the Midheaven and the fourth"
     assert state["Anything else"] == "method not stated in PN IV"
 
 

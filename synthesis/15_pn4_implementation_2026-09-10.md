@@ -258,6 +258,82 @@ A second fixture pins the property that would catch a real error rather than a r
 sign and its opposite sum to the same value at every latitude — twice the equatorial span, not
 60 — because the two ascensional differences cancel.
 
+### 4b. III.1, 12: the meridian, by right ascension — built 2026-09-10, second session
+
+Put to the owner first, per `PN4_CONTINUATION_BRIEF.md` §7, as one technique with the four things a
+prompt owes (citation and whether stated; the releaser; a worked example; what the page must admit).
+The owner's answer: **build it, the MC and IC degrees only, applied at every latitude.**
+
+**Re-checked in the corpus before writing**, each opened and read in context:
+
+| Citation | What it had to support | Held? |
+|---|---|---|
+| **III.1, 12** + fn 14, 15, 16 | "what is in the Midheaven or the fourth is directed by the ascensions of the right sphere"; fn 14 "or rather, the IC itself"; fn 15 the Descendant omitted | yes |
+| **III.1, 7–11** | the bound-by-bound method is stated for "every bound you need, of the bounds of the Ascendant and the rest of the releasers, and the other planets and Lots" (10) | yes |
+| **III.1, 13, 15–16, 23–25, 47** | ladder; partner by body or ray; partner at birth — **worded for the Ascendant**; every point from its own position | yes |
+| **II.2, 4–16** | the year's indicators name the Ascendant's and the releaser's distributions (6–7, 12–13), not the meridian's | yes |
+| **VI.2, 15** | "the tenth house of the root is turned and directed" for authority and rank — the *profected house*, not the MC degree; **not** used as the topic | yes |
+| **Appendix A, p. 673** + fn 1 | Dykes' animation, 1° per 4 min (fn 1: 3 m 59.34 s), "the same thing with the degree of the Midheaven" | yes — an editor's procedure, used only as the cross-check |
+| **fn 4** (al-Qabīsī IV.12) | the Midheaven "for the profession" — an editor's note | yes, cited as such |
+
+**Stated, not presupposed.** III.1, 12 states the measure outright and III.1, 10 makes the method
+general. What PN IV does *not* state, and the page says instead of filling in: the distribution's
+topic (fn 4 and Dykes only); its place among the year's indicators (none, II.2); any worked example
+(III.1, 19–45 directs the Ascendant only); and the partner-at-birth rule for a point other than the
+Ascendant (carried by analogy). Planets *in* the Midheaven, which III.1, 12 also assigns to right
+ascension, are not directed.
+
+**What was built.** `_pn4_distribute` — III.1, 7–16 generalised over its measure, with
+`pn4_distribution_from_ascendant` now a wrapper that keeps its D-23 refusal;
+`pn4_distribution_from_meridian`, right ascension through `_ra_decl`, `point` one of
+`PN4_MERIDIAN_POINTS` and a `ValueError` for anything else (fn 15); `_pn4_distribution_rows`, one
+row-builder for all three tables. Every segment now carries `from_lon`, the degree it opened on.
+The Timing page gains one section, two tables and a five-point caption of what the source does
+not supply. The ascension-rule table's states are now `applied to the degree of the Ascendant` and
+`applied to the degrees of the Midheaven and the fourth`: the Ascendant row's old bare `applied`
+beside the label "and things in it" was imprecise, and the new row would have inherited the
+imprecision.
+
+**Domain: applied everywhere.** D-23 refuses where the *oblique* ascension has no inverse. Right
+ascension has no latitude in it and the meridian crosses the ecliptic at every latitude, so the
+arc is defined everywhere; the Ascendant's run refuses at 78° N and the meridian's does not, and a
+fixture holds both halves. The refusing alternative was offered to the owner and declined.
+
+**What pins it, there being no author's example.** Six fixtures in `test_doctrine_fixtures.py`:
+
+- the measure — from 0 Aries the Sun's body at 0 Cancer (the solstice, RA exactly 90 at any
+  obliquity) is met at **90.000** years, where the Ascendant's run from the same degree at 43.78° N
+  meets it at 65.45; every segment's `from_lon` is the inverse of its arc;
+- no refusal at 78° N, and the span tiled for both points;
+- the fourth is the Midheaven's run **half a turn on** — opposite points are 180° apart in RA, so
+  every boundary in the IC's first 180 years is one the MC's direction crosses 180 years later,
+  on the same degree, with the same distributor;
+- the Descendant refused;
+- **Dykes' animation** — cast a chart, advance the clock by 3 m 59.34 s per year of age, and the
+  Midheaven `swe.houses` reports for the later moment agrees with the directed degree to
+  **0.004°** at ages 17.97, 42 and 100, and lies in the bound of the engine's distributor (Saturn,
+  Mars, Saturn — three different periods, so the check has teeth). `swe.houses`' meridian is an
+  independent path from the `cotrans` the engine directs with; the engine's RA of the MC equals
+  swe's ARMC to 1e-14;
+- `from_lon` agrees with `_pn4_seg_degree`'s oblique-ascension inverse on every Ascendant segment,
+  so the two routes to the degree a period opened on cannot drift apart.
+
+**One thing observed on the page rather than designed.** On the default chart at age 42 the
+Midheaven's and the fourth's current periods both end at 44.47 years: a body the Midheaven's
+direction meets is met by the fourth's direction as its *opposition ray* at the same arc, because
+opposite points are 180° apart in right ascension. It follows from the sentence and it is what the
+half-a-turn fixture pins.
+
+**Verification.** Doctrine fixtures 176 (were 170). `tables.json` **+12 / −0**: the two new tables
+on six charts, no existing table moved. Full suite **2489 passed**, six of them new; `test_base_tables.py` 121 / 0.
+Rendered in the browser on the default chart at target date 1282-06-01 (age 42): both "now" lines,
+both tables, the caption, and the ascension table's new states.
+
+**Left undone, on purpose.** Planets in the Midheaven. III.7's "Confirmed by the distribution"
+column still checks the *jār bakhtār* alone. The meridian enters neither the year's indicators nor
+any governor. The next technique, per the continuation brief, is "the small days" (IX.7, 29–31),
+and it is to be put to the owner before it is built.
+
 ### Refused at the poles
 
 `pn4_distribution_from_ascendant` returns `None` where |latitude| + obliquity ≥ 90°, on the

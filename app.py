@@ -7026,14 +7026,25 @@ def evaluate_planetary_years_display(planetary_data, cusps, ascendant_lon, sect,
 # statement of the truth of that ... is found in the book which we worked
 # on concerning nativities" (IX.8, 123) -- a book outside this corpus.
 #
-# Nothing below depends on that choice. The distribution implemented here
-# is the one taken FROM THE ASCENDANT, which II.2, 6-7 lists as an
+# Nothing below depends on that choice. The distributions implemented here
+# are the one taken FROM THE ASCENDANT, which II.2, 6-7 lists as an
 # indicator separate from the one taken from the longevity releaser, and
-# which III.1, 14 says the Persians alone called the "jar bakhtar".
+# which III.1, 14 says the Persians alone called the "jar bakhtar"; and,
+# since 2026-09-10, the ones taken FROM THE MERIDIAN -- the degrees of the
+# Midheaven and the fourth, "directed by the ascensions of the right
+# sphere" (III.1, 12; fn 14: "or rather, the IC itself"). What PN IV does
+# NOT say about the meridian distribution, and the page says instead: it
+# gives it no topic (the "profession" reading is fn 4, al-Qabisi IV.12,
+# an editor's note), it does not list it among the year's indicators
+# (II.2), it works no example of it (the III.1, 19-45 example directs the
+# Ascendant only), and its partner-at-birth rule (III.1, 23-25) is worded
+# for the Ascendant and carried to the meridian by analogy. Planets IN the
+# Midheaven, which III.1, 12 also assigns to right ascension, are not
+# directed.
 #
 # The third case of III.1, 12 -- everything that is neither the Ascendant
 # nor the meridian, directed "according to what we stated in our book [on
-# that topic]" -- is also absent. PN IV defers the method to a book it
+# that topic]" -- is absent. PN IV defers the method to a book it
 # does not reproduce; Dykes' fn 16 identifies it as Ptolemy's proportional
 # semi-arcs, but that is an editor's note, not Abu Ma'shar's sentence, and
 # the reconstructions of it differ. Named and refused rather than guessed.
@@ -7104,15 +7115,17 @@ def pn4_direction_unit(chart_level):
 
 # --- III.1, 12: which ascensions measure which point ----------------------
 # III.1, 12, and the STATE of each of its three cases in this engine. The
-# three do not fail alike and the table must not flatten them: the
-# Ascendant is built; the meridian's measure is stated by Abu Ma'shar and
-# simply not built yet; the third case's method is not in PN IV at all,
-# being deferred to a book he does not reproduce, so it is not buildable
-# from this corpus without importing a reconstruction.
+# table must not flatten them: the first two cases are built, each for the
+# DEGREE of its point and not for "the things in it"; the third case's
+# method is not in PN IV at all, being deferred to a book he does not
+# reproduce, so it is not buildable from this corpus without importing a
+# reconstruction. The state strings are asserted verbatim by
+# test_pn4_printed_reference_tables_derive_from_the_rules, so directing a
+# planet on an angle, or building the third case, means changing them.
 PN4_ASCENSION_RULE = {
-    'Ascendant': ('oblique ascensions of the birth latitude', 'applied'),
-    'Midheaven': ('right ascensions', 'stated by III.1, 12; not built'),
-    'Fourth (IC)': ('right ascensions', 'stated by III.1, 12; not built'),
+    'Ascendant': ('oblique ascensions of the birth latitude', 'applied to the degree of the Ascendant'),
+    'Midheaven': ('right ascensions', 'applied to the degrees of the Midheaven and the fourth'),
+    'Fourth (IC)': ('right ascensions', 'applied to the degrees of the Midheaven and the fourth'),
     'anything else': ('proportional semi-arcs', 'method not stated in PN IV'),
 }
 
@@ -7205,72 +7218,65 @@ def pn4_partner_strength(aspect):
 
 PN4_DISTRIBUTION_SPAN_YEARS = 120.0
 
-def pn4_distribution_from_ascendant(planetary_data, ascendant_lon, obliquity, geo_lat,
-                                    span_years=PN4_DISTRIBUTION_SPAN_YEARS):
-    """The *jar bakhtar* (III.1, 14): the degree of the Ascendant directed
-    through the bounds by the oblique ascensions of the birth latitude
-    (III.1, 12), naming at every moment a distributor -- the lord of the
-    bound reached (III.1, 11) -- and a partner, the most recent body or
-    ray the direction has met (III.1, 15-16).
+def _pn4_distribute(planetary_data, start_lon, measure, span_years, point_label):
+    """The bound-by-bound direction of III.1, 7-16, shared by every point
+    this engine distributes: `start_lon` directed through the Egyptian
+    bounds, naming at every moment a distributor -- the lord of the bound
+    reached (III.1, 11) -- and a partner, the most recent body or ray the
+    direction has met (III.1, 15-16). `measure` maps an ecliptic degree
+    to the ascension the point is directed in (III.1, 12): the oblique
+    ascension of the birth latitude for the Ascendant, the right ascension
+    for the meridian. Callers choose it and own its domain.
 
     Returns a list of segments in age order, each
-    {from, to, distributor, partner, partner_aspect, opened_by, ...},
-    or None where the method has no domain (see below).
+    {from, to, from_lon, distributor, partner, partner_aspect, ...}, where
+    `from_lon` is the zodiacal degree the direction stands on as the
+    segment opens.
 
     Time comes from the arc: one degree of ascension is one year
-    (III.1, 13). Order comes from the longitudes, since at any latitude
-    where every degree rises the oblique ascension increases with the
-    longitude, so "the next bound round the zodiac" and "the next arc of
-    direction" are the same sequence.
-
-    ABOVE THE POLAR CIRCLE THIS REFUSES, returning None, on the domain of
-    D-23: where |latitude| + obliquity >= 90 some degrees never rise, the
-    oblique ascension has no unique inverse, and an arc of direction from
-    the Ascendant is not defined. Refusing is the decided behaviour for
-    every ascensional method in this file.
+    (III.1, 13). Order comes from the longitudes: both measures increase
+    with the longitude wherever they are defined, so "the next bound round
+    the zodiac" and "the next arc of direction" are the same sequence.
     """
-    if not _ascensional_method_applies(obliquity, geo_lat):
-        return None
-
-    ascendant_lon %= 360.0
-    oa_asc = _oblique_ascension(ascendant_lon, obliquity, geo_lat)
+    start_lon %= 360.0
+    m0 = measure(start_lon)
     meetings = pn4_bodies_and_rays(planetary_data)
 
-    # III.1, 23-25: the partner AT BIRTH. Look back from the degree of the
-    # Ascendant to the beginning of its sign; the nearest body or ray
-    # behind it is already the partner. "But since I did not find a planet
-    # nor its rays from the beginning of the sign up to the degree of the
+    # III.1, 23-25: the partner AT BIRTH. Look back from the directed
+    # degree to the beginning of its sign; the nearest body or ray behind
+    # it is already the partner. "But since I did not find a planet nor
+    # its rays from the beginning of the sign up to the degree of the
     # Ascendant, Venus became the distributor without a planet partnering
-    # with her" -- the search does NOT run back past the start of the sign.
-    sign_start = (ascendant_lon // 30.0) * 30.0
-    behind = [m for m in meetings if sign_start <= m[0] <= ascendant_lon]
+    # with her" -- the search does NOT run back past the start of the
+    # sign. Worded for the Ascendant; the meridian gets it by analogy, and
+    # the page says so.
+    sign_start = (start_lon // 30.0) * 30.0
+    behind = [m for m in meetings if sign_start <= m[0] <= start_lon]
     opening = max(behind, key=lambda m: m[0]) if behind else None
 
-    # Everything the direction will meet, by arc from the Ascendant.
-    events = []
-    for lon, lord, _sign in pn4_bound_starts():
-        events.append((lon, 'bound', lord, 'bound'))
+    # Everything the direction will meet, by arc from the starting point.
+    events = [(lon, 'bound', lord, 'bound') for lon, lord, _sign in pn4_bound_starts()]
     events.extend(meetings)
 
     dated = []
     for lon, kind, who, aspect in events:
-        arc = (_oblique_ascension(lon, obliquity, geo_lat) - oa_asc) % 360.0
+        arc = (measure(lon) - m0) % 360.0
         if 0.0 < arc <= span_years:
             dated.append((arc, lon, kind, who, aspect))
     dated.sort(key=lambda e: e[0])
 
-    distributor = pn4_bound_lord(ascendant_lon)
+    distributor = pn4_bound_lord(start_lon)
     partner = opening[2] if opening else None
     partner_aspect = opening[3] if opening else None
-    partner_from = (f"{opening[2]} by {opening[3]} at {get_degree_string(opening[0])}, behind the Ascendant"
+    partner_from = (f"{opening[2]} by {opening[3]} at {get_degree_string(opening[0])}, behind the {point_label}"
                     if opening else 'none: the distributor acts alone (III.1, 25)')
     opened_by = ('at birth: %s by %s' % (partner, partner_aspect)) if opening else 'at birth: the distributor alone'
 
-    segments, cursor = [], 0.0
+    segments, cursor, from_lon = [], 0.0, start_lon
     for arc, lon, kind, who, aspect in dated:
         if arc - cursor > 1e-9:
             segments.append({
-                'from': cursor, 'to': arc, 'distributor': distributor,
+                'from': cursor, 'to': arc, 'from_lon': from_lon, 'distributor': distributor,
                 'partner': partner, 'partner_aspect': partner_aspect,
                 'partner_from': partner_from, 'opened_by': opened_by,
             })
@@ -7282,14 +7288,63 @@ def pn4_distribution_from_ascendant(planetary_data, ascendant_lon, obliquity, ge
             partner_from = (f"{who} by body at {get_degree_string(lon)}" if aspect == 'body'
                             else f"{who} by {aspect} at {get_degree_string(lon)}")
             opened_by = partner_from
-        cursor = arc
+        cursor, from_lon = arc, lon
     if cursor < span_years:
         segments.append({
-            'from': cursor, 'to': span_years, 'distributor': distributor,
+            'from': cursor, 'to': span_years, 'from_lon': from_lon, 'distributor': distributor,
             'partner': partner, 'partner_aspect': partner_aspect,
             'partner_from': partner_from, 'opened_by': opened_by,
         })
     return segments
+
+def pn4_distribution_from_ascendant(planetary_data, ascendant_lon, obliquity, geo_lat,
+                                    span_years=PN4_DISTRIBUTION_SPAN_YEARS):
+    """The *jar bakhtar* (III.1, 14): the degree of the Ascendant directed
+    through the bounds by the oblique ascensions of the birth latitude
+    (III.1, 12). Segments as _pn4_distribute returns them, or None where
+    the method has no domain.
+
+    ABOVE THE POLAR CIRCLE THIS REFUSES, returning None, on the domain of
+    D-23: where |latitude| + obliquity >= 90 some degrees never rise, the
+    oblique ascension has no unique inverse, and an arc of direction from
+    the Ascendant is not defined. Refusing is the decided behaviour for
+    every method in this file that rests on the oblique ascension. The
+    meridian distribution below does not rest on it, and does not refuse.
+    """
+    if not _ascensional_method_applies(obliquity, geo_lat):
+        return None
+    return _pn4_distribute(planetary_data, ascendant_lon,
+                           lambda lon: _oblique_ascension(lon, obliquity, geo_lat),
+                           span_years, 'Ascendant')
+
+PN4_MERIDIAN_POINTS = ('Midheaven', 'Fourth (IC)')
+
+def pn4_distribution_from_meridian(planetary_data, mc_lon, obliquity, point='Midheaven',
+                                   span_years=PN4_DISTRIBUTION_SPAN_YEARS):
+    """III.1, 12: "what is in the Midheaven or the fourth is directed by
+    the ascensions of the right sphere" -- the degree of the Midheaven, or
+    of the fourth (fn 14: "or rather, the IC itself", the point opposite
+    it), directed through the bounds by RIGHT ASCENSION, one degree to a
+    year (III.1, 13), with the same distributor and partner as any other
+    direction (III.1, 10-11, 15-16). Built 2026-09-10.
+
+    This never refuses. Right ascension has no latitude in it and the
+    meridian crosses the ecliptic at every latitude, so the arc is defined
+    everywhere; D-23's refusal is about inverting the OBLIQUE ascension,
+    which this does not do.
+
+    What the source does not supply, and the page admits: no worked
+    example of a meridian direction exists in PN IV (the check is
+    arithmetic, plus the editor's four-minutes-a-degree animation of
+    Appendix A, p. 673); the partner-at-birth rule is worded for the
+    Ascendant; the distribution is given no topic by Abu Ma'shar and is
+    not among the year's indicators (II.2); planets IN the Midheaven are
+    not directed, only its degree."""
+    if point not in PN4_MERIDIAN_POINTS:
+        raise ValueError(f"point must be one of {PN4_MERIDIAN_POINTS}, not {point!r}")
+    start = mc_lon if point == 'Midheaven' else mc_lon + 180.0
+    return _pn4_distribute(planetary_data, start, lambda lon: _ra_decl(lon, obliquity)[0],
+                           span_years, point)
 
 def pn4_distribution_at_age(segments, age_years):
     """The segment covering an age, or None past the end of the span."""
@@ -7789,6 +7844,21 @@ def _pn4_seg_degree(segment, ascendant_lon, chart_data, geo_lat):
     got = _lon_with_oblique_ascension(oa, chart_data['obliquity'], geo_lat)
     return ascendant_lon if got is None else got
 
+def _pn4_distribution_rows(segments, current):
+    """A distribution as the Timing page prints it, one row per segment,
+    the same shape for the Ascendant and for the meridian."""
+    return [{
+        'From age': f"{seg['from']:.2f}", 'To age': f"{seg['to']:.2f}",
+        'Lasting': pn4_format_arc_time(seg['to'] - seg['from']),
+        'Distributor': seg['distributor'],
+        'Partner': seg['partner'] or 'none',
+        'By': seg['partner_aspect'] or '-',
+        'Rank': ('-' if seg['partner_aspect'] is None
+                 else f"{pn4_partner_strength(seg['partner_aspect']) + 1} of 5"),
+        'Opened by': seg['opened_by'],
+        'Now': 'yes' if current is not None and seg is current else '',
+    } for seg in (segments or [])]
+
 def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule):
     """Everything the Timing page shows that comes from PN IV, computed
     once. Returns a dict of row-lists plus the raw pieces the captions
@@ -7821,6 +7891,16 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule):
     segments = pn4_distribution_from_ascendant(
         chart_data['planetary_data'], ascendant, chart_data['obliquity'], lat)
     current = pn4_distribution_at_age(segments, float(age)) if segments else None
+
+    # III.1, 12: the meridian, by right ascension -- the Midheaven and the
+    # fourth, each from its own degree. Never refuses (see the function).
+    meridian = {}
+    for point in PN4_MERIDIAN_POINTS:
+        start_lon = chart_data['mc'] if point == 'Midheaven' else (chart_data['mc'] + 180.0) % 360.0
+        segs = pn4_distribution_from_meridian(
+            chart_data['planetary_data'], chart_data['mc'], chart_data['obliquity'], point)
+        meridian[point] = {'degree': start_lon, 'segments': segs,
+                           'current': pn4_distribution_at_age(segs, float(age))}
 
     # --- The revolution of the year (I.2, 1-4; I.7, 2) ---
     revolution_rows = [
@@ -7907,22 +7987,15 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule):
     activation_rows = pn4_activation_ages(
         chart_data['planetary_data'], chart_data['obliquity'], lat, segments)
 
-    # --- the distribution, as a forward table (III.1, 11-16) ---
-    distribution_rows = [{
-        'From age': f"{seg['from']:.2f}", 'To age': f"{seg['to']:.2f}",
-        'Lasting': pn4_format_arc_time(seg['to'] - seg['from']),
-        'Distributor': seg['distributor'],
-        'Partner': seg['partner'] or 'none',
-        'By': seg['partner_aspect'] or '-',
-        'Rank': ('-' if seg['partner_aspect'] is None
-                 else f"{pn4_partner_strength(seg['partner_aspect']) + 1} of 5"),
-        'Opened by': seg['opened_by'],
-        'Now': 'yes' if current is not None and seg is current else '',
-    } for seg in (segments or [])]
+    # --- the distributions, as forward tables (III.1, 11-16) ---
+    distribution_rows = _pn4_distribution_rows(segments, current)
+    meridian_rows = {point: _pn4_distribution_rows(m['segments'], m['current'])
+                     for point, m in meridian.items()}
 
     return {
         'activation_rows': activation_rows,
         'distribution_rows': distribution_rows,
+        'meridian': meridian, 'meridian_rows': meridian_rows,
         'age': age, 'month': month, 'jd_sr': jd_sr, 'jd_mr': jd_mr,
         'sr': sr, 'mr': mr, 'year': year, 'ninth': ninth, 'fardar': fardar,
         'segments': segments, 'current': current, 'ages': ages,
@@ -9070,13 +9143,46 @@ if location_query and lat is not None and lon is not None:
                            "partnering with her\". III.2, 103-104 ranks partners body > opposition > square > trine > "
                            "sextile -- hard aspects above soft ones, which is the reverse of the usual intuition.")
 
+            st.subheader("The distribution from the Midheaven and the fourth",
+                         help="III.1, 12: \"what is in the Midheaven or the fourth is directed by the ascensions of "
+                              "the right sphere\" -- right ascension, one degree to a year (III.1, 13), the lord of "
+                              "the bound reached as distributor (III.1, 11) and the last body or ray met as partner "
+                              "(III.1, 15-16), exactly as for the Ascendant. Fn 14 reads \"the fourth\" as the IC "
+                              "degree itself. Right ascension has no latitude in it, so these two distributions are "
+                              "defined at every latitude and are never refused.")
+            for point in PN4_MERIDIAN_POINTS:
+                m = pn4['meridian'][point]
+                cur = m['current']
+                if cur:
+                    st.markdown(
+                        f"**{point}** at {get_degree_string(m['degree'])} -- **now** (age {pn4['age']}): distributor "
+                        f"**{cur['distributor']}**, partner **{cur['partner'] or 'none -- the distributor acts alone'}**"
+                        f" &nbsp;|&nbsp; this period runs from age {cur['from']:.2f} to {cur['to']:.2f}"
+                        f" &nbsp;|&nbsp; opened standing on {get_degree_string(cur['from_lon'])}")
+                else:
+                    st.markdown(f"**{point}** at {get_degree_string(m['degree'])} -- age {pn4['age']} is past the "
+                                f"{PN4_DISTRIBUTION_SPAN_YEARS:g}-year table")
+                st.dataframe(pd.DataFrame(pn4['meridian_rows'][point]), hide_index=True, width='stretch',
+                             height=_rows_height(min(len(pn4['meridian_rows'][point]), 12)))
+            st.caption("What PN IV does not supply here, stated rather than filled in. (1) Abu Ma'shar gives this "
+                       "distribution no topic: \"actions, profession, and life projects\" is Dykes (Appendix A, "
+                       "p. 673) and fn 4's al-Qabisi IV.12 -- editors' notes, not a sentence of the book. (2) It is "
+                       "not among the year's indicators: II.2, 6-7 and 12-13 name the Ascendant's and the releaser's "
+                       "distributions only, so it does not enter the indicators table above. (3) No worked example of "
+                       "a meridian direction exists in PN IV -- III.1, 19-45 directs the Ascendant only -- so the "
+                       "engine is checked by arithmetic and against the editor's four-minutes-a-degree animation "
+                       "(Appendix A), not against the author's numbers. (4) The partner-at-birth rule of III.1, 23-25 "
+                       "is worded for the Ascendant and is carried here by analogy. (5) Only the two degrees are "
+                       "directed; planets in the Midheaven, which III.1, 12 also assigns to right ascension, are not.")
+
             st.subheader("Directing: which ascensions, and what a degree is worth")
             c1, c2 = st.columns(2)
             with c1:
                 st.markdown("**III.1, 12 -- the measure, by position**")
                 st.dataframe(pd.DataFrame(PN4_ASCENSION_ROWS), hide_index=True, width='stretch')
-                st.caption("The three cases do not fail alike. The **Ascendant** is the distribution above. The "
-                           "**meridian** measure is Abu Ma'shar's own and simply is not built yet. The **third case** "
+                st.caption("The three cases do not stand alike. The **Ascendant** and the **meridian** are the "
+                           "distributions above, each applied to the degree of its point and not to the planets in "
+                           "it. The **third case** "
                            "has no method in PN IV at all -- III.1, 12 sends the reader to \"what we stated in our "
                            "book [on that topic]\", and Dykes' fn 16 identifies it as Ptolemy's proportional "
                            "semi-arcs, which is an editor's note rather than a stated rule.")
