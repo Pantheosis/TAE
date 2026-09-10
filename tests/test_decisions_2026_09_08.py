@@ -359,19 +359,30 @@ def test_d3_control_the_GRANTED_years_are_applied_by_nothing(engine):
     import re
     src = engine_source()
     display = function_source("evaluate_planetary_years_display")
+    fardar_seq = function_source("pn4_fardar_sequence")
 
-    # No grant is read anywhere but the display evaluator.
+    # (a) WHO may touch the constant at all. This is the coarse check the
+    # test carried before D-3 closed, kept rather than traded away: it
+    # catches a new reader however it spells the read -- .get("greater"),
+    # a variable subscript, unpacking -- which the key-level check in (b)
+    # cannot see.
+    readers = [m.start() for m in re.finditer(r"PLANETARY_YEARS\b", src)]
+    assert len(readers) == 3, (
+        f"{len(readers)} mentions of PLANETARY_YEARS in the engine half; expected the "
+        f"definition, evaluate_planetary_years_display and pn4_fardar_sequence. A new "
+        f"reader must be justified here before it is allowed.")
+    assert src.count("PLANETARY_YEARS") - display.count("PLANETARY_YEARS") \
+           - fardar_seq.count("PLANETARY_YEARS") == 1, "the extra reader is not one of the two named"
+
+    # (b) WHICH years they may read. No grant is read anywhere but the
+    # display evaluator; a grant applied to a judgment is the thing D-3's
+    # closure did NOT authorise.
     for key in ("lesser", "middle", "greater", "mighty"):
         pattern = r"\['" + key + r"'\]"
         assert len(re.findall(pattern, src)) == len(re.findall(pattern, display)) == 1, (
             f"the {key} years are read outside evaluate_planetary_years_display; "
             f"D-3's closure did not authorise applying a grant")
-
-    # The fardar is read by the display evaluator and by the sequence, and
-    # by nothing else. A third reader means something new applies it.
-    fardar_seq = function_source("pn4_fardar_sequence")
     assert len(re.findall(r"\['fardar'\]", src)) == 2
-    assert len(re.findall(r"\['fardar'\]", display)) == 1
     assert len(re.findall(r"\['fardar'\]", fardar_seq)) == 1
 
 
