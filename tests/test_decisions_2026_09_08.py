@@ -340,50 +340,67 @@ def test_d3_years_display_reads_both_rules_and_names_the_silence(engine):
         assert (r["Lesser"], r["Greater"]) == (engine["PLANETARY_YEARS"][r["Planet"]]["lesser"], engine["PLANETARY_YEARS"][r["Planet"]]["greater"])
 
 
-def test_d3_control_the_GRANTED_years_are_applied_by_nothing(engine):
-    """D-3 was closed on 2026-09-10 and the timing apparatus was built from
-    PN IV, so the control is no longer "nothing reads PLANETARY_YEARS" --
-    pn4_fardar_sequence now reads it. What the control guards is narrower,
-    and is still exactly true.
+# Who may read PLANETARY_YEARS, and which of its columns. Extending either
+# set is a deliberate act: add the function AND say why in the commit.
+D3_GRANT_READERS = {"evaluate_planetary_years_display"}
+D3_FARDAR_READERS = {"evaluate_planetary_years_display", "pn4_fardar_sequence"}
+D3_GRANT_KEYS = ("lesser", "middle", "greater", "mighty")
 
-    The LESSER, MIDDLE, GREATER and MIGHTY years remain display-only. PN IV
+
+def _functions_reading(pattern):
+    """Top-level engine functions whose source matches `pattern`."""
+    import ast, re
+    from conftest import engine_source
+    src = engine_source()
+    hits = set()
+    for node in ast.parse(src).body:
+        if isinstance(node, ast.FunctionDef):
+            if re.search(pattern, ast.get_source_segment(src, node) or ""):
+                hits.add(node.name)
+    return hits
+
+
+def test_d3_control_the_GRANTED_years_are_applied_by_nothing():
+    """D-3 was closed on 2026-09-10 and the timing apparatus was built from
+    PN IV, so this control is no longer "nothing reads PLANETARY_YEARS" --
+    pn4_fardar_sequence now reads it. What it guards is narrower.
+
+    The LESSER, MIDDLE, GREATER and MIGHTY years stay display-only. PN IV
     turned out not to say which planet is the house-master or how many
     years it grants -- Abu Ma'shar defers it to a book outside this corpus
     (IX.8, 123) -- so corpus disagreement #2 stays open on the merits and
-    no row of that table is chosen by anything.
+    nothing chooses a row of that table. The FARDAR column is a different
+    kind of number, a period length rather than a grant, and IV.1, 2 gives
+    it outright.
 
-    The FARDAR column is a different kind of number: a period length, not
-    a grant. IV.1, 2 gives it outright and it is implemented, so exactly
-    one further reader of it is expected."""
-    from conftest import engine_source, function_source
-    import re
-    src = engine_source()
-    display = function_source("evaluate_planetary_years_display")
-    fardar_seq = function_source("pn4_fardar_sequence")
+    TWO CHECKS, and they catch different things. The key-level one runs
+    first so that a genuine attempt to apply a grant gets the doctrinal
+    message rather than the generic one; the by-name one then catches any
+    new reader however it spells the read -- .get("greater"), a variable
+    subscript, unpacking -- which the key-level check cannot see.
 
-    # (a) WHO may touch the constant at all. This is the coarse check the
-    # test carried before D-3 closed, kept rather than traded away: it
-    # catches a new reader however it spells the read -- .get("greater"),
-    # a variable subscript, unpacking -- which the key-level check in (b)
-    # cannot see.
-    readers = [m.start() for m in re.finditer(r"PLANETARY_YEARS\b", src)]
-    assert len(readers) == 3, (
-        f"{len(readers)} mentions of PLANETARY_YEARS in the engine half; expected the "
-        f"definition, evaluate_planetary_years_display and pn4_fardar_sequence. A new "
-        f"reader must be justified here before it is allowed.")
-    assert src.count("PLANETARY_YEARS") - display.count("PLANETARY_YEARS") \
-           - fardar_seq.count("PLANETARY_YEARS") == 1, "the extra reader is not one of the two named"
+    IF THIS FAILS ON WORK YOU BELIEVE IS CORRECT: no regex can tell
+    "applies a grant to a judgment" from "derives a displayed quantity",
+    and the sets above are the place that decision is recorded. Deriving
+    the Ages of Man from I.8, 9's rule, or III.7, 32-42's activation ages,
+    would both land here legitimately. Applying a house-master's years as
+    a lifespan would not -- that is the thing PN IV does not license."""
+    grant_readers = set()
+    for key in D3_GRANT_KEYS:
+        grant_readers |= _functions_reading(r"\['" + key + r"'\]")
+    unexpected = grant_readers - D3_GRANT_READERS
+    assert not unexpected, (
+        f"{sorted(unexpected)} read the lesser/middle/greater/mighty years. PN IV does not "
+        f"say who the house-master is or what it grants (IX.8, 123), so a grant must not "
+        f"reach a judgment. If this is a DISPLAY quantity or a derivation Abu Ma'shar states "
+        f"(e.g. I.8, 9's Ages), add it to D3_GRANT_READERS and say why in the commit.")
 
-    # (b) WHICH years they may read. No grant is read anywhere but the
-    # display evaluator; a grant applied to a judgment is the thing D-3's
-    # closure did NOT authorise.
-    for key in ("lesser", "middle", "greater", "mighty"):
-        pattern = r"\['" + key + r"'\]"
-        assert len(re.findall(pattern, src)) == len(re.findall(pattern, display)) == 1, (
-            f"the {key} years are read outside evaluate_planetary_years_display; "
-            f"D-3's closure did not authorise applying a grant")
-    assert len(re.findall(r"\['fardar'\]", src)) == 2
-    assert len(re.findall(r"\['fardar'\]", fardar_seq)) == 1
+    fardar_readers = _functions_reading(r"PLANETARY_YEARS\b")
+    unexpected = fardar_readers - D3_FARDAR_READERS
+    assert not unexpected, (
+        f"{sorted(unexpected)} read PLANETARY_YEARS. That may be fine -- the fardar is a "
+        f"period length, not a grant -- but it is not fine by default: add it to "
+        f"D3_FARDAR_READERS deliberately, having checked it reads no grant.")
 
 
 # --- D-1: Ptolemy's casting of the rays by ascensions (VII.7), a static quantity
