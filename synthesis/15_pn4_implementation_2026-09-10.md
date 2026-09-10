@@ -334,6 +334,60 @@ column still checks the *jār bakhtār* alone. The meridian enters neither the y
 any governor. The next technique, per the continuation brief, is "the small days" (IX.7, 29–31),
 and it is to be put to the owner before it is built.
 
+### 4c. IX.7, 29–31: "the small days" — built 2026-09-10, second session
+
+Put to the owner as technique 2 of the continuation brief with the four-point prompt. Two
+decisions were the owner's and both were taken as recommended: **the stated rate, 59′08″ a day in
+degrees of the zodiac**, over the author's own "exact" form (the Sun's real daily motion, IX.7, 32)
+and over Dykes' fn 178 (by ascensions); and **the opening partner looked for behind the degree
+within its bound**, the shape of III.1, 23–25 narrowed to the window IX.7, 30 names.
+
+**Re-checked in the corpus before writing:**
+
+| Citation | What it had to support | Held? |
+|---|---|---|
+| **IX.7, 29** | "a day for every 59′ 08″, until it returns to the degree of the Ascendant at the end of the year" | yes — the corpus carries it as `$59'\ 08''$` |
+| **IX.7, 30** + fn 179 | a body or ray "in the bounds of the degree" manages until another meets it; else the bound lords "in the way we have stated" (→ 24) | yes |
+| **IX.7, 31** | the name, and the extension to "everything of the planets, Lots, and houses" | yes |
+| **IX.7, 32** + fn 178, 180 | the author's grading: an approximation, the exact form is the Sun's daily direction, "no harm in the work"; Dykes' preference for ascensions is his own | yes |
+| **IX.7, 23–24** + fn 176 | the mighty days' identical management rule, which 30 refers back to | yes |
+| **IX.7, 1** + fn 161 | a "day" is not defined by the author; Dykes raises it | yes |
+| **IX.7, 10** + fn 167 | the year of the revolution, 365¼ − 1/300 | yes |
+| Findings file, appendix item | the Janus note's "59° 08′" is the appendix's error against IX.7, 29 | yes, already recorded |
+
+**Stated, not presupposed.** The rate, the point, the circuit and the management are all in the
+sentences. Read into them and said on the page: the bodies and rays are the **revolution's**; the
+days count from the **moment of the revolution**; the opening window is the bound, looking back;
+only the revolution's Ascendant is directed. No worked example exists — IX.7's only one (57–69)
+is the ninth-part method.
+
+**What was built.** `_pn4_distribute` gains `opening_window` ('sign' for III.1, 23–25, 'bound'
+for IX.7, 30) and `epoch` (the row text now says "at the revolution" rather than "at birth");
+`PN4_SMALL_DAYS_RATE`, `pn4_small_days_arc_to_days`, `pn4_small_days` (measure = the zodiac,
+span = the full circuit, segments returned in days); `_pn4_distribution_rows` gains a `unit`. The
+bundle computes the day of the year as target − revolution in Julian days. The page gains one
+section, one table and a caption carrying the author's grading and the four readings.
+
+**The arithmetic the sentence itself supplies.** 360 ÷ 59′08″ = **365.28 days**: the promised
+return "at the end of the year" holds to within an hour of the tropical year, which is what makes
+a zodiacal rate defensible here where III.1, 12 would otherwise want oblique ascensions. The page
+says the two distributions of the Ascendant on it run in different measures, and why.
+
+**What pins it.** Six fixtures: the rate (59′08″ = 1 day; the circuit 365.28, within an hour of
+the year, tiled); zodiacal and latitude-free (a body 30° ahead met at 30.44 days, where the natal
+Ascendant's oblique run meets it elsewhere); the opening partner within the bound (Sun 21 Aries,
+degree 22 Aries in Mars's bound: partner from day 0); **the window is the bound, not the sign**
+(Sun 19 Aries in Mercury's bound: the natal distribution takes it, the small days do not, and cite
+IX.7, 30); a body ahead in the bound manages on arrival, 2.03 days, not from day 0 — the owner's
+reading pinned as a negative control; and the bundle starts from the revolution's Ascendant, not
+the natal one, with the day of the year in range.
+
+**Verification.** Doctrine fixtures 182 (were 176). `tables.json` **+6 / −0**: one new table on six
+charts. Full suite **2495 passed**, six of them new; `test_base_tables.py` 121 / 0. Rendered in the browser.
+
+**Left undone, on purpose.** IX.7, 31's extension to the planets, Lots and houses; the exact form
+of IX.7, 32; the mighty days (IX.7, 23–28), which is the next prompt.
+
 ### Refused at the poles
 
 `pn4_distribution_from_ascendant` returns `None` where |latitude| + obliquity ≥ 90°, on the

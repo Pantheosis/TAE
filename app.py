@@ -523,7 +523,7 @@ FALLS = {'Sun': ['Libra'], 'Moon': ['Scorpio'], 'Mercury': ['Pisces'], 'Venus': 
 # Aquarius 0-13 read Venus then Mercury -- so every degree in those 24
 # carried the wrong term lord in dignity scoring, the victor grids, the
 # prenatal syzygy and distribution. Sahl is the independent witness for
-# the correction: On Nativities Ch. 10.2.7, 22 has Mercury at Aquarius 5
+# the correction: On Nativities Ch. 10.2.7, 21-22 has Mercury at Aquarius 5
 # "in his own bound", and fn. 198 there gives Capricorn 0-7 to Mercury as
 # this table does.
 EGYPTIAN_TERMS = {
@@ -4407,7 +4407,7 @@ NOT_IMPLEMENTED_COVERAGE = [
      "matters from the place of retreat and withdrawal.' Stated for questions and never "
      "restated for nativities; testimony 83 stays unconditional (Introduction Ch. 3, 83). "
      "Decision D-14 (2026-09-08): a note, not a topical modifier."),
-    ("Sahl, On Questions Ch. 6, 2 and 7.7, 91-101 (Figures 37-41)", "PER-TOPIC REASSIGNMENT "
+    ("Sahl, On Questions Ch. 6, 2 and 7.7, 90-101 (Figures 37-41)", "PER-TOPIC REASSIGNMENT "
      "OF THE ANGLES -- 'the Ascendant indicates the doctor, the Midheaven indicates the sick "
      "person, the seventh sign indicates the illness, and the fourth sign indicates the "
      "medicine' -- and a twelve-house scheme for war. Horary, and in tension with the fixed "
@@ -7218,7 +7218,8 @@ def pn4_partner_strength(aspect):
 
 PN4_DISTRIBUTION_SPAN_YEARS = 120.0
 
-def _pn4_distribute(planetary_data, start_lon, measure, span_years, point_label):
+def _pn4_distribute(planetary_data, start_lon, measure, span_years, point_label,
+                    opening_window='sign', epoch='birth'):
     """The bound-by-bound direction of III.1, 7-16, shared by every point
     this engine distributes: `start_lon` directed through the Egyptian
     bounds, naming at every moment a distributor -- the lord of the bound
@@ -7232,6 +7233,12 @@ def _pn4_distribute(planetary_data, start_lon, measure, span_years, point_label)
     {from, to, from_lon, distributor, partner, partner_aspect, ...}, where
     `from_lon` is the zodiacal degree the direction stands on as the
     segment opens.
+
+    `span_years` is in units of the measure (degrees of arc); the caller
+    converts to time. `opening_window` is where the partner already in
+    place is looked for: 'sign' (III.1, 23-25, back to the beginning of the
+    sign) or 'bound' (IX.7, 30, "in the bounds of the degree"). `epoch`
+    names the moment the direction starts from in the row text.
 
     Time comes from the arc: one degree of ascension is one year
     (III.1, 13). Order comes from the longitudes: both measures increase
@@ -7250,8 +7257,22 @@ def _pn4_distribute(planetary_data, start_lon, measure, span_years, point_label)
     # with her" -- the search does NOT run back past the start of the
     # sign. Worded for the Ascendant; the meridian gets it by analogy, and
     # the page says so.
-    sign_start = (start_lon // 30.0) * 30.0
-    behind = [m for m in meetings if sign_start <= m[0] <= start_lon]
+    #
+    # IX.7, 30 (the small days) names a narrower window, "in the bounds of
+    # the degree of the Ascendant of the revolution": the same look-back,
+    # stopping at the beginning of the BOUND. The sentence does not say
+    # whether a body ahead of the degree within its bound manages from the
+    # first day or from the day the degree reaches it; this reads it the
+    # way III.1, 23-25 is worked, and the page says so.
+    if opening_window == 'sign':
+        window_start = (start_lon // 30.0) * 30.0
+        alone_cite = 'III.1, 25'
+    elif opening_window == 'bound':
+        window_start = max(lon for lon, _lord, _sign in pn4_bound_starts() if lon <= start_lon)
+        alone_cite = 'IX.7, 30'
+    else:
+        raise ValueError(f"opening_window must be 'sign' or 'bound', not {opening_window!r}")
+    behind = [m for m in meetings if window_start <= m[0] <= start_lon]
     opening = max(behind, key=lambda m: m[0]) if behind else None
 
     # Everything the direction will meet, by arc from the starting point.
@@ -7269,8 +7290,9 @@ def _pn4_distribute(planetary_data, start_lon, measure, span_years, point_label)
     partner = opening[2] if opening else None
     partner_aspect = opening[3] if opening else None
     partner_from = (f"{opening[2]} by {opening[3]} at {get_degree_string(opening[0])}, behind the {point_label}"
-                    if opening else 'none: the distributor acts alone (III.1, 25)')
-    opened_by = ('at birth: %s by %s' % (partner, partner_aspect)) if opening else 'at birth: the distributor alone'
+                    if opening else f'none: the distributor acts alone ({alone_cite})')
+    opened_by = (f'at {epoch}: {partner} by {partner_aspect}' if opening
+                 else f'at {epoch}: the distributor alone')
 
     segments, cursor, from_lon = [], 0.0, start_lon
     for arc, lon, kind, who, aspect in dated:
@@ -7345,6 +7367,53 @@ def pn4_distribution_from_meridian(planetary_data, mc_lon, obliquity, point='Mid
     start = mc_lon if point == 'Midheaven' else mc_lon + 180.0
     return _pn4_distribute(planetary_data, start, lambda lon: _ra_decl(lon, obliquity)[0],
                            span_years, point)
+
+# --- IX.7, 29-31: "the small days" ---------------------------------------
+# "you look at the degree of the Ascendant of the revolution of the year,
+# so that you direct from it (for the knowledge of the conditions of the
+# days), a day for every 59' 08", until it returns to the degree of the
+# Ascendant at the end of the year" (IX.7, 29). The management is the
+# distribution's -- a body or ray already in the bound, else the bound
+# lords "in the way we have stated" until a planet or ray is reached
+# (IX.7, 30; 24) -- and IX.7, 31 names it the small days.
+#
+# ZODIACAL, on purpose. The sentence gives a rate in degrees of the
+# zodiac and promises a return to the same degree at the year's end, and
+# 360 / 59'08" is 365.28 days -- the year to within an hour. Abu Ma'shar
+# grades it himself: "there is an approximation in it, but the correct
+# [approach] is that this way of directing is like the direction of the
+# Sun every day ... between this sense which is by approximation and the
+# exact one, the second one is easy, [with] no harm in the work"
+# (IX.7, 32). The exact form he names -- the degree advancing by the
+# Sun's real motion each day -- is not built; nor is Dykes' fn 178, which
+# would have it by ascensions (an editor's view). Decided by the owner
+# 2026-09-10 between the three, with the stated rate chosen.
+#
+# What is read into the sentence and said on the page: the bodies and
+# rays are the REVOLUTION'S (the sentence sits inside the revolution);
+# the days count from the moment of the revolution (fn 161 says a "day"
+# is not defined); only the revolution's Ascendant is directed, though
+# IX.7, 31 extends the method to "everything of the planets, Lots, and
+# houses". No worked example of it exists in PN IV.
+PN4_SMALL_DAYS_RATE = (59.0 * 60.0 + 8.0) / 3600.0      # degrees of the zodiac per day, IX.7, 29
+
+def pn4_small_days_arc_to_days(arc_degrees):
+    """IX.7, 29: a day for every 59' 08"."""
+    return float(arc_degrees) / PN4_SMALL_DAYS_RATE
+
+def pn4_small_days(sr_planetary_data, sr_ascendant_lon):
+    """The revolution's Ascendant distributed round the revolution chart
+    for one year (IX.7, 29-31). Segments in DAYS from the revolution, each
+    {from, to, from_lon, distributor, partner, partner_aspect, ...}; the
+    last ends at the full circuit, 360 / (59' 08"), about 365.28 days.
+    Never refuses: the measure is the zodiac itself."""
+    segments = _pn4_distribute(sr_planetary_data, sr_ascendant_lon, lambda lon: lon % 360.0,
+                               360.0, 'Ascendant of the revolution',
+                               opening_window='bound', epoch='the revolution')
+    for seg in segments:
+        seg['from'] = pn4_small_days_arc_to_days(seg['from'])
+        seg['to'] = pn4_small_days_arc_to_days(seg['to'])
+    return segments
 
 def pn4_distribution_at_age(segments, age_years):
     """The segment covering an age, or None past the end of the span."""
@@ -7844,12 +7913,20 @@ def _pn4_seg_degree(segment, ascendant_lon, chart_data, geo_lat):
     got = _lon_with_oblique_ascension(oa, chart_data['obliquity'], geo_lat)
     return ascendant_lon if got is None else got
 
-def _pn4_distribution_rows(segments, current):
+def _pn4_distribution_rows(segments, current, unit='years'):
     """A distribution as the Timing page prints it, one row per segment,
-    the same shape for the Ascendant and for the meridian."""
+    the same shape for the Ascendant, the meridian and the small days.
+    `unit` is what the segment bounds are in: years (a degree of
+    ascension a year, III.1, 13) or days (59' 08" a day, IX.7, 29)."""
+    if unit == 'years':
+        head, lasting = ('From age', 'To age'), lambda d: pn4_format_arc_time(d)
+    elif unit == 'days':
+        head, lasting = ('From day', 'To day'), lambda d: f"{int(d)}d {(d - int(d)) * 24.0:.1f}h"
+    else:
+        raise ValueError(f"unit must be 'years' or 'days', not {unit!r}")
     return [{
-        'From age': f"{seg['from']:.2f}", 'To age': f"{seg['to']:.2f}",
-        'Lasting': pn4_format_arc_time(seg['to'] - seg['from']),
+        head[0]: f"{seg['from']:.2f}", head[1]: f"{seg['to']:.2f}",
+        'Lasting': lasting(seg['to'] - seg['from']),
         'Distributor': seg['distributor'],
         'Partner': seg['partner'] or 'none',
         'By': seg['partner_aspect'] or '-',
@@ -7992,10 +8069,18 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule):
     meridian_rows = {point: _pn4_distribution_rows(m['segments'], m['current'])
                      for point, m in meridian.items()}
 
+    # --- IX.7, 29-31: the small days, in days from the revolution ---
+    small_days = pn4_small_days(sr['planetary_data'], sr['ascendant'])
+    day_of_year = jd_target - jd_sr
+    small_days_current = pn4_distribution_at_age(small_days, day_of_year)
+    small_days_rows = _pn4_distribution_rows(small_days, small_days_current, unit='days')
+
     return {
         'activation_rows': activation_rows,
         'distribution_rows': distribution_rows,
         'meridian': meridian, 'meridian_rows': meridian_rows,
+        'small_days': small_days, 'small_days_current': small_days_current,
+        'small_days_rows': small_days_rows, 'day_of_year': day_of_year,
         'age': age, 'month': month, 'jd_sr': jd_sr, 'jd_mr': jd_mr,
         'sr': sr, 'mr': mr, 'year': year, 'ninth': ninth, 'fardar': fardar,
         'segments': segments, 'current': current, 'ages': ages,
@@ -9052,7 +9137,7 @@ if location_query and lat is not None and lon is not None:
                          hide_index=True)
 
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-                st.markdown('The STANDING column records his editorial position in his own words where he states one.\n\nFour kinds of case. SAHL HIMSELF RULES: of the two sibling Lots, "both of the Lots are correct, so work with them both together" (3.11, 4) -- neither is subordinate. DYKES NAMES HIS CHOICE: of the three witnesses to the Lot of enemies, "I have used M here"; on the night reversal of the Saturn-Moon work Lot, "Paul instructs us to reverse it by night, but Abu Ma\'shar says not to. We should follow Paul." DYKES MARKS ONE STANDARD: on children, "the usual calculation ... is that of Hermes." DYKES ONLY TABULATES: three Lots for work, after noting that "Sahl quietly switches to Masha\'allah\'s treatise on Lots ... without telling us that the formula is different."\n\nEvery formula is taken from the running prose or a footnote, never from one of the summary tables, whose glyph columns the OCR mangles -- in Sahl\'s Fig. 63 (On Nativities; Abu Ma\'shar\'s Fig. 63 is a different table), the row for Ch. 10.2.5 renders as Mercury-Venus where the body text plainly reads "from Saturn to the Moon."\n\nNote the Lot of death is projected from Saturn by Dykes\' emendation (fn. 89, with Masha\'allah\'s manuscripts and Dorotheus); Sahl\'s own manuscripts read the Ascendant.')
+                st.markdown('The STANDING column records his editorial position in his own words where he states one.\n\nFour kinds of case. SAHL HIMSELF RULES: of the two sibling Lots, "both of the Lots are correct, so work with them both together" (3.11, 4) -- neither is subordinate. DYKES NAMES HIS CHOICE: of the three witnesses to the Lot of enemies, "I have used M here"; on the night reversal of the Saturn-Moon work Lot, "Paul instructs us to reverse it by night, but Abu Ma\'shar says not to. We should follow Paul." DYKES MARKS ONE STANDARD: on children, "the usual calculation ... is that of Hermes." DYKES ONLY TABULATES: three Lots for work, after noting that "Sahl quietly switches to Masha\'allah\'s treatise on Lots ... without telling us that the formula is different."\n\nEvery formula is taken from the running prose or a footnote, never from one of the summary tables.\n\nNote the Lot of death is projected from Saturn by Dykes\' emendation (fn. 89, with Masha\'allah\'s manuscripts and Dorotheus); Sahl\'s own manuscripts read the Ascendant.')
         def page_victors():
             st.header("Lunation and victors")
             st.caption("Lessons 19-20.")
@@ -9174,6 +9259,40 @@ if location_query and lat is not None and lon is not None:
                        "(Appendix A), not against the author's numbers. (4) The partner-at-birth rule of III.1, 23-25 "
                        "is worded for the Ascendant and is carried here by analogy. (5) Only the two degrees are "
                        "directed; planets in the Midheaven, which III.1, 12 also assigns to right ascension, are not.")
+
+            st.subheader("The small days: the revolution's Ascendant distributed round the year",
+                         help="IX.7, 29: \"you look at the degree of the Ascendant of the revolution of the year, so "
+                              "that you direct from it (for the knowledge of the conditions of the days), a day for "
+                              "every 59' 08\", until it returns to the degree of the Ascendant at the end of the "
+                              "year.\" IX.7, 30: a body or ray already in the bound of that degree manages until "
+                              "another meets it; otherwise the bound lords, until a planet or ray is reached. IX.7, 31 "
+                              "names it the small days. A second distribution, running inside the year at its own "
+                              "rate; the Ascendant's distribution above runs across the years.")
+            sd_cur = pn4['small_days_current']
+            sr_asc = pn4['sr']['ascendant']
+            if sd_cur:
+                st.markdown(
+                    f"**Ascendant of the revolution** at {get_degree_string(sr_asc)} -- **now** (day "
+                    f"{pn4['day_of_year']:.1f} of the year): distributor **{sd_cur['distributor']}**, partner "
+                    f"**{sd_cur['partner'] or 'none -- the distributor acts alone'}**"
+                    f" &nbsp;|&nbsp; this period runs from day {sd_cur['from']:.1f} to {sd_cur['to']:.1f}"
+                    f" &nbsp;|&nbsp; opened standing on {get_degree_string(sd_cur['from_lon'])}")
+            else:
+                st.markdown(f"**Ascendant of the revolution** at {get_degree_string(sr_asc)} -- day "
+                            f"{pn4['day_of_year']:.1f} is outside the year's circuit")
+            st.dataframe(pd.DataFrame(pn4['small_days_rows']), hide_index=True, width='stretch',
+                         height=_rows_height(min(len(pn4['small_days_rows']), 12)))
+            st.caption("Zodiacal, by the sentence: 59' 08\" a day round the zodiac returns to the degree in 365.28 "
+                       "days, the year to within an hour. Abu Ma'shar grades it himself -- \"there is an "
+                       "approximation in it, but the correct [approach] is that this way of directing is like the "
+                       "direction of the Sun every day ... [with] no harm in the work\" (IX.7, 32); that exact form "
+                       "is not built, nor is Dykes' fn 178, which would direct by ascensions. What is read into the "
+                       "sentence rather than stated by it: the bodies and rays are the revolution's; the days count "
+                       "from the moment of the revolution (fn 161 leaves a \"day\" undefined); the partner already "
+                       "in place is looked for behind the degree within its bound, the shape of III.1, 23-25 narrowed "
+                       "to the window IX.7, 30 names, since the sentence does not say whether a body ahead in the "
+                       "bound manages from the first day. Only the revolution's Ascendant is directed; IX.7, 31 "
+                       "extends the method to every planet, Lot and house. No worked example of it exists in PN IV.")
 
             st.subheader("Directing: which ascensions, and what a degree is worth")
             c1, c2 = st.columns(2)

@@ -707,7 +707,9 @@ def test_egyptian_bounds_table_has_exactly_the_twelve_signs_and_no_gaps(engine):
 
 
 def test_sahl_example_6_mercury_at_aquarius_5_is_in_his_own_bound(engine):
-    # On Nativities Ch. 10.2.7, 22: "look at Mercury, how he is in the honor
+    # On Nativities Ch. 10.2.7, 21-22: 21 gives the position ("Mercury with
+    # him, 5deg", the Sun at Aquarius 16deg); 22 is the bound claim quoted here.
+    # 22: "look at Mercury, how he is in the honor
     # guard of the Sun and his right side, IN HIS OWN BOUND, eastern" --
     # Mercury at Aquarius 5 degrees. The engine returned Venus here from the
     # initial commit until 2026-09-07.
@@ -1177,6 +1179,101 @@ def test_pn4_segment_from_lon_agrees_with_the_ascension_inverse(engine):
     for seg in segs:
         got = engine["_pn4_seg_degree"](seg, 110.0, {"obliquity": 23.44}, 43.78)
         assert _angdiff(got, seg["from_lon"]) == pytest.approx(0.0, abs=1e-8)
+
+
+# --- IX.7, 29-31: the small days (built 2026-09-10) -----------------------
+# No worked example exists in PN IV (IX.7's only one, 57-69, is the
+# ninth-part method), so these pin the sentence: the rate, the circuit,
+# the zodiacal measure, and IX.7, 30's opening window -- the bound, not
+# the sign -- read as III.1, 23-25 is worked, which the owner chose.
+
+def test_pn4_small_days_rate_closes_the_year(engine):
+    """IX.7, 29: "a day for every 59' 08", until it returns to the degree
+    of the Ascendant at the end of the year". 59' 08" is one day exactly,
+    and the full circuit is 360 / (59' 08") = 365.28 days -- the year to
+    within an hour, which is what "returns ... at the end of the year"
+    requires of a zodiacal rate."""
+    assert engine["pn4_small_days_arc_to_days"](59 / 60 + 8 / 3600) == pytest.approx(1.0)
+    segs = engine["pn4_small_days"](pdata(Sun=100.0, Moon=200.0), 10.0)
+    assert segs[0]["from"] == 0.0
+    circuit = segs[-1]["to"]
+    assert circuit == pytest.approx(360.0 / (59 / 60 + 8 / 3600))
+    assert abs(circuit - 365.2422) < 1 / 24 + 0.01
+    for a, b in zip(segs, segs[1:]):
+        assert a["to"] == pytest.approx(b["from"], abs=1e-9) and a["to"] > a["from"]
+
+
+def test_pn4_small_days_are_zodiacal_and_take_no_latitude(engine):
+    """The sentence gives its rate in degrees of the zodiac (IX.7, 29) and
+    Abu Ma'shar calls that an approximation he is content with (IX.7,
+    32). A body 30 degrees ahead is met at 30 / (59' 08") = 30.44 days,
+    wherever the native was born; the Ascendant's own distribution from
+    the same degree at 43.78 N reaches the same body at a different arc,
+    because that one runs in oblique ascension (III.1, 12)."""
+    points = pdata(Sun=130.0)
+    segs = engine["pn4_small_days"](points, 100.0)
+    met = [s for s in segs if s["partner"] == "Sun" and s["partner_aspect"] == "body"]
+    assert met[0]["from"] == pytest.approx(30.0 / (59 / 60 + 8 / 3600))
+    assert met[0]["from_lon"] == pytest.approx(130.0)
+    natal = engine["pn4_distribution_from_ascendant"](points, 100.0, 23.44, 43.78)
+    met_natal = [s for s in natal if s["partner"] == "Sun" and s["partner_aspect"] == "body"]
+    assert abs(met_natal[0]["from"] - 30.0) > 1.0
+
+
+def test_pn4_small_days_opening_partner_is_looked_for_within_the_bound(engine):
+    """IX.7, 30: "if in the bounds of the degree of the Ascendant of the
+    revolution there was the body of a planet or its rays, the management
+    ... will belong to it". The window is the BOUND: a body one degree
+    behind the degree in the same bound is the partner from day 0."""
+    # 22 Aries is Mars's Egyptian bound (20-25); the Sun at 21 Aries is in it.
+    segs = engine["pn4_small_days"](pdata(Sun=21.0), 22.0)
+    assert segs[0]["distributor"] == "Mars"
+    assert segs[0]["partner"] == "Sun" and segs[0]["partner_aspect"] == "body"
+    assert segs[0]["opened_by"] == "at the revolution: Sun by body"
+
+
+def test_pn4_small_days_window_is_the_bound_not_the_sign(engine):
+    """The negative control, and the point where IX.7, 30 differs from
+    III.1, 23-25. The Sun at 19 Aries is behind 22 Aries in the SAME SIGN
+    but in Mercury's bound (12-20), not Mars's (20-25): the Ascendant's
+    natal distribution takes it as the birth partner, the small days do
+    not, and cite IX.7, 30 for the distributor acting alone."""
+    points = pdata(Sun=19.0)
+    natal = engine["pn4_distribution_from_ascendant"](points, 22.0, 23.44, 43.78)
+    assert natal[0]["partner"] == "Sun"
+    segs = engine["pn4_small_days"](points, 22.0)
+    assert segs[0]["partner"] is None
+    assert "IX.7, 30" in segs[0]["partner_from"]
+    assert segs[0]["opened_by"] == "at the revolution: the distributor alone"
+
+
+def test_pn4_small_days_body_ahead_in_the_bound_manages_on_arrival(engine):
+    """The owner's reading of IX.7, 30's silence: a body AHEAD of the
+    degree within its bound is not the opening partner; the direction
+    reaches it and III.1, 16 gives it the management then. The Sun at 24
+    Aries, two degrees ahead of 22 Aries in Mars's bound, is met at
+    2 / (59' 08") = 2.03 days, not on day 0."""
+    segs = engine["pn4_small_days"](pdata(Sun=24.0), 22.0)
+    assert segs[0]["partner"] is None
+    assert segs[1]["partner"] == "Sun" and segs[1]["from"] == pytest.approx(2.0 / (59 / 60 + 8 / 3600))
+
+
+def test_pn4_small_days_start_from_the_revolutions_ascendant(engine):
+    """The bundle directs the REVOLUTION'S Ascendant through the
+    revolution's own bodies and rays (IX.7, 29-30 sit inside the
+    revolution), not the natal Ascendant, and counts days from the
+    moment of the revolution."""
+    cast = engine["calculate_traditional_chart"]
+    birth, lat, lon = datetime(1985, 3, 20, 14, 30), 51.5, -0.12
+    chart = cast(birth, lat, lon)
+    rule = engine["PN4_MONTHLY_TURN_OPTIONS"][0]
+    bundle = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(2027, 6, 1).date(), rule)
+    segs = bundle["small_days"]
+    assert segs[0]["from_lon"] == pytest.approx(bundle["sr"]["ascendant"])
+    assert abs(segs[0]["from_lon"] - chart["ascendant"]) > 1.0
+    assert 0.0 <= bundle["day_of_year"] < 366.0
+    assert bundle["small_days_current"] is not None
+    assert bundle["small_days_rows"][0]["From day"] == "0.00"
 
 
 def test_pn4_indicator_two_against_abu_mashars_worked_months(engine):
