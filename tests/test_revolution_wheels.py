@@ -266,7 +266,7 @@ def test_timing_page_draws_every_view(view):
     at.session_state["_target_age"] = 43
     at.run()
     assert_no_exception(at, f"timing view {view}")
-    assert at.main.radio(key="timing_wheel_view").value == view
+    assert at.main.selectbox(key="timing_wheel_view").value == view
     # Five pictures at least: the wheel and the four distributions' strips.
     assert len(at.main.image) >= 5, [i for i in at.main.image]
     assert [d for d in at.main.download_button if "wheel" in d.label]
@@ -297,3 +297,20 @@ def test_chart_page_offers_the_bounds_ring_and_a_download():
     off.run()
     assert_no_exception(off, "chart, bounds off")
     assert off.main.checkbox(key="chart_bounds").value is False
+
+
+def test_timing_page_tabs_are_a_reading_that_survives_navigation():
+    """Five chapters; the stored tab is the one selected on the next
+    render, and every table is still reachable inside its tab."""
+    at = make_app(date="1240-05-23", page="timing")
+    at.session_state["_timing_tab"] = "Distributions"
+    at.run()
+    assert_no_exception(at, "timing, Distributions tab")
+    labels = [t.label for t in at.main.tabs]
+    assert labels == ["The revolution", "Indicators of the year", "Distributions", "Days and months",
+                      "Fardar, ages and reference tables"]
+    assert at.session_state["timing_tab"] == "Distributions"
+    assert len(at.main.dataframe) >= 30
+    # The wheel controls: a selectbox for the view, the rest behind the popover.
+    assert at.main.selectbox(key="timing_wheel_view").value == "Year"
+    assert at.main.radio(key="wheel_order").value.startswith("Nativity")

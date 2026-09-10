@@ -3,8 +3,8 @@
 Branch `ui-2026-09-10` off `main` at `05b8746`. Brief:
 `consolidated_texts/process/UI_CHART_INPUT_BRIEF.md`; the evaluation that reshaped it, with the
 review of PN IV's own figures: `consolidated_texts/process/UI_CHART_INPUT_EVALUATION_2026-09-10.md`.
-Four commits, each by pathspec: `6b3f664` (input), `976b6a7` (caption + Figure 22 oracle), `6ad3260`
-(the pictures), and this note.
+Commits, each by pathspec: `6b3f664` (input), `976b6a7` (caption + Figure 22 oracle), `6ad3260`
+(the pictures), `4c89364` (this note), and the second pass below.
 
 ## What was asked
 
@@ -73,3 +73,20 @@ scroll or screenshot; rasterise the SVG with `rsvg-convert` and read the PNG ins
 `tests/test_chart_input.py` (25), `tests/test_revolution_wheels.py` (76), the Figure 22 oracle in
 `tests/test_doctrine_fixtures.py`. `tests/fixtures/tables.json`: thirty lines changed, all the same
 four tables gaining `Date`; nothing removed. Full suite after the build: 2649 passed, 0 failed, 0 skipped, 10 min 22 s, with the root venv.
+
+## Second pass, same day: chapters
+
+The owner, reading the page: the density is impressive and does not lend itself to easy access; the
+strips sit logically beside their tables but are far down; too many radio buttons up top. Built:
+
+- **The Timing page in five tabs**, in the page's own order — *The revolution* (the target stays above
+  the tabs, since it governs everything; then the revolution table, the charts drawn, the I.6
+  inventory, the I.7 checklist), *Indicators of the year*, *Distributions* (the three strips and their
+  tables, III.2), *Days and months* (small days, mighty days, the nine methods, and the seven monthly
+  indicators, moved up from below the fardar to sit with the days), *Fardar, ages and reference
+  tables*. The selected tab is a reading: it survives navigation (`_timing_tab`), and a click reruns
+  the script so the store can follow it. The two closing expanders stay at the foot, outside the tabs.
+- **The wheel controls decluttered**: the view is a selectbox, the layout stays a two-way radio, and
+  the order, bounds, Lots, rays and twelfth-parts live in an *Options* popover.
+- No table renamed; one section moved (the monthly indicators); `tables.json` unchanged — the harness
+  walks tab contents, so the fixture sees the same multiset.
