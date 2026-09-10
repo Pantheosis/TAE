@@ -388,6 +388,49 @@ charts. Full suite **2495 passed**, six of them new; `test_base_tables.py` 121 /
 **Left undone, on purpose.** IX.7, 31's extension to the planets, Lots and houses; the exact form
 of IX.7, 32; the mighty days (IX.7, 23–28), which is the next prompt.
 
+### 4d. IX.7, 23–28: "the mighty days" — built 2026-09-10, second session
+
+Technique 3 of the continuation brief, put to the owner with the four-point prompt. Chosen as
+recommended: **the printed rate, zodiacal, with the same three readings as the small days**, over
+fn 177's corrected rate and over stopping at the end of the sign.
+
+**Re-checked in the corpus before writing:**
+
+| Citation | What it had to support | Held? |
+|---|---|---|
+| **IX.7, 23** + fn 175, 176 | the terminal point, "in the revolution of the year"; a body or ray "in the bounds of that degree" manages | yes |
+| **IX.7, 24** | else the lord of the bound, "then to the lord of the bound which follows it" — the direction runs on past the sign | yes |
+| **IX.7, 25** + fn 177 | "12 days, <4 hours>, 10 minutes, and 30 seconds" a degree, "from the first day of the revolution"; the `<4 hours>` is Dykes' insertion; fn 177's correction | yes |
+| **IX.7, 27** | the extension to the Lots of the parents and every house and Lot | yes — not built |
+| **IX.7, 28** | thirty of them are "365 1/4 days, approximately"; the name | yes |
+| **II.3, 1**; `pn4_sign_of_the_year` | the terminal point is the natal Ascendant's degree carried into the sign of the year | yes |
+
+**Stated, not presupposed.** The point, the management, the rate and the span are all in the
+sentences. The rate's inexactness is the book's: thirty of 12 d 4 h 10 m 30 s is 365 d 5 h 15 m,
+short of 365¼ by 45 minutes, which "approximately" covers and fn 177 corrects. The printed number
+is applied and a fixture holds the 45-minute gap, so repairing the rate silently to fn 177's would
+fail a test. The three readings shared with the small days are made and said on the page.
+
+**What was built.** `PN4_MIGHTY_DAYS_PER_DEGREE`, `PN4_MIGHTY_DAYS_SPAN_DEGREES` (30),
+`pn4_mighty_days_arc_to_days`, `pn4_mighty_days` — `_pn4_distribute` over the zodiac with the
+bound window, cut at thirty degrees, in days. The bound-window citation in the row text is now
+"IX.7, 24 and 30", the two sentences that state it identically. One section, one table and a
+caption on the page. **The direction crosses the sign boundary**: from the terminal degree it runs
+thirty degrees, so its last part lies in the next sign's bounds, which is what IX.7, 24 describes.
+
+**What pins it.** Four fixtures: the printed rate and its 365.22-day year, with the 45-minute gap
+from 365¼ held; zodiacal and crossing the boundary (from 25 Aries, Venus's bound of Taurus opens
+at five printed days and a body ten degrees on is met at ten); the opening window is the bound
+(Sun 21 Aries taken, Sun 19 Aries refused with the citation); and the bundle directs the terminal
+point — the natal Ascendant's degree, six signs on at age 42 — not the revolution's Ascendant.
+
+**Verification.** Doctrine fixtures 186 (were 182). `tables.json` **+6 / −0**. Full suite
+**2499 passed**, four of them new; `test_base_tables.py` 121 / 0. Rendered in the browser.
+
+**Left undone, on purpose.** IX.7, 27's extension; fn 177's rate. The next prompt, per the brief,
+is the lord of the orb (VI.1), which uses planetary hours where the rest of the book uses equal
+ones (IX.7, 56).
+
 ### Refused at the poles
 
 `pn4_distribution_from_ascendant` returns `None` where |latitude| + obliquity ≥ 90°, on the

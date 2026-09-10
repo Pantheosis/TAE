@@ -7269,7 +7269,7 @@ def _pn4_distribute(planetary_data, start_lon, measure, span_years, point_label,
         alone_cite = 'III.1, 25'
     elif opening_window == 'bound':
         window_start = max(lon for lon, _lord, _sign in pn4_bound_starts() if lon <= start_lon)
-        alone_cite = 'IX.7, 30'
+        alone_cite = 'IX.7, 24 and 30'
     else:
         raise ValueError(f"opening_window must be 'sign' or 'bound', not {opening_window!r}")
     behind = [m for m in meetings if window_start <= m[0] <= start_lon]
@@ -7413,6 +7413,59 @@ def pn4_small_days(sr_planetary_data, sr_ascendant_lon):
     for seg in segments:
         seg['from'] = pn4_small_days_arc_to_days(seg['from'])
         seg['to'] = pn4_small_days_arc_to_days(seg['to'])
+    return segments
+
+# --- IX.7, 23-28: "the mighty days" --------------------------------------
+# "you look in the revolution of the year at the degree of the sign which
+# the year terminated at, from the Ascendant of the root of the nativity"
+# (IX.7, 23) -- the terminal point, the natal Ascendant's degree carried
+# into the sign of the year -- and direct it: a body or ray already "in
+# the bounds of that degree" manages until another meets it, else the
+# lord of the bound and the bounds that follow (IX.7, 23-24). The rate
+# (IX.7, 25): "multiply by 12 days, <4 hours>, 10 minutes, and 30
+# seconds ... from the first day of the revolution", because thirty of
+# them "comes to 365 1/4 days, approximately the number of days of the
+# year" (IX.7, 28) -- the profected thirty degrees treated as the year.
+#
+# THE PRINTED RATE, on purpose. Thirty of 12d 4h 10m 30s is 365d 5h 15m
+# (365.22 days), not the 365 1/4 the sentence says "approximately"; fn
+# 177 says both the units and the parenthetical fractions are wrong and
+# gives 12d 4h 12m for a 365.25-day year. The "<4 hours>" is Dykes'
+# insertion. The number printed is the author's and is what is applied;
+# the page prints the correction beside it. Zodiacal by construction --
+# there is no ascension anywhere in the sentence; fn 175's report that
+# Birchfield would prefer ascensions is an editor's note. Decided by the
+# owner 2026-09-10 between the printed rate, the corrected rate, and
+# stopping at the sign's end.
+#
+# The direction does NOT stop at the end of the sign of the year: it
+# starts at the terminal degree and runs thirty degrees, so its last
+# part is in the bounds of the NEXT sign, which is what IX.7, 24's "then
+# to the lord of the bound which follows it" describes. The same three
+# readings as the small days are made and said on the page: the
+# revolution's bodies and rays; days from the moment of the revolution;
+# the opening partner behind the degree within its bound. IX.7, 27's
+# extension to the Lots of the parents and every house and Lot is not
+# built. No worked example exists in PN IV.
+PN4_MIGHTY_DAYS_PER_DEGREE = 12.0 + 4.0 / 24.0 + 10.0 / 1440.0 + 30.0 / 86400.0   # IX.7, 25, as printed
+PN4_MIGHTY_DAYS_SPAN_DEGREES = 30.0                                                # IX.7, 28: thirty degrees, the year
+
+def pn4_mighty_days_arc_to_days(arc_degrees):
+    """IX.7, 25: 12 days, 4 hours, 10 minutes and 30 seconds a degree."""
+    return float(arc_degrees) * PN4_MIGHTY_DAYS_PER_DEGREE
+
+def pn4_mighty_days(sr_planetary_data, terminal_lon):
+    """The terminal degree of the year directed through the revolution
+    chart for the year (IX.7, 23-28). Segments in DAYS from the
+    revolution, each {from, to, from_lon, distributor, partner, ...}; the
+    last ends at thirty degrees, 365.22 days at the printed rate. Never
+    refuses: the measure is the zodiac itself."""
+    segments = _pn4_distribute(sr_planetary_data, terminal_lon, lambda lon: lon % 360.0,
+                               PN4_MIGHTY_DAYS_SPAN_DEGREES, 'terminal point of the year',
+                               opening_window='bound', epoch='the revolution')
+    for seg in segments:
+        seg['from'] = pn4_mighty_days_arc_to_days(seg['from'])
+        seg['to'] = pn4_mighty_days_arc_to_days(seg['to'])
     return segments
 
 def pn4_distribution_at_age(segments, age_years):
@@ -8075,12 +8128,19 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule):
     small_days_current = pn4_distribution_at_age(small_days, day_of_year)
     small_days_rows = _pn4_distribution_rows(small_days, small_days_current, unit='days')
 
+    # --- IX.7, 23-28: the mighty days, the terminal degree through the SR ---
+    mighty_days = pn4_mighty_days(sr['planetary_data'], year['longitude'])
+    mighty_days_current = pn4_distribution_at_age(mighty_days, day_of_year)
+    mighty_days_rows = _pn4_distribution_rows(mighty_days, mighty_days_current, unit='days')
+
     return {
         'activation_rows': activation_rows,
         'distribution_rows': distribution_rows,
         'meridian': meridian, 'meridian_rows': meridian_rows,
         'small_days': small_days, 'small_days_current': small_days_current,
         'small_days_rows': small_days_rows, 'day_of_year': day_of_year,
+        'mighty_days': mighty_days, 'mighty_days_current': mighty_days_current,
+        'mighty_days_rows': mighty_days_rows,
         'age': age, 'month': month, 'jd_sr': jd_sr, 'jd_mr': jd_mr,
         'sr': sr, 'mr': mr, 'year': year, 'ninth': ninth, 'fardar': fardar,
         'segments': segments, 'current': current, 'ages': ages,
@@ -9293,6 +9353,40 @@ if location_query and lat is not None and lon is not None:
                        "to the window IX.7, 30 names, since the sentence does not say whether a body ahead in the "
                        "bound manages from the first day. Only the revolution's Ascendant is directed; IX.7, 31 "
                        "extends the method to every planet, Lot and house. No worked example of it exists in PN IV.")
+
+            st.subheader("The mighty days: the terminal degree of the year directed through the revolution",
+                         help="IX.7, 23: \"you look in the revolution of the year at the degree of the sign which the "
+                              "year terminated at, from the Ascendant of the root\" -- the terminal point -- and a body "
+                              "or ray already in its bound manages until another meets it, else the lord of the bound "
+                              "\"then the lord of the bound which follows it\" (IX.7, 24). IX.7, 25: the arc times "
+                              "\"12 days, 4 hours, 10 minutes, and 30 seconds\", from the first day of the revolution; "
+                              "IX.7, 28: thirty of them are the year, \"approximately\", and this is the mighty days. "
+                              "The profected thirty degrees treated as a year, walked degree by degree.")
+            md_cur = pn4['mighty_days_current']
+            if md_cur:
+                st.markdown(
+                    f"**Terminal point** at {get_degree_string(pn4['year']['longitude'])} -- **now** (day "
+                    f"{pn4['day_of_year']:.1f} of the year): distributor **{md_cur['distributor']}**, partner "
+                    f"**{md_cur['partner'] or 'none -- the distributor acts alone'}**"
+                    f" &nbsp;|&nbsp; this period runs from day {md_cur['from']:.1f} to {md_cur['to']:.1f}"
+                    f" &nbsp;|&nbsp; opened standing on {get_degree_string(md_cur['from_lon'])}")
+            else:
+                st.markdown(f"**Terminal point** at {get_degree_string(pn4['year']['longitude'])} -- day "
+                            f"{pn4['day_of_year']:.1f} is outside the thirty degrees ({PN4_MIGHTY_DAYS_SPAN_DEGREES * PN4_MIGHTY_DAYS_PER_DEGREE:.2f} days)")
+            st.dataframe(pd.DataFrame(pn4['mighty_days_rows']), hide_index=True, width='stretch',
+                         height=_rows_height(min(len(pn4['mighty_days_rows']), 12)))
+            st.caption("The rate is applied as printed. Thirty of 12 d 4 h 10 m 30 s is 365 d 5 h 15 m, not the "
+                       "365 1/4 the sentence calls it \"approximately\"; Dykes' fn 177 says both the units and the "
+                       "parenthetical fractions are wrong and gives 12 d 4 h 12 m for a 365 1/4-day year, and the "
+                       "\"4 hours\" is his insertion. The book's number is the book's. Zodiacal by construction -- "
+                       "no ascension appears in the sentence; fn 175's report that ascensions would make more sense "
+                       "is an editor's note. The direction does not stop at the end of the sign of the year: it "
+                       "starts at the terminal degree and runs thirty degrees, so its last part lies in the bounds "
+                       "of the next sign, which is what \"then to the lord of the bound which follows it\" "
+                       "describes. Read into the sentence, as for the small days: the revolution's bodies and rays; "
+                       "days from the moment of the revolution; the opening partner behind the degree within its "
+                       "bound. IX.7, 27's extension to the Lots of the parents and every house and Lot is not built. "
+                       "No worked example of it exists in PN IV.")
 
             st.subheader("Directing: which ascensions, and what a degree is worth")
             c1, c2 = st.columns(2)

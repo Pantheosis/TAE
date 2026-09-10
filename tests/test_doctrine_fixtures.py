@@ -1243,7 +1243,7 @@ def test_pn4_small_days_window_is_the_bound_not_the_sign(engine):
     assert natal[0]["partner"] == "Sun"
     segs = engine["pn4_small_days"](points, 22.0)
     assert segs[0]["partner"] is None
-    assert "IX.7, 30" in segs[0]["partner_from"]
+    assert "IX.7, 24 and 30" in segs[0]["partner_from"]
     assert segs[0]["opened_by"] == "at the revolution: the distributor alone"
 
 
@@ -1274,6 +1274,83 @@ def test_pn4_small_days_start_from_the_revolutions_ascendant(engine):
     assert 0.0 <= bundle["day_of_year"] < 366.0
     assert bundle["small_days_current"] is not None
     assert bundle["small_days_rows"][0]["From day"] == "0.00"
+
+
+# --- IX.7, 23-28: the mighty days (built 2026-09-10) ----------------------
+# No worked example exists in PN IV. These pin the printed rate and its
+# consequence, the zodiacal measure, the crossing of the sign boundary
+# under IX.7, 24, the bound-window opening, and the point directed.
+
+MIGHTY_DAY = 12 + 4 / 24 + 10 / 1440 + 30 / 86400
+
+
+def test_pn4_mighty_days_rate_as_printed_and_its_year(engine):
+    """IX.7, 25: "12 days, <4 hours>, 10 minutes, and 30 seconds" a
+    degree, applied AS PRINTED; IX.7, 28: thirty of them "comes to
+    365 1/4 days, approximately". Thirty of the printed rate is 365d 5h
+    15m -- 365.22 days, short of 365 1/4 by 45 minutes, which is what
+    "approximately" is covering and what fn 177 corrects. The fixture
+    holds the printed number, not the correction, and holds the gap so
+    that silently repairing the rate to fn 177's would fail here."""
+    assert engine["pn4_mighty_days_arc_to_days"](1.0) == pytest.approx(MIGHTY_DAY)
+    segs = engine["pn4_mighty_days"](pdata(Sun=100.0, Moon=200.0), 10.0)
+    assert segs[0]["from"] == 0.0
+    year = segs[-1]["to"]
+    assert year == pytest.approx(30 * MIGHTY_DAY)
+    assert 365.25 - year == pytest.approx(45 / 1440, abs=1e-6)
+    assert year != pytest.approx(365.25, abs=1e-3)
+    for a, b in zip(segs, segs[1:]):
+        assert a["to"] == pytest.approx(b["from"], abs=1e-9) and a["to"] > a["from"]
+
+
+def test_pn4_mighty_days_are_zodiacal_and_cross_the_sign_boundary(engine):
+    """Thirty degrees are the year (IX.7, 28) and there is no ascension in
+    the sentence: a body ten degrees ahead is met at ten printed days,
+    wherever the native was born. And the direction does not stop at the
+    end of the sign: from 25 Aries it leaves Saturn's bound for Venus's
+    at 0 Taurus, five degrees on, "then to the lord of the bound which
+    follows it" (IX.7, 24), and runs on to 25 Taurus."""
+    segs = engine["pn4_mighty_days"](pdata(Sun=35.0), 25.0)
+    assert segs[0]["distributor"] == "Saturn"                       # 25 Aries, Egyptian
+    venus = [s for s in segs if s["opened_by"].startswith("bound of Venus at 00")]
+    assert venus and venus[0]["from"] == pytest.approx(5 * MIGHTY_DAY)
+    met = [s for s in segs if s["partner"] == "Sun" and s["partner_aspect"] == "body"]
+    assert met[0]["from"] == pytest.approx(10 * MIGHTY_DAY)
+    assert met[0]["from_lon"] == pytest.approx(35.0)
+    assert segs[-1]["to"] == pytest.approx(30 * MIGHTY_DAY)
+
+
+def test_pn4_mighty_days_opening_window_is_the_bound(engine):
+    """IX.7, 23: "if the body of a planet or its rays was in the bounds of
+    that degree, then the management of the days will belong to it". A
+    body behind the degree in its bound is the partner from day 0; one
+    behind it in the previous bound of the same sign is not, and the
+    distributor acts alone."""
+    within = engine["pn4_mighty_days"](pdata(Sun=21.0), 22.0)          # both in Mars's 20-25 Aries
+    assert within[0]["partner"] == "Sun"
+    assert within[0]["opened_by"] == "at the revolution: Sun by body"
+    outside = engine["pn4_mighty_days"](pdata(Sun=19.0), 22.0)         # Sun in Mercury's 12-20
+    assert outside[0]["partner"] is None
+    assert "IX.7, 24 and 30" in outside[0]["partner_from"]
+
+
+def test_pn4_mighty_days_direct_the_terminal_point_through_the_revolution(engine):
+    """IX.7, 23: the degree directed is the terminal point -- the natal
+    Ascendant's degree in the sign of the year -- and it is read "in the
+    revolution of the year". The bundle starts the direction from the
+    terminal point, not from the revolution's Ascendant and not from the
+    natal Ascendant itself."""
+    cast = engine["calculate_traditional_chart"]
+    birth, lat, lon = datetime(1985, 3, 20, 14, 30), 51.5, -0.12
+    chart = cast(birth, lat, lon)
+    rule = engine["PN4_MONTHLY_TURN_OPTIONS"][0]
+    bundle = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(2027, 6, 1).date(), rule)
+    start = bundle["mighty_days"][0]["from_lon"]
+    assert start == pytest.approx(bundle["year"]["longitude"])
+    assert start % 30.0 == pytest.approx(chart["ascendant"] % 30.0)      # the same degree, in the sign of the year
+    assert abs(start - chart["ascendant"]) > 1.0                          # age 42: six signs on
+    assert abs(start - bundle["sr"]["ascendant"]) > 1.0
+    assert bundle["mighty_days_rows"][0]["From day"] == "0.00"
 
 
 def test_pn4_indicator_two_against_abu_mashars_worked_months(engine):
