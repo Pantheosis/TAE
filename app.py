@@ -11204,7 +11204,7 @@ if location_query and lat is not None and lon is not None:
                         + f" -- I.6, 8 counts 154 without the Lots{' and the count agrees' if image_counts['total of I.6, 8'] == 154 else ', and this chart differs'}.")
             st.dataframe(pd.DataFrame(image_rows), hide_index=True, width='stretch', height=_rows_height(16))
             st.caption("A table, not the wheel of I.6, 1: every point by whole-sign house from the revolution's "
-                       "Ascendant (Dykes drew Figure 52 that way, fn 33), ordered by degree within the house, with each "
+                       "Ascendant (Dykes drew Figure 51 that way, fn 33; Figure 52 is the count table), ordered by degree within the house, with each "
                        "point's bound. The twelfth-part construction -- 2.5 degrees to a sign, beginning with the sign "
                        "itself -- is stated in no text in hand and is supplied from convention, as the Chart page says "
                        "of the Moon's fifth corruption. The fixed stars of I.6, 7 are not computed. The Lots are this "

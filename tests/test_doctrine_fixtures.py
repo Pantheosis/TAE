@@ -2602,3 +2602,40 @@ def test_pn4_ascensions_against_abu_mashars_own_worked_conversion(engine):
     # "so Venus distributes alone for 3 years, 12 days"
     period = engine["pn4_arc_to_time"](printed)
     assert (period["years"], period["months"], period["days"]) == (3, 0, 12)
+
+
+# --- III.1: the jar bakhtar against the editor's worked figure (added 2026-09-10)
+
+FIG22_ROWS = [
+    # (arc d, m, s), distributor, partner, aspect -- PN IV Figure 22 (p. 63),
+    # a Janus run on the chart of Apr 27 2019, 5:13:00 AM CDT, Minneapolis
+    # 93w15'49" 44n58'48". Janus leaves the partner at birth blank; III.1,
+    # 23-25 gives the body or ray behind the Ascendant in its sign, Venus.
+    ((0, 0, 0), "Venus", "Venus", "body"),
+    ((1, 10, 54), "Mercury", "Venus", "body"),
+    ((1, 19, 57), "Mercury", "Moon", "sextile"),
+    ((2, 19, 36), "Mercury", "Mercury", "body"),
+    ((4, 18, 54), "Mercury", "Mars", "sextile"),
+    ((5, 28, 58), "Mars", "Mars", "sextile"),
+    ((5, 45, 50), "Mars", "Saturn", "square"),
+    ((7, 38, 54), "Mars", "Jupiter", "trine"),
+]
+
+
+def test_pn4_distribution_reproduces_figure_22(engine):
+    """PN IV Figure 22 is the one printed distribution with arcs to the
+    second: eight segments over the first 7.6 years. The engine's
+    oblique-ascension direction of the Ascendant (III.1, 12-13) must land
+    every bound and every partner where the figure does, within two
+    seconds of arc -- the figure's own rounding."""
+    lat, lon = 44 + 58 / 60 + 48 / 3600, -(93 + 15 / 60 + 49 / 3600)
+    chart = engine["calculate_traditional_chart"](datetime(2019, 4, 27, 10, 13, 0), lat, lon)
+    assert engine["get_degree_string"](chart["ascendant"]) == "09° Ari 45'"
+    segs = engine["pn4_distribution_from_ascendant"](chart["planetary_data"], chart["ascendant"],
+                                                     chart["obliquity"], lat)
+    assert len(segs) >= len(FIG22_ROWS)
+    for seg, ((d, m, s), distributor, partner, aspect) in zip(segs, FIG22_ROWS):
+        expected = d + m / 60.0 + s / 3600.0
+        assert seg["from"] == pytest.approx(expected, abs=2.0 / 3600.0), (seg, (d, m, s))
+        assert seg["distributor"] == distributor
+        assert seg["partner"] == partner and seg["partner_aspect"] == aspect
