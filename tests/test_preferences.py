@@ -120,3 +120,16 @@ def test_the_reading_depth_is_a_reading_on_the_sources_page(prefs_on):
     find_page_widget(at, "radio", "Reading depth").set_value("Course text and supplement").run()
     assert at.session_state["_reading_depth"] == "Course text and supplement"
     assert json.loads(_prefs_path().read_text())["_reading_depth"] == "Course text and supplement"
+
+
+def test_option_values_renamed_by_the_citation_convention_still_load(prefs_on):
+    """A preferences file written before 2026-09-10 holds the old option
+    strings; load_preferences maps them to the new ones."""
+    _prefs_path().parent.mkdir(parents=True)
+    _prefs_path().write_text(json.dumps({"_pn4_monthly_turn": "Abu Ma'shar IX.1, 26-34",
+                                         "_wheel_order": "Revolution inside (Abu Ma'shar, I.6)"}))
+    at = make_app(page="timing").run()
+    assert_no_exception(at, "renamed options")
+    assert at.session_state["_pn4_monthly_turn"] == "PN IV IX.1, 26-34"
+    assert at.session_state["_wheel_order"] == "Revolution inside (Abu Ma'shar's order, PN IV I.6)"
+    assert at.main.radio(key="pn4_monthly_turn").value == "PN IV IX.1, 26-34"
