@@ -884,6 +884,46 @@ I.6, 6's time lords, twelve houses, and degree order within each house.
 falling" beyond direct/retrograde (fn 32 is unsure what it means). The next prompt, per the brief,
 is the reading checklist (I.7, 1–26).
 
+### 4o. I.7, 1–26: the reading checklist — built 2026-09-10, second session
+
+Technique 14 of the continuation brief, put to the owner with the four-point prompt. Chosen as
+recommended: **the facts, with the six things the page does not read named**, over 2–6 alone.
+
+**Re-checked in the corpus before writing:**
+
+| Citation | What it had to support | Held? |
+|---|---|---|
+| **I.7, 1–6** + fn 37–38 | the revolution's Ascendant: its house in the root (fn 37 adds "dynamic angularity"), who is in it and looks at it, who has a claim (fn 38) and where they stand, in a share or in exile; the lord's one house or two | yes |
+| **I.7, 7–24** + fn 39–45 | the per-planet list; fn 41 whole sign, fn 42 by degree, fn 44 the return, fn 45 the Lots | yes |
+| **I.7, 25–26** + fn 46 | the two-times principle | yes — already applied under II.3 |
+| **I.6, 3** + fn 32 | "rising and falling", which fn 32 could not settle | yes — named as unread |
+
+**Facts, and six things not read.** 2–7, 10–14, 17–19 and 22–24 are read from the engine's
+evaluators on each chart: the pairwise configurations and the connection rule the Configurations
+page uses (12–13), reception under its rule (14), the accidental dignities' domain (17), the
+twelfth-part (18, the convention already declared), V.1, 2–3's grades for a return (19), the
+stakes (23), the solar phase (24). Not read, and the caption says so: 8 strong or weak, 15
+supporting or corrupting, 16 hostile or friendly — judgments; 9 rising and falling — fn 32; 20–21
+— the year's transits, untracked. 22, the Lots of the year, are the image's rows.
+
+**What was built.** `PN4_I7_NOT_READ`, `_pn4_share_or_exile` (I.7, 5's "share or exile"),
+`pn4_i7_ascendant` (2–6), `pn4_i7_planets` (fourteen rows, seven a chart); the bundle carries
+both; one section before the indicators table.
+
+**What pins it.** Three fixtures on constructed charts: 2–6 for a Cancer revolution Ascendant
+under an Aries root (house 4 a stake; the contents of both charts with the twelfth-parts falling
+in it; the claimants with their shares; the Moon's one house and Mercury's two, one seen by
+trine and one in aversion); share or exile (Mars in Aries, Libra, Gemini; Venus in her Aquarius
+bound); and the per-planet rows (fourteen; retrograde; a return by degree and a return on the
+Sun's bound; assembly and square by whole sign; the stake; the Sun's own row; the Moon's
+twelfth-part at 0 Gemini; every row's domain and reception filled).
+
+**Verification.** Doctrine fixtures 229 (were 226). `tables.json` **+12 / −0**: the two tables on six charts. Full suite
+**2542 passed**, three of them new; `test_base_tables.py` 121 / 0.
+
+**Left undone, on purpose.** 8, 9, 15, 16, 20, 21. The next prompt, per the brief, is the last
+item, the nine methods for days and hours (IX.7, 1–72).
+
 ### Refused at the poles
 
 `pn4_distribution_from_ascendant` returns `None` where |latitude| + obliquity ≥ 90°, on the

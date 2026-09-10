@@ -8941,6 +8941,182 @@ def pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat):
     counts['total of I.6, 8'] = counts['planets'] + counts['rays'] + counts['nodes'] + counts['twelfth-parts of houses'] + counts['twelfth-parts of planets']
     return rows, counts
 
+# --- I.7, 1-26: the reading checklist -------------------------------------
+# "If you made the image of the revolution of the year, then understand:"
+# (I.7, 1) -- twenty-six things. 2-6 concern the revolution's Ascendant:
+# its house in the root, who is in it and looks at it in both times, who
+# has a claim on it and where they stand (in a share or in exile), and
+# whether its lord has one house or two and looks at them. 7-24 run over
+# all the planets (fn 39): direct or retrograde (7); strong or weak (8);
+# "rising and falling" (9); aversion (10); assembly and whole-sign aspect
+# (11, fn 41); rays by degree (12, fn 42); connection and separation
+# (13); reception (14); supporting or corrupting (15); hostile or
+# friendly, harmonizing or contrary (16); domain (17); their
+# twelfth-parts (18); returns to their rooted positions (19, fn 44);
+# their course in the signs (20); their transits of the natal,
+# revolution and monthly planets (21); the Lots of the year (22, fn 45);
+# the stakes (23); the solar phase (24). 25-26: "its indication will be
+# according to its place and condition in the two times together".
+#
+# FACTS, and six things named as not read. The facts (2-7, 10-14,
+# 17-19, 22-24) come from the engine's evaluators run on each chart --
+# the pairwise configurations and the connection rule the Configurations
+# page uses, reception under its rule, accidental dignity's domain, the
+# solar phase, the twelfth-part, the transit grade of V.1. NOT read: 8
+# "strong or weak", 15 "supporting or corrupting", 16 "hostile or
+# friendly" -- judgments the page does not make; 9 "rising and falling",
+# which fn 32 could not settle; 20-21, the year's course and transits,
+# which the engine does not track. 25-26 is the principle II.3's section
+# already applies. Decided by the owner 2026-09-10; no worked example.
+
+PN4_I7_NOT_READ = (
+    ('8', 'the strong ones, and the weak', 'a judgment the page does not make'),
+    ('9', 'those rising and falling in their direction', 'fn 32 could not settle what this means'),
+    ('15', 'those supporting their associate or corrupting them', 'a judgment the page does not make'),
+    ('16', 'those hostile to them and friendly towards them, and those harmonizing with others or being contrary to them', 'a judgment the page does not make'),
+    ('20', 'their course in the twelve signs', "the year's transits are not tracked"),
+    ('21', 'their transiting the planets of the root, the revolution, and the revolution of the months', "the year's transits are not tracked"),
+)
+
+def _pn4_share_or_exile(planet, lon):
+    """I.7, 5: "in a position in which it has a share, or in the contrary
+    of that (being in exile)"."""
+    r = get_essential_rulers(lon)
+    if planet in (r['domicile'], r['exaltation'], r['triplicity_day'], r['triplicity_night'], r.get('term'), r['face']):
+        shares = [k for k, v in (('house', r['domicile']), ('exaltation', r['exaltation']), ('triplicity', r['triplicity_day']),
+                                 ('triplicity', r['triplicity_night']), ('bound', r.get('term')), ('face', r['face'])) if v == planet]
+        return 'a share: ' + ', '.join(dict.fromkeys(shares))
+    sign = get_zodiac_sign(lon)
+    if sign in DOMICILES.get(planet, []) or sign in EXALTATIONS.get(planet, []):
+        return 'a share'
+    opposite = get_zodiac_sign(lon + 180.0)
+    if opposite in DOMICILES.get(planet, []):
+        return 'exile (detriment)'
+    return 'no share (peregrine)'
+
+def pn4_i7_ascendant(chart_data, sr):
+    """I.7, 2-6 for the revolution's Ascendant, as facts."""
+    natal, rev = chart_data['planetary_data'], sr['planetary_data']
+    n_asc, r_asc = chart_data['ascendant'], sr['ascendant']
+    sign = get_zodiac_sign(r_asc)
+    h = get_wsh_house(r_asc, n_asc)
+
+    def contents(chart, data):
+        planets = _pn4_natal_planets_in_sign(data, sign)
+        lots = _pn4_lots_in_sign(chart, sign)
+        twelfths = [p for p in PN4_SEVEN if p in data and get_zodiac_sign(pn4_twelfth_part(data[p]['longitude'])) == sign]
+        return (f"planets: {planets}; Lots: {', '.join(lots) or 'none'}; twelfth-parts of planets falling in it: "
+                f"{', '.join(twelfths) or 'none'}")
+
+    def looking(data):
+        return ', '.join(f"{p} by {a}" for p, a, _l, _d in _pn4_looks_at_sign(data, sign) if a != 'in it') or 'none'
+
+    r = get_essential_rulers(r_asc)
+    trip = r['triplicity_day'] if sr['sect'] == 'Diurnal' else r['triplicity_night']
+    claimants = []
+    for kind, lord in (('house', r['domicile']), ('exaltation', r['exaltation']), ('triplicity', trip), ('bound', r.get('term')), ('face', r['face'])):
+        if lord in (None, '-', '') or lord not in rev:
+            continue
+        lon = rev[lord]['longitude']
+        claimants.append(f"{lord} ({kind}): house {get_wsh_house(lon, r_asc)} from it, in {get_zodiac_sign(lon)}, {_pn4_share_or_exile(lord, lon)}")
+    lord = r['domicile']
+    houses = DOMICILES.get(lord, [])
+    lord_lon = rev.get(lord, {}).get('longitude')
+    parts = []
+    if lord_lon is not None:
+        lord_idx = int(lord_lon // 30)
+        for hs in houses:
+            idx = SIGN_ORDER.index(hs)
+            apart = min((idx - lord_idx) % 12, (lord_idx - idx) % 12)
+            entry = ASPECT_BY_SIGN_COUNT.get(apart)
+            rel = 'in it' if apart == 0 else (f"looks at it by {entry[0].lower()}" if entry else 'does not look at it (aversion)')
+            parts.append(f"{hs} (house {get_wsh_house(idx * 30.0 + 15.0, r_asc)} from the Ascendant): {lord} {rel}; "
+                         f"{lord} is house {get_wsh_house(lord_lon, idx * 30.0)} from {hs}")
+    return [
+        {'I.7': '2', 'Question': "The revolution's Ascendant: which house it is in the root",
+         'Reads': f"{sign} ({get_degree_string(r_asc)}) is house {h} from the natal Ascendant, {_pn4_house_class(h)} (fn 37)",
+         'Source': 'I.7, 2'},
+        {'I.7': '3', 'Question': 'Who was in it in the root; in the revolution',
+         'Reads': f"root -- {contents(chart_data, natal)}; revolution -- {contents(sr, rev)}", 'Source': 'I.7, 3'},
+        {'I.7': '4', 'Question': 'Who looks at it, in both times (whole sign)',
+         'Reads': f"root: {looking(natal)}; revolution: {looking(rev)}", 'Source': 'I.7, 4; fn 41'},
+        {'I.7': '5', 'Question': 'Who has a claim on it, where they are relative to it, and in a share or in exile (in the revolution)',
+         'Reads': '; '.join(claimants) or '-', 'Source': 'I.7, 5; fn 38'},
+        {'I.7': '6', 'Question': f"Its lord, {lord}: one house or two, does it look at them, and where each is relative to the other",
+         'Reads': f"{len(houses)} house{'s' if len(houses) != 1 else ''}: " + ('; '.join(parts) or '-'), 'Source': 'I.7, 6'},
+    ]
+
+def pn4_i7_planets(chart_data, sr):
+    """I.7, 7, 10-14, 17-19, 22-24 per planet, in the root and the
+    revolution, from the engine's evaluators."""
+    rows = []
+    natal = chart_data['planetary_data']
+    for label, chart in (('root', chart_data), ('revolution', sr)):
+        data, asc, sect = chart['planetary_data'], chart['ascendant'], chart['sect']
+        acc = evaluate_accidental_dignities(data, chart['houses'], sect, chart.get('julian_day'))
+        pairs = _pairwise_configurations(data)
+        try:
+            receptions = evaluate_reception(data, sect)
+        except Exception:
+            receptions = None
+        for planet in PN4_SEVEN:
+            if planet not in data:
+                continue
+            row = data[planet]
+            lon = row['longitude']
+            a = acc.get(planet, {})
+            phase, side, _el = solar_phase(planet, lon, data['Sun']['longitude'])
+            my_idx = int(lon // 30)
+            assembled, looks, averse = [], [], []
+            for other in PN4_SEVEN:
+                if other == planet or other not in data:
+                    continue
+                o_idx = int(data[other]['longitude'] // 30)
+                apart = min((o_idx - my_idx) % 12, (my_idx - o_idx) % 12)
+                entry = ASPECT_BY_SIGN_COUNT.get(apart)
+                if apart == 0:
+                    assembled.append(other)
+                elif entry:
+                    looks.append(f"{other} ({entry[0].lower()})")
+                else:
+                    averse.append(other)
+            by_degree = []
+            for pr in pairs:
+                if planet not in (pr['p1'], pr['p2']) or pr['aspect_name'] == 'Aversion':
+                    continue
+                other = pr['p2'] if pr['p1'] == planet else pr['p1']
+                by_degree.append(f"{other} {pr['aspect_name'].lower()}, {str(pr.get('motion', '-')).lower()}"
+                                 + (', connected' if _is_connected(pr) else ''))
+            if receptions is None:
+                received = 'not computed'
+            else:
+                by = sorted({r['Receiver'] for r in receptions if r.get('Received') == planet
+                             or (r.get('Received') == 'each other' and planet in str(r.get('Receiver')))})
+                received = ', '.join(by) or 'not received'
+            h = get_wsh_house(lon, asc)
+            if label == 'revolution' and planet in natal:
+                grade = _pn4_transit_grade(lon, natal[planet]['longitude'])
+                others = [q for q in PN4_SEVEN if q != planet and q in natal and _pn4_transit_grade(lon, natal[q]['longitude'])]
+                returns = (f"on its own rooted place by {grade}" if grade else 'not on its rooted place') + \
+                          (f"; on the rooted place of {', '.join(others)}" if others else '')
+            else:
+                returns = '-'
+            rows.append({
+                'Planet': planet, 'Chart': label,
+                'Motion (7)': 'retrograde' if row.get('speed_in_lon', 1.0) < 0 else 'direct',
+                'Whole sign (10-11)': (f"assembled with {', '.join(assembled)}; " if assembled else '') +
+                                      (f"looks at {', '.join(looks)}; " if looks else '') +
+                                      (f"in aversion to {', '.join(averse)}" if averse else '') or '-',
+                'By degree (12-13)': '; '.join(by_degree) or 'none',
+                'Received by (14)': received,
+                'Domain (17)': 'in its own domain' if a.get('Hayz') else 'contrary to its domain' if a.get('ContraryDomain') else 'neither',
+                'Twelfth-part (18)': get_degree_string(pn4_twelfth_part(lon)),
+                'Return (19)': returns,
+                'Stakes (23)': f"house {h}, {_pn4_house_class(h)}",
+                'Sun (24)': (f"{side or '-'}" + (f", {phase.lower()}" if phase else ', in its own glow')),
+            })
+    return rows
+
 def pn4_fardar_at_age(age_years, sect):
     """The fardar lord and sub-lord at an age.
 
@@ -9509,6 +9685,8 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'iii2_transitions': pn4_year_transitions(segments, age),
         'bound_transits': pn4_bound_transits(chart_data, sr, current, year['lord']) if current else None,
         'image': pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat),
+        'i7_ascendant': pn4_i7_ascendant(chart_data, sr),
+        'i7_planets': pn4_i7_planets(chart_data, sr),
         'moon_rows': [{'Day from the revolution': f"{c['day']:.2f}", 'Planet': c['planet'], 'By': c['aspect'],
                        'Moon at': get_degree_string(c['moon_at'])} for c in moon['connections']],
         'portion_rows': [{'Portion': f"{p['portion']} of {p['of']}", 'Owned by': p['planet'],
@@ -10645,6 +10823,26 @@ if location_query and lat is not None and lon is not None:
                        "itself -- is stated in no text in hand and is supplied from convention, as the Chart page says "
                        "of the Moon's fifth corruption. The fixed stars of I.6, 7 are not computed. The Lots are this "
                        "engine's, \"many or few\"; the count line excludes them as I.6, 8 does.")
+
+            st.subheader("The reading checklist (I.7, 1-26)",
+                         help="\"If you made the image of the revolution of the year, then understand:\" (I.7, 1) -- "
+                              "twenty-six things. 2-6: the revolution's Ascendant -- its house in the root, who is in it "
+                              "and looks at it in both times, who has a claim on it and where they stand, whether its "
+                              "lord has one house or two and looks at them. 7-24: every planet -- motion, strength, "
+                              "aversion and aspect, rays, connection, reception, support, friendship, domain, "
+                              "twelfth-parts, returns, course, transits, the Lots, the stakes, the Sun. 25-26: \"its "
+                              "indication will be according to its place and condition in the two times together.\"")
+            st.markdown("**I.7, 2-6 -- the revolution's Ascendant:**")
+            st.dataframe(pd.DataFrame(pn4['i7_ascendant']), hide_index=True, width='stretch', height=_rows_height(5))
+            st.markdown("**I.7, 7-24 -- the planets, in both times** (the numbers are I.7's sentences):")
+            st.dataframe(pd.DataFrame(pn4['i7_planets']), hide_index=True, width='stretch', height=_rows_height(14))
+            st.caption("Facts from the engine's own evaluators, run on the revolution's data as on the root's: the "
+                       "pairwise configurations and the connection rule of the Configurations page, reception under "
+                       "its rule, the domain of the accidental dignities, the solar phase, the twelfth-part (a "
+                       "convention, as the image's caption says), and V.1, 2-3's grades for a return. Not read, and "
+                       "said so: " + '; '.join(f"{n} \"{t}\" -- {why}" for n, t, why in PN4_I7_NOT_READ)
+                       + ". I.7, 22, the Lots of the year, are in the image above. I.7, 25-26 is the principle the "
+                       "II.3 section applies. No worked example exists; I.7 is a list.")
 
             st.subheader("Indicators of the year, in Abu Ma'shar's order",
                          help="II.1, 5-24 ranks nineteen indicators of the year and II.1, 25 says \"each one in turn "

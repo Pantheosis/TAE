@@ -2197,6 +2197,70 @@ def test_pn4_revolution_image_counts_as_i_6_8(engine):
     assert rows == b["image"][0]
 
 
+# --- I.7, 1-26: the reading checklist (built 2026-09-10) -------------------
+
+def test_pn4_i7_ascendant_rows_read_2_to_6(engine):
+    """I.7, 2-6 for the revolution's Ascendant. Revolution Ascendant 5
+    Cancer under a natal Aries Ascendant: house 4 from the root, a stake;
+    who is in Cancer in each chart; who looks at it; the claimants and
+    their shares; the Moon's one house, Cancer, which she is in."""
+    root, sr, _ = _ii3_pair(engine, r_asc=95.0, rev=dict(Moon=100.0, Jupiter=250.0, Venus=130.0))
+    rows = engine["pn4_i7_ascendant"](root, sr)
+    assert [r["I.7"] for r in rows] == ["2", "3", "4", "5", "6"]
+    assert rows[0]["Reads"].startswith("Cancer (05\u00b0 Can 00') is house 4 from the natal Ascendant, a stake")
+    assert "root -- planets: Sun (neither), Mercury (neither)" in rows[1]["Reads"]
+    assert "revolution -- planets: Sun (neither), Mercury (neither), Moon (neither)" in rows[1]["Reads"]
+    assert "twelfth-parts of planets falling in it" in rows[1]["Reads"]
+    assert "root: " in rows[2]["Reads"] and "revolution: " in rows[2]["Reads"]
+    assert rows[3]["Reads"].startswith("Moon (house): house 1 from it, in Cancer, a share: house")
+    assert "Jupiter (exaltation): house 6 from it, in Sagittarius, a share: house" in rows[3]["Reads"]
+    assert rows[4]["Reads"].startswith("1 house: Cancer (house 1 from the Ascendant): Moon in it; Moon is house 1 from Cancer")
+    # a lord with two houses: Mercury, for an Ascendant in Gemini
+    root, sr, _ = _ii3_pair(engine, r_asc=65.0, rev=dict(Mercury=200.0))
+    rows = engine["pn4_i7_ascendant"](root, sr)
+    assert rows[4]["Reads"].startswith("2 houses: Gemini") and "Virgo" in rows[4]["Reads"]
+    assert "Mercury looks at it by trine" in rows[4]["Reads"]                     # Libra trines Gemini
+    assert "Virgo" in rows[4]["Reads"] and "does not look at it (aversion)" in rows[4]["Reads"]   # Libra is averse to Virgo
+
+
+def test_pn4_share_or_exile(engine):
+    """I.7, 5: "either in a position in which it has a share, or in the
+    contrary of that (being in exile)". Mars at 10 Aries has a share (his
+    house); Mars at 10 Libra is in exile; Mars at 5 Gemini has none;
+    Venus at 10 Aquarius has the bound (Mercury-first Aquarius: Venus
+    7-13)."""
+    s = engine["_pn4_share_or_exile"]
+    assert s("Mars", 10.0).startswith("a share: house")
+    assert s("Mars", 190.0) == "exile (detriment)"
+    assert s("Mars", 65.0) == "no share (peregrine)"
+    assert s("Venus", 310.0).startswith("a share:") and "bound" in s("Venus", 310.0)
+
+
+def test_pn4_i7_planet_rows_in_both_times(engine):
+    """I.7, 7-24 per planet: fourteen rows, seven a chart, with motion,
+    whole-sign configurations, degree connections, reception, domain,
+    twelfth-part, return, stakes and the Sun. The revolution's Saturn on
+    its natal degree reads a return by degree; the revolution's Mars on
+    the natal Sun's bound reads it too."""
+    root, sr, _ = _ii3_pair(engine, rev=dict(Saturn=(20.3, -0.05), Mars=(102.0, 0.6)))
+    rows = engine["pn4_i7_planets"](root, sr)
+    assert len(rows) == 14 and [r["Chart"] for r in rows] == ["root"] * 7 + ["revolution"] * 7
+    by = {(r["Planet"], r["Chart"]): r for r in rows}
+    assert by[("Saturn", "revolution")]["Motion (7)"] == "retrograde"
+    assert by[("Saturn", "revolution")]["Return (19)"].startswith("on its own rooted place by degree")
+    assert "on the rooted place of Sun" in by[("Mars", "revolution")]["Return (19)"]
+    assert by[("Saturn", "root")]["Return (19)"] == "-"
+    assert by[("Sun", "root")]["Whole sign (10-11)"].startswith("assembled with Mercury")
+    assert "Moon (square)" in by[("Sun", "root")]["Whole sign (10-11)"]
+    assert by[("Sun", "root")]["Stakes (23)"] == "house 4, a stake"
+    assert by[("Sun", "root")]["Sun (24)"] == "-, in its own glow"
+    assert by[("Mercury", "root")]["Sun (24)"].split(",")[0] in ("eastern", "western")
+    assert by[("Moon", "root")]["Twelfth-part (18)"] == "00\u00b0 Gem 00'"           # 20 Libra: the ninth twelfth-part, Gemini
+    for r in rows:
+        assert r["Domain (17)"] in ("in its own domain", "contrary to its domain", "neither")
+        assert r["Received by (14)"] != ""
+
+
 def test_pn4_indicator_two_against_abu_mashars_worked_months(engine):
     """IX.1, 15-16 works indicator #2 out month by month for a year that
     terminates at Cancer: "the lord of its first ninth-part is the Moon,
