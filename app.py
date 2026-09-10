@@ -7617,6 +7617,77 @@ def pn4_fardar_subperiods(lord, years):
     part = float(years) / 7.0
     return [(PN4_DESCENDING_SPHERES[(i + k) % 7], part) for k in range(7)]
 
+# --- VI.1: the lord of the orb -------------------------------------------
+# "you look at the lord of the hour in which the native was born, and
+# assign it to the Ascendant and to the first year from his birth"
+# (VI.1, 4); "the lord of the second hour from it to the second house
+# ... and to the second year" (5), and so on, "so that the lord of the
+# twelfth hour from the lord of the hour in which the native was born,
+# belongs to the twelfth house ... and the lord of the thirteenth hour
+# from it belongs to the Ascendant of the root and the thirteenth year"
+# (VI.1, 8) -- a CONTINUOUS loop of the seven hour lords against the
+# twelve-year cycle of the profection, so the pairing changes every
+# twelve years. Judged "just as you judge by means of the lord of the
+# year" (VI.1, 12). Indicator #5 of the year (II.1, 10).
+#
+# The hour lords run down the spheres, "the planet which is below it in
+# the circle" (IX.7, 3-5 and Dykes' Figure 45): after the natal hour lord
+# comes the next in PN4_DESCENDING_SPHERES, cyclically. VI.1, 10 names
+# each by the house its number matches -- "the lord of the hour of the
+# house of assets" is the SECOND hour lord from the natal one -- and
+# VI.1, 18-19 use those names for six fixed positions: the Ascendant,
+# Midheaven and house of hope of the root, and the sign of the year with
+# the tenth and eleventh from it. Those are read here by VI.1, 10's
+# naming, hour k for house k, without the twelve-year "reset" Dykes
+# proposes in Intro Sect. 13 and calls "my idea".
+#
+# What PN IV presupposes and does not state: the planetary hours
+# themselves. The sequence from the day lord at sunrise is Dykes' Figure
+# 45 (Intro Sect. 13), and the engine's calculate_chronocrats follows it,
+# with real sunrise and sunset and a flagged equal-hour approximation
+# where the Sun is circumpolar. Dykes floats a single-cycle alternative
+# (each house keeping its first hour lord for life, Intro Figure 48) on
+# the thought that the loop is Abu Ma'shar's own error; VI.1, 8 states
+# the loop, and the owner chose it 2026-09-10. The delineations of VI.1,
+# 12-17 and the seven-day grant of IX.7, 7-8 are not built.
+
+def pn4_hour_lord_from_natal(natal_hour_lord, steps):
+    """The lord of the hour `steps` hours after the natal one, down the
+    spheres and round again (VI.1, 5-8)."""
+    if natal_hour_lord not in PN4_DESCENDING_SPHERES:
+        return None
+    i = PN4_DESCENDING_SPHERES.index(natal_hour_lord)
+    return PN4_DESCENDING_SPHERES[(i + int(steps)) % 7]
+
+def pn4_lord_of_the_orb(natal_hour_lord, completed_years):
+    """VI.1, 4-8: the lord of the orb for the year -- the natal hour lord
+    at age 0, and one hour lord further down the spheres for every
+    completed year, without reset."""
+    return pn4_hour_lord_from_natal(natal_hour_lord, completed_years)
+
+def pn4_hour_lord_of_house(natal_hour_lord, house):
+    """VI.1, 10: "the lord of the hour of the house of X" is the hour lord
+    numbered as the house, counted from the natal hour as the first."""
+    return pn4_hour_lord_from_natal(natal_hour_lord, int(house) - 1)
+
+def pn4_named_lords_of_the_orb(natal_hour_lord, completed_years):
+    """VI.1, 18-19: the six named lords of the orb -- the hour lords of
+    the Ascendant, Midheaven and house of hope of the root (18), and of
+    the sign of the terminal point and the tenth and eleventh from it
+    (19), each by VI.1, 10's naming."""
+    k = int(completed_years) % 12 + 1              # the house of the sign of the year from the natal Ascendant
+    positions = (
+        ('Ascendant of the root', 1, 'VI.1, 18'),
+        ('Midheaven of the root', 10, 'VI.1, 18'),
+        ('House of hope of the root', 11, 'VI.1, 18'),
+        ('Sign of the terminal point', k, 'VI.1, 19'),
+        ('Tenth from the sign of the year', (k - 1 + 9) % 12 + 1, 'VI.1, 19'),
+        ('Eleventh from the sign of the year', (k - 1 + 10) % 12 + 1, 'VI.1, 19'),
+    )
+    return [{'Position': label, 'House': house, 'Hour from the natal hour': house,
+             'Lord of the hour': pn4_hour_lord_of_house(natal_hour_lord, house) or '-',
+             'Source': cite} for label, house, cite in positions]
+
 def pn4_fardar_at_age(age_years, sect):
     """The fardar lord and sub-lord at an age.
 
@@ -7930,6 +8001,7 @@ PN4_YEAR_INDICATOR_ORDER = (
     'The distribution and the distributor',
     'The one partnering with the distributor',
     "The fardar lord and its sub-lord",
+    'The lord of the orb',
 )
 
 
@@ -7989,10 +8061,12 @@ def _pn4_distribution_rows(segments, current, unit='years'):
         'Now': 'yes' if current is not None and seg is current else '',
     } for seg in (segments or [])]
 
-def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule):
+def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chronocrats=None):
     """Everything the Timing page shows that comes from PN IV, computed
     once. Returns a dict of row-lists plus the raw pieces the captions
-    need. Kept in the engine half so it is testable without Streamlit."""
+    need. Kept in the engine half so it is testable without Streamlit.
+    `chronocrats` is calculate_chronocrats' result for the birth, read for
+    the natal hour lord the lord of the orb (VI.1) starts from."""
     natal_sun = chart_data['planetary_data']['Sun']['longitude']
     ascendant = chart_data['ascendant']
     age = pn4_completed_years(birth_date, target_date)
@@ -8076,6 +8150,20 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule):
          'Source': 'IV.1, 2-8; II.1, 9'},
     ]
 
+    # --- VI.1: the lord of the orb, indicator #5 (II.1, 10) ---
+    natal_hour_lord = (chronocrats or {}).get('Hour Lord')
+    hour_approximate = bool((chronocrats or {}).get('Approximate'))
+    orb = pn4_lord_of_the_orb(natal_hour_lord, age)
+    orb_rows = pn4_named_lords_of_the_orb(natal_hour_lord, age)
+    year_rows.append({
+        '#': 5, 'Indicator': PN4_YEAR_INDICATOR_ORDER[4],
+        'Active point': (f"hour {age % 7 + 1} of 7 from the natal hour lord ({natal_hour_lord}"
+                         f"{', by equal hours -- approximate' if hour_approximate else ''}); "
+                         f"cycle {age // 12 + 1} of the profection" if orb else 'natal hour lord unavailable'),
+        'Ruler': orb or '-',
+        'Source': 'VI.1, 4-8; II.1, 10',
+    })
+
     # --- The fardar cycle (IV.1, 2-8; IV.7, 24-25) ---
     fardar_rows, start = [], 0.0
     for lord, years in pn4_fardar_sequence(chart_data['sect']):
@@ -8141,6 +8229,8 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule):
         'small_days_rows': small_days_rows, 'day_of_year': day_of_year,
         'mighty_days': mighty_days, 'mighty_days_current': mighty_days_current,
         'mighty_days_rows': mighty_days_rows,
+        'orb': orb, 'orb_rows': orb_rows, 'natal_hour_lord': natal_hour_lord,
+        'hour_approximate': hour_approximate,
         'age': age, 'month': month, 'jd_sr': jd_sr, 'jd_mr': jd_mr,
         'sr': sr, 'mr': mr, 'year': year, 'ninth': ninth, 'fardar': fardar,
         'segments': segments, 'current': current, 'ages': ages,
@@ -8542,7 +8632,7 @@ if location_query and lat is not None and lon is not None:
         planets_in_houses_data = evaluate_planets_in_houses(p_data, abu_mashar_condition, chart_data['ascendant'])
         time_lords_data = calculate_time_lords(chart_data['ascendant'], input_date, target_date)
         planetary_years_data = evaluate_planetary_years_display(p_data, chart_data['houses'], chart_data['ascendant'], sect, essential)
-        pn4 = pn4_timing_bundle(chart_data, lat, lon, input_date, target_date, PN4_MONTHLY_TURN)
+        pn4 = pn4_timing_bundle(chart_data, lat, lon, input_date, target_date, PN4_MONTHLY_TURN, chronocrats)
 
         # The hub names the chart: the saved chart picked in the sidebar, else
         # the name typed for saving, else "Transits" (owner's decision D5,
@@ -9254,12 +9344,34 @@ if location_query and lat is not None and lon is not None:
 
             st.subheader("Indicators of the year, in Abu Ma'shar's order",
                          help="II.1, 5-24 ranks nineteen indicators of the year and II.1, 25 says \"each one in turn "
-                              "is stronger in indication than the one which is after it\". The first four are computed "
+                              "is stronger in indication than the one which is after it\". The first five are computed "
                               "here; the rest are delineation material. Note the order: WITHIN A YEAR the lord of the "
                               "year outranks the distributor (II.1, 25; II.23, 1). Across several years the "
                               "distribution is the stronger (III.2, 2-3) -- the two are indexed to different scopes, "
                               "which is how PN IV resolves the corpus disagreement.")
             st.dataframe(pd.DataFrame(pn4['year_rows']), hide_index=True, width='stretch')
+
+            st.subheader("The lord of the orb (VI.1)",
+                         help="VI.1, 4: \"the lord of the hour in which the native was born\" is assigned to the "
+                              "Ascendant and the first year; VI.1, 5-8: the next hour lord down the spheres to the "
+                              "next house and the next year, and on past twelve -- \"the lord of the thirteenth hour "
+                              "from it belongs to the Ascendant of the root and the thirteenth year\" -- so the loop "
+                              "of seven runs on against the cycle of twelve and the pairing changes every twelve "
+                              "years. Judged \"just as you judge by means of the lord of the year\" (VI.1, 12). "
+                              "Row 5 above is this year's. The table here is VI.1, 18-19: six positions whose hour "
+                              "lords are named by VI.1, 10 -- \"the lord of the hour of the house of assets\" is the "
+                              "second hour lord from the natal one -- read as hour k for house k.")
+            st.dataframe(pd.DataFrame(pn4['orb_rows']), hide_index=True, width='stretch',
+                         height=_rows_height(len(pn4['orb_rows'])))
+            st.caption("What PN IV presupposes here rather than states: the planetary hours. Their sequence from "
+                       "the day lord at sunrise is Dykes' Figure 45 (Intro Sect. 13), which the Chart page's hour "
+                       "lord follows with real sunrise and sunset, and with a flagged equal-hour approximation where "
+                       "the Sun is circumpolar; Dykes notes that not everyone agrees on when the day begins. Dykes "
+                       "also floats a single-cycle version in which each house keeps its first hour lord for life "
+                       "(Intro Figure 48), on the thought that the loop is Abu Ma'shar's own error; VI.1, 8 states "
+                       "the loop and the loop is built. His twelve-year \"reset\" of the named lords is, in his "
+                       "words, his idea, and is not built. The delineations of VI.1, 12-17 and the seven days the "
+                       "lord of the orb grants at IX.7, 7-8 are not built.")
 
             st.subheader("The distribution from the Ascendant (the *jar bakhtar*)",
                          help="III.1, 12: the Ascendant is directed by the ascensions \"of the country in which the "

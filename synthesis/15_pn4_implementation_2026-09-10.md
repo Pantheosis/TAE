@@ -431,6 +431,51 @@ point — the natal Ascendant's degree, six signs on at age 42 — not the revol
 is the lord of the orb (VI.1), which uses planetary hours where the rest of the book uses equal
 ones (IX.7, 56).
 
+### 4e. VI.1: the lord of the orb — built 2026-09-10, second session
+
+Technique 4 of the continuation brief, put to the owner with the four-point prompt. Chosen as
+recommended: **the continuous loop of VI.1, 8, with the six named lords of VI.1, 18–19 read by
+VI.1, 10's naming**, over VI.1, 4–8 alone and over Dykes' single-cycle alternative.
+
+**Re-checked in the corpus before writing:**
+
+| Citation | What it had to support | Held? |
+|---|---|---|
+| **VI.1, 4–8** | the natal hour lord to the Ascendant and year 1; each next hour lord to the next house and year; "the lord of the thirteenth hour from it belongs to the Ascendant of the root and the thirteenth year" | yes |
+| **VI.1, 10–11** | each named by the house its number matches; all called the lord of the orb | yes |
+| **VI.1, 12** | judged "just as you judge by means of the lord of the year", root and revolution | yes |
+| **VI.1, 18–19** + fn 9, 10 | the six named positions | yes |
+| **II.1, 10** + fn 8 | "The fifth is the lord of the orb" → VI.1 | yes |
+| **IX.7, 3–5** | "the planet which is below it in the circle" — the hour lords run down the spheres | yes |
+| **Intro §13**, Figures 45–48 + fn 4 to VI.1 | the hour system; the editor's worked example; the single-cycle alternative and the "reset" are his | yes — Figure 89 in the chapter is the editor's tabulation of VI.1, 8, identical to Intro Figure 47 |
+
+**Stated, not presupposed — except the hours.** VI.1 assumes the planetary hours and never defines
+them; the day-lord-at-sunrise sequence is Dykes' Figure 45. The engine's `calculate_chronocrats`
+already follows it with real sunrise and sunset, a flagged equal-hour approximation where the Sun
+is circumpolar, and one continuous cycle of seven across day and night, which matches Figure 45
+(Sunday night-hour 1 is Jupiter in both). That is what the lord of the orb starts from, and the
+page says the system is the editor's.
+
+**What was built.** `pn4_hour_lord_from_natal`, `pn4_lord_of_the_orb` (age steps down
+`PN4_DESCENDING_SPHERES`, no reset), `pn4_hour_lord_of_house` (VI.1, 10: hour k for house k),
+`pn4_named_lords_of_the_orb` (the six of VI.1, 18–19). `PN4_YEAR_INDICATOR_ORDER` gains its
+fifth; the bundle takes `chronocrats` and emits row 5 of the indicators table, saying which hour
+of seven, which cycle of the profection, and whether the hour was approximate — or "natal hour
+lord unavailable". One new section, one table and a caption on the page.
+
+**What pins it.** Four fixtures. Dykes' worked example (Venus natal: Mercury at 1, Moon and Saturn
+at 9 and 10, Mars at 12, Sun at 13, Mars at 82), every value following from VI.1, 8; the loop
+does not reset (for all seven natal lords, ages 12·n for n = 1…6 differ from the natal lord and
+84 returns to it — Dykes' Figure 48 is the negative control); the named lords by VI.1, 10 (at age
+14 the sign of the year's lord is the third hour lord, not the natal one, which Dykes' reset would
+give); and the bundle's row 5, with and without a natal hour lord.
+
+**Verification.** Doctrine fixtures 190 (were 186). `tables.json` **+6 / −0**. Full suite
+**2503 passed**, four of them new; `test_base_tables.py` 121 / 0. Rendered in the browser.
+
+**Left undone, on purpose.** VI.1, 12–17's delineations; the seven days of IX.7, 7–8; Dykes'
+reset. The next prompt, per the brief, is the profected houses (VI.2, 1–20).
+
 ### Refused at the poles
 
 `pn4_distribution_from_ascendant` returns `None` where |latitude| + obliquity ≥ 90°, on the

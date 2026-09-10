@@ -1353,6 +1353,83 @@ def test_pn4_mighty_days_direct_the_terminal_point_through_the_revolution(engine
     assert bundle["mighty_days_rows"][0]["From day"] == "0.00"
 
 
+# --- VI.1: the lord of the orb (built 2026-09-10) -------------------------
+
+def test_pn4_lord_of_the_orb_against_dykes_worked_example(engine):
+    """The author gives no example; the editor does (Intro Sect. 13,
+    Figures 46-47): a nocturnal birth in the second night hour of a
+    Wednesday, natal hour lord Venus. "At Age 1 the lord of the year is
+    the Moon, with its lord of the orb Mercury"; "ages 9 and 10: the Moon
+    and Saturn"; "the new lord of the orb for Age 12 is Mars, not Venus.
+    At Age 13 ... the Sun"; "at Age 82 ... Mars will likewise be the lord
+    of the orb, as Mars is always the sixth lord from Venus". Every value
+    follows from VI.1, 8's continuous loop down the spheres."""
+    orb = engine["pn4_lord_of_the_orb"]
+    assert [orb("Venus", a) for a in (0, 1, 9, 10, 12, 13, 82)] == [
+        "Venus", "Mercury", "Moon", "Saturn", "Mars", "Sun", "Mars"]
+
+
+def test_pn4_lord_of_the_orb_loops_and_does_not_reset(engine):
+    """VI.1, 8: "the lord of the thirteenth hour from it belongs to the
+    Ascendant of the root and the thirteenth year". The negative control
+    is Dykes' single-cycle alternative (Intro Figure 48), under which the
+    Ascendant's lord at age 12 would be the natal lord again. It is not:
+    the loop of seven against the cycle of twelve gives a different lord
+    at 12, 24, 36, 48, 60 and 72, and the natal lord returns only at 84."""
+    orb = engine["pn4_lord_of_the_orb"]
+    for natal in engine["PN4_DESCENDING_SPHERES"]:
+        assert orb(natal, 0) == natal
+        for cycle in range(1, 7):
+            assert orb(natal, 12 * cycle) != natal
+        assert orb(natal, 84) == natal
+    assert orb("Pluto", 3) is None
+
+
+def test_pn4_named_lords_of_the_orb_by_vi_1_10s_naming(engine):
+    """VI.1, 10: "the lord of the hour of the house of assets" is the
+    second hour lord from the natal one -- the name is fixed to the hour
+    number. VI.1, 18-19 use those names for the Ascendant, Midheaven and
+    house of hope of the root, and for the sign of the year with the
+    tenth and eleventh from it. With Venus natal the hours run Venus,
+    Mercury, Moon, Saturn, Jupiter, Mars, Sun and round again, so hours
+    10 and 11 are the Moon and Saturn -- which is what Dykes' example
+    gives for the natal tenth and eleventh ("ages 9 and 10: the Moon and
+    Saturn")."""
+    rows = engine["pn4_named_lords_of_the_orb"]("Venus", 14)     # age 14: sign of the year in house 3
+    by = {r["Position"]: r for r in rows}
+    assert by["Ascendant of the root"]["Lord of the hour"] == "Venus"
+    assert by["Midheaven of the root"]["Lord of the hour"] == "Moon"          # hour 10
+    assert by["House of hope of the root"]["Lord of the hour"] == "Saturn"    # hour 11
+    assert by["Sign of the terminal point"]["House"] == 3
+    assert by["Sign of the terminal point"]["Lord of the hour"] == "Moon"     # hour 3
+    assert by["Tenth from the sign of the year"]["House"] == 12
+    assert by["Eleventh from the sign of the year"]["House"] == 1
+    assert by["Eleventh from the sign of the year"]["Lord of the hour"] == "Venus"
+    # Dykes' "reset" would make the third house's lord at age 14 the natal
+    # lord (Venus); VI.1, 10's naming keeps it the third hour lord (Moon).
+    assert by["Sign of the terminal point"]["Lord of the hour"] != "Venus"
+
+
+def test_pn4_bundle_carries_the_lord_of_the_orb_as_indicator_five(engine):
+    """II.1, 10: "The fifth is the lord of the orb." The bundle's
+    indicators table gains row 5 from the natal hour lord it is handed,
+    and says so when it is handed none."""
+    cast = engine["calculate_traditional_chart"]
+    birth, lat, lon = datetime(1985, 3, 20, 14, 30), 51.5, -0.12
+    chart = cast(birth, lat, lon)
+    rule = engine["PN4_MONTHLY_TURN_OPTIONS"][0]
+    target = datetime(2027, 6, 1).date()                                # age 42
+    with_hour = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), target, rule,
+                                            {"Hour Lord": "Venus", "Approximate": False})
+    row = with_hour["year_rows"][4]
+    assert row["#"] == 5 and row["Ruler"] == "Venus"                    # 42 = 6 x 7: the natal lord again
+    assert "cycle 4" in row["Active point"]
+    assert len(with_hour["orb_rows"]) == 6
+    without = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), target, rule)
+    assert without["year_rows"][4]["Ruler"] == "-"
+    assert without["year_rows"][4]["Active point"] == "natal hour lord unavailable"
+
+
 def test_pn4_indicator_two_against_abu_mashars_worked_months(engine):
     """IX.1, 15-16 works indicator #2 out month by month for a year that
     terminates at Cancer: "the lord of its first ninth-part is the Moon,
