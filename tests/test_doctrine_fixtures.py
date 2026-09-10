@@ -1628,32 +1628,53 @@ def test_pn4_house_shift_and_nodes_count_from_the_three_places(engine):
 
 # --- IX.9, 1-10 and IX.2, 4-7: the governor (built 2026-09-10) -------------
 
-def test_pn4_governor_tally_counts_six_and_never_claims_alone(engine):
+def test_pn4_governor_tally_counts_the_available_and_never_claims_alone(engine):
     """IX.9, 10: a planet is the governor ALONE only if all eight
-    testimonies combine in it. Two need the refused releaser and one the
-    uncomputed connection, so at most six are counted, and even when all
-    six agree the summary says the planet is primary with 6 of 6 of
-    eight, not the governor alone. 215 Scorpio: the revolution's
-    Ascendant's domicile lord is Mars."""
+    testimonies combine in it. Without the releaser's distribution
+    (Sahl, On Nativities 1.15, passed in by the bundle since 2026-09-10)
+    #3 is unavailable and #4, "the partner to them both", is not counted
+    -- it is counted only when the two distributions share one partner
+    (a reading) -- and with the connection uncomputed at most five are
+    counted; even when all five agree the summary says primary with 5 of
+    5 of eight, not the governor alone. With the releaser's distribution
+    supplied and the same partner, seven; with a different partner, six.
+    215 Scorpio: the revolution's Ascendant's domicile lord is Mars."""
     rows, s = engine["pn4_governor"]("Mars", "Mars", "Mars", "", "Mars", "Mars", 215.0)
     assert [r["#"] for r in rows] == list(range(1, 9))
-    assert s["counted"] == 6 and s["primary"] == ["Mars"] and s["top"] == 6
-    assert "ALONE" in s["text"] and "6 of the 6 testimonies available (of eight)" in s["text"]
+    assert s["counted"] == 5 and s["primary"] == ["Mars"] and s["top"] == 5
+    assert "ALONE" in s["text"] and "5 of the 5 testimonies available (of eight)" in s["text"]
     by = {r["#"]: r for r in rows}
     assert by[3]["Counted"] == "no" and "releaser" in by[3]["Planet"] and "IX.8, 123" in by[3]["Planet"]
     assert by[7]["Counted"] == "no" and "connection" in by[7]["Planet"]
-    assert by[4]["Counted"] == "yes" and "releaser's partner" in by[4]["Planet"]
+    assert by[4]["Counted"] == "no" and "not counted" in by[4]["Planet"]
+    rows, s = engine["pn4_governor"]("Mars", "Mars", "Mars", "", "Mars", "Mars", 215.0,
+                                     releaser_distributor="Mars", releaser_partner="Mars")
+    by = {r["#"]: r for r in rows}
+    assert s["counted"] == 7 and by[3]["Planet"] == "Mars" and by[4]["Counted"] == "yes" and "both" in by[4]["Planet"]
+    rows, s = engine["pn4_governor"]("Mars", "Mars", "Mars", "", "Mars", "Mars", 215.0,
+                                     releaser_distributor="Venus", releaser_partner="Saturn")
+    by = {r["#"]: r for r in rows}
+    assert s["counted"] == 6 and by[3]["Planet"] == "Venus" and by[4]["Counted"] == "no" and "Saturn" in by[4]["Planet"]
+    rows, s = engine["pn4_governor"]("Mars", "Mars", "Mars", "", "Mars", "Mars", 215.0, releaser_note="no releaser by 1.15")
+    assert {r["#"]: r for r in rows}[3]["Planet"] == "unavailable: no releaser by 1.15"
     assert by[8]["Planet"] == "Mars" and by[8]["Source"] == "IX.9, 9"
 
 
 def test_pn4_governor_primary_and_partners_and_missing_distribution(engine):
     """IX.9, 10: "if one of them had [only] some of the testimonies, it
     will be more primary than the others, and the rest of them will have
-    a partnership with it". Saturn twice, Venus twice, Mars once: a tie
-    names both. With no distributor (the age past the table) #2 and #4
-    are unavailable with the reason, and the tally counts four."""
-    _rows, s = engine["pn4_governor"]("Saturn", "Venus", "Saturn", "", "Venus", "Mars", 95.0)   # Cancer: Moon
-    assert s["tally"] == {"Saturn": 2, "Venus": 2, "Mars": 1, "Moon": 1}
+    a partnership with it". With the releaser's distribution supplied
+    (distributor Venus, partner Saturn -- the same partner as the
+    Ascendant's, so #4 counts): Saturn twice, Venus three times, Mars
+    once, the Moon once; Venus primary. Without it, #4 is not counted and
+    Saturn and Venus tie. With no distributor (the age past the table) #2
+    and #4 are unavailable with the reason, and the tally counts four."""
+    _rows, s = engine["pn4_governor"]("Saturn", "Venus", "Saturn", "", "Venus", "Mars", 95.0,   # Cancer: Moon
+                                      releaser_distributor="Venus", releaser_partner="Saturn")
+    assert s["tally"] == {"Saturn": 2, "Venus": 3, "Mars": 1, "Moon": 1} and s["primary"] == ["Venus"]
+    _rows, s = engine["pn4_governor"]("Saturn", "Venus", "Saturn", "", "Venus", "Mars", 95.0)
+    assert s["tally"] == {"Saturn": 1, "Venus": 2, "Mars": 1, "Moon": 1}
+    _rows, s = engine["pn4_governor"]("Saturn", "Venus", "Saturn", "", "Venus", "Saturn", 95.0)
     assert s["primary"] == ["Saturn", "Venus"] and "are primary with 2" in s["text"]
     rows, s2 = engine["pn4_governor"]("Saturn", None, None, "age 786 is past the 120-year table", "Venus", "Mars", 95.0)
     by = {r["#"]: r for r in rows}
@@ -1778,15 +1799,19 @@ def test_pn4_moon_empty_in_course_falls_to_her_house_lord(engine):
 def test_pn4_governor_counts_the_moons_testimony_when_it_is_read(engine):
     """IX.9, 8: "the one accepting the connection of the Moon, or the lord
     of her house". Handed the Moon's testimony the governor counts seven
-    of eight; handed none it still says why #7 is unavailable."""
+    of eight (with the releaser's distribution and a shared partner, all
+    eight); handed none it still says why #7 is unavailable."""
     rows, s = engine["pn4_governor"]("Mars", "Mars", "Mars", "", "Mars", "Mars", 215.0, "Venus", False)
     by = {r["#"]: r for r in rows}
     assert by[7]["Counted"] == "yes" and by[7]["Planet"].startswith("Venus; accepting her connection")
-    assert s["counted"] == 7 and s["tally"] == {"Mars": 6, "Venus": 1}
+    assert s["counted"] == 6 and s["tally"] == {"Mars": 5, "Venus": 1}
+    rows, s = engine["pn4_governor"]("Mars", "Mars", "Mars", "", "Mars", "Mars", 215.0, "Venus", False,
+                                     releaser_distributor="Mars", releaser_partner="Mars")
+    assert s["counted"] == 8 and s["tally"] == {"Mars": 7, "Venus": 1} and "1 are unavailable" not in s["text"]
     rows, s = engine["pn4_governor"]("Mars", "Mars", "Mars", "", "Mars", "Mars", 215.0, "Saturn", True)
     assert "empty in course" in {r["#"]: r for r in rows}[7]["Planet"]
     rows, s = engine["pn4_governor"]("Mars", "Mars", "Mars", "", "Mars", "Mars", 215.0)
-    assert {r["#"]: r for r in rows}[7]["Counted"] == "no" and s["counted"] == 6
+    assert {r["#"]: r for r in rows}[7]["Counted"] == "no" and s["counted"] == 5
 
 
 def test_pn4_bundle_reads_the_moon_into_indicator_seven_and_the_portions(engine):
@@ -2639,3 +2664,174 @@ def test_pn4_distribution_reproduces_figure_22(engine):
         assert seg["from"] == pytest.approx(expected, abs=2.0 / 3600.0), (seg, (d, m, s))
         assert seg["distributor"] == distributor
         assert seg["partner"] == partner and seg["partner_aspect"] == aspect
+
+
+# --- SAHL: the releaser (On Nativities 1.15-1.16, 1.20) and the house-master
+# directed (1.23, 2) -- built 2026-09-10 on the owner's decision. Cusps are
+# the whole-sign starts, so the quadrant place with the carry-over is the
+# sign count unless a planet sits within five degrees of a stake's cusp.
+
+def _sahl_chart(asc, **planets):
+    base = (asc // 30.0) * 30.0
+    cusps = [(base + 30.0 * i) % 360.0 for i in range(12)]
+    seven = dict(Sun=100.0, Moon=200.0, Mercury=110.0, Venus=130.0, Mars=300.0, Jupiter=250.0, Saturn=20.0)
+    seven.update(planets)
+    return pdata(**seven), cusps
+
+
+def _releaser(engine, asc, sect, lot=15.0, meeting=15.0, fullness=15.0, **planets):
+    data, cusps = _sahl_chart(asc, **planets)
+    return engine["sahl_releaser"](data, asc, cusps, sect, lot, meeting, fullness)
+
+
+def test_sahl_releaser_the_sun_in_leo_is_both_releaser_and_house_master(engine):
+    """1.16, 1: "if the Sun was in Aries or Leo ... the Sun in these two
+    signs becomes both the releaser and the house-master". Scorpio rising,
+    the Sun at 15 Leo in the tenth (one of 1.15, 6's five places)."""
+    r = _releaser(engine, 215.0, "Diurnal", Sun=135.0)
+    assert r["releaser"] == "the Sun" and r["house_master"] == "Sun"
+    assert r["chosen"]["both_at_once"] and "1.16" in r["verdict"]
+    assert r["candidates"][0]["Verdict"].startswith("THE RELEASER")
+
+
+def test_sahl_releaser_falls_to_the_meeting_and_two_shares_beat_one(engine):
+    """1.15, 7-8: the Sun in the twelfth "will not be the releaser ... look
+    at the meeting"; 1.20, 3: "the one having two shares is stronger than
+    the lord of only a single one". Scorpio rising, the Sun at 10 Libra
+    (twelfth, falling), the meeting at 5 Leo in the tenth: its house and
+    triplicity lord is the Sun, looking by sextile from Libra -- two
+    shares; its face lord Saturn looks by opposition from Aquarius -- one;
+    its bound lord Jupiter is in aversion from Capricorn."""
+    r = _releaser(engine, 215.0, "Diurnal", Sun=190.0, meeting=125.0, Saturn=320.0, Jupiter=280.0)
+    assert r["releaser"] == "the meeting (the last New Moon)"
+    assert r["house_master"] == "Sun"
+    assert [row["Planet"] for row in r["ranking"]] == ["Sun", "Saturn"]
+    assert r["ranking"][0]["Shares"] == "house, triplicity"
+    assert r["candidates"][0]["Verdict"].startswith("falling: house 12")
+
+
+def test_sahl_releaser_falls_to_the_ascendant_and_the_bound_lord_with_it_wins(engine):
+    """1.15, 9 and 15-16: both falling, the Ascendant, "being looked at by
+    the fortunes, and the lord of the Ascendant in its own house ... in
+    good places"; 1.20, 4: the releaser "in the bound of a planet, and that
+    planet was in the Ascendant with the releaser, it is stronger than the
+    others". 5 Scorpio rising, Mars at 10 Scorpio (own house, bound lord
+    of 5 Scorpio, in the Ascendant), Venus trine from Pisces, Jupiter
+    opposing from Taurus; Sun and meeting both falling."""
+    r = _releaser(engine, 215.0, "Diurnal", Sun=190.0, meeting=20.0, Mars=220.0, Venus=345.0, Jupiter=50.0)
+    assert r["releaser"] == "the Ascendant" and r["house_master"] == "Mars"
+    assert "1.20, 4" in r["ranking"][0]["Rank"]
+    # the same chart with Mars at 25 Gemini, out of every share of his: no foundation (1.15, 16)
+    none = _releaser(engine, 215.0, "Diurnal", Sun=190.0, meeting=20.0, Mars=85.0, Venus=345.0, Jupiter=50.0)
+    assert none["releaser"] is None and none["house_master"] is None
+    assert "does not have a foundation" in none["verdict"]
+    assert engine["sahl_releaser_distribution"](_sahl_chart(215.0)[0], None, 23.44, 40.0) is None
+
+
+def test_sahl_releaser_by_night_ranks_bound_above_house_and_shares_above_rank(engine):
+    """1.15, 11: the Moon "in a stake or what follows a stake, with the
+    lord of the bound, house, exaltation, triplicity, or image looking at
+    her, then the Moon is the releaser". Cancer rising, the Moon at 10
+    Libra in the fourth: Saturn holds exaltation and face (two shares),
+    Venus the house (one), Mercury the bound and the night triplicity
+    (two). With Mercury in aversion Saturn wins by shares over Venus;
+    with Mercury looking, Mercury and Saturn tie on shares and the bound
+    decides (1.20, 2)."""
+    r = _releaser(engine, 95.0, "Nocturnal", Moon=190.0, Mercury=230.0, Venus=3.0, Saturn=75.0)
+    assert r["releaser"] == "the Moon" and r["house_master"] == "Saturn"
+    assert r["ranking"][0]["Shares"] == "exaltation, face" and r["ranking"][1]["Planet"] == "Venus"
+    r2 = _releaser(engine, 95.0, "Nocturnal", Moon=190.0, Mercury=75.0, Venus=3.0, Saturn=75.0)
+    assert r2["house_master"] == "Mercury" and r2["ranking"][0]["Shares"] == "bound, triplicity"
+    assert r2["ranking"][1]["Planet"] == "Saturn"
+
+
+def test_sahl_releaser_by_night_falls_to_the_fullness_then_the_lot(engine):
+    """1.15, 12 and 14: "if the Moon was falling ... turn to the fullness
+    ... Now if the fullness was also falling ... then the Lot of Fortune
+    is the releaser". Cancer rising, the Moon at 10 Gemini (twelfth); the
+    fullness at 10 Capricorn (seventh), its bound lord Jupiter trine from
+    Taurus outranking its house lord Saturn square from Aries; then the
+    fullness moved to 15 Sagittarius (sixth) and the Lot at 10 Scorpio
+    (fifth): its bound lord Venus looks by trine from Pisces, one share,
+    but Mars, its house lord and (by night) its triplicity lord, looks by
+    square from Aquarius with two -- and two shares beat the bound
+    (1.20, 3)."""
+    r = _releaser(engine, 95.0, "Nocturnal", Moon=70.0, fullness=280.0, Jupiter=40.0)
+    assert r["releaser"] == "the fullness (the last Full Moon)" and r["house_master"] == "Jupiter"
+    assert [row["Planet"] for row in r["ranking"]] == ["Jupiter", "Saturn"]
+    r2 = _releaser(engine, 95.0, "Nocturnal", Moon=70.0, fullness=255.0, lot=220.0, Venus=345.0, Jupiter=40.0)
+    assert r2["releaser"] == "the Lot of Fortune" and r2["house_master"] == "Mars"
+    assert r2["ranking"][0]["Shares"] == "house, triplicity" and r2["ranking"][1]["Planet"] == "Venus"
+    assert r2["candidates"][1]["Verdict"].startswith("falling: house 6")
+
+
+def test_sahl_house_master_direction_at_the_equator_is_right_ascension(engine):
+    """1.23, 2: "direct it to the conjunction of the infortunes and the
+    degree of burning, and its opposition and its square, a year for every
+    degree of ascensions". At the equator the ascensions are right
+    ascensions: a house-master at 0 Aries reaches Saturn's body at 0 Cancer
+    and Mars's square at 0 Cancer in 90 years, the Sun's degree at 15
+    Aries in atan(cos e tan 15) = 13.8 years; Mars's body at 0 Libra (180)
+    and Saturn's opposition (270) lie past the table."""
+    import math
+    data = pdata(Venus=0.0, Saturn=90.0, Mars=180.0, Sun=15.0, Moon=200.0, Mercury=20.0, Jupiter=250.0)
+    obl = 23.44
+    rows = engine["sahl_house_master_direction"](data, "Venus", obl, 0.0)
+    got = {r["Target"]: float(r["Arc (years)"]) for r in rows}
+    assert got["the Sun's degree (burning)"] == pytest.approx(math.degrees(math.atan(math.cos(math.radians(obl)) * math.tan(math.radians(15.0)))), abs=0.01)
+    assert got["Saturn's body"] == pytest.approx(90.0, abs=1e-6)
+    assert got["Mars's square (right)"] == pytest.approx(90.0, abs=1e-6)
+    assert "Mars's body" not in got and "Saturn's opposition" not in got
+    assert [r["Target"] for r in rows][0] == "the Sun's degree (burning)"          # age order
+    assert rows[0]["In the year of age"] == 13
+    assert engine["sahl_house_master_direction"](data, "Venus", obl, 70.0) is None   # D-23
+    assert engine["sahl_house_master_direction"](data, "Pluto", obl, 0.0) is None
+
+
+def test_sahl_house_master_flags_name_the_infortune_the_eighth_and_the_fall(engine):
+    """1.23, 12: an infortune, or the lord of the eighth; 1.23, 53:
+    retrograde or in its fall. Scorpio rising: the eighth is Gemini,
+    Mercury's; Saturn at 10 Aries retrograde is in his fall."""
+    data, cusps = _sahl_chart(215.0, Saturn=(10.0, -0.03))
+    flags = engine["sahl_house_master_flags"]("Saturn", data, cusps)
+    assert any("infortune" in f for f in flags) and any("fall" in f for f in flags) and any("retrograde" in f for f in flags)
+    assert not any("eighth" in f for f in flags)
+    assert any("lord of the eighth (Gemini)" in f for f in engine["sahl_house_master_flags"]("Mercury", data, cusps))
+    assert engine["sahl_house_master_flags"](None, data, cusps) == []
+
+
+def test_sahl_releaser_in_the_bundle_feeds_the_governor_and_the_proxies(engine):
+    """The bundle carries the releaser, its distribution and the
+    house-master's direction; when a releaser and a current segment exist,
+    the governor's testimony #3 is that distribution's distributor and is
+    counted; #4 is counted only when both distributions share a partner."""
+    cast = engine["calculate_traditional_chart"]
+    birth, lat, lon = datetime(1985, 3, 20, 14, 30), 51.5, -0.12
+    chart = cast(birth, lat, lon)
+    rule = engine["PN4_MONTHLY_TURN_OPTIONS"][0]
+    b = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(2027, 6, 1).date(), rule,
+                                    {"Hour Lord": "Venus", "Approximate": False})
+    rel = b["releaser"]
+    assert rel["releaser"] == "the Sun" and rel["house_master"] == "Saturn"
+    assert b["releaser_note"] is None and b["releaser_stand"]["distributor"] in engine["PN4_SEVEN"]
+    gov_rows, gov = b["governor"]
+    assert gov_rows[2]["Planet"] == b["releaser_stand"]["distributor"] and gov_rows[2]["Counted"] == "yes"
+    both = b["current"]["partner"] == b["releaser_current"]["partner"]
+    assert gov_rows[3]["Counted"] == ("yes" if both else "no")
+    assert b["hm_direction"] and all(r["In the year of age"] == int(float(r["Arc (years)"])) for r in b["hm_direction"])
+    assert [r["Fact"] for r in b["hm_revolution"]][:2] == ["Saturn in the revolution", "Burned at the revolution"]
+    # the same chart at the year the earliest target falls in: the page's "this year" list is that row
+    first = b["hm_direction"][0]
+    b2 = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(),
+                                     (birth + timedelta(days=365.2425 * first["In the year of age"] + 10)).date(), rule,
+                                     {"Hour Lord": "Venus", "Approximate": False})
+    assert b2["hm_this_year"] and b2["hm_this_year"][0]["Target"] == first["Target"]
+    # a year whose lord is a luminary reads the releaser's distributor and sign in its first proxies
+    stand = {"distributor": "Venus", "partner": "Sun", "sign": "Gemini", "lord": "Mercury", "note": None}
+    sun_rows = engine["pn4_luminary_proxies"]("Sun", chart, b["sr"], None, None, stand)
+    assert sun_rows[0]["Reads"].startswith("Venus (the releaser's distributor") and sun_rows[1]["Reads"].startswith("Gemini, lord Mercury")
+    moon_rows = engine["pn4_luminary_proxies"]("Moon", chart, b["sr"], b["moon"], None, {"note": "no releaser by 1.15"})
+    assert moon_rows[0]["Reads"] == "unavailable: no releaser by 1.15" == moon_rows[1]["Reads"]
+    assert engine["pn4_luminary_proxies"]("Moon", chart, b["sr"], b["moon"], None, None)[0]["Reads"].startswith("unavailable: the sign")
+    syz = b["syzygies"]
+    assert 0.0 <= syz["meeting"]["longitude"] < 360.0 and syz["fullness"]["jd"] < chart["julian_day"] and syz["meeting"]["jd"] < chart["julian_day"]
