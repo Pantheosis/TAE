@@ -7294,6 +7294,113 @@ def pn4_distribution_at_age(segments, age_years):
             return seg
     return None
 
+
+# --- III.7, 32-42: when a natal indication comes out ----------------------
+# A planet may distribute or manage more than once in a lifetime (III.7,
+# 32), and this chapter asks how often what it promised in the root
+# actually manifests, and at what ages.
+#
+# HOW OFTEN, by the quadruplicity of the sign it holds in the ROOT:
+#   fixed        -- "in [only] a single time" (III.7, 35)
+#   convertible  -- "in [only] one of the times" (III.7, 39)
+#   double-bodied-- "on an occasional basis" (III.7, 38)
+# III.7, 36 raises this to "whenever it distributes" when the planet looks
+# at the position of the distribution AND "is strong in [its] indication
+# for that thing". The looking is computable; the strength is not defined
+# anywhere in the chapter, so the engine reports the quadruplicity rule
+# and does not silently promote a row. III.7, 37 exempts the MANAGER (the
+# partner): not being an indicator in its own right, it "will produce its
+# indication" whenever it manages.
+#
+# AT WHAT AGE -- III.7, 34 and 42 name two measures and gesture at a third:
+#   (a) "the number of ascensions of the sign in which it was in the root"
+#   (b) "the amount of one of its own years" (fn 190: "For example, its
+#       lesser years"; III.7, 35 says "its greater, middle, or lesser")
+#   (c) "the rest of the times which one employs as models" -- unquantified;
+#       fn 191 guesses the fardars. Not invented here.
+#
+# WHAT ABU MA'SHAR ADDS, and the only part that is his: the effect is
+# "strong, evident, notable" when such an age falls in a period where that
+# same planet is the distributor or the manager (III.7, 42). That is what
+# the "Confirmed by" column computes, against the jar bakhtar above.
+#
+# NOT IMPLEMENTED, deliberately, both from Dykes' fn 191:
+#   * The SUM of (a) and (b), and 1/3, 1/2 and 2/3 of that sum, are
+#     introduced with "IF WE FOLLOW VALENS". They are not Abu Ma'shar's
+#     and no sentence of III.7 contains them. Corpus disagreement #4 over
+#     Valens's year-tables is untouched and stays open.
+#   * fn 191's worked figure for Taurus at 45N, 20.17 ascensional times,
+#     is not reproduced: the exact computation gives 20.09, and Dykes'
+#     own thirds are internally inconsistent with his 20.17 anyway
+#     (he prints 2/3 = 26.75 where 20.17 gives 26.78). The engine computes
+#     ascensions directly, as it does everywhere else.
+#
+# WHICH of the greater, middle and lesser years applies is chosen "in
+# accordance with what its position in the rotation of the circle
+# indicated in the root" (III.7, 35) -- a placement rule PN IV
+# presupposes and never states. That is corpus disagreement #2, which
+# PN IV does not adjudicate (IX.8, 123), so ALL THREE are shown and none
+# is chosen, exactly as the planetary-years table does.
+
+PN4_MANIFESTATION_BY_QUADRUPLICITY = {
+    'fixed': ('once in the lifespan', 'III.7, 35'),
+    'convertible': ('in one of the times', 'III.7, 39'),
+    'double-bodied': ('on an occasional basis', 'III.7, 38'),
+}
+
+def pn4_sign_ascensions(sign, obliquity, geo_lat):
+    """The ascensional times of a whole sign at the birth latitude: the
+    arc of the equator that rises with it (III.7, 34, "the ascensions of
+    its sign"). Returns None above the polar circle, where a sign may not
+    rise at all -- the domain of D-23."""
+    if not _ascensional_method_applies(obliquity, geo_lat):
+        return None
+    start = SIGN_ORDER.index(sign) * 30.0
+    return (_oblique_ascension(start + 30.0, obliquity, geo_lat)
+            - _oblique_ascension(start, obliquity, geo_lat)) % 360.0
+
+def pn4_activation_ages(planetary_data, obliquity, geo_lat, segments=None,
+                        max_age=PN4_DISTRIBUTION_SPAN_YEARS):
+    """III.7, 32-42, one row per planet.
+
+    `segments` is the output of pn4_distribution_from_ascendant; when it is
+    given, each candidate age is checked against it for Abu Ma'shar's
+    confirmation (III.7, 42) -- is this planet the distributor or the
+    manager at that age?"""
+    rows = []
+    for planet in PN4_SEVEN:
+        row = planetary_data.get(planet)
+        if not row:
+            continue
+        sign = get_zodiac_sign(row['longitude'])
+        kind = PN4_QUADRUPLICITY[sign]
+        manifests, cite = PN4_MANIFESTATION_BY_QUADRUPLICITY[kind]
+        ascensions = pn4_sign_ascensions(sign, obliquity, geo_lat)
+        years = PLANETARY_YEARS[planet]
+
+        candidates = {'ascensions of the sign': ascensions}
+        for grade in ('lesser', 'middle', 'greater'):
+            candidates[f'{grade} years'] = float(years[grade])
+
+        confirmed = []
+        for label, age in candidates.items():
+            if age is None or not (0.0 < age <= max_age):
+                continue
+            seg = pn4_distribution_at_age(segments, age) if segments else None
+            if seg and planet in (seg['distributor'], seg['partner']):
+                role = 'distributor' if seg['distributor'] == planet else 'manager'
+                confirmed.append(f"{label} ({age:.2f}, as {role})")
+
+        rows.append({
+            'Planet': planet, 'Natal sign': sign, 'Quadruplicity': kind,
+            'Manifests': f"{manifests} ({cite})",
+            'Ascensions of the sign': '-' if ascensions is None else f"{ascensions:.2f}",
+            'Lesser': f"{years['lesser']:g}", 'Middle': f"{years['middle']:g}",
+            'Greater': f"{years['greater']:g}",
+            'Confirmed by the distribution': '; '.join(confirmed) if confirmed else 'none',
+        })
+    return rows
+
 # --- IV.1 and IV.7: the fardar -------------------------------------------
 
 def pn4_fardar_sequence(sect):
@@ -7790,6 +7897,10 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule):
         })
         start += years
 
+    # --- III.7, 32-42: when each natal indication comes out ---
+    activation_rows = pn4_activation_ages(
+        chart_data['planetary_data'], chart_data['obliquity'], lat, segments)
+
     # --- the distribution, as a forward table (III.1, 11-16) ---
     distribution_rows = [{
         'From age': f"{seg['from']:.2f}", 'To age': f"{seg['to']:.2f}",
@@ -7804,6 +7915,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule):
     } for seg in (segments or [])]
 
     return {
+        'activation_rows': activation_rows,
         'distribution_rows': distribution_rows,
         'age': age, 'month': month, 'jd_sr': jd_sr, 'jd_mr': jd_mr,
         'sr': sr, 'mr': mr, 'year': year, 'ninth': ninth, 'fardar': fardar,
@@ -8980,6 +9092,29 @@ if location_query and lat is not None and lon is not None:
                        "\"the planet which is below it in the celestial circle\". IV.1, 8: the Nodes have no "
                        "sub-periods, \"because they do not have houses\". I.8, 35 says the order follows the planets' "
                        "exaltations; it does not, and Book IV governs -- an inconsistency inside PN IV, recorded.")
+
+            st.subheader("When a natal indication comes out (III.7, 32-42)",
+                         help="A planet may distribute or manage more than once in a lifetime (III.7, 32), and this "
+                              "chapter asks how often what it promised in the root actually manifests, and at what "
+                              "ages. HOW OFTEN is keyed to the quadruplicity of its natal sign: fixed, \"in [only] a "
+                              "single time\" (35); convertible, \"in [only] one of the times\" (39); double-bodied, "
+                              "\"on an occasional basis\" (38). AT WHAT AGE: \"the number of ascensions of the sign in "
+                              "which it was in the root, or the amount of one of its own years\" (42). What Abu "
+                              "Ma'shar himself adds is the last column -- the effect is \"strong, evident, notable\" "
+                              "when such an age falls where that same planet is the distributor or the manager.")
+            st.dataframe(pd.DataFrame(pn4['activation_rows']), hide_index=True, width='stretch',
+                         height=_rows_height(len(pn4['activation_rows'])))
+            st.caption("**All three grades are shown and none is chosen.** III.7, 35 picks among the greater, middle "
+                       "and lesser years \"in accordance with what its position in the rotation of the circle "
+                       "indicated in the root\" -- and never states that rule. It is the same placement question "
+                       "*On Times* 4, 7 and *On Nativities* 1.20 disagree about, which PN IV does not adjudicate. "
+                       "**Two things in Dykes' fn 191 are also absent**: the SUM of the ascensions and the years, and "
+                       "a third, a half and two-thirds of it, are introduced with \"if we follow Valens\" and appear "
+                       "in no sentence of III.7; and his worked figure of 20.17 ascensional times for Taurus at 45N "
+                       "is not reproduced, the exact computation giving 20.09. III.7, 36 raises a row to \"whenever it "
+                       "distributes\" when the planet looks at the position of the distribution and is \"strong in "
+                       "[its] indication\" -- strength is nowhere defined in the chapter, so no row is promoted here. "
+                       "III.7, 37 exempts the manager, which \"will produce its indication\" whenever it manages.")
 
             st.subheader("The seven indicators of the month",
                          help="IX.1, 35-39. Five are \"rooted\" -- turned from the positions they hold at the "

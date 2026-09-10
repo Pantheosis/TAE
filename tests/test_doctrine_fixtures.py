@@ -1124,3 +1124,120 @@ def test_pn4_printed_reference_tables_derive_from_the_rules(engine):
     applied = {r["Point directed"]: r["Applied"] for r in engine["PN4_ASCENSION_ROWS"]}
     assert applied["Anything else"] == "no"
     assert "PN IV" in [r["Measured in"] for r in engine["PN4_ASCENSION_ROWS"]][2]
+
+
+# --- III.7, 32-42: when a natal indication comes out ----------------------
+
+@pytest.mark.parametrize("lon, sign, kind, cite", [
+    (40.0, "Taurus", "fixed", "III.7, 35"),           # "in [only] a single time"
+    (5.0, "Aries", "convertible", "III.7, 39"),       # "in [only] one of the times"
+    (70.0, "Gemini", "double-bodied", "III.7, 38"),   # "on an occasional basis"
+])
+def test_pn4_manifestation_frequency_by_quadruplicity(engine, lon, sign, kind, cite):
+    """III.7, 35, 38 and 39 key how often a natal indication comes out to
+    the quadruplicity of the sign the planet holds in the ROOT."""
+    rows = engine["pn4_activation_ages"](pdata(Saturn=lon), 23.44, 43.78)
+    row = next(r for r in rows if r["Planet"] == "Saturn")
+    assert (row["Natal sign"], row["Quadruplicity"]) == (sign, kind)
+    assert cite in row["Manifests"]
+
+
+def test_pn4_sign_ascensions_close_to_the_circle(engine):
+    """III.7, 34's "ascensions of its sign": the arc of the equator that
+    rises with it. The twelve must sum to 360 at any latitude in domain,
+    which is the check that catches a sign measured the wrong way round."""
+    for lat in (0.0, 43.78, 51.5):
+        total = sum(engine["pn4_sign_ascensions"](s, 23.44, lat) for s in engine["SIGN_ORDER"])
+        assert total == pytest.approx(360.0, abs=1e-9)
+
+
+def test_pn4_sign_ascensions_are_latitude_dependent(engine):
+    """A long-ascension sign in the north rises with more than 30 degrees
+    of equator and its opposite with fewer; at the equator every sign is
+    the same pair. A latitude-independent answer would mean the birth
+    latitude was dropped -- III.7, 34 reads it from the birth place, as
+    III.1, 12 does."""
+    at = engine["pn4_sign_ascensions"]
+    # At the equator every sign rises with its right-ascension span, and a
+    # sign and its opposite rise alike: Taurus and Scorpio both 29.91.
+    assert at("Taurus", 23.44, 0.0) == pytest.approx(29.908, abs=0.01)
+    assert at("Scorpio", 23.44, 0.0) == pytest.approx(at("Taurus", 23.44, 0.0), abs=1e-9)
+    # In the north that symmetry breaks: Taurus is a sign of short
+    # ascension and Scorpio, its opposite, of long, and the pair still
+    # closes to twice 30.
+    assert at("Taurus", 23.44, 51.5) < 20.0
+    assert at("Scorpio", 23.44, 51.5) > 40.0
+    # A sign and its opposite sum to the SAME value at every latitude --
+    # twice that sign's equatorial span, not 60 -- because the two
+    # ascensional differences are equal and opposite and cancel. This is
+    # the check that would catch a dropped or mis-signed AD, which is the
+    # way an ascension goes wrong without looking wrong.
+    for sign in engine["SIGN_ORDER"][:6]:
+        opposite = engine["SIGN_ORDER"][engine["SIGN_ORDER"].index(sign) - 6]
+        equatorial = at(sign, 23.44, 0.0) + at(opposite, 23.44, 0.0)
+        for lat in (23.0, 43.78, 51.5, -35.0):
+            assert at(sign, 23.44, lat) + at(opposite, 23.44, lat) == pytest.approx(
+                equatorial, abs=1e-9), f"{sign}/{opposite} at {lat}"
+
+
+def test_pn4_activation_ages_refuse_above_the_polar_circle(engine):
+    """D-23's domain again: above it a sign may never rise, so it has no
+    ascensional time."""
+    assert engine["pn4_sign_ascensions"]("Taurus", 23.44, 78.0) is None
+    row = engine["pn4_activation_ages"](pdata(Mars=40.0), 23.44, 78.0)[0]
+    assert row["Ascensions of the sign"] == "-"
+
+
+def test_pn4_activation_ages_choose_none_of_the_three_grades(engine):
+    """The negative control that admitted this evaluator past the D-3
+    guard. III.7, 35 picks among the greater, middle and lesser years "in
+    accordance with what its position in the rotation of the circle
+    indicated in the root" -- and PN IV never states that rule. It is
+    corpus disagreement #2, which PN IV does not adjudicate (IX.8, 123).
+
+    So all three must be present and none marked as the answer: no
+    "grants", no "selected", no single Years column."""
+    row = engine["pn4_activation_ages"](pdata(Mercury=40.0), 23.44, 43.78)[0]
+    assert row["Lesser"] == "20" and row["Middle"] == "48" and row["Greater"] == "76"
+    joined = " ".join(str(v).lower() for v in row.values())
+    for verdict in ("grants", "granted", "selected", "chosen", "house-master"):
+        assert verdict not in joined, f"{verdict!r} appears: a grade was chosen"
+
+
+def test_pn4_activation_ages_do_NOT_carry_valens_sum_or_thirds(engine):
+    """The other negative control, and the reason this is narrower than
+    the answer document's summary. Dykes' fn 191 introduces the SUM of the
+    ascensions and the years, and 1/3, 1/2 and 2/3 of it, with the words
+    "IF WE FOLLOW VALENS". No sentence of III.7 contains them; III.7, 42
+    names only the ascensions, "the amount of one of its own years", and
+    an unquantified "rest of the times which one employs as models".
+
+    For Mercury in Taurus -- Figure 75's own configuration -- the Valens
+    construction would put candidates near 13.4, 20.1 and 26.8. None may
+    appear."""
+    row = engine["pn4_activation_ages"](pdata(Mercury=40.0), 23.44, 45.0)[0]
+    ascensions, lesser = float(row["Ascensions of the sign"]), 20.0
+    total = ascensions + lesser
+    printed = " ".join(str(v) for v in row.values())
+    for absent in (total, total / 3, total / 2, 2 * total / 3):
+        assert f"{absent:.2f}" not in printed, f"{absent:.2f} is Valens's, not Abu Ma'shar's"
+
+
+def test_pn4_activation_confirmation_needs_the_planet_to_be_a_time_lord(engine):
+    """III.7, 42 is Abu Ma'shar's own contribution: the effect is "strong,
+    evident, notable" when such an age falls where that same planet is the
+    distributor or the manager. Without a distribution to check against,
+    nothing may be confirmed -- the column must not assert on its own."""
+    unchecked = engine["pn4_activation_ages"](pdata(Mercury=40.0), 23.44, 43.78, None)[0]
+    assert unchecked["Confirmed by the distribution"] == "none"
+
+    points = pdata(Mercury=40.0, Saturn=200.0)
+    segments = engine["pn4_distribution_from_ascendant"](points, 110.0, 23.44, 43.78)
+    rows = engine["pn4_activation_ages"](points, 23.44, 43.78, segments)
+    for row in rows:
+        for claim in row["Confirmed by the distribution"].split(";"):
+            if "as " not in claim:
+                continue
+            age = float(claim.split("(")[1].split(",")[0])
+            segment = engine["pn4_distribution_at_age"](segments, age)
+            assert row["Planet"] in (segment["distributor"], segment["partner"])

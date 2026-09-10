@@ -342,8 +342,22 @@ def test_d3_years_display_reads_both_rules_and_names_the_silence(engine):
 
 # Who may read PLANETARY_YEARS, and which of its columns. Extending either
 # set is a deliberate act: add the function AND say why in the commit.
-D3_GRANT_READERS = {"evaluate_planetary_years_display"}
-D3_FARDAR_READERS = {"evaluate_planetary_years_display", "pn4_fardar_sequence"}
+D3_GRANT_READERS = {
+    "evaluate_planetary_years_display",
+    # Added 2026-09-10 with III.7, 32-42. It reads the years as a TIMING
+    # measure -- the ages at which a natal indication comes out, "the
+    # amount of one of its own years" (III.7, 42) -- and not as a grant of
+    # lifespan to a house-master, which is the thing PN IV does not
+    # license. Decisive for admitting it: III.7, 35 selects among the
+    # greater, middle and lesser "in accordance with what its position in
+    # the rotation of the circle indicated in the root" and never states
+    # that rule, so pn4_activation_ages CHOOSES NONE OF THE THREE -- it
+    # prints all three, as the display evaluator does. Disagreement #2 is
+    # left exactly where it was.
+    "pn4_activation_ages",
+}
+D3_FARDAR_READERS = {"evaluate_planetary_years_display", "pn4_fardar_sequence",
+                     "pn4_activation_ages"}
 D3_GRANT_KEYS = ("lesser", "middle", "greater", "mighty")
 
 

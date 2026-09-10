@@ -172,6 +172,7 @@ Intro §2 p. 7's "12° 23′" breaks.
 | The seven monthly indicators, with the turn as a reading | IX.1, 9–10, 26–32, 35–39 |
 | The first ninth-part (monthly indicator #2) | IX.1, 36; III.10, 5 |
 | The Ages of Man | I.8, 9–26 |
+| When a natal indication comes out, and at what ages | III.7, 32–42 |
 
 ### Refused, each with the reason carried into the UI
 
@@ -186,7 +187,49 @@ Intro §2 p. 7's "12° 23′" breaks.
 - **The Indian lord of the year** (III.10) — reported by PN IV, not adopted; used only as monthly
   indicator #2, where IX.1, 36 puts it.
 - **Corpus disagreements #2 and #5** stay open. PN IV is silent on #2 and answers a different
-  question from #5; the Planetary years table still chooses no row.
+  question from #5; the Planetary years table still chooses no row, and neither does III.7's
+  activation table (below).
+- **Valens's sum and thirds** (Dykes' fn 191). See §4a.
+
+### 4a. III.7, 32–42, and what had to be left out of it
+
+Added 2026-09-10 on the owner's request. The chapter turned out to be narrower than the answer
+document's Q32 summary, in a way that matters.
+
+**What III.7 states.** How often a natal indication manifests, keyed to the quadruplicity of the
+planet's *natal* sign — fixed "in [only] a single time" (**35**), convertible "in [only] one of
+the times" (**39**), double-bodied "on an occasional basis" (**38**) — and at what ages: "the
+number of ascensions of the sign in which it was in the root, or the amount of one of its own
+years, or the rest of the times which one employs as models" (**42**). Abū Ma'shar's own
+contribution is the confirmation: the effect is "strong, evident, notable" when such an age falls
+where that same planet is the distributor or the manager. That last part is computed against the
+*jār bakhtār* table, which is the one place the two techniques meet.
+
+**What is left out, and why.**
+
+1. **The sum, and ⅓, ½ and ⅔ of it.** The answer document lists these among the activation ages.
+   They are **not Abū Ma'shar's**: Dykes' fn 191 introduces them with *"**If we follow Valens**"*,
+   and no sentence of III.7 contains them. The reader did attribute the confirmation rule
+   correctly, but the summary line reads as though the whole construction were PN IV's. Refused,
+   on the same ground as III.1, 12's third case: an editor's identification is not a stated rule.
+   Corpus disagreement #4 over Valens's tables is untouched.
+2. **Which of the greater, middle and lesser years applies.** **III.7, 35** selects "in accordance
+   with what its position in the rotation of the circle indicated in the root" and never states
+   that rule — it is the placement question of disagreement #2, which PN IV does not adjudicate.
+   All three grades are printed and none chosen, exactly as the planetary-years table does. This
+   is what admitted the evaluator past the D-3 guard, and a fixture asserts no row says "grants",
+   "selected" or "chosen".
+3. **III.7, 36's promotion** to "whenever it distributes" needs the planet to be "strong in [its]
+   indication for that thing". Strength is nowhere defined in the chapter; the looking half is
+   computable, the strength half is not, so no row is promoted.
+
+**Dykes' worked figure is not reproduced.** fn 191 gives Taurus at 45° N as 20.17 ascensional
+times; the exact computation gives **20.09**. His own arithmetic is internally inconsistent with
+20.17 anyway (he prints ⅔ of the sum as 26.75 where 20.17 gives 26.78), so this is rounding slop
+in an illustrative footnote rather than a table to match. The engine computes ascensions directly,
+and a fixture pins the property that would catch a real error instead: a sign and its opposite sum
+to the same value at every latitude — twice the equatorial span, not 60 — because the two
+ascensional differences cancel.
 
 ### Refused at the poles
 
@@ -243,7 +286,10 @@ shipped default and Abū Ma'shar's rule available as a reading.
 - **IX.7, 23–33** gives two further rate keys ("the mighty days", 12 d 4 h 10 m 30 s per degree,
   and "the small days", 59′08″ a day) and **II.22, 2–3** divides the year by the Moon's
   connections. All three are cited on the page but none is computed; they are the obvious next
-  increment and they need no decision.
+  increment and they need no decision. (III.7, 32–42, which used to head this list, is now built —
+  see §4a.)
+- **IX.8, 13** applies the same age-matching to the *house-master's* years. It stays unbuilt for
+  the same reason the rest of the longevity chain does: there is no house-master to take them from.
 - **Appendix B, pp. 675–677** — the table of ascensional times — exists in PN IV three pages past
   the corpus boundary. It is not needed (Appendix A gives a latitude-exact method, and this engine
   computes ascensions directly), but `04_timing_open_questions.md`'s claim that the corpus cannot
