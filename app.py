@@ -8190,6 +8190,238 @@ def pn4_moon_testimony(moon):
         return moon['connections'][0]['planet']
     return moon['house_lord']
 
+# --- III.2: the distribution analysed ------------------------------------
+# Three stated pieces, and the prose between them left alone.
+#   III.2, 4-9   a checklist of questions about the bound the distribution
+#                stands in -- answered here as FACTS, not judged;
+#   III.2, 10-17 seven "static" types of distributor and partner, by
+#                fortune and infortune (Figure 66) -- delineated at 18-54
+#                under conditions in root and revolution, which are not
+#                judged here;
+#   III.2, 55-86 twenty-four transitions inside a year, by the natures of
+#                the outgoing and incoming bound lords and managers, and
+#                III.2, 87-101 their twelve indications, one sentence
+#                each, quoted verbatim on the page.
+# III.2, 105: the twelve concern the manager by its ROOTED body or ray --
+# the natal distribution table -- and a revolutionary planet entering the
+# bound (43, 46-47, 54) is a different matter, not built. III.2, 110-111
+# gate every death statement in the chapter on "the years of the lifespan
+# which his [longevity] indicator in the root [had already] pointed out",
+# which is the refused releaser: the quoted indications that mention
+# death carry that gate on the page.
+#
+# The Sun, Moon and Mercury are neither fortune nor infortune, and the
+# types and transitions speak only of fortunes and infortunes: a
+# distribution under one of them reads "no type by nature", a transition
+# involving one "not among the twenty-four". Type 5 turns on conditions
+# (a corrupting infortune in the bound, a weak fortune) that are not
+# judged, so it is never assigned. Decided by the owner 2026-09-10, with
+# the indications quoted. No worked example by the author; Figure 67 /
+# fn 56 is Dykes' diagram of III.2, 33 (Mars distributing with Venus's
+# sextile: type 3), and pins the classification.
+
+def pn4_nature(planet):
+    """Fortune, infortune, or None for the Sun, Moon and Mercury."""
+    if planet in FORTUNES:
+        return 'fortune'
+    if planet in INFORTUNES:
+        return 'infortune'
+    return None
+
+PN4_III2_TYPES = {
+    1: ('a fortune, acting alone in the distribution', 'III.2, 11; 18-24'),
+    2: ('an infortune, acting alone in the distribution', 'III.2, 12; 25-29'),
+    3: ('an infortune distributing, a fortune partnering', 'III.2, 13; 30-35'),
+    4: ('a fortune distributing, an infortune partnering', 'III.2, 14; 36-39'),
+    5: ('one of the planets, fortune or infortune, under a corrupting infortune -- a condition, not assigned here', 'III.2, 15; 40-43'),
+    6: ('both infortunes', 'III.2, 16; 44-48'),
+    7: ('both fortunes', 'III.2, 17; 49-54'),
+}
+
+def pn4_static_type(distributor, partner):
+    """III.2, 10-17: which of the seven the current distribution is, by
+    nature alone. Returns (number or None, label, cite)."""
+    d, p = pn4_nature(distributor), pn4_nature(partner) if partner else None
+    if d is None or (partner and p is None):
+        who = distributor if d is None else partner
+        return (None, f"no type by nature: {who} is neither fortune nor infortune, and III.2's seven types "
+                      f"speak only of fortunes and infortunes", 'III.2, 10-17')
+    if not partner:
+        n = 1 if d == 'fortune' else 2
+    elif d == 'fortune' and p == 'fortune':
+        n = 7
+    elif d == 'infortune' and p == 'infortune':
+        n = 6
+    elif d == 'infortune':
+        n = 3
+    else:
+        n = 4
+    return (n, PN4_III2_TYPES[n][0], PN4_III2_TYPES[n][1])
+
+# The twenty-four (III.2, 58-86): number -> (kind, from, to, context nature).
+_F, _I = 'fortune', 'infortune'
+PN4_III2_TRANSITIONS = {
+    1: ('bound', _F, _F, None), 2: ('bound', _F, _I, None), 3: ('bound', _I, _F, None), 4: ('bound', _I, _I, None),
+    5: ('management', _F, _F, None), 6: ('management', _F, _I, None), 7: ('management', _I, _F, None), 8: ('management', _I, _I, None),
+    9: ('bound', _F, _F, _F), 10: ('bound', _F, _F, _I), 11: ('bound', _F, _I, _F), 12: ('bound', _F, _I, _I),
+    13: ('bound', _I, _F, _F), 14: ('bound', _I, _F, _I), 15: ('bound', _I, _I, _F), 16: ('bound', _I, _I, _I),
+    17: ('management', _F, _F, _F), 18: ('management', _F, _F, _I), 19: ('management', _F, _I, _F), 20: ('management', _F, _I, _I),
+    21: ('management', _I, _F, _F), 22: ('management', _I, _F, _I), 23: ('management', _I, _I, _F), 24: ('management', _I, _I, _I),
+}
+
+# The twelve indications (III.2, 87-101), quoted. (from, to) -> paired;
+# (from, to, context) -> doubled. `death` marks the ones III.2, 110-111
+# gate on the longevity indicator's years.
+PN4_III2_PAIRED = {
+    (_F, _F): ('III.2, 88', 'the duration of good fortune, and the shift from good fortune to good fortune', False),
+    (_I, _F): ('III.2, 89', 'a shift from the bottom and humbleness to being raised up and greatness', False),
+    (_F, _I): ('III.2, 90', 'a shift from good to bad, and a fear of death', True),
+    (_I, _I): ('III.2, 91', 'a fluctuation in tribulations, and a shift from adversity to adversity, and from evil to evil, '
+                          'and that indication of the fear of death will be more confirmed', True),
+}
+PN4_III2_DOUBLED = {
+    (_F, _F, _F): ('III.2, 92', 'good fortune and surpassing good', False),
+    (_F, _F, _I): ('III.2, 94', 'a suitability of condition, and the lastingness of good fortune, because the fortunes in it are '
+                                'greater in testimony -- except that it will blend it with evil and something detestable due to '
+                                'the nature of the infortune', False),
+    (_I, _F, _F): ('III.2, 95', 'a shift from something detestable and evil to surpassing good fortune', False),
+    (_I, _F, _I): ('III.2, 96', 'a middling [condition] in good and evil, and excellence and badness, even though the '
+                                'indication of good is stronger', False),
+    (_F, _I, _F): ('III.2, 97', 'a middling condition in suitability and corruption, and good and evil, even though the '
+                                'indication of evil is stronger', False),
+    (_F, _I, _I): ('III.2, 98', 'something detestable and much evil, and the encountering of tribulations and the fear of '
+                                'death, and fluctuations in detestable things', True),
+    (_I, _I, _F): ('III.2, 99', 'excessive adversity and the fear of death', True),
+    (_I, _I, _I): ('III.2, 100', 'varieties of detestable things, evil, and death', True),
+}
+PN4_III2_DEATH_GATE = ' [death only in the years the longevity indicator pointed out, III.2, 110-111 -- the releaser this engine refuses]'
+
+def pn4_transition_numbers(kind, frm, to, context):
+    """The transition numbers a shift answers to: the isolated one (1-8)
+    and, when the context planet has a nature, the qualified one (9-24)."""
+    out = [n for n, (k, f, t, c) in PN4_III2_TRANSITIONS.items() if k == kind and f == frm and t == to and c is None]
+    if context is not None:
+        out += [n for n, (k, f, t, c) in PN4_III2_TRANSITIONS.items() if k == kind and f == frm and t == to and c == context]
+    return out
+
+def pn4_classify_shift(prev_seg, next_seg):
+    """III.2, 55-101 for one boundary between two segments of the natal
+    distribution: zero, one or two shifts (bound and/or management),
+    each numbered and given its quoted indication, or explained as not
+    among the twenty-four."""
+    out = []
+    bound_shift = prev_seg['distributor'] != next_seg['distributor']
+    mgmt_shift = prev_seg['partner'] != next_seg['partner']
+    if bound_shift:
+        frm, to = pn4_nature(prev_seg['distributor']), pn4_nature(next_seg['distributor'])
+        ctx = pn4_nature(next_seg['partner']) if next_seg['partner'] else None
+        label = f"the distribution shifts from the bound of {prev_seg['distributor']} to the bound of {next_seg['distributor']}"
+        out.append(_pn4_shift_row('bound', label, frm, to, ctx, next_seg['partner']))
+    if mgmt_shift:
+        frm = pn4_nature(prev_seg['partner']) if prev_seg['partner'] else None
+        to = pn4_nature(next_seg['partner']) if next_seg['partner'] else None
+        ctx = pn4_nature(next_seg['distributor'])
+        label = (f"the management shifts from {prev_seg['partner'] or 'the distributor alone'} to "
+                 f"{next_seg['partner'] or 'the distributor alone'}")
+        out.append(_pn4_shift_row('management', label, frm, to, ctx, next_seg['distributor']))
+    if bound_shift and mgmt_shift and len(out) == 2 and all(r['numbers'] for r in out):
+        natures = {pn4_nature(prev_seg['distributor']), pn4_nature(next_seg['distributor']),
+                   pn4_nature(prev_seg['partner']), pn4_nature(next_seg['partner'])}
+        if natures == {_F}:
+            out[0]['indication'] += ' -- and both shifting from a fortune to a fortune: "good fortune upon good fortune, and of good upon good; and it is the most powerful good fortune, and the most splendid in power, if the four of them were fortunes" (III.2, 93)'
+        elif natures == {_I}:
+            out[0]['indication'] += ' -- and both shifting from an infortune to an infortune: "of the greatest and harshest adversity if the four of them were infortunes" (III.2, 101)' + PN4_III2_DEATH_GATE
+    return out
+
+def _pn4_shift_row(kind, label, frm, to, ctx, context_planet):
+    if frm is None or to is None:
+        return {'kind': kind, 'label': label, 'numbers': [], 'cite': 'III.2, 58-86',
+                'indication': 'not among the twenty-four: one side of the shift is neither fortune nor infortune, or the distributor acts alone'}
+    numbers = pn4_transition_numbers(kind, frm, to, ctx)
+    paired_cite, paired_text, paired_death = PN4_III2_PAIRED[(frm, to)]
+    if ctx is not None:
+        d_cite, d_text, d_death = PN4_III2_DOUBLED[(frm, to, ctx)]
+        indication = (f'"{d_text}" ({d_cite}; the paired reading at {paired_cite})'
+                      + (PN4_III2_DEATH_GATE if d_death else ''))
+    else:
+        indication = (f'"{paired_text}" ({paired_cite}); the qualified transition needs a fortune or infortune '
+                      f'{"managing" if kind == "bound" else "distributing"}, and {context_planet or "none"} is neither'
+                      + (PN4_III2_DEATH_GATE if paired_death else ''))
+    return {'kind': kind, 'label': label, 'numbers': numbers,
+            'cite': 'III.2, ' + ('58-62' if kind == 'bound' and ctx is None else '63-67' if ctx is None
+                                 else '68-76' if kind == 'bound' else '77-85'),
+            'indication': indication}
+
+def pn4_year_transitions(segments, age):
+    """The shifts of the natal distribution that fall inside this year of
+    it, [age, age + 1) in years of arc (III.2, 55: "within one of the
+    years")."""
+    rows = []
+    if not segments:
+        return rows
+    for prev_seg, next_seg in zip(segments, segments[1:]):
+        if age <= next_seg['from'] < age + 1:
+            for r in pn4_classify_shift(prev_seg, next_seg):
+                rows.append({'At age': f"{next_seg['from']:.2f}", 'Shift': r['label'],
+                             'Transition': ', '.join(f"#{n}" for n in r['numbers']) or '-',
+                             'Indication': r['indication'], 'Source': r['cite']})
+    return rows
+
+def pn4_distribution_checklist(chart_data, sr, year_lon, current):
+    """III.2, 4-9 as facts for the bound the distribution stands in now.
+    Nothing here is judged: the conditions 5 and 8 ask about are shown
+    as what they are (direct or retrograde, the solar phase) and the
+    reader judges."""
+    if not current:
+        return []
+    natal, rev = chart_data['planetary_data'], sr['planetary_data']
+    n_asc, r_asc = chart_data['ascendant'], sr['ascendant']
+    deg = current['from_lon'] % 360.0
+    starts = pn4_bound_starts()
+    idx = max(i for i, (lon, _l, _s) in enumerate(starts) if lon <= deg)
+    b_start = starts[idx][0]
+    b_end = starts[idx + 1][0] if idx + 1 < len(starts) else 360.0
+    lord = current['distributor']
+    sign = get_zodiac_sign(b_start)
+
+    def condition(data, planet):
+        row = data.get(planet)
+        if not row:
+            return '-'
+        motion = 'retrograde' if row.get('speed_in_lon', 1.0) < 0 else 'direct'
+        phase, side, _el = solar_phase(planet, row['longitude'], data['Sun']['longitude'])
+        return f"{get_zodiac_sign(row['longitude'])}, {motion}, {side or '-'}{', ' + phase.lower() if phase else ''}"
+
+    def in_bound(items):
+        return [(lon, who, aspect) for lon, kind, who, aspect in items if b_start <= lon < b_end]
+
+    rulers = get_essential_rulers(b_start)
+    face = get_essential_rulers(deg)['face']
+    trip = rulers['triplicity_day'] if chart_data['sect'] == 'Diurnal' else rulers['triplicity_night']
+    natal_meet = in_bound(pn4_bodies_and_rays(natal))
+    rev_meet = in_bound(pn4_bodies_and_rays(rev))
+    fmt = lambda items: '; '.join(f"{who} by {aspect} at {get_degree_string(lon)}" for lon, who, aspect in items) or 'none'
+    return [
+        {'Question': '[1a] Whose bound is it', 'Reads': f"{lord}'s, {get_degree_string(b_start)} to {get_degree_string(b_end)}",
+         'Source': 'III.2, 5'},
+        {'Question': "[1b] Its lord's condition in the root and the revolution (not judged: the facts)",
+         'Reads': f"root: {condition(natal, lord)}; revolution: {condition(rev, lord)}", 'Source': 'III.2, 5'},
+        {'Question': '[2] Where the bound falls from the natal Ascendant / the terminal sign / the revolution Ascendant',
+         'Reads': f"house {get_wsh_house(b_start, n_asc)} / {get_wsh_house(b_start, year_lon)} / {get_wsh_house(b_start, r_asc)}",
+         'Source': 'III.2, 6'},
+        {'Question': "[3] The sign's house, exaltation, triplicity and face",
+         'Reads': f"{sign}: house of {rulers['domicile']}, exaltation of {rulers['exaltation'] if rulers['exaltation'] not in (None, '-', '') else 'none'}, triplicity of "
+                  f"{trip} ({'day' if chart_data['sect'] == 'Diurnal' else 'night'}), face of {face} at {get_degree_string(deg)}",
+         'Source': 'III.2, 7'},
+        {'Question': '[4] Who is in that sign in the root; in the revolution',
+         'Reads': f"root: {_pn4_natal_planets_in_sign(natal, sign)}; revolution: {_pn4_natal_planets_in_sign(rev, sign)}",
+         'Source': 'III.2, 8'},
+        {'Question': '[5] Who casts rays to the bound, and who is in it -- root',
+         'Reads': fmt(natal_meet), 'Source': 'III.2, 9'},
+        {'Question': '[5] The same in the revolution (a different matter from the twelve, III.2, 105-106)',
+         'Reads': fmt(rev_meet), 'Source': 'III.2, 9; 43, 46-47, 54'},
+    ]
+
 def pn4_fardar_at_age(age_years, sect):
     """The fardar lord and sub-lord at an age.
 
@@ -8747,6 +8979,9 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
             (fardar or {}).get('lord'), orb, sr['ascendant'],
             pn4_moon_testimony(moon), moon['void']),
         'moon': moon, 'moon_portions': portions, 'year_days': year_days,
+        'iii2_type': pn4_static_type(current['distributor'], current['partner']) if current else None,
+        'iii2_checklist': pn4_distribution_checklist(chart_data, sr, year['longitude'], current),
+        'iii2_transitions': pn4_year_transitions(segments, age),
         'moon_rows': [{'Day from the revolution': f"{c['day']:.2f}", 'Planet': c['planet'], 'By': c['aspect'],
                        'Moon at': get_degree_string(c['moon_at'])} for c in moon['connections']],
         'portion_rows': [{'Portion': f"{p['portion']} of {p['of']}", 'Owned by': p['planet'],
@@ -10020,6 +10255,42 @@ if location_query and lat is not None and lon is not None:
                            "the Ascendant's sign and its degree; if there is none, \"the distributor without a planet "
                            "partnering with her\". III.2, 103-104 ranks partners body > opposition > square > trine > "
                            "sextile -- hard aspects above soft ones, which is the reverse of the usual intuition.")
+
+            st.subheader("The distribution analysed (III.2)",
+                         help="III.2, 4-9: a checklist of questions about the bound the distribution stands in, answered "
+                              "here as facts. III.2, 10-17: seven \"static\" types of distributor and partner, by "
+                              "fortune and infortune (Figure 66). III.2, 55-86: twenty-four transitions that can occur "
+                              "inside a year, by the natures of the outgoing and incoming bound lords and managers, and "
+                              "87-101 their twelve indications, quoted here one sentence each. III.2, 102-104 rank the "
+                              "three indicators: the distributor, then the partner by body, then by ray.")
+            if pn4['iii2_type'] is None:
+                st.markdown("No current distribution to analyse (refused at this latitude, or the age is past the table).")
+            else:
+                t_num, t_label, t_cite = pn4['iii2_type']
+                cur = pn4['current']
+                st.markdown(f"**Static type:** {'type ' + str(t_num) + ', ' if t_num else ''}{t_label} -- "
+                            f"{cur['distributor']} distributing"
+                            f"{', ' + cur['partner'] + ' partnering by ' + cur['partner_aspect'] if cur['partner'] else ', alone'} "
+                            f"({t_cite}).")
+                st.dataframe(pd.DataFrame(pn4['iii2_checklist']), hide_index=True, width='stretch', height=_rows_height(7))
+                if pn4['iii2_transitions']:
+                    st.markdown(f"**Shifts inside this year of the distribution** (age {pn4['age']} to {pn4['age'] + 1}):")
+                    st.dataframe(pd.DataFrame(pn4['iii2_transitions']), hide_index=True, width='stretch',
+                                 height=_rows_height(len(pn4['iii2_transitions'])))
+                else:
+                    st.markdown(f"**No shift of bound or management falls inside this year of the distribution** "
+                                f"(age {pn4['age']} to {pn4['age'] + 1}); the twenty-four of III.2, 55-86 do not arise.")
+            st.caption("Facts and classification, not judgment: the conditions III.2's delineation turns on -- \"in a "
+                       "suitable condition in the root and in the revolution\" -- are not judged, and the prose of "
+                       "III.2, 18-54 is not built. The Sun, Moon and Mercury are neither fortune nor infortune, and the "
+                       "types and transitions speak only of fortunes and infortunes, so a distribution under one of "
+                       "them reads \"no type by nature\" and a shift involving one \"not among the twenty-four\"; type 5 "
+                       "turns on conditions and is never assigned. The transitions are read from the natal "
+                       "distribution above, as III.2, 105 requires; a revolutionary planet entering the bound (III.2, "
+                       "43, 46-47, 54) is listed as a fact and not built as a rule. Every quoted indication that "
+                       "mentions death carries III.2, 110-111's gate: death only in the years the longevity indicator "
+                       "pointed out, which is the releaser this engine refuses. No worked example by the author; "
+                       "Figure 67 with fn 56 is Dykes' diagram of III.2, 33.")
 
             st.subheader("The distribution from the Midheaven and the fourth",
                          help="III.1, 12: \"what is in the Midheaven or the fourth is directed by the ascensions of "

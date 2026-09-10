@@ -657,6 +657,62 @@ longer reading "NOT computed" and its portions closing at the year's length.
 simulator could read but which no prompt has yet asked for. The next items in the brief are the
 interpretation bodies (III.2's analysis and the rest), which are delineation prose.
 
+### 4j. III.2: the distribution analysed — built 2026-09-10, second session
+
+Technique 9 of the continuation brief, the first of its interpretation items, put to the owner
+with the four-point prompt. Chosen as recommended: **the checklist as facts, the static type by
+nature, and this year's transitions with the twelve indications quoted verbatim**, over a
+classification with nothing quoted.
+
+**Re-checked in the corpus before writing:**
+
+| Citation | What it had to support | Held? |
+|---|---|---|
+| **III.2, 1–3** | the distributor's power across years; the year's witnesses | yes |
+| **III.2, 4–9** + fn 41–43 | the checklist: bound and lord, its condition, the places from the three signs, the sign's rulers, who is in it, who casts rays to it | yes |
+| **III.2, 10–17** + fn 44–50, Figure 66 | the seven types, and the sentences delineating each (18–54) | yes; fn 48 calls type 5 "an ambiguous mixture" |
+| **III.2, 33** + fn 56, Figure 67 | Dykes' diagram: Mars distributing in Leo with Venus's sextile — type 3 | yes, an editor's example |
+| **III.2, 55–86** + fn 69–72, Figures 68–73 | the six factors and the twenty-four ways (58–62 the bound alone, 63–67 the management alone, 68–76 the bound qualified, 77–85 the management qualified) | yes; 72 and 95 run across page breaks and were read whole |
+| **III.2, 87–101** + fn 73–82 | the twelve indications, four paired and eight doubled; 93 and 101 for all four alike | yes — quoted |
+| **III.2, 102–104** | the ranking of the three indicators | already built |
+| **III.2, 105–106** + fn 83 | the twelve concern the rooted manager; a revolutionary planet in the bound is another matter (43, 46–47, 54) | yes |
+| **III.2, 110–111** | every death statement gated on the longevity indicator's years | yes — the gate is printed |
+
+**Stated, not presupposed — and what is not judged.** The checklist is answered as facts; the
+conditions the delineation turns on ("in a suitable condition in the root and in the revolution")
+are not judged and III.2, 18–54 is not built. The Sun, Moon and Mercury are neither fortune nor
+infortune and the types and transitions speak only of those two, so a distribution under one of
+them reads "no type by nature" and a shift involving one "not among the twenty-four"; type 5,
+which turns on a corrupting infortune and a weak fortune, is never assigned. The transitions are
+read from the natal distribution, as 105 requires. Each quoted indication that mentions death —
+90, 91, 98, 99, 100, and 101 — carries 110–111's gate, which is the refused releaser.
+
+**What was built.** `pn4_nature`, `PN4_III2_TYPES`, `pn4_static_type`, `PN4_III2_TRANSITIONS`
+(the twenty-four as (kind, from, to, context)), `PN4_III2_PAIRED` and `PN4_III2_DOUBLED` (the
+twelve, quoted, with the death flag), `pn4_transition_numbers`, `pn4_classify_shift` (one
+boundary → zero, one or two shifts, numbered, with 93/101 when all four are alike),
+`pn4_year_transitions` ([age, age+1) in years of arc), `pn4_distribution_checklist` (the seven
+fact rows for the current bound, with the revolution's rays into it listed as a fact under
+105–106); the bundle carries `iii2_type`, `iii2_checklist`, `iii2_transitions`; one section on
+the page after the Ascendant's distribution.
+
+**What pins it.** Five fixtures: the seven types by nature with Figure 67's Mars–Venus as type 3
+and the neutrals as none, type 5 never; the twenty-four mapping onto the twelve — every number
+answers to exactly one indication, the isolated eight to the paired four and the qualified sixteen
+to the doubled eight, and the five death-gated sentences named; shift classification quoting the
+sentence (#2/#11 → 97 with 90 cited; #7/#22 → 96; the gate on 98; 101 when all four are
+infortunes and 93 when all four are fortunes; a neutral manager leaving only the isolated number;
+a neutral distributor not among the twenty-four); the year window; and the checklist on a
+constructed pair of charts (Mars's bound of Aries, the places 1 / 9 / 10, the sign's rulers, the
+planets in it, the Sun's square and Saturn's body in the bound).
+
+**Verification.** Doctrine fixtures 215 (were 210). `tables.json` **unchanged**: the six fixture charts are past the 120-year table, so the section renders its "no current distribution" line and no table there; the live state was checked in the browser at age 42. Full suite
+**2528 passed**, five of them new; `test_base_tables.py` 121 / 0. Rendered in the browser.
+
+**Left undone, on purpose.** III.2, 18–54's delineation and its conditions; the revolutionary
+planet in the bound as a rule (item 12). The next prompt, per the brief, is the luminary proxies
+for the lord of the year (II.13, 1; II.14, 1; II.22, 1–5).
+
 ### Refused at the poles
 
 `pn4_distribution_from_ascendant` returns `None` where |latitude| + obliquity ≥ 90°, on the

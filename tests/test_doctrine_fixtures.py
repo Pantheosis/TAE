@@ -1808,6 +1808,125 @@ def test_pn4_bundle_reads_the_moon_into_indicator_seven_and_the_portions(engine)
     assert {r["#"]: r for r in gov_rows}[7]["Counted"] == "yes"
 
 
+# --- III.2: the distribution analysed (built 2026-09-10) -------------------
+
+def _seg(distributor, partner, frm, to=None, aspect="body"):
+    return {"from": frm, "to": to if to is not None else frm + 1.0, "from_lon": 0.0,
+            "distributor": distributor, "partner": partner, "partner_aspect": aspect if partner else None,
+            "partner_from": "", "opened_by": ""}
+
+
+def test_pn4_iii2_static_types_by_nature_and_dykes_figure_67(engine):
+    """III.2, 10-17: the seven types. Figure 67 / fn 56: "the directed
+    Ascendant has reached the bound of Mars in Leo, with its partner
+    Venus sending a sextile ray to it. So, the distribution is
+    Mars-Venus" -- an infortune distributing with a fortune partnering,
+    the third type (III.2, 13). The Sun, Moon and Mercury have no type
+    by nature, and type 5 is never assigned."""
+    t = engine["pn4_static_type"]
+    assert t("Mars", "Venus")[0] == 3
+    assert t("Venus", "Mars")[0] == 4
+    assert t("Jupiter", None)[0] == 1 and t("Saturn", None)[0] == 2
+    assert t("Saturn", "Mars")[0] == 6 and t("Venus", "Jupiter")[0] == 7
+    assert t("Sun", "Venus")[0] is None and "neither fortune nor infortune" in t("Sun", "Venus")[1]
+    assert t("Venus", "Mercury")[0] is None
+    assert all(n != 5 for n in (t(d, p)[0] for d in ("Jupiter", "Venus", "Saturn", "Mars")
+                                for p in (None, "Jupiter", "Venus", "Saturn", "Mars")))
+
+
+def test_pn4_iii2_twenty_four_map_to_twelve_indications(engine):
+    """III.2, 57: "these six indicators ... are in twenty-four ways";
+    III.2, 87: twelve indications, "four of them are called a paired
+    indication, and eight of them are called a double indication". Every
+    numbered transition answers to exactly one indication; the isolated
+    eight to the paired four, the qualified sixteen to the doubled eight;
+    and each qualified number is the isolated one plus its context."""
+    trans = engine["PN4_III2_TRANSITIONS"]
+    assert sorted(trans) == list(range(1, 25))
+    paired, doubled = engine["PN4_III2_PAIRED"], engine["PN4_III2_DOUBLED"]
+    assert len(paired) == 4 and len(doubled) == 8
+    for n, (kind, f, t, c) in trans.items():
+        if c is None:
+            assert 1 <= n <= 8 and (f, t) in paired
+        else:
+            assert 9 <= n <= 24 and (f, t, c) in doubled
+    numbers = engine["pn4_transition_numbers"]
+    assert numbers("bound", "fortune", "fortune", "fortune") == [1, 9]
+    assert numbers("management", "infortune", "fortune", "infortune") == [7, 22]
+    assert numbers("bound", "infortune", "infortune", None) == [4]
+    # the sentences that mention death are gated on III.2, 110-111
+    gated = {c for c, _t, d in list(paired.values()) + list(doubled.values()) if d}
+    assert gated == {"III.2, 90", "III.2, 91", "III.2, 98", "III.2, 99", "III.2, 100"}
+
+
+def test_pn4_iii2_shift_classification_quotes_the_sentence(engine):
+    """III.2, 60 / 71 and 97: the distribution shifting "from the bound of
+    a fortune to the bound of an infortune, in the management of a
+    fortune" is #2 and #11, and "in that year it indicates a middling
+    condition in suitability and corruption, and good and evil, even
+    though the indication of evil is stronger" (97). III.2, 66 / 83 and
+    96: the management shifting from an infortune to a fortune in the
+    bound of an infortune is #7 and #22 (96). A death sentence carries the
+    gate; a neutral planet is not among the twenty-four."""
+    classify = engine["pn4_classify_shift"]
+    rows = classify(_seg("Venus", "Jupiter", 3.0), _seg("Saturn", "Jupiter", 4.0))
+    assert len(rows) == 1 and rows[0]["numbers"] == [2, 11]
+    assert "middling condition in suitability and corruption" in rows[0]["indication"]
+    assert "III.2, 97" in rows[0]["indication"] and "III.2, 90" in rows[0]["indication"]
+    rows = classify(_seg("Mars", "Saturn", 3.0), _seg("Mars", "Venus", 4.0, aspect="trine"))
+    assert rows[0]["numbers"] == [7, 22] and "III.2, 96" in rows[0]["indication"]
+    rows = classify(_seg("Venus", "Venus", 3.0), _seg("Mars", "Mars", 4.0))
+    assert len(rows) == 2 and rows[0]["numbers"] == [2, 12] and "110-111" in rows[0]["indication"]
+    assert rows[1]["numbers"] == [6, 20]
+    assert "harshest adversity" not in rows[0]["indication"]        # not all four infortunes
+    rows = classify(_seg("Saturn", "Mars", 3.0), _seg("Mars", "Saturn", 4.0))
+    assert "greatest and harshest adversity" in rows[0]["indication"] and "III.2, 101" in rows[0]["indication"]
+    rows = classify(_seg("Jupiter", "Venus", 3.0), _seg("Venus", "Jupiter", 4.0))
+    assert "good fortune upon good fortune" in rows[0]["indication"] and "III.2, 93" in rows[0]["indication"]
+    rows = classify(_seg("Venus", "Sun", 3.0), _seg("Mars", "Sun", 4.0))
+    assert rows[0]["numbers"] == [2] and "is neither" in rows[0]["indication"]
+    rows = classify(_seg("Mercury", "Venus", 3.0), _seg("Mars", "Venus", 4.0))
+    assert rows[0]["numbers"] == [] and "not among the twenty-four" in rows[0]["indication"]
+    assert classify(_seg("Mars", "Venus", 3.0), _seg("Mars", "Venus", 4.0)) == []
+
+
+def test_pn4_iii2_transitions_fall_inside_the_year(engine):
+    """III.2, 55: "within one of the years it will shift". Only the
+    boundaries with age <= from < age + 1 are this year's; a boundary at
+    exactly the next birthday belongs to the next year."""
+    segs = [_seg("Venus", None, 0.0, 3.5), _seg("Saturn", None, 3.5, 4.0), _seg("Saturn", "Jupiter", 4.0, 4.7),
+            _seg("Mars", "Jupiter", 4.7, 9.0)]
+    rows = engine["pn4_year_transitions"](segs, 3)
+    assert [r["At age"] for r in rows] == ["3.50"] and rows[0]["Transition"] == "#2"
+    rows = engine["pn4_year_transitions"](segs, 4)
+    assert [r["At age"] for r in rows] == ["4.00", "4.70"]
+    assert rows[1]["Transition"] == "#4, #15"
+    assert engine["pn4_year_transitions"](segs, 6) == []
+    assert engine["pn4_year_transitions"](None, 6) == []
+
+
+def test_pn4_iii2_checklist_reads_the_bound_as_facts(engine):
+    """III.2, 4-9 answered as facts for the bound the distribution stands
+    in. Current segment opened at 22 Aries, Mars's Egyptian bound
+    (20-25): the bound and its span; the places from the three signs;
+    the sign's rulers; who is in Aries in root and revolution; who casts
+    rays into 20-25 Aries -- the Sun at 20 Cancer squares 20 Aries."""
+    root = {"planetary_data": pdata(Sun=110.0, Moon=200.0, Mercury=100.0, Venus=130.0, Mars=300.0, Jupiter=250.0, Saturn=23.0),
+            "ascendant": 5.0, "houses": [], "sect": "Diurnal"}
+    rev = {"planetary_data": pdata(Sun=110.0, Moon=21.0, Mercury=100.0, Venus=130.0, Mars=300.0, Jupiter=250.0, Saturn=(24.0, -0.05)),
+           "ascendant": 95.0, "houses": [], "sect": "Diurnal"}
+    current = _seg("Mars", "Saturn", 20.0); current["from_lon"] = 22.0
+    rows = engine["pn4_distribution_checklist"](root, rev, 125.0, current)
+    assert [r["Question"][:3] for r in rows] == ["[1a", "[1b", "[2]", "[3]", "[4]", "[5]", "[5]"]
+    assert rows[0]["Reads"].startswith("Mars's, 20") and "25" in rows[0]["Reads"]
+    assert rows[2]["Reads"] == "house 1 / 9 / 10"                             # from Aries / Leo / Cancer
+    assert "Aries: house of Mars, exaltation of Sun" in rows[3]["Reads"]
+    assert rows[4]["Reads"].startswith("root: Saturn (infortune); revolution: Saturn (infortune), Moon (neither)")
+    assert "Sun by square at 20" in rows[5]["Reads"] and "Saturn by body at 23" in rows[5]["Reads"]
+    assert "Saturn by body at 24" in rows[6]["Reads"]
+    assert engine["pn4_distribution_checklist"](root, rev, 125.0, None) == []
+
+
 def test_pn4_indicator_two_against_abu_mashars_worked_months(engine):
     """IX.1, 15-16 works indicator #2 out month by month for a year that
     terminates at Cancer: "the lord of its first ninth-part is the Moon,
