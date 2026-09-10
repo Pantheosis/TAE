@@ -610,6 +610,53 @@ The next prompt, per the brief, is the Moon's connections dividing the year (II.
 needs the same connection-in-the-revolution the engine does not compute — the prompt must say
 whether it can be built at all.
 
+### 4i. II.22, 1–4: the Moon's connections in her sign, and the portions of the year — built 2026-09-10, second session
+
+Technique 8 of the continuation brief, put to the owner with the four-point prompt. Chosen as
+recommended: **computed every year, filling indicator #7 and the governor's testimony #7**, over
+showing the division only in the Moon's years.
+
+**Re-checked in the corpus before writing:**
+
+| Citation | What it had to support | Held? |
+|---|---|---|
+| **II.22, 1** + fn 307–309 | "the planet which the Moon connects with, so long as she is in her [current] sign", inside "If the Moon was the lord of the year" | yes |
+| **II.22, 2–3** | two → halves, three → thirds, more → by their number; each portion judged by its owner | yes |
+| **II.22, 4, 17** + fn 310 | empty in course → the lord of her house, "whether it looked at her or not" | yes |
+| **II.1, 12**; **IX.9, 8** + fn 323 | the connection as indicator #7 of every year and testimony #7 of the governor | yes |
+| **VII.5, 14** (via `_perfection_day`) | no out-of-sign connection — the configuration re-checked at perfection | already pinned |
+| Intro p. 106–107 | Dykes on the void Moon and Sahl's exception — the editor's, not built | read |
+
+**Stated, not presupposed — with four readings named on the page.** "Connects with" is a
+perfection by degree of the body or a Ptolemaic ray before her sign exit, found by the engine's
+forward simulation; the portions go to the planets in the order of connection (not stated); the
+division is stated for the Moon's year and is computed every year with this year's lord named;
+"empty in course" is no such perfection before she leaves the sign. II.22, 11's rays, Lots and
+twelfth-parts are not counted; II.22, 5–24's judgments are not built. No worked example exists.
+
+**What was built.** `PN4_MOON_ASPECTS`, `pn4_moon_connections` (simulation from the revolution,
+`_perfection_day` before her sign exit, day order), `pn4_moon_portions`, `pn4_moon_testimony`;
+`pn4_further_indicators` takes the result for row #7 and `pn4_governor` takes the testimony and
+counts it, so the governor's tally now runs over **seven** of eight; the bundle carries the
+year's length to the next revolution and the portions; one section with two tables (none when
+she is void, and the markdown says so). The two captions that said the connection was not
+computed now say where it is read.
+
+**What pins it.** Five fixtures: the portion arithmetic; every connection the simulator reports
+on four real revolutions perfects before the exit day, inside her starting sign, and exact to the
+ephemeris at that moment (checked with a fresh `swe.calc_ut`, not the simulator); a void case
+built by searching the ephemeris for a Moon within a third of a degree of her sign's end with no
+aspect degree ahead of her, which must read empty in course and fall to her house lord; the
+governor counting seven when handed the testimony and six when not; the bundle's row #7 no
+longer reading "NOT computed" and its portions closing at the year's length.
+
+**Verification.** Doctrine fixtures 210 (were 205). `tables.json` **+8 / −0**: the two tables on the four fixture charts whose Moon is not void. Full suite
+**2523 passed**, five of them new; `test_base_tables.py` 121 / 0. Rendered in the browser.
+
+**Left undone, on purpose.** The judgments; #15's house-lord connections, which the same
+simulator could read but which no prompt has yet asked for. The next items in the brief are the
+interpretation bodies (III.2's analysis and the rest), which are delineation prose.
+
 ### Refused at the poles
 
 `pn4_distribution_from_ascendant` returns `None` where |latitude| + obliquity ≥ 90°, on the

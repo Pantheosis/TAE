@@ -7876,7 +7876,7 @@ def _pn4_house_from(lon, from_lon):
     """Whole-sign house of `lon` counted from the sign of `from_lon`."""
     return get_wsh_house(lon, from_lon)
 
-def pn4_further_indicators(chart_data, sr, year_lon):
+def pn4_further_indicators(chart_data, sr, year_lon, moon=None):
     """Indicators 6-19 of the year (II.1, 11-24): one row each, the fact
     it reads computed where it is a lookup on the root and the
     revolution, and stated as not computed where it is not."""
@@ -7896,12 +7896,22 @@ def pn4_further_indicators(chart_data, sr, year_lon):
                  'Reads': f"{get_zodiac_sign(r_asc)} ({get_degree_string(r_asc)}), lord {lord(r_asc)}",
                  'Source': 'II.1, 11; VI.3, 1-2'})
     # 7
-    moon = rev['Moon']['longitude']
+    moon_lon = rev['Moon']['longitude']
+    if moon is None:
+        reads7 = (f"the revolution's Moon in {get_zodiac_sign(moon_lon)} ({get_degree_string(moon_lon)}), lord of her house "
+                  f"{lord(moon_lon)}; her connections within the sign are NOT computed -- II.22, 1-4 need the "
+                  f"connection to perfect before she leaves the sign, which the engine's static test does not encode")
+    elif moon['void']:
+        reads7 = (f"the revolution's Moon in {moon['sign']} ({get_degree_string(moon_lon)}) is empty in course -- she "
+                  f"leaves the sign on day {moon['exit_day']:.2f} without perfecting a connection -- so the lord of her "
+                  f"house, {moon['house_lord']}, stands in (II.22, 4)")
+    else:
+        reads7 = (f"the revolution's Moon in {moon['sign']} ({get_degree_string(moon_lon)}) connects, before leaving it on "
+                  f"day {moon['exit_day']:.2f}, with " + '; '.join(
+                      f"{c['planet']} by {c['aspect']} on day {c['day']:.2f}" for c in moon['connections'])
+                  + " (II.22, 1-2; the portions of the year below)")
     rows.append({'#': 7, 'Indicator': 'The Moon and the planets she connects with in her sign; if void, the lord of her house',
-                 'Reads': f"the revolution's Moon in {get_zodiac_sign(moon)} ({get_degree_string(moon)}), lord of her house "
-                          f"{lord(moon)}; her connections within the sign are NOT computed -- II.22, 1-4 need the "
-                          f"connection to perfect before she leaves the sign, which the engine's static test does not encode",
-                 'Source': 'II.1, 12; II.22, 1-4'})
+                 'Reads': reads7, 'Source': 'II.1, 12; II.22, 1-4'})
     # 8
     transits = []
     for p in PN4_SEVEN:
@@ -8041,7 +8051,8 @@ PN4_GOVERNOR_RELEASER_REASON = ('unavailable: needs the longevity releaser, whic
 PN4_GOVERNOR_CONNECTION_REASON = ("unavailable: the Moon's connection is not read in the revolution, and her "
                                   "house lord stands in only when she is void, which is not determined")
 
-def pn4_governor(year_lord, distributor, partner, distribution_note, fardar_lord, orb_lord, sr_ascendant_lon):
+def pn4_governor(year_lord, distributor, partner, distribution_note, fardar_lord, orb_lord, sr_ascendant_lon,
+                 moon_testimony=None, moon_void=None):
     """IX.9, 1-10 over the six testimonies this engine can supply.
     Returns (rows, summary): one row per testimony with the planet or the
     reason it is unavailable, and a summary with the tally, the primary
@@ -8056,7 +8067,8 @@ def pn4_governor(year_lord, distributor, partner, distribution_note, fardar_lord
            if distributor else f"unavailable: {distribution_note}",
         5: fardar_lord or 'unavailable',
         6: orb_lord or 'unavailable: natal hour lord unavailable',
-        7: PN4_GOVERNOR_CONNECTION_REASON,
+        7: ((f"{moon_testimony}; {'the lord of her house, she being empty in course' if moon_void else 'accepting her connection'} (II.22, 1-4)")
+            if moon_testimony else PN4_GOVERNOR_CONNECTION_REASON),
         8: SIGN_TO_DOMICILE.get(get_zodiac_sign(sr_ascendant_lon), '-'),
     }
     rows, tally, counted = [], {}, 0
@@ -8107,6 +8119,76 @@ def pn4_first_month_governor(natal_ascendant, natal_fortune, year_lon, sr_ascend
                f"year with it (fn 37)" if holds else
                f"no governor: {sum(1 for _c, ok, _r, _s in conditions if not ok)} of the five conditions fail")
     return rows, verdict
+
+# --- II.22, 1-4: the Moon's connections in her sign; the portions of the year
+# "[4] the planet which the Moon connects with, so long as she is in her
+# [current] sign. Now if in that sign she connected with not just one,
+# then see how many there are: for if it was two planets, the year is
+# divided into two halves; and if her connection in that sign of hers was
+# with three planets, then that year is divided into equal thirds; and if
+# it increased beyond that, then the year is divided according to their
+# number. So, his condition in each one of the portions of the year ...
+# will be in accordance with the condition of the planet which owns the
+# portion. But if the Moon was empty in course, his situation will be in
+# accordance with the condition of the lord of her house, whether it
+# looked at her or not" (II.22, 1-4; the fallback again at 17). The
+# connection is indicator #7 of every year (II.1, 12) and testimony #7 of
+# the governor (IX.9, 8).
+#
+# READ INTO THE SENTENCES, and said on the page: "connects with" is a
+# perfection by degree, of the body or a Ptolemaic ray, before the
+# revolution's Moon leaves her sign -- found by the engine's forward
+# simulation and _perfection_day, which revalidates the whole-sign
+# configuration at the moment of perfection (VII.5, 14: no out-of-sign
+# connection); the portions go to the planets in the ORDER she connects
+# (not stated); the division is stated inside "If the Moon was the lord
+# of the year" (II.22, 1) and is computed every year with the row saying
+# whether this year's lord is the Moon (owner's decision 2026-09-10);
+# "empty in course" is no such perfection before she leaves the sign.
+# II.22, 11's rays, Lots and twelfth-parts are not counted. The
+# judgments of II.22, 5-24 are not built. No worked example exists.
+PN4_MOON_ASPECTS = ((0.0, 'body'), (60.0, 'sextile'), (90.0, 'square'), (120.0, 'trine'), (180.0, 'opposition'))
+
+def pn4_moon_connections(sr_planetary_data, jd_sr):
+    """The planets the revolution's Moon connects with before she leaves
+    her sign (II.22, 1), in the order she reaches them. Returns
+    {sign, moon_lon, exit_day, connections: [{day, planet, aspect, moon_at}],
+    void, house_lord}; days are from the revolution."""
+    sim = _simulate_forward(sr_planetary_data, jd_sr, horizon_days=6, step_days=0.25)
+    exit_day = next((d for d in sim['events']['Moon']['sign_exits'] if d > 0.0), None)
+    moon_lon = sr_planetary_data['Moon']['longitude'] % 360.0
+    sign = get_zodiac_sign(moon_lon)
+    found = []
+    for planet in PN4_SEVEN:
+        if planet == 'Moon' or planet not in sr_planetary_data:
+            continue
+        for target, name in PN4_MOON_ASPECTS:
+            day = _perfection_day(sim, 'Moon', planet, target, before_day=exit_day)
+            if day is not None and day > 0.0:
+                found.append({'day': day, 'planet': planet, 'aspect': name, 'moon_at': _lon_at(sim, 'Moon', day)})
+    found.sort(key=lambda c: c['day'])
+    return {'sign': sign, 'moon_lon': moon_lon, 'exit_day': exit_day, 'connections': found,
+            'void': not found, 'house_lord': SIGN_TO_DOMICILE.get(sign, '-')}
+
+def pn4_moon_portions(connections, year_days):
+    """II.22, 2-3: the year divided by the number of planets she connects
+    with, each portion owned by one of them, in the order of connection."""
+    n = len(connections)
+    if n == 0:
+        return []
+    size = float(year_days) / n
+    return [{'portion': i + 1, 'of': n, 'planet': c['planet'], 'from_day': i * size, 'to_day': (i + 1) * size}
+            for i, c in enumerate(connections)]
+
+def pn4_moon_testimony(moon):
+    """IX.9, 8 / II.1, 12: "the one accepting the connection of the Moon,
+    or the lord of her house" -- the first planet she connects with in
+    her sign, else her house lord."""
+    if not moon:
+        return None
+    if moon['connections']:
+        return moon['connections'][0]['planet']
+    return moon['house_lord']
 
 def pn4_fardar_at_age(age_years, sect):
     """The fardar lord and sub-lord at an age.
@@ -8636,6 +8718,11 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
     small_days_current = pn4_distribution_at_age(small_days, day_of_year)
     small_days_rows = _pn4_distribution_rows(small_days, small_days_current, unit='days')
 
+    # --- II.22, 1-4: the Moon's connections in her sign, and the portions ---
+    moon = pn4_moon_connections(sr['planetary_data'], jd_sr)
+    year_days = pn4_solar_revolution_jd(chart_data['julian_day'], natal_sun, age + 1) - jd_sr
+    portions = pn4_moon_portions(moon['connections'], year_days)
+
     # --- IX.7, 23-28: the mighty days, the terminal degree through the SR ---
     mighty_days = pn4_mighty_days(sr['planetary_data'], year['longitude'])
     mighty_days_current = pn4_distribution_at_age(mighty_days, day_of_year)
@@ -8652,12 +8739,18 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'orb': orb, 'orb_rows': orb_rows, 'natal_hour_lord': natal_hour_lord,
         'hour_approximate': hour_approximate,
         'turning_rows': pn4_turning_rows(chart_data, age),
-        'further_rows': pn4_further_indicators(chart_data, sr, year['longitude']),
+        'further_rows': pn4_further_indicators(chart_data, sr, year['longitude'], moon),
         'governor': pn4_governor(
             year['lord'], (current or {}).get('distributor'), (current or {}).get('partner'),
             ('refused above the polar circle' if segments is None
              else f"age {age} is past the {PN4_DISTRIBUTION_SPAN_YEARS:g}-year table"),
-            (fardar or {}).get('lord'), orb, sr['ascendant']),
+            (fardar or {}).get('lord'), orb, sr['ascendant'],
+            pn4_moon_testimony(moon), moon['void']),
+        'moon': moon, 'moon_portions': portions, 'year_days': year_days,
+        'moon_rows': [{'Day from the revolution': f"{c['day']:.2f}", 'Planet': c['planet'], 'By': c['aspect'],
+                       'Moon at': get_degree_string(c['moon_at'])} for c in moon['connections']],
+        'portion_rows': [{'Portion': f"{p['portion']} of {p['of']}", 'Owned by': p['planet'],
+                          'From day': f"{p['from_day']:.1f}", 'To day': f"{p['to_day']:.1f}"} for p in portions],
         'first_month_governor': pn4_first_month_governor(
             ascendant, chart_data['lot_of_fortune'], year['longitude'], sr['ascendant'], sr['lot_of_fortune']),
         'age': age, 'month': month, 'jd_sr': jd_sr, 'jd_mr': jd_mr,
@@ -9784,9 +9877,10 @@ if location_query and lat is not None and lon is not None:
                          help="II.1, 11-24 list the remaining fourteen indicators, in II.1, 25's order of strength. "
                               "Each reads a fact from the root and the revolution and judges it in a chapter of its "
                               "own; the facts are computed here, the judgments are not. Nine are lookups on the two "
-                              "charts. #7 and #15 need a connection to be read in the revolution, which the engine's "
-                              "static test does not do, and #16 and #17 follow the year's transits, which are not "
-                              "tracked -- those four rows say so.")
+                              "charts. #7 is read from the Moon's connections in her sign (II.22, below). #15 needs "
+                              "the house lords' connections read in the revolution, which the engine's static test "
+                              "does not do, and #16 and #17 follow the year's transits, which are not tracked -- "
+                              "those three rows say so.")
             st.dataframe(pd.DataFrame(pn4['further_rows']), hide_index=True, width='stretch',
                          height=_rows_height(14))
             st.caption("Facts, not judgments: the delineation chapters behind these rows (II.6-21, V.1-8, VI.3-6, "
@@ -9832,13 +9926,49 @@ if location_query and lat is not None and lon is not None:
             st.markdown(f"**IX.2, 4:** {fm_verdict}")
             st.dataframe(pd.DataFrame(fm_rows), hide_index=True, width='stretch', height=_rows_height(5))
             st.caption("Partial by nature, and said so per row. Testimony #3 and the releaser's half of #4 need the "
-                       "longevity releaser, which PN IV does not supply (IX.8, 123) and this engine refuses; #7 needs "
-                       "the Moon's connection read in the revolution, which is not computed. The tally runs over the "
-                       "six that remain and never names a governor ALONE, which IX.9, 10 reserves for all eight. "
+                       "longevity releaser, which PN IV does not supply (IX.8, 123) and this engine refuses; #7 is "
+                       "read from the Moon's connections in her sign (II.22, below). The tally runs over the seven "
+                       "that remain and never names a governor ALONE, which IX.9, 10 reserves for all eight. "
                        "\"The first lord\" of the revolution's Ascendant is read as its domicile lord (fn 324). The "
                        "IX.2 test is strict and most years fail it, so its five conditions are shown one by one; "
                        "Dykes' fn 39 (age 39, everything in Cancer, the Moon) is the case it is checked against. "
                        "IX.9, 11-13 and IX.2, 8-11, the judgments of the governor's condition, are not built.")
+
+            st.subheader("The Moon's connections in her sign, and the portions of the year (II.22)",
+                         help="II.22, 1: \"the planet which the Moon connects with, so long as she is in her [current] "
+                              "sign\"; II.22, 2: \"if it was two planets, the year is divided into two halves; and if "
+                              "her connection in that sign of hers was with three planets, then that year is divided "
+                              "into equal thirds; and if it increased beyond that, then the year is divided according "
+                              "to their number\"; II.22, 3: each portion judged by \"the planet which owns the "
+                              "portion\"; II.22, 4: \"if the Moon was empty in course ... the lord of her house, "
+                              "whether it looked at her or not\". The revolution's Moon is followed by the ephemeris "
+                              "until she leaves her sign, and every perfection of body or Ptolemaic ray before that is "
+                              "a connection.")
+            mn = pn4['moon']
+            if mn['void']:
+                st.markdown(f"The revolution's Moon at {get_degree_string(mn['moon_lon'])} leaves {mn['sign']} on day "
+                            f"{mn['exit_day']:.2f} **without perfecting a connection**: empty in course, so the lord of "
+                            f"her house, **{mn['house_lord']}**, stands in (II.22, 4).")
+            else:
+                st.markdown(f"The revolution's Moon at {get_degree_string(mn['moon_lon'])} leaves {mn['sign']} on day "
+                            f"{mn['exit_day']:.2f}; before that she connects with **{len(mn['connections'])}** "
+                            f"planet{'s' if len(mn['connections']) != 1 else ''}, so the year "
+                            f"({pn4['year_days']:.2f} days to the next revolution) is divided into "
+                            f"**{len(mn['connections'])}** portion{'s' if len(mn['connections']) != 1 else ''} "
+                            f"(II.22, 2). This year's lord is **{pn4['year']['lord']}**; II.22 states the division "
+                            f"for a year whose lord is the Moon, and it is computed here in every year.")
+                st.dataframe(pd.DataFrame(pn4['moon_rows']), hide_index=True, width='stretch',
+                             height=_rows_height(len(pn4['moon_rows'])))
+                st.dataframe(pd.DataFrame(pn4['portion_rows']), hide_index=True, width='stretch',
+                             height=_rows_height(len(pn4['portion_rows'])))
+            st.caption("Read into the sentences: a connection is a perfection by degree, of the body or a Ptolemaic "
+                       "ray, before she leaves the sign, with the whole-sign configuration re-checked at the moment of "
+                       "perfection (VII.5, 14: no out-of-sign connection); the portions go to the planets in the order "
+                       "she connects, which II.22 does not state; the division is stated for the Moon's year and is "
+                       "shown every year with this year's lord named; \"empty in course\" is no such perfection "
+                       "before she leaves the sign. II.22, 11's rays, Lots and twelfth-parts are not counted. The "
+                       "same computation fills indicator #7 above and testimony #7 of the governor. The judgments of "
+                       "II.22, 5-24 are not built. No worked example exists in PN IV.")
 
             st.subheader("The turning of the houses of the root (VI.2)",
                          help="VI.2, 1: \"every one of the seven planets, the twelve houses, and the twelve Lots, is "

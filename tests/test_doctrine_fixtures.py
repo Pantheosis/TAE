@@ -1693,6 +1693,121 @@ def test_pn4_first_month_governor_fails_one_condition_at_a_time(engine):
     assert [r["Holds"] for r in rows][:2] == ["no", "no"]
 
 
+# --- II.22, 1-4: the Moon's connections and the portions (built 2026-09-10)
+
+def test_pn4_moon_portions_divide_the_year_by_the_count(engine):
+    """II.22, 2: two planets, halves; three, thirds; more, "according to
+    their number"; none, no division. Each portion is owned by one planet
+    in the order of connection."""
+    portions = engine["pn4_moon_portions"]
+    two = portions([{"planet": "Venus"}, {"planet": "Mars"}], 365.25)
+    assert [(p["planet"], p["from_day"], p["to_day"]) for p in two] == [
+        ("Venus", 0.0, 365.25 / 2), ("Mars", 365.25 / 2, 365.25)]
+    three = portions([{"planet": "Saturn"}, {"planet": "Sun"}, {"planet": "Jupiter"}], 366.0)
+    assert [p["of"] for p in three] == [3, 3, 3] and three[1]["from_day"] == pytest.approx(122.0)
+    assert portions([], 365.25) == []
+
+
+def test_pn4_moon_connections_perfect_inside_her_sign(engine):
+    """II.22, 1: the connection counts only "so long as she is in her
+    [current] sign". Every connection the simulator reports must perfect
+    before her sign exit, with the Moon still in her starting sign and
+    the aspect exact to the ephemeris at that moment, in day order."""
+    cast = engine["calculate_traditional_chart"]
+    birth, lat, lon = datetime(1985, 3, 20, 14, 30), 51.5, -0.12
+    chart = cast(birth, lat, lon)
+    natal_sun = chart["planetary_data"]["Sun"]["longitude"]
+    for age in (30, 41, 42, 55):
+        jd_sr = engine["pn4_solar_revolution_jd"](chart["julian_day"], natal_sun, age)
+        sr = cast(engine["pn4_datetime_from_jd"](jd_sr), lat, lon)
+        moon = engine["pn4_moon_connections"](sr["planetary_data"], jd_sr)
+        assert moon["sign"] == engine["get_zodiac_sign"](sr["planetary_data"]["Moon"]["longitude"])
+        assert 0.0 < moon["exit_day"] < 3.0
+        days = [c["day"] for c in moon["connections"]]
+        assert days == sorted(days)
+        for c in moon["connections"]:
+            assert 0.0 < c["day"] < moon["exit_day"]
+            assert engine["get_zodiac_sign"](c["moon_at"]) == moon["sign"]
+            swe = engine["swe"]
+            m = swe.calc_ut(jd_sr + c["day"], swe.MOON)[0][0]
+            p = swe.calc_ut(jd_sr + c["day"], engine["PLANET_SWE_IDS"][c["planet"]])[0][0]
+            target = {"body": 0.0, "sextile": 60.0, "square": 90.0, "trine": 120.0, "opposition": 180.0}[c["aspect"]]
+            sep = abs(engine["_wrap180"](m - p))
+            assert abs(sep - target) < 0.05
+        assert moon["void"] == (not moon["connections"])
+
+
+def test_pn4_moon_empty_in_course_falls_to_her_house_lord(engine):
+    """II.22, 4: "if the Moon was empty in course, his situation will be
+    in accordance with the condition of the lord of her house". Built by
+    construction: a moment when the Moon is within a third of a degree of
+    the end of her sign and no planet's body or ray lies in the little
+    arc she has left, found by searching the ephemeris."""
+    swe = engine["swe"]
+    ids = engine["PLANET_SWE_IDS"]
+    jd = swe.julday(2000, 1, 1, 0.0)
+    found = None
+    for k in range(4000):
+        t = jd + k * 0.02
+        m = swe.calc_ut(t, swe.MOON)[0][0] % 360.0
+        left = 30.0 - (m % 30.0)
+        if left > 0.3:
+            continue
+        clear = True
+        for name, pid in ids.items():
+            if name == "Moon":
+                continue
+            p = swe.calc_ut(t, pid)[0][0]
+            for target in (0.0, 60.0, 90.0, 120.0, 180.0):
+                for off in (target, -target):
+                    ahead = (p + off - m) % 360.0
+                    if ahead < left + 0.5:
+                        clear = False
+        if clear:
+            found = t
+            break
+    assert found is not None
+    data = {name: {"longitude": swe.calc_ut(found, pid)[0][0] % 360.0, "latitude": 0.0, "distance": 1.0,
+                   "speed_in_lon": 1.0, "speed_in_lat": 0.0, "speed_in_dist": 0.0} for name, pid in ids.items()}
+    moon = engine["pn4_moon_connections"](data, found)
+    assert moon["void"] and moon["connections"] == []
+    assert moon["house_lord"] == engine["SIGN_TO_DOMICILE"][moon["sign"]]
+    assert engine["pn4_moon_testimony"](moon) == moon["house_lord"]
+
+
+def test_pn4_governor_counts_the_moons_testimony_when_it_is_read(engine):
+    """IX.9, 8: "the one accepting the connection of the Moon, or the lord
+    of her house". Handed the Moon's testimony the governor counts seven
+    of eight; handed none it still says why #7 is unavailable."""
+    rows, s = engine["pn4_governor"]("Mars", "Mars", "Mars", "", "Mars", "Mars", 215.0, "Venus", False)
+    by = {r["#"]: r for r in rows}
+    assert by[7]["Counted"] == "yes" and by[7]["Planet"].startswith("Venus; accepting her connection")
+    assert s["counted"] == 7 and s["tally"] == {"Mars": 6, "Venus": 1}
+    rows, s = engine["pn4_governor"]("Mars", "Mars", "Mars", "", "Mars", "Mars", 215.0, "Saturn", True)
+    assert "empty in course" in {r["#"]: r for r in rows}[7]["Planet"]
+    rows, s = engine["pn4_governor"]("Mars", "Mars", "Mars", "", "Mars", "Mars", 215.0)
+    assert {r["#"]: r for r in rows}[7]["Counted"] == "no" and s["counted"] == 6
+
+
+def test_pn4_bundle_reads_the_moon_into_indicator_seven_and_the_portions(engine):
+    """The bundle fills indicator #7 from II.22 and carries the portions;
+    "NOT computed" no longer appears on that row."""
+    cast = engine["calculate_traditional_chart"]
+    birth, lat, lon = datetime(1985, 3, 20, 14, 30), 51.5, -0.12
+    chart = cast(birth, lat, lon)
+    rule = engine["PN4_MONTHLY_TURN_OPTIONS"][0]
+    b = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(2027, 6, 1).date(), rule,
+                                    {"Hour Lord": "Venus", "Approximate": False})
+    row7 = next(r for r in b["further_rows"] if r["#"] == 7)
+    assert "NOT computed" not in row7["Reads"]
+    assert 360.0 < b["year_days"] < 370.0
+    assert len(b["moon_portions"]) == len(b["moon"]["connections"])
+    if b["moon_portions"]:
+        assert b["moon_portions"][-1]["to_day"] == pytest.approx(b["year_days"])
+    gov_rows, gov = b["governor"]
+    assert {r["#"]: r for r in gov_rows}[7]["Counted"] == "yes"
+
+
 def test_pn4_indicator_two_against_abu_mashars_worked_months(engine):
     """IX.1, 15-16 works indicator #2 out month by month for a year that
     terminates at Cancer: "the lord of its first ninth-part is the Moon,
