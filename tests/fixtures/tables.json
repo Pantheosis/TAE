@@ -68,6 +68,7 @@
    ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
   ],
   "sources": [
+   ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
   ],
   "timing": [
@@ -175,6 +176,7 @@
    ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
   ],
   "sources": [
+   ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
   ],
   "timing": [
@@ -295,6 +297,7 @@
    ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
   ],
   "sources": [
+   ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
   ],
   "timing": [
@@ -409,6 +412,7 @@
    ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
   ],
   "sources": [
+   ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
   ],
   "timing": [
@@ -523,6 +527,7 @@
    ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
   ],
   "sources": [
+   ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
   ],
   "timing": [
@@ -643,6 +648,7 @@
    ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
   ],
   "sources": [
+   ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
   ],
   "timing": [

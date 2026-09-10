@@ -92,6 +92,52 @@ def write_saved_charts(charts):
     except (OSError, ValueError):
         return False
 
+# --- Preferences (2026-09-10) -------------------------------------------
+# The readings and display choices, kept across runs in the same per-user
+# directory as the saved charts (UI_REVIEW_2026-09-10.md §2). Streamlit's
+# own persist_state lives only as long as the session, so a restart needs
+# a file. Only the store keys listed here are kept, plus the name of the
+# last chart loaded, which the app opens on. Missing or unknown keys are
+# ignored on read, as the saved-charts loader ignores them. The harness
+# sets ALMUTEN_NO_PREFERENCES=1 so a test can neither read a real file
+# nor leak a reading into the next test.
+PREFERENCES_PATH = _user_data_dir() / "preferences.json"
+READING_DEPTH_OPTIONS = ("Course text", "Course text and supplement")
+PREFERENCE_KEYS = (
+    # doctrinal readings, each set on the page it affects
+    '_connection_rule', '_five_degree_all_cusps', '_eastern_rule', '_moon_rays_15', '_mars_west_18',
+    '_fitting_infortune', '_domain_rule', '_lot_house_cusp', '_pn4_monthly_turn', '_reading_depth',
+    # display
+    '_wheel_layout', '_chart_bounds', '_timing_bounds', '_wheel_order', '_timing_lots', '_timing_rays',
+    '_timing_twelfths', '_timing_wheel_view', '_timing_tab', '_configurations_tab', '_target_mode',
+)
+
+def preferences_enabled():
+    return os.environ.get("ALMUTEN_NO_PREFERENCES") != "1"
+
+def load_preferences():
+    """The stored preferences as a dict, keys limited to PREFERENCE_KEYS and
+    'last_chart'; an empty dict when there is no file, or it is unreadable,
+    or the harness has switched preferences off."""
+    if not preferences_enabled() or not PREFERENCES_PATH.exists():
+        return {}
+    try:
+        raw = json.loads(PREFERENCES_PATH.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    if not isinstance(raw, dict):
+        return {}
+    return {k: v for k, v in raw.items() if k in PREFERENCE_KEYS or k == 'last_chart'}
+
+def write_preferences(prefs):
+    if not preferences_enabled():
+        return False
+    try:
+        _write_text_atomically(PREFERENCES_PATH, json.dumps(prefs, indent=2, sort_keys=True))
+        return True
+    except OSError:
+        return False
+
 # ==========================================
 # 1. CORE CALCULATION ENGINE
 # ==========================================
@@ -11019,12 +11065,43 @@ st.sidebar.header("Nativity")
 if "saved_charts" not in st.session_state:
     st.session_state["saved_charts"] = load_saved_charts()
 
+# Preferences: read once per session into the store keys that nothing has
+# set yet (a test's seeded session_state wins), written back through
+# _remember() whenever _persist() moves a reading, so the file is the
+# stores' shadow and never a second source of truth.
+if "_prefs" not in st.session_state:
+    st.session_state["_prefs"] = load_preferences()
+    for _key, _value in st.session_state["_prefs"].items():
+        if _key in PREFERENCE_KEYS and _key not in st.session_state:
+            st.session_state[_key] = _value
+
+def _remember(key, value):
+    """Keep `key` = `value` in the preferences file, if it is a preference
+    and it changed."""
+    prefs = st.session_state["_prefs"]
+    if (key in PREFERENCE_KEYS or key == 'last_chart') and prefs.get(key) != value:
+        prefs[key] = value
+        write_preferences(prefs)
+
+def _forget(key):
+    prefs = st.session_state["_prefs"]
+    if key in prefs:
+        del prefs[key]
+        write_preferences(prefs)
+
 def _apply_selected_chart():
     """on_change callback: runs before the script reruns, so writing into
     these session_state keys here makes the widgets below pick up the
-    loaded values on this same rerun."""
+    loaded values on this same rerun. The chart loaded becomes the one the
+    app opens on next time (preference 'last_chart', 2026-09-10)."""
     name = st.session_state.get("chart_picker")
     if name and name != "-- New Chart --":
+        _restore_chart(name)
+        _remember('last_chart', name)
+
+def _restore_chart(name):
+    """Write a saved chart's fields into the sidebar widgets' keys."""
+    if True:
         entry = st.session_state["saved_charts"].get(name, {})
         if "date_string" in entry:
             st.session_state["date_input_key"] = entry["date_string"]
@@ -11081,13 +11158,24 @@ def _apply_selected_chart():
             st.session_state["location_input_key"] = entry["location_query"]
 
 chart_options = ["-- New Chart --"] + sorted(st.session_state["saved_charts"].keys())
+# The app opens on the chart it was last working on (owner's decision
+# 2026-09-10), unless something has already seeded the sidebar -- the
+# harness does, and a fresh session has not.
+if "_autoload_done" not in st.session_state:
+    st.session_state["_autoload_done"] = True
+    _last = st.session_state["_prefs"].get('last_chart')
+    if _last in st.session_state["saved_charts"] and "date_input_key" not in st.session_state:
+        st.session_state["chart_picker"] = _last
+        _restore_chart(_last)
 load_col, del_col = st.sidebar.columns([3, 1])
-load_col.selectbox("\U0001F4C2 Load Saved Chart", chart_options, key="chart_picker", on_change=_apply_selected_chart)
+load_col.selectbox("\U0001F4C2 Load saved chart", chart_options, key="chart_picker", on_change=_apply_selected_chart)
 if del_col.button("\U0001F5D1", help="Delete the selected saved chart"):
     picked = st.session_state.get("chart_picker")
     if picked and picked != "-- New Chart --" and picked in st.session_state["saved_charts"]:
         del st.session_state["saved_charts"][picked]
         write_saved_charts(st.session_state["saved_charts"])
+        if st.session_state["_prefs"].get('last_chart') == picked:
+            _forget('last_chart')
         st.rerun()
 
 # --- Configurable readings: read here, set on the pages ------------------
@@ -11253,6 +11341,7 @@ if st.sidebar.button("\U0001F4BE Save this chart"):
         }
         if write_saved_charts(st.session_state["saved_charts"]):
             st.session_state.pop("_loaded_without_standard", None)
+            _remember('last_chart', trimmed_name)
             st.sidebar.success(f"Saved '{trimmed_name}'.")
         else:
             st.sidebar.error("Could not write saved_charts.json to disk.")
@@ -11274,6 +11363,42 @@ PN4_MONTHLY_TURN = _reading("pn4_monthly_turn", "_pn4_monthly_turn", PN4_MONTHLY
 # Owner's decision 2026-09-10: the natal wheel carries the Egyptian-bounds
 # ring too, as every PN IV wheel does -- the course works the bounds by hand.
 CHART_BOUNDS = bool(_reading("chart_bounds", "_chart_bounds", True))
+# The reading depth (UI_REVIEW_2026-09-10.md §1 B): the course text alone,
+# or with Abu Ma'shar's supplement laid beside it. Set on the Sources page.
+READING_DEPTH = _reading("reading_depth", "_reading_depth", READING_DEPTH_OPTIONS[0])
+
+# Every doctrinal reading, for the Sources page's table of what is in force
+# and its reset. (label, widget key, store key, default, page it is set on)
+READINGS_REGISTRY = (
+    ("Connection test used in the shared tables", "connection_rule", "_connection_rule", "Sahl", "Configurations"),
+    ("Five-degree carryover at all twelve cusps", "five_degree_all_cusps", "_five_degree_all_cusps", False, "Configurations"),
+    ("VII.6, 27/45 eastern/western relative to the Sun", "eastern_rule", "_eastern_rule", EASTERN_RULE_OPTIONS[0], "Configurations"),
+    ("Fitting infortune (Choices Ch. 1, 12)", "fitting_infortune", "_fitting_infortune", False, "Configurations"),
+    ("Moon under the rays to 15 degrees", "moon_rays_15", "_moon_rays_15", False, "Chart"),
+    ("Mars under the rays to 18 degrees west", "mars_west_18", "_mars_west_18", False, "Chart"),
+    ("Domain (hayz)", "domain_rule", "_domain_rule", DOMAIN_RULE_OPTIONS[0], "Dignities and places"),
+    ("House-based Lots measure to the", "lot_house_cusp", "_lot_house_cusp", LOT_HOUSE_CUSP_OPTIONS[0], "Lots"),
+    ("Monthly profections turn", "pn4_monthly_turn", "_pn4_monthly_turn", PN4_MONTHLY_TURN_OPTIONS[0], "Timing"),
+    ("Reading depth", "reading_depth", "_reading_depth", READING_DEPTH_OPTIONS[0], "Sources and readings"),
+)
+
+def _readings_off_default():
+    """The doctrinal readings not at their course default, as (label, value)."""
+    out = []
+    for label, widget_key, store_key, default, _page in READINGS_REGISTRY:
+        value = _reading(widget_key, store_key, default)
+        if value != default:
+            out.append((label, value))
+    return out
+
+def _readings_note():
+    """One line under a page header when a persisted reading is in force
+    that a reader might not remember setting (UI_REVIEW §2's caution)."""
+    off = [(l, v) for l, v in _readings_off_default() if l != "Reading depth"]
+    if off:
+        st.caption("Readings in force that differ from the course defaults: "
+                   + "; ".join(f"{l} = {v}" for l, v in off)
+                   + ". They are remembered between runs; see Sources and readings to reset them.")
 
 
 if location_query and lat is not None and lon is not None:
@@ -11464,9 +11589,11 @@ if location_query and lat is not None and lon is not None:
         # page and the engine (which read the same store at the top level)
         # agree on the first render.
         def _persist(widget_key, store_key, default):
-            """Render-independent memory for a page widget. Call AFTER the widget."""
+            """Render-independent memory for a page widget. Call AFTER the widget.
+            A store that is a preference is also written to disk (2026-09-10)."""
             if widget_key in st.session_state:
                 st.session_state[store_key] = st.session_state[widget_key]
+                _remember(store_key, st.session_state[store_key])
             return st.session_state.get(store_key, default)
 
         def _reading_checkbox(label, widget_key, store_key, help=None):
@@ -11546,6 +11673,7 @@ if location_query and lat is not None and lon is not None:
         def page_chart():
             st.header("Chart")
             st.caption("Lessons 3-5: chart identification, measurement, astronomy.")
+            _readings_note()
             _gap = []
             # Looking at the chart is the primary act, so the wheel comes first.
             # st.image shows the SVG through Streamlit's own fullscreen wrapper,
@@ -11739,6 +11867,7 @@ if location_query and lat is not None and lon is not None:
         def page_dignities():
             st.header("Dignities and places")
             st.caption("Lessons 9-13: dignities and management, sect, places, lords of places.")
+            _readings_note()
             st.subheader('Lordship Mapping', help="The domicile, exaltation, triplicity, term (bound), and face ruler of each planet's OWN degree -- the five essential dignities, read at the planet's own position rather than another point.")
             triplicity_key = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
             lordship_list = []
@@ -11856,6 +11985,7 @@ if location_query and lat is not None and lon is not None:
             st.header("Configurations")
             st.caption("Lessons 14-17. Sahl's Introduction Ch.2-3 is the course text; "
                        "Abu Ma'shar's Great Introduction VII is supplementary.")
+            _readings_note()
             _gap = []
             show_col, rule_col = st.columns([2, 1])
             with show_col:
@@ -12042,6 +12172,7 @@ if location_query and lat is not None and lon is not None:
         def page_lots():
             st.header("Lots")
             st.caption("Lesson 18.")
+            _readings_note()
             st.subheader('Classical Lots', help='Arabic Parts: sect-dependent formulas combining two planets or points with the Ascendant to derive a new sensitive degree tied to a specific topic (e.g. Fortune = body/livelihood, Spirit = mind/action).')
             # Formula from the same LOT_DEFINITIONS text the Topical Lots
             # table carries (via calculate_topical_lots), so the two cannot
@@ -13053,7 +13184,27 @@ if location_query and lat is not None and lon is not None:
                     "(synthesis/04_timing_open_questions.md Sect. 3 #2), and no row is chosen.")
 
         def page_sources():
-            st.header("Sources and coverage")
+            st.header("Sources and readings")
+            st.caption("What the app reads from, how it can be read, and what it does not cover.")
+            # --- The readings in force (2026-09-10) ----------------------------
+            st.subheader("Readings in force",
+                         help="Every doctrinal switch, where it is set, what it says now and what the course default "
+                              "is. They are remembered between runs. Reset returns all of them to the defaults.")
+            _reading_radio("Reading depth", READING_DEPTH_OPTIONS, "reading_depth", "_reading_depth",
+                           help="Course text: Sahl's Introduction and On Nativities, the course's own texts, with Abu "
+                                "Ma'shar's Great Introduction VII kept apart in its own tab on the Configurations page "
+                                "and behind closed expanders elsewhere. Course text and supplement: his tables laid "
+                                "beside Sahl's on the same topic, and the supplementary expanders open.")
+            _rows = [{'Reading': label, 'In force': str(_reading(wk, sk, default)), 'Course default': str(default),
+                      'Set on': page, 'Differs': 'yes' if _reading(wk, sk, default) != default else ''}
+                     for label, wk, sk, default, page in READINGS_REGISTRY]
+            st.dataframe(pd.DataFrame(_rows), hide_index=True, width='stretch', height=_rows_height(len(_rows)))
+            if st.button("Reset every reading to the course defaults", icon=":material/restart_alt:"):
+                for _label, wk, sk, _default, _page in READINGS_REGISTRY:
+                    st.session_state.pop(wk, None)
+                    st.session_state.pop(sk, None)
+                    _forget(sk)
+                st.rerun()
             # The full comparison of the two connection tests. It was the
             # Connection rule radio's tooltip; the radio (Configurations page)
             # now carries a one-line help and points here.

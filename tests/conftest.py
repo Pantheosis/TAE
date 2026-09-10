@@ -35,6 +35,10 @@ TABLES_FIXTURE = FIXTURE_DIR / "tables.json"
 # Saved charts live in the user's XDG data dir. Point them at a scratch
 # directory so a test run can never read or write the real file.
 os.environ.setdefault("XDG_DATA_HOME", str(Path(__file__).parent / ".xdg-scratch"))
+# Preferences (2026-09-10) are neither read nor written under the harness, so a
+# reading set in one test cannot leak into the next; tests of the preferences
+# themselves delete this variable and point XDG_DATA_HOME at a tmp_path.
+os.environ.setdefault("ALMUTEN_NO_PREFERENCES", "1")
 
 # --- Charts and pages ----------------------------------------------------
 # All Florence, LMT, 14:30. Between them they populate the conditional
