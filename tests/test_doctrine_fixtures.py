@@ -1927,6 +1927,77 @@ def test_pn4_iii2_checklist_reads_the_bound_as_facts(engine):
     assert engine["pn4_distribution_checklist"](root, rev, 125.0, None) == []
 
 
+# --- II.13, 1; II.14, 1; II.22, 1-5: the luminary proxies (built 2026-09-10)
+
+def test_pn4_sun_handover_is_applying_and_inside_his_sign(engine):
+    """II.13, 1 [3] with fn 239: "the planet to which the Sun hands over the
+    management (so long as it is in its sign)" -- the Sun's own
+    connections before he leaves his sign, and "hands over" as the Sun
+    applying. Every reported hand-over perfects before his exit, inside
+    his starting sign, exact to a fresh ephemeris call, with the Sun the
+    faster body at that moment; the Moon, always faster, is never one."""
+    cast = engine["calculate_traditional_chart"]
+    birth, lat, lon = datetime(1985, 3, 20, 14, 30), 51.5, -0.12
+    chart = cast(birth, lat, lon)
+    natal_sun = chart["planetary_data"]["Sun"]["longitude"]
+    swe = engine["swe"]
+    for age in (30, 42):
+        jd_sr = engine["pn4_solar_revolution_jd"](chart["julian_day"], natal_sun, age)
+        sr = cast(engine["pn4_datetime_from_jd"](jd_sr), lat, lon)
+        sun = engine["pn4_sun_handover"](sr["planetary_data"], jd_sr)
+        assert sun["sign"] == engine["get_zodiac_sign"](sr["planetary_data"]["Sun"]["longitude"])
+        assert 0.0 < sun["exit_day"] < 32.0
+        for c in sun["connections"]:
+            assert c["planet"] != "Moon"
+            assert 0.0 < c["day"] < sun["exit_day"]
+            assert engine["get_zodiac_sign"](c["moon_at"]) == sun["sign"]
+            s = swe.calc_ut(jd_sr + c["day"], swe.SUN)[0]
+            p = swe.calc_ut(jd_sr + c["day"], engine["PLANET_SWE_IDS"][c["planet"]])[0]
+            target = {"body": 0.0, "sextile": 60.0, "square": 90.0, "trine": 120.0, "opposition": 180.0}[c["aspect"]]
+            assert abs(abs(engine["_wrap180"](s[0] - p[0])) - target) < 0.05
+            assert s[3] > p[3]
+
+
+def test_pn4_proxies_only_for_a_luminary_year_and_admit_the_releaser(engine):
+    """The proxies exist only when the Sun or the Moon is lord of the year
+    (II.13, 1; II.22, 1), and their first member needs the longevity
+    releaser: that row says so. Leo's and Cancer's occupants are read
+    from both charts; the Moon's rows carry the II.22 computation."""
+    root, sr, _y = _two_charts(engine, natal=dict(Venus=140.0), rev=dict(Mars=100.0, Saturn=145.0))
+    assert engine["pn4_luminary_proxies"]("Mars", root, sr) is None
+    moon = {"sign": "Libra", "moon_lon": 200.0, "exit_day": 1.5, "void": False, "house_lord": "Venus",
+            "connections": [{"day": 0.4, "planet": "Jupiter", "aspect": "sextile", "moon_at": 205.0}]}
+    sun = {"sign": "Cancer", "moon_lon": 100.0, "exit_day": 20.0, "void": True, "house_lord": "Moon", "connections": []}
+    rows = engine["pn4_luminary_proxies"]("Sun", root, sr, moon, sun)
+    assert [r["Proxy"][:4] for r in rows] == ["[II.", "[1] ", "[2] ", "[3] ", "[4] "]
+    assert "releaser" in rows[0]["Reads"] and "IX.8, 123" in rows[1]["Reads"]
+    assert rows[2]["Reads"] == "root: Venus; revolution: Saturn, Venus"             # 20 Leo natal; 25 and 10 Leo in the revolution
+    assert rows[3]["Reads"].startswith("none: leaves Cancer on day 20.00 without a connection")
+    assert rows[4]["Reads"].startswith("Cancer (10")
+    rows = engine["pn4_luminary_proxies"]("Moon", root, sr, moon, None)
+    assert [r["Proxy"][:3] for r in rows] == ["[1]", "[2]", "[3]", "[4]", "[5]", "[6]"]
+    assert rows[2]["Reads"] == "root: Sun, Mercury; revolution: Mars, Sun, Mercury"
+    assert rows[3]["Reads"] == "Jupiter by sextile on day 0.40"
+    assert rows[4]["Reads"] == "not empty in course"
+    assert "in glow" in rows[5]["Reads"]
+
+
+def test_pn4_bundle_shows_proxies_in_a_luminary_year_only(engine):
+    """Through the bundle: a year whose lord is the Sun gets the Sun's
+    hand-over computed and five rows; a Mars year gets none."""
+    cast = engine["calculate_traditional_chart"]
+    birth, lat, lon = datetime(1985, 3, 20, 14, 30), 51.5, -0.12
+    chart = cast(birth, lat, lon)
+    rule = engine["PN4_MONTHLY_TURN_OPTIONS"][0]
+    lords = {age: engine["pn4_sign_of_the_year"](chart["ascendant"], age)["lord"] for age in range(12)}
+    sun_age = next(a for a, l in lords.items() if l == "Sun")
+    mars_age = next(a for a, l in lords.items() if l == "Mars")
+    b = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(1985 + sun_age, 6, 1).date(), rule)
+    assert b["year"]["lord"] == "Sun" and b["sun_handover"] is not None and len(b["proxies"]) == 5
+    b = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(1985 + mars_age, 6, 1).date(), rule)
+    assert b["proxies"] is None and b["sun_handover"] is None
+
+
 def test_pn4_indicator_two_against_abu_mashars_worked_months(engine):
     """IX.1, 15-16 works indicator #2 out month by month for a year that
     terminates at Cancer: "the lord of its first ninth-part is the Moon,

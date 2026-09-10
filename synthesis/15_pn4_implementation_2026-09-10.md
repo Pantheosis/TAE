@@ -713,6 +713,48 @@ planets in it, the Sun's square and Saturn's body in the bound).
 planet in the bound as a rule (item 12). The next prompt, per the brief, is the luminary proxies
 for the lord of the year (II.13, 1; II.14, 1; II.22, 1–5).
 
+### 4k. II.13, 1; II.14, 1; II.22, 1–5: the luminary proxies — built 2026-09-10, second session, partial by nature
+
+Technique 10 of the continuation brief, put to the owner with the four-point prompt. Chosen:
+**the proxies table, its first row admitting the releaser**, over leaving it unbuilt.
+
+**Re-checked in the corpus before writing:**
+
+| Citation | What it had to support | Held? |
+|---|---|---|
+| **II.13, 1** + fn 237–241 | the Sun's four: the releaser's distribution sign and lord; the planet in Leo, root or revolution; the planet the Sun hands over to in his sign; where the Sun is | yes; fn 239 reads the hand-over as the Sun's and notes root/revolution unstated; fn 241 reads "where the Sun is" as his sign's lord |
+| **II.14, 1** + fn 249–250 | the distributor added, "probably" the releaser's | yes |
+| **II.22, 1–5** + fn 308–310 | the Moon's six | yes (1–4 already pinned under 4i) |
+| **II.22, 6–10** + fn 311 | her conditions: latitude, "calculation", glow | yes — shown as facts, not judged |
+
+**Stated, but the first proxy is the releaser.** In every version the leading proxy is the sign the
+longevity releaser's distribution stands in and its lord (II.14 adds that distributor itself),
+which PN IV does not supply and the engine refuses: those rows read unavailable with the reason.
+The rest is built: the occupants of Leo or Cancer in root and revolution; the Sun's hand-over as
+his own connections before he leaves his sign in the revolution, "hands over" read as the Sun
+being the applying body at the perfection (a speed comparison at that moment, so the Moon, always
+faster, never receives it); the Moon's rows from 4i; her conditions as facts.
+
+**What was built.** `_pn4_luminary_connections` (the Moon's computation generalised over the
+body, with an `applying_only` gate), `pn4_moon_connections` as its wrapper, `pn4_sun_handover`
+(horizon 40 days, daily steps), `PN4_PROXY_RELEASER`, `pn4_luminary_proxies`; the bundle runs
+the Sun's simulation only in a Sun year and carries `proxies`; one section, one table, shown
+only when the Sun or the Moon is lord of the year, otherwise a line saying so.
+
+**What pins it.** Three fixtures: every hand-over the simulator reports on two real revolutions
+perfects before the Sun's exit, in his sign, exact to a fresh ephemeris call, with the Sun the
+faster body and never the Moon; the rows for a Sun year and a Moon year on constructed charts
+(the releaser rows, Leo's and Cancer's occupants from both charts, the hand-over, the Moon's
+rows, her conditions), and `None` for a Mars year; the bundle computing the Sun's hand-over in a
+Sun year only.
+
+**Verification.** Doctrine fixtures 218 (were 215). `tables.json` **+1 / −0**: one fixture chart has a luminary year, the others render the one-line notice. Full suite
+**2531 passed**, three of them new; `test_base_tables.py` 121 / 0. The non-luminary notice was seen in the browser on the default chart; the luminary table's render is covered by the fixture chart whose year a luminary rules (the Browser pane was hidden when the live check was attempted, so no screenshot of that state).
+
+**Left undone, on purpose.** The releaser rows; the delineations of II.13, 2 – II.21 and II.22,
+5–24. The next prompt, per the brief, is the four-way root/revolution comparison for the lord of
+the year (II.3, 5–19, Figure 55).
+
 ### Refused at the poles
 
 `pn4_distribution_from_ascendant` returns `None` where |latitude| + obliquity ≥ 90°, on the

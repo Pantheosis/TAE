@@ -8149,26 +8149,48 @@ def pn4_first_month_governor(natal_ascendant, natal_fortune, year_lon, sr_ascend
 # judgments of II.22, 5-24 are not built. No worked example exists.
 PN4_MOON_ASPECTS = ((0.0, 'body'), (60.0, 'sextile'), (90.0, 'square'), (120.0, 'trine'), (180.0, 'opposition'))
 
+def _pn4_luminary_connections(sr_planetary_data, jd_sr, body, horizon_days, step_days, applying_only):
+    """The planets a luminary of the revolution connects with before it
+    leaves its sign, in day order. `applying_only` keeps a perfection only
+    if the luminary is the faster body at that moment -- the one "handing
+    over" (II.13, 1) rather than being handed to. The Moon is always the
+    faster, so for her it changes nothing."""
+    sim = _simulate_forward(sr_planetary_data, jd_sr, horizon_days=horizon_days, step_days=step_days)
+    exit_day = next((d for d in sim['events'][body]['sign_exits'] if d > 0.0), None)
+    lon0 = sr_planetary_data[body]['longitude'] % 360.0
+    sign = get_zodiac_sign(lon0)
+    found = []
+    for planet in PN4_SEVEN:
+        if planet == body or planet not in sr_planetary_data:
+            continue
+        for target, name in PN4_MOON_ASPECTS:
+            day = _perfection_day(sim, body, planet, target, before_day=exit_day)
+            if day is None or day <= 0.0:
+                continue
+            if applying_only:
+                v_body = swe.calc_ut(jd_sr + day, PLANET_SWE_IDS[body])[0][3]
+                v_planet = swe.calc_ut(jd_sr + day, PLANET_SWE_IDS[planet])[0][3]
+                if not v_body > v_planet:
+                    continue
+            found.append({'day': day, 'planet': planet, 'aspect': name, 'moon_at': _lon_at(sim, body, day)})
+    found.sort(key=lambda c: c['day'])
+    return {'sign': sign, 'moon_lon': lon0, 'exit_day': exit_day, 'connections': found,
+            'void': not found, 'house_lord': SIGN_TO_DOMICILE.get(sign, '-')}
+
 def pn4_moon_connections(sr_planetary_data, jd_sr):
     """The planets the revolution's Moon connects with before she leaves
     her sign (II.22, 1), in the order she reaches them. Returns
     {sign, moon_lon, exit_day, connections: [{day, planet, aspect, moon_at}],
     void, house_lord}; days are from the revolution."""
-    sim = _simulate_forward(sr_planetary_data, jd_sr, horizon_days=6, step_days=0.25)
-    exit_day = next((d for d in sim['events']['Moon']['sign_exits'] if d > 0.0), None)
-    moon_lon = sr_planetary_data['Moon']['longitude'] % 360.0
-    sign = get_zodiac_sign(moon_lon)
-    found = []
-    for planet in PN4_SEVEN:
-        if planet == 'Moon' or planet not in sr_planetary_data:
-            continue
-        for target, name in PN4_MOON_ASPECTS:
-            day = _perfection_day(sim, 'Moon', planet, target, before_day=exit_day)
-            if day is not None and day > 0.0:
-                found.append({'day': day, 'planet': planet, 'aspect': name, 'moon_at': _lon_at(sim, 'Moon', day)})
-    found.sort(key=lambda c: c['day'])
-    return {'sign': sign, 'moon_lon': moon_lon, 'exit_day': exit_day, 'connections': found,
-            'void': not found, 'house_lord': SIGN_TO_DOMICILE.get(sign, '-')}
+    return _pn4_luminary_connections(sr_planetary_data, jd_sr, 'Moon', 6, 0.25, applying_only=False)
+
+def pn4_sun_handover(sr_planetary_data, jd_sr):
+    """II.13, 1 [3]: "the planet to which the Sun hands over the management
+    (so long as it is in its sign)" -- read, with fn 239, as the Sun's
+    own connections before he leaves his sign, and "hands over" as the
+    Sun being the applying body at the perfection. Same shape as
+    pn4_moon_connections; 'moon_at' is the Sun's longitude then."""
+    return _pn4_luminary_connections(sr_planetary_data, jd_sr, 'Sun', 40, 1.0, applying_only=True)
 
 def pn4_moon_portions(connections, year_days):
     """II.22, 2-3: the year divided by the number of planets she connects
@@ -8421,6 +8443,88 @@ def pn4_distribution_checklist(chart_data, sr, year_lon, current):
         {'Question': '[5] The same in the revolution (a different matter from the twelve, III.2, 105-106)',
          'Reads': fmt(rev_meet), 'Source': 'III.2, 9; 43, 46-47, 54'},
     ]
+
+# --- II.13, 1; II.14, 1; II.22, 1-5: the luminary proxies -----------------
+# "If the Sun was the lord of the year, then the majority of that judgment
+# in that year should be in accordance with the condition of [1] the lord
+# of the sign in which the distribution of the lifespan from the
+# [longevity] releaser was ..., and partnering with it in the indication
+# is [2] the planet which is in Leo in the root of the nativity or in the
+# revolution, and [3] the planet to which the Sun hands over the
+# management (so long as it is in its sign), and then along with that you
+# see [4] where the Sun is, calling upon [that] as a witness" (II.13, 1);
+# II.14, 1 adds "the condition of the distributor"; II.22, 1-5 for the
+# Moon: the distributor, the lord of the sign of the releaser's
+# distribution, the planet in Cancer, the planet she connects with in her
+# sign, her house lord if empty in course, and her own conditions.
+#
+# PARTIAL, on purpose: the first proxy in every version -- the sign the
+# longevity releaser's distribution stands in, and its lord -- needs the
+# releaser PN IV does not supply (IX.8, 123) and this engine refuses, so
+# that row reads unavailable. The Sun's hand-over is read per fn 239 as
+# the Sun's own connections in his sign, in the REVOLUTION (fn 239 notes
+# the book does not say root or revolution), with "hands over" as the Sun
+# being the applying body; "where the Sun is" is his sign and its lord
+# per fn 241. Shown only in a year whose lord is the Sun or the Moon.
+# The delineations (II.13, 2 - II.21; II.22, 5-24) are not built. No
+# worked example exists; fn 238 illustrates the missing part.
+# Decided by the owner 2026-09-10.
+PN4_PROXY_RELEASER = ('unavailable: the sign the longevity releaser\'s distribution stands in needs the releaser, '
+                      'which PN IV does not supply (IX.8, 123) and this engine refuses')
+
+def pn4_luminary_proxies(year_lord, chart_data, sr, moon=None, sun=None):
+    """The proxies for a year whose lord is the Sun or the Moon, or None
+    for any other lord. Rows of {Proxy, Reads, Source}."""
+    if year_lord not in ('Sun', 'Moon'):
+        return None
+    natal, rev = chart_data['planetary_data'], sr['planetary_data']
+
+    def in_sign(data, sign):
+        found = [p for p in PN4_SEVEN if p in data and p != year_lord and get_zodiac_sign(data[p]['longitude']) == sign]
+        return ', '.join(found) or 'none'
+
+    def handover(lum):
+        if lum is None:
+            return 'not computed'
+        if lum['void']:
+            return (f"none: leaves {lum['sign']} on day {lum['exit_day']:.2f} without a connection"
+                    + (f"; the lord of the house, {lum['house_lord']}, stands in (II.22, 4)" if year_lord == 'Moon' else ''))
+        return '; '.join(f"{c['planet']} by {c['aspect']} on day {c['day']:.2f}" for c in lum['connections'])
+
+    rows = []
+    if year_lord == 'Sun':
+        rows.append({'Proxy': '[II.14] The distributor (probably of the longevity releaser, fn 249)',
+                     'Reads': PN4_PROXY_RELEASER, 'Source': 'II.14, 1'})
+        rows.append({'Proxy': "[1] The lord of the sign in which the distribution of the lifespan from the releaser is",
+                     'Reads': PN4_PROXY_RELEASER, 'Source': 'II.13, 1; fn 238'})
+        rows.append({'Proxy': '[2] The planet in Leo in the root; in the revolution',
+                     'Reads': f"root: {in_sign(natal, 'Leo')}; revolution: {in_sign(rev, 'Leo')}", 'Source': 'II.13, 1'})
+        rows.append({'Proxy': '[3] The planet to which the Sun hands over the management, so long as he is in his sign',
+                     'Reads': handover(sun) + ' -- the revolution\'s Sun, applying (fn 239)', 'Source': 'II.13, 1; fn 239'})
+        sun_lon = rev['Sun']['longitude']
+        rows.append({'Proxy': '[4] Where the Sun is, as a witness',
+                     'Reads': f"{get_zodiac_sign(sun_lon)} ({get_degree_string(sun_lon)}), lord "
+                              f"{SIGN_TO_DOMICILE.get(get_zodiac_sign(sun_lon), '-')} (fn 241)", 'Source': 'II.13, 1; fn 241'})
+    else:
+        rows.append({'Proxy': '[1] The distributor (of the longevity releaser, fn 308)',
+                     'Reads': PN4_PROXY_RELEASER, 'Source': 'II.22, 1; fn 308'})
+        rows.append({'Proxy': "[2] The lord of the sign in which the distribution from the releaser is",
+                     'Reads': PN4_PROXY_RELEASER, 'Source': 'II.22, 1; fn 309'})
+        rows.append({'Proxy': '[3] The planet in Cancer in the root; in the revolution',
+                     'Reads': f"root: {in_sign(natal, 'Cancer')}; revolution: {in_sign(rev, 'Cancer')}", 'Source': 'II.22, 1'})
+        rows.append({'Proxy': '[4] The planet the Moon connects with, so long as she is in her sign',
+                     'Reads': handover(moon), 'Source': 'II.22, 1-2'})
+        rows.append({'Proxy': '[5] If she is empty in course, the lord of her house',
+                     'Reads': (f"she is empty in course: {moon['house_lord']}" if moon and moon['void']
+                               else 'not empty in course' if moon else 'not computed'), 'Source': 'II.22, 4'})
+        m = rev['Moon']
+        elong = (m['longitude'] - rev['Sun']['longitude']) % 360.0
+        rows.append({'Proxy': "[6] Her conditions (facts; the judgment of II.22, 6-10 is not built)",
+                     'Reads': (f"{'northern' if m.get('latitude', 0.0) >= 0 else 'southern'} in latitude "
+                               f"({m.get('latitude', 0.0):+.2f}); {'increasing' if elong < 180.0 else 'decreasing'} in glow "
+                               f"({elong:.1f} from the Sun); {m.get('speed_in_lon', 0.0):.2f} a day"),
+                     'Source': 'II.22, 5-10'})
+    return rows
 
 def pn4_fardar_at_age(age_years, sect):
     """The fardar lord and sub-lord at an age.
@@ -8955,6 +9059,10 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
     year_days = pn4_solar_revolution_jd(chart_data['julian_day'], natal_sun, age + 1) - jd_sr
     portions = pn4_moon_portions(moon['connections'], year_days)
 
+    # --- II.13, 1; II.14, 1; II.22, 1-5: the luminary proxies ---
+    sun = pn4_sun_handover(sr['planetary_data'], jd_sr) if year['lord'] == 'Sun' else None
+    proxies = pn4_luminary_proxies(year['lord'], chart_data, sr, moon, sun)
+
     # --- IX.7, 23-28: the mighty days, the terminal degree through the SR ---
     mighty_days = pn4_mighty_days(sr['planetary_data'], year['longitude'])
     mighty_days_current = pn4_distribution_at_age(mighty_days, day_of_year)
@@ -8979,6 +9087,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
             (fardar or {}).get('lord'), orb, sr['ascendant'],
             pn4_moon_testimony(moon), moon['void']),
         'moon': moon, 'moon_portions': portions, 'year_days': year_days,
+        'proxies': proxies, 'sun_handover': sun,
         'iii2_type': pn4_static_type(current['distributor'], current['partner']) if current else None,
         'iii2_checklist': pn4_distribution_checklist(chart_data, sr, year['longitude'], current),
         'iii2_transitions': pn4_year_transitions(segments, age),
@@ -10204,6 +10313,33 @@ if location_query and lat is not None and lon is not None:
                        "before she leaves the sign. II.22, 11's rays, Lots and twelfth-parts are not counted. The "
                        "same computation fills indicator #7 above and testimony #7 of the governor. The judgments of "
                        "II.22, 5-24 are not built. No worked example exists in PN IV.")
+
+            st.subheader("When a luminary is lord of the year: the proxies (II.13, 1; II.14, 1; II.22, 1-5)",
+                         help="II.13, 1: \"If the Sun was the lord of the year, then the majority of that judgment in "
+                              "that year should be in accordance with the condition of [1] the lord of the sign in "
+                              "which the distribution of the lifespan from the [longevity] releaser was ..., and "
+                              "partnering with it in the indication is [2] the planet which is in Leo in the root of "
+                              "the nativity or in the revolution, and [3] the planet to which the Sun hands over the "
+                              "management (so long as it is in its sign), and then along with that you see [4] where "
+                              "the Sun is, calling upon [that] as a witness.\" II.14, 1 adds the distributor; II.22, "
+                              "1-5 give the Moon's list. Dykes' fn 237 reads these as proxies standing in for the "
+                              "luminary.")
+            if pn4['proxies'] is None:
+                st.markdown(f"This year's lord is **{pn4['year']['lord']}**; the proxies apply only when the Sun or "
+                            f"the Moon is lord of the year.")
+            else:
+                st.markdown(f"This year's lord is **{pn4['year']['lord']}**.")
+                st.dataframe(pd.DataFrame(pn4['proxies']), hide_index=True, width='stretch',
+                             height=_rows_height(len(pn4['proxies'])))
+            st.caption("Partial by nature, and said so in the row: the first proxy in every version is the sign the "
+                       "longevity releaser's distribution stands in, which needs the releaser PN IV does not supply "
+                       "(IX.8, 123) and this engine refuses. The Sun's hand-over is read per fn 239 as the Sun's own "
+                       "connections before he leaves his sign, in the revolution (fn 239 notes the book does not say "
+                       "root or revolution), and \"hands over\" as the Sun being the applying body at the perfection; "
+                       "\"where the Sun is\" is his sign and its lord per fn 241. The Moon's rows are the II.22 "
+                       "computation above; her conditions are shown as facts and II.22, 6-10's judgment of them is "
+                       "not built, nor are II.13, 2 - II.21. No worked example exists; fn 238 illustrates the missing "
+                       "part.")
 
             st.subheader("The turning of the houses of the root (VI.2)",
                          help="VI.2, 1: \"every one of the seven planets, the twelve houses, and the twelve Lots, is "
