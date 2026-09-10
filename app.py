@@ -234,6 +234,7 @@ WHEEL_WIDE_WIDTH = 1760               # the wide variant: wheel plus a positions
 _R_RIM, _R_WS_IN, _R_SIGN_IN = 492, 462, 402
 _R_GLYPH, _R_DEG, _R_SIGN, _R_MIN, _R_RX = 344, 306, 272, 242, 214
 _R_Q_OUT, _R_Q_IN = 152, 122
+_R_BOUNDS_BAND = 24                   # the Egyptian-bounds ring, inside the degree scale, when drawn
 LABEL_MIN_SEP = 10.5                  # degrees between neighbouring label stacks
 LABEL_STAGGER = 30                    # px inward for alternate members of a crowded run
 # One tint per triplicity (D3): fire, earth, air, water; sign i uses i % 4.
@@ -312,7 +313,7 @@ def _wheel_dm(longitude):
 
 
 def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_local, tz_name,
-                        wide=False, chronocrats=None):
+                        wide=False, chronocrats=None, bounds=False):
     size = WHEEL_SIZE
     cx = cy = size / 2.0
     asc = chart_data['ascendant']
@@ -321,28 +322,15 @@ def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_loc
     asc_sign = int((asc % 360.0) // 30)
     angles = (asc, mc, (asc + 180.0) % 360.0, (mc + 180.0) % 360.0)
 
-    def ang(longitude):
-        # D1: the rising sign's boundary at 9 o'clock, zodiac counter-clockwise.
-        return (longitude - asc_sign * 30 + 180.0) % 360.0
-
-    def xy(r, a):
-        t = math.radians(a)
-        return cx + r * math.cos(t), cy - r * math.sin(t)
-
-    def sector(r_in, r_out, a0, a1):
-        x0o, y0o = xy(r_out, a0); x1o, y1o = xy(r_out, a1)
-        x0i, y0i = xy(r_in, a0); x1i, y1i = xy(r_in, a1)
-        large = 1 if (a1 - a0) % 360 > 180 else 0
-        return (f'M{x0o:.1f},{y0o:.1f} A{r_out},{r_out} 0 {large} 0 {x1o:.1f},{y1o:.1f} '
-                f'L{x1i:.1f},{y1i:.1f} A{r_in},{r_in} 0 {large} 1 {x0i:.1f},{y0i:.1f} Z')
-
-    def line(x0, y0, x1, y1, stroke, width, dash=None):
-        d = f' stroke-dasharray="{dash}"' if dash else ''
-        return f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x1:.1f}" y2="{y1:.1f}" stroke="{stroke}" stroke-width="{width}"{d}/>'
-
-    def text(x, y, s, px, weight='normal', fill='#000', anchor='middle'):
-        return (f'<text x="{x:.1f}" y="{y:.1f}" text-anchor="{anchor}" dominant-baseline="central" '
-                f'font-size="{px}" font-weight="{weight}" fill="{fill}">{s}</text>')
+    # D1: the rising sign's boundary at 9 o'clock, zodiac counter-clockwise.
+    # The geometry and the two primitives are shared with the multi-ring
+    # wheels of the Timing page (2026-09-10).
+    ang, xy, sector, _arc = _wheel_geometry(asc_sign, cx, cy)
+    line, text = _svg_line, _svg_text
+    # An Egyptian-bounds ring inside the degree scale (2026-09-10): every
+    # natal wheel in PN IV carries one (Figures 1, 22, 25, 26). It sits in
+    # the leader zone, so the planet stack is not moved.
+    r_planet_edge = _R_SIGN_IN - _R_BOUNDS_BAND if bounds else _R_SIGN_IN
 
     def sign_glyph(longitude):
         return SIGN_GLYPHS[int((longitude % 360.0) // 30)] + _VS
@@ -377,6 +365,8 @@ def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_loc
         ln = 14 if d % 10 == 0 else 10 if d % 5 == 0 else 5
         x0, y0 = xy(_R_SIGN_IN, ang(d)); x1, y1 = xy(_R_SIGN_IN + ln, ang(d))
         svg.append(line(x0, y0, x1, y1, '#000000', 0.9 if ln > 5 else 0.5))
+    if bounds:
+        svg.extend(_bounds_ring_svg(ang, xy, sector, r_planet_edge, _R_SIGN_IN, glyph_px=12))
     for r, w in ((_R_RIM, 2.5), (_R_WS_IN, 1.2), (_R_SIGN_IN, 1.6), (_R_Q_OUT, 1.2), (_R_Q_IN, 1.6)):
         svg.append(f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="#000000" stroke-width="{w}"/>')
 
@@ -384,7 +374,7 @@ def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_loc
     #    the four stakes solid and coloured. House numbers at mid-house on
     #    the quadrant ring.
     for i, cusp_lon in enumerate(cusps):
-        x0, y0 = xy(_R_Q_IN, ang(cusp_lon)); x1, y1 = xy(_R_SIGN_IN, ang(cusp_lon))
+        x0, y0 = xy(_R_Q_IN, ang(cusp_lon)); x1, y1 = xy(r_planet_edge, ang(cusp_lon))
         if i in _AXIS_COLOUR:
             svg.append(line(x0, y0, x1, y1, _AXIS_COLOUR[i], 2.6))
         else:
@@ -418,7 +408,7 @@ def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_loc
     offsets = _stagger_offsets(true_bearings, shown)
     for (name, lon_val, speed), a_true, a_shown, off in zip(points, true_bearings, shown, offsets):
         # A tick on the ring at the true degree, a hairline from it to the glyph.
-        x0, y0 = xy(_R_SIGN_IN, a_true); x1, y1 = xy(_R_SIGN_IN - 10, a_true)
+        x0, y0 = xy(r_planet_edge, a_true); x1, y1 = xy(r_planet_edge - 10, a_true)
         svg.append(line(x0, y0, x1, y1, '#000000', 1.6))
         x2, y2 = xy(_R_GLYPH - off + 22, a_shown)
         svg.append(line(x1, y1, x2, y2, '#666666', 0.8))
@@ -499,6 +489,442 @@ def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_loc
 
     svg.append('</svg>')
     return ''.join(svg)
+
+
+# ---- Multi-ring wheels and direction strips for the Timing page (2026-09-10) ----
+# Built from the book's own figures (UI_CHART_INPUT_EVALUATION_2026-09-10.md
+# §6). The revolution over the root is PN IV I.6 (Figure 51, fn 33); the
+# month over the year and the root is IX.3, 4-6 (Figures 39 and 109, fn 58);
+# the profection is Figures 3, 15 and 33. What Dykes' wheels carry, read
+# from the images: the outer charts in whole signs, the sign of the year
+# shaded, the profection as a dashed arc from the natal Ascendant, an
+# Egyptian-bounds ring, and "only the seven traditional planets, the Nodes,
+# Lot of Fortune, and axial degrees" (p. 12) unless more is asked for. On
+# the order: "Abu Ma'shar seems to prefer that the SR be the inner wheel,
+# but to me this seem unnatural and I only do it to illustrate his
+# instructions in Ch. I.6" (p. 12) -- the caller chooses; the page offers
+# both. Pure functions, no Streamlit, SVG strings out; every point carries
+# data- attributes so a test can hold the picture to the inventory table.
+
+_M_RIM, _M_SIGN_IN, _M_BOUNDS_IN, _M_HUB_RING, _M_HUB = 478, 430, 408, 150, 118
+WHEEL_RING_COLOURS = ('#000000', '#1f3a93', '#8b1a1a')     # inner, middle, outer ring text
+WHEEL_SHADE = '#e2e2e2'                                    # the sign of the year (fn 33)
+WHEEL_BOUND_TINT = '#ffe08a'                               # the bound the distribution stands in
+WHEEL_ORDER_OPTIONS = ("Nativity inside (Dykes)", "Revolution inside (Abu Ma'shar, I.6)")
+WHEEL_VIEW_OPTIONS = ("Year", "Year over root", "Month over year and root", "Month", "Profection")
+_ASPECT_GLYPH = {'body': '☌', 'sextile': '⚹', 'square': '□', 'trine': '△', 'opposition': '☍'}
+
+
+def _wheel_geometry(asc_sign, cx=500.0, cy=500.0):
+    """ang/xy/sector for a wheel whose rising SIGN's boundary sits at
+    9 o'clock (D1), the zodiac running counter-clockwise."""
+    def ang(longitude):
+        return (longitude - asc_sign * 30 + 180.0) % 360.0
+
+    def xy(r, a):
+        t = math.radians(a)
+        return cx + r * math.cos(t), cy - r * math.sin(t)
+
+    def sector(r_in, r_out, a0, a1):
+        x0o, y0o = xy(r_out, a0); x1o, y1o = xy(r_out, a1)
+        x0i, y0i = xy(r_in, a0); x1i, y1i = xy(r_in, a1)
+        large = 1 if (a1 - a0) % 360 > 180 else 0
+        return (f'M{x0o:.1f},{y0o:.1f} A{r_out},{r_out} 0 {large} 0 {x1o:.1f},{y1o:.1f} '
+                f'L{x1i:.1f},{y1i:.1f} A{r_in},{r_in} 0 {large} 1 {x0i:.1f},{y0i:.1f} Z')
+
+    def arc(r, a0, a1):
+        """An open arc from bearing a0 to a1 the zodiacal way round."""
+        x0, y0 = xy(r, a0); x1, y1 = xy(r, a1)
+        large = 1 if (a1 - a0) % 360 > 180 else 0
+        return f'M{x0:.1f},{y0:.1f} A{r},{r} 0 {large} 0 {x1:.1f},{y1:.1f}'
+
+    return ang, xy, sector, arc
+
+
+def _svg_line(x0, y0, x1, y1, stroke, width, dash=None):
+    d = f' stroke-dasharray="{dash}"' if dash else ''
+    return f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x1:.1f}" y2="{y1:.1f}" stroke="{stroke}" stroke-width="{width}"{d}/>'
+
+
+def _svg_text(x, y, s, px, weight='normal', fill='#000', anchor='middle', rotate=None, cls=None):
+    rot = f' transform="rotate({rotate:.1f} {x:.1f} {y:.1f})"' if rotate is not None else ''
+    c = f' class="{cls}"' if cls else ''
+    return (f'<text{c} x="{x:.1f}" y="{y:.1f}" text-anchor="{anchor}" dominant-baseline="central" '
+            f'font-size="{px}" font-weight="{weight}" fill="{fill}"{rot}>{s}</text>')
+
+
+def _svg_arrowhead(xy, r, a, colour, size=9, forward=True):
+    """A small filled triangle at bearing a on radius r, pointing the
+    zodiacal way (forward) along the circle."""
+    tip_a = a + (1.2 if forward else -1.2) * (size * 0.5) * 57.2958 / r
+    tx, ty = xy(r, tip_a)
+    bx1, by1 = xy(r + size * 0.6, a)
+    bx2, by2 = xy(r - size * 0.6, a)
+    return f'<polygon points="{tx:.1f},{ty:.1f} {bx1:.1f},{by1:.1f} {bx2:.1f},{by2:.1f}" fill="{colour}"/>'
+
+
+def _bounds_ring_svg(ang, xy, sector, r_in, r_out, highlight=None, glyph_px=12):
+    """The Egyptian bounds as a ring, a cell per bound with its lord's
+    glyph, as every PN IV wheel carries (Figures 1, 22, 25, 26, 109).
+    `highlight` is a longitude whose bound is tinted -- the bound the
+    distribution stands in. Every cell is class="bound"."""
+    out = []
+    for i, sign in enumerate(SIGN_ORDER):
+        start = 0
+        for limit, lord in EGYPTIAN_TERMS[sign]:
+            a0, a1 = ang(i * 30 + start), ang(i * 30 + limit)
+            tint = '#ffffff'
+            if highlight is not None and int((highlight % 360.0) // 30) == i and start <= (highlight % 30.0) < limit:
+                tint = WHEEL_BOUND_TINT
+            out.append(f'<path class="bound" d="{sector(r_in, r_out, a0, a1)}" fill="{tint}" '
+                       f'stroke="#000000" stroke-width="0.6"/>')
+            mx, my = xy((r_in + r_out) / 2.0, ang(i * 30 + (start + limit) / 2.0))
+            out.append(_svg_text(mx, my, POINT_GLYPHS[lord] + _VS, glyph_px, fill='#333333', cls='bound-lord'))
+            start = limit
+    return out
+
+
+def _wheel_points(chart_data):
+    """The points a wheel draws by default (p. 12): the seven planets, the
+    nodes, the Lot of Fortune. (name, longitude, speed-or-None)."""
+    p_data = chart_data['planetary_data']
+    node = p_data['North Node']
+    points = [(name, d['longitude'], d.get('speed_in_lon', 0.0)) for name, d in p_data.items()]
+    points.append(('South Node', (node['longitude'] + 180.0) % 360.0, node.get('speed_in_lon', 0.0)))
+    points.append(('Lot of Fortune', chart_data['lot_of_fortune'], None))
+    return points
+
+
+def _ring_layout(n, bounds):
+    """(r_in, r_out) for n chart rings, inner to outer, between the hub
+    ring and the bounds ring (or the degree scale)."""
+    top = _M_BOUNDS_IN - 4 if bounds else _M_SIGN_IN - 4
+    bottom = _M_HUB_RING
+    if n == 1:
+        return [(bottom, top)]
+    if n == 2:
+        split = bottom + (top - bottom) * 0.58
+        return [(bottom, split), (split, top)]
+    a = bottom + (top - bottom) * 0.40
+    b = a + (top - bottom) * 0.30
+    return [(bottom, a), (a, b), (b, top)]
+
+
+def _draw_ring_points(svg, ang, xy, ring_idx, label, chart_data, r_in, r_out, colour, badges=None):
+    """One chart's default points in its annulus: a tick at the true
+    degree on the ring's outer edge, a hairline to a radial stack (glyph,
+    degree, sign, minute, retrograde mark, badge letters), spread apart
+    as the natal wheel spreads them. Each point is a <g class="pt"> with
+    data-ring/data-chart/data-point/data-lon."""
+    # The stack -- glyph, degree, sign, minute, retrograde, badge -- fits the
+    # annulus: sizes scale with its width (capped at the natal wheel's),
+    # the lines are laid out between the ring's edges, and the stagger
+    # for crowded runs is used only where the ring is wide enough for it.
+    width = r_out - r_in
+    scale = max(0.42, min(1.0, width / 150.0))
+    px_glyph, px_deg, px_sign, px_min, px_rx = (round(34 * scale), round(18 * scale), round(19 * scale),
+                                                 round(15 * scale), round(14 * scale))
+    r_glyph = r_out - 12 - px_glyph * 0.55
+    span = min(r_glyph - (r_in + 8), 118.0 * scale + 12.0)
+    step = span / 4.6
+    r_deg, r_sign, r_min, r_rx = r_glyph - step, r_glyph - 2.0 * step, r_glyph - 2.9 * step, r_glyph - 3.7 * step
+    r_badge = r_glyph - 4.6 * step
+    points = sorted(_wheel_points(chart_data), key=lambda p: ang(p[1]))
+    true_b = [ang(p[1]) for p in points]
+    min_sep = max(4.0, (px_glyph + 6) * 57.2958 / r_glyph)
+    shown = _spread_labels(true_b, min_sep)
+    stagger = round(min(30.0 * scale, max(0.0, width - span - 22.0)))
+    offsets = _stagger_offsets(true_b, shown, step=stagger) if stagger >= 8 else [0] * len(points)
+    for (name, lon_val, speed), a_true, a_shown, off in zip(points, true_b, shown, offsets):
+        d, m = _wheel_dm(lon_val)
+        svg.append(f'<g class="pt" data-ring="{ring_idx}" data-chart="{escape(label)}" data-point="{escape(name)}" '
+                   f'data-lon="{lon_val % 360.0:.6f}">')
+        x0, y0 = xy(r_out, a_true); x1, y1 = xy(r_out - 8, a_true)
+        svg.append(_svg_line(x0, y0, x1, y1, colour, 1.4))
+        x2, y2 = xy(r_glyph - off + px_glyph * 0.6, a_shown)
+        svg.append(_svg_line(x1, y1, x2, y2, '#777777', 0.7))
+        gx, gy = xy(r_glyph - off, a_shown); svg.append(_svg_text(gx, gy, POINT_GLYPHS.get(name, name[:2]) + _VS, px_glyph, fill=colour))
+        dx_, dy_ = xy(r_deg - off, a_shown); svg.append(_svg_text(dx_, dy_, f'{d:02d}°', px_deg, 'bold', colour))
+        sx, sy = xy(r_sign - off, a_shown); svg.append(_svg_text(sx, sy, SIGN_GLYPHS[int((lon_val % 360.0) // 30)] + _VS, px_sign, fill=colour))
+        mx, my = xy(r_min - off, a_shown); svg.append(_svg_text(mx, my, f"{m:02d}'", px_min, fill=colour))
+        if speed is not None and speed < 0:
+            rx, ry = xy(r_rx - off, a_shown); svg.append(_svg_text(rx, ry, '℞' + _VS, px_rx, fill=colour))
+        if badges and badges.get(name):
+            bx, by = xy(r_badge - off, a_shown)
+            svg.append(_svg_text(bx, by, escape(badges[name]), px_rx, 'bold', '#b8860b', cls='badge'))
+        svg.append('</g>')
+
+
+def _draw_ring_extras(svg, ang, xy, ring_idx, label, extras, r_out, colour):
+    """Optional points (Lots, rays, twelfth-parts): a short tick at the
+    ring's outer edge and a tiny label, spread thinly. <g class="extra">."""
+    if not extras:
+        return
+    items = sorted(extras, key=lambda e: ang(e[1]))
+    true_b = [ang(e[1]) for e in items]
+    shown = _spread_labels(true_b, 2.2)
+    for item, a_true, a_shown in zip(items, true_b, shown):
+        name, lon_val = item[0], item[1]
+        short = item[2] if len(item) > 2 else (name if len(name) <= 6 else name[:6])
+        svg.append(f'<g class="extra" data-ring="{ring_idx}" data-chart="{escape(label)}" '
+                   f'data-point="{escape(name)}" data-lon="{lon_val % 360.0:.6f}">')
+        x0, y0 = xy(r_out, a_true); x1, y1 = xy(r_out - 5, a_true)
+        svg.append(_svg_line(x0, y0, x1, y1, colour, 0.8))
+        tx, ty = xy(r_out - 12, a_shown)
+        svg.append(_svg_text(tx, ty, escape(short) + _VS, 7, fill=colour, rotate=-(a_shown - 90.0) % 360.0 - 90.0))
+        svg.append('</g>')
+
+
+def generate_multiwheel_svg(rings, chart_name, wide=False, bounds=True, shade_sign=None, shade_label='Sign of year',
+                            outline_sign=None, outline_label='Sign of month', profection_from=None,
+                            distribution=None, marks=(), badges=None, extras=None, hub_lines=()):
+    """One to three charts on one zodiac. `rings` are dicts inner to outer:
+    {'label', 'chart' (a chart_data), 'when' (a short line for the hub)}.
+    shade_sign / outline_sign: sign indices 0-11 (the sign of the year,
+    the sign of the month). profection_from: a longitude whose sign the
+    dashed arc starts from, ending at shade_sign (Figures 3, 33).
+    distribution: {'start': lon, 'end': lon} draws the directed
+    Ascendant's arc and tints the bound of `end` (Figures 2, 65). marks:
+    (label, lon, ring_idx) degrees ticked on a ring's outer edge. badges:
+    {ring_idx: {planet: letters}}. extras: {ring_idx: [(name, lon)]}."""
+    rings = list(rings)
+    assert 1 <= len(rings) <= 3
+    size = WHEEL_SIZE
+    cx = cy = size / 2.0
+    inner = rings[0]['chart']
+    asc_sign = int((inner['ascendant'] % 360.0) // 30)
+    ang, xy, sector, arc = _wheel_geometry(asc_sign, cx, cy)
+    width = WHEEL_WIDE_WIDTH if wide else size
+    svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {size}" width="{width}" height="{size}" '
+           f'style="font-family:{_WHEEL_FONT}">',
+           f'<rect width="{width}" height="{size}" fill="#ffffff"/>']
+    layout = _ring_layout(len(rings), bounds)
+    r_top = layout[-1][1]
+
+    # 0. The shaded sign of the year, under everything (fn 33).
+    if shade_sign is not None:
+        a0, a1 = ang(shade_sign * 30), ang(shade_sign * 30 + 30)
+        svg.append(f'<path class="shade" data-sign="{shade_sign}" d="{sector(_M_HUB, _M_RIM, a0, a1)}" fill="{WHEEL_SHADE}"/>')
+    # 1. Sign band, degree scale, spokes through every ring (whole signs are
+    #    every chart's houses here, as Dykes draws them).
+    for i in range(12):
+        a0, a1 = ang(i * 30), ang(i * 30 + 30)
+        fill = TRIPLICITY_TINT[i % 4] if shade_sign != i else WHEEL_SHADE
+        svg.append(f'<path d="{sector(_M_SIGN_IN, _M_RIM, a0, a1)}" fill="{fill}"/>')
+        gx, gy = xy((_M_SIGN_IN + _M_RIM) / 2.0 + 6, ang(i * 30 + 15))
+        svg.append(_svg_text(gx, gy, SIGN_GLYPHS[i] + _VS, 26))
+        x0, y0 = xy(_M_HUB, a0); x1, y1 = xy(_M_RIM, a0)
+        svg.append(_svg_line(x0, y0, x1, y1, '#000000', 1.0))
+    for d in range(360):
+        ln = 12 if d % 10 == 0 else 8 if d % 5 == 0 else 4
+        x0, y0 = xy(_M_SIGN_IN, ang(d)); x1, y1 = xy(_M_SIGN_IN + ln, ang(d))
+        svg.append(_svg_line(x0, y0, x1, y1, '#000000', 0.8 if ln > 4 else 0.45))
+    if bounds:
+        svg.extend(_bounds_ring_svg(ang, xy, sector, _M_BOUNDS_IN, _M_SIGN_IN,
+                                    highlight=(distribution or {}).get('end')))
+    for r, w in ((_M_RIM, 2.2), (_M_SIGN_IN, 1.4), (_M_HUB_RING, 1.0), (_M_HUB, 1.4)):
+        svg.append(f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="#000000" stroke-width="{w}"/>')
+    if outline_sign is not None:
+        a0, a1 = ang(outline_sign * 30), ang(outline_sign * 30 + 30)
+        svg.append(f'<path class="outline" data-sign="{outline_sign}" d="{sector(_M_HUB, _M_RIM, a0, a1)}" '
+                   f'fill="none" stroke="#000000" stroke-width="2.2" stroke-dasharray="7 5"/>')
+
+    # 2. The rings, inner to outer: separator, whole-sign numbers of that
+    #    chart, its angles across its own annulus, its points.
+    for idx, (ring, (r_in, r_out)) in enumerate(zip(rings, layout)):
+        chart = ring['chart']
+        colour = WHEEL_RING_COLOURS[idx if len(rings) > 1 else 0]
+        if idx > 0:
+            svg.append(f'<circle cx="{cx}" cy="{cy}" r="{r_in}" fill="none" stroke="#000000" stroke-width="1.0"/>')
+        c_asc_sign = int((chart['ascendant'] % 360.0) // 30)
+        num_r = (_M_HUB + _M_HUB_RING) / 2.0 if idx == 0 else r_out - 9
+        for i in range(12):
+            nx, ny = xy(num_r, ang(i * 30 + 15 if idx > 0 else i * 30 + 15))
+            svg.append(_svg_text(nx, ny, str((i - c_asc_sign) % 12 + 1), 15 if idx == 0 else 10,
+                                 'bold', colour, cls='house'))
+        a_lo = _M_HUB if idx == 0 else r_in
+        for lon_val, col, lab in ((chart['ascendant'], '#0000cc', 'As'), (chart['mc'], '#1e7b1e', 'Mc'),
+                                  ((chart['ascendant'] + 180.0) % 360.0, '#0000cc', 'Ds'),
+                                  ((chart['mc'] + 180.0) % 360.0, '#1e7b1e', 'Ic')):
+            x0, y0 = xy(a_lo, ang(lon_val)); x1, y1 = xy(r_out, ang(lon_val))
+            svg.append(_svg_line(x0, y0, x1, y1, col, 2.0 if idx == 0 else 1.5))
+            lx, ly = xy(r_out - 9, ang(lon_val) + 2.5 * 57.2958 / r_out * 3)
+            svg.append(_svg_text(lx, ly, lab, 9, 'bold', col, cls='angle'))
+        _draw_ring_points(svg, ang, xy, idx, ring['label'], chart, r_in, r_out, colour,
+                          badges=(badges or {}).get(idx))
+        _draw_ring_extras(svg, ang, xy, idx, ring['label'], (extras or {}).get(idx), r_out, colour)
+
+    # 3. Marks: named degrees on a ring's outer edge (the terminal point ...).
+    for lab, lon_val, ring_idx in marks:
+        r_in, r_out = layout[min(ring_idx, len(layout) - 1)]
+        a = ang(lon_val)
+        x0, y0 = xy(r_out, a); x1, y1 = xy(r_out - 14, a)
+        svg.append(f'<g class="mark" data-point="{escape(lab)}" data-lon="{lon_val % 360.0:.6f}">')
+        svg.append(_svg_line(x0, y0, x1, y1, '#b8860b', 2.2))
+        tx, ty = xy(r_out - 22, a)
+        svg.append(_svg_text(tx, ty, escape(lab), 9, 'bold', '#b8860b'))
+        svg.append('</g>')
+
+    # 4. The profection: a dashed arc outside the rim from the natal
+    #    Ascendant's sign to the sign of the year, arrowhead at the end.
+    if profection_from is not None and shade_sign is not None:
+        s0 = int((profection_from % 360.0) // 30)
+        if s0 != shade_sign:
+            a0, a1 = ang(s0 * 30 + 15), ang(shade_sign * 30 + 15)
+            svg.append(f'<path class="profection" d="{arc(_M_RIM + 11, a0, a1)}" fill="none" stroke="#000000" '
+                       f'stroke-width="2.4" stroke-dasharray="9 6"/>')
+            svg.append(_svg_arrowhead(xy, _M_RIM + 11, a1, '#000000'))
+    # Sign labels run along the arc in the sign band's inner margin,
+    # upright on either half of the wheel, as Dykes letters "Sign of year".
+    def _tangential(r, lon_val, s, cls):
+        a = ang(lon_val)
+        rot = (90.0 - a) % 360.0
+        if 180.0 < a % 360.0 < 360.0:
+            rot += 180.0
+        x, y = xy(r, a)
+        return _svg_text(x, y, s, 10, 'bold', '#444444', rotate=rot, cls=cls)
+    if shade_sign is not None:
+        svg.append(_tangential(_M_SIGN_IN + 15, shade_sign * 30 + 15, shade_label, 'shade-label'))
+    if outline_sign is not None:
+        svg.append(_tangential(_M_SIGN_IN + 15 if outline_sign != shade_sign else _M_SIGN_IN + 26,
+                               outline_sign * 30 + 15, outline_label, 'outline-label'))
+
+    # 5. The distribution: the directed Ascendant from its degree to the
+    #    degree reached now, solid, on the inner edge of the bounds ring.
+    if distribution:
+        r_arc = r_top + 1
+        a0, a1 = ang(distribution['start']), ang(distribution['end'])
+        svg.append(f'<path class="distribution" data-start="{distribution["start"] % 360.0:.6f}" '
+                   f'data-end="{distribution["end"] % 360.0:.6f}" d="{arc(r_arc, a0, a1)}" fill="none" '
+                   f'stroke="#0000cc" stroke-width="2.6"/>')
+        svg.append(_svg_arrowhead(xy, r_arc, a1, '#0000cc', size=11))
+
+    # 6. Hub: the name, then one line per ring, inner first.
+    svg.append(f'<circle cx="{cx}" cy="{cy}" r="{_M_HUB - 1}" fill="#ffffff"/>')
+    name = str(chart_name)
+    if len(name) > 30:
+        name = name[:29] + '…'
+    lines = [(escape(name), 15 if len(name) <= 18 else 12, 'bold', '#000000')]
+    for idx, ring in enumerate(rings):
+        colour = WHEEL_RING_COLOURS[idx if len(rings) > 1 else 0]
+        place = ('Inner', 'Middle', 'Outer')[idx] if len(rings) == 3 else ('Inner', 'Outer')[idx] if len(rings) == 2 else ''
+        head = f"{place}: {ring['label']}" if place else ring['label']
+        lines.append((escape(head), 11, 'bold', colour))
+        if ring.get('when'):
+            lines.append((escape(str(ring['when'])), 9, 'normal', colour))
+    for s in hub_lines:
+        lines.append((escape(str(s)), 9, 'normal', '#333333'))
+    y = cy - 6.5 * (len(lines) - 1)
+    for s, px, w, col in lines:
+        svg.append(_svg_text(cx, y, s, px, w, col))
+        y += 13
+
+    # 7. Wide: a positions column per ring.
+    if wide:
+        col_w = (width - size - 60) / len(rings)
+        for idx, ring in enumerate(rings):
+            colour = WHEEL_RING_COLOURS[idx if len(rings) > 1 else 0]
+            x0 = size + 40 + idx * col_w
+            svg.append(_svg_text(x0, 60, escape(ring['label']), 18, 'bold', colour, anchor='start'))
+            if ring.get('when'):
+                svg.append(_svg_text(x0, 84, escape(str(ring['when'])), 11, fill=colour, anchor='start'))
+            svg.append(_svg_line(x0, 98, x0 + col_w - 30, 98, '#000000', 1))
+            chart = ring['chart']
+            y = 122
+            pts = sorted(_wheel_points(chart), key=lambda p: list(POINT_GLYPHS).index(p[0]) if p[0] in POINT_GLYPHS else 99)
+            for name_, lon_val, speed in pts:
+                d, m = _wheel_dm(lon_val)
+                motion = '' if speed is None else ('℞' + _VS if speed < 0 else '')
+                svg.append(_svg_text(x0, y, POINT_GLYPHS.get(name_, '') + _VS, 18, fill=colour, anchor='start'))
+                svg.append(_svg_text(x0 + 30, y, f'{d:02d}° {SIGN_GLYPHS[int((lon_val % 360.0) // 30)]}{_VS} {m:02d}′ {motion}',
+                                     14, fill=colour, anchor='start'))
+                svg.append(_svg_text(x0 + col_w - 50, y, str(get_wsh_house(lon_val, chart['ascendant'])), 13, fill=colour))
+                y += 28
+            y += 10
+            for lon_val, lab in ((chart['ascendant'], 'Asc'), (chart['mc'], 'MC')):
+                d, m = _wheel_dm(lon_val)
+                svg.append(_svg_text(x0, y, lab, 13, 'bold', colour, anchor='start'))
+                svg.append(_svg_text(x0 + 30, y, f'{d:02d}° {SIGN_GLYPHS[int((lon_val % 360.0) // 30)]}{_VS} {m:02d}′',
+                                     14, fill=colour, anchor='start'))
+                y += 26
+            svg.append(_svg_text(x0, y, f"Sect: {chart['sect']}", 12, fill=colour, anchor='start'))
+
+    svg.append('</svg>')
+    return ''.join(svg)
+
+
+# ---- Direction strips --------------------------------------------------------
+# The four distributions as timelines (evaluation B.4): one bar per bound
+# tinted by its distributor, the distributor's glyph in it, a full-height
+# line where the bound changes and a half tick where only the partner
+# does, and the present as a red line. PN IV prints distributions as a
+# table with dates (Figure 22) and as an arc on the wheel (Figures 2, 65);
+# nothing in the book replaces a timeline, and a student needs one.
+STRIP_WIDTH, STRIP_HEIGHT = 1600, 170
+STRIP_TINT = {'Saturn': '#d9d9d9', 'Jupiter': '#cfe0f5', 'Mars': '#f5cdc7', 'Sun': '#fbe9a6',
+              'Venus': '#d4efd0', 'Mercury': '#f8ddb8', 'Moon': '#e2d9f3'}
+
+
+def generate_distribution_strip_svg(segments, now, unit='years', span=None, title=''):
+    """segments as _pn4_distribute returns them (from/to/distributor/partner/
+    partner_aspect); `now` in the strip's unit (completed years, or the day
+    of the year) or None; span the bar's full length (120 years, 365 days
+    ...). Each bar is <rect class="seg"> with data-from/to/distributor/
+    partner; the present is <line class="now">."""
+    if unit not in ('years', 'days'):
+        raise ValueError(f"unit must be 'years' or 'days', not {unit!r}")
+    segments = list(segments or [])
+    if span is None:
+        span = max((s['to'] for s in segments), default=1.0)
+    span = float(span) or 1.0
+    x_left, x_right = 60.0, STRIP_WIDTH - 40.0
+    y_top, y_bot = 62.0, 122.0
+
+    def x_of(v):
+        return x_left + (x_right - x_left) * max(0.0, min(1.0, v / span))
+
+    svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {STRIP_WIDTH} {STRIP_HEIGHT}" width="{STRIP_WIDTH}" '
+           f'height="{STRIP_HEIGHT}" style="font-family:{_WHEEL_FONT}">',
+           f'<rect width="{STRIP_WIDTH}" height="{STRIP_HEIGHT}" fill="#ffffff"/>']
+    if title:
+        svg.append(_svg_text(x_left, 26, escape(str(title)), 18, 'bold', anchor='start'))
+    prev = None
+    for seg in segments:
+        x0, x1 = x_of(seg['from']), x_of(seg['to'])
+        w = max(0.0, x1 - x0)
+        tint = STRIP_TINT.get(seg['distributor'], '#eeeeee')
+        svg.append(f'<rect class="seg" x="{x0:.1f}" y="{y_top}" width="{w:.1f}" height="{y_bot - y_top}" fill="{tint}" '
+                   f'stroke="#000000" stroke-width="0.4" data-from="{seg["from"]:.4f}" data-to="{seg["to"]:.4f}" '
+                   f'data-distributor="{escape(str(seg["distributor"]))}" data-partner="{escape(str(seg["partner"]))}" '
+                   f'data-aspect="{escape(str(seg["partner_aspect"]))}"/>')
+        bound_change = prev is None or prev['distributor'] != seg['distributor']
+        svg.append(_svg_line(x0, y_top if bound_change else y_top, x0, y_bot if bound_change else y_top + 16,
+                             '#000000', 1.4 if bound_change else 1.0))
+        if w >= 16:
+            svg.append(_svg_text((x0 + x1) / 2.0, y_top + 22, POINT_GLYPHS.get(seg['distributor'], '') + _VS, 20))
+        if w >= 26 and seg['partner']:
+            svg.append(_svg_text((x0 + x1) / 2.0, y_bot - 14,
+                                 _ASPECT_GLYPH.get(seg['partner_aspect'], '') + POINT_GLYPHS.get(seg['partner'], '') + _VS,
+                                 13, fill='#333333'))
+        prev = seg
+    svg.append(_svg_line(x_left, y_bot, x_right, y_bot, '#000000', 1.2))
+    tick = 10.0 if unit == 'years' else 30.0
+    v = 0.0
+    while v <= span + 1e-9:
+        x = x_of(v)
+        svg.append(_svg_line(x, y_bot, x, y_bot + 7, '#000000', 1.0))
+        svg.append(_svg_text(x, y_bot + 20, f'{v:g}', 12))
+        v += tick
+    svg.append(_svg_text(x_right, y_bot + 40, 'age in completed years' if unit == 'years' else 'day of the year',
+                         11, fill='#555555', anchor='end'))
+    if now is not None and 0.0 <= now <= span:
+        x = x_of(now)
+        svg.append(f'<line class="now" x1="{x:.1f}" y1="{y_top - 14}" x2="{x:.1f}" y2="{y_bot + 8}" stroke="#c00000" '
+                   f'stroke-width="2.4" data-now="{now:.4f}"/>')
+        svg.append(_svg_text(x, y_top - 22, ('now: age ' if unit == 'years' else 'now: day ') + f'{now:g}', 12, 'bold', '#c00000'))
+    svg.append('</svg>')
+    return ''.join(svg)
+
 
 # ==========================================
 # 3. DIGNITY & ASPECT EVALUATORS
@@ -9729,19 +10155,35 @@ def _pn4_seg_degree(segment, ascendant_lon, chart_data, geo_lat):
     got = _lon_with_oblique_ascension(oa, chart_data['obliquity'], geo_lat)
     return ascendant_lon if got is None else got
 
-def _pn4_distribution_rows(segments, current, unit='years'):
+PN4_DIRECTION_YEAR_DAYS = 365.2425    # the year a degree of direction is worth, in days, for the Date column.
+# Measured against PN IV Figure 22's eight printed dates (a Janus run): this
+# mean year, from the birth in UT, reproduces all eight; 365.25 misses two
+# (Oct 19 2024 and Dec 19 2026 fall a day late), and local civil time
+# misses two the other way. It is also the year this file already uses for
+# fractional ages (calculate_time_lords) and the revolution's first guess.
+
+def _pn4_distribution_rows(segments, current, unit='years', origin_jd=None):
     """A distribution as the Timing page prints it, one row per segment,
     the same shape for the Ascendant, the meridian and the small days.
     `unit` is what the segment bounds are in: years (a degree of
-    ascension a year, III.1, 13) or days (59' 08" a day, IX.7, 29)."""
+    ascension a year, III.1, 13) or days (59' 08" a day, IX.7, 29).
+    `origin_jd`, when given, adds the civil DATE each segment opens on, as
+    PN IV Figure 22 prints a distribution (Arc, Date, Distributor,
+    Partner): the birth for the year-long ones, the revolution for the
+    day-long ones, a mean year of 365.2425 days from the moment in UT --
+    the construction that reproduces that figure's dates -- in the
+    calendar the epoch uses."""
     if unit == 'years':
         head, lasting = ('From age', 'To age'), lambda d: pn4_format_arc_time(d)
+        per_unit = PN4_DIRECTION_YEAR_DAYS
     elif unit == 'days':
         head, lasting = ('From day', 'To day'), lambda d: f"{int(d)}d {(d - int(d)) * 24.0:.1f}h"
+        per_unit = 1.0
     else:
         raise ValueError(f"unit must be 'years' or 'days', not {unit!r}")
     return [{
         head[0]: f"{seg['from']:.2f}", head[1]: f"{seg['to']:.2f}",
+        **({'Date': f"{pn4_datetime_from_jd(origin_jd + seg['from'] * per_unit):%Y-%m-%d}"} if origin_jd is not None else {}),
         'Lasting': lasting(seg['to'] - seg['from']),
         'Distributor': seg['distributor'],
         'Partner': seg['partner'] or 'none',
@@ -9897,15 +10339,15 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         chart_data['planetary_data'], chart_data['obliquity'], lat, segments)
 
     # --- the distributions, as forward tables (III.1, 11-16) ---
-    distribution_rows = _pn4_distribution_rows(segments, current)
-    meridian_rows = {point: _pn4_distribution_rows(m['segments'], m['current'])
+    distribution_rows = _pn4_distribution_rows(segments, current, origin_jd=chart_data['julian_day'])
+    meridian_rows = {point: _pn4_distribution_rows(m['segments'], m['current'], origin_jd=chart_data['julian_day'])
                      for point, m in meridian.items()}
 
     # --- IX.7, 29-31: the small days, in days from the revolution ---
     small_days = pn4_small_days(sr['planetary_data'], sr['ascendant'])
     day_of_year = jd_target - jd_sr
     small_days_current = pn4_distribution_at_age(small_days, day_of_year)
-    small_days_rows = _pn4_distribution_rows(small_days, small_days_current, unit='days')
+    small_days_rows = _pn4_distribution_rows(small_days, small_days_current, unit='days', origin_jd=jd_sr)
 
     # --- II.22, 1-4: the Moon's connections in her sign, and the portions ---
     moon = pn4_moon_connections(sr['planetary_data'], jd_sr)
@@ -9919,7 +10361,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
     # --- IX.7, 23-28: the mighty days, the terminal degree through the SR ---
     mighty_days = pn4_mighty_days(sr['planetary_data'], year['longitude'])
     mighty_days_current = pn4_distribution_at_age(mighty_days, day_of_year)
-    mighty_days_rows = _pn4_distribution_rows(mighty_days, mighty_days_current, unit='days')
+    mighty_days_rows = _pn4_distribution_rows(mighty_days, mighty_days_current, unit='days', origin_jd=jd_sr)
 
     return {
         'activation_rows': activation_rows,
@@ -9966,6 +10408,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'segments': segments, 'current': current, 'ages': ages,
         'revolution_rows': revolution_rows, 'year_rows': year_rows,
         'fardar_rows': fardar_rows, 'monthly_rows': monthly_rows, 'age_rows': age_rows,
+        'monthly_indicators': indicators,
     }
 
 def calculate_time_lords(ascendant_lon, birth_date, target_date):
@@ -10317,6 +10760,9 @@ LOT_HOUSE_CUSP = _reading("lot_house_cusp", "_lot_house_cusp", LOT_HOUSE_CUSP_OP
 # as a reading, defaulting to Dykes' plain forward count. Read only by the
 # Timing page, so it is not in the Configurations cross-product.
 PN4_MONTHLY_TURN = _reading("pn4_monthly_turn", "_pn4_monthly_turn", PN4_MONTHLY_TURN_OPTIONS[0])
+# Owner's decision 2026-09-10: the natal wheel carries the Egyptian-bounds
+# ring too, as every PN IV wheel does -- the course works the bounds by hand.
+CHART_BOUNDS = bool(_reading("chart_bounds", "_chart_bounds", True))
 
 
 if location_query and lat is not None and lon is not None:
@@ -10457,9 +10903,9 @@ if location_query and lat is not None and lon is not None:
         chart_name = (_picked if _picked and _picked != "-- New Chart --"
                       else new_chart_name.strip() or "Transits")
         svg_code = generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, local_dt, tz_name,
-                                       chronocrats=chronocrats)
+                                       chronocrats=chronocrats, bounds=CHART_BOUNDS)
         svg_wide = generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, local_dt, tz_name,
-                                       wide=True, chronocrats=chronocrats)
+                                       wide=True, chronocrats=chronocrats, bounds=CHART_BOUNDS)
 
         st.title("Traditional Astrology Engine")
 
@@ -10600,11 +11046,20 @@ if location_query and lat is not None and lon is not None:
             # the start of the rerun that a click causes; the store key keeps
             # it across pages.
             def _layout_control():
-                return _reading_radio(
+                st.session_state.setdefault("_chart_bounds", True)
+                layout = _reading_radio(
                     "Wheel layout", WHEEL_LAYOUT_OPTIONS, "wheel_layout", "_wheel_layout",
                     help="Square: the wheel beside the header metrics. Wide: the wheel with a "
                          "positions panel across the page. Hover either and use the expand "
                          "arrows for a full-window view.")
+                _reading_checkbox("Bounds ring", "chart_bounds", "_chart_bounds",
+                                  help="The Egyptian bounds, with their lords, as a ring inside the degree scale -- "
+                                       "as every natal wheel in Persian Nativities IV carries them (Figures 1, 22, "
+                                       "25, 26). Owner's choice, 2026-09-10.")
+                st.download_button("Download the wheel (SVG)", svg_wide if layout == WHEEL_LAYOUT_OPTIONS[1] else svg_code,
+                                   key="dl_chart_wheel", mime="image/svg+xml",
+                                   file_name=f"{re.sub(r'[^A-Za-z0-9]+', '_', chart_name).strip('_') or 'chart'}_natal.svg")
+                return layout
             wheel_layout = st.session_state.get(
                 "wheel_layout", st.session_state.get("_wheel_layout", WHEEL_LAYOUT_OPTIONS[0]))
             if wheel_layout == WHEEL_LAYOUT_OPTIONS[1]:
@@ -11190,6 +11645,135 @@ if location_query and lat is not None and lon is not None:
             st.dataframe(pd.DataFrame(pn4['revolution_rows']), hide_index=True, width='stretch',
                          height=_rows_height(len(pn4['revolution_rows'])))
 
+            # --- The charts, drawn (2026-09-10) ---------------------------------
+            # I.6, 1-6 and IX.3, 4-8 describe images holding the root, the
+            # revolution of the year and the revolution of the month on one
+            # zodiac. Drawn as PN IV's editor draws them: the outer charts in
+            # whole signs, the sign of the year shaded, the profection a
+            # dashed arc, an Egyptian-bounds ring, the default points of p. 12.
+            # The controls are readings of the page, kept across navigation.
+            st.subheader("The charts, drawn",
+                         help="Year: the revolution alone (Figures 4, 26). Year over root: the image of the revolution "
+                              "of the year, I.6, 3-6 (Figure 51 and fn 33; Figures 5 and 27 in Dykes' order). Month "
+                              "over year and root: the image of the revolution of the month, IX.3, 4-8 (Figures 39 "
+                              "and 109, fn 58). Month: the month's revolution alone. Profection: the natal wheel with "
+                              "the sign of the year and the sign of the month (Figures 3, 15, 33). The Wide layout "
+                              "adds a positions column per chart; hover the picture for the expand arrows.")
+            st.session_state.setdefault("_timing_bounds", True)
+            v_view, v_layout = st.columns([3.2, 1])
+            with v_view:
+                wheel_view = _reading_radio("View", WHEEL_VIEW_OPTIONS, "timing_wheel_view", "_timing_wheel_view")
+            with v_layout:
+                _timing_layout = _reading_radio("Wheel layout", WHEEL_LAYOUT_OPTIONS, "wheel_layout", "_wheel_layout")
+            o_order, o_bounds, o_lots, o_rays, o_twelfths = st.columns([2.2, 1, 1, 1, 1.2])
+            with o_order:
+                wheel_order = _reading_radio("Inner wheel", WHEEL_ORDER_OPTIONS, "wheel_order", "_wheel_order",
+                                             help="Dykes: \"Abu Ma'shar seems to prefer that the SR be the inner "
+                                                  "wheel, but to me this seem unnatural and I only do it to "
+                                                  "illustrate his instructions in Ch. I.6\" (p. 12). Figure 51 "
+                                                  "follows Abu Ma'shar; every other figure in the book puts the "
+                                                  "nativity in the centre. IX.3, 4-6 writes the month first, then "
+                                                  "the year, then the root.")
+            with o_bounds:
+                wheel_bounds = _reading_checkbox("Bounds", "timing_bounds", "_timing_bounds",
+                                                 help="The Egyptian bounds as a ring, as every PN IV wheel carries them.")
+            with o_lots:
+                want_lots = _reading_checkbox("Lots", "timing_lots", "_timing_lots",
+                                              help="I.6, 3-4: the Lots \"according to how you do it\" -- this engine's, "
+                                                   "beyond Fortune, as short ticks with their names.")
+            with o_rays:
+                want_rays = _reading_checkbox("Rays", "timing_rays", "_timing_rays",
+                                              help="I.6, 3-4 and 8: the 98 rays, as ticks -- too many to letter; the "
+                                                   "inventory table below lists each one.")
+            with o_twelfths:
+                want_twelfths = _reading_checkbox("Twelfth-parts", "timing_twelfths", "_timing_twelfths",
+                                                  help="I.6, 3-4 and 8: the 38 twelfth-parts of the planets and of the "
+                                                       "house degrees, as ticks.")
+
+            def _ring_extras(chart):
+                out = []
+                if want_lots:
+                    for d in LOT_DEFINITIONS:
+                        if d['id'] == 'fortune':
+                            continue
+                        lot_lon = lot_by_id(d['id'], chart['planetary_data'], chart['ascendant'], chart['houses'], chart['sect'])
+                        if lot_lon is not None:
+                            out.append((d['name'], lot_lon, d['name'].replace('Lot of ', '').replace('the ', '')[:9]))
+                if want_rays:
+                    for ray_lon, kind, who, aspect in pn4_bodies_and_rays(chart['planetary_data']):
+                        if kind != 'body':
+                            out.append((f"{who} by {aspect}", ray_lon, POINT_GLYPHS[who] + _ASPECT_GLYPH.get(aspect, '')))
+                if want_twelfths:
+                    for who, row in chart['planetary_data'].items():
+                        if who in PLANET_SWE_IDS:
+                            out.append((f"twelfth-part of {who}", pn4_twelfth_part(row['longitude']), '¹²' + POINT_GLYPHS[who]))
+                    for i, cusp in enumerate(list(chart['houses'])[:12]):
+                        out.append((f"twelfth-part of the degree of house {i + 1} ({get_degree_string(cusp)})",
+                                    pn4_twelfth_part(cusp), f'¹²h{i + 1}'))
+                return out
+
+            _natal_when = f"{local_dt.day} {local_dt:%b} {local_dt.year} {local_dt:%H:%M} {tz_name}"
+            natal_ring = {'label': 'Nativity', 'chart': chart_data, 'when': _natal_when}
+            year_ring = {'label': f"Year, age {pn4['age']}", 'chart': pn4['sr'],
+                         'when': f"{pn4_datetime_from_jd(pn4['jd_sr']):%d %b %Y %H:%M} UT"}
+            month_ring = {'label': f"Month {pn4['month']} of 12", 'chart': pn4['mr'],
+                          'when': f"{pn4_datetime_from_jd(pn4['jd_mr']):%d %b %Y %H:%M} UT"}
+            year_sign = SIGN_ORDER.index(pn4['year']['sign'])
+            _month_lon = next((r['longitude'] for r in pn4['monthly_indicators'] if r['number'] == 1), None)
+            month_sign = None if _month_lon is None else int((_month_lon % 360.0) // 30)
+            _cur = pn4['current']
+            _distribution = None
+            if _cur and pn4['segments']:
+                _distribution = {'start': chart_data['ascendant'],
+                                 'end': _pn4_seg_degree({'from': float(pn4['age'])}, chart_data['ascendant'], chart_data, lat)}
+            _badges = {}
+            for _planet, _letter in (((_cur or {}).get('distributor'), 'D'), ((_cur or {}).get('partner'), 'P'),
+                                     ((pn4['fardar'] or {}).get('lord'), 'F'), ((pn4['fardar'] or {}).get('sub_lord'), 'f'),
+                                     (pn4['orb'], 'O')):
+                if _planet:
+                    _badges[_planet] = (_badges.get(_planet, '') + '·' + _letter).strip('·')
+            _dykes = wheel_order == WHEEL_ORDER_OPTIONS[0]
+            _wide_t = _timing_layout == WHEEL_LAYOUT_OPTIONS[1]
+            if wheel_view == WHEEL_VIEW_OPTIONS[0]:
+                _rings, _kw = [year_ring], {}
+            elif wheel_view == WHEEL_VIEW_OPTIONS[1]:
+                _rings = [natal_ring, year_ring] if _dykes else [year_ring, natal_ring]
+                _n = _rings.index(natal_ring)
+                _kw = dict(shade_sign=year_sign, profection_from=chart_data['ascendant'], distribution=_distribution,
+                           marks=[('TP', pn4['year']['longitude'], _n)], badges={_n: _badges})
+            elif wheel_view == WHEEL_VIEW_OPTIONS[2]:
+                _rings = [natal_ring, year_ring, month_ring] if _dykes else [month_ring, year_ring, natal_ring]
+                _n = _rings.index(natal_ring)
+                _kw = dict(shade_sign=year_sign, outline_sign=month_sign, profection_from=chart_data['ascendant'],
+                           marks=[('TP', pn4['year']['longitude'], _n)], badges={_n: _badges})
+            elif wheel_view == WHEEL_VIEW_OPTIONS[3]:
+                _rings, _kw = [month_ring], {}
+            else:
+                _rings = [natal_ring]
+                _kw = dict(shade_sign=year_sign, outline_sign=month_sign, profection_from=chart_data['ascendant'],
+                           marks=[('TP', pn4['year']['longitude'], 0)])
+            _extras = {i: _ring_extras(r['chart']) for i, r in enumerate(_rings)} if (want_lots or want_rays or want_twelfths) else None
+            svg_timing = generate_multiwheel_svg(_rings, chart_name, wide=_wide_t, bounds=wheel_bounds, extras=_extras, **_kw)
+            st.image(svg_timing, width='stretch' if _wide_t else 560)
+            st.download_button("Download this wheel (SVG)", svg_timing, key="dl_timing_wheel",
+                               file_name=f"{re.sub(r'[^A-Za-z0-9]+', '_', chart_name).strip('_') or 'chart'}_"
+                                         f"{re.sub(r'[^A-Za-z0-9]+', '_', wheel_view).strip('_').lower()}_age{pn4['age']}.svg",
+                               mime="image/svg+xml")
+            st.caption("PN IV's own conventions, read from its figures: the nativity in the centre and the "
+                       "revolution outside in every bi-wheel but Figure 51, where Dykes follows Abu Ma'shar's I.6 "
+                       "order and says so (p. 12); the outer charts in whole signs; \"the profected natal Ascendant "
+                       "... which I have shaded in grey\" (fn 33) -- the sign of the terminal point of the year -- "
+                       "with the profection drawn as a dashed arc from the natal Ascendant (Figures 3, 33); the month "
+                       "as a tri-wheel, root, year, month (fn 58); a ring of the Egyptian bounds on every wheel. "
+                       "Default points are Dykes' (p. 12): the seven planets, the nodes, Fortune, the angles; "
+                       "I.6, 3-4's Lots, rays and twelfth-parts are the toggles, and the inventory table below is "
+                       "the authority the picture is held to. TP marks the terminal point of the year (I.6, 5); the "
+                       "letters under a natal planet mark I.6, 6's time lords -- D distributor, P partner, F lord of "
+                       "the fardar, f its divider, O lord of the orb; the solid arc from the natal Ascendant is the "
+                       "distribution, ending on the degree reached now with its bound tinted (Figures 2, 65). The "
+                       "outer charts' Alchabitius cusps are not drawn; Figure 51's are not either.")
+
+
             st.subheader("The image of the revolution of the year: its points (I.6, 3-8)",
                          help="I.6, 3: the revolution's planets with their conditions, \"their rays and twelfth-parts, "
                               "and the twelfth-parts of the degrees of the houses\"; I.6, 4: the root's planets likewise, "
@@ -11428,6 +12012,11 @@ if location_query and lat is not None and lon is not None:
                            "ascension has no unique inverse, and an arc of direction from the Ascendant is not "
                            "defined (the domain of decision D-23).")
             else:
+                _strip = generate_distribution_strip_svg(pn4['segments'], float(pn4['age']), 'years',
+                                                         PN4_DISTRIBUTION_SPAN_YEARS, 'The distribution from the Ascendant')
+                st.image(_strip, width='stretch')
+                st.download_button("Download this strip (SVG)", _strip, key="dl_strip_asc", mime="image/svg+xml",
+                                   file_name="distribution_ascendant.svg")
                 cur = pn4['current']
                 if cur:
                     st.markdown(
@@ -11494,6 +12083,11 @@ if location_query and lat is not None and lon is not None:
             for point in PN4_MERIDIAN_POINTS:
                 m = pn4['meridian'][point]
                 cur = m['current']
+                _strip = generate_distribution_strip_svg(m['segments'], float(pn4['age']), 'years',
+                                                         PN4_DISTRIBUTION_SPAN_YEARS, f'The distribution from the {point}')
+                st.image(_strip, width='stretch')
+                st.download_button("Download this strip (SVG)", _strip, key=f"dl_strip_{point[:4].lower()}",
+                                   mime="image/svg+xml", file_name=f"distribution_{point[:4].lower()}.svg")
                 if cur:
                     st.markdown(
                         f"**{point}** at {get_degree_string(m['degree'])} -- **now** (age {pn4['age']}): distributor "
@@ -11526,6 +12120,10 @@ if location_query and lat is not None and lon is not None:
                               "rate; the Ascendant's distribution above runs across the years.")
             sd_cur = pn4['small_days_current']
             sr_asc = pn4['sr']['ascendant']
+            _strip = generate_distribution_strip_svg(pn4['small_days'], pn4['day_of_year'], 'days', None, 'The small days')
+            st.image(_strip, width='stretch')
+            st.download_button("Download this strip (SVG)", _strip, key="dl_strip_small", mime="image/svg+xml",
+                               file_name="small_days.svg")
             if sd_cur:
                 st.markdown(
                     f"**Ascendant of the revolution** at {get_degree_string(sr_asc)} -- **now** (day "
@@ -11559,6 +12157,10 @@ if location_query and lat is not None and lon is not None:
                               "IX.7, 28: thirty of them are the year, \"approximately\", and this is the mighty days. "
                               "The profected thirty degrees treated as a year, walked degree by degree.")
             md_cur = pn4['mighty_days_current']
+            _strip = generate_distribution_strip_svg(pn4['mighty_days'], pn4['day_of_year'], 'days', None, 'The mighty days')
+            st.image(_strip, width='stretch')
+            st.download_button("Download this strip (SVG)", _strip, key="dl_strip_mighty", mime="image/svg+xml",
+                               file_name="mighty_days.svg")
             if md_cur:
                 st.markdown(
                     f"**Terminal point** at {get_degree_string(pn4['year']['longitude'])} -- **now** (day "
