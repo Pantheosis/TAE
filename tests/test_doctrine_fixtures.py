@@ -2147,6 +2147,56 @@ def test_pn4_bound_transits_quote_the_sentence_and_read_iii_8_7(engine):
     assert engine["pn4_bound_transits"](root, sr, None, "Saturn") == []
 
 
+# --- I.6, 3-8: the image of the revolution of the year (built 2026-09-10)
+
+def test_pn4_twelfth_part_agrees_with_the_engines_construction(engine):
+    """The twelfth-part as a degree: 2.5 degrees to a sign, beginning with
+    the sign itself, the position inside the 2.5 spread over the sign's
+    30. Its sign must be _twelfth_part_sign's (the engine's existing
+    construction, supplied from convention and said so). 1 Aries is 12
+    Aries; 5 Aries is 0 Gemini; 29 Pisces is 18 Aquarius."""
+    tp = engine["pn4_twelfth_part"]
+    assert tp(1.0) == pytest.approx(12.0)
+    assert tp(5.0) == pytest.approx(60.0)
+    assert tp(359.0) == pytest.approx(300.0 + 18.0)
+    for lon in range(0, 360, 7):
+        assert engine["get_zodiac_sign"](tp(lon + 0.3)) == engine["_twelfth_part_sign"](lon + 0.3)
+
+
+def test_pn4_revolution_image_counts_as_i_6_8(engine):
+    """I.6, 8 and Figure 52: 14 planets, 98 rays, the Head and Tail twice
+    each, 24 twelfth-parts of houses and 14 of planets -- 154 -- with the
+    Lots outside the count. On a real chart the inventory counts exactly
+    that, carries I.6, 5's two points and I.6, 6's time lords, and is
+    ordered by degree within each house."""
+    cast = engine["calculate_traditional_chart"]
+    birth, lat, lon = datetime(1985, 3, 20, 14, 30), 51.5, -0.12
+    chart = cast(birth, lat, lon)
+    rule = engine["PN4_MONTHLY_TURN_OPTIONS"][0]
+    b = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(2027, 6, 1).date(), rule,
+                                    {"Hour Lord": "Venus", "Approximate": False})
+    rows, counts = b["image"]
+    assert counts["planets"] == 14 and counts["rays"] == 98 and counts["nodes"] == 4
+    assert counts["twelfth-parts of houses"] == 24 and counts["twelfth-parts of planets"] == 14
+    assert counts["total of I.6, 8"] == 154 and counts["Lots"] > 0
+    points = [r["Point"] for r in rows]
+    assert "Ascendant of the root" in points and "Terminal point of the year" in points
+    assert any(p.startswith("Endpoint of the distribution") for p in points)
+    assert any(", the distributor" in p for p in points) and any(", lord of the orb" in p for p in points)
+    assert any(", lord of the fardar" in p for p in points)
+    assert all(r["Bound"] in engine["PN4_SEVEN"] for r in rows)
+    by_house = {}
+    for r in rows:
+        by_house.setdefault(r["House"], []).append(r["Position"])
+    assert sorted(by_house) == list(range(1, 13))
+    # within a house the degree-in-sign never decreases (all points of one whole-sign house share a sign)
+    deg = lambda s: int(s.split("\u00b0")[0]) * 60 + int(s.split(" ")[-1].rstrip("'"))
+    for house, positions in by_house.items():
+        vals = [deg(p) for p in positions]
+        assert vals == sorted(vals), house
+    assert rows == b["image"][0]
+
+
 def test_pn4_indicator_two_against_abu_mashars_worked_months(engine):
     """IX.1, 15-16 works indicator #2 out month by month for a year that
     terminates at Cancer: "the lord of its first ninth-part is the Moon,

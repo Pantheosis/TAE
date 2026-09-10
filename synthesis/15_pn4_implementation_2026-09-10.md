@@ -843,6 +843,47 @@ rows without a current distribution).
 **Left undone, on purpose.** 39's aggravators, 40–42's and III.8, 7's conditions as judgments; 48.
 The next prompt, per the brief, is the revolution chart's full contents (I.6, 3–8, Figure 52).
 
+### 4n. I.6, 3–8: the image of the revolution of the year, as an inventory — built 2026-09-10, second session
+
+Technique 13 of the continuation brief, put to the owner with the four-point prompt. Chosen as
+recommended: **the 154-point inventory with the twelfth-parts under the existing provenance
+note**, over leaving the twelfth-parts out.
+
+**Re-checked in the corpus before writing:**
+
+| Citation | What it had to support | Held? |
+|---|---|---|
+| **I.6, 1–2** + fn 31 | the wheel, the houses by "the portions of hours and the ascensions of the right circle" = the quadrant cusps | yes |
+| **I.6, 3** + fn 32 | the revolution's planets, conditions, rays, twelfth-parts, and the twelfth-parts of the house degrees | yes |
+| **I.6, 4** | the root's planets, rays, twelfth-parts, "the twelfth-parts of the signs, and the Lots and Head and Tail" | yes |
+| **I.6, 5** + fn 33 | the natal Ascendant and the terminal point; Dykes' whole-sign drawing | yes |
+| **I.6, 6** + fn 34 | the endpoint of the distribution, distributor, partner, fardār lord and divider, lord of the orb, "in their signs and bounds" | yes |
+| **I.6, 7** + fn 35 | a fixed star on the Ascendant, Midheaven, a luminary or an angular planet | yes — not computed |
+| **I.6, 8–11** + Figure 52, fn 36 | the count: 14, 98, 2+2, 24+14 = 154, the Lots apart; by degree within a house | yes — the count is a fixture |
+
+**Stated as a drawing, built as a table.** Every point of I.6, 3–6 is listed by whole-sign house
+from the revolution's Ascendant, ordered by degree within the house, with its bound (I.6, 6's
+"in their signs and bounds"). The twelfth-part construction is stated in no text in hand; the
+engine's `_twelfth_part_sign` already supplies it from convention for the Moon's fifth corruption
+and says so, and `pn4_twelfth_part` carries the same convention through to the degree and is
+pinned to agree with it on the sign. The fixed stars are not computed and the page says so. The
+Lots are the engine's, outside the count as I.6, 8 leaves them.
+
+**What was built.** `pn4_twelfth_part`, `pn4_revolution_image` (rows and counts); the bundle
+carries `image`; one section after the revolution table, with the count line checked against 154.
+
+**What pins it.** Two fixtures: the twelfth-part degree (1 Aries → 12 Aries, 5 Aries → 0 Gemini,
+29 Pisces → 18 Aquarius) agreeing with the engine's sign construction across the zodiac; and the
+count on a real chart — 14, 98, 4, 24, 14 = 154 with the Lots outside — with I.6, 5's two points,
+I.6, 6's time lords, twelve houses, and degree order within each house.
+
+**Verification.** Doctrine fixtures 226 (were 224). `tables.json` **+6 / −0**: the inventory on six charts. Full suite
+**2539 passed**, two of them new; `test_base_tables.py` 121 / 0.
+
+**Left undone, on purpose.** The wheel itself; the fixed stars; I.6, 3's "conditions in rising and
+falling" beyond direct/retrograde (fn 32 is unsure what it means). The next prompt, per the brief,
+is the reading checklist (I.7, 1–26).
+
 ### Refused at the poles
 
 `pn4_distribution_from_ascendant` returns `None` where |latitude| + obliquity ≥ 90°, on the

@@ -8845,6 +8845,102 @@ def pn4_ii3_examination(chart_data, sr, year, jd_sr):
     return {'root_rows': root_rows, 'revolution_rows': revolution_rows, 'lord_rows': lord_rows,
             'refinement_rows': ref_rows, 'figure_55': figure_55}
 
+# --- I.6, 1-11: the image of the revolution of the year, as an inventory ---
+# "write down the planets of the revolution of the year, with their
+# conditions ..., and their rays and twelfth-parts, and the twelfth-parts
+# of the degrees of the houses" (I.6, 3); "the planets of the root of the
+# nativity, with their conditions and rays and twelfth-parts, and the
+# twelfth-parts of the signs, and the Lots and Head and Tail" (4); "the
+# Ascendant of the root, and the position of the terminal point of the
+# year" (5); "the endpoint of the distribution, the distributor and the
+# one partnering with it in the management, and the lord of the fardar,
+# and the one dividing [its fardar] with it, and the lord of the orb, each
+# of them in their signs and bounds" (6); a fixed star on the natal
+# Ascendant, Midheaven, a luminary or an angular planet (7). The count
+# (8, Figure 52): 14 planets, 98 rays, the Head and Tail twice each, 38
+# twelfth-parts (24 of the houses, 14 of the planets) -- 154 -- "and the
+# Lots according to how you do it". Within a house, by degree (9-10).
+#
+# A TABLE, NOT THE WHEEL of I.6, 1: every point by whole-sign house from
+# the revolution's Ascendant (fn 33: Dykes drew it that way for clarity;
+# I.6, 2's quadrant cusps are listed as points of their own), ordered by
+# degree within the house. The twelfth-part construction -- 2.5 degrees
+# to a sign, beginning with the sign itself -- is not stated in any text
+# in hand and is supplied from convention, as _twelfth_part_sign already
+# says for the Moon's fifth corruption; it is used here on the same
+# terms. The fixed stars of I.6, 7 are not computed. The Lots are the
+# engine's, "many or few" (I.6, 8). Decided by the owner 2026-09-10.
+
+def pn4_twelfth_part(lon):
+    """The twelfth-part of a degree, as a longitude: each 2.5 degrees of a
+    sign maps to one whole sign in order, beginning with the sign itself,
+    and the position inside the 2.5 is spread over that sign's 30.
+    The sign agrees with _twelfth_part_sign (the engine's existing
+    construction); the degree is the same convention carried through."""
+    lon %= 360.0
+    sign_idx, within = int(lon // 30), lon % 30.0
+    step = int(within // 2.5)
+    return (((sign_idx + step) % 12) * 30.0 + (within - step * 2.5) * 12.0) % 360.0
+
+def pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat):
+    """I.6, 3-8: every point of the image, as rows, and the count."""
+    natal, rev = chart_data['planetary_data'], sr['planetary_data']
+    r_asc = sr['ascendant']
+    rows = []
+
+    def add(chart, kind, point, lon, cite):
+        lon %= 360.0
+        rows.append({'lon': lon, 'House': get_wsh_house(lon, r_asc), 'Chart': chart, 'Kind': kind, 'Point': point,
+                     'Position': get_degree_string(lon), 'Bound': pn4_bound_lord(lon), 'Source': cite})
+
+    counts = {'planets': 0, 'rays': 0, 'nodes': 0, 'twelfth-parts of houses': 0, 'twelfth-parts of planets': 0, 'Lots': 0}
+    for label, chart, cite in (('revolution', sr, 'I.6, 3'), ('root', chart_data, 'I.6, 4')):
+        data = chart['planetary_data']
+        for lon, kind, who, aspect in pn4_bodies_and_rays(data):
+            if kind == 'body':
+                row = data[who]
+                cond = ('retrograde' if row.get('speed_in_lon', 1.0) < 0 else 'direct')
+                add(label, 'planet', f"{who} ({cond})", lon, cite)
+                counts['planets'] += 1
+                add(label, 'twelfth-part of a planet', f"twelfth-part of {who}", pn4_twelfth_part(lon), cite)
+                counts['twelfth-parts of planets'] += 1
+            else:
+                add(label, 'ray', f"{who} by {aspect}", lon, cite)
+                counts['rays'] += 1
+        node = data.get('North Node')
+        if node:
+            add(label, 'node', 'Head', node['longitude'], cite)
+            add(label, 'node', 'Tail', node['longitude'] + 180.0, cite)
+            counts['nodes'] += 2
+        for i, cusp in enumerate(list(chart['houses'])[:12]):
+            add(label, 'twelfth-part of a house', f"twelfth-part of the degree of house {i + 1} ({get_degree_string(cusp)})",
+                pn4_twelfth_part(cusp), cite + ' (fn 31: the quadrant cusps)')
+            counts['twelfth-parts of houses'] += 1
+        for d in LOT_DEFINITIONS:
+            lon = lot_by_id(d['id'], data, chart['ascendant'], chart['houses'], chart['sect'])
+            if lon is not None:
+                add(label, 'Lot', d['name'], lon, 'I.6, 4; 8: "according to how you do it"')
+                counts['Lots'] += 1
+    add('root', 'point', 'Ascendant of the root', chart_data['ascendant'], 'I.6, 5')
+    add('root', 'point', 'Terminal point of the year', year['longitude'], 'I.6, 5')
+    if current:
+        endpoint = _pn4_seg_degree({'from': float(age)}, chart_data['ascendant'], chart_data, lat)
+        add('root', 'time lord', 'Endpoint of the distribution (the degree reached now)', endpoint, 'I.6, 6; fn 34')
+        for name, planet in (('the distributor', current['distributor']), ('the partner in the management', current['partner'])):
+            if planet and planet in natal:
+                add('root', 'time lord', f"{planet}, {name}", natal[planet]['longitude'], 'I.6, 6')
+    if fardar:
+        for name, planet in (('lord of the fardar', fardar.get('lord')), ('dividing the fardar with it', fardar.get('sub_lord'))):
+            if planet and planet in natal:
+                add('root', 'time lord', f"{planet}, {name}", natal[planet]['longitude'], 'I.6, 6')
+    if orb and orb in natal:
+        add('root', 'time lord', f"{orb}, lord of the orb", natal[orb]['longitude'], 'I.6, 6')
+    rows.sort(key=lambda r: (r['House'], r['lon']))
+    for r in rows:
+        del r['lon']
+    counts['total of I.6, 8'] = counts['planets'] + counts['rays'] + counts['nodes'] + counts['twelfth-parts of houses'] + counts['twelfth-parts of planets']
+    return rows, counts
+
 def pn4_fardar_at_age(age_years, sect):
     """The fardar lord and sub-lord at an age.
 
@@ -9412,6 +9508,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'iii2_checklist': pn4_distribution_checklist(chart_data, sr, year['longitude'], current),
         'iii2_transitions': pn4_year_transitions(segments, age),
         'bound_transits': pn4_bound_transits(chart_data, sr, current, year['lord']) if current else None,
+        'image': pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat),
         'moon_rows': [{'Day from the revolution': f"{c['day']:.2f}", 'Planet': c['planet'], 'By': c['aspect'],
                        'Moon at': get_degree_string(c['moon_at'])} for c in moon['connections']],
         'portion_rows': [{'Portion': f"{p['portion']} of {p['of']}", 'Owned by': p['planet'],
@@ -10528,6 +10625,26 @@ if location_query and lat is not None and lon is not None:
                               "tropical year (I.4, 23-31), which Dykes says plainly does not make sense.")
             st.dataframe(pd.DataFrame(pn4['revolution_rows']), hide_index=True, width='stretch',
                          height=_rows_height(len(pn4['revolution_rows'])))
+
+            st.subheader("The image of the revolution of the year: its points (I.6, 3-8)",
+                         help="I.6, 3: the revolution's planets with their conditions, \"their rays and twelfth-parts, "
+                              "and the twelfth-parts of the degrees of the houses\"; I.6, 4: the root's planets likewise, "
+                              "\"and the Lots and Head and Tail\"; I.6, 5: the natal Ascendant and the terminal point; "
+                              "I.6, 6: the endpoint of the distribution, the distributor and partner, the fardar lord "
+                              "and its divider, and the lord of the orb, \"each of them in their signs and bounds\"; "
+                              "I.6, 8 and Figure 52: 14 planets, 98 rays, the Head and Tail twice each, 38 "
+                              "twelfth-parts -- 154 -- \"and the Lots according to how you do it\"; I.6, 9-10: within a "
+                              "house, by degree.")
+            image_rows, image_counts = pn4['image']
+            st.markdown("The count: " + ", ".join(f"{k} {v}" for k, v in image_counts.items())
+                        + f" -- I.6, 8 counts 154 without the Lots{' and the count agrees' if image_counts['total of I.6, 8'] == 154 else ', and this chart differs'}.")
+            st.dataframe(pd.DataFrame(image_rows), hide_index=True, width='stretch', height=_rows_height(16))
+            st.caption("A table, not the wheel of I.6, 1: every point by whole-sign house from the revolution's "
+                       "Ascendant (Dykes drew Figure 52 that way, fn 33), ordered by degree within the house, with each "
+                       "point's bound. The twelfth-part construction -- 2.5 degrees to a sign, beginning with the sign "
+                       "itself -- is stated in no text in hand and is supplied from convention, as the Chart page says "
+                       "of the Moon's fifth corruption. The fixed stars of I.6, 7 are not computed. The Lots are this "
+                       "engine's, \"many or few\"; the count line excludes them as I.6, 8 does.")
 
             st.subheader("Indicators of the year, in Abu Ma'shar's order",
                          help="II.1, 5-24 ranks nineteen indicators of the year and II.1, 25 says \"each one in turn "
