@@ -1,5 +1,27 @@
 # Timing — the open questions for *On the Revolutions of the Years of Nativities* (PN IV) to answer
 
+> **STATUS, 2026-09-10 — the premise of this file has changed. Read this first.**
+>
+> PN IV has been OCR'd, committed and read end to end. **The 34 questions below are answered or
+> explicitly declined in `04_timing_answers_2026-09-10.md`**, which carries the per-question
+> status table and the citations; the reading artifact is `01_persian_nativities_iv.md` and the
+> text defects found are in `consolidated_texts/process/PN4_READTHROUGH_FINDINGS_2026-09-10.md`.
+>
+> Headline results: **20 answered, 2 partly, 12 declined or not determinable.** (§2 below calls
+> them "the 35 numbered questions"; there are in fact **34**, numbered 1-34 without gaps.) Corpus
+> disagreement **#1 is resolved by scope** (II.1, **25** with III.2, **2-3**); **#5 and #11 are
+> clarified as out of PN IV's scope**; the other nine are untouched and §3's "do not resolve"
+> instruction still stands for them. **Item 2 (releaser/house-master selection) is the one thing
+> PN IV does not supply** — Abu Ma'shar defers it to another book at IX.8, **123** — so
+> disagreement **#2 stays open**.
+>
+> **Two numbers below must not be taken from the corpus text**: the distribution rate ladder's
+> bottom rung (the corpus flattened `25‴` to `25"`) and the *fardar* table (15 of 18 glyphs
+> dropped). Both are photo-verified in the findings file.
+>
+> The paragraph that follows is left as written on 2026-09-08 for the record. Its last clause is
+> now false.
+
 Written 2026-09-08. **Every entry is recorded, not queued.** Implementation of timing stays
 deferred (`project_timing_deferred_pending_revolutions`); the PN IV OCR has produced no usable text.
 This is not a change list. It is the checklist a reader will need in hand when PN IV arrives, so
