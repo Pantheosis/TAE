@@ -18,8 +18,8 @@ def _render(depth, date="1240-05-26"):
 def test_course_text_keeps_abu_mashar_in_his_own_chapter():
     at = _render("Course text")
     labels = [t.label for t in at.main.tabs]
-    assert labels == ["Aspects and connections", "Handing over and reception", "Prevented connections",
-                      "Strength and weakness", "Abu Ma'shar (supplement)"]
+    assert labels == ["Aspects & Connections", "Handing Over & Reception", "Prevented Connections",
+                      "Strength & Weakness", "Abu Ma'shar (Supplement)"]
     # His tables are in the last tab and nowhere else.
     last = at.main.tabs[-1]
     inside = {n.value for n in last if getattr(n, "type", None) == "subheader"}
@@ -32,13 +32,13 @@ def test_course_text_keeps_abu_mashar_in_his_own_chapter():
 def test_the_supplement_joins_the_topics_it_belongs_to():
     at = _render("Course text and supplement")
     labels = [t.label for t in at.main.tabs]
-    assert labels == ["Aspects and connections", "Handing over and reception", "Prevented connections",
-                      "Strength and weakness"]
+    assert labels == ["Aspects & Connections", "Handing Over & Reception", "Prevented Connections",
+                      "Strength & Weakness"]
     heads = {tab.label: {n.value for n in tab if getattr(n, "type", None) == "subheader"} for tab in at.main.tabs}
-    assert "Planetary Condition" in heads["Strength and weakness"]
-    assert "Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, Gr. Intr. VII.7)" in heads["Aspects and connections"]
-    assert "Aspects, aversions and connections" in heads["Aspects and connections"]
-    assert "Strength of the Planets" in heads["Strength and weakness"]
+    assert "Planetary Condition" in heads["Strength & Weakness"]
+    assert "Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, Gr. Intr. VII.7)" in heads["Aspects & Connections"]
+    assert "Aspects, aversions and connections" in heads["Aspects & Connections"]
+    assert "Strength of the Planets" in heads["Strength & Weakness"]
 
 
 def test_the_same_tables_render_under_either_depth():
@@ -49,21 +49,19 @@ def test_the_same_tables_render_under_either_depth():
         assert a == b, date
 
 
-def test_the_chapter_is_a_reading_and_the_controls_stay_above_it():
-    at = make_app(page="configurations")
-    at.session_state["_configurations_tab"] = "Prevented connections"
-    at.run()
-    assert_no_exception(at, "stored tab")
-    assert at.session_state["configurations_tab"] == "Prevented connections"
+def test_the_chapters_are_client_side_and_the_controls_stay_above_them():
+    """Owner, 2026-09-10 (third pass): the rerun that remembered the
+    chapter across pages flickered, so the tabs carry no key and no
+    on_change; a click switches instantly. The controls that govern every
+    chapter stay above the tabs."""
+    from conftest import ui_source
+    src = ui_source()
+    assert 'on_change="rerun"' not in src, "a tab control reruns the script on click again"
+    assert "_timing_tab" not in src and "_configurations_tab" not in src
+    at = make_app(page="configurations").run()
+    assert_no_exception(at, "configurations")
     assert [r for r in at.main.radio if r.label.startswith("Connection test")]
     assert [c for c in at.main.checkbox if c.label.startswith("Fitting infortune")]
-    # A stored tab that the fuller depth removes falls back to the first.
-    at2 = make_app(page="configurations")
-    at2.session_state["_configurations_tab"] = "Abu Ma'shar (supplement)"
-    at2.session_state["_reading_depth"] = "Course text and supplement"
-    at2.run()
-    assert_no_exception(at2, "removed tab")
-    assert at2.session_state["configurations_tab"] == "Aspects and connections"
 
 
 def test_dignities_supplement_expanders_follow_the_depth():
@@ -75,22 +73,3 @@ def test_dignities_supplement_expanders_follow_the_depth():
         at.session_state["_reading_depth"] = depth
         at.run()
         assert_no_exception(at, f"dignities under {depth}")
-
-
-def test_tab_defaults_read_the_widget_before_the_store():
-    """A click sets the widget key; the store follows only after _persist.
-    A default read from the store therefore lags one rerun and the
-    frontend snaps back to the old tab (the second-click bug, 2026-09-10).
-    Both tab controls must read the widget key first."""
-    from conftest import ui_source
-    src = ui_source()
-    assert '_reading("configurations_tab", "_configurations_tab", _labels[0])' in src
-    assert '_reading("timing_tab", "_timing_tab", _tab_labels[0])' in src
-    # And the rerun a click causes keeps the clicked tab: widget = new, store = old.
-    at = make_app(page="timing")
-    at.session_state["_timing_tab"] = "The revolution"
-    at.session_state["timing_tab"] = "Distributions"
-    at.run()
-    assert_no_exception(at, "clicked tab")
-    assert at.session_state["timing_tab"] == "Distributions"
-    assert at.session_state["_timing_tab"] == "Distributions"

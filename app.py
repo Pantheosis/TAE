@@ -109,7 +109,7 @@ PREFERENCE_KEYS = (
     '_fitting_infortune', '_domain_rule', '_lot_house_cusp', '_pn4_monthly_turn', '_reading_depth',
     # display
     '_wheel_layout', '_chart_bounds', '_timing_bounds', '_wheel_order', '_timing_lots', '_timing_rays',
-    '_timing_twelfths', '_timing_wheel_view', '_timing_tab', '_configurations_tab', '_target_mode',
+    '_timing_twelfths', '_timing_wheel_view', '_target_mode',
 )
 
 PREFERENCE_RENAMES = (
@@ -12212,16 +12212,17 @@ if location_query and lat is not None and lon is not None:
             # connections (the Handy Tables' own grouping for Lesson 17, kept
             # in his own bordered block so the author separation stands); his
             # planetary condition and Book V degrees with strength and weakness.
-            _labels = ["Aspects and connections", "Handing over and reception", "Prevented connections",
-                       "Strength and weakness"] + ([] if supplement else ["Abu Ma'shar (supplement)"])
-            # Widget-first, like _reading(): on the rerun a click causes, the
-            # widget key already holds the new tab while the store still holds
-            # the old one, and a default that lags snaps the frontend back
-            # (the "second click" bug the owner saw on the Timing page).
-            _stored_tab = _reading("configurations_tab", "_configurations_tab", _labels[0])
-            _tabs = st.tabs(_labels, key="configurations_tab", on_change="rerun",
-                            default=_stored_tab if _stored_tab in _labels else _labels[0])
-            _persist("configurations_tab", "_configurations_tab", _labels[0])
+            _labels = ["Aspects & Connections", "Handing Over & Reception", "Prevented Connections",
+                       "Strength & Weakness"] + ([] if supplement else ["Abu Ma'shar (Supplement)"])
+            # Client-side tabs (owner, 2026-09-10, third pass): no key, no
+            # rerun. A click switches instantly, and the frontend keeps the
+            # chapter across reruns caused by other controls on the page;
+            # leaving the page and coming back opens the first chapter. The
+            # earlier version remembered the chapter across pages by rerunning
+            # the whole script on every click, which the owner saw as a
+            # flicker. To have the memory back at the price of the rerun:
+            # key=, on_change set to rerun, default=_reading(...) and _persist().
+            _tabs = st.tabs(_labels)
             with _tabs[0]:
                 sahl_aspects()
                 sahl_connection_group()
@@ -12370,18 +12371,14 @@ if location_query and lat is not None and lon is not None:
             # indicators of the month moved up beside the days; the releaser
             # and the house-master, Sahl's apparatus and the page's one
             # exception to PN IV, in a chapter of their own after the
-            # distribution they copy. The tab is a reading: it survives
-            # navigation, and a click reruns the script so the store can
-            # follow it.
-            _tab_labels = ("The revolution", "Indicators of the year", "Distributions", "The releaser",
-                           "Days and months", "Fardar, ages and reference tables")
-            # Widget-first (see the Configurations page): a default read from
-            # the store lags the click by one rerun and snaps the tab back.
-            _tab_default = _reading("timing_tab", "_timing_tab", _tab_labels[0])
-            tab_rev, tab_ind, tab_dist, tab_rel, tab_days, tab_lords = st.tabs(
-                list(_tab_labels), key="timing_tab", on_change="rerun",
-                default=_tab_default if _tab_default in _tab_labels else _tab_labels[0])
-            _persist("timing_tab", "_timing_tab", _tab_labels[0])
+            # distribution they copy. Client-side tabs, as on Configurations:
+            # a click switches instantly and reruns nothing; the chapter is
+            # kept across reruns from the page's own controls, and the page
+            # opens on the first chapter when returned to (owner, third pass:
+            # the rerun that remembered the chapter across pages flickered).
+            _tab_labels = ("The Revolution", "Indicators of the Year", "Distributions", "The Releaser",
+                           "Days & Months", "Fardar, Ages & Reference Tables")
+            tab_rev, tab_ind, tab_dist, tab_rel, tab_days, tab_lords = st.tabs(list(_tab_labels))
             with tab_rev:
                 st.subheader("The revolution of the year",
                              help="I.2, 1: a revolution is the moment the Sun comes back to \"his position in which he was "

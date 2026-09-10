@@ -270,8 +270,8 @@ def test_configurations_chapters_match_the_code():
     own; under the fuller depth his tables join the topics."""
     src = ui_source()
     assert "segmented_control" not in src.split("def page_configurations")[1].split("def page_lots")[0]
-    assert ('_labels = ["Aspects and connections", "Handing over and reception", "Prevented connections",\n'
-            '                       "Strength and weakness"] + ([] if supplement else ["Abu Ma\'shar (supplement)"])') in src
+    assert ('_labels = ["Aspects & Connections", "Handing Over & Reception", "Prevented Connections",\n'
+            '                       "Strength & Weakness"] + ([] if supplement else ["Abu Ma\'shar (Supplement)"])') in src
     assert "abu_block([abu_condition, abu_natural, abu_wildness, abu_reflection, abu_favor, abu_rays," in src
 
 

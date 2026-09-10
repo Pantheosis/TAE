@@ -323,17 +323,14 @@ def test_chart_page_offers_the_bounds_ring_and_a_download():
     assert off.main.checkbox(key="chart_bounds").value is False
 
 
-def test_timing_page_tabs_are_a_reading_that_survives_navigation():
-    """Six chapters; the stored tab is the one selected on the next
-    render, and every table is still reachable inside its tab."""
-    at = make_app(date="1240-05-23", page="timing")
-    at.session_state["_timing_tab"] = "Distributions"
-    at.run()
-    assert_no_exception(at, "timing, Distributions tab")
+def test_timing_page_has_six_chapters_and_every_table_inside_them():
+    """Six chapters, capitalised as the owner asked, client-side (no key,
+    no rerun on click); every table is still reachable inside its tab."""
+    at = make_app(date="1240-05-23", page="timing").run()
+    assert_no_exception(at, "timing")
     labels = [t.label for t in at.main.tabs]
-    assert labels == ["The revolution", "Indicators of the year", "Distributions", "The releaser",
-                      "Days and months", "Fardar, ages and reference tables"]
-    assert at.session_state["timing_tab"] == "Distributions"
+    assert labels == ["The Revolution", "Indicators of the Year", "Distributions", "The Releaser",
+                      "Days & Months", "Fardar, Ages & Reference Tables"]
     assert len(at.main.dataframe) >= 30
     # The wheel controls: a selectbox for the view, the rest behind the popover.
     assert at.main.selectbox(key="timing_wheel_view").value == "Year"
