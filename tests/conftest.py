@@ -59,10 +59,12 @@ CHARTS = {
 FLORENCE = (43.7792, 11.2463)
 LOCAL_TIME = time(14, 30)
 
-# url_path of every st.Page, in navigation order. The Configurations page
-# has a three-way view control; each view is treated as its own page.
+# url_path of every st.Page, in navigation order. (The Configurations page's
+# three-way view control went on 2026-09-10; the reading depth, a store key
+# like the switches, decides where Abu Ma'shar's tables sit, and the page
+# renders the same multiset of tables under either depth.)
 PAGES = ["chart", "dignities", "configurations", "lots", "victors", "timing", "reference", "sources"]
-CONFIG_VIEWS = ["Sahl (course text)", "Abu Ma'shar (supplement)", "Both"]
+READING_DEPTHS = ["Course text", "Course text and supplement"]
 
 # The configurable readings (one entry per switch; the matrix test
 # takes their cross-product, so each new switch doubles it). Since the 2026-09-06 UI restructure each
@@ -74,27 +76,21 @@ CONFIG_VIEWS = ["Sahl (course text)", "Abu Ma'shar (supplement)", "Both"]
 # control fails loudly.
 SWITCHES = {
     # name: (store key, alternatives, page, view, widget kind, label prefix)
-    "connection": ("_connection_rule", ["Sahl", "Abu Ma'shar"], "configurations", "Both", "radio", "Connection test"),
-    "five_degree": ("_five_degree_all_cusps", [False, True], "configurations", "Both", "checkbox", "Five-degree carryover"),
-    "eastern": ("_eastern_rule", ["hemisphere", "VII.2 band"], "configurations", "Both", "radio", "VII.6, 27/45"),
+    "connection": ("_connection_rule", ["Sahl", "Abu Ma'shar"], "configurations", None, "radio", "Connection test"),
+    "five_degree": ("_five_degree_all_cusps", [False, True], "configurations", None, "checkbox", "Five-degree carryover"),
+    "eastern": ("_eastern_rule", ["hemisphere", "VII.2 band"], "configurations", None, "radio", "VII.6, 27/45"),
     "moon_rays": ("_moon_rays_15", [False, True], "chart", None, "checkbox", "Moon under the rays"),
     "mars_west": ("_mars_west_18", [False, True], "chart", None, "checkbox", "Mars under the rays"),
     "domain": ("_domain_rule", ["Abu Ma'shar", "Masha'allah"], "dignities", None, "radio", "Domain (hayz)"),
     "lot_cusp": ("_lot_house_cusp", ["whole-sign place", "quadrant cusp"], "lots", None, "radio", "House-based Lots"),
-    "fitting": ("_fitting_infortune", [False, True], "configurations", "Both", "checkbox", "Fitting infortune"),
+    "fitting": ("_fitting_infortune", [False, True], "configurations", None, "checkbox", "Fitting infortune"),
 }
 
 
 def page_slots():
-    """Every (page, view) a test should render. view is None except for
-    the Configurations page."""
-    slots = []
-    for page in PAGES:
-        if page == "configurations":
-            slots.extend((page, view) for view in CONFIG_VIEWS)
-        else:
-            slots.append((page, None))
-    return slots
+    """Every (page, view) a test should render. view is always None now;
+    the pair is kept so slot names and fixtures read as before."""
+    return [(page, None) for page in PAGES]
 
 
 def slot_name(page, view):
@@ -122,7 +118,9 @@ def make_app(date="1240-05-23", page=None, view=None, switches=None, timeout=60)
     at.session_state["date_input_key"] = date
     at.session_state["time_input_key"] = LOCAL_TIME
     if view is not None:
-        at.session_state["configurations_view"] = view
+        # The Configurations view control is gone (2026-09-10); a caller
+        # passing one of the old view names gets the depth that shows it.
+        at.session_state["_reading_depth"] = "Course text and supplement" if view != "Sahl (course text)" else "Course text"
     if page is not None:
         at._page_hash = calc_hash(page)
     if switches:

@@ -264,12 +264,15 @@ def test_switch_options_match_the_values_the_code_compares_against(engine):
     assert re.search(r"_reading_radio\(\"Connection test used in the shared tables\", CONNECTION_PROFILES\.keys\(\)", src)
 
 
-def test_configurations_views_match_the_code():
+def test_configurations_chapters_match_the_code():
+    """The three-way view went on 2026-09-10; the page is four chapters in
+    the course's order plus, under the Course text depth, Abu Ma'shar's
+    own; under the fuller depth his tables join the topics."""
     src = ui_source()
-    m = re.search(r"st\.segmented_control\(\s*\"Show\",\s*(\[[^\]]*\])", src)
-    assert m and eval(m.group(1)) == ["Sahl (course text)", "Abu Ma'shar (supplement)", "Both"]
-    assert 'show_sahl = view in (None, "Sahl (course text)", "Both")' in src
-    assert 'show_abu = view in ("Abu Ma\'shar (supplement)", "Both")' in src
+    assert "segmented_control" not in src.split("def page_configurations")[1].split("def page_lots")[0]
+    assert ('_labels = ["Aspects and connections", "Handing over and reception", "Prevented connections",\n'
+            '                       "Strength and weakness"] + ([] if supplement else ["Abu Ma\'shar (supplement)"])') in src
+    assert "abu_block([abu_condition, abu_natural, abu_wildness, abu_reflection, abu_favor, abu_rays," in src
 
 
 # --- Pins added with the 2026-09-06 consistency fixes -------------------

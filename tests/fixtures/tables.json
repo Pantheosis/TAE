@@ -8,15 +8,7 @@
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
    ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
-  "configurations/Abu Ma'shar (supplement)": [
-   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
-   ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
-   ["Reflection of Light", ["Reflection Type", "Detail"]],
-   ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]],
-   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
-   ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
-  ],
-  "configurations/Both": [
+  "configurations": [
    ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Collection of Light", ["Collector", "Collects"]],
@@ -37,22 +29,6 @@
    ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]],
    ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
-  ],
-  "configurations/Sahl (course text)": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
-   ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
-   ["Collection of Light", ["Collector", "Collects"]],
-   ["Enclosure", ["Planet", "Enclosed By", "Separating From", "Connecting To", "Severity"]],
-   ["Handing Over", ["Type", "Planet", "Hands Over To"]],
-   ["Reception — Sahl rule", ["Receiver", "Received", "Direction", "Via", "Grade", "Mode"]],
-   ["Non-reception", ["Kind", "Connecting", "With"]],
-   ["Returning", ["Manner", "Planet", "Returned By"]],
-   ["Banished", ["Planet", "Closest configured planet"]],
-   ["Strength of the Planets", ["Planet", "78 excellent place", "79 own dignity", "80 direct", "81 not in infortune stakes", "82 not with fallen", "83 advancing", "84 eastern, masculine", "85 of sect", "86 fixed sign", "87 heart of Sun", "88 gender match", "Count"]],
-   ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
-   ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
-   ["Corruption of the Moon", ["Planet", "Defects", "Count"]]
   ],
   "dignities": [
    ["Lordship Mapping", ["Planet", "Position", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord", "Own dignity here"]],
@@ -132,13 +108,7 @@
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
    ["Quadrant divisions (Alchabitius)", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
-  "configurations/Abu Ma'shar (supplement)": [
-   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
-   ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
-   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
-   ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
-  ],
-  "configurations/Both": [
+  "configurations": [
    ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Handing Over", ["Type", "Planet", "Hands Over To"]],
@@ -154,19 +124,6 @@
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
    ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
-  ],
-  "configurations/Sahl (course text)": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
-   ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
-   ["Handing Over", ["Type", "Planet", "Hands Over To"]],
-   ["Non-reception", ["Kind", "Connecting", "With"]],
-   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because"]],
-   ["Banished", ["Planet", "Closest configured planet"]],
-   ["Strength of the Planets", ["Planet", "78 excellent place", "79 own dignity", "80 direct", "81 not in infortune stakes", "82 not with fallen", "83 advancing", "84 eastern, masculine", "85 of sect", "86 fixed sign", "87 heart of Sun", "88 gender match", "Count"]],
-   ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
-   ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
-   ["Corruption of the Moon", ["Planet", "Defects", "Count"]]
   ],
   "dignities": [
    ["Lordship Mapping", ["Planet", "Position", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord", "Own dignity here"]],
@@ -249,15 +206,7 @@
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
    ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
-  "configurations/Abu Ma'shar (supplement)": [
-   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
-   ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
-   ["Reflection of Light", ["Reflection Type", "Detail"]],
-   ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]],
-   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
-   ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
-  ],
-  "configurations/Both": [
+  "configurations": [
    ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Collection of Light", ["Collector", "Collects"]],
@@ -278,22 +227,6 @@
    ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]],
    ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
-  ],
-  "configurations/Sahl (course text)": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
-   ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
-   ["Collection of Light", ["Collector", "Collects"]],
-   ["Handing Over", ["Type", "Planet", "Hands Over To"]],
-   ["Reception — Sahl rule", ["Receiver", "Received", "Direction", "Via", "Grade", "Mode"]],
-   ["Non-reception", ["Kind", "Connecting", "With"]],
-   ["Returning", ["Manner", "Planet", "Returned By"]],
-   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because"]],
-   ["Banished", ["Planet", "Closest configured planet"]],
-   ["Strength of the Planets", ["Planet", "78 excellent place", "79 own dignity", "80 direct", "81 not in infortune stakes", "82 not with fallen", "83 advancing", "84 eastern, masculine", "85 of sect", "86 fixed sign", "87 heart of Sun", "88 gender match", "Count"]],
-   ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
-   ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
-   ["Corruption of the Moon", ["Planet", "Defects", "Count"]]
   ],
   "dignities": [
    ["Lordship Mapping", ["Planet", "Position", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord", "Own dignity here"]],
@@ -374,14 +307,7 @@
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
    ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
-  "configurations/Abu Ma'shar (supplement)": [
-   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
-   ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
-   ["Reflection of Light", ["Reflection Type", "Detail"]],
-   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
-   ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
-  ],
-  "configurations/Both": [
+  "configurations": [
    ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Enclosure", ["Planet", "Enclosed By", "Separating From", "Connecting To", "Severity"]],
@@ -400,21 +326,6 @@
    ["Reflection of Light", ["Reflection Type", "Detail"]],
    ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
-  ],
-  "configurations/Sahl (course text)": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
-   ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
-   ["Enclosure", ["Planet", "Enclosed By", "Separating From", "Connecting To", "Severity"]],
-   ["Handing Over", ["Type", "Planet", "Hands Over To"]],
-   ["Reception — Sahl rule", ["Receiver", "Received", "Direction", "Via", "Grade", "Mode"]],
-   ["Non-reception", ["Kind", "Connecting", "With"]],
-   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because"]],
-   ["Banished", ["Planet", "Closest configured planet"]],
-   ["Strength of the Planets", ["Planet", "78 excellent place", "79 own dignity", "80 direct", "81 not in infortune stakes", "82 not with fallen", "83 advancing", "84 eastern, masculine", "85 of sect", "86 fixed sign", "87 heart of Sun", "88 gender match", "Count"]],
-   ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
-   ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
-   ["Corruption of the Moon", ["Planet", "Defects", "Count"]]
   ],
   "dignities": [
    ["Lordship Mapping", ["Planet", "Position", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord", "Own dignity here"]],
@@ -497,14 +408,7 @@
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
    ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
-  "configurations/Abu Ma'shar (supplement)": [
-   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
-   ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
-   ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]],
-   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
-   ["Book V degrees (supplement, display only)", ["Point", "Position", "Table", "Caveat"]]
-  ],
-  "configurations/Both": [
+  "configurations": [
    ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Handing Over", ["Type", "Planet", "Hands Over To"]],
@@ -522,20 +426,6 @@
    ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]],
    ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Book V degrees (supplement, display only)", ["Point", "Position", "Table", "Caveat"]]
-  ],
-  "configurations/Sahl (course text)": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
-   ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
-   ["Handing Over", ["Type", "Planet", "Hands Over To"]],
-   ["Reception — Sahl rule", ["Receiver", "Received", "Direction", "Via", "Grade", "Mode"]],
-   ["Non-reception", ["Kind", "Connecting", "With"]],
-   ["Returning", ["Manner", "Planet", "Returned By"]],
-   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because"]],
-   ["Banished", ["Planet", "Closest configured planet"]],
-   ["Strength of the Planets", ["Planet", "78 excellent place", "79 own dignity", "80 direct", "81 not in infortune stakes", "82 not with fallen", "83 advancing", "84 eastern, masculine", "85 of sect", "86 fixed sign", "87 heart of Sun", "88 gender match", "Count"]],
-   ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
-   ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]]
   ],
   "dignities": [
    ["Lordship Mapping", ["Planet", "Position", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord", "Own dignity here"]],
@@ -618,14 +508,7 @@
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
    ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
-  "configurations/Abu Ma'shar (supplement)": [
-   ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
-   ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
-   ["Reflection of Light", ["Reflection Type", "Detail"]],
-   ["Favor & Recompense", ["Planet", "Condition", "Favored By"]],
-   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]]
-  ],
-  "configurations/Both": [
+  "configurations": [
    ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Collection of Light", ["Collector", "Collects"]],
@@ -646,23 +529,6 @@
    ["Reflection of Light", ["Reflection Type", "Detail"]],
    ["Favor & Recompense", ["Planet", "Condition", "Favored By"]],
    ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]]
-  ],
-  "configurations/Sahl (course text)": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
-   ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
-   ["Collection of Light", ["Collector", "Collects"]],
-   ["Enclosure", ["Planet", "Enclosed By", "Separating From", "Connecting To", "Severity"]],
-   ["Handing Over", ["Type", "Planet", "Hands Over To"]],
-   ["Reception — Sahl rule", ["Receiver", "Received", "Direction", "Via", "Grade", "Mode"]],
-   ["Non-reception", ["Kind", "Connecting", "With"]],
-   ["Returning", ["Manner", "Planet", "Returned By"]],
-   ["Prevented connections", ["Kind", "Planet", "Prevented From", "By", "Because"]],
-   ["Banished", ["Planet", "Closest configured planet"]],
-   ["Strength of the Planets", ["Planet", "78 excellent place", "79 own dignity", "80 direct", "81 not in infortune stakes", "82 not with fallen", "83 advancing", "84 eastern, masculine", "85 of sect", "86 fixed sign", "87 heart of Sun", "88 gender match", "Count"]],
-   ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
-   ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
-   ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
-   ["Corruption of the Moon", ["Planet", "Defects", "Count"]]
   ],
   "dignities": [
    ["Lordship Mapping", ["Planet", "Position", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord", "Own dignity here"]],

@@ -11922,7 +11922,7 @@ if location_query and lat is not None and lon is not None:
             st.dataframe(pd.DataFrame(planets_in_houses_data, columns=['Planet', 'Placed in (WS place)', 'Lean']),
                          hide_index=True, width='content', height=_rows_height(len(planets_in_houses_data)))
             # The readings wrap in st.table; the structural columns stay above.
-            with st.expander("Rhetorius / PN4 readings for these placements"):
+            with st.expander("Rhetorius / PN4 readings for these placements", expanded=READING_DEPTH == READING_DEPTH_OPTIONS[1]):
                 st.table(pd.DataFrame(planets_in_houses_data,
                                       columns=['Planet', 'Net', 'Standing', 'If Well Placed', 'If Badly Placed']),
                          hide_index=True)
@@ -11940,11 +11940,11 @@ if location_query and lat is not None and lon is not None:
                        "(On Nativities 3.10, 14; likewise 4.11, 24; 6.3.4, 24; 7.1, 217; 9.4, 35; 10.2.4, 13; 11.1, 28; 12.1, 47). "
                        "Whole-sign: an infortune with, square or opposite the house or its lord; a fortune in any aspect or assembly. "
                        "It is met on about one row in ten; the readings are shown regardless, with the column saying whether he would apply them.")
-            with st.expander("Masha'allah readings for lord placements"):
+            with st.expander("Masha'allah readings for lord placements", expanded=READING_DEPTH == READING_DEPTH_OPTIONS[1]):
                 st.table(pd.DataFrame(house_lords_data,
                                       columns=['Topical House', 'Domicile Lord', 'Placed in (WS place)', "Masha'allah Signification"]),
                          hide_index=True)
-            with st.expander("Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", expanded=False):
+            with st.expander("Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", expanded=READING_DEPTH == READING_DEPTH_OPTIONS[1]):
                 dignity_list = []
                 for p in essential.keys():
                     ess = essential[p]
@@ -11986,17 +11986,12 @@ if location_query and lat is not None and lon is not None:
                        "Abu Ma'shar's Great Introduction VII is supplementary.")
             _readings_note()
             _gap = []
-            show_col, rule_col = st.columns([2, 1])
-            with show_col:
-                view = st.segmented_control(
-                    "Show", ["Sahl (course text)", "Abu Ma'shar (supplement)", "Both"],
-                    default=st.session_state.get("_configurations_view", "Sahl (course text)"),
-                    key="configurations_view",
-                    help="Each author's tables are computed under that author's OWN rule "
-                         "whatever this is set to -- it selects what is shown, not how it "
-                         "is judged. The Connection rule beside this control governs the few "
-                         "tables that deliberately present both authors.")
-                view = _persist("configurations_view", "_configurations_view", "Sahl (course text)")
+            # The connection rule and the fitting infortune govern tables on every
+            # tab, so they stay above the tabs. The three-way view control went on
+            # 2026-09-10: the reading depth (Sources page) decides where Abu
+            # Ma'shar's tables sit -- a tab of their own under Course text, or
+            # beside Sahl's on the same topic under Course text and supplement.
+            rule_col, fit_col = st.columns([1.1, 1.9], vertical_alignment="bottom")
             with rule_col:
                 # Governs only the dual-author tables; each author's own
                 # tables pin their own rule (see doctrine()). The essay
@@ -12006,24 +12001,27 @@ if location_query and lat is not None and lon is not None:
                                help="Which author's test decides Connected in the aspects, reception and "
                                     "prevented-connections tables. Sahl: the applying planet's own light. "
                                     "Abu Ma'shar: 15° in one sign, 12° for aspects. Full comparison on the Sources page.")
-            _reading_checkbox("Fitting infortune: the malefic that rules the Ascendant is not counted as an infortune (Choices Ch. 1, 12)",
-                              "fitting_infortune", "_fitting_infortune",
-                              help="Sahl, Choices Ch. 1, 12: \"that infortune was good for him, because the infortunes are "
-                                   "perhaps more fitting for him, since [one] may be the lord of the original Ascendant\" -- "
-                                   "against his own 1, 16-17, so off by default. When on, that malefic drops out of every "
-                                   "'afflicted by an infortune' test in these tables (Sahl's enclosure, strength and weakness "
-                                   "94-95; Abu Ma'shar's 3, 47-50 and enclosure; the Moon's 67-68 and 106). Decision D-13.")
+            with fit_col:
+                _reading_checkbox("Fitting infortune: the malefic that rules the Ascendant is not counted as an infortune (Choices Ch. 1, 12)",
+                                  "fitting_infortune", "_fitting_infortune",
+                                  help="Sahl, Choices Ch. 1, 12: \"that infortune was good for him, because the infortunes are "
+                                       "perhaps more fitting for him, since [one] may be the lord of the original Ascendant\" -- "
+                                       "against his own 1, 16-17, so off by default. When on, that malefic drops out of every "
+                                       "'afflicted by an infortune' test in these tables (Sahl's enclosure, strength and weakness "
+                                       "94-95; Abu Ma'shar's 3, 47-50 and enclosure; the Moon's 67-68 and 106). Decision D-13.")
             if FITTING_INFORTUNE:
                 st.caption(f"Fitting infortune in force: {SOFTENED_INFORTUNE} rules the Ascendant and is not counted as an infortune."
                            if SOFTENED_INFORTUNE else "Fitting infortune switched on, but no malefic rules this Ascendant -- nothing changes.")
-            show_sahl = view in (None, "Sahl (course text)", "Both")
-            show_abu = view in ("Abu Ma'shar (supplement)", "Both")
-            if show_sahl:
+            supplement = READING_DEPTH == READING_DEPTH_OPTIONS[1]
+
+            def sahl_aspects():
                 _finding(_gap, "Aspects, aversions and connections",
                          f"Sahl, The Introduction Ch.2, 50-60 and Ch.3, 6-21 — {CONNECTION_PROFILE} rule in force", aspects,
                           columns=['Light Planet', 'Aspect', 'Heavy Planet', 'Applying Planet', 'Motion', 'Orientation', 'Exact Orb Dist', 'Bodies', 'Strength', 'Connected', 'Rules differ'], height=_rows_height(len(aspects)),
                           glance='Four separate facts about each pair, kept apart rather than collapsed into one verdict. LOOKING is the whole-sign configuration (Union/Sextile/Square/Trine/Opposition, or Aversion if none applies) -- sign to sign.',
                           notes='MOTION and EXACT ORB DIST are the degree-to-degree approach. BODIES is whether each planet falls inside the other\'s sphere of power, which is asymmetric because the spheres differ in size: Abu Ma\'shar VII.4, 7 notes that Saturn sits inside the Moon\'s body from 12 degrees while she only enters his at a little under 9. CONNECTED is the active author\'s verdict -- switch the Connection rule at the top of this page to see where they disagree; RULES DIFFER marks the pairs where the two tests disagree.\n\nSTRENGTH is two different measures. For an assembly it is the source\'s own: whose body reaches whose (VII.4, 5-8) and whether they share a bound. For an aspect it is marked "(app scale)", because VII.5, 4 grades looking as a continuum with no cutoffs anywhere -- "the strongest thing there is in its looking is the degree related most closely by number to the degree of its own sign, and if the aspect was far from these degrees, its aspect will be weaker." The thirds are this app\'s own scanning aid; the measurement itself is the Exact Orb Dist column.\n\nLIGHT and HEAVY are the standing classes both authors name as nouns (Saturn heaviest through the Moon lightest), not a reading of momentary speed: they are fixed, and a planet slowing toward its station does not thereby become heavy.\n\nAPPLYING PLANET is the separate, directed fact: which one is actually closing the aspect. Normally it is the lighter, and Ch.3, 6 assumes as much ("a light, quick star GOING STRAIGHTAWAY TO a heavy star ... FEWER IN DEGREES than the heavy one"). Retrogradation reverses it, and both authors say so rather than leaving it to be inferred -- Abu Ma\'shar VII.5, 24 ("the connection of one of them with the other ... will be BY RETROGRADATION"), VII.5, 118 ("the light one IN MORE DEGREES goes retrograde and connects with the heavy one"), and the note on VII.5, 130 (Saturn "could never be received because he is too slow to connect with anyone, UNLESS BY RETROGRADATION"). The cause is named in this column whenever the heavier planet is the one applying, which happens for about 4% of configured pairs. Reception, transfer, collection, returning, revoking, emptiness of course and enclosure all read this column, not the light/heavy one.')
+
+            def sahl_connection_group():
                 with st.container(border=True):
                     st.markdown("**Connection group** — Ch.3, 24-30 and 119-123")
                     _finding(_gap, 'Transfer of Light', "Sahl, The Introduction Ch.3, 24-27; Type II is Abu Ma'shar, Great Introduction VII.5, 84-85", transfers,
@@ -12033,6 +12031,8 @@ if location_query and lat is not None and lon is not None:
                     _finding(_gap, 'Enclosure', 'Sahl, The Introduction Ch.3, 119-123', enclosure_data,
                               glance='A planet separating from one of the two infortunes (or, per Abu Ma\'shar\'s extension, fortunes) and connecting with the other, with neither leg intercepted by a third planet\'s rays -- graded "more powerful/unfortunate" when both legs are within 7 degrees of exact.')
                     _absent(_gap)
+
+            def sahl_handing_over():
                 with st.container(border=True):
                     st.markdown("**Handing-over group** — Ch.3, 49-76")
                     _finding(_gap, 'Handing Over', 'Sahl, The Introduction Ch.3, 70-76', handing_over_data,
@@ -12047,6 +12047,8 @@ if location_query and lat is not None and lon is not None:
                               glance='Manner I: a planet connects with a retrograde planet or one under the rays -- it "returns to it what it accepted," corrupting the question.',
                               notes='Manner II: an angular (faster) planet hands over to a cadent (slower) one -- the matter has a beginning but no end.')
                     _absent(_gap)
+
+            def sahl_prevented():
                 # The Handy Tables give Lesson 17 ONE table here, headed
                 # "Prevented connections" and listing blocking, resistance,
                 # cutting #1, escape, revoking and cutting #2 together. This
@@ -12085,6 +12087,8 @@ if location_query and lat is not None and lon is not None:
                               glance='"The banished planet is the planet which none of the planets connects to" (64) -- a planet outside every live connection, whatever the signs are doing. Each row shows the nearest configured planet and why that is not a connection.',
                               notes='Sahl\'s definition is about CONNECTIONS (6-21), not signs: a planet can be in trine by sign with everyone and still be banished if no planet is inside a live connection with it, and it can hold an out-of-sign body connection (20-21) and not be banished at all. Abu Ma\'shar\'s later "wildness" (VII.5, 79-82) is a different, whole-sign test -- aversion to every planet -- and has its own table in his view. Dykes\' note on 64 calls Sahl\'s the earlier, less precise form; the two are kept apart rather than one served under both names.')
                     _absent(_gap)
+
+            def sahl_strength():
                 with st.container(border=True):
                     st.markdown("**Strength and weakness** — Ch.3, 77-112")
                     _reading_checkbox("Five-degree carryover at all twelve cusps", "five_degree_all_cusps", "_five_degree_all_cusps",
@@ -12103,71 +12107,128 @@ if location_query and lat is not None and lon is not None:
                               glance="Sahl's own ten defects of the Moon, item [16] of his sixteen -- a different list from Abu Ma'shar's eleven corruptions in the Planetary Condition table.",
                               notes="Sahl's ten (103-112): burned within 12 degrees of the Sun; in her own fall or connecting with a planet in its own fall; approaching the Sun's opposition within 12 degrees; assembled with, square or opposed by an infortune, or enclosed between the two; with the Head or Tail in one sign under 12 degrees; in Gemini or in the sign's last bound; falling from the stakes or connecting with a planet that is; in the burned path, the end of Libra and beginning of Scorpio; wild, empty of course; slow, or waning in light.\n\nAbu Ma'shar's eleven (VII.6, 63-74) are not a variant of this list. He has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear there. His list is scored in the Planetary Condition table, this one is not scored anywhere.")
                     _absent(_gap)
-            if show_abu:
-                with st.container(border=True):
-                    st.markdown("**Abu Ma'shar, Great Introduction VII.5-6**")
-                    st.subheader('Planetary Condition', help="Each planet checked against Abu Ma'shar's conditions in Great Introduction VII.6, kept in his own four groups: good fortune (1-20), strength (21-29), weakness (30-46), misfortune (47-62), plus, for the Moon only, HIS OWN eleven corruptions (63-74).")
-                    st.caption("Abu Ma'shar VII.6")
-                    _reading_radio("VII.6, 27/45 'eastern/western relative to the Sun'", EASTERN_RULE_OPTIONS,
-                                   "eastern_rule", "_eastern_rule",
-                                   help="'hemisphere': the whole half, excluding the rays (VII.2, 2; VII.6, 34). "
-                                        "'VII.2 band': only the easternizing and westernizing bands (VII.2, 14-31). "
-                                        "Affects: Planetary Condition (27, 45). Full text on the Sources page.")
-                    condition_list = []
-                    for p, cond in abu_mashar_condition.items():
-                        condition_list.append({
-                            "Planet": p,
-                            # VII.6's own four sections, kept apart: the chapter
-                            # enumerates these separately and never totals them.
-                            "Good Fortune": cond['Good Fortune'],
-                            "Strength": cond['Strength'],
-                            "Weakness": cond['Weakness'],
-                            "Misfortune": cond['Misfortune'],
-                            # str, not int-or-'': a column mixing the two is an
-                            # object column that Arrow rejects.
-                            "Moon Defects": str(cond['Moon Defects']) if cond['Moon Defects'] else '',
-                            "Good Fortune / Strength": ", ".join(cond['Positive Labels']) if cond['Positive Labels'] else "-",
-                            "Weakness / Misfortune": ", ".join(cond['Negative Labels']) if cond['Negative Labels'] else "-",
-                            # Last, and labelled app arithmetic in the caption:
-                            # VII.6 never totals its conditions.
-                            "Net": cond['Net'],
-                            "Verdict": cond['Condition'],
-                        })
-                    df_condition = pd.DataFrame(condition_list).sort_values(by="Net", ascending=False)
-                    st.dataframe(df_condition, hide_index=True, width='stretch', height=_rows_height(len(df_condition)))
-                    st.caption(
-                        ":orange[**Net and Verdict are this app's heuristic, not Abu Ma'shar's.**] He enumerates these "
-                        "conditions; he nowhere adds them up, and VII.6 gives no weighting and no tie rule. They are kept "
-                        "only because the Rhetorius/PN4 delineations on the Dignities page have to pick one of two readings. Read the four "
-                        "counts and the labels themselves in preference to the single number."
-                    )
-                    with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-                        st.markdown("The Moon's eleven corruptions (63-74) are shown as their own count rather than folded in with the rest. Sahl's ten (The Introduction Ch.3, 103-112) are a different list, not a variant reading of this one, and have their own table, Corruption of the Moon, in the Sahl view: Abu Ma'shar has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear here.\n\nThe four counts and the labels are the report. NET and VERDICT are a convenience of this app and NOT Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They exist because the Rhetorius/PN4 delineations in Topical Planets in Houses have to choose between a good and a bad reading.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's eleven corruptions contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once.\n\nEnclosure here is Abu Ma'shar's own (56-62) -- by degree within 7 degrees either side counting rays as well as bodies, by sign in the 2nd and 12th, or separating from one encloser and connecting with the other -- and it can be DISSOLVED: the degree type when the Sun or a fortune casts a ray within 7 degrees of the enclosed planet (60), the sign type by any look from them (61). The standalone Enclosure table in the Connection group of the Sahl view is Sahl's separate version.\n\nThe by-sign type counts an encloser's RAYS as well as its body, which is what 58 says twice. Be aware that this makes it common: it fires on roughly 43% of placements, because a planet's rays reach eight of the twelve signs. A bodies-only variant at about 2% exists in the code (SIGN_ENCLOSURE_BODIES_ONLY) but is this project's own conjecture, not the text, so it is off.")
-                    _finding(_gap, 'Natural connections', "Abu Ma'shar, Great Introduction VII.5, 53-77", natural_connections,
-                              columns=['Pair', 'Family', 'Degrees', 'From exact', 'Motion', 'Affinity (76-77)', 'Ordinary aspect', 'Standing'],
-                              glance='"Another type of connection and separation [even] without the planets\' looking at each other" (53): pairs standing in signs of equal ascensions (56) or of equal daylight (67-75), whose degrees correspond as complements within the sign -- 12 Gemini to 18 Capricorn (62). A relation of its own, not an aspect and not a dignity: the Ordinary aspect column keeps saying Aversion where that is what the signs are.',
-                              notes='EQUAL ASCENSIONS (56): "Aries and Pisces, Taurus and Aquarius, Gemini and Capricorn, Cancer and Sagittarius, Leo and Scorpio, and Virgo and Libra." EQUAL DAYLIGHT (67-75), the antiscia: Gemini-Cancer, Taurus-Leo, Aries-Virgo, Libra-Pisces, Sagittarius-Capricorn, exactly as he lists them -- Aquarius-Scorpio completes the standard scheme but is not enumerated here and is not added (see the coverage note on the Sources page).\n\nDEGREES: "when a planet is in the first degree of Aries, then it is in the nature of a planet which is at the last degree of Pisces" (57); "the planet which is in 12° of Gemini is in the nature of the degree of the planet which is in 18° of Capricorn: so when it passes beyond 12° of Gemini, then it has separated from it" (62). So the counterpart degree runs backwards as the planet runs forwards, and MOTION is read from both speeds together. He gives no orb: every planet in Aries is in the nature of some degree of Pisces, so every pair in a listed sign pair is shown with its distance from exact.\n\nAFFINITY: 76-77 single out four pairs of each family as bridging an ordinary aversion -- Gemini-Capricorn, Sagittarius-Cancer, Aries-Virgo, Libra-Pisces "is called a natural connection by opposition" (76); Gemini-Cancer, Virgo-Libra, Sagittarius-Capricorn, Pisces-Aries "the natural connection by sextile" (77). The notes there record that he omits Aries-Scorpio, Taurus-Libra and Aquarius-Capricorn; they are not added.\n\nThe same sign pairs are one of 134\'s four bases of acceptance, in the Reception table under his rule.')
-                    _finding(_gap, 'Wildness', "Abu Ma'shar, Great Introduction VII.5, 79-82", wildness_data,
-                              glance='A planet in whole-sign Aversion to all six other classical planets -- "in a sign such that absolutely no planet looks at it" (79) -- though it may still be "reached" via the lord of whatever bound it occupies (80-81).',
-                              notes='Whole-sign and independent of degree. Sahl\'s "banished" (Ch.3, 64) is a different test, about live connections rather than signs, and has its own table in his view.')
-                    _finding(_gap, 'Reflection of Light', "Abu Ma'shar, Great Introduction VII.5, 87-89", reflections,
-                              glance="Collection or Transfer specifically between two planets that are in Aversion to each other, not just unconnected -- since Aversion pairs can't see each other at all, a third planet is the only way their natures can interact.")
-                    _finding(_gap, 'Favor & Recompense', "Abu Ma'shar VII.5, 126-128", favor_recompense_data,
-                              glance='A planet in its own Fall or a welled/pitted degree, pulled out of that weak condition by a connecting dispositor (Favor). Recompense is the same planet later returning the favor, found by simulating the chart forward.')
-                    _finding(_gap, "Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)",
-                              "Abu Ma'shar, Great Introduction VII.7, 1-22", rays_by_ascension_data,
-                              glance="Where each planet's sextile, square and trine rays fall once the ascensions of this latitude are taken into account, beside the zodiacal aspect the rest of these tables use. A static quantity of the chart, not a direction; VII.7, 1-2 attributes the method to Ptolemy. Nothing else reads it yet.",
-                              notes="VII.7, 3-13: the planet's distance from the nearest stake in seasonal hours, from the right ascensions and the hourly times of its degree (or of the opposite degree on the nocturnal side). 14-15: two candidate ray positions, one from the right ascensions, one from the ascensions of the city (fn. 252: the oblique ascensions). 16-19: when they differ, a sixth of the excess for every hour of distance is added to the candidate NEAREST the planet (left rays); 20-21: for right rays the same, to the more DISTANT candidate. The nearest/distant flip is in the text and unexplained; the function takes it as written and can be asked for either reading. 22: \"as for the opposition, [a planet] casts its ray into the opposition of its sign, in the same degree and minute.\" The tables the chapter presupposes (fn. 250-251) are computed from the obliquity and the latitude. Decision D-1 (2026-09-08).",
-                              height=_rows_height(len(rays_by_ascension_data)))
-                    _finding(_gap, 'Book V degrees (supplement, display only)', "Abu Ma'shar, Great Introduction V.22, Figs. 63-64", book_v_degrees_data,
-                              glance='Two degree tables from Book V that no condition in VII.6 and nothing in Sahl reads: the seven "degrees increasing in good fortune" (for the Moon, the Lot of Fortune and the Ascendant) and the thirty-one "degrees of elevation and power" (for the Ascendant and the luminary of the sect). Shown when a named point falls in one; never scored.',
-                              notes='V.22, 1-2: "when planets indicate the native\'s good fortune by means of their positions, and the Moon or the Lot of Fortune is in these degrees, or [these degrees] are exactly on the Ascendant, then they will increase in the native\'s good fortune. And if they indicate downfall, then these will instigate some motion towards high rank and power." V.22, 4: "if the Ascendant was one of these degrees ... or the Sun by day or the Moon by night was in one of them, and they were in an excellent position of the circle, and the planets of the root of the nativity indicated good fortune, then they will make him attain nobility and the houses of kings." Ordinal degrees, as in the wells. Leo 5 and Aquarius 20 are in both tables; Aquarius 17 is a degree of elevation and a well. Decisions D-20 and D-21 (2026-09-08), decided together.')
-                    _finding(_gap, 'Forward-Looking Conditions', 'Revoking, Resistance, Escape — next 200 days', forward_looking_data,
-                              glance='Conditions describing what happens as the chart moves forward in time (up to ~200 days), not the birth moment alone.',
-                              notes='Each chapter prescribes an ORDERED SEQUENCE of events, and a row appears only when every step in that sequence actually occurs against the ephemeris -- the day columns show when. A condition not found inside 200 days is reported as not found, never as a negative finding.\n\nREVOKING (117): "a planet is connecting with a planet, but BEFORE IT REACHES IT, it retrogrades away from it." The window is now birth to the applicant\'s first station: perfection inside it means nothing was revoked.\n\nRESISTANCE (118): a light planet ahead of a heavier one by degree stations retrograde, reaches that heavier one BY RETROGRADATION, goes past it, and a third planet lighter still -- one that wanted the heavy planet -- meets the retrograde one instead. All five steps are required and timed.\n\nESCAPE (119): the planet being applied to leaves its sign first; the applicant then follows across the SAME boundary on its own next crossing, and is captured by a body it meets in the new sign. Dykes\' note on Fig. 139 is the picture: Mercury slips from Virgo into Libra, Venus follows, and Saturn\'s body catches her there.')
 
+            def abu_condition():
+                st.subheader('Planetary Condition', help="Each planet checked against Abu Ma'shar's conditions in Great Introduction VII.6, kept in his own four groups: good fortune (1-20), strength (21-29), weakness (30-46), misfortune (47-62), plus, for the Moon only, HIS OWN eleven corruptions (63-74).")
+                st.caption("Abu Ma'shar VII.6")
+                _reading_radio("VII.6, 27/45 'eastern/western relative to the Sun'", EASTERN_RULE_OPTIONS,
+                               "eastern_rule", "_eastern_rule",
+                               help="'hemisphere': the whole half, excluding the rays (VII.2, 2; VII.6, 34). "
+                                    "'VII.2 band': only the easternizing and westernizing bands (VII.2, 14-31). "
+                                    "Affects: Planetary Condition (27, 45). Full text on the Sources page.")
+                condition_list = []
+                for p, cond in abu_mashar_condition.items():
+                    condition_list.append({
+                        "Planet": p,
+                        # VII.6's own four sections, kept apart: the chapter
+                        # enumerates these separately and never totals them.
+                        "Good Fortune": cond['Good Fortune'],
+                        "Strength": cond['Strength'],
+                        "Weakness": cond['Weakness'],
+                        "Misfortune": cond['Misfortune'],
+                        # str, not int-or-'': a column mixing the two is an
+                        # object column that Arrow rejects.
+                        "Moon Defects": str(cond['Moon Defects']) if cond['Moon Defects'] else '',
+                        "Good Fortune / Strength": ", ".join(cond['Positive Labels']) if cond['Positive Labels'] else "-",
+                        "Weakness / Misfortune": ", ".join(cond['Negative Labels']) if cond['Negative Labels'] else "-",
+                        # Last, and labelled app arithmetic in the caption:
+                        # VII.6 never totals its conditions.
+                        "Net": cond['Net'],
+                        "Verdict": cond['Condition'],
+                    })
+                df_condition = pd.DataFrame(condition_list).sort_values(by="Net", ascending=False)
+                st.dataframe(df_condition, hide_index=True, width='stretch', height=_rows_height(len(df_condition)))
+                st.caption(
+                    ":orange[**Net and Verdict are this app's heuristic, not Abu Ma'shar's.**] He enumerates these "
+                    "conditions; he nowhere adds them up, and VII.6 gives no weighting and no tie rule. They are kept "
+                    "only because the Rhetorius/PN4 delineations on the Dignities page have to pick one of two readings. Read the four "
+                    "counts and the labels themselves in preference to the single number."
+                )
+                with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
+                    st.markdown("The Moon's eleven corruptions (63-74) are shown as their own count rather than folded in with the rest. Sahl's ten (The Introduction Ch.3, 103-112) are a different list, not a variant reading of this one, and have their own table, Corruption of the Moon, in the Sahl view: Abu Ma'shar has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear here.\n\nThe four counts and the labels are the report. NET and VERDICT are a convenience of this app and NOT Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They exist because the Rhetorius/PN4 delineations in Topical Planets in Houses have to choose between a good and a bad reading.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's eleven corruptions contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once.\n\nEnclosure here is Abu Ma'shar's own (56-62) -- by degree within 7 degrees either side counting rays as well as bodies, by sign in the 2nd and 12th, or separating from one encloser and connecting with the other -- and it can be DISSOLVED: the degree type when the Sun or a fortune casts a ray within 7 degrees of the enclosed planet (60), the sign type by any look from them (61). The standalone Enclosure table in the Connection group of the Sahl view is Sahl's separate version.\n\nThe by-sign type counts an encloser's RAYS as well as its body, which is what 58 says twice. Be aware that this makes it common: it fires on roughly 43% of placements, because a planet's rays reach eight of the twelve signs. A bodies-only variant at about 2% exists in the code (SIGN_ENCLOSURE_BODIES_ONLY) but is this project's own conjecture, not the text, so it is off.")
+
+            def abu_natural():
+                _finding(_gap, 'Natural connections', "Abu Ma'shar, Great Introduction VII.5, 53-77", natural_connections,
+                          columns=['Pair', 'Family', 'Degrees', 'From exact', 'Motion', 'Affinity (76-77)', 'Ordinary aspect', 'Standing'],
+                          glance='"Another type of connection and separation [even] without the planets\' looking at each other" (53): pairs standing in signs of equal ascensions (56) or of equal daylight (67-75), whose degrees correspond as complements within the sign -- 12 Gemini to 18 Capricorn (62). A relation of its own, not an aspect and not a dignity: the Ordinary aspect column keeps saying Aversion where that is what the signs are.',
+                          notes='EQUAL ASCENSIONS (56): "Aries and Pisces, Taurus and Aquarius, Gemini and Capricorn, Cancer and Sagittarius, Leo and Scorpio, and Virgo and Libra." EQUAL DAYLIGHT (67-75), the antiscia: Gemini-Cancer, Taurus-Leo, Aries-Virgo, Libra-Pisces, Sagittarius-Capricorn, exactly as he lists them -- Aquarius-Scorpio completes the standard scheme but is not enumerated here and is not added (see the coverage note on the Sources page).\n\nDEGREES: "when a planet is in the first degree of Aries, then it is in the nature of a planet which is at the last degree of Pisces" (57); "the planet which is in 12° of Gemini is in the nature of the degree of the planet which is in 18° of Capricorn: so when it passes beyond 12° of Gemini, then it has separated from it" (62). So the counterpart degree runs backwards as the planet runs forwards, and MOTION is read from both speeds together. He gives no orb: every planet in Aries is in the nature of some degree of Pisces, so every pair in a listed sign pair is shown with its distance from exact.\n\nAFFINITY: 76-77 single out four pairs of each family as bridging an ordinary aversion -- Gemini-Capricorn, Sagittarius-Cancer, Aries-Virgo, Libra-Pisces "is called a natural connection by opposition" (76); Gemini-Cancer, Virgo-Libra, Sagittarius-Capricorn, Pisces-Aries "the natural connection by sextile" (77). The notes there record that he omits Aries-Scorpio, Taurus-Libra and Aquarius-Capricorn; they are not added.\n\nThe same sign pairs are one of 134\'s four bases of acceptance, in the Reception table under his rule.')
+
+            def abu_wildness():
+                _finding(_gap, 'Wildness', "Abu Ma'shar, Great Introduction VII.5, 79-82", wildness_data,
+                          glance='A planet in whole-sign Aversion to all six other classical planets -- "in a sign such that absolutely no planet looks at it" (79) -- though it may still be "reached" via the lord of whatever bound it occupies (80-81).',
+                          notes='Whole-sign and independent of degree. Sahl\'s "banished" (Ch.3, 64) is a different test, about live connections rather than signs, and has its own table in his view.')
+
+            def abu_reflection():
+                _finding(_gap, 'Reflection of Light', "Abu Ma'shar, Great Introduction VII.5, 87-89", reflections,
+                          glance="Collection or Transfer specifically between two planets that are in Aversion to each other, not just unconnected -- since Aversion pairs can't see each other at all, a third planet is the only way their natures can interact.")
+
+            def abu_favor():
+                _finding(_gap, 'Favor & Recompense', "Abu Ma'shar VII.5, 126-128", favor_recompense_data,
+                          glance='A planet in its own Fall or a welled/pitted degree, pulled out of that weak condition by a connecting dispositor (Favor). Recompense is the same planet later returning the favor, found by simulating the chart forward.')
+
+            def abu_rays():
+                _finding(_gap, "Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)",
+                          "Abu Ma'shar, Great Introduction VII.7, 1-22", rays_by_ascension_data,
+                          glance="Where each planet's sextile, square and trine rays fall once the ascensions of this latitude are taken into account, beside the zodiacal aspect the rest of these tables use. A static quantity of the chart, not a direction; VII.7, 1-2 attributes the method to Ptolemy. Nothing else reads it yet.",
+                          notes="VII.7, 3-13: the planet's distance from the nearest stake in seasonal hours, from the right ascensions and the hourly times of its degree (or of the opposite degree on the nocturnal side). 14-15: two candidate ray positions, one from the right ascensions, one from the ascensions of the city (fn. 252: the oblique ascensions). 16-19: when they differ, a sixth of the excess for every hour of distance is added to the candidate NEAREST the planet (left rays); 20-21: for right rays the same, to the more DISTANT candidate. The nearest/distant flip is in the text and unexplained; the function takes it as written and can be asked for either reading. 22: \"as for the opposition, [a planet] casts its ray into the opposition of its sign, in the same degree and minute.\" The tables the chapter presupposes (fn. 250-251) are computed from the obliquity and the latitude. Decision D-1 (2026-09-08).",
+                          height=_rows_height(len(rays_by_ascension_data)))
+
+            def abu_book_v():
+                _finding(_gap, 'Book V degrees (supplement, display only)', "Abu Ma'shar, Great Introduction V.22, Figs. 63-64", book_v_degrees_data,
+                          glance='Two degree tables from Book V that no condition in VII.6 and nothing in Sahl reads: the seven "degrees increasing in good fortune" (for the Moon, the Lot of Fortune and the Ascendant) and the thirty-one "degrees of elevation and power" (for the Ascendant and the luminary of the sect). Shown when a named point falls in one; never scored.',
+                          notes='V.22, 1-2: "when planets indicate the native\'s good fortune by means of their positions, and the Moon or the Lot of Fortune is in these degrees, or [these degrees] are exactly on the Ascendant, then they will increase in the native\'s good fortune. And if they indicate downfall, then these will instigate some motion towards high rank and power." V.22, 4: "if the Ascendant was one of these degrees ... or the Sun by day or the Moon by night was in one of them, and they were in an excellent position of the circle, and the planets of the root of the nativity indicated good fortune, then they will make him attain nobility and the houses of kings." Ordinal degrees, as in the wells. Leo 5 and Aquarius 20 are in both tables; Aquarius 17 is a degree of elevation and a well. Decisions D-20 and D-21 (2026-09-08), decided together.')
+
+            def abu_forward():
+                _finding(_gap, 'Forward-Looking Conditions', 'Revoking, Resistance, Escape — next 200 days', forward_looking_data,
+                          glance='Conditions describing what happens as the chart moves forward in time (up to ~200 days), not the birth moment alone.',
+                          notes='Each chapter prescribes an ORDERED SEQUENCE of events, and a row appears only when every step in that sequence actually occurs against the ephemeris -- the day columns show when. A condition not found inside 200 days is reported as not found, never as a negative finding.\n\nREVOKING (117): "a planet is connecting with a planet, but BEFORE IT REACHES IT, it retrogrades away from it." The window is now birth to the applicant\'s first station: perfection inside it means nothing was revoked.\n\nRESISTANCE (118): a light planet ahead of a heavier one by degree stations retrograde, reaches that heavier one BY RETROGRADATION, goes past it, and a third planet lighter still -- one that wanted the heavy planet -- meets the retrograde one instead. All five steps are required and timed.\n\nESCAPE (119): the planet being applied to leaves its sign first; the applicant then follows across the SAME boundary on its own next crossing, and is captured by a body it meets in the new sign. Dykes\' note on Fig. 139 is the picture: Mercury slips from Virgo into Libra, Venus follows, and Saturn\'s body catches her there.')
+
+            def abu_block(parts):
+                with st.container(border=True):
+                    st.markdown("**Abu Ma'shar, Great Introduction VII.5-6** (supplement)")
+                    for part in parts:
+                        part()
                     _absent(_gap)
+
+            # --- Five chapters, or four with the supplement laid beside the text ---
+            # In the page's own order: the aspects and the connection group;
+            # handing over and reception; the prevented connections; strength
+            # and weakness. Abu Ma'shar's tables join the topic they belong to
+            # when the depth says so -- his natural connections, wildness,
+            # reflection and rays with the aspects; favor and recompense with
+            # reception; revoking, resistance and escape with the prevented
+            # connections (the Handy Tables' own grouping for Lesson 17, kept
+            # in his own bordered block so the author separation stands); his
+            # planetary condition and Book V degrees with strength and weakness.
+            _labels = ["Aspects and connections", "Handing over and reception", "Prevented connections",
+                       "Strength and weakness"] + ([] if supplement else ["Abu Ma'shar (supplement)"])
+            _stored_tab = st.session_state.get("_configurations_tab", _labels[0])
+            _tabs = st.tabs(_labels, key="configurations_tab", on_change="rerun",
+                            default=_stored_tab if _stored_tab in _labels else _labels[0])
+            _persist("configurations_tab", "_configurations_tab", _labels[0])
+            with _tabs[0]:
+                sahl_aspects()
+                sahl_connection_group()
+                if supplement:
+                    abu_block([abu_natural, abu_wildness, abu_reflection, abu_rays])
+            with _tabs[1]:
+                sahl_handing_over()
+                if supplement:
+                    abu_block([abu_favor])
+            with _tabs[2]:
+                sahl_prevented()
+                if supplement:
+                    abu_block([abu_forward])
+            with _tabs[3]:
+                sahl_strength()
+                if supplement:
+                    abu_block([abu_condition, abu_book_v])
+            if not supplement:
+                with _tabs[4]:
+                    abu_block([abu_condition, abu_natural, abu_wildness, abu_reflection, abu_favor, abu_rays,
+                               abu_book_v, abu_forward])
             _absent(_gap)
+
         def page_lots():
             st.header("Lots")
             st.caption("Lesson 18.")
