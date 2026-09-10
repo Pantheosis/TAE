@@ -924,6 +924,58 @@ twelfth-part at 0 Gemini; every row's domain and reception filled).
 **Left undone, on purpose.** 8, 9, 15, 16, 20, 21. The next prompt, per the brief, is the last
 item, the nine methods for days and hours (IX.7, 1–72).
 
+### 4p. IX.7, 1–72: the nine methods for the days and hours — built 2026-09-10, second session
+
+Technique 15 of the continuation brief, its last item, put to the owner with the four-point
+prompt. Chosen as recommended: **all seven remaining methods, method 9 pinned to IX.7, 57–69**,
+over methods 3 and 9 alone.
+
+**Re-checked in the corpus before writing:**
+
+| Citation | What it had to support | Held? |
+|---|---|---|
+| **IX.7, 1** + fn 160–161 | nine indicators; fn 161: a "day" is not defined by the author | yes |
+| **IX.7, 2–6** + fn 162–164 | method 1: the days since birth in weeks from the lord of the natal Ascendant, "the one below it in the circle"; the remainder; days and hours, 3 3/7 apiece | yes; fn 163's Scorpio case is a fixture |
+| **IX.7, 7–9** + fn 165–166 | method 2: the lord of the orb "grants 7 days" from the first day of the revolution | yes |
+| **IX.7, 10–13** + fn 167–169 | method 3: "365 1/4 minus 1/300 of a day" in greater sevenths of 52 d 4 h and a quarter, lesser sevenths of 7 d 10 h and about 6/7 | yes; fn 168's 52 d 4 h 16 m is a fixture |
+| **IX.7, 14–17** + fn 170–173 | method 4: the weeks to the signs, "not the lord of the sign"; 14 hours a sign | yes |
+| **IX.7, 18–20** | method 5: the days by twelves from the natal Ascendant; two hours a sign | yes |
+| **IX.7, 21–22** + fn 174 | the judgment of the weeks and days | yes — not built |
+| **IX.7, 34–39** + fn 181–182 | method 8: the four rooted monthly indicators and the month's Ascendant, Lot and Moon; a day per degree, or a day per 12°, 2½ days and five hours to a sign, sixty hours for the twelve | yes |
+| **IX.7, 40–42** | the judgment; "sign after sign, whether ... convertible or something else" | yes — not built |
+| **IX.7, 43–55** + fn 183–190 | method 9: three starts; a sign a month; the ninth-parts, thirds, ninths, thirds; 3 d 9 h 1/6; 30 d 10 h 1/2; 365¼ | yes — the durations are fixtures |
+| **IX.7, 56** + fn 191 | equal hours throughout | yes |
+| **IX.7, 57–69** + fn 192–198 | the worked example: 20 Taurus, Saturn; Saturn, Venus, Mercury; Saturn, Saturn, Jupiter; Saturn, Venus, Mercury; two printed fractions wrong (fn 195, 197) | yes — every lord and duration is a fixture; the errata shown as printed |
+| **IX.7, 70–72** + fn 199–201 | the revolution's Ascendant start; the Moon "from that ninth-part and from that degree she is in" | yes |
+| **IX.7, 79** | day and hour charts declined; these nine kept | already pinned |
+
+**Stated, with four readings said on the page.** A "day" is a whole 24-hour period from the birth
+moment, and "now" is the target date at noon; method 8's four rooted indicators are the monthly
+profections already on the page (fn 181); method 9's partners are the domicile lords of the fifth
+and ninth signs from the ninth-part's, as the example does; the example's two wrong fractions
+are computed exactly and printed as printed. IX.7, 21–22 and 40–42 are not built.
+
+**What was built.** `PN4_IX7_YEAR_DAYS`, `PN4_IX7_GREATER_SEVENTH`, `PN4_IX7_LESSER_SEVENTH`,
+`PN4_IX7_MONTH_DAYS`, `PN4_IX7_NINTH_PART_DAYS`, `PN4_IX7_EXAMPLE_ERRATA`, `_pn4_sign_step`,
+`_pn4_hours_of_seven`, `pn4_ix7_weeks_from_birth` (1), `pn4_ix7_weeks_from_orb` (2),
+`pn4_ix7_sevenths` (3; its result keys are `greater_seventh` and `lesser_seventh`, since the D-3 control's regex reads `['greater']` as a planetary-years grant and method 3's sevenths are nothing of the kind), `pn4_ix7_weeks_to_signs` (4), `pn4_ix7_days_to_signs` (5),
+`pn4_ix7_month_days` (8), `pn4_ix7_ninth_parts` and `pn4_ix7_moon_start` (9), `pn4_day_methods`
+(the page's three tables); the bundle carries `day_methods`; one section after the mighty days.
+
+**What pins it.** Five fixtures: the worked example of IX.7, 57–69 in full — Capricorn and
+Saturn for a year at 20 Taurus, the four durations to fn 196's and 198's fractions, the thirds to
+Venus and Mercury, the ninths to Saturn (Aquarius) and Jupiter (Pisces), the thirds of the ninth
+to Venus and Mercury, the second ninth-part Aquarius, the second month Gemini, twelve months to
+365¼, and the exact 7′24″ against the printed 7′25″; the Moon's start from her own ninth-part
+and degree; methods 1–5 against fn 163's Scorpio case, fn 168's greater seventh, and the hour
+fractions; method 8's two ways; and the bundle's three tables.
+
+**Verification.** Doctrine fixtures 234 (were 229). `tables.json` **+18 / −0**: the three tables on six charts. Full suite
+**2547 passed**, five of them new; `test_base_tables.py` 121 / 0.
+
+**Left undone, on purpose.** The judgments; a dawn-based day. This closes §7 of the continuation
+brief: every item is built or refused with its reason on the page.
+
 ### Refused at the poles
 
 `pn4_distribution_from_ascendant` returns `None` where |latitude| + obliquity ≥ 90°, on the

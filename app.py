@@ -9117,6 +9117,225 @@ def pn4_i7_planets(chart_data, sr):
             })
     return rows
 
+# --- IX.7, 1-72: the nine methods for the days and hours ------------------
+# "The days and hours have nine indicators" (IX.7, 1). Six and seven --
+# the mighty days and the small days -- are built above. The other seven:
+#   1 (2-6)   the days since birth "up to the year which has just been
+#             completed", divided by seven: each week to a planet from the
+#             lord of the natal Ascendant, "then the one below it in the
+#             circle"; the remainder days say whose week opens the year and
+#             how much of it is left; each day of a week to the planets in
+#             the same order; each hour to them, 3 3/7 hours apiece (fn 164);
+#   2 (7-9)   the lord of the orb of that year "grants 7 days" from the
+#             first day of the revolution, then the planets below it, round
+#             again; days and hours as in 1;
+#   3 (10-13) the year, "365 1/4 minus 1/300 of a day", in seven "greater
+#             sevenths" (52 d 4 h and a quarter) from the lord of the
+#             revolution's Ascendant downward; each in seven "lesser
+#             sevenths" (7 d 10 h and about 6/7 of an hour); days and hours
+#             as in 1;
+#   4 (14-17) the week count of 1, the cycles going to the SIGNS from the
+#             natal Ascendant, "not the lord of the sign" (fn 171); a
+#             week's 168 hours among the twelve signs, 14 apiece (fn 173);
+#   5 (18-20) the days since birth cast out by twelves from the natal
+#             Ascendant: the sign reached manages that day and "introduces
+#             the year"; each sign then a day; two hours to a sign;
+#   8 (34-39) the month's days from the four rooted monthly indicators
+#             (fn 181) and the month's Ascendant, Lot and Moon: a day per
+#             degree up to thirty, or a day per 12 degrees, 2 1/2 days and
+#             then 5 hours to a sign, sixty hours for the twelve;
+#   9 (43-72) the ninth-part method from three starts -- the terminal
+#             sign, the revolution's Ascendant, the Moon's own ninth-part
+#             and degree -- a sign a month of 30 d 10 h 30 m, each
+#             ninth-part 3 d 9 h 10 m, subdivided into thirds among its
+#             lord and the lords of the fifth and ninth signs from it, then
+#             ninths, then thirds again (49-54); worked at 57-69.
+# IX.7, 56: everything in equal hours. IX.7, 79 declines day and hour
+# CHARTS; these nine are what the author uses instead.
+#
+# WHAT IS READ IN, and said on the page. A "day" is a whole 24-hour
+# period from the birth moment (fn 161: the book does not say whether
+# from birth or from dawn). The 'now' is the page's target date at noon.
+# Method 8's four rooted indicators are the monthly profections of IX.1,
+# 26 already on the page (fn 181). Method 9's subdivision partners, "the
+# lord of the fifth sign from the sign of the lord of the ninth-part" and
+# "the ninth", are the domicile lords of those signs, which is what the
+# worked example does (Capricorn, then Taurus and Virgo: Saturn, Venus,
+# Mercury). Two of the example's printed fractions are wrong and fn 195
+# and 197 say so; the exact values are computed and the printed ones
+# shown beside them as printed errata. The judgments of IX.7, 21-22 and
+# 40-42 are not built. Decided by the owner 2026-09-10.
+PN4_IX7_YEAR_DAYS = 365.25 - 1.0 / 300.0                 # IX.7, 10
+PN4_IX7_GREATER_SEVENTH = PN4_IX7_YEAR_DAYS / 7.0        # 52 d 4 h and a quarter (fn 168)
+PN4_IX7_LESSER_SEVENTH = PN4_IX7_GREATER_SEVENTH / 7.0   # 7 d 10 h and about 6/7 of an hour
+PN4_IX7_MONTH_DAYS = 365.25 / 12.0                       # IX.7, 54-55: 30 d 10 h 30 m
+PN4_IX7_NINTH_PART_DAYS = PN4_IX7_MONTH_DAYS / 9.0       # 3 d 9 h 10 m
+PN4_IX7_EXAMPLE_ERRATA = (
+    ('IX.7, 62', '7\' 25" 33""', '7\' 24" 26""', 'fn 195'),
+    ('IX.7, 66', '2\' 28" 31""', '2\' 28" 09""', 'fn 197'),
+)
+
+def _pn4_sign_step(sign, steps):
+    return SIGN_ORDER[(SIGN_ORDER.index(sign) + int(steps)) % 12]
+
+def _pn4_hours_of_seven(day_fraction):
+    """IX.7, 6: the day's 24 hours among the seven, 3 3/7 apiece."""
+    return int((day_fraction * 24.0) // (24.0 / 7.0))
+
+def pn4_ix7_weeks_from_birth(days_since_birth, asc_lord):
+    """Method 1, IX.7, 2-6."""
+    d = int(days_since_birth // 1)
+    weeks, rem = d // 7, d % 7
+    week = pn4_hour_lord_from_natal(asc_lord, weeks)
+    day = pn4_hour_lord_from_natal(asc_lord, weeks + rem)
+    hour = pn4_hour_lord_from_natal(day, _pn4_hours_of_seven(days_since_birth % 1.0))
+    return {'weeks': weeks, 'remainder': rem, 'left_of_week': 7 - rem, 'week': week, 'day': day, 'hour': hour}
+
+def pn4_ix7_weeks_from_orb(days_since_revolution, orb_lord):
+    """Method 2, IX.7, 7-9."""
+    if not orb_lord:
+        return None
+    d = int(days_since_revolution // 1)
+    weeks, rem = d // 7, d % 7
+    week = pn4_hour_lord_from_natal(orb_lord, weeks)
+    day = pn4_hour_lord_from_natal(orb_lord, weeks + rem)
+    hour = pn4_hour_lord_from_natal(day, _pn4_hours_of_seven(days_since_revolution % 1.0))
+    return {'weeks': weeks, 'remainder': rem, 'week': week, 'day': day, 'hour': hour}
+
+def pn4_ix7_sevenths(days_since_revolution, sr_asc_lord):
+    """Method 3, IX.7, 10-13."""
+    t = days_since_revolution
+    g = int(t // PN4_IX7_GREATER_SEVENTH)
+    within_g = t - g * PN4_IX7_GREATER_SEVENTH
+    l = int(within_g // PN4_IX7_LESSER_SEVENTH)
+    within_l = within_g - l * PN4_IX7_LESSER_SEVENTH
+    greater = pn4_hour_lord_from_natal(sr_asc_lord, g)
+    lesser = pn4_hour_lord_from_natal(greater, l)
+    day = pn4_hour_lord_from_natal(lesser, int(within_l // 1))
+    hour = pn4_hour_lord_from_natal(day, _pn4_hours_of_seven(within_l % 1.0))
+    return {'greater_index': g, 'lesser_index': l, 'greater_seventh': greater, 'lesser_seventh': lesser, 'day': day, 'hour': hour}
+
+def pn4_ix7_weeks_to_signs(days_since_birth, asc_sign):
+    """Method 4, IX.7, 14-17: the cycles of weeks to the signs; 14 hours a
+    sign within the week (fn 173)."""
+    d = int(days_since_birth // 1)
+    weeks, rem = d // 7, d % 7
+    week_sign = _pn4_sign_step(asc_sign, weeks)
+    hours_in_week = (days_since_birth - weeks * 7) * 24.0
+    now_sign = _pn4_sign_step(week_sign, int(hours_in_week // 14.0))
+    return {'weeks': weeks, 'remainder': rem, 'week': week_sign, 'now': now_sign}
+
+def pn4_ix7_days_to_signs(days_since_birth, asc_sign):
+    """Method 5, IX.7, 18-20: the days by twelves from the natal
+    Ascendant; two hours a sign."""
+    d = int(days_since_birth // 1)
+    day_sign = _pn4_sign_step(asc_sign, d % 12)
+    hour_sign = _pn4_sign_step(day_sign, int(((days_since_birth % 1.0) * 24.0) // 2.0))
+    return {'day': day_sign, 'hour': hour_sign}
+
+def pn4_ix7_month_days(days_since_month, starts):
+    """Method 8, IX.7, 34-39, for each of the seven starts (name, lon):
+    way [1] a day per degree; way [2] a day per twelve degrees, 2 1/2 days
+    to a sign, five hours to a sign within that."""
+    d = days_since_month
+    rows = []
+    for name, lon in starts:
+        way1 = (lon + d) % 360.0
+        sign0 = get_zodiac_sign(lon)
+        way2_sign = _pn4_sign_step(sign0, int(d // 2.5))
+        hours_in_slot = (d % 2.5) * 24.0
+        way2_hour = _pn4_sign_step(way2_sign, int(hours_in_slot // 5.0))
+        rows.append({'Start': name, 'Position': get_degree_string(lon),
+                     'Way 1: a day per degree, now at': f"{get_degree_string(way1)} (bound of {pn4_bound_lord(way1)})",
+                     'Way 2: the day\'s sign': way2_sign, 'Way 2: this hour\'s sign': way2_hour,
+                     'Source': 'IX.7, 35-38'})
+    return rows
+
+def pn4_ix7_ninth_parts(days_since_revolution, start_sign, start_offset_days=0.0):
+    """Method 9, IX.7, 43-55: a sign a month from `start_sign`, the
+    ninth-parts of each sign 3 d 9 h 10 m apiece, each in thirds among the
+    lords of its own sign and the fifth and ninth from it, each third in
+    ninths continuing the ninth-part sequence, each ninth in thirds again.
+    `start_offset_days` places the Moon's own start within her ninth-part
+    (IX.7, 71)."""
+    N, M = PN4_IX7_NINTH_PART_DAYS, PN4_IX7_MONTH_DAYS
+    third, ninth, third_of_ninth = N / 3.0, N / 27.0, N / 81.0
+    t = days_since_revolution + start_offset_days
+    m = int(t // M)
+    u = t - m * M
+    month_sign = _pn4_sign_step(start_sign, m)
+    first = pn4_first_ninth_part_lord(month_sign)['ninth_part_sign']
+    k = int(u // N)
+    np_sign = _pn4_sign_step(first, k)
+    w = u - k * N
+    j = int(w // third)
+    third_sign = _pn4_sign_step(np_sign, (0, 4, 8)[j])
+    x = w - j * third
+    i = int(x // ninth)
+    ninth_sign = _pn4_sign_step(third_sign, i)
+    y = x - i * ninth
+    q = int(y // third_of_ninth)
+    q_sign = _pn4_sign_step(ninth_sign, (0, 4, 8)[q])
+    lord = lambda s: SIGN_TO_DOMICILE.get(s, '-')
+    return {
+        'month': m + 1, 'month_sign': month_sign,
+        'ninth_part': k + 1, 'ninth_part_sign': np_sign, 'ninth_part_lord': lord(np_sign),
+        'ninth_part_days': (m * M + k * N - start_offset_days, m * M + (k + 1) * N - start_offset_days),
+        'third': j + 1, 'third_lord': lord(third_sign), 'third_sign': third_sign,
+        'ninth': i + 1, 'ninth_lord': lord(ninth_sign), 'ninth_sign': ninth_sign,
+        'third_of_ninth': q + 1, 'third_of_ninth_lord': lord(q_sign),
+        'durations_hours': {'ninth-part': N * 24.0, 'third': third * 24.0, 'ninth of the third': ninth * 24.0,
+                            'third of the ninth': third_of_ninth * 24.0},
+    }
+
+def pn4_ix7_moon_start(moon_lon):
+    """IX.7, 71: the Moon begins "from that ninth-part and from that degree
+    she is in" -- her sign, and the days into the month her degree stands
+    for at the ninth-part's rate."""
+    within = moon_lon % 30.0
+    return get_zodiac_sign(moon_lon), within / (30.0 / 9.0) * PN4_IX7_NINTH_PART_DAYS
+
+def pn4_day_methods(jd_birth, jd_sr, jd_mr, jd_now, natal_asc, sr_asc, orb_lord, year_sign, month_starts, sr_moon_lon):
+    """The seven methods at `jd_now`, as rows for the page, with method
+    8's and 9's own tables."""
+    since_birth, since_rev, since_month = jd_now - jd_birth, jd_now - jd_sr, jd_now - jd_mr
+    at_rev = int((jd_sr - jd_birth) // 1)
+    asc_sign, asc_lord = get_zodiac_sign(natal_asc), SIGN_TO_DOMICILE.get(get_zodiac_sign(natal_asc), '-')
+    sr_lord = SIGN_TO_DOMICILE.get(get_zodiac_sign(sr_asc), '-')
+    m1_open = pn4_ix7_weeks_from_birth(float(at_rev), asc_lord)
+    m1, m2 = pn4_ix7_weeks_from_birth(since_birth, asc_lord), pn4_ix7_weeks_from_orb(since_rev, orb_lord)
+    m3, m4, m5 = pn4_ix7_sevenths(since_rev, sr_lord), pn4_ix7_weeks_to_signs(since_birth, asc_sign), pn4_ix7_days_to_signs(since_birth, asc_sign)
+    rows = [
+        {'Method': '1. The weeks of days from birth', 'Opens the year': f"{m1_open['week']}'s week, {m1_open['left_of_week']} of its days left ({at_rev} days from birth: {m1_open['weeks']} weeks and {m1_open['remainder']})",
+         'This week': m1['week'], 'Today': m1['day'], 'This hour': m1['hour'], 'Source': 'IX.7, 2-6'},
+        {'Method': '2. Seven days each from the lord of the orb', 'Opens the year': f"{orb_lord}, the lord of the orb, the first seven days" if orb_lord else 'natal hour lord unavailable',
+         'This week': m2['week'] if m2 else '-', 'Today': m2['day'] if m2 else '-', 'This hour': m2['hour'] if m2 else '-', 'Source': 'IX.7, 7-9'},
+        {'Method': '3. The greater and lesser sevenths of the year', 'Opens the year': f"{sr_lord}, lord of the revolution\'s Ascendant, the first greater seventh ({PN4_IX7_GREATER_SEVENTH:.3f} days)",
+         'This week': f"greater {m3['greater_seventh']} (no. {m3['greater_index'] + 1}), lesser {m3['lesser_seventh']} (no. {m3['lesser_index'] + 1})", 'Today': m3['day'], 'This hour': m3['hour'], 'Source': 'IX.7, 10-13'},
+        {'Method': '4. The weeks to the signs from the natal Ascendant', 'Opens the year': f"the week of {pn4_ix7_weeks_to_signs(float(at_rev), asc_sign)['week']}",
+         'This week': m4['week'], 'Today': f"{m4['now']} (14 hours a sign, fn 173)", 'This hour': m4['now'], 'Source': 'IX.7, 14-17'},
+        {'Method': '5. The days to the signs by twelves from the natal Ascendant', 'Opens the year': pn4_ix7_days_to_signs(float(at_rev), asc_sign)['day'],
+         'This week': '-', 'Today': m5['day'], 'This hour': m5['hour'], 'Source': 'IX.7, 18-20'},
+        {'Method': '6. The mighty days', 'Opens the year': 'the terminal point', 'This week': '-', 'Today': 'the mighty-days table above', 'This hour': '-', 'Source': 'IX.7, 23-28'},
+        {'Method': '7. The small days', 'Opens the year': "the revolution's Ascendant", 'This week': '-', 'Today': 'the small-days table above', 'This hour': '-', 'Source': 'IX.7, 29-33'},
+        {'Method': "8. The month's days", 'Opens the year': '-', 'This week': '-', 'Today': 'the table below', 'This hour': 'the table below', 'Source': 'IX.7, 34-39'},
+        {'Method': '9. The ninth-parts', 'Opens the year': f"the first ninth-part of {year_sign}", 'This week': '-', 'Today': 'the table below', 'This hour': 'the table below', 'Source': 'IX.7, 43-72'},
+    ]
+    month_rows = pn4_ix7_month_days(since_month, month_starts)
+    moon_sign, moon_offset = pn4_ix7_moon_start(sr_moon_lon)
+    ninth_rows = []
+    for label, start, offset, cite in (('the sign of the terminal point', year_sign, 0.0, 'IX.7, 44-48'),
+                                        ("the revolution's Ascendant", get_zodiac_sign(sr_asc), 0.0, 'IX.7, 70'),
+                                        ("the Moon, from her own ninth-part and degree", moon_sign, moon_offset, 'IX.7, 71')):
+        r = pn4_ix7_ninth_parts(since_rev, start, offset)
+        ninth_rows.append({'Start': label, 'Month': f"{r['month']}: {r['month_sign']}",
+                           'Ninth-part (3 d 9 h 10 m)': f"{r['ninth_part']} of 9: {r['ninth_part_sign']}, {r['ninth_part_lord']}, days {r['ninth_part_days'][0]:.2f} to {r['ninth_part_days'][1]:.2f}",
+                           'Third (27 h 3 m)': f"{r['third']}: {r['third_lord']} ({r['third_sign']})",
+                           'Ninth of the third (3 h 0.4 m)': f"{r['ninth']}: {r['ninth_lord']} ({r['ninth_sign']})",
+                           'Third of that (1 h 0.1 m)': f"{r['third_of_ninth']}: {r['third_of_ninth_lord']}",
+                           'Source': cite})
+    return rows, month_rows, ninth_rows
+
 def pn4_fardar_at_age(age_years, sect):
     """The fardar lord and sub-lord at an age.
 
@@ -9687,6 +9906,12 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'image': pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat),
         'i7_ascendant': pn4_i7_ascendant(chart_data, sr),
         'i7_planets': pn4_i7_planets(chart_data, sr),
+        'day_methods': pn4_day_methods(
+            chart_data['julian_day'], jd_sr, jd_mr, jd_target, ascendant, sr['ascendant'], orb, year['sign'],
+            [(f"#{r['number']} {r['name']}", r['longitude']) for r in indicators if r['number'] in (1, 3, 4, 5)]
+            + [("the month's Ascendant", mr['ascendant']), ("the month's Lot of Fortune", mr['lot_of_fortune']),
+               ("the month's Moon", mr['planetary_data']['Moon']['longitude'])],
+            sr['planetary_data']['Moon']['longitude']),
         'moon_rows': [{'Day from the revolution': f"{c['day']:.2f}", 'Planet': c['planet'], 'By': c['aspect'],
                        'Moon at': get_degree_string(c['moon_at'])} for c in moon['connections']],
         'portion_rows': [{'Portion': f"{p['portion']} of {p['of']}", 'Owned by': p['planet'],
@@ -11197,6 +11422,33 @@ if location_query and lat is not None and lon is not None:
                        "days from the moment of the revolution; the opening partner behind the degree within its "
                        "bound. IX.7, 27's extension to the Lots of the parents and every house and Lot is not built. "
                        "No worked example of it exists in PN IV.")
+
+            st.subheader("The nine methods for the days and hours (IX.7, 1-72)",
+                         help="\"The days and hours have nine indicators\" (IX.7, 1). 1: the days since birth in weeks "
+                              "from the lord of the natal Ascendant (2-6). 2: seven days each from the lord of the orb "
+                              "(7-9). 3: the year in greater and lesser sevenths from the lord of the revolution's "
+                              "Ascendant (10-13). 4: the weeks to the signs (14-17). 5: the days to the signs by "
+                              "twelves (18-20). 6 and 7: the mighty and small days above. 8: the month's days (34-39). "
+                              "9: the ninth-parts, from the terminal sign, the revolution's Ascendant and the Moon "
+                              "(43-72), worked at 57-69. IX.7, 56: all in equal hours. IX.7, 79 declines day and hour "
+                              "charts and keeps these.")
+            dm_rows, dm_month, dm_ninth = pn4['day_methods']
+            st.dataframe(pd.DataFrame(dm_rows), hide_index=True, width='stretch', height=_rows_height(9))
+            st.markdown("**8. The month's days** (IX.7, 34-39), from the four rooted monthly indicators (fn 181) and the month's Ascendant, Lot and Moon:")
+            st.dataframe(pd.DataFrame(dm_month), hide_index=True, width='stretch', height=_rows_height(len(dm_month)))
+            st.markdown("**9. The ninth-parts** (IX.7, 43-72), from the three starts:")
+            st.dataframe(pd.DataFrame(dm_ninth), hide_index=True, width='stretch', height=_rows_height(3))
+            st.caption("A \"day\" is a whole 24-hour period from the birth moment -- fn 161 says the book never says "
+                       "whether from birth or from dawn -- and the moment read is the target date at noon. The "
+                       "hours are equal (IX.7, 56): 3 3/7 apiece among seven (fn 164), 14 to a sign in a week (fn "
+                       "173), two to a sign in a day (IX.7, 20), five to a sign in a sixty-hour slot (IX.7, 38). "
+                       "Method 8's four rooted indicators are the monthly profections above (fn 181). Method 9's "
+                       "partners are the domicile lords of the fifth and ninth signs from the ninth-part's, as the "
+                       "worked example does (Capricorn, Taurus, Virgo: Saturn, Venus, Mercury); its month is 30 d "
+                       "10 h 30 m and its ninth-part 3 d 9 h 10 m (IX.7, 54-55). Two of the example's printed "
+                       "fractions are wrong, and are shown as printed: "
+                       + '; '.join(f"{c} prints {p} for {e} ({fn})" for c, p, e, fn in PN4_IX7_EXAMPLE_ERRATA)
+                       + ". The judgments of IX.7, 21-22 and 40-42 are not built.")
 
             st.subheader("Directing: which ascensions, and what a degree is worth")
             c1, c2 = st.columns(2)

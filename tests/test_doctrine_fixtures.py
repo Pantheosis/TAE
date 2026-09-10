@@ -2261,6 +2261,117 @@ def test_pn4_i7_planet_rows_in_both_times(engine):
         assert r["Received by (14)"] != ""
 
 
+# --- IX.7, 1-72: the nine methods for the days and hours (built 2026-09-10)
+
+def test_pn4_ix7_ninth_parts_against_the_worked_example(engine):
+    """IX.7, 57-69, "a year terminated at 20 Taurus": Saturn, lord of
+    Capricorn and of the first ninth-part, "manages 3 days, 9 hours, and
+    1/6 of an hour"; the thirds of 1 06' 40" go to Saturn, Venus (lord of
+    Taurus) and Mercury (lord of Virgo) "for 27 hours, and one-half of a
+    ninth of an hour"; the ninths of the first third to Saturn
+    (Capricorn), Saturn (Aquarius) and Jupiter (Pisces) for "three hours
+    and one-third of a sixth of a ninth of an hour"; the thirds of the
+    first ninth to Saturn, Venus, Mercury for "1 hour and one-third of
+    one-ninth of one-third of one-sixth of an hour"."""
+    np = engine["pn4_ix7_ninth_parts"]
+    r = np(0.0, "Taurus")
+    assert (r["month_sign"], r["ninth_part_sign"], r["ninth_part_lord"]) == ("Taurus", "Capricorn", "Saturn")
+    d = r["durations_hours"]
+    assert d["ninth-part"] == pytest.approx(3 * 24 + 9 + 1 / 6, abs=1e-6)                  # 3 d 9 h 10 m
+    assert d["third"] == pytest.approx(27 + 1 / 18, abs=1e-6)                             # 27 h and half a ninth
+    assert d["ninth of the third"] == pytest.approx(3 + 1 / 162, abs=1e-6)                 # fn 196
+    assert d["third of the ninth"] == pytest.approx(1 + 1 / 486, abs=1e-6)                 # fn 198
+    assert (r["third_lord"], r["ninth_lord"], r["third_of_ninth_lord"]) == ("Saturn", "Saturn", "Saturn")
+    hours = lambda h: h / 24.0
+    assert np(hours(27.5), "Taurus")["third_lord"] == "Venus"                              # 60: the second third
+    assert np(hours(55.0), "Taurus")["third_lord"] == "Mercury"                            # 61
+    assert np(hours(3.5), "Taurus")["ninth_lord"] == "Saturn" and np(hours(3.5), "Taurus")["ninth_sign"] == "Aquarius"   # 64
+    assert np(hours(6.5), "Taurus")["ninth_lord"] == "Jupiter"                             # 65: Pisces
+    assert np(hours(1.5), "Taurus")["third_of_ninth_lord"] == "Venus"                      # 68
+    assert np(hours(2.5), "Taurus")["third_of_ninth_lord"] == "Mercury"                    # 69
+    second = np(3.4, "Taurus")
+    assert (second["ninth_part"], second["ninth_part_sign"], second["ninth_part_lord"]) == (2, "Aquarius", "Saturn")
+    month2 = np(engine["PN4_IX7_MONTH_DAYS"] + 0.1, "Taurus")
+    assert (month2["month"], month2["month_sign"]) == (2, "Gemini")                        # 46: the next sign
+    assert engine["PN4_IX7_MONTH_DAYS"] * 12 == pytest.approx(365.25)                       # 55
+    # the two printed errata, shown as printed beside the exact (fn 195, 197)
+    errata = engine["PN4_IX7_EXAMPLE_ERRATA"]
+    assert [e[0] for e in errata] == ["IX.7, 62", "IX.7, 66"]
+    third_arc = (30.0 / 9.0) / 3.0                                                        # 1 06' 40"
+    ninth_arc = third_arc / 9.0 * 3600.0                                                   # in arcseconds
+    assert int(ninth_arc // 60) == 7 and int(ninth_arc % 60) == 24                         # 7' 24" ..., not 7' 25" 33""
+
+
+def test_pn4_ix7_moon_starts_from_her_own_ninth_part_and_degree(engine):
+    """IX.7, 71: "one sees at the revolution of the year which ninth-part
+    she is in, of the sign she is in, so that the beginning of the
+    management of the days will be from that ninth-part and from that
+    degree". The Moon at 5 Taurus is in Taurus's second ninth-part (3 20'
+    to 6 40'), half-way through it."""
+    sign, offset = engine["pn4_ix7_moon_start"](35.0)
+    assert sign == "Taurus"
+    N = engine["PN4_IX7_NINTH_PART_DAYS"]
+    assert offset == pytest.approx(1.5 * N)
+    r = engine["pn4_ix7_ninth_parts"](0.0, sign, offset)
+    assert r["ninth_part"] == 2 and r["ninth_part_sign"] == "Aquarius"
+    assert r["third"] == 2                                                                  # half-way: the second third
+
+
+def test_pn4_ix7_weeks_and_sevenths(engine):
+    """Methods 1-5. Fn 163: "let a native be born with Scorpio rising:
+    Mars rules the first week (and the first day of it), and after seven
+    weeks of the seven planets (or 49 days)" Mars again. Method 3: the
+    greater seventh is 52 d 4 h 16 m (fn 168), the lesser about 7 d 10 h
+    52 m; the lord of the revolution's Ascendant takes the first of each.
+    Method 5: the days by twelves; two hours a sign."""
+    w = engine["pn4_ix7_weeks_from_birth"]
+    assert w(0.0, "Mars") == {"weeks": 0, "remainder": 0, "left_of_week": 7, "week": "Mars", "day": "Mars", "hour": "Mars"}
+    assert w(49.0, "Mars")["week"] == "Mars" and w(48.0, "Mars")["week"] == "Jupiter"       # the seventh planet from Mars
+    assert w(1.0, "Mars")["day"] == "Sun" and w(1.5, "Mars")["hour"] == "Moon"              # 12 h = the fourth 3 3/7 from the Sun
+    assert w(3.9999, "Mars")["day"] == "Mercury"                                            # whole days from the birth moment
+    o = engine["pn4_ix7_weeks_from_orb"]
+    assert o(7.0, "Venus")["week"] == "Mercury" and o(8.0, "Venus")["day"] == "Moon"
+    assert o(0.0, None) is None
+    G = engine["PN4_IX7_GREATER_SEVENTH"]
+    assert G == pytest.approx(52 + 4 / 24 + 16 / 1440, abs=0.001)
+    s = engine["pn4_ix7_sevenths"]
+    assert s(0.0, "Venus")["greater_seventh"] == "Venus" and s(0.0, "Venus")["lesser_seventh"] == "Venus"
+    assert s(G + 0.5, "Venus")["greater_seventh"] == "Mercury"
+    assert s(engine["PN4_IX7_LESSER_SEVENTH"] + 0.5, "Venus")["lesser_seventh"] == "Mercury"
+    ws = engine["pn4_ix7_weeks_to_signs"]
+    assert ws(0.0, "Scorpio")["week"] == "Scorpio" and ws(7.0, "Scorpio")["week"] == "Sagittarius"
+    assert ws(14.5 / 24.0, "Scorpio")["now"] == "Sagittarius"                               # 14 hours a sign
+    ds = engine["pn4_ix7_days_to_signs"]
+    assert ds(0.0, "Scorpio") == {"day": "Scorpio", "hour": "Scorpio"}
+    assert ds(13.0, "Scorpio")["day"] == "Sagittarius"
+    assert ds(2.5 / 24.0, "Scorpio")["hour"] == "Sagittarius"
+
+
+def test_pn4_ix7_month_days_two_ways(engine):
+    """Method 8, IX.7, 35-38: from a start at 10 Aries, day 4 of the month
+    reaches 14 Aries by way [1]; by way [2] the day belongs to the second
+    sign, Taurus (2 1/2 days a sign), and 36 hours into that slot the
+    hours have moved seven signs on, to Sagittarius (five hours a sign)."""
+    rows = engine["pn4_ix7_month_days"](4.0, [("x", 10.0)])
+    assert rows[0]["Way 1: a day per degree, now at"].startswith("14\u00b0 Ari 00'")
+    assert rows[0]["Way 2: the day's sign"] == "Taurus"                                     # 4 // 2.5 = 1
+    assert rows[0]["Way 2: this hour's sign"] == "Sagittarius"                              # 36 h into the slot: the eighth five-hour portion
+
+
+def test_pn4_bundle_carries_the_day_methods(engine):
+    cast = engine["calculate_traditional_chart"]
+    birth, lat, lon = datetime(1985, 3, 20, 14, 30), 51.5, -0.12
+    chart = cast(birth, lat, lon)
+    rule = engine["PN4_MONTHLY_TURN_OPTIONS"][0]
+    b = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(2027, 6, 1).date(), rule,
+                                    {"Hour Lord": "Venus", "Approximate": False})
+    rows, month_rows, ninth_rows = b["day_methods"]
+    assert [r["Method"][:2] for r in rows] == ["1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9."]
+    assert rows[1]["This week"] in engine["PN4_SEVEN"] and rows[0]["This hour"] in engine["PN4_SEVEN"]
+    assert len(month_rows) == 7 and len(ninth_rows) == 3
+    assert ninth_rows[0]["Start"] == "the sign of the terminal point"
+
+
 def test_pn4_indicator_two_against_abu_mashars_worked_months(engine):
     """IX.1, 15-16 works indicator #2 out month by month for a year that
     terminates at Cancer: "the lord of its first ninth-part is the Moon,
