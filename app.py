@@ -4574,8 +4574,10 @@ DIGNITY_ORDER = {
 # A STATIC chart quantity: where a planet's sextile, square and trine rays
 # fall at the moment of the chart once the ascensions of the birth latitude
 # are taken into account, beside the zodiacal aspect VII.5 uses. Nothing
-# here advances a point through time; the releaser, distributions and the
-# rest of the timing apparatus stay deferred (D-3). VII.7, 1-2 says the
+# here advances a point through time. The distributions are implemented
+# separately, from Persian Nativities IV (section 3b below, D-3 closed
+# 2026-09-10); the RELEASER is still deferred, because PN IV turned out
+# not to state how one is chosen (IX.8, 123). VII.7, 1-2 says the
 # tradition disagrees and that this is Ptolemy's account ("we will state
 # what Ptolemy ... said"), so it is labelled his, not Abu Ma'shar's own.
 #
@@ -7000,6 +7002,816 @@ def evaluate_planetary_years_display(planetary_data, cusps, ascendant_lon, sect,
         })
     return rows
 
+# =========================================================================
+# 3b. PERSIAN NATIVITIES IV -- THE TIMING APPARATUS  (D-3 closed 2026-09-10)
+# =========================================================================
+#
+# Abu Ma'shar, On the Revolutions of the Years of Nativities (Persian
+# Nativities IV, tr. Dykes), read 2026-09-10 and answered in
+# synthesis/04_timing_answers_2026-09-10.md. Citations are Book.chapter,
+# sentence -- "III.1, 13" is Book III, chapter 1, sentence 13 -- and were
+# re-checked against the corpus at blob 295eb22 before this code was
+# written (see synthesis/15_pn4_implementation_2026-09-10.md).
+#
+# WHAT IS DELIBERATELY ABSENT, and why.
+#
+# The releaser/house-master/cutter chain is NOT implemented. PN IV names
+# the five releasers -- "the Sun, Moon, Ascendant, Lot of Fortune, or the
+# degree of the meeting or degree of the opposition" (III.3, 1) -- and
+# gives the frame (the house-master is the distributor of the releaser's
+# natal position, Dykes' Figure 50), but it never states how to CHOOSE
+# among the five, how many years the house-master grants, or how
+# increasers and decreasers are counted. Abu Ma'shar says so himself:
+# those "who look into it are wandering around in the dark; but a
+# statement of the truth of that ... is found in the book which we worked
+# on concerning nativities" (IX.8, 123) -- a book outside this corpus.
+#
+# Nothing below depends on that choice. The distribution implemented here
+# is the one taken FROM THE ASCENDANT, which II.2, 6-7 lists as an
+# indicator separate from the one taken from the longevity releaser, and
+# which III.1, 14 says the Persians alone called the "jar bakhtar".
+#
+# The third case of III.1, 12 -- everything that is neither the Ascendant
+# nor the meridian, directed "according to what we stated in our book [on
+# that topic]" -- is also absent. PN IV defers the method to a book it
+# does not reproduce; Dykes' fn 16 identifies it as Ptolemy's proportional
+# semi-arcs, but that is an editor's note, not Abu Ma'shar's sentence, and
+# the reconstructions of it differ. Named and refused rather than guessed.
+
+PN4_SEVEN = ('Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon')
+
+# The order of the spheres, highest first -- "according to the succession
+# of their spheres" (IV.1, 3). CHALDEAN_ORDER above is the same cycle
+# rotated to start at Mars for the planetary hours; written out again here
+# because the fardar and its sub-periods both index into it by position,
+# and a rotation whose starting point is incidental to another doctrine is
+# not a safe thing to index.
+PN4_DESCENDING_SPHERES = ('Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon')
+
+PN4_NODE_ORDER = ('Head', 'Tail')
+
+# Quadruplicity under PN IV's names. "Convertible" is Dykes' rendering of
+# the cardinal signs; "having two bodies" of the common ones (IX.1, 26-30).
+PN4_QUADRUPLICITY = {
+    'Aries': 'convertible', 'Cancer': 'convertible', 'Libra': 'convertible', 'Capricorn': 'convertible',
+    'Taurus': 'fixed', 'Leo': 'fixed', 'Scorpio': 'fixed', 'Aquarius': 'fixed',
+    'Gemini': 'double-bodied', 'Virgo': 'double-bodied', 'Sagittarius': 'double-bodied', 'Pisces': 'double-bodied',
+}
+
+# --- III.1, 13: the rate ladder ------------------------------------------
+# 1 deg = 1 year, 5' = 1 month, 1' = 6 days, 10" = 1 day, 25''' = 1 hour,
+# on an idealised year of twelve 30-day months (fn 17). Matching Sahl,
+# On Nativities 1.18, 21 exactly and extending it by one rung.
+#
+# The ladder is ONE conversion, not five: a degree is 360 idealised days
+# and every rung follows from that. 25''' -- twenty-five THIRDS, a
+# sixtieth of a second of arc -- is the rung that closes it, because 10"
+# is a day and 10"/24 = 25''' exactly.
+#
+# The corpus reads `every 25" one hour`, which would make an hour two and
+# a half days long. The page prints 25''' (photo-verified, p. 288:
+# PN4_READTHROUGH_FINDINGS_2026-09-10.md, D-07). The arithmetic settles it
+# without the photograph, and test_pn4_timing.py asserts both halves.
+PN4_IDEALISED_DAYS_PER_YEAR = 360.0
+PN4_IDEALISED_DAYS_PER_MONTH = 30.0
+
+def pn4_arc_to_time(arc_degrees):
+    """III.1, 13. An arc of direction in degrees -> Abu Ma'shar's years,
+    months, days and hours on the idealised 360-day year."""
+    total = float(arc_degrees) * PN4_IDEALISED_DAYS_PER_YEAR
+    years, rem = divmod(total, PN4_IDEALISED_DAYS_PER_YEAR)
+    months, rem = divmod(rem, PN4_IDEALISED_DAYS_PER_MONTH)
+    days, rem = divmod(rem, 1.0)
+    return {'years': int(years), 'months': int(months), 'days': int(days), 'hours': rem * 24.0}
+
+def pn4_format_arc_time(arc_degrees):
+    t = pn4_arc_to_time(arc_degrees)
+    return f"{t['years']}y {t['months']}m {t['days']}d {t['hours']:.1f}h"
+
+# III.1, 6: the unit of a directed degree is keyed to the LEVEL OF THE
+# CHART, not to sign type, planetary strength, quadruplicity or speed.
+# This is orthogonal to corpus disagreement #5, which asks a different
+# question and stays open; PN IV must not be cited on any side of it.
+PN4_DIRECTION_UNITS = {
+    'root': 'years',
+    'revolution of the year': 'months and days',
+    'revolution of the month': 'days and hours',
+}
+
+def pn4_direction_unit(chart_level):
+    """III.1, 6."""
+    return PN4_DIRECTION_UNITS.get(chart_level)
+
+# --- III.1, 12: which ascensions measure which point ----------------------
+PN4_ASCENSION_RULE = {
+    'Ascendant': ('oblique ascensions of the birth latitude', True),
+    'Midheaven': ('right ascensions', True),
+    'Fourth (IC)': ('right ascensions', True),
+    'anything else': ('proportional semi-arcs -- method not stated in PN IV', False),
+}
+
+def pn4_ascension_measure(point):
+    """III.1, 12. Returns (measure, implemented)."""
+    return PN4_ASCENSION_RULE.get(point, PN4_ASCENSION_RULE['anything else'])
+
+def _pn4_sentence_case(text):
+    """Upper-case the first letter only. str.capitalize() would lower the
+    rest and turn "PN IV" into "pn iv"."""
+    return text[:1].upper() + text[1:]
+
+# The three reference tables the Timing page prints beside the working
+# ones, so a number on the page can be traced to the sentence that fixes
+# it without leaving the app. Each is DERIVED from the rule above it
+# rather than restating it, so the printed table cannot drift from the
+# rule the engine applies.
+PN4_LADDER_ROWS = [
+    {'Arc': label, 'Is': f"{v} {unit}" if v != 1 else f"1 {unit.rstrip('s')}"}
+    for label, arc, unit, v in (
+        ('1\u00b0', 1.0, 'years', 1), ("5\u2032", 5 / 60, 'months', 1),
+        ("1\u2032", 1 / 60, 'days', 6), ('10\u2033', 10 / 3600, 'days', 1),
+        ('25\u2034', 25 / 216000.0, 'hours', 1))
+    if pn4_arc_to_time(arc)[unit] == v            # each rung checked as it is printed
+]
+PN4_UNIT_ROWS = [{'Directed in the': label, 'A degree is': pn4_direction_unit(key)}
+                 for key, label in (('root', 'Root of the nativity'),
+                                    ('revolution of the year', 'Revolution of the year'),
+                                    ('revolution of the month', 'Revolution of the month'))]
+PN4_ASCENSION_ROWS = [
+    {'Point directed': label, 'Measured in': _pn4_sentence_case(pn4_ascension_measure(point)[0]),
+     'Applied': 'yes' if pn4_ascension_measure(point)[1] else 'no'}
+    for point, label in (('Ascendant', 'Ascendant, and things in it'),
+                         ('Midheaven', 'Midheaven, or the fourth'),
+                         ('anything else', 'Anything else'))
+]
+
+def pn4_bound_lord(lon):
+    """III.1, 11: the lord of the bound the directed degree stands in is
+    the distributor, 'whether it looked at [the bound] or not'."""
+    sign = get_zodiac_sign(lon)
+    degree_in_sign = lon % 30.0
+    return next((lord for limit, lord in EGYPTIAN_TERMS.get(sign, []) if degree_in_sign < limit), '-')
+
+def pn4_bound_starts():
+    """The longitude at which every Egyptian bound begins, once round the
+    circle: (longitude, lord, sign). EGYPTIAN_TERMS stores each bound's
+    END degree, so a bound starts where the previous one ended."""
+    out = []
+    for i, sign in enumerate(SIGN_ORDER):
+        base, start = i * 30.0, 0.0
+        for limit, lord in EGYPTIAN_TERMS[sign]:
+            out.append((base + start, lord, sign))
+            start = float(limit)
+    return out
+
+# I.7, 12 and III.1, 15: "the positions of the planets and their rays."
+# The ray is a POINT, not a body with an orb -- the partner holds "until
+# it encounters another planet by its body or rays" (III.1, 16), so there
+# is always exactly one partner and never a contested overlap. Transit
+# orbs (Figure 83, p. 397) belong to a different technique and must not be
+# carried in here.
+PN4_RAY_OFFSETS = ((60.0, 'sextile'), (90.0, 'square'), (120.0, 'trine'), (180.0, 'opposition'))
+
+def pn4_bodies_and_rays(planetary_data):
+    """Every body and ray a directed degree can meet, as
+    (longitude, kind, planet, aspect). Both sides of each aspect, "right or
+    left"; the opposition is one point, not two."""
+    out = []
+    for planet in PN4_SEVEN:
+        row = planetary_data.get(planet)
+        if not row:
+            continue
+        lon = row['longitude'] % 360.0
+        out.append((lon, 'body', planet, 'body'))
+        for offset, name in PN4_RAY_OFFSETS:
+            out.append(((lon + offset) % 360.0, 'ray', planet, name))
+            if offset != 180.0:
+                out.append(((lon - offset) % 360.0, 'ray', planet, name))
+    return out
+
+# III.2, 103-104: the strength of a partner. Body first, then the rays in
+# the order opposition > square > trine > sextile -- HARD ASPECTS ABOVE
+# SOFT ONES, which is the reverse of the usual benefic intuition and is
+# easy to get backwards.
+PN4_PARTNER_RANK = {'body': 0, 'opposition': 1, 'square': 2, 'trine': 3, 'sextile': 4}
+
+def pn4_partner_strength(aspect):
+    return PN4_PARTNER_RANK.get(aspect)
+
+PN4_DISTRIBUTION_SPAN_YEARS = 120.0
+
+def pn4_distribution_from_ascendant(planetary_data, ascendant_lon, obliquity, geo_lat,
+                                    span_years=PN4_DISTRIBUTION_SPAN_YEARS):
+    """The *jar bakhtar* (III.1, 14): the degree of the Ascendant directed
+    through the bounds by the oblique ascensions of the birth latitude
+    (III.1, 12), naming at every moment a distributor -- the lord of the
+    bound reached (III.1, 11) -- and a partner, the most recent body or
+    ray the direction has met (III.1, 15-16).
+
+    Returns a list of segments in age order, each
+    {from, to, distributor, partner, partner_aspect, opened_by, ...},
+    or None where the method has no domain (see below).
+
+    Time comes from the arc: one degree of ascension is one year
+    (III.1, 13). Order comes from the longitudes, since at any latitude
+    where every degree rises the oblique ascension increases with the
+    longitude, so "the next bound round the zodiac" and "the next arc of
+    direction" are the same sequence.
+
+    ABOVE THE POLAR CIRCLE THIS REFUSES, returning None, on the domain of
+    D-23: where |latitude| + obliquity >= 90 some degrees never rise, the
+    oblique ascension has no unique inverse, and an arc of direction from
+    the Ascendant is not defined. Refusing is the decided behaviour for
+    every ascensional method in this file.
+    """
+    if not _ascensional_method_applies(obliquity, geo_lat):
+        return None
+
+    ascendant_lon %= 360.0
+    oa_asc = _oblique_ascension(ascendant_lon, obliquity, geo_lat)
+    meetings = pn4_bodies_and_rays(planetary_data)
+
+    # III.1, 23-25: the partner AT BIRTH. Look back from the degree of the
+    # Ascendant to the beginning of its sign; the nearest body or ray
+    # behind it is already the partner. "But since I did not find a planet
+    # nor its rays from the beginning of the sign up to the degree of the
+    # Ascendant, Venus became the distributor without a planet partnering
+    # with her" -- the search does NOT run back past the start of the sign.
+    sign_start = (ascendant_lon // 30.0) * 30.0
+    behind = [m for m in meetings if sign_start <= m[0] <= ascendant_lon]
+    opening = max(behind, key=lambda m: m[0]) if behind else None
+
+    # Everything the direction will meet, by arc from the Ascendant.
+    events = []
+    for lon, lord, _sign in pn4_bound_starts():
+        events.append((lon, 'bound', lord, 'bound'))
+    events.extend(meetings)
+
+    dated = []
+    for lon, kind, who, aspect in events:
+        arc = (_oblique_ascension(lon, obliquity, geo_lat) - oa_asc) % 360.0
+        if 0.0 < arc <= span_years:
+            dated.append((arc, lon, kind, who, aspect))
+    dated.sort(key=lambda e: e[0])
+
+    distributor = pn4_bound_lord(ascendant_lon)
+    partner = opening[2] if opening else None
+    partner_aspect = opening[3] if opening else None
+    partner_from = (f"{opening[2]} by {opening[3]} at {get_degree_string(opening[0])}, behind the Ascendant"
+                    if opening else 'none: the distributor acts alone (III.1, 25)')
+    opened_by = ('at birth: %s by %s' % (partner, partner_aspect)) if opening else 'at birth: the distributor alone'
+
+    segments, cursor = [], 0.0
+    for arc, lon, kind, who, aspect in dated:
+        if arc - cursor > 1e-9:
+            segments.append({
+                'from': cursor, 'to': arc, 'distributor': distributor,
+                'partner': partner, 'partner_aspect': partner_aspect,
+                'partner_from': partner_from, 'opened_by': opened_by,
+            })
+        if kind == 'bound':
+            distributor = who
+            opened_by = f"bound of {who} at {get_degree_string(lon)}"
+        else:
+            partner, partner_aspect = who, aspect
+            partner_from = (f"{who} by body at {get_degree_string(lon)}" if aspect == 'body'
+                            else f"{who} by {aspect} at {get_degree_string(lon)}")
+            opened_by = partner_from
+        cursor = arc
+    if cursor < span_years:
+        segments.append({
+            'from': cursor, 'to': span_years, 'distributor': distributor,
+            'partner': partner, 'partner_aspect': partner_aspect,
+            'partner_from': partner_from, 'opened_by': opened_by,
+        })
+    return segments
+
+def pn4_distribution_at_age(segments, age_years):
+    """The segment covering an age, or None past the end of the span."""
+    if not segments:
+        return None
+    for seg in segments:
+        if seg['from'] <= age_years < seg['to']:
+            return seg
+    return None
+
+# --- IV.1 and IV.7: the fardar -------------------------------------------
+
+def pn4_fardar_sequence(sect):
+    """IV.1, 2-4 with IV.7, 24. The order is the descending order of the
+    spheres, begun from the light of the sect and wrapped: by day from the
+    Sun, by night from the Moon. The Head (3 years) and the Tail (2) come
+    LAST IN BOTH SECTS -- "whether the native was diurnal or nocturnal"
+    (IV.7, 24) -- which is the point the later tradition got wrong.
+
+    Seven planets sum to 70 and the Nodes carry it to 75 (IV.1, 2, 8)."""
+    light = 'Sun' if sect == 'Diurnal' else 'Moon'
+    i = PN4_DESCENDING_SPHERES.index(light)
+    order = [PN4_DESCENDING_SPHERES[(i + k) % 7] for k in range(7)]
+    seq = [(p, float(PLANETARY_YEARS[p]['fardar'])) for p in order]
+    seq += [(n, float(NODE_FARDAR_YEARS[n])) for n in PN4_NODE_ORDER]
+    return seq
+
+PN4_FARDAR_CYCLE_YEARS = 75.0
+
+def pn4_fardar_subperiods(lord, years):
+    """IV.1, 5-6: each planetary fardar divides into seven equal parts,
+    the lord itself first, then "the planet which is below it in the
+    celestial circle" and so on down the spheres.
+
+    IV.1, 8: the Head and the Tail have NO sub-periods -- they "stand
+    alone in the management of their years ... because they do not have
+    houses". Returns []."""
+    if lord in NODE_FARDAR_YEARS:
+        return []
+    i = PN4_DESCENDING_SPHERES.index(lord)
+    part = float(years) / 7.0
+    return [(PN4_DESCENDING_SPHERES[(i + k) % 7], part) for k in range(7)]
+
+def pn4_fardar_at_age(age_years, sect):
+    """The fardar lord and sub-lord at an age.
+
+    IV.7, 25: "once 75 years are completed for the native, the
+    distribution of the fardar returns to THE LUMINARY WHICH HE BEGAN FROM
+    at his birth, in the original order" -- so the cycle restarts at the
+    light of the sect, not always at the Sun. IV.1, 2's "then it returns
+    to the Sun" is the diurnal case of that rule."""
+    if age_years < 0:
+        return None
+    sequence = pn4_fardar_sequence(sect)
+    cycles, within = divmod(float(age_years), PN4_FARDAR_CYCLE_YEARS)
+    start = 0.0
+    for lord, years in sequence:
+        if within < start + years:
+            offset = within - start
+            subs = pn4_fardar_subperiods(lord, years)
+            sub_lord, sub_from, sub_to = None, None, None
+            if subs:
+                each = years / 7.0
+                k = min(int(offset // each), 6)
+                sub_lord = subs[k][0]
+                sub_from, sub_to = start + k * each, start + (k + 1) * each
+            return {
+                'lord': lord, 'years': years,
+                'from': cycles * PN4_FARDAR_CYCLE_YEARS + start,
+                'to': cycles * PN4_FARDAR_CYCLE_YEARS + start + years,
+                'sub_lord': sub_lord,
+                'sub_from': None if sub_from is None else cycles * PN4_FARDAR_CYCLE_YEARS + sub_from,
+                'sub_to': None if sub_to is None else cycles * PN4_FARDAR_CYCLE_YEARS + sub_to,
+                'cycle': int(cycles) + 1,
+            }
+        start += years
+    return None
+
+# --- I.8, 10-26: the Ages of Man -----------------------------------------
+# Ptolemy's seven ages, ordered by sphere from the lowest upward, NOT the
+# quadrant scheme of Sahl, On Nativities 3.9, 32-36. Each span is a
+# planet's lesser years, or one-half or one-tenth of its lesser or middle
+# years (I.8, 9): Moon 4 = a tenth of her middle years 39 1/2 (I.8, 12),
+# Mercury 10 = half his lesser 20, and Venus 8, Sun 19, Mars 15,
+# Jupiter 12, Saturn 30 are lesser years outright.
+#
+# Saturn's span is OPEN-ENDED. Figure 53 tabulates it as "30 / ages 68-97"
+# and 30 is his lesser years, but the prose governs: the seventh age runs
+# "until the end of his lifespan" (I.8, 25). A native of 100 is still in
+# Saturn's age. I.8, 31-33 reports that some restart the cycle at the Moon
+# after Saturn; Abu Ma'shar does not endorse it, so this does not restart.
+#
+# I.8, 34-35: he also refuses to subdivide an age into sevenths the way a
+# fardar is subdivided -- "he will be in the nature of the planet itself,
+# for the amount of those years". So there is no sub-lord here.
+PN4_AGES_OF_MAN = (
+    ('Moon', 4, 'Upbringing'), ('Mercury', 10, 'End of childhood'),
+    ('Venus', 8, 'Beginning of youth'), ('Sun', 19, 'End of youth'),
+    ('Mars', 15, 'Beginning of maturity'), ('Jupiter', 12, 'Maturity, transition to old age'),
+    ('Saturn', 30, 'Old age'),
+)
+
+def pn4_age_of_man(age_years):
+    """I.8, 10-26. The last age is open-ended (I.8, 25)."""
+    if age_years < 0:
+        return None
+    start = 0.0
+    for i, (planet, years, label) in enumerate(PN4_AGES_OF_MAN):
+        last = i == len(PN4_AGES_OF_MAN) - 1
+        if last or age_years < start + years:
+            return {'planet': planet, 'from': start,
+                    'to': None if last else start + years,
+                    'label': label, 'nominal_years': years}
+        start += years
+    return None
+
+# --- I.2 and IX.3: the revolutions ---------------------------------------
+
+PN4_MEAN_SOLAR_DAY_MOTION = 0.9856
+
+def _pn4_sun_offset(jd, target_lon):
+    res = swe.calc_ut(jd, swe.SUN)[0]
+    return ((res[0] - target_lon + 180.0) % 360.0) - 180.0, res[3]
+
+def pn4_revolution_jd(target_lon, jd_guess):
+    """Newton search for the moment the TRUE Sun stands at target_lon,
+    from a guess within a few days, in the manner calculate_prenatal_syzygy
+    searches for the syzygy.
+
+    I.2, 1 defines the revolution as the Sun's return to "his position in
+    which he was at the root". Abu Ma'shar computes it from a MEAN Sun and
+    then applies the Hipparchan tropical year of 365;14,48 days
+    (I.4, 23-31; IX.7, 10) -- Dykes says plainly that this does not make
+    sense (Intro Sect. 1, p. 6), and it is not reproduced. This is a true-Sun
+    return, which is what the definition actually asks for."""
+    jd = float(jd_guess)
+    for _ in range(30):
+        offset, speed = _pn4_sun_offset(jd, target_lon)
+        if abs(offset) < 1e-9:
+            break
+        if abs(speed) < 1e-6:
+            speed = PN4_MEAN_SOLAR_DAY_MOTION
+        jd -= offset / speed
+    return jd
+
+def pn4_solar_revolution_jd(jd_natal, natal_sun_lon, age):
+    """The solar revolution opening the native's `age`-th completed year.
+    Cast for the BIRTH LOCATION: PN IV never states the location for the
+    annual revolution, but it does for the monthly ones -- "(And we will
+    use the birthplace for the location)", Intro Sect. 9, p. 95 -- and the
+    excess-of-revolution technique presupposes a fixed one. Dykes' reading;
+    flagged as an assumption in the UI, not as Abu Ma'shar's sentence."""
+    return pn4_revolution_jd(natal_sun_lon % 360.0,
+                             jd_natal + float(age) * 365.2425)
+
+def pn4_monthly_revolution_jd(jd_solar_revolution, natal_sun_lon, month):
+    """IX.3, 2: month 1 IS the solar revolution (IX.1, 10; IX.2, 1-2).
+    For month n the Sun stands in the n-th sign from his rooted place, "in
+    the like degree AND MINUTE which he was in at the root".
+
+    Intro Sect. 2 (p. 7) illustrates this with a natal Sun at 12 22' Gemini
+    and then puts the monthly revolutions at 12 23' Cancer and 12 23' Leo.
+    The page genuinely prints that; it is an error in Dykes' own book
+    (PN4_READTHROUGH_FINDINGS_2026-09-10.md, P-01), contradicted by the
+    rule in its own sentence, by IX.1, 23, by IX.3, 2 and by the worked
+    example at Intro Sect. 9 p. 95. The degree and minute do not change."""
+    month = int(month)
+    if month <= 1:
+        return jd_solar_revolution
+    target = (natal_sun_lon + 30.0 * (month - 1)) % 360.0
+    return pn4_revolution_jd(target, jd_solar_revolution + (month - 1) * 30.44)
+
+# --- Profection: II.3, 1 and IX.1 ----------------------------------------
+
+def pn4_profect(lon, steps, forward=True):
+    """Move a point `steps` whole signs, keeping its degree within the
+    sign. All profection in PN IV is sign-by-sign (IX.1; Intro Sect. 9 p. 90)."""
+    idx = int(lon // 30.0)
+    moved = (idx + steps) % 12 if forward else (idx - steps) % 12
+    return moved * 30.0 + (lon % 30.0)
+
+def pn4_sign_of_the_year(ascendant_lon, completed_years):
+    """II.3, 1 and I.2, 5: "for every year the native has completed, cast
+    out one sign from it: the sign which the intended year reaches is the
+    'sign of the terminal point,' and its lord is the 'lord of the year'
+    (and in Persian it is called the *salkhudhah*)."
+
+    The lord of the year is the lord of the SIGN -- not the lord of the
+    revolution's Ascendant, and not a victor (Q21). "Governor"
+    (Ar. mustawli), the sign on which most of the year's indicators
+    coincide (IX.9, 10; IX.2, 4-7), is a separate term."""
+    lon = pn4_profect(ascendant_lon, int(completed_years))
+    sign = get_zodiac_sign(lon)
+    return {'longitude': lon, 'sign': sign, 'lord': SIGN_TO_DOMICILE.get(sign, '-')}
+
+def pn4_first_ninth_part_lord(sign):
+    """The lord of the first ninth-part of a sign -- monthly indicator #2
+    (IX.1, 36), and the Indian rule for the lord of the year that PN IV
+    reports without adopting (III.10, 1).
+
+    The first ninth-part of a convertible sign is that sign; of a fixed
+    sign, the ninth from it; of a double-bodied sign, the fifth from it.
+    So the lord is always a lord of a convertible sign, which is why the
+    Indian rule "restricts the lord of the year to four planets only".
+    Verified against Abu Ma'shar's own three worked examples at III.10, 5:
+    Taurus -> Saturn, Gemini -> Venus, Cancer -> the Moon.
+
+    It is a function of the SIGN, not of the degree: "if the year
+    terminated at 20 deg of Taurus (or less than that or more), then its
+    lord would be Saturn" (III.10, 5)."""
+    idx = SIGN_ORDER.index(sign)
+    kind = PN4_QUADRUPLICITY[sign]
+    step = {'convertible': 0, 'fixed': 8, 'double-bodied': 4}[kind]
+    target = SIGN_ORDER[(idx + step) % 12]
+    return {'ninth_part_sign': target, 'lord': SIGN_TO_DOMICILE.get(target, '-')}
+
+# The direction of monthly profection. Abu Ma'shar's quadruplicity rule
+# (IX.1, 26-34) reverses it for convertible signs and for the second half
+# of a double-bodied one; Dykes rejects the rule as "complicated, probably
+# wrong, and an over-zealous application of quadruplicities" (Intro
+# Sect. 9 p. 102 and fn 95) and counts forward always. Owner's decision of
+# 2026-09-10: ship both, default to Dykes.
+PN4_MONTHLY_TURN_OPTIONS = ('Dykes: always forward', "Abu Ma'shar IX.1, 26-34")
+
+def pn4_monthly_turn_forward(lon, rule):
+    """IX.1, 26-30, applied PER INDICATOR.
+
+    IX.1, 31 is explicit that when the four rooted indicators fall in
+    different quadruplicities "one turns EACH ONE OF THEM INDIVIDUALLY",
+    so the direction is decided by the sign each indicator itself occupies
+    -- not once, globally, by the sign of the year. (The two coincide for
+    indicator #1, whose sign IS the sign of the year, and can differ for
+    #3, #4 and #5.)
+
+    The boundary in a double-bodied sign is 15 deg 00': forward "from the
+    beginning of that sign up to 15 complete degrees" (28), backward "from
+    the beginning of the sixteenth degree ... up to the end" (29), because
+    the first half is of the nature of the preceding fixed sign and the
+    second of the following convertible one (30)."""
+    if rule != PN4_MONTHLY_TURN_OPTIONS[1]:
+        return True
+    kind = PN4_QUADRUPLICITY[get_zodiac_sign(lon)]
+    if kind == 'fixed':
+        return True
+    if kind == 'convertible':
+        return False
+    return (lon % 30.0) < 15.0
+
+# IX.1, 35-39: the seven monthly indicators, five rooted and two not.
+# "Rooted" because they are turned from the positions they hold AT THE
+# REVOLUTION OF THE YEAR (IX.1, 37); the last two are not, because each
+# "indicates the condition of a single month, and [then] changes in the
+# next month" (IX.1, 38). They decrease in universality in that order
+# (IX.1, 39).
+#
+# fn 15 to IX.1, 26 notes that Abu Ma'shar himself "will ignore [#2] the
+# ninth-part" through most of these chapters, and fn 3 to II.1, 5 notes
+# that the Indian ninth-parts are absent from the nineteen indicators of
+# the year. It is carried here because IX.1, 36 names it.
+PN4_MONTHLY_INDICATOR_NAMES = (
+    (1, 'Sign of the terminal point (profected natal Ascendant)', True),
+    (2, "Lord of the month's sign's first ninth-part", True),
+    (3, 'Profected natal Lot of Fortune', True),
+    (4, 'Ascendant of the revolution of the year', True),
+    (5, 'Lot of Fortune of the revolution of the year', True),
+    (6, 'Ascendant of the revolution of the month', False),
+    (7, 'Lot of Fortune of the revolution of the month', False),
+)
+
+def pn4_monthly_indicators(month, completed_years, sign_of_year_lon, natal_fortune_lon,
+                           sr_ascendant_lon, sr_fortune_lon,
+                           mr_ascendant_lon, mr_fortune_lon, rule):
+    """The seven indicators of IX.1, 35-39 for month `month` (1-12).
+
+    Each is first brought to its position for the YEAR, and only then
+    turned month by month -- and the four are not brought there the same
+    way, which is the thing to get right:
+
+    * #1 is the natal Ascendant profected a sign a year (IX.1, 9).
+    * #3 is the natal Lot of Fortune profected a sign a year in its own
+      right: "you see where the Lot of Fortune is in the root of the
+      nativity, and TURN FROM IT A SIGN FOR EVERY YEAR, up to the year
+      which you want" (IX.1, 17-18). It is not the natal Lot itself.
+    * #4 and #5 are NOT profected: the revolution's Ascendant and its Lot
+      of Fortune are "assign[ed] to the first month" as they stand
+      (IX.1, 20-21).
+    * #6 and #7 are not turned at all -- they are read from the monthly
+      revolution, which is cast afresh each month (IX.1, 38).
+
+    #2 is a different shape from the rest. What turns is the sign of the
+    terminal point, and the indicator is the lord of the FIRST ninth-part
+    of whatever sign the turning reaches: "the lord of the first
+    ninth-part belonging to the second sign from the sign of the terminal
+    point ... is the indicator of the condition of the second month"
+    (IX.1, 12-14). Abu Ma'shar works it at IX.1, 15-16 -- year at Cancer:
+    Moon, then Leo -> Mars, Virgo -> Saturn, Libra -> Venus. It always
+    turns forward, "without distinction, whether the sign of the terminal
+    point is convertible, fixed, or having two bodies" (IX.1, 32), and it
+    ignores the degree entirely (IX.1, 11: "so don't worry about which
+    position in that sign is the terminal point of the year").
+    """
+    steps = max(int(month) - 1, 0)
+
+    def _row(number, lon, direction):
+        sign = get_zodiac_sign(lon)
+        return {'number': number, 'name': PN4_MONTHLY_INDICATOR_NAMES[number - 1][1],
+                'rooted': PN4_MONTHLY_INDICATOR_NAMES[number - 1][2],
+                'longitude': lon, 'sign': sign,
+                'lord': SIGN_TO_DOMICILE.get(sign, '-'), 'direction': direction}
+
+    out = []
+    # #1, #3, #4, #5: turned, each by the quadruplicity of its OWN sign.
+    for number, base in ((1, sign_of_year_lon),
+                         (3, pn4_profect(natal_fortune_lon, int(completed_years))),
+                         (4, sr_ascendant_lon),
+                         (5, sr_fortune_lon)):
+        forward = pn4_monthly_turn_forward(base, rule)
+        out.append(_row(number, pn4_profect(base, steps, forward=forward),
+                        'forward' if forward else 'backwards'))
+
+    # #2: the terminal point turns forward; the lord is that sign's first
+    # ninth-part lord, so the row names the ninth-part sign it comes from.
+    month_sign = get_zodiac_sign(pn4_profect(sign_of_year_lon, steps, forward=True))
+    ninth = pn4_first_ninth_part_lord(month_sign)
+    out.append({'number': 2, 'name': PN4_MONTHLY_INDICATOR_NAMES[1][1], 'rooted': True,
+                'longitude': SIGN_ORDER.index(ninth['ninth_part_sign']) * 30.0,
+                'sign': ninth['ninth_part_sign'], 'lord': ninth['lord'],
+                'direction': f"forward (from {month_sign})"})
+
+    for number, lon in ((6, mr_ascendant_lon), (7, mr_fortune_lon)):
+        out.append(_row(number, lon, 'cast, not turned'))
+
+    out.sort(key=lambda r: r['number'])
+    return out
+
+# II.1, 5-24 ranks NINETEEN indicators of the year and II.1, 25 says "each
+# one in turn is stronger in indication than the one which is after it".
+# The first four are implemented; the rest are delineation material.
+#
+# This ordering resolves corpus disagreement #1 BY SCOPE, not by
+# combination. Within a single year the lord of the year outranks the
+# distributor (II.1, 25; II.23, 1). Across several years the distribution
+# is stronger, because "the indication of the lord of the terminal point
+# is only over the condition of THAT YEAR: but as for the lord of the
+# distribution, sometimes its indication ... is for SEVERAL YEARS", and
+# the year's indicators are then read "as witnesses" to it (III.2, 2-3).
+# The two statements are indexed to different scopes and do not conflict.
+#
+# Dykes' Introduction Sect. 3 (p. 21, point 3) states the opposite --
+# distributions "tend to be more powerful than profections" -- and cites no
+# Abu Ma'shar sentence for it. II.1, 25 governs here, not Intro Sect. 3.
+PN4_YEAR_INDICATOR_ORDER = (
+    'The sign of the terminal point, and its lord',
+    'The distribution and the distributor',
+    'The one partnering with the distributor',
+    "The fardar lord and its sub-lord",
+)
+
+
+# --- Assembling the page -------------------------------------------------
+
+PN4_GREGORIAN_REFORM_JD = 2299160.5
+
+def pn4_datetime_from_jd(jd):
+    """A UTC datetime from a Julian Day, in the calendar this file uses for
+    that epoch, so that feeding it back to calculate_traditional_chart --
+    which picks its own flag from the y/m/d digits -- round-trips."""
+    cal = swe.GREG_CAL if jd >= PN4_GREGORIAN_REFORM_JD else swe.JUL_CAL
+    y, m, d, hour = swe.revjul(jd, cal)
+    total = int(round(hour * 3600.0))
+    total = min(total, 24 * 3600 - 1)
+    return datetime(int(y), int(m), int(d), total // 3600, (total % 3600) // 60, total % 60)
+
+def pn4_completed_years(birth_date, target_date):
+    """Age in COMPLETED CIVIL ANNIVERSARIES -- the count II.3, 1 asks for
+    ("for every year the native has completed"). Not elapsed days over a
+    mean year, which lets the sign turn a day either side of the birthday."""
+    years = target_date.year - birth_date.year
+    if (target_date.month, target_date.day) < (birth_date.month, birth_date.day):
+        years -= 1
+    return max(years, 0)
+
+def _pn4_seg_degree(segment, ascendant_lon, chart_data, geo_lat):
+    """The zodiacal degree the direction stands on at the start of a
+    segment: the arc is in oblique ascension, so the degree comes back
+    through the inverse (fn 251's inverse, _lon_with_oblique_ascension)."""
+    if not segment:
+        return ascendant_lon
+    oa = (_oblique_ascension(ascendant_lon, chart_data['obliquity'], geo_lat) + segment['from']) % 360.0
+    got = _lon_with_oblique_ascension(oa, chart_data['obliquity'], geo_lat)
+    return ascendant_lon if got is None else got
+
+def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule):
+    """Everything the Timing page shows that comes from PN IV, computed
+    once. Returns a dict of row-lists plus the raw pieces the captions
+    need. Kept in the engine half so it is testable without Streamlit."""
+    natal_sun = chart_data['planetary_data']['Sun']['longitude']
+    ascendant = chart_data['ascendant']
+    age = pn4_completed_years(birth_date, target_date)
+
+    # I.2, 1-4: the revolution of the year, cast for the birth location.
+    jd_sr = pn4_solar_revolution_jd(chart_data['julian_day'], natal_sun, age)
+    sr = calculate_traditional_chart(pn4_datetime_from_jd(jd_sr), lat, lon)
+
+    # IX.1, 9-10: the sign of the year is also month 1, and the months run
+    # from the revolution dates, not the calendar (Intro Sect. 9 p. 90).
+    # Which month the target date falls in: the last monthly revolution at
+    # or before it.
+    jd_target = swe.julday(target_date.year, target_date.month, target_date.day, 12.0,
+                           swe.GREG_CAL if (target_date.year, target_date.month, target_date.day) >= (1582, 10, 15) else swe.JUL_CAL)
+    month, jd_mr = 1, jd_sr
+    for m in range(1, 13):
+        jd_m = pn4_monthly_revolution_jd(jd_sr, natal_sun, m)
+        if jd_m <= jd_target:
+            month, jd_mr = m, jd_m
+    mr = calculate_traditional_chart(pn4_datetime_from_jd(jd_mr), lat, lon)
+
+    year = pn4_sign_of_the_year(ascendant, age)
+    ninth = pn4_first_ninth_part_lord(year['sign'])
+    fardar = pn4_fardar_at_age(age, chart_data['sect'])
+    ages = pn4_age_of_man(age)
+    segments = pn4_distribution_from_ascendant(
+        chart_data['planetary_data'], ascendant, chart_data['obliquity'], lat)
+    current = pn4_distribution_at_age(segments, float(age)) if segments else None
+
+    # --- The revolution of the year (I.2, 1-4; I.7, 2) ---
+    revolution_rows = [
+        {'Item': 'Moment of the revolution (UTC)', 'Value': f"{pn4_datetime_from_jd(jd_sr):%Y-%m-%d %H:%M:%S}",
+         'Source': 'I.2, 1: the Sun returns to his rooted position'},
+        {'Item': 'Ascendant of the year', 'Value': get_degree_string(sr['ascendant']),
+         'Source': 'I.2, 4; vocabulary at Intro Sect. 8 p. 77'},
+        {'Item': "Its house in the root", 'Value': f"House {get_wsh_house(sr['ascendant'], ascendant)}",
+         'Source': 'I.7, 2: the first thing asked of the chart'},
+        {'Item': 'Lot of Fortune of the year', 'Value': get_degree_string(sr['lot_of_fortune']),
+         'Source': 'I.6, 3; monthly indicator #5 at IX.1, 36'},
+        {'Item': 'Sect of the revolution', 'Value': sr['sect'], 'Source': 'I.6, 3'},
+        {'Item': 'Location', 'Value': 'Birth location (assumed)',
+         'Source': "Not stated for the year; stated for the months, Intro Sect. 9 p. 95"},
+        {'Item': f'Revolution of the month ({month} of 12)', 'Value': f"{pn4_datetime_from_jd(jd_mr):%Y-%m-%d %H:%M:%S} UTC",
+         'Source': 'IX.3, 2: the like degree AND minute in the n-th sign'},
+        {'Item': 'Ascendant of the month', 'Value': get_degree_string(mr['ascendant']),
+         'Source': 'IX.3, 2; monthly indicator #6'},
+    ]
+
+    # --- The year's indicators, in II.1, 5-9's order ---
+    year_rows = [
+        {'#': 1, 'Indicator': PN4_YEAR_INDICATOR_ORDER[0],
+         'Active point': f"{year['sign']} ({get_degree_string(year['longitude'])})",
+         'Ruler': year['lord'], 'Source': 'II.3, 1; I.2, 5'},
+        {'#': 2, 'Indicator': PN4_YEAR_INDICATOR_ORDER[1],
+         'Active point': ('refused above the polar circle' if segments is None
+                          else (f"{get_degree_string(_pn4_seg_degree(current, ascendant, chart_data, lat))}"
+                                if current else
+                                f"age {age} is past the {PN4_DISTRIBUTION_SPAN_YEARS:g}-year table")),
+         'Ruler': (current or {}).get('distributor', '-') if segments is not None else '-',
+         'Source': 'III.1, 11-13'},
+        {'#': 3, 'Indicator': PN4_YEAR_INDICATOR_ORDER[2],
+         'Active point': ((current or {}).get('partner_from', '-') if segments is not None and current
+                          else '-'),
+         'Ruler': (((current or {}).get('partner') or 'none -- the distributor alone')
+                   if segments is not None and current else '-'),
+         'Source': 'III.1, 15-16, 23-25'},
+        {'#': 4, 'Indicator': PN4_YEAR_INDICATOR_ORDER[3],
+         'Active point': (f"age {age}: cycle {fardar['cycle']}, year "
+                          f"{age % PN4_FARDAR_CYCLE_YEARS:g} of 75" if fardar else '-'),
+         'Ruler': (f"{fardar['lord']}" + (f" / {fardar['sub_lord']}" if fardar['sub_lord'] else " (no sub-period)")) if fardar else '-',
+         'Source': 'IV.1, 2-8; II.1, 9'},
+    ]
+
+    # --- The fardar cycle (IV.1, 2-8; IV.7, 24-25) ---
+    fardar_rows, start = [], 0.0
+    for lord, years in pn4_fardar_sequence(chart_data['sect']):
+        subs = pn4_fardar_subperiods(lord, years)
+        fardar_rows.append({
+            'Lord': lord, 'Years': int(years),
+            'From age': f"{start:g}", 'To age': f"{start + years:g}",
+            'Sub-periods': ', '.join(s[0] for s in subs) if subs
+                           else 'none -- "they do not have houses" (IV.1, 8)',
+            'Active': 'yes' if fardar and fardar['lord'] == lord and fardar['cycle'] >= 1
+                      and start <= (age % PN4_FARDAR_CYCLE_YEARS) < start + years else '',
+        })
+        start += years
+
+    # --- The seven monthly indicators (IX.1, 35-39) ---
+    indicators = pn4_monthly_indicators(
+        month, age, year['longitude'], chart_data['lot_of_fortune'],
+        sr['ascendant'], sr['lot_of_fortune'], mr['ascendant'], mr['lot_of_fortune'], rule)
+    monthly_rows = [{
+        '#': row['number'], 'Indicator': row['name'],
+        'Rooted': 'yes' if row['rooted'] else 'no',
+        'Sign': row['sign'], 'Lord': row['lord'], 'Turned': row['direction'],
+        'In the root': f"House {get_wsh_house(row['longitude'], ascendant)}",
+    } for row in indicators]
+
+    # --- Ages of Man (I.8, 10-26) ---
+    age_rows, start = [], 0
+    for planet, years, label in PN4_AGES_OF_MAN:
+        last = planet == PN4_AGES_OF_MAN[-1][0]
+        age_rows.append({
+            'Planet': planet, 'Years': years,
+            'Ages': f"{start}-{start + years - 1}" if not last else f"{start} onward",
+            'Period of life': label,
+            'Active': 'yes' if ages and ages['planet'] == planet else '',
+        })
+        start += years
+
+    # --- the distribution, as a forward table (III.1, 11-16) ---
+    distribution_rows = [{
+        'From age': f"{seg['from']:.2f}", 'To age': f"{seg['to']:.2f}",
+        'Lasting': pn4_format_arc_time(seg['to'] - seg['from']),
+        'Distributor': seg['distributor'],
+        'Partner': seg['partner'] or 'none',
+        'By': seg['partner_aspect'] or '-',
+        'Rank': ('-' if seg['partner_aspect'] is None
+                 else f"{pn4_partner_strength(seg['partner_aspect']) + 1} of 5"),
+        'Opened by': seg['opened_by'],
+        'Now': 'yes' if current is not None and seg is current else '',
+    } for seg in (segments or [])]
+
+    return {
+        'distribution_rows': distribution_rows,
+        'age': age, 'month': month, 'jd_sr': jd_sr, 'jd_mr': jd_mr,
+        'sr': sr, 'mr': mr, 'year': year, 'ninth': ninth, 'fardar': fardar,
+        'segments': segments, 'current': current, 'ages': ages,
+        'revolution_rows': revolution_rows, 'year_rows': year_rows,
+        'fardar_rows': fardar_rows, 'monthly_rows': monthly_rows, 'age_rows': age_rows,
+    }
+
 def calculate_time_lords(ascendant_lon, birth_date, target_date):
     """Annual Profection (Lord of the Year) and a symbolic 1-degree-per-year
     direction of the Ascendant through the Egyptian bounds.
@@ -7271,6 +8083,10 @@ MARS_WEST_RAYS_18 = bool(_reading("mars_west_18", "_mars_west_18", False))
 FITTING_INFORTUNE = bool(_reading("fitting_infortune", "_fitting_infortune", False))
 DOMAIN_RULE = _reading("domain_rule", "_domain_rule", DOMAIN_RULE_OPTIONS[0])
 LOT_HOUSE_CUSP = _reading("lot_house_cusp", "_lot_house_cusp", LOT_HOUSE_CUSP_OPTIONS[0])
+# Owner's decision 2026-09-10: ship Abu Ma'shar's quadruplicity turn (IX.1, 26-34)
+# as a reading, defaulting to Dykes' plain forward count. Read only by the
+# Timing page, so it is not in the Configurations cross-product.
+PN4_MONTHLY_TURN = _reading("pn4_monthly_turn", "_pn4_monthly_turn", PN4_MONTHLY_TURN_OPTIONS[0])
 
 
 if location_query and lat is not None and lon is not None:
@@ -7390,6 +8206,7 @@ if location_query and lat is not None and lon is not None:
         planets_in_houses_data = evaluate_planets_in_houses(p_data, abu_mashar_condition, chart_data['ascendant'])
         time_lords_data = calculate_time_lords(chart_data['ascendant'], input_date, target_date)
         planetary_years_data = evaluate_planetary_years_display(p_data, chart_data['houses'], chart_data['ascendant'], sect, essential)
+        pn4 = pn4_timing_bundle(chart_data, lat, lon, input_date, target_date, PN4_MONTHLY_TURN)
 
         # The hub names the chart: the saved chart picked in the sidebar, else
         # the name typed for saving, else "Transits" (owner's decision D5,
@@ -8086,24 +8903,191 @@ if location_query and lat is not None and lon is not None:
                 st.markdown('The first five rows score each planet\'s essential-dignity claim AT THAT POINT\'S degree -- Sun, Moon, Ascendant, Lot of Fortune, and the prenatal New/Full Moon. Then Lord of the Day (+7), Lord of the Hour (+6) and Places are added ONCE each, not per point; Places is keyed the other way round, by the candidate planet\'s own Whole-Sign house. Every column is summed into Totals, and the single highest total is the chart\'s victor.\n\nTWO INDEPENDENT AXES, and all four combinations are shown. The dignity weights are Older (al-Tabari/Masha\'allah, Bound 3 > Triplicity 2) or Newer (al-Qabisi/Abu Ma\'shar, Triplicity 3 > Bound 2); the Places wheel is ibn Ezra\'s own or Masha\'allah\'s. Nothing in the source says which wheel goes with which weighting, so pairing each with the wheel of its own named tradition is a reading, not a fact -- those two are labelled "matched preset" and the two off-diagonal combinations, previously not computed at all, are shown beside them. Where all four agree the victor is robust; where they part, the disagreement is the finding. Ibn Ezra\'s later victor #2 (1507) replaces the two chronocrator rows with a Superiors row scored only for Saturn, Jupiter and Mars; its weight is not given in the course materials, so it is not implemented rather than guessed.')
         def page_timing():
             st.header("Timing")
-            st.caption("Part 2: prediction.")
-            st.subheader('Chronocrator Matrix (Active Time Lords)', help='Two rows: the lord of the year by annual profection, and the Egyptian bound lord of the Ascendant directed symbolically at one degree per year -- which is not a distribution, as its label says.')
+            st.caption("Part 2: prediction. Every rule on this page comes from Abu Ma'shar, "
+                       "*On the Revolutions of the Years of Nativities* (*Persian Nativities* IV), "
+                       "cited as Book.chapter, sentence. What that book does not settle is listed "
+                       "at the foot of the page rather than filled in.")
+
+            st.subheader("The revolution of the year",
+                         help="I.2, 1: a revolution is the moment the Sun comes back to \"his position in which he was "
+                              "at the root\". I.2, 4: derive its Ascendant and the twelve houses. The engine uses a "
+                              "TRUE-Sun return; Abu Ma'shar computes a mean Sun and then applies the Hipparchan "
+                              "tropical year (I.4, 23-31), which Dykes says plainly does not make sense.")
+            st.dataframe(pd.DataFrame(pn4['revolution_rows']), hide_index=True, width='stretch',
+                         height=_rows_height(len(pn4['revolution_rows'])))
+
+            st.subheader("Indicators of the year, in Abu Ma'shar's order",
+                         help="II.1, 5-24 ranks nineteen indicators of the year and II.1, 25 says \"each one in turn "
+                              "is stronger in indication than the one which is after it\". The first four are computed "
+                              "here; the rest are delineation material. Note the order: WITHIN A YEAR the lord of the "
+                              "year outranks the distributor (II.1, 25; II.23, 1). Across several years the "
+                              "distribution is the stronger (III.2, 2-3) -- the two are indexed to different scopes, "
+                              "which is how PN IV resolves the corpus disagreement.")
+            st.dataframe(pd.DataFrame(pn4['year_rows']), hide_index=True, width='stretch')
+
+            st.subheader("The distribution from the Ascendant (the *jar bakhtar*)",
+                         help="III.1, 12: the Ascendant is directed by the ascensions \"of the country in which the "
+                              "native was born\" -- oblique ascensions of the birth latitude, one degree of ascension "
+                              "to a year (III.1, 13). III.1, 11: the lord of the bound reached is the distributor, "
+                              "\"whether it looked at [the bound] or not\". III.1, 15-16: the most recent body or ray "
+                              "met is the partner, and it holds until another body or ray is met -- so there is always "
+                              "exactly one, and a ray is a point with no orb. III.1, 14: the Persians gave this "
+                              "particular distribution, and no other, the name *jar bakhtar*.")
+            if pn4['segments'] is None:
+                st.warning("Refused at this latitude. Above the polar circle some degrees never rise, the oblique "
+                           "ascension has no unique inverse, and an arc of direction from the Ascendant is not "
+                           "defined (the domain of decision D-23).")
+            else:
+                cur = pn4['current']
+                if cur:
+                    st.markdown(
+                        f"**Now** (age {pn4['age']}): distributor **{cur['distributor']}**, partner "
+                        f"**{cur['partner'] or 'none -- the distributor acts alone'}**"
+                        f" &nbsp;|&nbsp; this period runs from age {cur['from']:.2f} to {cur['to']:.2f}"
+                        f" &nbsp;|&nbsp; partner met: {cur['partner_from']}")
+                st.dataframe(pd.DataFrame(pn4['distribution_rows']), hide_index=True, width='stretch',
+                             height=_rows_height(min(len(pn4['distribution_rows']), 16)))
+                st.caption("III.1, 23-25: at birth the partner is whatever body or ray lies between the beginning of "
+                           "the Ascendant's sign and its degree; if there is none, \"the distributor without a planet "
+                           "partnering with her\". III.2, 103-104 ranks partners body > opposition > square > trine > "
+                           "sextile -- hard aspects above soft ones, which is the reverse of the usual intuition.")
+
+            st.subheader("Directing: which ascensions, and what a degree is worth")
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown("**III.1, 12 -- the measure, by position**")
+                st.dataframe(pd.DataFrame(PN4_ASCENSION_ROWS), hide_index=True, width='stretch')
+                st.markdown("**III.1, 6 -- the unit, by level of chart**")
+                st.dataframe(pd.DataFrame(PN4_UNIT_ROWS), hide_index=True, width='stretch')
+            with c2:
+                st.markdown("**III.1, 13 -- the rate ladder**")
+                st.dataframe(pd.DataFrame(PN4_LADDER_ROWS), hide_index=True, width='stretch')
+                st.caption("An idealised year of twelve 30-day months (fn 17). The bottom rung is **25 thirds**, a "
+                           "sixtieth of a second of arc: 10″ is a day, so an hour is 10″/24 = 25‴ exactly. "
+                           "The OCR'd corpus reads 25″, which would make an hour two and a half days long; the "
+                           "printed page has 25‴ (verified against the photograph of p. 288).")
+
+            st.subheader("The *fardar*",
+                         help="IV.1, 2-4: the years are Sun 10, Venus 8, Mercury 13, Moon 9, Saturn 11, Jupiter 12, "
+                              "Mars 7, Head 3, Tail 2 -- 75 in all. The order runs down the spheres from the light of "
+                              "the sect: by day from the Sun, by night from the Moon. IV.7, 24: the Head and Tail come "
+                              "LAST IN BOTH SECTS, \"whether the native was diurnal or nocturnal\" -- the point the "
+                              "later tradition got wrong. IV.7, 25: after 75 the cycle returns to \"the luminary which "
+                              "he began from at his birth\", not always to the Sun.")
+            st.dataframe(pd.DataFrame(pn4['fardar_rows']), hide_index=True, width='stretch',
+                         height=_rows_height(len(pn4['fardar_rows'])))
+            st.caption("IV.1, 5-6: each planetary period divides into seven equal parts, the lord itself first, then "
+                       "\"the planet which is below it in the celestial circle\". IV.1, 8: the Nodes have no "
+                       "sub-periods, \"because they do not have houses\". I.8, 35 says the order follows the planets' "
+                       "exaltations; it does not, and Book IV governs -- an inconsistency inside PN IV, recorded.")
+
+            st.subheader("The seven indicators of the month",
+                         help="IX.1, 35-39. Five are \"rooted\" -- turned from the positions they hold at the "
+                              "revolution of the year -- and two are not, being cast fresh from each monthly "
+                              "revolution. They decrease in universality in the order given (IX.1, 39). The sign of "
+                              "the year is itself month 1 (IX.1, 10), and months run from the revolution dates, not "
+                              "the calendar.")
+            PN4_MONTHLY_TURN_LOCAL = _reading_radio(
+                "Monthly profections turn", list(PN4_MONTHLY_TURN_OPTIONS),
+                "pn4_monthly_turn", "_pn4_monthly_turn",
+                help="IX.1, 26-34: Abu Ma'shar turns the monthly indicators BACKWARDS when the sign is convertible, "
+                     "and for a double-bodied sign forwards below 15°00' and backwards from it, because the first "
+                     "half of a common sign is of the nature of the fixed sign before it and the second half of the "
+                     "convertible sign after it (IX.1, 30). IX.1, 31 applies the test to each indicator's OWN sign, "
+                     "individually. Indicator #2, the ninth-part, always runs forward (IX.1, 32). Dykes rejects the "
+                     "whole rule as \"complicated, probably wrong\" and counts forward always; his reading is the "
+                     "default here, by the owner's decision of 2026-09-10.")
+            st.dataframe(pd.DataFrame(pn4['monthly_rows']), hide_index=True, width='stretch',
+                         height=_rows_height(len(pn4['monthly_rows'])))
+            st.caption(f"Month {pn4['month']} of 12. IX.1, 37: each is read against three positions -- the Ascendant "
+                       "of the root (the column above), the sign of the terminal point, and the Ascendant of the "
+                       "revolution. Indicator #2 is the lord of the first ninth-part of the sign of the year "
+                       f"({pn4['ninth']['ninth_part_sign']}, lord {pn4['ninth']['lord']}); Abu Ma'shar himself "
+                       "ignores it through most of Book IX (fn 15).")
+
+            st.subheader("The Ages of Man",
+                         help="I.8, 10-26 and Figure 53: Ptolemy's seven ages, ordered by sphere from the lowest "
+                              "upward -- not the quadrant scheme of Sahl, On Nativities 3.9. Each span is a planet's "
+                              "lesser years, or a half or a tenth of its lesser or middle years (I.8, 9). The Moon's 4 "
+                              "is a tenth of her middle years, 39 1/2 (I.8, 12) -- an independent witness for the "
+                              "luminary construction of the middle years used elsewhere in this app.")
+            st.dataframe(pd.DataFrame(pn4['age_rows']), hide_index=True, width='stretch',
+                         height=_rows_height(len(pn4['age_rows'])))
+            st.caption("The last age is open-ended: Figure 53 tabulates Saturn as 30 years and ages 68-97, but the "
+                       "prose governs -- the seventh age runs \"until the end of his lifespan\" (I.8, 25). Abu Ma'shar "
+                       "refuses to subdivide an age into sevenths the way a *fardar* is subdivided, so there is no "
+                       "sub-lord here (I.8, 34-35).")
+
+            st.subheader('Chronocrator Matrix (Active Time Lords)', help='Two rows: the lord of the year by annual profection, and the Egyptian bound lord of the Ascendant directed symbolically at one degree per year -- which is not a distribution, as its label says. Abu Ma\'shar names the shortcut himself and grades it: "there is an approximation in it, but the correct [approach] is that this way of directing is like the direction of the Sun every day" (IX.7, 32). The ascensional method he prefers is the jar bakhtar table above.')
             st.dataframe(pd.DataFrame(time_lords_data), hide_index=True, width='stretch')
             st.subheader("Planetary years (Abu Ma'shar VII.8, Figure 146) -- display only",
                          help="The lesser, middle, greater and mighty years and the fardar of each planet, beside its placement and what "
-                              "the two placement rules in the corpus would grant it. Nothing here is applied: the releaser, house-master "
-                              "and every timing technique stay deferred until Persian Nativities IV is read (decision D-3).")
+                              "the two placement rules in the corpus would grant it. Nothing here is applied: which planet is the "
+                              "house-master, and how many years it grants, are the questions PN IV turns out not to answer (IX.8, 123).")
             st.dataframe(pd.DataFrame(planetary_years_data), hide_index=True, width='stretch', height=_rows_height(len(planetary_years_data)))
+
+            with st.expander("What Persian Nativities IV does not settle", icon=":material/help:"):
+                st.markdown(
+                    "The Timing page has been deliberately incomplete for weeks, and these items keep it so. "
+                    "Each is absent because **the book does not answer it**, not because the work was skipped.\n\n"
+                    "**The releaser and the house-master.** PN IV names five releasers -- \"the Sun, Moon, Ascendant, "
+                    "Lot of Fortune, or the degree of the meeting or degree of the opposition\" (III.3, 1) -- and says "
+                    "all five are directed (III.1, 3). It never says **how to choose among them**, how many years the "
+                    "house-master grants, how increasers and decreasers are counted, or how to judge a planet that "
+                    "passes one test and fails another. Abu Ma'shar says so himself: those \"who look into it are "
+                    "wandering around in the dark; but a statement of the truth of that ... is found in the book which "
+                    "we worked on concerning nativities\" (IX.8, 123) -- a book outside this corpus. Nothing on this "
+                    "page is built on a guessed releaser, and the distribution above is the one taken **from the "
+                    "Ascendant**, which II.2, 6-7 lists as a separate indicator from the one taken from the releaser.\n\n"
+                    "**Where the greater years are granted** (*On Times* 4, 7 against *On Nativities* 1.20, 10-17). "
+                    "PN IV is silent, so the disagreement stays open and the Planetary years table still chooses no row.\n\n"
+                    "**Directing anything that is not the Ascendant or the meridian.** III.1, 12 sends the reader to "
+                    "\"what we stated in our book [on that topic]\" for every other point. Dykes' fn 16 identifies the "
+                    "method as Ptolemy's proportional semi-arcs, but that is an editor's note rather than Abu Ma'shar's "
+                    "sentence, and the reconstructions differ; it is named rather than guessed.\n\n"
+                    "**Revolutions of the day and the hour.** Defined in principle (I.3, 10-13) and then declined by "
+                    "the author: \"there is no need for us [to do] that, because these nine indicators ... are complete "
+                    "for everything needed\" (IX.7, 79).\n\n"
+                    "**The unit of a directed degree by sign type, strength or planet.** PN IV keys the unit to the "
+                    "level of the chart (III.1, 6) and answers a different question from the one the corpus "
+                    "disagreements ask; it is not evidence on either side of them.\n\n"
+                    "**The Indian rule for the lord of the year** -- the lord of the first ninth-part of the sign of "
+                    "the year (III.10, 1-5), which would restrict the lord of the year to Mars, Venus, Saturn and the "
+                    "Moon. PN IV reports it without adopting it, so it is used here only as monthly indicator #2, "
+                    "which is where IX.1, 36 puts it.")
+
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-                st.markdown("Figure 146 (VII.8, p. 487), verified against the prose restatement at VII.8, 3-8 and the fardar total the text "
-                            "gives (\"that is 75 years\", VII.8, 3: 10+8+13+9+11+12+7+3+2, the Head 3 and the Tail 2 included). "
-                            "**On Times Ch. 4, 7:** \"if the ruler was in a stake, eastern, it grants its greater years; or if it was in what "
-                            "follows the stakes, it grants its middle years; and if it was falling, it grants its lesser years.\" "
-                            "**On Nativities 1.20, 10-17:** greater in the Ascendant, Midheaven, sign of the west or eleventh when enhanced (10), "
-                            "or under the earth, eastern, in a share (11); middle in the second or eighth (16), or in the eleventh or fifth "
-                            "when not in a share and not eastern (17). The two disagree on where the greater years are granted "
-                            "(synthesis/04_timing_open_questions.md §3 #2); fn. 151 adds al-Tabari's reduction to the lesser years when "
-                            "alien and western. Which planet is the ruler or house-master is the deferred question, so no row is chosen.")
+                st.markdown(
+                    "**Decision D-3 is closed** (2026-09-10). It asked whether Sahl's *On Times* fell under the "
+                    "*Revolutions* deferral, and was decided \"for implementation, yes; for reading, no\" while "
+                    "PN IV was unread. PN IV has now been read, and the deferral it named is lifted for everything "
+                    "above.\n\n"
+                    "**Two readings on this page come from the photograph rather than the OCR'd corpus.** "
+                    "(1) The bottom rung of the rate ladder is **25‴**, twenty-five thirds; the corpus reads "
+                    "25″, which would make an hour two and a half days long, and the arithmetic settles it "
+                    "independently of the page. (2) The *fardar* order is taken from the prose of **IV.1, 2-4**, "
+                    "which gives it complete; the corpus has dropped fifteen of the eighteen planet glyphs from "
+                    "Figure 43 (p. 116), so the figure itself is not built from. Both are recorded in "
+                    "`PN4_READTHROUGH_FINDINGS_2026-09-10.md` (D-07, D-05).\n\n"
+                    "**One printed error is deliberately not reproduced.** Intro Sect. 2 (p. 7) puts the monthly "
+                    "revolutions at 12° **23′** when the natal Sun is at 12° **22′**. The page "
+                    "genuinely prints that, and it is contradicted by the rule in its own sentence, by IX.1, 23, by "
+                    "IX.3, 2, and by Dykes' own worked example at Intro Sect. 9 p. 95. The degree **and minute** are "
+                    "carried unchanged into every sign.\n\n"
+                    "**The lord of the year is the lord of the *sign* of the year** (II.3, 1), Persian *salkhudhah* "
+                    "-- not the lord of the revolution's Ascendant and not a victor. \"Governor\" (Ar. *mustawli*), "
+                    "the sign on which most of the year's indicators coincide (IX.9, 10), is a different term, and "
+                    "PN IV keeps \"Ascendant of the year\" and \"sign of the year\" carefully apart (Intro Sect. 8, "
+                    "p. 77) where Sahl's English does not.\n\n"
+                    "**Figure 146 (VII.8, p. 487)**, verified against the prose restatement at VII.8, 3-8 and the "
+                    "fardar total the text gives (\"that is 75 years\", VII.8, 3), agrees with PN IV's IV.1, 2 cell "
+                    "for cell. **On Times Ch. 4, 7:** \"if the ruler was in a stake, eastern, it grants its greater "
+                    "years; or if it was in what follows the stakes, it grants its middle years; and if it was "
+                    "falling, it grants its lesser years.\" **On Nativities 1.20, 10-17:** greater in the Ascendant, "
+                    "Midheaven, sign of the west or eleventh when enhanced (10), or under the earth, eastern, in a "
+                    "share (11); middle in the second or eighth (16), or in the eleventh or fifth when not in a share "
+                    "and not eastern (17). The two disagree, PN IV does not adjudicate them "
+                    "(synthesis/04_timing_open_questions.md Sect. 3 #2), and no row is chosen.")
 
         def page_sources():
             st.header("Sources and coverage")

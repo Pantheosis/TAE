@@ -65,3 +65,39 @@ def _write_fixture_at_end():
         ordered = {d: dict(sorted(v.items())) for d, v in sorted(_collected.items())}
         TABLES_FIXTURE.write_text(dump_fixture(ordered))
         print(f"\nwrote {TABLES_FIXTURE}")
+
+
+# --- The Timing page's own reading (PN IV, IX.1, 26-34) ------------------
+# This switch is NOT in conftest.SWITCHES: it is read only by page_timing,
+# so putting it in the registry would double the Configurations
+# cross-product (2**8 states x 6 charts) to prove nothing. It is covered
+# instead by the doctrine fixtures, which pin the rule itself, and by
+# these two renders, which prove both settings draw the page.
+
+@pytest.mark.parametrize("date", list(CHARTS))
+@pytest.mark.parametrize("turn", ["Dykes: always forward", "Abu Ma'shar IX.1, 26-34"])
+def test_timing_page_renders_under_both_monthly_turn_readings(date, turn):
+    at = make_app(date=date, page="timing")
+    at.session_state["_pn4_monthly_turn"] = turn
+    at.run()
+    assert_no_exception(at, f"{date} timing, monthly turn = {turn}")
+    assert len(at.main.dataframe) > 0
+
+
+def test_abu_mashars_turn_actually_reverses_a_convertible_indicator():
+    """Not just "it renders": under Abu Ma'shar's rule at least one of the
+    seven monthly indicators must be turned backwards on some chart, or
+    the switch is inert. The default must leave every one forward."""
+    def directions(turn):
+        at = make_app(date="1240-05-23", page="timing")
+        at.session_state["_pn4_monthly_turn"] = turn
+        at.run()
+        assert_no_exception(at, f"timing {turn}")
+        for df in at.main.dataframe:
+            if "Turned" in df.value.columns:
+                return list(df.value["Turned"])
+        pytest.fail("the monthly indicators table did not render")
+
+    default = directions("Dykes: always forward")
+    assert not any(d.startswith("backwards") for d in default), default
+    assert any(d.startswith("backwards") for d in directions("Abu Ma'shar IX.1, 26-34"))

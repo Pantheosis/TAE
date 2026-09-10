@@ -724,3 +724,403 @@ def test_gemini_transposition_is_gone_with_control(engine):
     # transposed table gave the reverse.
     assert engine["get_essential_rulers"](68.0)["term"] == "Jupiter"
     assert engine["get_essential_rulers"](73.0)["term"] == "Venus"
+
+
+# =========================================================================
+# Persian Nativities IV: the timing apparatus (D-3 closed 2026-09-10)
+# =========================================================================
+# Citations are Book.chapter, sentence, as in app.py section 3b. Each rule
+# gets a case from Abu Ma'shar's own text that must fire and a near-miss
+# that must not -- and several of the negatives below are the specific
+# wrong readings this corpus or the later tradition actually produced.
+
+
+# --- III.1, 13: the rate ladder ------------------------------------------
+
+@pytest.mark.parametrize("arc, unit, amount", [
+    (1.0, "years", 1),            # "every degree a year"
+    (5 / 60, "months", 1),        # "every 5' a month"
+    (1 / 60, "days", 6),          # "every 1' six days"
+    (10 / 3600, "days", 1),       # 'every 10" one day'
+])
+def test_pn4_rate_ladder_rungs(engine, arc, unit, amount):
+    assert engine["pn4_arc_to_time"](arc)[unit] == amount
+
+
+def test_pn4_bottom_rung_is_twenty_five_THIRDS(engine):
+    """III.1, 13's last rung. 25''' is a sixtieth of a second of arc, and
+    it is what closes the ladder: 10" is a day, so an hour is 10"/24."""
+    assert engine["pn4_arc_to_time"](25 / 216000.0)["hours"] == pytest.approx(1.0, abs=1e-9)
+
+
+def test_pn4_bottom_rung_is_NOT_twenty_five_seconds(engine):
+    """The negative control for corpus defect D-07. The OCR'd text reads
+    `every 25" one hour`; that would make an hour two and a half days, so
+    a reading of 25 SECONDS must not produce an hour."""
+    got = engine["pn4_arc_to_time"](25 / 3600.0)
+    assert got["days"] == 2 and got["hours"] == pytest.approx(12.0, abs=1e-9)
+    assert (got["days"] * 24 + got["hours"]) == pytest.approx(60.0, abs=1e-9)
+
+
+def test_pn4_ladder_is_internally_consistent(engine):
+    """Each rung is exactly the next one's multiple, on the idealised year
+    of twelve 30-day months (fn 17): 12 months to a degree, 5 days to a
+    minute-fifth, 24 hours to a day."""
+    f = engine["pn4_arc_to_time"]
+    assert f(1.0)["years"] == 1 and f(11 * 5 / 60)["months"] == 11
+    assert f(59 / 60)["months"] == 11 and f(59 / 60)["days"] == 24
+
+
+# --- III.1, 6: the unit is keyed to the level of the chart ----------------
+
+@pytest.mark.parametrize("level, unit", [
+    ("root", "years"),
+    ("revolution of the year", "months and days"),
+    ("revolution of the month", "days and hours"),
+])
+def test_pn4_direction_unit_by_chart_level(engine, level, unit):
+    assert engine["pn4_direction_unit"](level) == unit
+
+
+def test_pn4_direction_unit_has_no_key_but_the_chart_level(engine):
+    """The negative control for corpus disagreement #5. PN IV keys the unit
+    to the level of the chart and to nothing else -- not sign type, not
+    planetary strength, not quadruplicity, not speed -- so it must not
+    answer for any of those, and must not be cited on either side."""
+    for absent in ("convertible", "fixed", "Saturn", "strong", "fast"):
+        assert engine["pn4_direction_unit"](absent) is None
+
+
+# --- IV.1, 2-4 and IV.7, 24-25: the fardar --------------------------------
+
+@pytest.mark.parametrize("sect, first", [("Diurnal", "Sun"), ("Nocturnal", "Moon")])
+def test_pn4_fardar_begins_at_the_light_of_the_sect(engine, sect, first):
+    """IV.1, 3-4: by day from the Sun, by night from the Moon, then down
+    the spheres."""
+    assert engine["pn4_fardar_sequence"](sect)[0][0] == first
+
+
+@pytest.mark.parametrize("sect, order", [
+    ("Diurnal", ["Sun", "Venus", "Mercury", "Moon", "Saturn", "Jupiter", "Mars"]),
+    ("Nocturnal", ["Moon", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury"]),
+])
+def test_pn4_fardar_planetary_order(engine, sect, order):
+    """IV.1, 3 names the diurnal run "the Sun ... Venus ... Mercury, the
+    Moon, and ... Saturn", IV.1, 4 the nocturnal "the Moon, then Saturn,
+    Jupiter, [and] Mars" -- both descending the spheres and wrapping."""
+    assert [p for p, _ in engine["pn4_fardar_sequence"](sect)][:7] == order
+
+
+@pytest.mark.parametrize("sect", ["Diurnal", "Nocturnal"])
+def test_pn4_fardar_sums_to_seventy_five(engine, sect):
+    """IV.1, 2: "the amount of all of that is 75 years". The seven planets
+    make 70 (IV.1, 8) and the Nodes carry it to 75."""
+    seq = engine["pn4_fardar_sequence"](sect)
+    assert sum(y for _, y in seq) == 75
+    assert sum(y for p, y in seq if p not in ("Head", "Tail")) == 70
+
+
+@pytest.mark.parametrize("sect", ["Diurnal", "Nocturnal"])
+def test_pn4_nodes_come_last_in_BOTH_sects(engine, sect):
+    """IV.7, 24: the native "will begin in the distribution of the fardars
+    with the Head, then the Tail, WHETHER THE NATIVE WAS DIURNAL OR
+    NOCTURNAL" -- they enter at year 71 in both."""
+    seq = engine["pn4_fardar_sequence"](sect)
+    assert [p for p, _ in seq][-2:] == ["Head", "Tail"]
+
+
+def test_pn4_nocturnal_nodes_do_NOT_follow_mars(engine):
+    """The negative control, and it is the error the later tradition
+    actually made: al-Qabisi IV.21 was read as putting the Head and Tail
+    after Mars in every sect, which in a nocturnal chart would place them
+    at ages 39-43. IV.7, 24 puts them after MERCURY at night."""
+    seq = [p for p, _ in engine["pn4_fardar_sequence"]("Nocturnal")]
+    assert seq[seq.index("Mars") + 1] == "Sun"
+    assert seq[seq.index("Mercury") + 1] == "Head"
+    at = engine["pn4_fardar_at_age"](40.0, "Nocturnal")
+    assert at["lord"] not in ("Head", "Tail")
+
+
+def test_pn4_fardar_subperiods_are_sevenths_from_the_lord(engine):
+    """IV.1, 5-6: "one-seventh of its years", beginning from the lord
+    itself, then "the planet which is below it in the celestial circle".
+    IV.1, 11 works the Sun's: 10/7 = "1 year, 5 months, 4 days, and
+    approximately 6 hours"."""
+    subs = engine["pn4_fardar_subperiods"]("Sun", 10)
+    assert [p for p, _ in subs] == ["Sun", "Venus", "Mercury", "Moon", "Saturn", "Jupiter", "Mars"]
+    t = engine["pn4_arc_to_time"](subs[0][1])
+    assert (t["years"], t["months"], t["days"]) == (1, 5, 4)
+    # "and approximately 6 hours": the exact value is 6h51m, which is what
+    # "approximately" is doing in the sentence.
+    assert 6.0 <= t["hours"] <= 7.0
+
+
+@pytest.mark.parametrize("node", ["Head", "Tail"])
+def test_pn4_nodes_have_no_subperiods(engine, node):
+    """IV.1, 8: they "do not partner with the planets (nor do [the planets]
+    partner with them), because they do not have houses"."""
+    assert engine["pn4_fardar_subperiods"](node, 3) == []
+    assert engine["pn4_fardar_at_age"](71.5, "Diurnal")["sub_lord"] is None
+
+
+def test_pn4_fardar_restarts_at_the_SECT_LIGHT_not_always_the_sun(engine):
+    """IV.7, 25: after 75 the distribution "returns to THE LUMINARY WHICH
+    HE BEGAN FROM at his birth". IV.1, 2's "then it returns to the Sun" is
+    the diurnal case of that, not the general rule."""
+    assert engine["pn4_fardar_at_age"](75.5, "Diurnal")["lord"] == "Sun"
+    assert engine["pn4_fardar_at_age"](75.5, "Nocturnal")["lord"] == "Moon"
+    assert engine["pn4_fardar_at_age"](75.5, "Nocturnal")["cycle"] == 2
+
+
+# --- I.8, 10-26: the Ages of Man -----------------------------------------
+
+@pytest.mark.parametrize("age, planet", [
+    (0, "Moon"), (3, "Moon"), (4, "Mercury"), (13, "Mercury"), (14, "Venus"),
+    (21, "Venus"), (22, "Sun"), (40, "Sun"), (41, "Mars"), (55, "Mars"),
+    (56, "Jupiter"), (67, "Jupiter"), (68, "Saturn"),
+])
+def test_pn4_ages_of_man_boundaries(engine, age, planet):
+    """I.8, 10-26 and Figure 53. The six stated spans (4, 10, 8, 19, 15,
+    12) sum to 68, where Saturn's age begins."""
+    assert engine["pn4_age_of_man"](age)["planet"] == planet
+
+
+def test_pn4_last_age_is_open_ended(engine):
+    """The negative control for a figure that disagrees with its prose.
+    Figure 53 tabulates Saturn as "30 / ages 68-97", but I.8, 25 says the
+    seventh age runs "until the end of his lifespan". A native of 120 is
+    still in Saturn's age, and the ages must NOT restart at the Moon --
+    I.8, 31-33 reports that view without endorsing it."""
+    assert engine["pn4_age_of_man"](97)["planet"] == "Saturn"
+    assert engine["pn4_age_of_man"](120)["planet"] == "Saturn"
+    assert engine["pn4_age_of_man"](98)["to"] is None
+
+
+def test_pn4_ages_are_not_subdivided_like_fardars(engine):
+    """I.8, 34-35: Abu Ma'shar refuses to divide an age among the seven
+    planets -- "he will be in the nature of the planet itself". So an age
+    carries no sub-lord, unlike a fardar."""
+    assert "sub_lord" not in engine["pn4_age_of_man"](30)
+
+
+# --- III.10, 5: the first ninth-part --------------------------------------
+
+@pytest.mark.parametrize("sign, lord", [
+    ("Taurus", "Saturn"),      # "if the year terminated at 20 deg of Taurus ... Saturn"
+    ("Gemini", "Venus"),       # "if the year terminated at Gemini ... Venus"
+    ("Cancer", "Moon"),        # "if the year terminated at Cancer ... the Moon"
+])
+def test_pn4_first_ninth_part_against_abu_mashars_worked_examples(engine, sign, lord):
+    """III.10, 5 gives three worked examples; all three must reproduce."""
+    assert engine["pn4_first_ninth_part_lord"](sign)["lord"] == lord
+
+
+def test_pn4_ninth_part_lord_is_one_of_only_four_planets(engine):
+    """III.10, 1: the Indian rule "restricts the lord of the year to four
+    planets only" -- the lords of the convertible signs, because the first
+    ninth-part of every sign falls in a convertible one."""
+    lords = {engine["pn4_first_ninth_part_lord"](s)["lord"] for s in engine["SIGN_ORDER"]}
+    assert lords == {"Mars", "Venus", "Saturn", "Moon"}
+
+
+def test_pn4_ninth_part_does_NOT_depend_on_the_degree(engine):
+    """The negative control. It is the FIRST ninth-part of the sign, not
+    the ninth-part the degree falls in: "if the year terminated at 20 deg
+    of Taurus (OR LESS THAN THAT OR MORE), then its lord would be
+    Saturn" (III.10, 5)."""
+    assert engine["pn4_first_ninth_part_lord"]("Taurus")["lord"] == "Saturn"
+    # a degree-sensitive reading would give Taurus's 7th ninth-part here
+    assert engine["pn4_first_ninth_part_lord"]("Taurus")["ninth_part_sign"] == "Capricorn"
+
+
+# --- IX.1, 26-32: which way the monthly indicators turn --------------------
+
+@pytest.mark.parametrize("lon, forward", [
+    (45.0, True),     # 15 Taurus -- fixed, forwards (IX.1, 26)
+    (5.0, False),     # 5 Aries -- convertible, backwards (IX.1, 27)
+    (65.0, True),     # 5 Gemini -- double-bodied, below 15 deg (IX.1, 28)
+    (80.0, False),    # 20 Gemini -- double-bodied, from 15 deg (IX.1, 29)
+    (75.0, False),    # exactly 15 Gemini: "the beginning of the sixteenth degree"
+    (74.99, True),    # just under it
+])
+def test_pn4_monthly_turn_under_abu_mashars_rule(engine, lon, forward):
+    rule = engine["PN4_MONTHLY_TURN_OPTIONS"][1]
+    assert engine["pn4_monthly_turn_forward"](lon, rule) is forward
+
+
+@pytest.mark.parametrize("lon", [45.0, 5.0, 65.0, 80.0])
+def test_pn4_monthly_turn_under_dykes_is_always_forward(engine, lon):
+    """The negative control for the shipped default. Dykes rejects the
+    quadruplicity rule and counts forward always, which is the engine's
+    default by the owner's decision of 2026-09-10."""
+    assert engine["pn4_monthly_turn_forward"](lon, engine["PN4_MONTHLY_TURN_OPTIONS"][0]) is True
+
+
+def test_pn4_each_indicator_turns_by_its_OWN_sign(engine):
+    """IX.1, 31: when the four rooted indicators fall in different
+    quadruplicities, "one turns EACH ONE OF THEM INDIVIDUALLY". The
+    direction is not decided once, globally, by the sign of the year.
+
+    Here indicator #1 sits in a convertible sign and #4 in a fixed one, so
+    under Abu Ma'shar's rule they must turn in OPPOSITE directions."""
+    rule = engine["PN4_MONTHLY_TURN_OPTIONS"][1]
+    rows = engine["pn4_monthly_indicators"](
+        3, 0, 5.0, 5.0, 45.0, 45.0, 100.0, 100.0, rule)
+    by_number = {r["number"]: r for r in rows}
+    assert by_number[1]["direction"] == "backwards"     # 5 Aries, convertible
+    assert by_number[4]["direction"] == "forward"       # 15 Taurus, fixed
+
+
+def test_pn4_ninth_part_indicator_never_reverses(engine):
+    """IX.1, 32: indicator #2 "is turned in succession without
+    distinction, whether the sign of the terminal point is convertible,
+    fixed, or having two bodies"."""
+    rule = engine["PN4_MONTHLY_TURN_OPTIONS"][1]
+    for sign_of_year in (5.0, 45.0, 80.0):       # convertible, fixed, late double-bodied
+        rows = engine["pn4_monthly_indicators"](
+            4, 0, sign_of_year, 5.0, 5.0, 5.0, 5.0, 5.0, rule)
+        assert next(r for r in rows if r["number"] == 2)["direction"].startswith("forward")
+
+
+# --- II.3, 1: the lord of the year ---------------------------------------
+
+def test_pn4_lord_of_the_year_is_the_lord_of_the_SIGN(engine):
+    """II.3, 1: "the sign which the intended year reaches is the 'sign of
+    the terminal point,' and its lord is the 'lord of the year'". One sign
+    per completed year from the natal Ascendant (I.2, 5)."""
+    year = engine["pn4_sign_of_the_year"](5.0, 0)          # 5 Aries, age 0
+    assert year["sign"] == "Aries" and year["lord"] == "Mars"
+    assert engine["pn4_sign_of_the_year"](5.0, 4)["sign"] == "Leo"
+    assert engine["pn4_sign_of_the_year"](5.0, 12)["sign"] == "Aries"   # a full turn
+
+
+def test_pn4_lord_of_the_year_is_NOT_the_lord_of_the_revolution_ascendant(engine):
+    """The negative control for Q21 and corpus disagreement #11. PN IV
+    keeps "sign of the year" and "Ascendant of the year" apart (Intro
+    Sect. 8, p. 77): the lord of the year is the profection lord, and it
+    must not track the revolution's Ascendant."""
+    # age 3 from 5 Aries profects to Cancer, lord the Moon, whatever the
+    # revolution's Ascendant happens to be.
+    assert engine["pn4_sign_of_the_year"](5.0, 3)["lord"] == "Moon"
+    assert engine["pn4_sign_of_the_year"](5.0, 3)["sign"] == "Cancer"
+
+
+# --- III.1, 11-16 and 23-25: the distribution and its partner -------------
+
+def test_pn4_distributor_is_the_bound_lord_aspect_or_no_aspect(engine):
+    """III.1, 11: "the lord of that bound is the 'distributor,' WHETHER IT
+    LOOKED AT [THE BOUND] OR NOT" -- so it is a pure lookup and must not
+    consult any aspect."""
+    assert engine["pn4_bound_lord"](0.5) == "Jupiter"      # 0 Aries, Egyptian
+    assert engine["pn4_bound_lord"](27.0) == "Saturn"      # 27 Aries
+    assert engine["pn4_bound_lord"](185.0) == "Saturn"     # 5 Libra
+
+
+def test_pn4_partner_ranking_puts_hard_aspects_above_soft(engine):
+    """III.2, 103-104: the body first, then "the strongest of the rays is
+    the opposition, and after that the square, the[n] the trine, and the
+    weakest of them is the sextile". This is the reverse of the usual
+    benefic intuition and is the easy thing to get backwards."""
+    rank = engine["pn4_partner_strength"]
+    assert rank("body") < rank("opposition") < rank("square") < rank("trine") < rank("sextile")
+
+
+def test_pn4_birth_partner_is_found_behind_the_ascendant(engine):
+    """III.1, 23-25: at birth look back "from the beginning of the sign up
+    to the degree of the Ascendant". A body there is already the partner."""
+    points = pdata(Sun=100.0)                 # 10 Cancer, behind 20 Cancer
+    segs = engine["pn4_distribution_from_ascendant"](points, 110.0, 23.44, 43.78)
+    assert segs[0]["partner"] == "Sun" and segs[0]["partner_aspect"] == "body"
+
+
+def test_pn4_birth_partner_search_stops_at_the_sign_boundary(engine):
+    """The negative control. The search runs to the beginning of the
+    Ascendant's SIGN, not backwards without limit: a body one degree
+    earlier but in the PREVIOUS sign is not the birth partner, and the
+    distributor then "[acts] without a planet partnering with her"
+    (III.1, 25)."""
+    points = pdata(Sun=89.0)                  # 29 Gemini, just before 0 Cancer
+    segs = engine["pn4_distribution_from_ascendant"](points, 95.0, 23.44, 43.78)
+    assert segs[0]["partner"] is None
+    assert "alone" in segs[0]["opened_by"]
+
+
+def test_pn4_distribution_refuses_above_the_polar_circle(engine):
+    """The domain of D-23. Where |latitude| + obliquity >= 90 some degrees
+    never rise, the oblique ascension has no unique inverse, and an arc of
+    direction from the Ascendant is not defined."""
+    points = pdata(Sun=100.0)
+    assert engine["pn4_distribution_from_ascendant"](points, 110.0, 23.44, 78.0) is None
+    assert engine["pn4_distribution_from_ascendant"](points, 110.0, 23.44, 43.78) is not None
+
+
+def test_pn4_distribution_segments_are_contiguous_and_ordered(engine):
+    """Every moment of the span has exactly one distributor and one
+    partner: III.1, 16 says the management holds "until it encounters
+    another planet", so the segments must tile the span without gaps."""
+    points = pdata(Sun=100.0, Moon=200.0, Mars=300.0)
+    segs = engine["pn4_distribution_from_ascendant"](points, 110.0, 23.44, 43.78)
+    assert segs[0]["from"] == 0.0
+    for a, b in zip(segs, segs[1:]):
+        assert a["to"] == pytest.approx(b["from"], abs=1e-12)
+        assert a["to"] > a["from"]
+
+
+def test_pn4_indicator_two_against_abu_mashars_worked_months(engine):
+    """IX.1, 15-16 works indicator #2 out month by month for a year that
+    terminates at Cancer: "the lord of its first ninth-part is the Moon,
+    and she is the lord of the year, as well as the lord of the first
+    month"; then "the lord of the first ninth-part of Leo is Mars ... of
+    Virgo is Saturn ... of Libra is Venus".
+
+    The thing this pins is the SHAPE of the indicator. What turns is the
+    sign of the terminal point; the lord is read off the first ninth-part
+    of whatever sign the turning reaches. Turning the year's ninth-part
+    SIGN instead would give the Sun for month 2, not Mars."""
+    rule = engine["PN4_MONTHLY_TURN_OPTIONS"][0]
+    cancer = 3 * 30.0
+    for month, lord in ((1, "Moon"), (2, "Mars"), (3, "Saturn"), (4, "Venus")):
+        rows = engine["pn4_monthly_indicators"](
+            month, 0, cancer, 0.0, 0.0, 0.0, 0.0, 0.0, rule)
+        got = next(r for r in rows if r["number"] == 2)
+        assert got["lord"] == lord, f"month {month}: got {got['lord']}, want {lord}"
+
+
+def test_pn4_indicator_three_is_profected_a_sign_a_year_first(engine):
+    """IX.1, 17-18: "you see where the Lot of Fortune is in the root of the
+    nativity, and TURN FROM IT A SIGN FOR EVERY YEAR, up to the year which
+    you want" -- and only then a sign a month (19). Indicator #3 is the
+    PROFECTED natal Lot, not the natal Lot itself."""
+    rule = engine["PN4_MONTHLY_TURN_OPTIONS"][0]
+    fortune = 5.0                                   # 5 Aries
+    rows = engine["pn4_monthly_indicators"](1, 4, 0.0, fortune, 0.0, 0.0, 0.0, 0.0, rule)
+    assert next(r for r in rows if r["number"] == 3)["sign"] == "Leo"      # 4 years on
+    rows = engine["pn4_monthly_indicators"](3, 4, 0.0, fortune, 0.0, 0.0, 0.0, 0.0, rule)
+    assert next(r for r in rows if r["number"] == 3)["sign"] == "Libra"    # +2 months
+
+
+def test_pn4_indicators_four_and_five_are_NOT_annually_profected(engine):
+    """The negative control for the pair above. IX.1, 20-21 assigns the
+    revolution's Ascendant and its Lot of Fortune to the first month AS
+    THEY STAND -- they must not be profected by the age the way #1 and #3
+    are, or a native's age would move the revolution's own Ascendant."""
+    rule = engine["PN4_MONTHLY_TURN_OPTIONS"][0]
+    sr_asc, sr_fortune = 5.0, 35.0                  # 5 Aries, 5 Taurus
+    for age in (0, 4, 40):
+        rows = engine["pn4_monthly_indicators"](1, age, 0.0, 0.0, sr_asc, sr_fortune, 0.0, 0.0, rule)
+        by = {r["number"]: r["sign"] for r in rows}
+        assert by[4] == "Aries" and by[5] == "Taurus"
+
+
+def test_pn4_printed_reference_tables_derive_from_the_rules(engine):
+    """The Timing page's three reference tables are built from the same
+    functions the engine applies, not restated beside them. Each ladder row
+    is emitted only if pn4_arc_to_time agrees with it, so a rung that
+    stopped agreeing would vanish -- this makes that loud instead."""
+    assert len(engine["PN4_LADDER_ROWS"]) == 5, engine["PN4_LADDER_ROWS"]
+    assert engine["PN4_LADDER_ROWS"][-1] == {"Arc": "25‴", "Is": "1 hour"}
+    assert [r["A degree is"] for r in engine["PN4_UNIT_ROWS"]] == [
+        "years", "months and days", "days and hours"]
+    applied = {r["Point directed"]: r["Applied"] for r in engine["PN4_ASCENSION_ROWS"]}
+    assert applied["Anything else"] == "no"
+    assert "PN IV" in [r["Measured in"] for r in engine["PN4_ASCENSION_ROWS"]][2]

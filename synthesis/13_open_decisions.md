@@ -21,7 +21,7 @@ additions are appended, not renumbered.
 |---|---|---|---|---|---|
 | **D-1** | Build VII.7's ascensional ray-casting as a static chart quantity, labelled Ptolemy's, or leave it under the timing deferral? | **Build it** (static; not a direction) | medium | subsystem | Aph. #45, *Nat.* 2.13, 48–51, C-16, ascensional distributions (04 Q10) |
 | **D-2** | When a connection is both a non-reception (Kind II/IV) and a Māshā'allāh minor-dignity reception, does the refusal win? | **Yes — refusal wins** | high | one function | the ¶63 xfail, C-18, C-24 |
-| **D-3** | Does Sahl's *On Times* fall under the *Revolutions* deferral? | **For implementation, yes; for reading, no** | medium-high | none | `04_timing_open_questions.md` §4 items 2–4 |
+| **D-3** | Does Sahl's *On Times* fall under the *Revolutions* deferral? | **For implementation, yes; for reading, no** — *superseded 2026-09-10, see below: the precondition was met and the deferral is lifted except for the releaser* | medium-high | none | `04_timing_open_questions.md` §4 items 2–4 |
 | **D-4** | Reverse `work_authority` (Sun→Saturn) at night? | **Yes** | high | one line | — (a displayed Lot, 46% of charts) |
 | **D-5** | Which burned-place span: none (Sahl), 15♎–15♏, or 19♎–3♏? | **None as Sahl's; keep 19–3 where the table is Abū Ma'shar's; drop the 15–15 label** | high | small | C-04 |
 | **D-6** | Carry Māshā'allāh's "work this if the house and its lord are free of the infortunes and the fortunes do not testify" condition on the two house tables? | **Yes, as a column, not a filter** | high | one function | the Dignities-page displays |
@@ -53,6 +53,7 @@ left as they were argued.
 | D-1 | Build it, static, labelled Ptolemy's | `cast_rays_by_ascension` / `evaluate_rays_by_ascension` (VII.7, 3–22; the ¶18/¶21 anchor flip taken as written and exposed as an argument); a Configurations table under the Abū Ma'shar view; nothing directs it in time; Aph. #45 and *Nat.* 2.13 remain unbuilt | `25d4214` |
 | D-2 | Refusal wins | `evaluate_reception` drops, under Sahl only, rows refused by non-reception Kind II and marks Kind IV rows "brought down (62)"; the strict xfail un-marked; scope settled by kind in the second pass (see the D-2 implementation note) | `f0ab0b5`, second pass below |
 | D-3 | Implementation deferred, reading in scope | Figure 146 on the Timing page as a display-only table with *Times* 4, 7 and *Nat.* 1.20 beside it, applied to nothing | `75267d0` |
+| D-3 *(closed)* | **Deferral lifted for everything PN IV states; the releaser stays deferred** | PN IV read and answered (`04_timing_answers_2026-09-10.md`); the revolutions, the distribution from the Ascendant (*jār bakhtār*), profections and the lord of the year, the *fardār*, the seven monthly indicators, the Ages of Man and the rate ladder all built and cited on the Timing page; the releaser/house-master/cutter chain refused in the UI with IX.8, **123** as the reason; *Times* 4, 7 and *Nat.* 1.20 still applied to nothing, because PN IV does not adjudicate them | `COMMIT_D3` |
 | D-4 | Reverse | `reverse_at_night=True`, note rewritten | `d295ec0` |
 | D-5 | None as Sahl's; keep 19–3 where Abū Ma'shar's; retire 15–15 | `DARK_SIGNS`, `BURNED_PLACE_SIGNS`, labels without degrees; the Via Combusta flag gone (C-04 done) | `0eeb089` |
 | D-6 | Column, not filter | `mashaallah_condition` beside every Topical House Lords row, naming what breaks it; not applied to the Rhetorius/PN4 table | `6353a26` |
@@ -223,6 +224,53 @@ confidence.** The reason is not that *On Times* is Sahl's; it is that every rule
 contradicted by another passage in the corpus and PN IV is the only source that could break the
 ties. The one exception worth admitting now is display-only: the planetary-years table (Fig. 146)
 with *Times* 4, 7's placement rule beside *Nat.* 1.20, 10's, both labelled.
+
+### Closed 2026-09-10 — the precondition was met
+
+The recommendation above named its own precondition: *"PN IV is the only source that could break
+the ties."* PN IV has now been read in full and answered
+(`04_timing_answers_2026-09-10.md`, from the read recorded in
+`process/PN4_READTHROUGH_FINDINGS_2026-09-10.md`). **The deferral is lifted for everything PN IV
+states, and it does not lapse quietly for the rest — the rest is named.**
+
+**What the deferral no longer covers**, all built and cited on the Timing page: the solar and
+monthly revolutions (I.2, **1–4**; IX.3, **2**); the distribution from the Ascendant, the
+*jār bakhtār*, directed by oblique ascensions of the birth latitude (III.1, **11–16**, **23–25**);
+the rate ladder (III.1, **13**); the unit keyed to the level of the chart (III.1, **6**); the lord
+of the year by annual profection (II.3, **1**); the *fardār* with its sub-periods and the Nodes
+last in both sects (IV.1, **2–8**; IV.7, **24–26**); the seven monthly indicators (IX.1,
+**9–39**); and the Ages of Man (I.8, **9–26**).
+
+**What stays deferred, and why it is no longer the same deferral.** The releaser and the
+house-master. This is not "waiting for PN IV" any more — PN IV arrived and **does not answer it**.
+It names five releasers (III.3, **1**) and never says how to choose among them; Abū Ma'shar sends
+the reader to a book outside this corpus:
+
+> "there is great difficulty and much confusion in deriving the years of the indicator of the
+> lifespan … a statement of the truth of that, and its correctness, is found in the book which we
+> worked on concerning nativities." — **IX.8, 123**
+
+So disagreement #2 (*Times* 4, 7 against *Nat.* 1.20, 10–17, on where the greater years are
+granted) **stays open on the merits**, not on a pending read, and the planetary-years table still
+chooses no row. Reopening it needs a source this corpus does not hold.
+
+**Also still deferred, for the same kind of reason:** directing any point that is neither the
+Ascendant nor the meridian — III.1, **12** defers the method to a book it does not reproduce, and
+Dykes' fn 16's identification of it as Ptolemy's proportional semi-arcs is an editor's note, not a
+stated rule.
+
+**Scope note.** The brief for the build read §5 as "stop if the releaser was declined, because the
+distributor and the unit keys depend on it". That dependency was checked and does not hold: the
+distribution *from the Ascendant* is listed by **II.2, 6–7** as an indicator separate from the one
+taken from the longevity releaser, and III.1's mechanics are stated without reference to which
+point is released. Owner's decision, 2026-09-10: build what does not need the releaser, refuse the
+longevity chain outright. Nothing on the page rests on a guessed releaser.
+
+**Related decision taken at the same time.** Abū Ma'shar's quadruplicity rule for the direction of
+monthly profections (IX.1, **26–34**), which Dykes rejects: **implemented as a configurable
+reading, defaulting to Dykes' plain forward count.**
+
+Implementation note: `15_pn4_implementation_2026-09-10.md`.
 
 ---
 
