@@ -7688,6 +7688,161 @@ def pn4_named_lords_of_the_orb(natal_hour_lord, completed_years):
              'Lord of the hour': pn4_hour_lord_of_house(natal_hour_lord, house) or '-',
              'Source': cite} for label, house, cite in positions]
 
+# --- VI.2, 1-26: the turning of the houses of the root ---------------------
+# "every one of the seven planets, the twelve houses, and the twelve Lots,
+# is turned at the revolutions of years from its own position (a year for
+# every sign), and is directed from its degree (a year for every degree);
+# and when any of them, by turning or by direction, reaches a sign or
+# planetary fortune or infortune, it produces the indication of that sign
+# or planet" (VI.2, 1). VI.2, 2-17 assign the points to topics; 18-20
+# generalise to any indicator; 21-26 handle a quadrant cusp that falls in
+# a different sign from its whole-sign house -- turned "in two ways",
+# from the house by counting and from the sign the degree falls in
+# (VI.2, 22), directed from its actual degree (21).
+#
+# ONLY THE TURNING IS BUILT. It is whole-sign profection from each point's
+# own natal position, one sign a year, exactly as the Ascendant's. The
+# direction "a year for every degree" is III.1, 12's third case for
+# planets and Lots (method not stated in PN IV) and, for cusps, VI.2, 21's
+# "portions of the hours and the right circle" -- a name for semi-arcs
+# with no procedure -- so it stays refused, and the table says so per
+# row. The Ascendant's and the meridian's directions are the two
+# distributions on the page and the rows for houses 1, 10 and 4 point to
+# them.
+#
+# What is read in and said on the page: which "twelve Lots" is not
+# stated; the formulas in fn 12-31 are Dykes' identifications from Sahl
+# and the Great Introduction, and the engine's Lots are paired to them
+# below with the two places they differ on the night reversal named.
+# "Whichever had the shift in the root" (VI.2, 6, 8) is the sect planet,
+# per fn 16 and 19. The triplicity-lord examinations of VI.2, 4-5 and all
+# the delineation are not built. No worked example exists; Figures 90-91
+# are Dykes' diagrams.
+
+PN4_TURNING_HOUSES = (
+    (1, 'the body, with the Moon', 'VI.2, 3'),
+    (2, 'assets, with the Lots of Fortune and assets', 'VI.2, 4'),
+    (3, 'siblings, with its Lot', 'VI.2, 5'),
+    (4, 'the fathers, with the Lot of the father', 'VI.2, 6'),
+    (5, 'children, with its Lot', 'VI.2, 9'),
+    (6, 'slaves, and illnesses, with their Lots', 'VI.2, 10-11'),
+    (7, 'women, with its Lot', 'VI.2, 12'),
+    (8, 'death and catastrophes, with its Lot', 'VI.2, 13'),
+    (9, 'travel, with its Lot', 'VI.2, 14'),
+    (10, 'authority and rank, with its Lot; the mother (VI.2, 8)', 'VI.2, 15'),
+    (11, 'hope and friends, with its Lot', 'VI.2, 16'),
+    (12, 'enemies and riding animals, with its Lot', 'VI.2, 17'),
+)
+
+# (lot id, what it is turned for, citation, note). The ids are the
+# engine's LOT_DEFINITIONS rows; the pairing to VI.2's footnotes is Dykes'.
+PN4_TURNING_LOTS = (
+    ('fortune', 'assets', 'VI.2, 4', ''),
+    ('assets_lord2', 'assets', 'VI.2, 4; fn 12', ''),
+    ('siblings_hermes', 'siblings', 'VI.2, 5; fn 15',
+     'fn 15 reverses it at night (Firmicus); the engine\'s Sahl row does not ("for one who was born by day and night")'),
+    ('father', 'the fathers', 'VI.2, 6; fn 17', ''),
+    ('mother', 'the mother', 'VI.2, 8; fn 20', ''),
+    ('children_hermes', 'children', 'VI.2, 9; fn 22', ''),
+    ('slaves', 'slaves', 'VI.2, 10; fn 24', ''),
+    ('chronic_illness', 'illnesses', 'VI.2, 11; fn 25', ''),
+    ('marriage_men', 'women (for men)', 'VI.2, 12; fn 26',
+     'fn 26 reverses it at night; the engine\'s Sahl row does not'),
+    ('marriage_women', 'women (for women)', 'VI.2, 12; fn 26',
+     'fn 26 reverses it at night; the engine\'s Sahl row does not'),
+    ('death', 'death and catastrophes', 'VI.2, 13; fn 27', ''),
+    ('travel', 'travel', 'VI.2, 14; fn 28', ''),
+    ('work_expedition_paul', 'authority and rank', 'VI.2, 15; fn 29', 'Gr. Intr. VIII.4, Saturn to the Moon, reversed at night'),
+    ('work_action', 'authority and rank (action)', 'VI.2, 15; fn 29', 'the alternative fn 29 names'),
+    ('friends', 'hope and friends', 'VI.2, 16; fn 30', ''),
+    ('enemies_necessity', 'enemies', 'VI.2, 17; fn 31', 'one of fn 31\'s three'),
+    ('enemies_slaves', 'enemies', 'VI.2, 17; fn 31', 'one of fn 31\'s three'),
+    ('enemies_hermes', 'enemies', 'VI.2, 17; fn 31', 'one of fn 31\'s three'),
+)
+
+PN4_TURNING_DIRECTION_REFUSED = ("refused: a year for every degree needs III.1, 12's third case, "
+                                 "whose method is not stated in PN IV")
+
+def pn4_turning_planet_topics(sect):
+    """VI.2, 2, 6 and 8: what each planet is turned for. The parents'
+    indicators are the sect planets, "whichever one of the two had the
+    shift in the root" (fn 16, 19)."""
+    diurnal = sect == 'Diurnal'
+    topics = {
+        'Sun': 'rank, works, and authority (VI.2, 2)' + ('; the fathers (VI.2, 6)' if diurnal else ''),
+        'Moon': 'the accidents of the body (VI.2, 2-3)' + ('' if diurnal else '; the mother (VI.2, 8)'),
+        'Jupiter': 'assets (VI.2, 2)',
+        'Venus': 'women, amusement, delight, and fornication (VI.2, 2)' + ('; the mother (VI.2, 8)' if diurnal else ''),
+        'Saturn': 'what it indicates (VI.2, 2)' + ('' if diurnal else '; the fathers (VI.2, 6)'),
+        'Mars': 'what it indicates (VI.2, 2)',
+        'Mercury': 'what it indicates (VI.2, 2)',
+    }
+    return topics
+
+def _pn4_natal_planets_in_sign(planetary_data, sign):
+    """VI.2, 1: the "planetary fortune or infortune" a turned point
+    reaches. Every natal planet in the sign, tagged."""
+    found = []
+    for planet in PN4_SEVEN:
+        row = planetary_data.get(planet)
+        if row and get_zodiac_sign(row['longitude']) == sign:
+            tag = 'fortune' if planet in FORTUNES else 'infortune' if planet in INFORTUNES else 'neither'
+            found.append(f"{planet} ({tag})")
+    return ', '.join(found) if found else 'none'
+
+def pn4_turned_sign(natal_lon, completed_years):
+    """VI.2, 1: "a year for every sign", from the point's own position."""
+    return get_zodiac_sign(pn4_profect(natal_lon, int(completed_years)))
+
+def pn4_turning_rows(chart_data, completed_years):
+    """The turning table of VI.2, 1-26 for one age: every planet, every
+    house (with a displaced quadrant cusp turned a second way, VI.2, 22),
+    and the Lots VI.2 names, each from its own natal position."""
+    planetary = chart_data['planetary_data']
+    asc, cusps, sect = chart_data['ascendant'], chart_data['houses'], chart_data['sect']
+    age = int(completed_years)
+
+    def row(point, natal_lon, topic, cite, directed):
+        sign = pn4_turned_sign(natal_lon, age)
+        return {
+            'Point': point, 'For the knowledge of': topic,
+            'Natal': f"{get_zodiac_sign(natal_lon)} ({get_degree_string(natal_lon)})",
+            'Turned to': sign,
+            'Its lord': SIGN_TO_DOMICILE.get(sign, '-'),
+            'Natal planets there': _pn4_natal_planets_in_sign(planetary, sign),
+            'Directed a year per degree': directed,
+            'Source': cite,
+        }
+
+    rows = []
+    topics = pn4_turning_planet_topics(sect)
+    for planet in PN4_SEVEN:
+        if planet in planetary:
+            rows.append(row(planet, planetary[planet]['longitude'], topics[planet], 'VI.2, 1-2',
+                            PN4_TURNING_DIRECTION_REFUSED))
+
+    directed_at = {1: 'the distribution from the Ascendant, above (III.1, 12)',
+                   10: 'the distribution from the Midheaven, above (III.1, 12)',
+                   4: 'the distribution from the fourth, above (III.1, 12)'}
+    for house, topic, cite in PN4_TURNING_HOUSES:
+        ws_start = ((asc // 30.0) * 30.0 + 30.0 * (house - 1)) % 360.0
+        directed = directed_at.get(house, "refused: VI.2, 21's \"portions of the hours and the right circle\" "
+                                          "names semi-arcs and gives no procedure")
+        rows.append(row(f'House {house} (by counting)', ws_start, topic, cite, directed))
+        cusp = cusps[house - 1] if cusps and len(cusps) >= house else None
+        if cusp is not None and get_zodiac_sign(cusp) != get_zodiac_sign(ws_start):
+            rows.append(row(f'House {house} (its degree, {get_degree_string(cusp)}, in another sign)', cusp,
+                            topic + ' -- the second turning, VI.2, 22 [2]', 'VI.2, 21-24', directed))
+
+    for lot_id, topic, cite, note in PN4_TURNING_LOTS:
+        d = next(x for x in LOT_DEFINITIONS if x['id'] == lot_id)
+        lon = lot_by_id(lot_id, planetary, asc, cusps, sect)
+        if lon is None:
+            continue
+        rows.append(row(d['name'] + (f' -- {note}' if note else ''), lon, topic, cite,
+                        PN4_TURNING_DIRECTION_REFUSED))
+    return rows
+
 def pn4_fardar_at_age(age_years, sect):
     """The fardar lord and sub-lord at an age.
 
@@ -8231,6 +8386,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'mighty_days_rows': mighty_days_rows,
         'orb': orb, 'orb_rows': orb_rows, 'natal_hour_lord': natal_hour_lord,
         'hour_approximate': hour_approximate,
+        'turning_rows': pn4_turning_rows(chart_data, age),
         'age': age, 'month': month, 'jd_sr': jd_sr, 'jd_mr': jd_mr,
         'sr': sr, 'mr': mr, 'year': year, 'ninth': ninth, 'fardar': fardar,
         'segments': segments, 'current': current, 'ages': ages,
@@ -9372,6 +9528,30 @@ if location_query and lat is not None and lon is not None:
                        "the loop and the loop is built. His twelve-year \"reset\" of the named lords is, in his "
                        "words, his idea, and is not built. The delineations of VI.1, 12-17 and the seven days the "
                        "lord of the orb grants at IX.7, 7-8 are not built.")
+
+            st.subheader("The turning of the houses of the root (VI.2)",
+                         help="VI.2, 1: \"every one of the seven planets, the twelve houses, and the twelve Lots, is "
+                              "turned at the revolutions of years from its own position (a year for every sign), and "
+                              "is directed from its degree (a year for every degree); and when any of them, by turning "
+                              "or by direction, reaches a sign or planetary fortune or infortune, it produces the "
+                              "indication of that sign or planet.\" VI.2, 2-17 say what each is turned for. Only the "
+                              "TURNING is built: whole-sign profection from each point's own natal position, as for "
+                              "the Ascendant. VI.2, 21-24: a quadrant cusp that falls in another sign is turned both "
+                              "from its house by counting and from the sign its degree falls in, and such houses get "
+                              "two rows.")
+            st.markdown(f"Turned by **{pn4['age']}** completed years, a sign for each (VI.2, 1).")
+            st.dataframe(pd.DataFrame(pn4['turning_rows']), hide_index=True, width='stretch',
+                         height=_rows_height(min(len(pn4['turning_rows']), 16)))
+            st.caption("The direction \"a year for every degree\" is not built and each row says so: for planets and "
+                       "Lots it is III.1, 12's third case, whose method PN IV does not state; for the cusps VI.2, 21 "
+                       "names \"the portions of the hours and the right circle\", semi-arcs, and gives no procedure. "
+                       "The Ascendant's and the meridian's directions are the distributions above. Which \"twelve "
+                       "Lots\" VI.2, 1 means is not stated; the formulas in fn 12-31 are Dykes' identifications from "
+                       "Sahl and the Great Introduction, and the engine's Lots are paired to them here, with the two "
+                       "places they differ on the night reversal named in the row. \"Whichever had the shift in the "
+                       "root\" for the parents (VI.2, 6, 8) is read as the sect planet, per fn 16 and 19. The "
+                       "triplicity lords of VI.2, 4-5 and the delineations are not built. No worked example exists; "
+                       "Figures 90-91 are Dykes' diagrams.")
 
             st.subheader("The distribution from the Ascendant (the *jar bakhtar*)",
                          help="III.1, 12: the Ascendant is directed by the ascensions \"of the country in which the "

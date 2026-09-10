@@ -1430,6 +1430,112 @@ def test_pn4_bundle_carries_the_lord_of_the_orb_as_indicator_five(engine):
     assert without["year_rows"][4]["Active point"] == "natal hour lord unavailable"
 
 
+# --- VI.2, 1-26: the turning of the houses of the root (built 2026-09-10) --
+
+def _turning_chart(engine, asc=5.0, cusps=None, sect="Diurnal", **planets):
+    """A minimal chart_data for pn4_turning_rows. Default cusps are the
+    whole-sign starts, so no house is displaced unless the test says so."""
+    if cusps is None:
+        base = (asc // 30.0) * 30.0
+        cusps = [(base + 30.0 * i) % 360.0 for i in range(12)]
+    seven = dict(Sun=100.0, Moon=200.0, Mercury=110.0, Venus=130.0, Mars=300.0, Jupiter=250.0, Saturn=20.0)
+    seven.update(planets)
+    return {"planetary_data": pdata(**seven), "ascendant": asc, "houses": cusps, "sect": sect}
+
+
+def test_pn4_turning_is_from_each_points_own_position(engine):
+    """VI.2, 1: "turned ... from its own position (a year for every
+    sign)". Three years on, the Sun at 10 Cancer is in Libra, house 3 of
+    an Aries Ascendant (Gemini) is in Virgo, and the Lot of the father is
+    three signs from where it stands natally -- each from its own sign,
+    none from the sign of the year."""
+    rows = {r["Point"]: r for r in engine["pn4_turning_rows"](_turning_chart(engine), 3)}
+    assert rows["Sun"]["Turned to"] == "Libra"
+    assert rows["House 3 (by counting)"]["Natal"].startswith("Gemini")
+    assert rows["House 3 (by counting)"]["Turned to"] == "Virgo"
+    father = next(r for k, r in rows.items() if k.startswith("Lot of the father"))
+    natal_sign = father["Natal"].split(" ")[0]
+    order = engine["SIGN_ORDER"]
+    assert father["Turned to"] == order[(order.index(natal_sign) + 3) % 12]
+    assert engine["pn4_turned_sign"](100.0, 0) == "Cancer"
+
+
+def test_pn4_turning_reports_the_fortune_or_infortune_reached(engine):
+    """VI.2, 1: "when any of them ... reaches a sign or planetary fortune
+    or infortune, it produces the indication of that sign or planet". The
+    row names the natal planets in the sign reached, tagged; Jupiter at
+    10 Sagittarius is reached by the Sun (10 Cancer) at age 5."""
+    rows = {r["Point"]: r for r in engine["pn4_turning_rows"](_turning_chart(engine), 5)}
+    assert rows["Sun"]["Turned to"] == "Sagittarius"
+    assert rows["Sun"]["Natal planets there"] == "Jupiter (fortune)"
+    assert rows["Moon"]["Natal planets there"] == "none"          # 20 Libra + 5 = Pisces, empty
+
+
+def test_pn4_turning_displaced_cusp_is_turned_both_ways(engine):
+    """VI.2, 22-24: when "the [natal] degree of the house of children fell
+    in the sixth sign ... the turning in the indication of the condition
+    of children will be from two signs: one of them is from the fifth
+    house by counting, and the second is from the sixth sign". With the
+    fifth cusp at 2 Virgo under an Aries Ascendant, house 5 gets two
+    rows; house 6, whose cusp sits in its own sign, gets one."""
+    base = 0.0
+    cusps = [(base + 30.0 * i) % 360.0 for i in range(12)]
+    cusps[4] = 152.0                                            # 2 Virgo, the sixth sign
+    rows = engine["pn4_turning_rows"](_turning_chart(engine, asc=5.0, cusps=cusps), 1)
+    five = [r for r in rows if r["Point"].startswith("House 5")]
+    assert len(five) == 2
+    assert five[0]["Turned to"] == "Virgo"               # Leo by counting, a year on
+    assert five[1]["Turned to"] == "Libra"               # from Virgo, where the degree falls
+    assert "VI.2, 21-24" in five[1]["Source"]
+    assert len([r for r in rows if r["Point"].startswith("House 6")]) == 1
+
+
+def test_pn4_turning_direction_column_refuses_and_points_to_the_distributions(engine):
+    """Only the turning is built. Planets and Lots say the direction is
+    III.1, 12's third case; ordinary houses cite VI.2, 21's semi-arcs
+    with no procedure; houses 1, 10 and 4 point to the distributions the
+    page already applies."""
+    rows = {r["Point"]: r for r in engine["pn4_turning_rows"](_turning_chart(engine), 2)}
+    assert rows["Mars"]["Directed a year per degree"].startswith("refused")
+    assert "III.1, 12" in rows["Mars"]["Directed a year per degree"]
+    assert "VI.2, 21" in rows["House 7 (by counting)"]["Directed a year per degree"]
+    assert "Ascendant" in rows["House 1 (by counting)"]["Directed a year per degree"]
+    assert "Midheaven" in rows["House 10 (by counting)"]["Directed a year per degree"]
+    assert "fourth" in rows["House 4 (by counting)"]["Directed a year per degree"]
+    lot = next(r for k, r in rows.items() if k.startswith("Lot of travel"))
+    assert lot["Directed a year per degree"].startswith("refused")
+
+
+def test_pn4_turning_parents_indicators_follow_the_sect(engine):
+    """VI.2, 6 and 8: "the Sun or Saturn ... (whichever one of the two had
+    the shift in the root)", "Venus or the Moon": fn 16 and 19 read the
+    shift as sect. By day the Sun and Venus carry the parents; by night
+    Saturn and the Moon."""
+    day = engine["pn4_turning_planet_topics"]("Diurnal")
+    night = engine["pn4_turning_planet_topics"]("Nocturnal")
+    assert "fathers" in day["Sun"] and "fathers" not in day["Saturn"]
+    assert "mother" in day["Venus"] and "mother" not in day["Moon"]
+    assert "fathers" in night["Saturn"] and "fathers" not in night["Sun"]
+    assert "mother" in night["Moon"] and "mother" not in night["Venus"]
+
+
+def test_pn4_turning_lots_are_paired_to_dykes_footnotes_and_say_where_they_differ(engine):
+    """Which "twelve Lots" VI.2, 1 means is not stated; fn 12-31 are the
+    editor's identifications. Every Lot VI.2 names is present with its
+    footnote cited, fn 31's three enemy Lots all appear, and the two
+    rows whose engine formula does not reverse at night where the
+    footnote does say so in the row."""
+    rows = engine["pn4_turning_rows"](_turning_chart(engine), 0)
+    lots = [r for r in rows if r["Point"].startswith("Lot")]
+    cites = {r["Source"] for r in lots}
+    for fn in ("fn 12", "fn 15", "fn 17", "fn 20", "fn 22", "fn 24", "fn 25", "fn 26", "fn 27", "fn 28", "fn 29", "fn 30", "fn 31"):
+        assert any(fn in c for c in cites), fn
+    assert sum(1 for r in lots if "fn 31" in r["Source"]) == 3
+    siblings = next(r for r in lots if r["Point"].startswith("Lot of siblings"))
+    assert "fn 15 reverses it at night" in siblings["Point"]
+    assert len([r for r in lots if "fn 26 reverses" in r["Point"]]) == 2
+
+
 def test_pn4_indicator_two_against_abu_mashars_worked_months(engine):
     """IX.1, 15-16 works indicator #2 out month by month for a year that
     terminates at Cancer: "the lord of its first ninth-part is the Moon,

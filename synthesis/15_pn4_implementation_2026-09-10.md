@@ -476,6 +476,54 @@ give); and the bundle's row 5, with and without a natal hour lord.
 **Left undone, on purpose.** VI.1, 12–17's delineations; the seven days of IX.7, 7–8; Dykes'
 reset. The next prompt, per the brief, is the profected houses (VI.2, 1–20).
 
+### 4f. VI.2, 1–26: the turning of the houses of the root — built 2026-09-10, second session
+
+Technique 5 of the continuation brief, put to the owner with the four-point prompt. Chosen as
+recommended: **the full turning table** — planets, whole-sign houses with a displaced quadrant cusp
+turned both ways, and the Lots VI.2 names — over planets and houses alone. The direction half of
+VI.2, 1 was not asked: it is the standing refusal, and the prompt said so instead.
+
+**Re-checked in the corpus before writing:**
+
+| Citation | What it had to support | Held? |
+|---|---|---|
+| **VI.2, 1** + fn 11 | turned "from its own position (a year for every sign)", directed "a year for every degree"; the fortune or infortune reached | yes |
+| **VI.2, 2–17** + fn 12–31 | the topics; the Lot formulas are the editor's identifications | yes |
+| **VI.2, 6, 8** + fn 16, 19 | "whichever one of the two had the shift" = the sect planet | yes, as an editor's reading |
+| **VI.2, 18–20** + fn 32 | the generalisation to any indicator | yes — not built |
+| **VI.2, 21–26** + fn 33, 34 | a displaced cusp turned "in two ways", directed "by the portions of the hours and the right circle" (semi-arcs, fn 33); Figures 90–91 are Dykes' | yes |
+
+**Stated, not presupposed — for the turning.** The turning is whole-sign profection from each
+point's own natal position, and the engine's `pn4_profect` already does it for the Ascendant. The
+direction is III.1, 12's third case for planets and Lots and, for cusps, a name for semi-arcs with
+no procedure (VI.2, 21); it stays refused and every row of the table says so, with houses 1, 10
+and 4 pointing to the distributions the page applies.
+
+**Read in and said on the page.** Which "twelve Lots" is not stated; the engine's Lots are paired
+to fn 12–31 (`PN4_TURNING_LOTS`), and the two places the engine's Sahl rows do not reverse at
+night where the footnote does — siblings (fn 15, Firmicus) and marriage (fn 26) — are named in
+the row rather than silently repaired. All three of fn 31's enemy Lots appear. The parents'
+indicators follow the sect.
+
+**What was built.** `PN4_TURNING_HOUSES`, `PN4_TURNING_LOTS`, `pn4_turning_planet_topics`,
+`pn4_turned_sign`, `pn4_turning_rows` (with `_pn4_natal_planets_in_sign` for VI.2, 1's fortune
+or infortune reached); the bundle carries `turning_rows`; one section, one table and a caption.
+
+**What pins it.** Six fixtures: each point turns from its own sign (Sun, house 3, the Lot of the
+father, none from the sign of the year); the fortune reached is reported (Jupiter in Sagittarius
+at the Sun's fifth year); a displaced fifth cusp in the sixth sign gives two rows turned from Leo
+and from Virgo, VI.2, 22–24's own example, and an undisplaced house gives one; the direction
+column refuses with the citation and points houses 1, 10 and 4 at the distributions; the parents'
+indicators follow the sect; every footnote Lot is present, fn 31's three, and the two reversal
+differences are stated in the row.
+
+**Verification.** Doctrine fixtures 196 (were 190). `tables.json` **+6 / −0**. Full suite
+**2509 passed**, six of them new; `test_base_tables.py` 121 / 0. Rendered in the browser.
+
+**Left undone, on purpose.** The direction; VI.2, 4–5's triplicity lords; VI.2, 18–20's
+generalisation; the delineations. The next prompt, per the brief, is indicators 5–19 of the
+year (II.1, 10–24) — of which #5 is now built.
+
 ### Refused at the poles
 
 `pn4_distribution_from_ascendant` returns `None` where |latitude| + obliquity ≥ 90°, on the
