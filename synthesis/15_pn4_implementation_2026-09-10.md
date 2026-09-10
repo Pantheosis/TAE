@@ -976,6 +976,68 @@ fractions; method 8's two ways; and the bundle's three tables.
 **Left undone, on purpose.** The judgments; a dawn-based day. This closes §7 of the continuation
 brief: every item is built or refused with its reason on the page.
 
+### 4q. The releaser and the house-master, from SAHL — built 2026-09-10, third session
+
+**Not a PN IV technique, and not from the brief.** PN IV lists the candidates (III.3, 1) and defers
+the choice to "the book on the releaser" (IX.8, 123), which the corpus lacks; the step was refused on
+that ground through every earlier session. On 2026-09-10 the owner had *On Questions*, *On Choices*,
+the *Fifty Aphorisms*, *On Nativities* and the *Great Introduction* read against the engine
+(`consolidated_texts/process/TIMING_SOURCES_REPORT_2026-09-10.md`, corpus commit `dae8223`) and
+decided: **build the releaser per Nawbakht, On Nativities 1.15, and direct the house-master per
+Māshā'allāh, 1.23, 2.** The years are still granted by nothing (disagreement #2 open; D-3 stands).
+
+**Re-checked in the corpus before writing:**
+
+| Citation (*On Nativities*) | What it had to support | Held? |
+|---|---|---|
+| **1.15, 6–9** + fn 109 | day: the Sun "in the Ascendant, the Midheaven, the house of hope, or in the stake of the west, or in the eighth", with a lord of its bound/house/exaltation/triplicity/face looking; else the meeting "in any of these five places"; else the Ascendant; fn 109 "quadrant divisions, not whole signs" | yes |
+| **1.15, 10–14** | night: the Moon "in a stake or what follows a stake" with such a lord looking; else the fullness; else the Lot of Fortune, same test | yes |
+| **1.15, 13** | "that one … which is looking at the releaser, is the house-master" | yes |
+| **1.15, 15–16** | the Ascendant "being looked at by the fortunes, and the lord of the Ascendant in its own house or exaltation, or in its own bound, triplicity, or image, in good places"; else "the native does not have a foundation for his lifespan" | yes (the angle brackets are Dykes' restorations, kept) |
+| **1.15, 22; 1.18, 20–21** | the releaser directed from its degree by the ascensions of the city; the bound lord is the distributor of time | yes |
+| **1.16, 1–2** | the Sun in Aries or Leo, the Moon in Taurus or Cancer, both releaser and house-master | yes |
+| **1.20, 2–5** | bound > house > exaltation > triplicity > image; two shares beat one; the bound lord in the Ascendant with the releaser "stronger than the others"; under the rays "deceptive, subtractive, corrupting" | yes |
+| **1.23, 2–4** + fn 181–183 | direct the house-master "to the conjunction of the infortunes and the degree of burning, and its opposition and its square, a year for every degree of ascensions"; then that year's revolution: burned there, or in a stake of the year's Ascendant, "worse … in the Ascendant" | yes |
+| **1.23, 12** + fn 190; **1.23, 53** | unsuitable: an infortune or the lord of the eighth; fear if retrograde or in fall | yes — flags only |
+| **1.19, 6; 1.20, 6; 1.18, 8–10; 1.15, 5; 1.32, 11–13; 4.12, 6** | the rules NOT applied, named on the page | yes |
+
+**Seven readings, said on the page:** quadrant places with the carry-over (fn 109); "looking" is the
+whole-sign aspect with co-presence counted (1.20, 4); a candidate is not its own house-master outside
+1.16's signs; the triplicity lord of the sect; the meeting/fullness are the last New/Full Moon, the
+fullness's degree by the engine's above-horizon convention; "good places" = stake or succedent; the
+day chart consults Sun, meeting, Ascendant and the night chart Moon, fullness, Lot, Ascendant, 1.15, 15's
+summary quoted not applied. For the direction: "the degree of burning" is the Sun's natal degree; the
+measure is the oblique ascension of the birth latitude applied to the house-master's degree, as 1.15, 17,
+1.16, 4 and 1.18, 21 apply "the ascensions of that city" to bodies and the Ascendant alike. Governor
+testimony #4, "the partner to them both", is counted only when the two distributions share one partner.
+
+**What was built.** `SAHL_RELEASER_DAY_PLACES`, `SAHL_RELEASER_NIGHT_PLACES`, `SAHL_DIGNITY_RANK`,
+`SAHL_BOTH_AT_ONCE`, `SAHL_RELEASER_NOT_APPLIED`, `SAHL_INFORTUNES`, `sahl_prenatal_meeting_and_fullness`,
+`_sahl_dignity_lords`, `_sahl_looks`, `_sahl_examine_candidate`, `_sahl_ascendant_candidate`,
+`_sahl_rank_house_master`, `sahl_releaser`, `sahl_releaser_distribution`, `sahl_house_master_direction`,
+`sahl_house_master_in_revolution`, `sahl_house_master_flags`. Wired: `pn4_governor` takes the releaser's
+distributor and partner (testimony #3 now counted; #4 per the reading); `pn4_luminary_proxies` takes
+the sign the releaser's distribution stands in (the first proxy of each version now filled);
+`PN4_III2_DEATH_GATE` points at the house-master's direction instead of "the releaser this engine
+refuses". Two sections in the Distributions chapter; the page's opening caption and foot note say the
+step is Sahl's.
+
+**What pins it.** Eight fixtures: 1.16's Sun in Leo; the fall to the meeting with two shares beating
+one (1.20, 3); the fall to the Ascendant with the bound lord in the Ascendant first (1.20, 4) and the
+"no foundation" case (1.15, 16); the night ranking bound-over-house and shares-over-rank; the fall to
+the fullness, then the Lot (where Mars's house + night triplicity beat Venus's bound — the engine
+corrected the fixture's first expectation); the direction at the equator against right ascension by
+hand, with D-23's refusal; the flags; the bundle feeding the governor and the proxies, and the "this
+year" flag at the first target's year.
+
+**Verification.** Doctrine fixtures 243 (were 234). `tables.json` +36 / −6, the six removals being
+"The seven indicators of the month" re-added in place (a move, not a loss). Full suite **2658 passed** in an isolated worktree at `8322df7` (a first run in the shared tree was contaminated by a peer switching its branch mid-run and is disregarded).
+
+**Left undone, on purpose.** Everything in `SAHL_RELEASER_NOT_APPLIED`; 1.23, 5–11's further
+witnesses (they are the II.3 examination and the indicators); 1.23, 13–14's redirection; 1.23, 53–60
+and 1.21's increase and decrease; the grant of years (disagreement #2); *On Times* 4's victor-by-
+testimony and Māshā'allāh's ray-in-the-Ascendant (1.23, 46–50) as alternative selections.
+
 ### Refused at the poles
 
 `pn4_distribution_from_ascendant` returns `None` where |latitude| + obliquity ≥ 90°, on the
