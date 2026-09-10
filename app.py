@@ -12326,10 +12326,12 @@ if location_query and lat is not None and lon is not None:
             st.caption("Part 2: prediction. Every rule on this page comes from Abu Ma'shar, "
                        "*On the Revolutions of the Years of Nativities* (*Persian Nativities* IV), "
                        "cited as Book.chapter, sentence -- except the releaser and the house-master, which "
-                       "PN IV leaves to a book outside the corpus (IX.8, 123) and which are taken from Sahl, "
-                       "*On Nativities* (the chapter named The releaser, cited by that book's "
-                       "chapter and sentence). What neither book settles is listed at the foot of the page "
-                       "rather than filled in.")
+                       "PN IV leaves to another book of Abu Ma'shar's: \"the book which we worked on concerning "
+                       "nativities\" (IX.8, 123), his *Book of the Judgments of Nativities* (Bodleian Hunt. 546, "
+                       "fn 315), not in this corpus and not the *Great Introduction*, which has only the Lot of the "
+                       "releaser. They are taken from Sahl, *On Nativities* (the chapter named The Releaser, cited "
+                       "by that book's chapter and sentence). What neither book settles is listed at the foot of "
+                       "the page rather than filled in.")
 
             # --- The year under examination (2026-09-10) ----------------------
             # The target lives here, where it is used, not in the sidebar with
