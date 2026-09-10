@@ -926,6 +926,65 @@ def generate_distribution_strip_svg(segments, now, unit='years', span=None, titl
     return ''.join(svg)
 
 
+def generate_hit_strip_svg(rows, now, span=None, title=''):
+    """The house-master's direction (Sahl, On Nativities 1.23, 2) as a
+    strip in the family of generate_distribution_strip_svg: the same
+    0-to-span axis in completed years, one tick per target reached
+    (<line class="hit"> with data-arc/data-target), labelled with the
+    infortune's glyph and the aspect's, alternating above and below the
+    axis so neighbours do not collide; the present as <line class="now">.
+    `rows` are sahl_house_master_direction's rows (Target, Arc (years))."""
+    rows = list(rows or [])
+    if span is None:
+        span = max((float(r['Arc (years)']) for r in rows), default=1.0)
+    span = float(span) or 1.0
+    x_left, x_right = 60.0, STRIP_WIDTH - 40.0
+    y_axis = 100.0
+
+    def x_of(v):
+        return x_left + (x_right - x_left) * max(0.0, min(1.0, v / span))
+
+    def label_of(target):
+        m = re.match(r"(?:the )?(\w+)'s (body|opposition|square|degree)", target)
+        if not m:
+            return escape(target)
+        planet, what = m.group(1), m.group(2)
+        glyph = POINT_GLYPHS.get(planet, planet)
+        return (glyph + _VS) if what == 'degree' else (_ASPECT_GLYPH.get(what, '') + glyph + _VS)
+
+    svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {STRIP_WIDTH} {STRIP_HEIGHT}" width="{STRIP_WIDTH}" '
+           f'height="{STRIP_HEIGHT}" style="font-family:{_WHEEL_FONT}">',
+           f'<rect width="{STRIP_WIDTH}" height="{STRIP_HEIGHT}" fill="#ffffff"/>']
+    if title:
+        svg.append(_svg_text(x_left, 26, escape(str(title)), 18, 'bold', anchor='start'))
+    svg.append(_svg_line(x_left, y_axis, x_right, y_axis, '#000000', 1.2))
+    v = 0.0
+    while v <= span + 1e-9:
+        x = x_of(v)
+        svg.append(_svg_line(x, y_axis, x, y_axis + 7, '#000000', 1.0))
+        svg.append(_svg_text(x, y_axis + 20, f'{v:g}', 12))
+        v += 10.0
+    svg.append(_svg_text(x_right, y_axis + 40, 'age in completed years', 11, fill='#555555', anchor='end'))
+    for i, r in enumerate(sorted(rows, key=lambda r: float(r['Arc (years)']))):
+        arc = float(r['Arc (years)'])
+        if arc > span:
+            continue
+        x = x_of(arc)
+        above = i % 2 == 0
+        y0, y1 = (y_axis - 30, y_axis) if above else (y_axis, y_axis + 30)
+        svg.append(f'<line class="hit" x1="{x:.1f}" y1="{y0}" x2="{x:.1f}" y2="{y1}" stroke="#000000" '
+                   f'stroke-width="1.6" data-arc="{arc:.4f}" data-target="{escape(str(r["Target"]))}"/>')
+        svg.append(_svg_text(x, y_axis - 38 if above else y_axis + 46, label_of(str(r['Target'])), 18))
+        svg.append(_svg_text(x, y_axis - 56 if above else y_axis + 62, f'{arc:.1f}', 11, fill='#333333'))
+    if now is not None and 0.0 <= now <= span:
+        x = x_of(now)
+        svg.append(f'<line class="now" x1="{x:.1f}" y1="{y_axis - 66}" x2="{x:.1f}" y2="{y_axis + 8}" stroke="#c00000" '
+                   f'stroke-width="2.4" data-now="{now:.4f}"/>')
+        svg.append(_svg_text(x, 44, f'now: age {now:g}', 12, 'bold', '#c00000'))
+    svg.append('</svg>')
+    return ''.join(svg)
+
+
 # ==========================================
 # 3. DIGNITY & ASPECT EVALUATORS
 # ==========================================
@@ -9146,7 +9205,7 @@ PN4_III2_DOUBLED = {
     (_I, _I, _I): ('III.2, 100', 'varieties of detestable things, evil, and death', True),
 }
 PN4_III2_DEATH_GATE = (' [death only in the years the longevity indicator pointed out, III.2, 110-111 -- see the '
-                       'house-master directed, Sahl On Nativities 1.23, 2, in the Distributions chapter]')
+                       'house-master directed, Sahl On Nativities 1.23, 2, in The releaser chapter]')
 
 def pn4_transition_numbers(kind, frm, to, context):
     """The transition numbers a shift answers to: the isolated one (1-8)
@@ -12060,7 +12119,7 @@ if location_query and lat is not None and lon is not None:
                        "*On the Revolutions of the Years of Nativities* (*Persian Nativities* IV), "
                        "cited as Book.chapter, sentence -- except the releaser and the house-master, which "
                        "PN IV leaves to a book outside the corpus (IX.8, 123) and which are taken from Sahl, "
-                       "*On Nativities* (two sections in the Distributions chapter, cited by that book's "
+                       "*On Nativities* (the chapter named The releaser, cited by that book's "
                        "chapter and sentence). What neither book settles is listed at the foot of the page "
                        "rather than filled in.")
 
@@ -12099,14 +12158,18 @@ if location_query and lat is not None and lon is not None:
                     f"The revolution of the year fell on **{_sr_dt:%Y-%m-%d}** UT; the target is in month "
                     f"**{pn4['month']}** of 12.")
 
-            # --- Five chapters (2026-09-10, second pass). Twenty sections in the
-            # page's own order, the seven indicators of the month moved up beside
-            # the days. The tab is a reading: it survives navigation, and a click
-            # reruns the script so the store can follow it.
-            _tab_labels = ("The revolution", "Indicators of the year", "Distributions", "Days and months",
-                           "Fardar, ages and reference tables")
+            # --- Six chapters (2026-09-10, second pass; the sixth added the same
+            # day). Twenty-two sections in the page's own order, the seven
+            # indicators of the month moved up beside the days; the releaser
+            # and the house-master, Sahl's apparatus and the page's one
+            # exception to PN IV, in a chapter of their own after the
+            # distribution they copy. The tab is a reading: it survives
+            # navigation, and a click reruns the script so the store can
+            # follow it.
+            _tab_labels = ("The revolution", "Indicators of the year", "Distributions", "The releaser",
+                           "Days and months", "Fardar, ages and reference tables")
             _tab_default = st.session_state.get("_timing_tab", _tab_labels[0])
-            tab_rev, tab_ind, tab_dist, tab_days, tab_lords = st.tabs(
+            tab_rev, tab_ind, tab_dist, tab_rel, tab_days, tab_lords = st.tabs(
                 list(_tab_labels), key="timing_tab", on_change="rerun",
                 default=_tab_default if _tab_default in _tab_labels else _tab_labels[0])
             _persist("timing_tab", "_timing_tab", _tab_labels[0])
@@ -12376,7 +12439,7 @@ if location_query and lat is not None and lon is not None:
                 st.dataframe(pd.DataFrame(fm_rows), hide_index=True, width='stretch', height=_rows_height(5))
                 st.caption("Partial by nature, and said so per row. Testimony #3 and the releaser's half of #4 need the "
                            "longevity releaser, which PN IV does not supply (IX.8, 123); they are filled from the releaser's "
-                           "distribution (Sahl, On Nativities 1.15, in the Distributions chapter) when that finds one, #4 "
+                           "distribution (Sahl, On Nativities 1.15, in The releaser chapter) when that finds one, #4 "
                            "counted only when the two distributions share one partner; #7 is "
                            "read from the Moon's connections in her sign (II.22, below). The tally runs over what is "
                            "available and names a governor ALONE only when all eight are counted and combine in one "
@@ -12441,7 +12504,7 @@ if location_query and lat is not None and lon is not None:
                                  height=_rows_height(len(pn4['proxies'])))
                 st.caption("The first proxy in every version is the sign the longevity releaser's distribution stands "
                            "in, which PN IV does not supply (IX.8, 123); it is filled from the releaser's distribution "
-                           "(Sahl, On Nativities 1.15, in the Distributions chapter) when that finds one, and reads "
+                           "(Sahl, On Nativities 1.15, in The releaser chapter) when that finds one, and reads "
                            "unavailable otherwise. The Sun's hand-over is read per fn 239 as the Sun's own "
                            "connections before he leaves his sign, in the revolution (fn 239 notes the book does not say "
                            "root or revolution), and \"hands over\" as the Sun being the applying body at the perfection; "
@@ -12546,10 +12609,48 @@ if location_query and lat is not None and lon is not None:
                            "38, 43, 46-47, 54; III.8, 7's condition on the two lords as facts), the Sun, Moon and Mercury "
                            "addressed by none, and 46-47 speaking of rays only. Every quoted indication that "
                            "mentions death carries III.2, 110-111's gate: death only in the years the longevity indicator "
-                           "pointed out -- the years the house-master's direction reaches an infortune, two sections "
-                           "below. No worked example by the author; "
+                           "pointed out -- the years the house-master's direction reaches an infortune, in The "
+                           "releaser chapter. No worked example by the author; "
                            "Figure 67 with fn 56 is Dykes' diagram of III.2, 33.")
 
+                st.subheader("The distribution from the Midheaven and the fourth",
+                             help="III.1, 12: \"what is in the Midheaven or the fourth is directed by the ascensions of "
+                                  "the right sphere\" -- right ascension, one degree to a year (III.1, 13), the lord of "
+                                  "the bound reached as distributor (III.1, 11) and the last body or ray met as partner "
+                                  "(III.1, 15-16), exactly as for the Ascendant. Fn 14 reads \"the fourth\" as the IC "
+                                  "degree itself. Right ascension has no latitude in it, so these two distributions are "
+                                  "defined at every latitude and are never refused.")
+                for point in PN4_MERIDIAN_POINTS:
+                    m = pn4['meridian'][point]
+                    cur = m['current']
+                    _strip = generate_distribution_strip_svg(m['segments'], float(pn4['age']), 'years',
+                                                             PN4_DISTRIBUTION_SPAN_YEARS, f'The distribution from the {point}')
+                    st.image(_strip, width='stretch')
+                    st.download_button("Download this strip (SVG)", _strip, key=f"dl_strip_{point[:4].lower()}",
+                                       mime="image/svg+xml", file_name=f"distribution_{point[:4].lower()}.svg")
+                    if cur:
+                        st.markdown(
+                            f"**{point}** at {get_degree_string(m['degree'])} -- **now** (age {pn4['age']}): distributor "
+                            f"**{cur['distributor']}**, partner **{cur['partner'] or 'none -- the distributor acts alone'}**"
+                            f" &nbsp;|&nbsp; this period runs from age {cur['from']:.2f} to {cur['to']:.2f}"
+                            f" &nbsp;|&nbsp; opened standing on {get_degree_string(cur['from_lon'])}")
+                    else:
+                        st.markdown(f"**{point}** at {get_degree_string(m['degree'])} -- age {pn4['age']} is past the "
+                                    f"{PN4_DISTRIBUTION_SPAN_YEARS:g}-year table")
+                    st.dataframe(pd.DataFrame(pn4['meridian_rows'][point]), hide_index=True, width='stretch',
+                                 height=_rows_height(min(len(pn4['meridian_rows'][point]), 12)))
+                st.caption("What PN IV does not supply here, stated rather than filled in. (1) Abu Ma'shar gives this "
+                           "distribution no topic: \"actions, profession, and life projects\" is Dykes (Appendix A, "
+                           "p. 673) and fn 4's al-Qabisi IV.12 -- editors' notes, not a sentence of the book. (2) It is "
+                           "not among the year's indicators: II.2, 6-7 and 12-13 name the Ascendant's and the releaser's "
+                           "distributions only, so it does not enter the indicators table above. (3) No worked example of "
+                           "a meridian direction exists in PN IV -- III.1, 19-45 directs the Ascendant only -- so the "
+                           "engine is checked by arithmetic and against the editor's four-minutes-a-degree animation "
+                           "(Appendix A), not against the author's numbers. (4) The partner-at-birth rule of III.1, 23-25 "
+                           "is worded for the Ascendant and is carried here by analogy. (5) Only the two degrees are "
+                           "directed; planets in the Midheaven, which III.1, 12 also assigns to right ascension, are not.")
+
+            with tab_rel:
                 # --- SAHL: the releaser and the house-master (2026-09-10) ---
                 st.subheader("The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)",
                              help="Not PN IV: Abu Ma'shar lists the five candidates (III.3, 1) and sends the reader to "
@@ -12580,7 +12681,7 @@ if location_query and lat is not None and lon is not None:
                 if rel['longitude'] is not None:
                     st.markdown(f"**The releaser distributed** (1.15, 22; 1.18, 20-21): {rel['releaser']} at "
                                 f"{get_degree_string(rel['longitude'])} directed through the bounds by the ascensions of the "
-                                f"birth latitude, as the Ascendant is above"
+                                f"birth latitude, as the Ascendant is in the Distributions chapter"
                                 + (" -- and here the releaser IS the Ascendant, so this is that distribution again." if rel['releaser'] == 'the Ascendant' else '.'))
                     if pn4['releaser_segments'] is None:
                         st.warning("Refused at this latitude, as the Ascendant's distribution is (decision D-23).")
@@ -12596,7 +12697,7 @@ if location_query and lat is not None and lon is not None:
                                 f"**Now** (age {pn4['age']}): distributor **{rcur['distributor']}**, partner "
                                 f"**{rcur['partner'] or 'none -- the distributor acts alone'}**, the direction standing in "
                                 f"**{pn4['releaser_stand']['sign']}** (lord {pn4['releaser_stand']['lord']}) -- this feeds the "
-                                f"governor's testimony #3 and the luminary proxies above.")
+                                f"governor's testimony #3 and the luminary proxies in the Indicators of the year chapter.")
                         else:
                             st.markdown(f"Age {pn4['age']} is past the {PN4_DISTRIBUTION_SPAN_YEARS:g}-year table.")
                         st.dataframe(pd.DataFrame(pn4['releaser_rows']), hide_index=True, width='stretch',
@@ -12646,6 +12747,11 @@ if location_query and lat is not None and lon is not None:
                                     f"bodies, squares and oppositions of Saturn and Mars and to the Sun's degree, forward, "
                                     f"a year to a degree of the birth latitude's ascensions, within {PN4_DISTRIBUTION_SPAN_YEARS:g} years:")
                         if pn4['hm_direction']:
+                            _hstrip = generate_hit_strip_svg(pn4['hm_direction'], float(pn4['age']),
+                                                             PN4_DISTRIBUTION_SPAN_YEARS, 'The house-master directed')
+                            st.image(_hstrip, width='stretch')
+                            st.download_button("Download this strip (SVG)", _hstrip, key="dl_strip_hm", mime="image/svg+xml",
+                                               file_name="house_master_directed.svg")
                             st.dataframe(pd.DataFrame(pn4['hm_direction']), hide_index=True, width='stretch',
                                          height=_rows_height(len(pn4['hm_direction'])))
                         else:
@@ -12667,46 +12773,9 @@ if location_query and lat is not None and lon is not None:
                            "1.23, 4's verdict is quoted in the help and not pronounced. Not applied: 4.12, 6 (a retrograde "
                            "planet's rays directed conversely); 1.23, 5-11's further witnesses (the lord of the "
                            "revolution's Ascendant, the lord of the year, the profection reaching an infortune's sign), "
-                           "which are the II.3 examination and the indicators above; 1.23, 13-14's redirection to the "
+                           "which are the II.3 examination and the indicators in that chapter; 1.23, 13-14's redirection to the "
                            "lord of the Ascendant when the house-master is unsuitable; 1.23, 53-60's increase and "
                            "decrease of years; and the 1.21 additions. No worked example exists in Sahl.")
-
-                st.subheader("The distribution from the Midheaven and the fourth",
-                             help="III.1, 12: \"what is in the Midheaven or the fourth is directed by the ascensions of "
-                                  "the right sphere\" -- right ascension, one degree to a year (III.1, 13), the lord of "
-                                  "the bound reached as distributor (III.1, 11) and the last body or ray met as partner "
-                                  "(III.1, 15-16), exactly as for the Ascendant. Fn 14 reads \"the fourth\" as the IC "
-                                  "degree itself. Right ascension has no latitude in it, so these two distributions are "
-                                  "defined at every latitude and are never refused.")
-                for point in PN4_MERIDIAN_POINTS:
-                    m = pn4['meridian'][point]
-                    cur = m['current']
-                    _strip = generate_distribution_strip_svg(m['segments'], float(pn4['age']), 'years',
-                                                             PN4_DISTRIBUTION_SPAN_YEARS, f'The distribution from the {point}')
-                    st.image(_strip, width='stretch')
-                    st.download_button("Download this strip (SVG)", _strip, key=f"dl_strip_{point[:4].lower()}",
-                                       mime="image/svg+xml", file_name=f"distribution_{point[:4].lower()}.svg")
-                    if cur:
-                        st.markdown(
-                            f"**{point}** at {get_degree_string(m['degree'])} -- **now** (age {pn4['age']}): distributor "
-                            f"**{cur['distributor']}**, partner **{cur['partner'] or 'none -- the distributor acts alone'}**"
-                            f" &nbsp;|&nbsp; this period runs from age {cur['from']:.2f} to {cur['to']:.2f}"
-                            f" &nbsp;|&nbsp; opened standing on {get_degree_string(cur['from_lon'])}")
-                    else:
-                        st.markdown(f"**{point}** at {get_degree_string(m['degree'])} -- age {pn4['age']} is past the "
-                                    f"{PN4_DISTRIBUTION_SPAN_YEARS:g}-year table")
-                    st.dataframe(pd.DataFrame(pn4['meridian_rows'][point]), hide_index=True, width='stretch',
-                                 height=_rows_height(min(len(pn4['meridian_rows'][point]), 12)))
-                st.caption("What PN IV does not supply here, stated rather than filled in. (1) Abu Ma'shar gives this "
-                           "distribution no topic: \"actions, profession, and life projects\" is Dykes (Appendix A, "
-                           "p. 673) and fn 4's al-Qabisi IV.12 -- editors' notes, not a sentence of the book. (2) It is "
-                           "not among the year's indicators: II.2, 6-7 and 12-13 name the Ascendant's and the releaser's "
-                           "distributions only, so it does not enter the indicators table above. (3) No worked example of "
-                           "a meridian direction exists in PN IV -- III.1, 19-45 directs the Ascendant only -- so the "
-                           "engine is checked by arithmetic and against the editor's four-minutes-a-degree animation "
-                           "(Appendix A), not against the author's numbers. (4) The partner-at-birth rule of III.1, 23-25 "
-                           "is worded for the Ascendant and is carried here by analogy. (5) Only the two degrees are "
-                           "directed; planets in the Midheaven, which III.1, 12 also assigns to right ascension, are not.")
 
             with tab_days:
                 st.subheader("The small days: the revolution's Ascendant distributed round the year",
@@ -12929,7 +12998,7 @@ if location_query and lat is not None and lon is not None:
                     "wandering around in the dark; but a statement of the truth of that ... is found in the book which "
                     "we worked on concerning nativities\" (IX.8, 123) -- a book outside this corpus. Since 2026-09-10 "
                     "the choice is made from **Sahl**, *On Nativities* 1.15 (Nawbakht), and the house-master is directed "
-                    "per 1.23, 2 (Masha'allah), in the Distributions chapter, with every reading that step needed said "
+                    "per 1.23, 2 (Masha'allah), in the chapter named The releaser, with every reading that step needed said "
                     "there; the releaser's distribution feeds the governor's testimony #3 and the luminary proxies. "
                     "The distribution **from the Ascendant** remains the *jar bakhtar* of II.2, 6-7.\n\n"
                     "**Where the greater years are granted** (*On Times* 4, 7 against *On Nativities* 1.20, 10-17). "

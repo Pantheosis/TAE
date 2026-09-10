@@ -1019,7 +1019,11 @@ testimony #4, "the partner to them both", is counted only when the two distribut
 distributor and partner (testimony #3 now counted; #4 per the reading); `pn4_luminary_proxies` takes
 the sign the releaser's distribution stands in (the first proxy of each version now filled);
 `PN4_III2_DEATH_GATE` points at the house-master's direction instead of "the releaser this engine
-refuses". Two sections in the Distributions chapter; the page's opening caption and foot note say the
+refuses". Two sections, first placed in the Distributions chapter and moved the same day, on the UI
+session's recommendation, into a sixth chapter of their own, **The releaser**, after Distributions
+(one topic from one source; the page's one exception to PN IV made visible; the meridian no longer
+pushed a screen down), with a hit strip for the house-master's direction
+(`generate_hit_strip_svg`, tested in `tests/test_revolution_wheels.py`); the page's opening caption and foot note say the
 step is Sahl's.
 
 **What pins it.** Eight fixtures: 1.16's Sun in Leo; the fall to the meeting with two shares beating

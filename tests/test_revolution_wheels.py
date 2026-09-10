@@ -235,6 +235,30 @@ def test_strip_rejects_an_unknown_unit(engine):
         engine["generate_distribution_strip_svg"]([], 0.0, "weeks")
 
 
+@pytest.mark.parametrize("date_str", [None] + list(CHARTS), ids=["1982-petoskey"] + list(CHARTS))
+def test_hit_strip_carries_one_tick_per_target_and_one_now(engine, date_str):
+    """The house-master's direction drawn: one <line class="hit"> per row
+    of sahl_house_master_direction with its arc and target, on the same
+    0-120 axis as the distribution strips, the present marked once."""
+    chart, latlon, b = _bundle(engine, date_str)
+    rows = b["hm_direction"]
+    if not rows:
+        pytest.skip("no house-master direction for this chart")
+    span = engine["PN4_DISTRIBUTION_SPAN_YEARS"]
+    svg = engine["generate_hit_strip_svg"](rows, float(b["age"]), span, "Hits & more")
+    root = ET.fromstring(svg)
+    hits = [l for l in root.iter(SVG + "line") if l.get("class") == "hit"]
+    assert len(hits) == len(rows)
+    by_target = {h.get("data-target"): float(h.get("data-arc")) for h in hits}
+    for r in rows:
+        assert by_target[r["Target"]] == pytest.approx(float(r["Arc (years)"]), abs=1e-3)
+    nows = [l for l in root.iter(SVG + "line") if l.get("class") == "now"]
+    assert len(nows) == (1 if 0.0 <= float(b["age"]) <= span else 0)
+    assert "Hits &amp; more" in svg
+    texts = [t.text for t in root.iter(SVG + "text") if t.text]
+    assert any(engine["POINT_GLYPHS"]["Saturn"] in t or engine["POINT_GLYPHS"]["Mars"] in t for t in texts)
+
+
 # --- The Date column (Figure 22's shape) ------------------------------------------------
 
 def test_distribution_rows_carry_the_date_each_segment_opens_on(engine):
@@ -300,15 +324,15 @@ def test_chart_page_offers_the_bounds_ring_and_a_download():
 
 
 def test_timing_page_tabs_are_a_reading_that_survives_navigation():
-    """Five chapters; the stored tab is the one selected on the next
+    """Six chapters; the stored tab is the one selected on the next
     render, and every table is still reachable inside its tab."""
     at = make_app(date="1240-05-23", page="timing")
     at.session_state["_timing_tab"] = "Distributions"
     at.run()
     assert_no_exception(at, "timing, Distributions tab")
     labels = [t.label for t in at.main.tabs]
-    assert labels == ["The revolution", "Indicators of the year", "Distributions", "Days and months",
-                      "Fardar, ages and reference tables"]
+    assert labels == ["The revolution", "Indicators of the year", "Distributions", "The releaser",
+                      "Days and months", "Fardar, ages and reference tables"]
     assert at.session_state["timing_tab"] == "Distributions"
     assert len(at.main.dataframe) >= 30
     # The wheel controls: a selectbox for the view, the rest behind the popover.
