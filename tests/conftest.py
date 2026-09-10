@@ -61,7 +61,7 @@ LOCAL_TIME = time(14, 30)
 
 # url_path of every st.Page, in navigation order. The Configurations page
 # has a three-way view control; each view is treated as its own page.
-PAGES = ["chart", "dignities", "configurations", "lots", "victors", "timing", "sources"]
+PAGES = ["chart", "dignities", "configurations", "lots", "victors", "timing", "reference", "sources"]
 CONFIG_VIEWS = ["Sahl (course text)", "Abu Ma'shar (supplement)", "Both"]
 
 # The configurable readings (one entry per switch; the matrix test

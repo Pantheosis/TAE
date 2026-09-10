@@ -1041,6 +1041,12 @@ def generate_hit_strip_svg(rows, now, span=None, title=''):
 # degree, not just at a planet's own position) can use the same data.
 DOMICILES = {'Sun': ['Leo'], 'Moon': ['Cancer'], 'Mercury': ['Gemini', 'Virgo'], 'Venus': ['Taurus', 'Libra'], 'Mars': ['Aries', 'Scorpio'], 'Jupiter': ['Sagittarius', 'Pisces'], 'Saturn': ['Capricorn', 'Aquarius']}
 EXALTATIONS = {'Sun': ['Aries'], 'Moon': ['Taurus'], 'Mercury': ['Virgo'], 'Venus': ['Pisces'], 'Mars': ['Capricorn'], 'Jupiter': ['Cancer'], 'Saturn': ['Libra']}
+# The degrees of exaltation in the standard scheme, as the course's Handy
+# Tables print them (Hermes' column differs by a degree for five of the
+# seven). DISPLAY ONLY, for the Reference tables page (2026-09-10): nothing
+# in this engine reads a degree of exaltation, and nothing may start to
+# without a source in hand.
+EXALTATION_DEGREES = {'Saturn': 21, 'Jupiter': 15, 'Mars': 28, 'Sun': 19, 'Venus': 27, 'Mercury': 15, 'Moon': 3}
 DETRIMENTS = {'Sun': ['Aquarius'], 'Moon': ['Capricorn'], 'Mercury': ['Sagittarius', 'Pisces'], 'Venus': ['Scorpio', 'Aries'], 'Mars': ['Libra', 'Taurus'], 'Jupiter': ['Gemini', 'Virgo'], 'Saturn': ['Cancer', 'Leo']}
 FALLS = {'Sun': ['Libra'], 'Moon': ['Scorpio'], 'Mercury': ['Pisces'], 'Venus': ['Virgo'], 'Mars': ['Cancer'], 'Jupiter': ['Capricorn'], 'Saturn': ['Aries']}
 # Egyptian bounds (terms), as the course tables give them: TNAC Handy Tables
@@ -7468,6 +7474,15 @@ PLANETARY_YEARS = {
 }
 NODE_FARDAR_YEARS = {'Head': 3, 'Tail': 2}
 
+def reference_planetary_years_rows():
+    """The planetary years as the course's Handy Tables print them (Lesson
+    5: lesser, middle, greater, mighty) with the fardar period (PN IV IV.1,
+    2), for the Reference tables page. DISPLAY ONLY, and a table rather
+    than a grant: nothing here applies a planet's years to a judgment,
+    which is what D-3 forbids -- see D3_GRANT_READERS in the tests."""
+    return [{'Planet': p, 'Lesser': y['lesser'], 'Middle': y['middle'], 'Greater': y['greater'],
+             'Mighty': y['mighty'], 'Fardar (years)': y['fardar']} for p, y in PLANETARY_YEARS.items()]
+
 def evaluate_planetary_years_display(planetary_data, cusps, ascendant_lon, sect, essential):
     """Figure 146 beside each planet's placement, with what the two
     placement rules in the corpus would grant it -- shown, not applied.
@@ -11034,31 +11049,16 @@ st.set_page_config(
     layout="wide",
 )
 
-# --- Structure: the course's own order, with a lesson gate ----------------
-# This was grouped by KIND OF COMPUTATION -- chart, then dignity, then
-# connections -- while TNAC is taught by lesson, and sixteen of the
-# thirty-one tables are Lesson 17 material sitting in a single subtab with
-# no structure of their own. That mismatch is why the tables read as a wall
-# rather than as a sequence.
-#
-# Pages follow the syllabus. The gate hides what the course has not reached,
-# so the app grows alongside it; everything is still computed, and the gate
-# defaults to the whole syllabus. Its stops are the pages: each label names
-# the lessons a page covers, and the number is the threshold that page
-# checks. Rendered first so it sits directly under the page navigation,
-# which st.navigation always draws at the top of the sidebar.
-LESSONS = [("Lessons 3-5: chart and calculation", 5),
-           ("Lessons 9-13: dignities, sect, places", 9),
-           ("Lessons 14-17: configurations", 14),
-           ("Lesson 18: Lots", 18),
-           ("Lessons 19-20: lunation and victors", 19),
-           ("Part 2: timing", 99)]
-gate = dict(LESSONS)[st.sidebar.selectbox(
-    "Show material through", options=[l for l, _ in LESSONS], index=len(LESSONS) - 1,
-    key="lesson_gate",
-    help="A study aid, not a filter on correctness -- everything is still "
-         "computed. It only hides what the course has not covered yet. Move "
-         "it forward as you progress.")]
+# --- Structure: the course's own order, in three sections -----------------
+# Pages follow the syllabus and are grouped in the navigation as the course
+# is: Part 1 (the nativity), Part 2 (prediction), and the reference pages.
+# Nothing is hidden. The lesson gate that used to hide pages by lesson
+# number went on 2026-09-10 (UI_REVIEW_2026-09-10.md §1): the course
+# reviews later material early -- the Lesson 5 warm-ups are the planets
+# and their places, the Dignities page -- so a filter by lesson number hid
+# exactly what the lecture was using, and a page a student is not ready
+# for is simply a page not opened. What restrains the pages now is the
+# reading depth on the Sources page, which folds the supplement.
 
 st.sidebar.header("Nativity")
 
@@ -11848,9 +11848,13 @@ if location_query and lat is not None and lon is not None:
                       glance='Flags planets in Sahl\'s dark signs (Libra, Capricorn), in the two signs of his burned place ("the end of Libra and the beginning of Scorpio" -- he gives no degrees; Abu Ma\'shar\'s 19 Libra-3 Scorpio is applied only in his own Planetary Condition table), in a welled degree of their sign (Abu Ma\'shar, Great Introduction V.21, Fig. 62), or in one of Sahl\'s two sign-boundary conditions.',
                       notes='ENTERING: "every planet which is at the beginning of a sign is weak until it is firmly established in it and comes to be 5 degrees within it" (Fifty Aphorisms #44, 87), repeated in On Nativities Ch.1.22, 9. This is the other half of the five-degree rule that also governs advancement.\n\nLEAVING: "if a planet came to be in the last degree of the sign, then its strength has already gone away from that sign, and its strength is in the next sign ... like a man putting his foot on the threshold of his door. And if a planet was in the twenty-ninth degree, then indeed the strength of the planet IS in that sign" (Fifty Aphorisms #15, 31-33) -- so the 29th degree still counts and only the 30th has left.')
             _absent(_gap)
-            with st.expander("Sahl's categories by work: sign categories, dignity orderings, good places", icon=":material/menu_book:"):
+            # The orders of the dignities and the good places -- static tables --
+            # moved to the Reference tables page on 2026-09-10; what stays is
+            # the one table that reads this chart.
+            with st.expander("Sahl's sign categories for this chart's points", icon=":material/menu_book:"):
                 st.caption("Where The Introduction and On Nativities disagree, both readings are shown and neither is merged "
-                           "(decisions D-7, D-8, D-9). Sources: " + "; ".join(f"{k}: {a} / {b}" for k, (a, b) in SIGN_CATEGORY_SOURCES.items()) + ".")
+                           "(decisions D-7, D-8, D-9). Sources: " + "; ".join(f"{k}: {a} / {b}" for k, (a, b) in SIGN_CATEGORY_SOURCES.items())
+                           + ". The orders of the dignities and the good places are on the Reference tables page.")
                 cat_rows = []
                 for p, d in list(p_data.items()) + [('Ascendant', {'longitude': chart_data['ascendant']})]:
                     if p == 'North Node':
@@ -11858,11 +11862,6 @@ if location_query and lat is not None and lon is not None:
                     sign_p = get_zodiac_sign(d['longitude'])
                     cat_rows.append({'Point': p, 'Sign': sign_p, **sign_categories(sign_p)})
                 st.dataframe(pd.DataFrame(cat_rows), hide_index=True, width='stretch', height=_rows_height(len(cat_rows)))
-                st.dataframe(pd.DataFrame([{'Context': k, 'Order, strongest first': ' > '.join(v)} for k, v in DIGNITY_ORDER.items()]),
-                             hide_index=True, width='stretch')
-                st.dataframe(pd.DataFrame([{'Scheme': k, 'Places': (', '.join(f"{g}: {p}" for g, p in v.items()) if isinstance(v, dict) else str(v))}
-                                           for k, v in GOOD_PLACE_SCHEMES.items()]), hide_index=True, width='stretch')
-                st.caption(SEVEN_PLACE_RANKING_NOTE)
 
         def page_dignities():
             st.header("Dignities and places")
@@ -13284,19 +13283,93 @@ if location_query and lat is not None and lon is not None:
                     [{'Passage': a, 'Not implemented': b} for a, b in NOT_IMPLEMENTED_COVERAGE]),
                     hide_index=True, width='stretch')
 
-        pages = [st.Page(page_chart, url_path="chart", title="Chart", icon=":material/explore:", default=True)]
-        if gate >= 9:
-            pages.append(st.Page(page_dignities, url_path="dignities", title="Dignities and places", icon=":material/shield:"))
-        if gate >= 14:
-            pages.append(st.Page(page_configurations, url_path="configurations", title="Configurations", icon=":material/hub:"))
-        if gate >= 18:
-            pages.append(st.Page(page_lots, url_path="lots", title="Lots", icon=":material/functions:"))
-        if gate >= 19:
-            pages.append(st.Page(page_victors, url_path="victors", title="Lunation and victors", icon=":material/trophy:"))
-        if gate >= 99:
-            pages.append(st.Page(page_timing, url_path="timing", title="Timing", icon=":material/schedule:"))
-        pages.append(st.Page(page_sources, url_path="sources", title="Sources and coverage", icon=":material/menu_book:"))
-        st.navigation(pages, position="sidebar").run()
+        # --- Reference tables (2026-09-10): the app's Handy Tables ---------------
+        # The course hands out the Handy Tables; the app holds every one of
+        # them as data and used to print them in five places. One static
+        # page, lesson-tagged, that reads no chart.
+        def page_reference():
+            st.header("Reference tables")
+            st.caption("The course's Handy Tables, printed from the data this app computes with. Nothing on this "
+                       "page reads the chart in the sidebar.")
+
+            st.subheader("Dignities by sign",
+                         help="Lesson 9. Domicile, exaltation, the three triplicity lords (day, night, participating) "
+                              "and the three faces of each sign, as the engine holds them. The exaltation degrees are "
+                              "the standard scheme of the Handy Tables and are printed only here.")
+            rows = []
+            for i, sign in enumerate(SIGN_ORDER):
+                exalted = next((p for p, signs in EXALTATIONS.items() if sign in signs), None)
+                trip = TRIPLICITY[SIGN_ELEMENT[sign]]
+                faces = [get_essential_rulers(i * 30 + d)['face'] for d in (5, 15, 25)]
+                rows.append({'Sign': sign, 'Domicile': SIGN_TO_DOMICILE[sign],
+                             'Exaltation': f"{exalted} ({EXALTATION_DEGREES[exalted]}°)" if exalted else '-',
+                             'Triplicity, day': trip['Day'], 'Triplicity, night': trip['Night'],
+                             'Participating': trip['Participating'],
+                             'Faces (1st, 2nd, 3rd)': ' · '.join(faces)})
+            st.dataframe(pd.DataFrame(rows), hide_index=True, width='stretch', height=_rows_height(12))
+            st.caption("Sources: Sahl, The Introduction Ch. 1 and Handy Tables (Tables of Dignities). Exaltation degrees: "
+                       "the standard scheme; Hermes' differ by a degree for Saturn, Mars, the Sun, Venus and the Moon. "
+                       "Triplicity lords are Dorothean. Faces are read at 5, 15 and 25 degrees of each sign.")
+
+            st.subheader("Egyptian bounds",
+                         help="Lesson 9, and the bounds every distribution of Part 2 runs through (III.1, 11). The "
+                              "same table the engine directs by; pinned against four independent witnesses.")
+            bound_rows = []
+            for sign in SIGN_ORDER:
+                row, start = {'Sign': sign}, 0
+                for n, (limit, lord) in enumerate(EGYPTIAN_TERMS[sign], 1):
+                    row[f'{pn4_ordinal(n)} bound'] = f"{lord} {start}°–{limit - 1}°59′"
+                    start = limit
+                bound_rows.append(row)
+            st.dataframe(pd.DataFrame(bound_rows), hide_index=True, width='stretch', height=_rows_height(12))
+
+            st.subheader("Orders of the dignities, and the good places",
+                         help="Lessons 9 and 11-12. How Sahl ranks the dignities in three of his works, and which "
+                              "places each of his schemes calls good -- the tables that used to sit in an expander "
+                              "on the Chart page.")
+            st.dataframe(pd.DataFrame([{'Context': k, 'Order, strongest first': ' > '.join(v)} for k, v in DIGNITY_ORDER.items()]),
+                         hide_index=True, width='stretch')
+            st.dataframe(pd.DataFrame([{'Scheme': k, 'Places': (', '.join(f"{g}: {p}" for g, p in v.items()) if isinstance(v, dict) else str(v))}
+                                       for k, v in GOOD_PLACE_SCHEMES.items()]), hide_index=True, width='stretch')
+            st.caption(SEVEN_PLACE_RANKING_NOTE)
+
+            st.subheader("Planetary years",
+                         help="Lesson 5's table: the lesser, middle, greater and mighty years of each planet, with the "
+                              "fardar period (PN IV IV.1, 2). Display only, by decision D-3: nothing in this app "
+                              "applies a planet's years as a grant to a judgment.")
+            years = reference_planetary_years_rows()
+            st.dataframe(pd.DataFrame(years), hide_index=True, width='content', height=_rows_height(len(years)))
+            st.caption("Abu Ma'shar, Great Introduction VII.8, Figure 146; the fardar periods PN IV IV.1, 2. The "
+                       "middle years use two constructions, the ordinary mean for the planets and (least + great/2)/2 "
+                       "for the luminaries, per Valens VII.5 (settled 2026-09-09).")
+
+            st.subheader("The Ages of Man",
+                         help="PN IV I.8, 10-26: the seven ages, each ruled by a planet for its lesser years in the "
+                              "Chaldean order from the Moon. The Timing page marks the native's own age in it.")
+            age_rows, from_year = [], 0
+            for planet, years_, description in PN4_AGES_OF_MAN:
+                age_rows.append({'Age': description, 'Ruler': planet, 'Years': years_,
+                                 'From': from_year, 'To': from_year + years_})
+                from_year += years_
+            st.dataframe(pd.DataFrame(age_rows), hide_index=True, width='stretch', height=_rows_height(len(age_rows)))
+
+        pages = {
+            "Part 1: the nativity": [
+                st.Page(page_chart, url_path="chart", title="Chart", icon=":material/explore:", default=True),
+                st.Page(page_dignities, url_path="dignities", title="Dignities and places", icon=":material/shield:"),
+                st.Page(page_configurations, url_path="configurations", title="Configurations", icon=":material/hub:"),
+                st.Page(page_lots, url_path="lots", title="Lots", icon=":material/functions:"),
+                st.Page(page_victors, url_path="victors", title="Lunation and victors", icon=":material/trophy:"),
+            ],
+            "Part 2: prediction": [
+                st.Page(page_timing, url_path="timing", title="Timing", icon=":material/schedule:"),
+            ],
+            "Reference": [
+                st.Page(page_reference, url_path="reference", title="Reference tables", icon=":material/table_chart:"),
+                st.Page(page_sources, url_path="sources", title="Sources and readings", icon=":material/menu_book:"),
+            ],
+        }
+        st.navigation(pages, position="sidebar", expanded=True).run()
 
     else:
         st.sidebar.error("Timezone boundary not found for coordinates.")

@@ -355,9 +355,14 @@ D3_GRANT_READERS = {
     # prints all three, as the display evaluator does. Disagreement #2 is
     # left exactly where it was.
     "pn4_activation_ages",
+    # Added 2026-09-10 with the Reference tables page. It prints the four
+    # years and the fardar period as the course's Handy Tables print them
+    # (Lesson 5), a table and nothing else: no caller reads a row to grant
+    # anything, and the page reads no chart. UI_REVIEW_2026-09-10.md §3.
+    "reference_planetary_years_rows",
 }
 D3_FARDAR_READERS = {"evaluate_planetary_years_display", "pn4_fardar_sequence",
-                     "pn4_activation_ages"}
+                     "pn4_activation_ages", "reference_planetary_years_rows"}
 D3_GRANT_KEYS = ("lesser", "middle", "greater", "mighty")
 
 

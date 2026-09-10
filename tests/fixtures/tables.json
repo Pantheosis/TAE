@@ -6,9 +6,7 @@
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
-   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]],
-   ["Special Degrees & Conditions", ["Context", "Order, strongest first"]],
-   ["Special Degrees & Conditions", ["Scheme", "Places"]]
+   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations/Abu Ma'shar (supplement)": [
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
@@ -66,6 +64,14 @@
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
    ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
+  ],
+  "reference": [
+   ["Dignities by sign", ["Sign", "Domicile", "Exaltation", "Triplicity, day", "Triplicity, night", "Participating", "Faces (1st, 2nd, 3rd)"]],
+   ["Egyptian bounds", ["Sign", "1st bound", "2nd bound", "3rd bound", "4th bound", "5th bound"]],
+   ["Orders of the dignities, and the good places", ["Context", "Order, strongest first"]],
+   ["Orders of the dignities, and the good places", ["Scheme", "Places"]],
+   ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar (years)"]],
+   ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
    ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
@@ -124,9 +130,7 @@
    ["Planetary Positions", ["Planet", "Position", "Absolute", "WS place", "Sees ASC", "Quadrant", "Motion", "Solar phase"]],
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
-   ["Quadrant divisions (Alchabitius)", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]],
-   ["Quadrant divisions (Alchabitius)", ["Context", "Order, strongest first"]],
-   ["Quadrant divisions (Alchabitius)", ["Scheme", "Places"]]
+   ["Quadrant divisions (Alchabitius)", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations/Abu Ma'shar (supplement)": [
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
@@ -174,6 +178,14 @@
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
    ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
+  ],
+  "reference": [
+   ["Dignities by sign", ["Sign", "Domicile", "Exaltation", "Triplicity, day", "Triplicity, night", "Participating", "Faces (1st, 2nd, 3rd)"]],
+   ["Egyptian bounds", ["Sign", "1st bound", "2nd bound", "3rd bound", "4th bound", "5th bound"]],
+   ["Orders of the dignities, and the good places", ["Context", "Order, strongest first"]],
+   ["Orders of the dignities, and the good places", ["Scheme", "Places"]],
+   ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar (years)"]],
+   ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
    ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
@@ -235,9 +247,7 @@
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
-   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]],
-   ["Special Degrees & Conditions", ["Context", "Order, strongest first"]],
-   ["Special Degrees & Conditions", ["Scheme", "Places"]]
+   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations/Abu Ma'shar (supplement)": [
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
@@ -295,6 +305,14 @@
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
    ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
+  ],
+  "reference": [
+   ["Dignities by sign", ["Sign", "Domicile", "Exaltation", "Triplicity, day", "Triplicity, night", "Participating", "Faces (1st, 2nd, 3rd)"]],
+   ["Egyptian bounds", ["Sign", "1st bound", "2nd bound", "3rd bound", "4th bound", "5th bound"]],
+   ["Orders of the dignities, and the good places", ["Context", "Order, strongest first"]],
+   ["Orders of the dignities, and the good places", ["Scheme", "Places"]],
+   ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar (years)"]],
+   ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
    ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
@@ -354,9 +372,7 @@
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
-   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]],
-   ["Special Degrees & Conditions", ["Context", "Order, strongest first"]],
-   ["Special Degrees & Conditions", ["Scheme", "Places"]]
+   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations/Abu Ma'shar (supplement)": [
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
@@ -410,6 +426,14 @@
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
    ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
+  ],
+  "reference": [
+   ["Dignities by sign", ["Sign", "Domicile", "Exaltation", "Triplicity, day", "Triplicity, night", "Participating", "Faces (1st, 2nd, 3rd)"]],
+   ["Egyptian bounds", ["Sign", "1st bound", "2nd bound", "3rd bound", "4th bound", "5th bound"]],
+   ["Orders of the dignities, and the good places", ["Context", "Order, strongest first"]],
+   ["Orders of the dignities, and the good places", ["Scheme", "Places"]],
+   ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar (years)"]],
+   ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
    ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
@@ -471,9 +495,7 @@
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
-   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]],
-   ["Special Degrees & Conditions", ["Context", "Order, strongest first"]],
-   ["Special Degrees & Conditions", ["Scheme", "Places"]]
+   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations/Abu Ma'shar (supplement)": [
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
@@ -525,6 +547,14 @@
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
    ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
+  ],
+  "reference": [
+   ["Dignities by sign", ["Sign", "Domicile", "Exaltation", "Triplicity, day", "Triplicity, night", "Participating", "Faces (1st, 2nd, 3rd)"]],
+   ["Egyptian bounds", ["Sign", "1st bound", "2nd bound", "3rd bound", "4th bound", "5th bound"]],
+   ["Orders of the dignities, and the good places", ["Context", "Order, strongest first"]],
+   ["Orders of the dignities, and the good places", ["Scheme", "Places"]],
+   ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar (years)"]],
+   ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
    ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
@@ -586,9 +616,7 @@
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
-   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]],
-   ["Special Degrees & Conditions", ["Context", "Order, strongest first"]],
-   ["Special Degrees & Conditions", ["Scheme", "Places"]]
+   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations/Abu Ma'shar (supplement)": [
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
@@ -646,6 +674,14 @@
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
    ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
+  ],
+  "reference": [
+   ["Dignities by sign", ["Sign", "Domicile", "Exaltation", "Triplicity, day", "Triplicity, night", "Participating", "Faces (1st, 2nd, 3rd)"]],
+   ["Egyptian bounds", ["Sign", "1st bound", "2nd bound", "3rd bound", "4th bound", "5th bound"]],
+   ["Orders of the dignities, and the good places", ["Context", "Order, strongest first"]],
+   ["Orders of the dignities, and the good places", ["Scheme", "Places"]],
+   ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar (years)"]],
+   ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
    ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
