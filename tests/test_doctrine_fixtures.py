@@ -1241,3 +1241,49 @@ def test_pn4_activation_confirmation_needs_the_planet_to_be_a_time_lord(engine):
             age = float(claim.split("(")[1].split(",")[0])
             segment = engine["pn4_distribution_at_age"](segments, age)
             assert row["Planet"] in (segment["distributor"], segment["partner"])
+
+
+def test_pn4_ascensions_against_abu_mashars_own_worked_conversion(engine):
+    """III.1, 26 (p. 291) converts a zodiacal arc into ascensions and then
+    into time, and prints every step, so the engine can be checked against
+    the author's own arithmetic rather than against an editor's note.
+
+        Ascendant Taurus 2 54' (III.1, 19), the Lot of courage 4 20'
+        later; "in the ascensions of the clime of Babylon (the fourth)
+        that is 3 02', so Venus distributes alone for 3 years, 12 days."
+
+    The chart's latitude is given as 36 deg (III.1, 19). With PTOLEMY'S
+    obliquity, 23;51 = 23.85 -- the value Abu Ma'shar's own tables use,
+    not the modern one -- the engine returns 3 02' to within half an
+    arcminute. The modern 23.44 gives 3 04', which is the size of error to
+    expect from using the wrong obliquity and is worth seeing here.
+
+    Then the rate ladder closes the circle: 3 deg is 3 years and 2' is
+    12 days at 6 days to the minute (III.1, 13), which is exactly the
+    period printed.
+
+    A NOTE ON USING THIS EXAMPLE AT ALL. Dykes judges the III.1 worked
+    example "corrupted and ought to be ignored" (Intro Sect. 7, pp. 73-75)
+    and 04_timing_answers_2026-09-10.md repeats "do not use it as a test
+    fixture". That verdict is about its DOCTRINE -- the chart data in 19
+    and 22 are mutually inconsistent, and it accumulates Lots as though
+    each became a releaser when met, against III.1, 47. This test takes no
+    doctrine from it. It takes one self-contained arithmetic step, whose
+    inputs are all printed in the same sentence and whose output is
+    checkable three ways, and uses it to pin the ascension code. Nothing
+    here depends on the example being a sound piece of astrology."""
+    oa = engine["_oblique_ascension"]
+    ascendant = 30 + 2 + 54 / 60           # Taurus 2 54'
+    lot = ascendant + 4 + 20 / 60          # 4 20' later, by degrees of equality
+    printed = 3 + 2 / 60                   # "that is 3 02'"
+
+    ptolemy = (oa(lot, 23.85, 36.0) - oa(ascendant, 23.85, 36.0)) % 360.0
+    assert ptolemy == pytest.approx(printed, abs=0.5 / 60)
+
+    modern = (oa(lot, 23.44, 36.0) - oa(ascendant, 23.44, 36.0)) % 360.0
+    assert modern == pytest.approx(printed, abs=2.5 / 60)
+    assert abs(modern - printed) > abs(ptolemy - printed)
+
+    # "so Venus distributes alone for 3 years, 12 days"
+    period = engine["pn4_arc_to_time"](printed)
+    assert (period["years"], period["months"], period["days"]) == (3, 0, 12)

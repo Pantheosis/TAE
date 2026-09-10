@@ -223,13 +223,40 @@ where that same planet is the distributor or the manager. That last part is comp
    indication for that thing". Strength is nowhere defined in the chapter; the looking half is
    computable, the strength half is not, so no row is promoted.
 
-**Dykes' worked figure is not reproduced.** fn 191 gives Taurus at 45° N as 20.17 ascensional
-times; the exact computation gives **20.09**. His own arithmetic is internally inconsistent with
-20.17 anyway (he prints ⅔ of the sum as 26.75 where 20.17 gives 26.78), so this is rounding slop
-in an illustrative footnote rather than a table to match. The engine computes ascensions directly,
-and a fixture pins the property that would catch a real error instead: a sign and its opposite sum
-to the same value at every latitude — twice the equatorial span, not 60 — because the two
-ascensional differences cancel.
+**Dykes' worked figure is not reproduced, and the ascension code is validated against a better
+witness.** fn 191 gives Taurus at 45° N as 20.17 ascensional times; the exact computation gives
+**20.09**. Checked further at the owner's request:
+
+- 20.17 is the value for Taurus at **44.78° N**, not 45°.
+- Obliquity does not explain it. It would need ε = 23.29°, and the historical obliquity was
+  *larger* (≈23.7° in Abū Ma'shar's day, 23.85° in Ptolemy's tables), which moves the figure the
+  **wrong way** — at 23.85° Taurus at 45° N is 19.86.
+- His own thirds are inconsistent with his own 20.17 (he prints ⅔ of the sum as 26.75; 20.17
+  gives 26.78).
+
+So it is slop in an illustrative footnote. **The engine is instead checked against Abū Ma'shar's
+own worked arithmetic**, which is a much stronger test and which the corpus turned out to contain:
+
+> "And between the degree of the Ascendant and the Lot of courage, were 4° 20′ by [degrees] of
+> equality: in the ascensions of the clime of Babylon (the fourth) that is **3° 02′**, so Venus
+> distributes alone for **3 years, 12 days**." — **III.1, 26** (p. 291), the chart's latitude given
+> as 36° at **III.1, 19**
+
+At 36° N with **Ptolemy's obliquity 23;51 = 23.85°** the engine returns 3° 02′, matching to within
+half an arcminute; the modern 23.44° gives 3° 04′, which is the size of error the wrong obliquity
+produces. And the rate ladder closes it: 3° is 3 years and 2′ is 12 days at six days to the
+minute, exactly the period printed. **Three numbers, printed in one sentence, all reproduce.**
+
+*A departure recorded.* `04_timing_answers_2026-09-10.md` says of the III.1 worked example "do not
+use it as a test fixture", following Dykes' verdict that it is "corrupted and ought to be ignored"
+(Intro §7). That verdict is about its **doctrine** — the data in **19** and **22** are mutually
+inconsistent, and it accumulates Lots against III.1, **47**. The fixture takes no doctrine from it:
+one self-contained arithmetic step, all of whose inputs and outputs are printed in the same
+sentence and check three ways. The reasoning is written into the test itself.
+
+A second fixture pins the property that would catch a real error rather than a rounding one: a
+sign and its opposite sum to the same value at every latitude — twice the equatorial span, not
+60 — because the two ascensional differences cancel.
 
 ### Refused at the poles
 
