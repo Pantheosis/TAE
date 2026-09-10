@@ -1998,6 +1998,99 @@ def test_pn4_bundle_shows_proxies_in_a_luminary_year_only(engine):
     assert b["proxies"] is None and b["sun_handover"] is None
 
 
+# --- II.3, 2-19: the sign of the terminal point and its lord (built 2026-09-10)
+
+def _ii3_pair(engine, **kw):
+    """A root and a revolution with twelve whole-sign cusps, for the
+    accidental-dignity evaluator."""
+    root, sr, year_lon = _two_charts(engine, **kw)
+    for chart in (root, sr):
+        base = (chart["ascendant"] // 30.0) * 30.0
+        chart["houses"] = [(base + 30.0 * i) % 360.0 for i in range(12)]
+        chart["julian_day"] = 2451545.0
+    return root, sr, year_lon
+
+
+def test_pn4_ii3_examines_the_sign_of_the_terminal_point_in_the_root(engine):
+    """II.3, 2 as facts. Terminal sign Cancer under an Aries Ascendant:
+    house 4, "a stake"; house of the Moon, exaltation of Jupiter,
+    triplicity of Venus by day; the Sun and Mercury in it; the Moon at 20
+    Libra squares it from 20 Libra with the ray at 20 Cancer, in
+    Jupiter's bound (19-26) and the face of the Moon (20-30 Cancer)."""
+    root, sr, _ = _ii3_pair(engine, year_lon=95.0)
+    year = {"sign": "Cancer", "longitude": 95.0, "lord": "Moon"}
+    out = engine["pn4_ii3_examination"](root, sr, year, 2451545.0)
+    rows = out["root_rows"]
+    assert rows[0]["Reads"] == "house 4 from the natal Ascendant, a stake"
+    assert rows[1]["Reads"].startswith("house of Moon (neither); exaltation of Jupiter (fortune); triplicity of Venus (fortune) (day)")
+    assert rows[2]["Reads"].startswith("planets: Sun (neither), Mercury (neither); Lots:")
+    assert "twelfth-parts not computed" in rows[2]["Reads"]
+    assert "Moon (neither) by square from 20\u00b0 Lib 00', the ray at 20\u00b0 Can 00' (bound of Jupiter, face of Moon)" in rows[3]["Reads"]
+    assert rows[4]["Reads"] == "no"
+
+
+def test_pn4_ii3_examines_the_revolution_and_reads_conditions_as_labels(engine):
+    """II.3, 3: the revolution's planets in the sign, who looks at it and
+    from where, whether it is devoid, where those planets were and are,
+    and their condition in each -- the engine's labels, not a verdict.
+    A revolution with Saturn at 5 Cancer and nothing else configured to
+    Cancer: Saturn in it; and a revolution where nothing touches the
+    sign reads devoid."""
+    root, sr, _ = _ii3_pair(engine, year_lon=95.0,
+                            rev=dict(Sun=40.0, Moon=70.0, Mercury=75.0, Venus=160.0, Mars=220.0, Jupiter=280.0, Saturn=95.0))
+    year = {"sign": "Cancer", "longitude": 95.0, "lord": "Moon"}
+    out = engine["pn4_ii3_examination"](root, sr, year, 2451545.0)
+    rows = out["revolution_rows"]
+    assert rows[0]["Reads"] == "Saturn (infortune)"
+    assert "Mars (infortune) by trine from 10\u00b0 Sco 00'" in rows[1]["Reads"]           # 10 Scorpio trines Cancer
+    assert "Jupiter (fortune) by opposition from 10\u00b0 Cap 00'" in rows[1]["Reads"]
+    assert rows[2]["Reads"] == "no"
+    assert "Saturn: house 1 -> 4 from the natal Ascendant" in rows[3]["Reads"]
+    assert rows[4]["Reads"].startswith("Saturn: root ")
+    quiet = _ii3_pair(engine, year_lon=95.0,
+                      rev=dict(Sun=70.0, Moon=75.0, Mercury=80.0, Venus=130.0, Mars=250.0, Jupiter=300.0, Saturn=310.0))
+    out = engine["pn4_ii3_examination"](quiet[0], quiet[1], year, 2451545.0)
+    assert out["revolution_rows"][2]["Reads"] == "yes: devoid"
+
+
+def test_pn4_ii3_lords_factors_per_chart_and_no_verdict(engine):
+    """II.3, 5-6: the factors of a suitable and a contrary condition,
+    shown for the root and the revolution. A retrograde lord under the
+    rays in the revolution reads so; Figure 55's four sentences are
+    quoted and no cell is chosen."""
+    root, sr, _ = _ii3_pair(engine, year_lon=5.0, rev=dict(Mars=(102.0, -0.3), Sun=100.0))   # Mars retrograde, burned
+    year = {"sign": "Aries", "longitude": 5.0, "lord": "Mars"}
+    out = engine["pn4_ii3_examination"](root, sr, year, 2451545.0)
+    row = lambda prefix: next(r for r in out["lord_rows"] if r["Factor"].startswith(prefix))
+    assert row("Direct")["Root"] == "direct" and row("Direct")["Revolution"] == "retrograde"
+    assert row("In its own glow")["Revolution"].startswith(("burned", "cazimi"))
+    assert row("In a sign")["Root"] == "peregrine"                                # Mars at 0 Aquarius
+    assert row("Its place")["Root"].startswith("house ")
+    assert row("In its own domain")["Revolution"] in ("in its own domain (hayz)", "contrary to its domain", "neither in nor contrary to its domain")
+    assert [r["Source"] for r in out["figure_55"]] == ["II.3, 5", "II.3, 6", "II.3, 7", "II.3, 8"]
+    assert all(r["Indicates"].startswith('"') for r in out["figure_55"])
+    assert not any("verdict" in k.lower() for k in out)
+
+
+def test_pn4_ii3_refinements_reception_stake_and_aversion(engine):
+    """II.3, 9-18 as facts: received or not; in a stake of the revolution's
+    Ascendant with an infortune squaring or opposing; looking at the
+    Ascendant or in 2, 6, 8, 12. Mars at 10 Capricorn under a Cancer
+    revolution Ascendant is in house 7, a stake, opposed by Saturn at 20
+    Cancer; from the natal Aries Ascendant it is in house 10 and looks at
+    the Ascendant from a stake."""
+    root, sr, _ = _ii3_pair(engine, year_lon=5.0, r_asc=95.0, rev=dict(Mars=280.0, Saturn=110.0))
+    year = {"sign": "Aries", "longitude": 5.0, "lord": "Mars"}
+    out = engine["pn4_ii3_examination"](root, sr, year, 2451545.0)
+    ref = out["refinement_rows"]
+    assert ref[0]["Reads"].startswith("root: ") and "revolution: " in ref[0]["Reads"]
+    assert ref[1]["Reads"].startswith("house 7 from the revolution Ascendant (a stake); infortunes by square or opposition: Saturn by opposition")
+    assert ref[2]["Reads"] == "house 10 from the natal Ascendant: looks at the Ascendant from a stake"
+    hidden = _ii3_pair(engine, year_lon=5.0, r_asc=95.0, rev=dict(Mars=160.0))              # 10 Virgo: house 6 from Aries
+    out = engine["pn4_ii3_examination"](hidden[0], hidden[1], year, 2451545.0)
+    assert out["refinement_rows"][2]["Reads"].startswith("house 6 from the natal Ascendant: does NOT look at the Ascendant")
+
+
 def test_pn4_indicator_two_against_abu_mashars_worked_months(engine):
     """IX.1, 15-16 works indicator #2 out month by month for a year that
     terminates at Cancer: "the lord of its first ninth-part is the Moon,

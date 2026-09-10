@@ -8526,6 +8526,211 @@ def pn4_luminary_proxies(year_lord, chart_data, sr, moon=None, sun=None):
                      'Source': 'II.22, 5-10'})
     return rows
 
+# --- II.3, 2-19: the sign of the terminal point and its lord, examined ----
+# II.3, 2: the sign of the terminal point in the ROOT -- which house of
+# the circle ("the stakes or what follows them, or those falling from
+# them"), whose house, exaltation and triplicity, which planets, Lots and
+# twelfth-parts are in it, who looks at it or casts rays at it and from
+# which sign and degree, to what bound, face and degree the rays fall,
+# and whether it is devoid of them. II.3, 3: the same in the REVOLUTION,
+# with where those planets were in the root and are now, and their
+# condition in each. II.3, 5-8: the lord of the year's condition in root
+# and revolution compared four ways (Figure 55), and 5-6 say what
+# "suitable" is: direct, in its own domain (sect, fn 46), in its own
+# glow, in a sign in which it has a claim, safe from the infortunes, in
+# an excellent place from the three signs; the contrary: retrograde,
+# burned or under the rays, exile, westernized from the Sun (fn 47),
+# assembled with or inspected by the infortunes, out of sect. II.3, 9-18
+# refine by reception, by a stake of the revolution's Ascendant under a
+# non-receiving infortune's square or opposition, and by aversion to the
+# Ascendant (the second, sixth, eighth and twelfth).
+#
+# FACTS, NOT A VERDICT. The book gives the factors and no rule for
+# weighing them, so every factor is shown for each chart and Figure 55's
+# four sentences are quoted with the cell left to the reader (owner's
+# decision 2026-09-10). The engine's own evaluators supply the facts --
+# essential and accidental dignity, solar phase, reception -- run on the
+# revolution's data as they run on the root's. Not read: twelfth-parts;
+# fn 37-41's classes of sign (helpful, hostile, matching in ascensions)
+# and of degree (bright, dark, smoky). The delineations II.4-II.21 are
+# not built. No worked example exists; Figure 55 is Dykes' table.
+
+PN4_II3_FIGURE_55 = (
+    ('suitable in the root, suitable in the revolution', 'II.3, 5',
+     'the safety of the body for the owner of the revolution of the year, and the goodness of his soul, and his '
+     'delighting in the things which the lord of the year indicates'),
+    ('suitable in the root, contrary in the revolution', 'II.3, 6',
+     'weakness in that year, and a decrease in everything we stated'),
+    ('bad in the root, excellent in the revolution', 'II.3, 7',
+     'his condition will improve somewhat in that year, and it will revive things for him in it, which he will delight in'),
+    ('bad in both the root and the revolution', 'II.3, 8',
+     'an excess of adversity in the category of what it indicates'),
+)
+
+def _pn4_house_class(house):
+    """II.3, 2 [1]: "the stakes or what follows them, or those falling from
+    them"."""
+    return 'a stake' if house in (1, 4, 7, 10) else 'following a stake' if house in (2, 5, 8, 11) else 'falling from a stake'
+
+def _pn4_tag(planet):
+    n = pn4_nature(planet)
+    return f"{planet} ({n or 'neither'})"
+
+def _pn4_looks_at_sign(data, sign, exclude=()):
+    """Whole-sign aspects to a sign from the planets of a chart: (planet,
+    aspect name, the planet's longitude, the degree its ray reaches in the
+    sign). A planet IN the sign is reported as 'in it'."""
+    out = []
+    target_idx = SIGN_ORDER.index(sign)
+    for planet in PN4_SEVEN:
+        if planet in exclude or planet not in data:
+            continue
+        lon = data[planet]['longitude'] % 360.0
+        apart = (target_idx - int(lon // 30)) % 12
+        apart = min(apart, 12 - apart)
+        entry = ASPECT_BY_SIGN_COUNT.get(apart)
+        if entry is None:
+            continue
+        name = 'in it' if apart == 0 else entry[0].lower()
+        ray_deg = target_idx * 30.0 + (lon % 30.0)
+        out.append((planet, name, lon, ray_deg))
+    return out
+
+def _pn4_lots_in_sign(chart, sign):
+    names = []
+    for d in LOT_DEFINITIONS:
+        lon = lot_by_id(d['id'], chart['planetary_data'], chart['ascendant'], chart['houses'], chart['sect'])
+        if lon is not None and get_zodiac_sign(lon) == sign:
+            names.append(d['name'])
+    return names
+
+def pn4_ii3_examination(chart_data, sr, year, jd_sr):
+    """II.3, 2-19 as facts. Returns {root_rows, revolution_rows, lord_rows,
+    refinement_rows, figure_55}."""
+    natal, rev = chart_data['planetary_data'], sr['planetary_data']
+    n_asc, r_asc = chart_data['ascendant'], sr['ascendant']
+    sign, year_lon, lord = year['sign'], year['longitude'], year['lord']
+    rulers = get_essential_rulers(year_lon)
+    trip = rulers['triplicity_day'] if chart_data['sect'] == 'Diurnal' else rulers['triplicity_night']
+
+    # --- II.3, 2: the root ---
+    h = get_wsh_house(year_lon, n_asc)
+    looks = _pn4_looks_at_sign(natal, sign)
+    rays = [(p, a, lon, deg) for p, a, lon, deg in looks if a != 'in it']
+    root_rows = [
+        {'Question': '[1] Which house of the circle it is', 'Reads': f"house {h} from the natal Ascendant, {_pn4_house_class(h)}",
+         'Source': 'II.3, 2; VI.3'},
+        {'Question': '[2] Whose house, exaltation and triplicity',
+         'Reads': f"house of {_pn4_tag(rulers['domicile'])}; exaltation of "
+                  f"{_pn4_tag(rulers['exaltation']) if rulers['exaltation'] not in (None, '-', '') else 'none'}; triplicity of "
+                  f"{_pn4_tag(trip)} ({'day' if chart_data['sect'] == 'Diurnal' else 'night'})",
+         'Source': 'II.3, 2'},
+        {'Question': '[3] Which planets, Lots and twelfth-parts are in it in the root',
+         'Reads': f"planets: {_pn4_natal_planets_in_sign(natal, sign)}; Lots: "
+                  f"{', '.join(_pn4_lots_in_sign(chart_data, sign)) or 'none'}; twelfth-parts not computed",
+         'Source': 'II.3, 2; VI.4'},
+        {'Question': '[4-7] Who looks at it or casts rays at it, from which sign and degree, and to what bound and face',
+         'Reads': ('; '.join(f"{_pn4_tag(p)} by {a} from {get_degree_string(lon)}, the ray at {get_degree_string(deg)} "
+                             f"(bound of {pn4_bound_lord(deg)}, face of {get_essential_rulers(deg)['face']})"
+                             for p, a, lon, deg in rays) or 'none'),
+         'Source': 'II.3, 2; fn 37-41 (the classes of sign and degree are not read)'},
+        {'Question': '[8] Whether it falls away from the view of the planets and their rays',
+         'Reads': 'yes: devoid of them' if not looks else 'no', 'Source': 'II.3, 2'},
+    ]
+
+    # --- II.3, 3: the revolution ---
+    r_looks = _pn4_looks_at_sign(rev, sign)
+    r_in = [p for p, a, _l, _d in r_looks if a == 'in it']
+    r_rays = [(p, a, lon, deg) for p, a, lon, deg in r_looks if a != 'in it']
+    ess_n, ess_r = evaluate_essential_dignities(natal, chart_data['sect']), evaluate_essential_dignities(rev, sr['sect'])
+    acc_n = evaluate_accidental_dignities(natal, chart_data['houses'], chart_data['sect'], chart_data.get('julian_day'))
+    acc_r = evaluate_accidental_dignities(rev, sr['houses'], sr['sect'], jd_sr)
+
+    def labels(planet, ess, acc):
+        return ', '.join((ess.get(planet, {}).get('Essential Labels') or []) + (acc.get(planet, {}).get('Accidental Labels') or [])) or 'none'
+
+    involved = [p for p, _a, _l, _d in r_looks]
+    revolution_rows = [
+        {'Question': '[1] Which revolution planets are in it (twelfth-parts not computed)',
+         'Reads': ', '.join(_pn4_tag(p) for p in r_in) or 'none', 'Source': 'II.3, 3; VI.3'},
+        {'Question': '[2, 4, 5] Who looks at it, and from what direction',
+         'Reads': '; '.join(f"{_pn4_tag(p)} by {a} from {get_degree_string(lon)}" for p, a, lon, _d in r_rays) or 'none',
+         'Source': 'II.3, 3'},
+        {'Question': '[3] Whether it is devoid of their alighting in or looking at it',
+         'Reads': 'yes: devoid' if not r_looks else 'no', 'Source': 'II.3, 3'},
+        {'Question': '[6] Where those planets were in the root, and where they are in the revolution',
+         'Reads': '; '.join(f"{p}: house {get_wsh_house(natal[p]['longitude'], n_asc)} -> {get_wsh_house(rev[p]['longitude'], n_asc)} "
+                            f"from the natal Ascendant" for p in involved if p in natal) or 'none',
+         'Source': 'II.3, 3; VI.5'},
+        {'Question': '[7] Their condition in the root; in the revolution (the engine\'s labels, not a verdict)',
+         'Reads': '; '.join(f"{p}: root {labels(p, ess_n, acc_n)} | revolution {labels(p, ess_r, acc_r)}" for p in involved) or 'none',
+         'Source': 'II.3, 3-4; I.7'},
+    ]
+
+    # --- II.3, 5-6: the lord of the year's factors, per chart ---
+    def factors(data, chart, ess, acc, asc_for_place):
+        row = data.get(lord)
+        if not row:
+            return {}
+        e, a = ess.get(lord, {}), acc.get(lord, {})
+        phase, side, _el = solar_phase(lord, row['longitude'], data['Sun']['longitude'])
+        claim = [k for k in ('Domicile', 'Exalt', 'Triplicity', 'Term', 'Face') if e.get(k)]
+        infortunes = [f"{p} by {asp}" for p, asp, _l, _d in _pn4_looks_at_sign(data, get_zodiac_sign(row['longitude']))
+                      if p in INFORTUNES and p != lord]
+        return {
+            'motion': 'retrograde' if row.get('speed_in_lon', 1.0) < 0 else 'direct',
+            'glow': (phase.lower() if phase else 'in its own glow') + (f", {side}" if side else ''),
+            'domain': 'in its own domain (hayz)' if a.get('Hayz') else 'contrary to its domain' if a.get('ContraryDomain') else 'neither in nor contrary to its domain',
+            'claim': ('a claim: ' + ', '.join(claim).lower()) if claim else ('exile (detriment)' if e.get('Detriment') else 'fall' if e.get('Fall') else 'peregrine'),
+            'infortunes': ', '.join(infortunes) or 'none by whole sign',
+            'place': f"house {get_wsh_house(row['longitude'], n_asc)} / {get_wsh_house(row['longitude'], year_lon)} / {get_wsh_house(row['longitude'], r_asc)}",
+        }
+    f_n, f_r = factors(natal, chart_data, ess_n, acc_n, n_asc), factors(rev, sr, ess_r, acc_r, r_asc)
+    lord_rows = [
+        {'Factor': label, 'Root': f_n.get(key, '-'), 'Revolution': f_r.get(key, '-'), 'Source': cite}
+        for key, label, cite in (
+            ('motion', 'Direct in course, or retrograde', 'II.3, 5-6'),
+            ('glow', 'In its own glow, or burned / under the rays; eastern or western', 'II.3, 5-6; fn 47'),
+            ('domain', 'In its own domain (sect), or the contrary', 'II.3, 5-6; fn 46, 48'),
+            ('claim', 'In a sign in which it has a claim, or exile', 'II.3, 5-6'),
+            ('infortunes', 'The infortunes assembled with it or inspecting it (whole sign)', 'II.3, 5-6'),
+            ('place', 'Its place from the natal Ascendant / the terminal sign / the revolution Ascendant', 'II.3, 5'),
+        )
+    ]
+
+    # --- II.3, 9-18: the refinements, as facts ---
+    def received(data, sect):
+        try:
+            rows = evaluate_reception(data, sect)
+        except Exception:
+            return 'not computed'
+        by = [r['Receiver'] for r in rows if r.get('Received') == lord or (r.get('Received') == 'each other' and lord in str(r.get('Receiver')))]
+        return ('received by ' + ', '.join(sorted(set(by)))) if by else 'not received'
+
+    r_lord = rev.get(lord)
+    ref_rows = []
+    ref_rows.append({'Refinement': 'Received, or not (root; revolution)',
+                     'Reads': f"root: {received(natal, chart_data['sect'])}; revolution: {received(rev, sr['sect'])}",
+                     'Source': 'II.3, 9-12 (under the Configurations page\'s reception rule)'})
+    if r_lord:
+        rh_rasc = get_wsh_house(r_lord['longitude'], r_asc)
+        rh_nasc = get_wsh_house(r_lord['longitude'], n_asc)
+        harming = [f"{p} by {asp}" for p, asp, _l, _d in _pn4_looks_at_sign(rev, get_zodiac_sign(r_lord['longitude']))
+                   if p in INFORTUNES and p != lord and asp in ('square', 'opposition')]
+        ref_rows.append({'Refinement': "In a stake of the revolution's Ascendant, and squared or opposed by an infortune",
+                         'Reads': f"house {rh_rasc} from the revolution Ascendant ({_pn4_house_class(rh_rasc)}); "
+                                  f"infortunes by square or opposition: {', '.join(harming) or 'none'}; whether the infortune "
+                                  f"receives it is read from the row above",
+                         'Source': 'II.3, 13-15'})
+        ref_rows.append({'Refinement': 'Looking at the Ascendant, or in the four positions that do not (2, 6, 8, 12)',
+                         'Reads': f"house {rh_nasc} from the natal Ascendant: "
+                                  + ('does NOT look at the Ascendant -- the detestable thing hidden (II.3, 17)' if rh_nasc in (2, 6, 8, 12)
+                                     else 'looks at the Ascendant' + (' from a stake' if rh_nasc in (1, 4, 7, 10) else ', not from a stake (II.3, 16)')),
+                         'Source': 'II.3, 16-18'})
+    figure_55 = [{'Lord of the year': case, 'Indicates': f'"{text}"', 'Source': cite} for case, cite, text in PN4_II3_FIGURE_55]
+    return {'root_rows': root_rows, 'revolution_rows': revolution_rows, 'lord_rows': lord_rows,
+            'refinement_rows': ref_rows, 'figure_55': figure_55}
+
 def pn4_fardar_at_age(age_years, sect):
     """The fardar lord and sub-lord at an age.
 
@@ -9088,6 +9293,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
             pn4_moon_testimony(moon), moon['void']),
         'moon': moon, 'moon_portions': portions, 'year_days': year_days,
         'proxies': proxies, 'sun_handover': sun,
+        'ii3': pn4_ii3_examination(chart_data, sr, year, jd_sr),
         'iii2_type': pn4_static_type(current['distributor'], current['partner']) if current else None,
         'iii2_checklist': pn4_distribution_checklist(chart_data, sr, year['longitude'], current),
         'iii2_transitions': pn4_year_transitions(segments, age),
@@ -10216,6 +10422,34 @@ if location_query and lat is not None and lon is not None:
                               "distribution is the stronger (III.2, 2-3) -- the two are indexed to different scopes, "
                               "which is how PN IV resolves the corpus disagreement.")
             st.dataframe(pd.DataFrame(pn4['year_rows']), hide_index=True, width='stretch')
+
+            st.subheader("The sign of the terminal point and its lord, examined (II.3, 2-19)",
+                         help="II.3, 2: examine the sign of the terminal point in the root -- which house of the circle, "
+                              "whose house, exaltation and triplicity, which planets, Lots and twelfth-parts are in it, "
+                              "who looks at it or casts rays at it and from where, and whether it is devoid of them. "
+                              "II.3, 3: the same in the revolution, with where those planets were and are, and their "
+                              "condition in each. II.3, 5-8: the lord of the year's condition in root and revolution "
+                              "compared four ways (Figure 55); II.3, 9-18: reception, a stake of the revolution's "
+                              "Ascendant under an infortune, aversion to the Ascendant.")
+            ii3 = pn4['ii3']
+            st.markdown(f"**The sign of the terminal point, {pn4['year']['sign']}, in the root (II.3, 2):**")
+            st.dataframe(pd.DataFrame(ii3['root_rows']), hide_index=True, width='stretch', height=_rows_height(5))
+            st.markdown("**In the revolution (II.3, 3):**")
+            st.dataframe(pd.DataFrame(ii3['revolution_rows']), hide_index=True, width='stretch', height=_rows_height(5))
+            st.markdown(f"**The lord of the year, {pn4['year']['lord']}: the factors of II.3, 5-6, per chart:**")
+            st.dataframe(pd.DataFrame(ii3['lord_rows']), hide_index=True, width='stretch', height=_rows_height(6))
+            st.dataframe(pd.DataFrame(ii3['refinement_rows']), hide_index=True, width='stretch',
+                         height=_rows_height(len(ii3['refinement_rows'])))
+            st.markdown("**Figure 55 -- the four cases, in the book's words; which one holds is left to the reader:**")
+            st.dataframe(pd.DataFrame(ii3['figure_55']), hide_index=True, width='stretch', height=_rows_height(4))
+            st.caption("Facts, not a verdict. II.3, 5-6 name the factors of a suitable and a contrary condition and "
+                       "give no rule for weighing them, so each factor is shown for each chart from the engine's own "
+                       "evaluators (essential and accidental dignity, solar phase, reception under the Configurations "
+                       "page's rule), and Figure 55's cell is not chosen. \"Domain\" is read as sect (fn 46, 48); "
+                       "\"westernization from the Sun\" is shown as the solar side (fn 47). Aspects to the sign and to "
+                       "the lord are by whole sign. Not read: twelfth-parts; fn 37-41's classes of sign and of degree. "
+                       "The delineations of II.4-II.21 are not built. No worked example exists; Figure 55 is Dykes' "
+                       "table.")
 
             st.subheader("Indicators 6-19: the fact each one reads",
                          help="II.1, 11-24 list the remaining fourteen indicators, in II.1, 25's order of strength. "

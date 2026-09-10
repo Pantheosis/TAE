@@ -755,6 +755,51 @@ Sun year only.
 5–24. The next prompt, per the brief, is the four-way root/revolution comparison for the lord of
 the year (II.3, 5–19, Figure 55).
 
+### 4l. II.3, 2–19: the sign of the terminal point and its lord, examined — built 2026-09-10, second session
+
+Technique 11 of the continuation brief, put to the owner with the four-point prompt. Chosen as
+recommended: **facts for both charts, Figure 55's four sentences quoted, the cell unchosen**, over
+a verdict by II.3, 6's list.
+
+**Re-checked in the corpus before writing:**
+
+| Citation | What it had to support | Held? |
+|---|---|---|
+| **II.3, 1** | the terminal point and the lord of the year | already pinned |
+| **II.3, 2** + fn 35–42 | the root checklist: house class, rulers, occupants (planets, Lots, twelfth-parts), who looks and from where, to what bound, face and degree, devoid | yes; fn 37–41's classes of sign and degree are not read |
+| **II.3, 3–4** + fn 43–44 | the revolution checklist; conditions "in the way we stated it in Chapter I.7" | yes |
+| **II.3, 5–8** + fn 45–49, Figure 55 | the four cases and the factors of suitable and contrary; "domain" as sect; "westernization" as going under the rays for the superiors | yes — quoted, cell unchosen |
+| **II.3, 9–18** + fn 50–51 | reception; a stake of the revolution's Ascendant under a non-receiving infortune's square or opposition; aversion to the Ascendant from 2, 6, 8, 12 | yes |
+| **II.3, 19–20** | the Lots and twelfth-parts; the eighteen chapters that follow | yes — not built |
+
+**Stated, not presupposed — and no verdict.** The book names the factors and gives no rule for
+weighing them, so every factor is shown per chart from the engine's own evaluators (essential and
+accidental dignity, solar phase, reception under the Configurations page's rule, all run on the
+revolution's data as on the root's) and Figure 55's cell is left to the reader. Aspects to the
+sign and to the lord are by whole sign. Not read: twelfth-parts; fn 37–41's classes. II.4–II.21
+are not built.
+
+**What was built.** `PN4_II3_FIGURE_55` (the four sentences), `_pn4_house_class`, `_pn4_tag`,
+`_pn4_looks_at_sign` (whole-sign aspects to a sign with the ray's degree in it),
+`_pn4_lots_in_sign`, `pn4_ii3_examination` (root rows, revolution rows, the lord's six factors
+per chart, the refinements, Figure 55); the bundle carries `ii3`; one section with five tables.
+
+**What pins it.** Four fixtures on constructed charts: the root checklist (house 4 a stake; house
+of the Moon, exaltation of Jupiter, triplicity of Venus by day; the Sun and Mercury in it; the
+Moon's square from 20 Libra with the ray at 20 Cancer in Jupiter's bound and the Moon's face);
+the revolution checklist (Saturn in it; Mars's trine and Jupiter's opposition with their degrees;
+house 1 → 4; the labels; a devoid case); the lord's factors (direct → retrograde, burned in the
+revolution, peregrine at 0 Aquarius) and Figure 55's four citations with no verdict key; the
+refinements (a stake of the revolution's Ascendant opposed by Saturn; looking at the Ascendant
+from a stake; house 6 not looking).
+
+**Verification.** Doctrine fixtures 222 (were 218). `tables.json` **+30 / −0**: the five tables on six charts. Full suite
+**2535 passed**, four of them new; `test_base_tables.py` 121 / 0. The section's five tables render on every fixture chart.
+
+**Left undone, on purpose.** Twelfth-parts; the classes of sign and degree; the verdict; II.4–21.
+The next prompt, per the brief, is transits into the bound of the distribution (III.2, 38, 43,
+46–47, 54; III.8, 7).
+
 ### Refused at the poles
 
 `pn4_distribution_from_ascendant` returns `None` where |latitude| + obliquity ≥ 90°, on the
