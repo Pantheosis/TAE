@@ -5,10 +5,11 @@ Branch `ui-part1-2026-09-10` off `main` at `3ab68eb`, built in a **git worktree*
 uncommitted, in the shared `Executable/` tree at the same time. Review that decided the work:
 `consolidated_texts/process/UI_REVIEW_2026-09-10.md`; the owner accepted all five of its decisions
 (retire the gate, tag now, depth control on the Sources page, auto-load the last chart, a Reference
-tables page). Commits by pathspec, after rebasing onto `e07344d` (the other session's releaser and house-master):
-`fc04ac3` (preferences), `a546df1` (sections, gate, Reference tables), `4719606` (Configurations
-chapters and the reading depth), `22e4216` (the tab fix), `74f5b68` and `8b9a05d` (the citation
-convention), and this note.
+tables page). Commits by pathspec, rebased twice onto the other session's work (`e07344d`, then `9e0834d`, which
+put the releaser and house-master in a chapter of their own on this session's recommendation):
+preferences; sections, gate and Reference tables; Configurations chapters and the reading depth;
+the tab fix; the citation convention (two commits); and this note. Hashes change with each rebase;
+`git log main..ui-part1-2026-09-10` lists them.
 
 ## What was asked
 
