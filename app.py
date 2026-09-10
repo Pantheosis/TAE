@@ -7103,15 +7103,21 @@ def pn4_direction_unit(chart_level):
     return PN4_DIRECTION_UNITS.get(chart_level)
 
 # --- III.1, 12: which ascensions measure which point ----------------------
+# III.1, 12, and the STATE of each of its three cases in this engine. The
+# three do not fail alike and the table must not flatten them: the
+# Ascendant is built; the meridian's measure is stated by Abu Ma'shar and
+# simply not built yet; the third case's method is not in PN IV at all,
+# being deferred to a book he does not reproduce, so it is not buildable
+# from this corpus without importing a reconstruction.
 PN4_ASCENSION_RULE = {
-    'Ascendant': ('oblique ascensions of the birth latitude', True),
-    'Midheaven': ('right ascensions', True),
-    'Fourth (IC)': ('right ascensions', True),
-    'anything else': ('proportional semi-arcs -- method not stated in PN IV', False),
+    'Ascendant': ('oblique ascensions of the birth latitude', 'applied'),
+    'Midheaven': ('right ascensions', 'stated by III.1, 12; not built'),
+    'Fourth (IC)': ('right ascensions', 'stated by III.1, 12; not built'),
+    'anything else': ('proportional semi-arcs', 'method not stated in PN IV'),
 }
 
 def pn4_ascension_measure(point):
-    """III.1, 12. Returns (measure, implemented)."""
+    """III.1, 12. Returns (measure, state) -- see PN4_ASCENSION_RULE."""
     return PN4_ASCENSION_RULE.get(point, PN4_ASCENSION_RULE['anything else'])
 
 def _pn4_sentence_case(text):
@@ -7138,7 +7144,7 @@ PN4_UNIT_ROWS = [{'Directed in the': label, 'A degree is': pn4_direction_unit(ke
                                     ('revolution of the month', 'Revolution of the month'))]
 PN4_ASCENSION_ROWS = [
     {'Point directed': label, 'Measured in': _pn4_sentence_case(pn4_ascension_measure(point)[0]),
-     'Applied': 'yes' if pn4_ascension_measure(point)[1] else 'no'}
+     'In this engine': pn4_ascension_measure(point)[1]}
     for point, label in (('Ascendant', 'Ascendant, and things in it'),
                          ('Midheaven', 'Midheaven, or the fourth'),
                          ('anything else', 'Anything else'))
@@ -9069,6 +9075,11 @@ if location_query and lat is not None and lon is not None:
             with c1:
                 st.markdown("**III.1, 12 -- the measure, by position**")
                 st.dataframe(pd.DataFrame(PN4_ASCENSION_ROWS), hide_index=True, width='stretch')
+                st.caption("The three cases do not fail alike. The **Ascendant** is the distribution above. The "
+                           "**meridian** measure is Abu Ma'shar's own and simply is not built yet. The **third case** "
+                           "has no method in PN IV at all -- III.1, 12 sends the reader to \"what we stated in our "
+                           "book [on that topic]\", and Dykes' fn 16 identifies it as Ptolemy's proportional "
+                           "semi-arcs, which is an editor's note rather than a stated rule.")
                 st.markdown("**III.1, 6 -- the unit, by level of chart**")
                 st.dataframe(pd.DataFrame(PN4_UNIT_ROWS), hide_index=True, width='stretch')
             with c2:

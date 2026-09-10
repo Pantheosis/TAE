@@ -1121,9 +1121,15 @@ def test_pn4_printed_reference_tables_derive_from_the_rules(engine):
     assert engine["PN4_LADDER_ROWS"][-1] == {"Arc": "25‴", "Is": "1 hour"}
     assert [r["A degree is"] for r in engine["PN4_UNIT_ROWS"]] == [
         "years", "months and days", "days and hours"]
-    applied = {r["Point directed"]: r["Applied"] for r in engine["PN4_ASCENSION_ROWS"]}
-    assert applied["Anything else"] == "no"
-    assert "PN IV" in [r["Measured in"] for r in engine["PN4_ASCENSION_ROWS"]][2]
+    state = {r["Point directed"]: r["In this engine"] for r in engine["PN4_ASCENSION_ROWS"]}
+    # III.1, 12's three cases do not fail alike and the table must not say
+    # they do: one is built, one is stated by Abu Ma'shar and not built,
+    # one has no stated method at all. Exactly one may claim to be applied,
+    # and it must be the Ascendant -- the only point this engine directs.
+    # Building the meridian distribution means changing this line too.
+    assert [k for k, v in state.items() if v == "applied"] == ["Ascendant, and things in it"]
+    assert state["Midheaven, or the fourth"] == "stated by III.1, 12; not built"
+    assert state["Anything else"] == "method not stated in PN IV"
 
 
 # --- III.7, 32-42: when a natal indication comes out ----------------------
