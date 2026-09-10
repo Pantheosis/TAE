@@ -297,7 +297,7 @@ def test_timing_page_draws_every_view(view):
 
 
 def test_timing_page_toggles_and_order_render():
-    for order in ["Nativity inside (Dykes)", "Revolution inside (Abu Ma'shar, I.6)"]:
+    for order in ["Nativity inside (Dykes)", "Revolution inside (Abu Ma'shar's order, PN IV I.6)"]:
         at = make_app(date="1240-05-26", page="timing")
         for key, value in {"_timing_wheel_view": "Year over root", "_wheel_order": order,
                            "_timing_lots": True, "_timing_rays": True, "_timing_twelfths": True,

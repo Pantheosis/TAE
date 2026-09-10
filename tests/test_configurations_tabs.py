@@ -4,7 +4,7 @@ from conftest import CHARTS, READING_DEPTHS, assert_no_exception, make_app, tabl
 
 SAHL = {"Aspects, aversions and connections", "Strength of the Planets", "Weakness of the Planets",
         "Prevented connections", "Corruption of the Moon"}
-ABU = {"Planetary Condition", "Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)"}
+ABU = {"Planetary Condition", "Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, Gr. Intr. VII.7)"}
 
 
 def _render(depth, date="1240-05-26"):
@@ -36,7 +36,7 @@ def test_the_supplement_joins_the_topics_it_belongs_to():
                       "Strength and weakness"]
     heads = {tab.label: {n.value for n in tab if getattr(n, "type", None) == "subheader"} for tab in at.main.tabs}
     assert "Planetary Condition" in heads["Strength and weakness"]
-    assert "Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, VII.7)" in heads["Aspects and connections"]
+    assert "Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, Gr. Intr. VII.7)" in heads["Aspects and connections"]
     assert "Aspects, aversions and connections" in heads["Aspects and connections"]
     assert "Strength of the Planets" in heads["Strength and weakness"]
 

@@ -75,7 +75,7 @@ def _write_fixture_at_end():
 # these two renders, which prove both settings draw the page.
 
 @pytest.mark.parametrize("date", list(CHARTS))
-@pytest.mark.parametrize("turn", ["Dykes: always forward", "Abu Ma'shar IX.1, 26-34"])
+@pytest.mark.parametrize("turn", ["Dykes: always forward", "PN IV IX.1, 26-34"])
 def test_timing_page_renders_under_both_monthly_turn_readings(date, turn):
     at = make_app(date=date, page="timing")
     at.session_state["_pn4_monthly_turn"] = turn
@@ -100,4 +100,4 @@ def test_abu_mashars_turn_actually_reverses_a_convertible_indicator():
 
     default = directions("Dykes: always forward")
     assert not any(d.startswith("backwards") for d in default), default
-    assert any(d.startswith("backwards") for d in directions("Abu Ma'shar IX.1, 26-34"))
+    assert any(d.startswith("backwards") for d in directions("PN IV IX.1, 26-34"))

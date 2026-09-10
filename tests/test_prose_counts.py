@@ -155,14 +155,14 @@ def test_coverage_entries_do_not_call_a_photographed_passage_missing(engine):
                     "book-list test above still guards the claim")
 def test_page_absence_claims_agree_with_the_corpus_when_present(engine):
     """With the corpus on disk, check the chapter heading itself: every
-    passage cited as 'Abu Ma'shar VII.N' must have a '### Chapter VII.N'
+    passage cited as 'Gr. Intr. VII.N' must have a '### Chapter VII.N'
     heading in the OCR, whatever the description says. Catches the next
     stale marker even if it uses a phrase PAGE_ABSENCE does not know."""
     text = (CORPUS_DIR / CORPUS_FILES["VII"]).read_text(encoding="utf-8")
     headings = set(re.findall(r"^### Chapter (VII\.\d+)", text, re.M))
     assert headings, "no VII chapter headings found -- wrong file?"
     for passage, desc in engine["NOT_IMPLEMENTED_COVERAGE"]:
-        m = re.match(r"Abu Ma'shar (VII\.\d+)", passage)
+        m = re.match(r"Gr\. Intr\. (VII\.\d+)", passage)
         if not m:
             continue
         assert m.group(1) in headings, f"{passage}: no '### Chapter {m.group(1)}' heading in the corpus"
@@ -174,8 +174,8 @@ def test_natural_connections_are_built_and_only_the_omitted_pairs_remain(engine)
     """VII.5, 53-77 is implemented (evaluate_abu_natural_connections); the
     coverage list may name only what the text itself leaves out."""
     passages = [a for a, _b in engine["NOT_IMPLEMENTED_COVERAGE"]]
-    assert not any(a in ("Abu Ma'shar VII.5, 53-77", "Abu Ma'shar VII.5, 134") for a in passages)
-    omitted = [b for a, b in engine["NOT_IMPLEMENTED_COVERAGE"] if a.startswith("Abu Ma'shar VII.5, 67-77")]
+    assert not any(a in ("Gr. Intr. VII.5, 53-77", "Gr. Intr. VII.5, 134") for a in passages)
+    omitted = [b for a, b in engine["NOT_IMPLEMENTED_COVERAGE"] if a.startswith("Gr. Intr. VII.5, 67-77")]
     assert len(omitted) == 1 and "Aquarius-Scorpio" in omitted[0] and "not added" in omitted[0]
 
 
@@ -345,10 +345,24 @@ def test_no_engine_function_is_dead():
 
 def test_prevented_connections_cite_what_they_contain():
     ui = ui_source()
-    assert "Great Introduction VII.5, 90-94 and 120-125\", prevented" in ui
+    assert "Gr. Intr. VII.5, 90-94 and 120-125\", prevented" in ui
     # The per-row Source column is gone (the caption cites both passages);
     # the two readings it distinguished are kept as comments on the rows.
     assert "'Source'" not in ui[ui.index("prevented = []"):ui.index("_finding(_gap, 'Prevented connections'")]
     assert "Sahl Ch.3, 35-48; VII.5, 90-94 -- cited in the caption" in ui
     assert "Types I and II are Abu Ma'shar's own (VII.5, 121-124)" in ui
-    assert "Type II is Abu Ma'shar, Great Introduction VII.5, 84-85" in ui
+    assert "Type II is Gr. Intr. VII.5, 84-85" in ui
+
+
+def test_a_locator_names_its_volume_never_the_author_alone():
+    """The citation convention of 2026-09-10. Both of Abu Ma'shar's volumes
+    in the corpus have a Book VII, so 'Abu Ma'shar VII.6' located nothing;
+    every locator now carries 'Gr. Intr.' or 'PN IV' (Sahl's works were
+    already named). The Timing page's own rule -- bare Book.chapter for
+    PN IV, stated in its header -- is the one exception and is page-wide."""
+    leftover = re.compile(r"Abu Ma'shar(?:'s)?,? (?:Great Introduction )?(?:I|II|III|IV|V|VI|VII|VIII|IX)\.\d")
+    # (PREFERENCE_RENAMES pairs each old form with its new one on one line; those lines are the migration, not a citation)
+    hits = [(n, l.strip()[:100]) for n, l in enumerate(app_source().split("\n"), 1)
+            if leftover.search(l) and not ("PN IV" in l or "Gr. Intr." in l)]
+    assert not hits, hits
+    assert "Gr. Intr. VII.6" in app_source() and "PN IV IX.1, 26-34" in app_source()
