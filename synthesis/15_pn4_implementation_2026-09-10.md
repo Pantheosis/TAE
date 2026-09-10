@@ -569,6 +569,47 @@ all delineation. The next prompt, per the brief, is the governor (IX.9, 1–10; 
 can only be partial because one of its eight indicators is the distributor from the longevity
 releaser.
 
+### 4h. IX.9, 1–10 and IX.2, 4–7: the governor — built 2026-09-10, second session, partial by nature
+
+Technique 7 of the continuation brief, put to the owner with the four-point prompt. Chosen as
+recommended: **both governors, admitted as partial** — IX.9's tally over the six available
+testimonies and IX.2's five-condition sign test — over IX.2 alone.
+
+**Re-checked in the corpus before writing:**
+
+| Citation | What it had to support | Held? |
+|---|---|---|
+| **IX.9, 1–9** + fn 321–324 | the eight testimonies; "the first lord" of the revolution's Ascendant; fn 321: the same list as II.2, 10–18 | yes |
+| **IX.9, 10** | all eight in one planet → governor alone; some → primary, the rest partner | yes |
+| **IX.2, 4–7** + fn 35–39 | the five conditions; fn 36 the convertible sign's ninth-part; fn 37 governs the year too; fn 39 Dykes' worked case | yes |
+| **IX.8, 123** | the releaser is not supplied — why #3 and half of #4 are unavailable | yes (already pinned) |
+
+**Stated, not presupposed.** Both rules are the sentences'. What is partial, and each row says: #3
+and the releaser's half of #4 need the longevity releaser; #7 needs the Moon's connection in the
+revolution, with her house lord standing in only when she is void, which is not determined. The
+tally therefore runs over six of eight, names the primary among them, and **never prints a planet
+as governor alone**. "The first lord" is read as the domicile lord (fn 324). Judgments — IX.9,
+11–13, IX.2, 8–11 — are not built.
+
+**What was built.** `PN4_GOVERNOR_TESTIMONIES`, `pn4_governor` (rows + summary with tally,
+primary, counted-of-eight, and a text that states the ALONE bar), `pn4_first_month_governor` (five
+rows and a verdict, each condition with what it reads); the bundle carries `governor` and
+`first_month_governor`; one section with two tables on the page.
+
+**What pins it.** Four fixtures: six of eight counted even when all six agree, with the ALONE bar
+in the text and the three unavailable rows carrying their reasons; a tie named as two primaries,
+and a missing distributor making #2 and #4 unavailable with the reason; Dykes' fn 39 case (natal
+Lot on the natal Ascendant, age 39 → Cancer, revolution Ascendant and Lot in Cancer, convertible,
+the Moon) passing all five; and one condition failing at a time as negative controls.
+
+**Verification.** Doctrine fixtures 205 (were 201). `tables.json` **+12 / −0** (two tables on six
+charts). Full suite **2518 passed**, four of them new; `test_base_tables.py` 121 / 0. Rendered in the browser.
+
+**Left undone, on purpose.** The two releaser testimonies; the Moon's connection; the judgments.
+The next prompt, per the brief, is the Moon's connections dividing the year (II.22, 2–3), which
+needs the same connection-in-the-revolution the engine does not compute — the prompt must say
+whether it can be built at all.
+
 ### Refused at the poles
 
 `pn4_distribution_from_ascendant` returns `None` where |latitude| + obliquity ≥ 90°, on the

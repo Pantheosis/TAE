@@ -7993,6 +7993,121 @@ def pn4_further_indicators(chart_data, sr, year_lon):
     rows.append({'#': 19, 'Indicator': 'The Head and Tail', 'Reads': reads, 'Source': 'II.1, 24; VII.9, 1'})
     return rows
 
+# --- IX.9, 1-10 and IX.2, 4-7: the "governor" (mustawli) --------------------
+# IX.9, 1-9 list "eight special indicators": the lord of the year; the
+# distributor from the Ascendant; the distributor from the [longevity]
+# releaser; "the partner to them both, by body and rays"; the lord of the
+# fardar; the lord of the orb; "the one accepting the connection of the
+# Moon, or the lord of her house"; "the first lord of the Ascendant of the
+# revolution". IX.9, 10: "if these eight indicators would combine together
+# in a single planet, then it alone would be the governor of the
+# indication for the condition of the year; and if one of them had [only]
+# some of the testimonies, it will be more primary than the others, and
+# the rest of them will have a partnership with it".
+#
+# PARTIAL, on purpose, and the page says so per row. Testimony #3 and the
+# releaser's half of #4 need the longevity releaser, which PN IV does not
+# supply (IX.8, 123) and this engine refuses; #7 needs the Moon's
+# connection read in the revolution (her house lord is the fallback only
+# when she is void), which is not computed. The tally runs over the six
+# that are available, names the primary among them, and NEVER prints a
+# planet as governor "alone", which IX.9, 10 reserves for all eight. "The
+# first lord" of the revolution's Ascendant is read as its domicile lord
+# (fn 324; "the first one is stronger in indication"). Decided by the
+# owner 2026-09-10.
+#
+# IX.2, 4 gives a second, sign-level governor for the first month: the
+# natal Lot of Fortune in the natal Ascendant, so that the terminal point
+# from the Ascendant and from the Lot "is one [and the same] sign", the
+# revolution's Ascendant "is also that sign, and in it is the Lot of
+# Fortune of the revolution, and that sign is convertible" -- five
+# conditions, shown one by one, since most years fail one of them. Fn 37:
+# such a sign governs the whole year too. Fn 39 is Dykes' worked case
+# (age 39, everything in Cancer, the Moon), and is the fixture. IX.9,
+# 11-13 and IX.2, 8-11, the judgments, are not built.
+
+PN4_GOVERNOR_TESTIMONIES = (
+    (1, 'The lord of the year', 'IX.9, 2'),
+    (2, 'The distributor from the Ascendant', 'IX.9, 3'),
+    (3, 'The distributor from the [longevity] releaser', 'IX.9, 4'),
+    (4, 'The partner to them both, by body and rays', 'IX.9, 5'),
+    (5, 'The lord of the fardar', 'IX.9, 6'),
+    (6, 'The lord of the orb', 'IX.9, 7'),
+    (7, "The one accepting the Moon's connection, or the lord of her house", 'IX.9, 8'),
+    (8, "The first lord of the Ascendant of the revolution", 'IX.9, 9'),
+)
+PN4_GOVERNOR_RELEASER_REASON = ('unavailable: needs the longevity releaser, which PN IV does not supply '
+                                '(IX.8, 123) and this engine refuses')
+PN4_GOVERNOR_CONNECTION_REASON = ("unavailable: the Moon's connection is not read in the revolution, and her "
+                                  "house lord stands in only when she is void, which is not determined")
+
+def pn4_governor(year_lord, distributor, partner, distribution_note, fardar_lord, orb_lord, sr_ascendant_lon):
+    """IX.9, 1-10 over the six testimonies this engine can supply.
+    Returns (rows, summary): one row per testimony with the planet or the
+    reason it is unavailable, and a summary with the tally, the primary
+    planet(s) among the available testimonies, and how many of eight
+    were counted. `distribution_note` explains a missing distributor
+    (refused at the poles, or the age past the table)."""
+    got = {
+        1: year_lord,
+        2: distributor or f"unavailable: {distribution_note}",
+        3: PN4_GOVERNOR_RELEASER_REASON,
+        4: ((partner or 'none: the distributor acts alone') + "; the releaser's partner " + PN4_GOVERNOR_RELEASER_REASON)
+           if distributor else f"unavailable: {distribution_note}",
+        5: fardar_lord or 'unavailable',
+        6: orb_lord or 'unavailable: natal hour lord unavailable',
+        7: PN4_GOVERNOR_CONNECTION_REASON,
+        8: SIGN_TO_DOMICILE.get(get_zodiac_sign(sr_ascendant_lon), '-'),
+    }
+    rows, tally, counted = [], {}, 0
+    for n, label, cite in PN4_GOVERNOR_TESTIMONIES:
+        value = got[n]
+        planet = value.split(';')[0] if isinstance(value, str) else None
+        available = planet in PN4_SEVEN
+        if available:
+            counted += 1
+            tally[planet] = tally.get(planet, 0) + 1
+        rows.append({'#': n, 'Testimony': label, 'Planet': value,
+                     'Counted': 'yes' if available else 'no', 'Source': cite})
+    top = max(tally.values()) if tally else 0
+    primary = sorted(p for p, c in tally.items() if c == top) if tally else []
+    summary = {
+        'tally': tally, 'counted': counted, 'primary': primary, 'top': top,
+        'text': (f"{primary[0] if len(primary) == 1 else ', '.join(primary[:-1]) + ' and ' + primary[-1]} "
+                 f"{'is' if len(primary) == 1 else 'are'} primary with {top} of the "
+                 f"{counted} testimonies available (of eight); the rest partner with "
+                 f"{'it' if len(primary) == 1 else 'them'} (IX.9, 10). No planet can be the governor ALONE here: "
+                 f"that needs all eight, and {8 - counted} are unavailable.") if primary else
+                'no testimony available',
+    }
+    return rows, summary
+
+def pn4_first_month_governor(natal_ascendant, natal_fortune, year_lon, sr_ascendant, sr_fortune):
+    """IX.2, 4: the five conditions, one by one, and whether all hold."""
+    year_sign = get_zodiac_sign(year_lon)
+    asc_sign, lot_sign = get_zodiac_sign(natal_ascendant), get_zodiac_sign(natal_fortune)
+    conditions = [
+        ('The natal Lot of Fortune is in the natal Ascendant', lot_sign == asc_sign,
+         f"Lot in {lot_sign}, Ascendant in {asc_sign}", 'IX.2, 4 [#1, #3]'),
+        ('So the terminal point from the Ascendant and from the Lot is one sign', lot_sign == asc_sign,
+         f"both reach {year_sign}" if lot_sign == asc_sign else 'they reach different signs', 'IX.2, 4; fn 35'),
+        ("The Ascendant of the revolution is that sign", get_zodiac_sign(sr_ascendant) == year_sign,
+         f"revolution Ascendant in {get_zodiac_sign(sr_ascendant)}", 'IX.2, 4 [#4]'),
+        ("The Lot of Fortune of the revolution is in it", get_zodiac_sign(sr_fortune) == year_sign,
+         f"revolution Lot in {get_zodiac_sign(sr_fortune)}", 'IX.2, 4 [#5]'),
+        ('That sign is convertible, so its lord is also the lord of its first ninth-part',
+         PN4_QUADRUPLICITY.get(year_sign) == 'convertible',
+         f"{year_sign} is {PN4_QUADRUPLICITY.get(year_sign)}; ninth-part lord {pn4_first_ninth_part_lord(year_sign)['lord']}, "
+         f"sign lord {SIGN_TO_DOMICILE.get(year_sign, '-')}", 'IX.2, 4 [#2]; fn 36'),
+    ]
+    rows = [{'Condition': c, 'Holds': 'yes' if ok else 'no', 'Reads': reads, 'Source': cite}
+            for c, ok, reads, cite in conditions]
+    holds = all(ok for _c, ok, _r, _s in conditions)
+    verdict = (f"{year_sign} and its lord {SIGN_TO_DOMICILE.get(year_sign, '-')} govern the first month, and the "
+               f"year with it (fn 37)" if holds else
+               f"no governor: {sum(1 for _c, ok, _r, _s in conditions if not ok)} of the five conditions fail")
+    return rows, verdict
+
 def pn4_fardar_at_age(age_years, sect):
     """The fardar lord and sub-lord at an age.
 
@@ -8538,6 +8653,13 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'hour_approximate': hour_approximate,
         'turning_rows': pn4_turning_rows(chart_data, age),
         'further_rows': pn4_further_indicators(chart_data, sr, year['longitude']),
+        'governor': pn4_governor(
+            year['lord'], (current or {}).get('distributor'), (current or {}).get('partner'),
+            ('refused above the polar circle' if segments is None
+             else f"age {age} is past the {PN4_DISTRIBUTION_SPAN_YEARS:g}-year table"),
+            (fardar or {}).get('lord'), orb, sr['ascendant']),
+        'first_month_governor': pn4_first_month_governor(
+            ascendant, chart_data['lot_of_fortune'], year['longitude'], sr['ascendant'], sr['lot_of_fortune']),
         'age': age, 'month': month, 'jd_sr': jd_sr, 'jd_mr': jd_mr,
         'sr': sr, 'mr': mr, 'year': year, 'ninth': ninth, 'fardar': fardar,
         'segments': segments, 'current': current, 'ages': ages,
@@ -9694,6 +9816,29 @@ if location_query and lat is not None and lon is not None:
                        "the loop and the loop is built. His twelve-year \"reset\" of the named lords is, in his "
                        "words, his idea, and is not built. The delineations of VI.1, 12-17 and the seven days the "
                        "lord of the orb grants at IX.7, 7-8 are not built.")
+
+            st.subheader("The governor (IX.9, 1-10; IX.2, 4-7)",
+                         help="IX.9, 1-9 name eight testimonies and IX.9, 10 the rule: \"if these eight indicators "
+                              "would combine together in a single planet, then it alone would be the governor ... and "
+                              "if one of them had [only] some of the testimonies, it will be more primary than the "
+                              "others, and the rest of them will have a partnership with it.\" IX.2, 4 gives a second, "
+                              "sign-level governor for the first month: five conditions on the natal Lot, the terminal "
+                              "point, the revolution's Ascendant and Lot, and the sign's quadruplicity; fn 37: such a "
+                              "sign governs the year too.")
+            gov_rows, gov = pn4['governor']
+            st.markdown(f"**IX.9:** {gov['text']}")
+            st.dataframe(pd.DataFrame(gov_rows), hide_index=True, width='stretch', height=_rows_height(8))
+            fm_rows, fm_verdict = pn4['first_month_governor']
+            st.markdown(f"**IX.2, 4:** {fm_verdict}")
+            st.dataframe(pd.DataFrame(fm_rows), hide_index=True, width='stretch', height=_rows_height(5))
+            st.caption("Partial by nature, and said so per row. Testimony #3 and the releaser's half of #4 need the "
+                       "longevity releaser, which PN IV does not supply (IX.8, 123) and this engine refuses; #7 needs "
+                       "the Moon's connection read in the revolution, which is not computed. The tally runs over the "
+                       "six that remain and never names a governor ALONE, which IX.9, 10 reserves for all eight. "
+                       "\"The first lord\" of the revolution's Ascendant is read as its domicile lord (fn 324). The "
+                       "IX.2 test is strict and most years fail it, so its five conditions are shown one by one; "
+                       "Dykes' fn 39 (age 39, everything in Cancer, the Moon) is the case it is checked against. "
+                       "IX.9, 11-13 and IX.2, 8-11, the judgments of the governor's condition, are not built.")
 
             st.subheader("The turning of the houses of the root (VI.2)",
                          help="VI.2, 1: \"every one of the seven planets, the twelve houses, and the twelve Lots, is "

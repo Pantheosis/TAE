@@ -1626,6 +1626,73 @@ def test_pn4_house_shift_and_nodes_count_from_the_three_places(engine):
     assert "Jupiter in Sagittarius (own house;" in rows[18]["Reads"]
 
 
+# --- IX.9, 1-10 and IX.2, 4-7: the governor (built 2026-09-10) -------------
+
+def test_pn4_governor_tally_counts_six_and_never_claims_alone(engine):
+    """IX.9, 10: a planet is the governor ALONE only if all eight
+    testimonies combine in it. Two need the refused releaser and one the
+    uncomputed connection, so at most six are counted, and even when all
+    six agree the summary says the planet is primary with 6 of 6 of
+    eight, not the governor alone. 215 Scorpio: the revolution's
+    Ascendant's domicile lord is Mars."""
+    rows, s = engine["pn4_governor"]("Mars", "Mars", "Mars", "", "Mars", "Mars", 215.0)
+    assert [r["#"] for r in rows] == list(range(1, 9))
+    assert s["counted"] == 6 and s["primary"] == ["Mars"] and s["top"] == 6
+    assert "ALONE" in s["text"] and "6 of the 6 testimonies available (of eight)" in s["text"]
+    by = {r["#"]: r for r in rows}
+    assert by[3]["Counted"] == "no" and "releaser" in by[3]["Planet"] and "IX.8, 123" in by[3]["Planet"]
+    assert by[7]["Counted"] == "no" and "connection" in by[7]["Planet"]
+    assert by[4]["Counted"] == "yes" and "releaser's partner" in by[4]["Planet"]
+    assert by[8]["Planet"] == "Mars" and by[8]["Source"] == "IX.9, 9"
+
+
+def test_pn4_governor_primary_and_partners_and_missing_distribution(engine):
+    """IX.9, 10: "if one of them had [only] some of the testimonies, it
+    will be more primary than the others, and the rest of them will have
+    a partnership with it". Saturn twice, Venus twice, Mars once: a tie
+    names both. With no distributor (the age past the table) #2 and #4
+    are unavailable with the reason, and the tally counts four."""
+    _rows, s = engine["pn4_governor"]("Saturn", "Venus", "Saturn", "", "Venus", "Mars", 95.0)   # Cancer: Moon
+    assert s["tally"] == {"Saturn": 2, "Venus": 2, "Mars": 1, "Moon": 1}
+    assert s["primary"] == ["Saturn", "Venus"] and "are primary with 2" in s["text"]
+    rows, s2 = engine["pn4_governor"]("Saturn", None, None, "age 786 is past the 120-year table", "Venus", "Mars", 95.0)
+    by = {r["#"]: r for r in rows}
+    assert by[2]["Counted"] == "no" and "past the 120-year table" in by[2]["Planet"]
+    assert by[4]["Counted"] == "no"
+    assert s2["counted"] == 4
+
+
+def test_pn4_first_month_governor_against_dykes_fn_39(engine):
+    """IX.2, 4 worked by Dykes at fn 39: at age 39 the natal Lot on the
+    natal Ascendant profects with it to Cancer, "the Ascendant of the
+    revolution and the Lot of the revolution are also on Cancer", and
+    Cancer is convertible, so "the Moon is the lord of all of them" and
+    Cancer governs the first month and the year. Natal Ascendant 5
+    Aries, Lot 10 Aries, age 39 -> Cancer; revolution Ascendant 5 Cancer,
+    Lot 20 Cancer."""
+    year_lon = engine["pn4_profect"](5.0, 39)
+    assert engine["get_zodiac_sign"](year_lon) == "Cancer"
+    rows, verdict = engine["pn4_first_month_governor"](5.0, 10.0, year_lon, 95.0, 110.0)
+    assert [r["Holds"] for r in rows] == ["yes"] * 5
+    assert verdict.startswith("Cancer and its lord Moon govern the first month")
+    assert "ninth-part lord Moon, sign lord Moon" in rows[4]["Reads"]
+
+
+def test_pn4_first_month_governor_fails_one_condition_at_a_time(engine):
+    """The negative controls, one condition each. The revolution's Lot in
+    Leo fails #5; a fixed sign of the year fails the convertible test
+    (fn 36); the natal Lot outside the Ascendant fails the first two."""
+    year_lon = engine["pn4_profect"](5.0, 39)
+    rows, verdict = engine["pn4_first_month_governor"](5.0, 10.0, year_lon, 95.0, 125.0)
+    assert [r["Holds"] for r in rows] == ["yes", "yes", "yes", "no", "yes"]
+    assert verdict.startswith("no governor: 1 of the five conditions fail")
+    fixed = engine["pn4_profect"](35.0, 39)                          # Taurus -> Leo
+    rows, _v = engine["pn4_first_month_governor"](35.0, 40.0, fixed, 125.0, 130.0)
+    assert [r["Holds"] for r in rows] == ["yes", "yes", "yes", "yes", "no"]
+    rows, _v = engine["pn4_first_month_governor"](5.0, 40.0, year_lon, 95.0, 110.0)
+    assert [r["Holds"] for r in rows][:2] == ["no", "no"]
+
+
 def test_pn4_indicator_two_against_abu_mashars_worked_months(engine):
     """IX.1, 15-16 works indicator #2 out month by month for a year that
     terminates at Cancer: "the lord of its first ninth-part is the Moon,
