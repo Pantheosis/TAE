@@ -800,6 +800,49 @@ from a stake; house 6 not looking).
 The next prompt, per the brief, is transits into the bound of the distribution (III.2, 38, 43,
 46–47, 54; III.8, 7).
 
+### 4m. III.2, 38, 43, 46–47, 54; III.8, 7: transits into the bound — built 2026-09-10, second session
+
+Technique 12 of the continuation brief, put to the owner with the four-point prompt and built as
+recommended: **each revolutionary body or ray in the current bound keyed by the static type to
+the one sentence that speaks of it, quoted, with III.8, 7's condition on the two lords as facts.**
+
+**Re-checked in the corpus before writing:**
+
+| Citation | What it had to support | Held? |
+|---|---|---|
+| **III.2, 38–39** + fn 61–63 | type 1 with an infortune's body or rays in the bound in the revolution: good fortune and "incidental adversity and harm"; 39's aggravators | yes |
+| **III.2, 40–43** + fn 64–65 | in the type-5 discussion, a fortune's body or rays in the bound: "will not have the power to repel death, but his death will be with reverence" — read whole across p. 303 | yes |
+| **III.2, 46–48** | type 6 with a fortune's ray: revered in illness; an infortune's ray: a bad death; 48 at home | yes — rays, not bodies |
+| **III.2, 54** + fn 67–68 | type 7 with an infortune's body or rays: "good fortune but he will be unhappy with it" | yes |
+| **III.2, 105–106** + fn 83 | these are "not in the manner we have described" for the twenty-four | yes |
+| **III.8, 7** | both lords infortunes, "both not in their own shares, but a fortune was with each": "a little good" | yes |
+| **III.2, 110–111** | the death gate | already printed |
+
+**Stated, and keyed by type.** Each sentence names its type and its entrant, so the pairing is the
+sentence's own. Said in the row: the Sun, Moon and Mercury are addressed by none; 46–47 speak of
+rays, so a body in a type-6 bound is not paired; 43 is shown under 40–42's conditions, which are
+not judged; III.8, 7 is a condition on the lord of the year and the distributor and is shown as
+facts (in its own share or not; a fortune with it or not) with the sentence quoted when both are
+infortunes.
+
+**What was built.** `_pn4_bound_span` (shared with the checklist), `PN4_BOUND_TRANSIT_SENTENCES`
+(the five, quoted, with the death flag), `pn4_bound_transit_sentence`, `pn4_bound_transits`; the
+bundle carries `bound_transits`; one table under the III.2 section, and that section's caption now
+says the pairing is built rather than that it is not.
+
+**What pins it.** Two fixtures: the keying (each type and entrant to its sentence, the neutrals to
+none, a type-6 body to "rays", 43's condition note, the three death-gated sentences); and the rows
+on constructed charts (a neutral entrant, Saturn's body under a fortune alone quoting 38 without
+the gate, III.8, 7 refusing for a fortune lord and reading the facts for two infortunes, a fortune's
+trine into a type-6 bound quoting 46 with the gate, a fortune's body there reading "rays", and no
+rows without a current distribution).
+
+**Verification.** Doctrine fixtures 224 (were 222). `tables.json` **unchanged**: the fixture charts are past the 120-year table, so the table does not render there; the rows were checked on a real chart at age 42 by the bundle. Full suite
+**2537 passed**, two of them new; `test_base_tables.py` 121 / 0.
+
+**Left undone, on purpose.** 39's aggravators, 40–42's and III.8, 7's conditions as judgments; 48.
+The next prompt, per the brief, is the revolution chart's full contents (I.6, 3–8, Figure 52).
+
 ### Refused at the poles
 
 `pn4_distribution_from_ascendant` returns `None` where |latitude| + obliquity ≥ 90°, on the

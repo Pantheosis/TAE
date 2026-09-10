@@ -2091,6 +2091,62 @@ def test_pn4_ii3_refinements_reception_stake_and_aversion(engine):
     assert out["refinement_rows"][2]["Reads"].startswith("house 6 from the natal Ascendant: does NOT look at the Ascendant")
 
 
+# --- III.2, 38, 43, 46-47, 54; III.8, 7: transits into the bound (built 2026-09-10)
+
+def test_pn4_bound_transit_sentence_is_keyed_to_the_type(engine):
+    """Each of the five sentences fits one type and one nature of
+    entrant: 38 a fortune alone with an infortune entering; 54 both
+    fortunes with an infortune entering; 46 both infortunes with a
+    fortune's ray, 47 with an infortune's ray, and a body says the
+    sentences speak of rays; 43 a fortune entering a bad distribution,
+    under 40-42's unjudged conditions; the neutrals, none."""
+    key = engine["pn4_bound_transit_sentence"]
+    assert key(1, "infortune", False) == (38, "")
+    assert key(7, "infortune", True) == (54, "")
+    assert key(6, "fortune", True) == (46, "")
+    assert key(6, "infortune", True) == (47, "")
+    assert key(6, "fortune", False)[0] is None and "speak of a ray" in key(6, "fortune", False)[1]
+    assert key(2, "fortune", True)[0] == 43 and "40-42" in key(2, "fortune", True)[1]
+    assert key(1, None, True)[0] is None and "Sun, the Moon or Mercury" in key(1, None, True)[1]
+    assert key(1, "fortune", True)[0] is None
+    gated = {k for k, (_c, _t, d) in engine["PN4_BOUND_TRANSIT_SENTENCES"].items() if d}
+    assert gated == {43, 46, 47}
+
+
+def test_pn4_bound_transits_quote_the_sentence_and_read_iii_8_7(engine):
+    """Jupiter distributing alone at 22 Aries (Mars's bound, 20-25) with
+    the revolution's Saturn at 23 Aries: III.2, 38 quoted; the
+    revolution's Sun at 21 Aries: no sentence. III.8, 7: the lord of the
+    year and the distributor both infortunes read as facts; a fortune
+    lord of the year reads why the sentence does not apply."""
+    root, sr, _ = _two_charts(engine, rev=dict(Saturn=23.0, Sun=21.0, Venus=130.0))
+    current = _seg("Jupiter", None, 20.0); current["from_lon"] = 22.0
+    rows = engine["pn4_bound_transits"](root, sr, current, "Venus")
+    pick = lambda prefix: next(r for r in rows if r["In the bound, in the revolution"].startswith(prefix))
+    assert pick("Sun by body at 21")["Sentence"].startswith("no sentence of III.2 speaks of the Sun")
+    assert pick("Moon by opposition at 20")["Nature"] == "neither"                    # the revolution's Moon at 20 Libra
+    saturn = pick("Saturn by body at 23")
+    assert "incidental adversity and harm" in saturn["Sentence"] and "III.2, 38-39" in saturn["Sentence"]
+    assert "110-111" not in saturn["Sentence"]
+    assert rows[-1]["Source"] == "III.8, 7" and "needs the lord of the year and the distributor both infortunes" in rows[-1]["Sentence"]
+    # both infortunes: the facts, then the sentence
+    current = _seg("Mars", "Saturn", 20.0); current["from_lon"] = 22.0
+    rows = engine["pn4_bound_transits"](root, sr, current, "Saturn")
+    last = rows[-1]
+    assert "a little good" in last["Sentence"] and "the facts:" in last["Sentence"]
+    assert "Saturn in Aries: not in its own share" in last["Sentence"]
+    # type 6 with a fortune's ray: 46, gated; with Venus's body: rays only
+    root, sr, _ = _two_charts(engine, rev=dict(Venus=142.0, Saturn=340.0, Sun=190.0))   # Venus 22 Leo trines 22 Aries
+    rows = engine["pn4_bound_transits"](root, sr, current, "Saturn")
+    venus = next(r for r in rows if r["In the bound, in the revolution"].startswith("Venus by trine"))
+    assert "revered in his illness" in venus["Sentence"] and "110-111" in venus["Sentence"]
+    root, sr, _ = _two_charts(engine, rev=dict(Venus=22.5, Saturn=340.0, Sun=190.0))
+    rows = engine["pn4_bound_transits"](root, sr, current, "Saturn")
+    body = next(r for r in rows if r["In the bound, in the revolution"].startswith("Venus by body"))
+    assert "speak of a ray" in body["Sentence"]
+    assert engine["pn4_bound_transits"](root, sr, None, "Saturn") == []
+
+
 def test_pn4_indicator_two_against_abu_mashars_worked_months(engine):
     """IX.1, 15-16 works indicator #2 out month by month for a year that
     terminates at Cancer: "the lord of its first ninth-part is the Moon,

@@ -8389,6 +8389,123 @@ def pn4_year_transitions(segments, age):
                              'Indication': r['indication'], 'Source': r['cite']})
     return rows
 
+def _pn4_bound_span(deg):
+    """The Egyptian bound a degree stands in: (start, end)."""
+    starts = pn4_bound_starts()
+    idx = max(i for i, (lon, _l, _s) in enumerate(starts) if lon <= deg % 360.0)
+    return starts[idx][0], (starts[idx + 1][0] if idx + 1 < len(starts) else 360.0)
+
+# --- III.2, 38, 43, 46-47, 54; III.8, 7: transits into the bound ----------
+# The twenty-four and the seven types read the NATAL distribution (III.2,
+# 105); "when there is a planet in that bound in one of the years, either
+# by its body or casting a ray to it, then its indication is not in the
+# manner we have described" (106). Six sentences do describe it, each
+# keyed to a type:
+#   38  a fortune distributing with no rooted partner (type 1), and "in
+#       the revolution the body or rays of an infortune was in it": "good
+#       fortune ... [and] incidental adversity and harm"; worse under 39's
+#       conditions;
+#   43  in the type-5 discussion (40-42: a corrupting infortune in the
+#       bound, a weak fortune -- conditions, not judged here): "the body
+#       of a fortune or its rays" in the bound in the revolution "will
+#       not have the power to repel death, but his death will be with
+#       reverence";
+#   46  both infortunes (type 6) and "in the revolution one of the
+#       fortunes cast its ray to it": "he will not be freed from death but
+#       he will be revered in his illness";
+#   47  the same with "the ray of an infortune in it": hardship, "a bad
+#       death"; 48: at home if the indicators are in their own places;
+#   54  both fortunes (type 7) and "the body of an infortune or its rays"
+#       in the bound in the revolution: "good fortune but he will be
+#       unhappy with it";
+#   III.8, 7  the lord of the year and the distributor both infortunes,
+#       in the revolution "both not in their own shares, but a fortune was
+#       with each one of them": "a little good" -- a condition on the two
+#       lords, shown as facts.
+# The death sentences carry III.2, 110-111's gate. The Sun, Moon and
+# Mercury entering the bound are addressed by no sentence, and 46-47
+# speak of rays, not bodies; both are said in the row. Decided by the
+# owner 2026-09-10; no worked example (fn 56's Figure 67 has the
+# revolutionary Saturn in the bound, one instance of the fact).
+
+PN4_BOUND_TRANSIT_SENTENCES = {
+    38: ('III.2, 38-39', 'because of the distribution of the fortunes it indicates good fortune, and due to the rays of the '
+                        'revolutionary infortune it indicates incidental adversity and harm', False),
+    43: ('III.2, 43', 'it will not have the power to repel death, but his death will be with reverence', True),
+    46: ('III.2, 46', 'he will not be freed from death but he will be revered in his illness and his conditions, until the '
+                     'time in which he dies', True),
+    47: ('III.2, 47', 'before death he will encounter hardship, and will be tortured, and it will be burdensome for whoever '
+                     'is tending to him, and he will die a bad death', True),
+    54: ('III.2, 54', 'he will have good fortune but he will be unhappy with it, and distresses and anxieties will affect '
+                     'him, in accordance with the indication of the infortune', False),
+}
+
+def pn4_bound_transit_sentence(type_number, entrant_nature, by_ray):
+    """Which of the five III.2 sentences fits a revolutionary body or ray
+    in the bound, given the static type. Returns (key or None, note)."""
+    if entrant_nature is None:
+        return None, 'no sentence of III.2 speaks of the Sun, the Moon or Mercury entering the bound'
+    if type_number == 1 and entrant_nature == 'infortune':
+        return 38, ''
+    if type_number == 7 and entrant_nature == 'infortune':
+        return 54, ''
+    if type_number == 6:
+        if not by_ray:
+            return None, 'III.2, 46-47 speak of a ray cast into the bound, not a body in it'
+        return (46 if entrant_nature == 'fortune' else 47), ''
+    if entrant_nature == 'fortune' and type_number in (2, 3, 5, None):
+        return 43, "under III.2, 40-42's conditions -- a corrupting infortune in the bound, a weak fortune -- which are not judged here"
+    return None, 'no sentence of III.2 pairs this entrant with this type'
+
+def pn4_bound_transits(chart_data, sr, current, year_lord):
+    """The revolution's bodies and rays in the current bound, each keyed
+    to its sentence and quoted; then III.8, 7's condition on the lord of
+    the year and the distributor, as facts."""
+    if not current:
+        return []
+    rev = sr['planetary_data']
+    b_start, b_end = _pn4_bound_span(current['from_lon'])
+    t_num, _label, _cite = pn4_static_type(current['distributor'], current['partner'])
+    rows = []
+    for lon, kind, who, aspect in sorted(pn4_bodies_and_rays(rev), key=lambda m: m[0]):
+        if not (b_start <= lon < b_end):
+            continue
+        key, note = pn4_bound_transit_sentence(t_num, pn4_nature(who), kind == 'ray')
+        if key:
+            cite, text, death = PN4_BOUND_TRANSIT_SENTENCES[key]
+            sentence = f'"{text}" ({cite})' + (f' -- {note}' if note else '') + (PN4_III2_DEATH_GATE if death else '')
+        else:
+            cite, sentence = 'III.2, 105-106', note
+        rows.append({'In the bound, in the revolution': f"{who} by {aspect} at {get_degree_string(lon)}",
+                     'Nature': pn4_nature(who) or 'neither',
+                     'With the type': f"type {t_num}" if t_num else 'no type by nature',
+                     'Sentence': sentence, 'Source': cite})
+    # III.8, 7
+    dist = current['distributor']
+    both_infortunes = pn4_nature(year_lord) == 'infortune' and pn4_nature(dist) == 'infortune'
+
+    def share_and_company(planet):
+        row = rev.get(planet)
+        if not row:
+            return '-'
+        r = get_essential_rulers(row['longitude'])
+        in_share = planet in (r['domicile'], r['exaltation'], r['triplicity_day'], r['triplicity_night'], r['face'], r.get('term'))
+        sign = get_zodiac_sign(row['longitude'])
+        with_fortune = [p for p in FORTUNES if p in rev and get_zodiac_sign(rev[p]['longitude']) == sign]
+        return (f"{planet} in {sign}: {'in its own share' if in_share else 'not in its own share'}; "
+                f"{'a fortune with it: ' + ', '.join(with_fortune) if with_fortune else 'no fortune with it'}")
+    if both_infortunes:
+        facts = share_and_company(year_lord) + ('' if year_lord == dist else '; ' + share_and_company(dist))
+        sentence = f'if both are not in their own shares and a fortune is with each: "they will indicate a little good" (III.8, 7); the facts: {facts}'
+    else:
+        sentence = (f"III.8, 7 needs the lord of the year and the distributor both infortunes; they are "
+                    f"{year_lord} ({pn4_nature(year_lord) or 'neither'}) and {dist} ({pn4_nature(dist) or 'neither'})")
+    rows.append({'In the bound, in the revolution': 'The lord of the year and the distributor, in the revolution',
+                 'Nature': f"{pn4_nature(year_lord) or 'neither'} / {pn4_nature(dist) or 'neither'}",
+                 'With the type': f"type {t_num}" if t_num else 'no type by nature',
+                 'Sentence': sentence, 'Source': 'III.8, 7'})
+    return rows
+
 def pn4_distribution_checklist(chart_data, sr, year_lon, current):
     """III.2, 4-9 as facts for the bound the distribution stands in now.
     Nothing here is judged: the conditions 5 and 8 ask about are shown
@@ -8399,10 +8516,7 @@ def pn4_distribution_checklist(chart_data, sr, year_lon, current):
     natal, rev = chart_data['planetary_data'], sr['planetary_data']
     n_asc, r_asc = chart_data['ascendant'], sr['ascendant']
     deg = current['from_lon'] % 360.0
-    starts = pn4_bound_starts()
-    idx = max(i for i, (lon, _l, _s) in enumerate(starts) if lon <= deg)
-    b_start = starts[idx][0]
-    b_end = starts[idx + 1][0] if idx + 1 < len(starts) else 360.0
+    b_start, b_end = _pn4_bound_span(deg)
     lord = current['distributor']
     sign = get_zodiac_sign(b_start)
 
@@ -9297,6 +9411,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'iii2_type': pn4_static_type(current['distributor'], current['partner']) if current else None,
         'iii2_checklist': pn4_distribution_checklist(chart_data, sr, year['longitude'], current),
         'iii2_transitions': pn4_year_transitions(segments, age),
+        'bound_transits': pn4_bound_transits(chart_data, sr, current, year['lord']) if current else None,
         'moon_rows': [{'Day from the revolution': f"{c['day']:.2f}", 'Planet': c['planet'], 'By': c['aspect'],
                        'Moon at': get_degree_string(c['moon_at'])} for c in moon['connections']],
         'portion_rows': [{'Portion': f"{p['portion']} of {p['of']}", 'Owned by': p['planet'],
@@ -10650,14 +10765,20 @@ if location_query and lat is not None and lon is not None:
                 else:
                     st.markdown(f"**No shift of bound or management falls inside this year of the distribution** "
                                 f"(age {pn4['age']} to {pn4['age'] + 1}); the twenty-four of III.2, 55-86 do not arise.")
+            if pn4.get('bound_transits') is not None:
+                st.markdown("**Transits into the bound, in the revolution** (III.2, 38, 43, 46-47, 54; III.8, 7):")
+                st.dataframe(pd.DataFrame(pn4['bound_transits']), hide_index=True, width='stretch',
+                             height=_rows_height(len(pn4['bound_transits'])))
             st.caption("Facts and classification, not judgment: the conditions III.2's delineation turns on -- \"in a "
                        "suitable condition in the root and in the revolution\" -- are not judged, and the prose of "
                        "III.2, 18-54 is not built. The Sun, Moon and Mercury are neither fortune nor infortune, and the "
                        "types and transitions speak only of fortunes and infortunes, so a distribution under one of "
                        "them reads \"no type by nature\" and a shift involving one \"not among the twenty-four\"; type 5 "
                        "turns on conditions and is never assigned. The transitions are read from the natal "
-                       "distribution above, as III.2, 105 requires; a revolutionary planet entering the bound (III.2, "
-                       "43, 46-47, 54) is listed as a fact and not built as a rule. Every quoted indication that "
+                       "distribution above, as III.2, 105 requires; a revolutionary planet entering the bound is the "
+                       "table just above, each keyed by the static type to the one sentence that speaks of it (III.2, "
+                       "38, 43, 46-47, 54; III.8, 7's condition on the two lords as facts), the Sun, Moon and Mercury "
+                       "addressed by none, and 46-47 speaking of rays only. Every quoted indication that "
                        "mentions death carries III.2, 110-111's gate: death only in the years the longevity indicator "
                        "pointed out, which is the releaser this engine refuses. No worked example by the author; "
                        "Figure 67 with fn 56 is Dykes' diagram of III.2, 33.")
