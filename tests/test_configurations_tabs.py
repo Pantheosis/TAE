@@ -75,3 +75,22 @@ def test_dignities_supplement_expanders_follow_the_depth():
         at.session_state["_reading_depth"] = depth
         at.run()
         assert_no_exception(at, f"dignities under {depth}")
+
+
+def test_tab_defaults_read_the_widget_before_the_store():
+    """A click sets the widget key; the store follows only after _persist.
+    A default read from the store therefore lags one rerun and the
+    frontend snaps back to the old tab (the second-click bug, 2026-09-10).
+    Both tab controls must read the widget key first."""
+    from conftest import ui_source
+    src = ui_source()
+    assert '_reading("configurations_tab", "_configurations_tab", _labels[0])' in src
+    assert '_reading("timing_tab", "_timing_tab", _tab_labels[0])' in src
+    # And the rerun a click causes keeps the clicked tab: widget = new, store = old.
+    at = make_app(page="timing")
+    at.session_state["_timing_tab"] = "The revolution"
+    at.session_state["timing_tab"] = "Distributions"
+    at.run()
+    assert_no_exception(at, "clicked tab")
+    assert at.session_state["timing_tab"] == "Distributions"
+    assert at.session_state["_timing_tab"] == "Distributions"

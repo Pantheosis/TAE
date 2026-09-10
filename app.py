@@ -12202,7 +12202,11 @@ if location_query and lat is not None and lon is not None:
             # planetary condition and Book V degrees with strength and weakness.
             _labels = ["Aspects and connections", "Handing over and reception", "Prevented connections",
                        "Strength and weakness"] + ([] if supplement else ["Abu Ma'shar (supplement)"])
-            _stored_tab = st.session_state.get("_configurations_tab", _labels[0])
+            # Widget-first, like _reading(): on the rerun a click causes, the
+            # widget key already holds the new tab while the store still holds
+            # the old one, and a default that lags snaps the frontend back
+            # (the "second click" bug the owner saw on the Timing page).
+            _stored_tab = _reading("configurations_tab", "_configurations_tab", _labels[0])
             _tabs = st.tabs(_labels, key="configurations_tab", on_change="rerun",
                             default=_stored_tab if _stored_tab in _labels else _labels[0])
             _persist("configurations_tab", "_configurations_tab", _labels[0])
@@ -12359,7 +12363,9 @@ if location_query and lat is not None and lon is not None:
             # follow it.
             _tab_labels = ("The revolution", "Indicators of the year", "Distributions", "The releaser",
                            "Days and months", "Fardar, ages and reference tables")
-            _tab_default = st.session_state.get("_timing_tab", _tab_labels[0])
+            # Widget-first (see the Configurations page): a default read from
+            # the store lags the click by one rerun and snaps the tab back.
+            _tab_default = _reading("timing_tab", "_timing_tab", _tab_labels[0])
             tab_rev, tab_ind, tab_dist, tab_rel, tab_days, tab_lords = st.tabs(
                 list(_tab_labels), key="timing_tab", on_change="rerun",
                 default=_tab_default if _tab_default in _tab_labels else _tab_labels[0])
