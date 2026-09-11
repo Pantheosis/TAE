@@ -8065,9 +8065,12 @@ def pn4_direction_unit(chart_level):
 # test_pn4_printed_reference_tables_derive_from_the_rules, so directing a
 # planet on an angle, or building the third case, means changing them.
 PN4_ASCENSION_RULE = {
-    'Ascendant': ('oblique ascensions of the birth latitude', 'applied to the degree of the Ascendant'),
-    'Midheaven': ('right ascensions', 'applied to the degrees of the Midheaven and the fourth'),
-    'Fourth (IC)': ('right ascensions', 'applied to the degrees of the Midheaven and the fourth'),
+    'Ascendant': ('oblique ascensions of the birth latitude',
+                  'applied to the degree of the Ascendant and to the planets in it (the first division, carried over)'),
+    'Midheaven': ('right ascensions',
+                  'applied to the degrees of the Midheaven and the fourth and to the planets in them (the tenth and fourth divisions, carried over)'),
+    'Fourth (IC)': ('right ascensions',
+                    'applied to the degrees of the Midheaven and the fourth and to the planets in them (the tenth and fourth divisions, carried over)'),
     'anything else': ('proportional semi-arcs', 'method not stated in PN IV'),
 }
 
@@ -8284,7 +8287,7 @@ def pn4_distribution_from_ascendant(planetary_data, ascendant_lon, obliquity, ge
 PN4_MERIDIAN_POINTS = ('Midheaven', 'Fourth (IC)')
 
 def pn4_distribution_from_meridian(planetary_data, mc_lon, obliquity, point='Midheaven',
-                                   span_years=PN4_DISTRIBUTION_SPAN_YEARS):
+                                   span_years=PN4_DISTRIBUTION_SPAN_YEARS, start_lon=None, label=None):
     """III.1, 12: "what is in the Midheaven or the fourth is directed by
     the ascensions of the right sphere" -- the degree of the Midheaven, or
     of the fourth (fn 14: "or rather, the IC itself", the point opposite
@@ -8304,6 +8307,12 @@ def pn4_distribution_from_meridian(planetary_data, mc_lon, obliquity, point='Mid
     Ascendant; the distribution is given no topic by Abu Ma'shar and is
     not among the year's indicators (II.2); planets IN the Midheaven are
     not directed, only its degree."""
+    if start_lon is not None:
+        # III.1, 12: "what is in the Midheaven or the fourth is directed by the
+        # ascensions of the right sphere" -- a PLANET'S degree, by right
+        # ascension, labelled by its name (orders GAP-37 / PN4R-4b-4).
+        return _pn4_distribute(planetary_data, start_lon % 360.0, lambda lon: _ra_decl(lon, obliquity)[0],
+                               span_years, label or f"{get_degree_string(start_lon)} by right ascension")
     if point not in PN4_MERIDIAN_POINTS:
         raise ValueError(f"point must be one of {PN4_MERIDIAN_POINTS}, not {point!r}")
     start = mc_lon if point == 'Midheaven' else mc_lon + 180.0
@@ -11989,6 +11998,34 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
     standin_moon = (sahl_house_master_direction(chart_data['planetary_data'], 'Moon', chart_data['obliquity'], lat,
                                                 origin_jd=chart_data['julian_day'])
                     if releaser['releaser'] is None else None)
+    # --- III.1, 12: "the Ascendant and the things in it ... what is in the
+    # Midheaven or the fourth" -- the PLANETS in those places directed as their
+    # degrees are (orders GAP-37 / PN4R-4b-4; the degrees alone until
+    # 2026-09-11). "In" is the Alcabitius division with the five-degree
+    # carry-over, the order's unit -- recorded as a reading for the owner,
+    # since the canon confines the carry-over to power and this is a
+    # positional test. First-division planets by the oblique ascension, tenth-
+    # and fourth-division planets by right ascension.
+    angle_planets = []
+    for planet in PN4_SEVEN:
+        if planet not in chart_data['planetary_data']:
+            continue
+        p_lon = chart_data['planetary_data'][planet]['longitude']
+        q = get_effective_house(p_lon, chart_data['houses'])
+        if q == 1:
+            segs = pn4_distribution_from_ascendant(chart_data['planetary_data'], p_lon, chart_data['obliquity'], lat)
+            where, how = 'the Ascendant', 'oblique ascension of the birth latitude'
+        elif q in (10, 4):
+            segs = pn4_distribution_from_meridian(chart_data['planetary_data'], chart_data['mc'], chart_data['obliquity'],
+                                                  start_lon=p_lon, label=f"{planet} in {'the Midheaven' if q == 10 else 'the fourth'}")
+            where, how = ('the Midheaven' if q == 10 else 'the fourth'), 'right ascension'
+        else:
+            continue
+        angle_planets.append({'planet': planet, 'division': q, 'where': where, 'how': how, 'segments': segs,
+                              'current': pn4_distribution_at_age(segs, elapsed) if segs else None,
+                              'rows': _pn4_distribution_rows(segs, pn4_distribution_at_age(segs, elapsed) if segs else None,
+                                                             origin_jd=chart_data['julian_day'])})
+
     # --- III.7, 32-42: when each natal indication comes out -- confirmed (42)
     # against every distribution on the page (order PN4R-4a-2) ---
     activation_rows = pn4_activation_ages(
@@ -12039,6 +12076,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'releaser_stand': releaser_stand, 'house_master': house_master, 'hm_direction': hm_direction,
         'hm_this_year': hm_this_year, 'hm_revolution': hm_revolution, 'hm_flags': hm_flags,
         'standin_moon': standin_moon,
+        'angle_planets': angle_planets,
         'hm_turning': sahl_house_master_turning(house_master, chart_data['planetary_data']) if house_master else [],
         # FINAL-A1 / sheet row 1: the house-master's years from 1.20, 7-34, by the division.
         'hm_years': (sahl_house_master_years(house_master, chart_data['planetary_data'], chart_data['houses'], chart_data['sect'],
@@ -14012,8 +14050,26 @@ if location_query and lat is not None and lon is not None:
                            "a meridian direction exists in PN IV -- III.1, 19-45 directs the Ascendant only -- so the "
                            "engine is checked by arithmetic and against the editor's four-minutes-a-degree animation "
                            "(Appendix A), not against the author's numbers. (4) The partner-at-birth rule of III.1, 23-25 "
-                           "is worded for the Ascendant and is carried here by analogy. (5) Only the two degrees are "
-                           "directed; planets in the Midheaven, which III.1, 12 also assigns to right ascension, are not.")
+                           "is worded for the Ascendant and is carried here by analogy. (5) The two degrees AND the planets "
+                           "in the tenth and fourth divisions are directed by right ascension, and the planets in the first by "
+                           "the oblique ascension, as III.1, 12 assigns them (\"the Ascendant and the things in it ... what is "
+                           "in the Midheaven or the fourth\"), below; \"in\" is read as the Alcabitius division with the "
+                           "five-degree carry-over -- a reading recorded for the owner, the carry-over being a power rule "
+                           "under the canon and this a positional test.")
+                if pn4['angle_planets']:
+                    st.markdown("**The planets in the Ascendant, the Midheaven and the fourth, directed as their degrees are "
+                                "(III.1, 12):**")
+                    for ap in pn4['angle_planets']:
+                        st.markdown(f"**{ap['planet']}** in {ap['where']} (division {ap['division']}), by the {ap['how']}"
+                                    + (f" -- now: distributor **{ap['current']['distributor']}**, partner "
+                                       f"**{ap['current']['partner'] or 'none'}**" if ap['current'] else '') + ":")
+                        if ap['segments'] is None:
+                            st.warning("Refused at this latitude (decision D-23).")
+                        else:
+                            st.dataframe(pd.DataFrame(ap['rows']), hide_index=True, width='stretch',
+                                         height=_rows_height(min(len(ap['rows']), 8)))
+                else:
+                    st.markdown("No planet stands in the first, tenth or fourth division of this chart.")
 
             with tab_rel:
                 # --- SAHL: the releaser and the house-master (2026-09-10) ---

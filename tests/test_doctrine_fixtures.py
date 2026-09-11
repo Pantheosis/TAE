@@ -2486,8 +2486,9 @@ def test_pn4_printed_reference_tables_derive_from_the_rules(engine):
     # changing these strings too.
     applied = {k: v for k, v in state.items() if v.startswith("applied")}
     assert sorted(applied) == ["Ascendant, and things in it", "Midheaven, or the fourth"]
-    assert applied["Ascendant, and things in it"] == "applied to the degree of the Ascendant"
-    assert applied["Midheaven, or the fourth"] == "applied to the degrees of the Midheaven and the fourth"
+    # since 2026-09-11 (GAP-37 / PN4R-4b-4) the planets in those divisions are directed as their degrees are
+    assert applied["Ascendant, and things in it"] == "applied to the degree of the Ascendant and to the planets in it (the first division, carried over)"
+    assert applied["Midheaven, or the fourth"] == "applied to the degrees of the Midheaven and the fourth and to the planets in them (the tenth and fourth divisions, carried over)"
     assert state["Anything else"] == "method not stated in PN IV"
 
 
@@ -3264,3 +3265,23 @@ def test_first_month_governor_names_the_primary_sign_when_the_strict_test_fails(
     assert "Primary: Scorpio (3 of five" in verdict
     rows, verdict = engine["pn4_first_month_governor"](5.0, 5.0, 185.0, 190.0, 195.0)     # Libra, convertible: the strict case
     assert "govern the first month" in verdict and len(rows) == 5
+
+
+# --- GAP-37 / PN4R-4b-4: the planets in the Midheaven, the fourth and the Ascendant, directed -----
+
+def test_planets_in_the_angular_divisions_are_directed_as_their_degrees_are(engine):
+    """III.1, 12. A meridian distribution from a planet's own degree runs by
+    right ascension from that degree; the bundle lists every planet whose
+    division is 1, 10 or 4 with its own table."""
+    p = pdata(Sun=100.0, Moon=200.0, Mercury=110.0, Venus=130.0, Mars=300.0, Jupiter=250.0, Saturn=20.0)
+    segs = engine["pn4_distribution_from_meridian"](p, 15.0, 23.44, start_lon=22.0, label="Saturn in the Midheaven")
+    assert segs and segs[0]["from"] == 0.0 and segs[0]["from_lon"] == pytest.approx(22.0)
+    cast = engine["calculate_traditional_chart"]
+    birth, lat, lon = datetime(1985, 3, 20, 14, 30), 51.5, -0.12
+    chart = cast(birth, lat, lon)
+    b = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(2027, 6, 1).date(), engine["PN4_MONTHLY_TURN_OPTIONS"][0])
+    for ap in b["angle_planets"]:
+        assert ap["division"] in (1, 10, 4) and ap["division"] == engine["get_effective_house"](chart["planetary_data"][ap["planet"]]["longitude"], chart["houses"])
+        assert ap["how"] == ("oblique ascension of the birth latitude" if ap["division"] == 1 else "right ascension")
+    expected = [pl for pl in engine["PN4_SEVEN"] if engine["get_effective_house"](chart["planetary_data"][pl]["longitude"], chart["houses"]) in (1, 10, 4)]
+    assert [ap["planet"] for ap in b["angle_planets"]] == expected
