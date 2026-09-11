@@ -2953,3 +2953,14 @@ def test_year_indicator_note_shows_sahls_two_sentences_and_does_not_claim_to_res
     assert "tender [of sheep]" in note and "stronger <than> the distributor of time" in note
     assert "II.1, 25" in note and "III.2, 2-3" in note
     assert "resolves the corpus disagreement" not in note and "not resolved" in note
+
+
+# --- GAP-27: the seven-day grant of IX.7, 7-9 is built (method 2), and the page no longer says otherwise ---
+
+def test_orb_lord_holds_the_first_week_of_ix_7_7(engine):
+    """IX.7, 7: the lord of the orb "grants 7 days"; at day 0 of the
+    revolution the week, the day and the hour are its own."""
+    m2 = engine["pn4_ix7_weeks_from_orb"](0.0, "Venus")
+    assert m2["week"] == "Venus" and m2["day"] == "Venus"
+    from conftest import engine_source
+    assert "IX.7, 7-8 are not built" not in engine_source()

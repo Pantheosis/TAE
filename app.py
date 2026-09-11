@@ -8924,7 +8924,8 @@ def pn4_fardar_subperiods(lord, years):
 # (each house keeping its first hour lord for life, Intro Figure 48) on
 # the thought that the loop is Abu Ma'shar's own error; VI.1, 8 states
 # the loop, and the owner chose it 2026-09-10. The delineations of VI.1,
-# 12-17 and the seven-day grant of IX.7, 7-8 are not built.
+# 12-17 are not built; the seven-day grant of IX.7, 7-9 IS -- method 2 of the
+# days tab, pn4_ix7_weeks_from_orb (an earlier line here said it was not; order GAP-27).
 
 def pn4_hour_lord_from_natal(natal_hour_lord, steps):
     """The lord of the hour `steps` hours after the natal one, down the
@@ -13089,8 +13090,8 @@ if location_query and lat is not None and lon is not None:
                            "also floats a single-cycle version in which each house keeps its first hour lord for life "
                            "(Intro Figure 48), on the thought that the loop is Abu Ma'shar's own error; VI.1, 8 states "
                            "the loop and the loop is built. His twelve-year \"reset\" of the named lords is, in his "
-                           "words, his idea, and is not built. The delineations of VI.1, 12-17 and the seven days the "
-                           "lord of the orb grants at IX.7, 7-8 are not built.")
+                           "words, his idea, and is not built. The delineations of VI.1, 12-17 are not built; the seven days the "
+                           "lord of the orb grants (IX.7, 7-9) are method 2 of the Days tab (This week / Today / This hour).")
 
                 st.subheader("The governor (IX.9, 1-10; IX.2, 4-7)",
                              help="IX.9, 1-9 name eight testimonies and IX.9, 10 the rule: \"if these eight indicators "

@@ -473,7 +473,7 @@ give); and the bundle's row 5, with and without a natal hour lord.
 **Verification.** Doctrine fixtures 190 (were 186). `tables.json` **+6 / −0**. Full suite
 **2503 passed**, four of them new; `test_base_tables.py` 121 / 0. Rendered in the browser.
 
-**Left undone, on purpose.** VI.1, 12–17's delineations; the seven days of IX.7, 7–8; Dykes'
+**Left undone, on purpose.** VI.1, 12–17's delineations; ~~the seven days of IX.7, 7–8~~ (built as method 2 of the days tab, `pn4_ix7_weeks_from_orb`; this line and the VI.1 caption said otherwise until 2026-09-11, order GAP-27); Dykes'
 reset. The next prompt, per the brief, is the profected houses (VI.2, 1–20).
 
 ### 4f. VI.2, 1–26: the turning of the houses of the root — built 2026-09-10, second session
