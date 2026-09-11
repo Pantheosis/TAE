@@ -2888,3 +2888,18 @@ def test_pn4_indicator_nine_reads_the_lord_of_the_years_house_from_the_three_pla
     assert "from the natal Ascendant / the terminal sign / the revolution Ascendant" in reads
     assert " in house " in reads and reads.split(" in house ")[1].split(" (")[0].count("/") == 2
     assert "II.6, 1" in rows[9]["Source"]
+
+
+# --- DEC-D-5 as implemented (sheet row 9): condition 110 keeps 19 Libra-3 Scorpio, labelled Abu Ma'shar's ---
+
+@pytest.mark.parametrize("moon, fires", [(182.0, False), (205.0, True), (212.9, True), (213.0, False), (235.0, False)])
+def test_moon_corruption_110_keeps_the_borrowed_19_libra_3_scorpio_span_and_says_whose_it_is(engine, moon, fires):
+    """Introduction 3, 110: "at the end of Libra and the beginning of
+    Scorpio" -- no degrees. The span tested is Gr. Intr. VII.6, 40's
+    (fn 120), borrowed and named as such; the Moon at 2 Libra or 25
+    Scorpio does not fire (owner, 2026-09-11)."""
+    fig = pdata(Moon=(moon, MOON), Venus=(155, VENUS), Mercury=(335, MERC), Sun=(0, 1.0), North_Node=(80, 0.0))
+    t = engine["evaluate_corruption_of_the_moon"](fig, 0.0, "Diurnal")["testimonies"][110]
+    assert t["matched"] is fires
+    if fires:
+        assert any("VII.6, 40" in str(c) and "no degrees" in str(c) for c in t["clauses"]), t["clauses"]

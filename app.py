@@ -7469,12 +7469,22 @@ def evaluate_corruption_of_the_moon(planetary_data, ascendant_lon, sect):
                 if get_wsh_house(planetary_data[other]['longitude'], ascendant_lon) in CADENT_HOUSES:
                     hit(109, f'Connecting with {other}, itself falling from the stakes')
 
-        # [8] (110) In the burned path -- Sahl's own wording narrows this to
-        # the end of Libra and the beginning of Scorpio specifically (not the
-        # full two signs), matching the alternate 19-Libra-to-3-Scorpio band
-        # footnoted there.
+        # [8] (110) "in the burned path, and that is at the end of Libra and
+        # the beginning of Scorpio". SAHL GIVES NO DEGREES. The span tested,
+        # 19 Libra to 3 Scorpio, is Abu Ma'shar's harsher band (Gr. Intr.
+        # VII.6, 40: "harsher than that is if it was from 19 Libra up to 3
+        # Scorpio"), the one fn 120 reports, BORROWED here as the only
+        # author-stated region of the shape Sahl describes. Firing on the two
+        # whole signs would over-read Sahl (early Libra is not "the end of
+        # Libra"). Owner, 2026-09-11 (decision sheet row 9, DEC-D-5 as
+        # implemented); an earlier comment claimed Sahl's wording "matches"
+        # the band, which it does not state. Readings, not tests: 15 Libra to
+        # 15 Scorpio is the definition "often" given (Dykes, Carmen p. 258 fn
+        # 104; the Course Glossary); Dorotheus's own (Carmen p. 258, 6: the
+        # equinoctial point taken southward) is a different construction.
         if HARSH_BURNED_PATH[0] <= lon < HARSH_BURNED_PATH[1]:
-            hit(110, 'In the burned path, end of Libra/beginning of Scorpio')
+            hit(110, 'In the burned path, "the end of Libra and the beginning of Scorpio" -- Sahl gives no degrees; '
+                     "the 19 Libra-3 Scorpio span is Gr. Intr. VII.6, 40's harsher band (fn 120), borrowed")
 
         # [9] (111) Wild -- empty of course, not connecting with any planet.
         # Sahl's own present-tense definition (not Abu Ma'shar's later,
