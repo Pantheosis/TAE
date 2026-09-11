@@ -3046,9 +3046,16 @@ def evaluate_handing_over(planetary_data, sect):
 # records each planet's sign-exit and station days, shared by every
 # detector below rather than recomputed per-condition.
 
-def _bisect_crossing(test_fn, day_lo, day_hi, tol=0.02, max_iter=40):
+def _bisect_crossing(test_fn, day_lo, day_hi, tol=1e-4, max_iter=60):
     """Assumes exactly one transition of test_fn's boolean value inside
-    [day_lo, day_hi]; returns the midpoint of the final bracket."""
+    [day_lo, day_hi]; returns the midpoint of the final bracket.
+
+    tol is 1e-4 day (about nine seconds), the same order as the contact
+    root-finder's, because an ingress found here is used as a HARD CUTOFF
+    against contacts found there: at the old 0.02-day bracket (29 minutes)
+    a sextile perfected three minutes before the Moon left her sign was
+    placed after the recorded exit and lost (Astra F06; PN IV II.22, 1-4
+    counts only what she connects with "so long as she is in her sign")."""
     val_lo = test_fn(day_lo)
     for _ in range(max_iter):
         if day_hi - day_lo < tol:
@@ -3098,18 +3105,30 @@ def _simulate_forward_uncached(planetary_data, jd, horizon_days=200, step_days=1
         days, lons, speeds = series[p]['day'], series[p]['lon'], series[p]['speed']
         pid = PLANET_SWE_IDS[p]
         for i in range(len(days) - 1):
-            sign0 = int(lons[i] // 30)
-            if int(lons[i + 1] // 30) != sign0:
-                def _sign_test(day, _pid=pid, _sign0=sign0):
-                    res, _ = swe.calc_ut(jd + day, _pid)
-                    return int(res[0] // 30) == _sign0
-                events[p]['sign_exits'].append(_bisect_crossing(_sign_test, days[i], days[i + 1]))
+            # A station first: the longitude is monotonic on each side of
+            # it and NOT across the whole step, so a planet can leave a sign
+            # and come back inside one sample (Mercury stationing just past
+            # 0 of the next sign) and show the same sign at both ends. The
+            # step is split at the station and each monotonic piece searched
+            # for its own crossing (Astra F07; Gr. Intr. VII.5, 117-119 and
+            # Aphorism 48, 99-102 order stations and sign changes).
+            pieces = [(days[i], lons[i]), (days[i + 1], lons[i + 1])]
             if (speeds[i] > 0) != (speeds[i + 1] > 0):
                 kind = 'first' if speeds[i] > 0 else 'second'
                 def _speed_test(day, _pid=pid, _positive=(speeds[i] > 0)):
                     res, _ = swe.calc_ut(jd + day, _pid)
                     return (res[3] > 0) == _positive
-                events[p]['stations'].append((_bisect_crossing(_speed_test, days[i], days[i + 1]), kind))
+                station_day = _bisect_crossing(_speed_test, days[i], days[i + 1])
+                events[p]['stations'].append((station_day, kind))
+                station_lon = swe.calc_ut(jd + station_day, pid)[0][0]
+                pieces.insert(1, (station_day, station_lon))
+            for (d0, l0), (d1, l1) in zip(pieces, pieces[1:]):
+                sign0 = int(l0 // 30)
+                if int(l1 // 30) != sign0:
+                    def _sign_test(day, _pid=pid, _sign0=sign0):
+                        res, _ = swe.calc_ut(jd + day, _pid)
+                        return int(res[0] // 30) == _sign0
+                    events[p]['sign_exits'].append(_bisect_crossing(_sign_test, d0, d1))
 
     return {'series': series, 'events': events, 'jd': jd, 'horizon_days': horizon_days}
 
@@ -3167,7 +3186,7 @@ def _sign_ingress_day(sim, planet, sign_idx, after_day=0.0, before_day=None):
             continue
         if before_day is not None and day > before_day:
             break
-        if int(_lon_at(sim, planet, day + 0.02) // 30) == sign_idx % 12:
+        if int(_lon_at(sim, planet, day + 1e-3) // 30) == sign_idx % 12:
             return day
     return None
 
@@ -3450,7 +3469,7 @@ def evaluate_escape(planetary_data, sim):
             # "before it reaches it, the one it is connecting with shifts over"
             if _perfection_day(sim, fast, slow, r['target'], before_day=exit_day) is not None:
                 continue
-            new_sign = int(_lon_at(sim, slow, exit_day + 0.02) // 30)
+            new_sign = int(_lon_at(sim, slow, exit_day + 1e-3) // 30)
             # "when the one handing over changes [to THAT NEXT SIGN]" -- the
             # applicant follows it across the same boundary, which is what
             # Fig. 139 shows: Venus and Mercury are both in Virgo, Mercury
@@ -3459,7 +3478,7 @@ def evaluate_escape(planetary_data, sim):
             # any later arrival in that sign -- otherwise the Moon qualifies
             # against everything, since she re-enters every sign each month.
             next_exit = next((d for d in sim['events'][fast]['sign_exits'] if d > exit_day), None)
-            if next_exit is None or int(_lon_at(sim, fast, next_exit + 0.02) // 30) != new_sign:
+            if next_exit is None or int(_lon_at(sim, fast, next_exit + 1e-3) // 30) != new_sign:
                 continue
             ingress_day = next_exit
             # "there is one of the planets closer to it" -- the body it meets
@@ -3475,7 +3494,21 @@ def evaluate_escape(planetary_data, sim):
                     continue
                 if best_day is None or day < best_day:
                     best, best_day = other, day
-            if best is not None:
+            if best is None:
+                continue
+            # "there is one of the planets CLOSER to it than [the first one],
+            # so its connection is with the other planet, and its connection
+            # with the first one is nullified": the capture must come BEFORE
+            # the original connection would have perfected in the new sign.
+            # If the applicant reaches the escapee first, nothing is
+            # nullified and there is no Escape (Astra F05; Sahl, Introduction
+            # 3, 57 fn 77 says the same from the other side: crossing over
+            # and connecting with B "before there is a connection with
+            # another planet" completes the ORIGINAL situation).
+            original = _perfection_day(sim, fast, slow, r['target'], after_day=ingress_day)
+            if original is not None and original <= best_day:
+                continue
+            if True:
                 results.append({
                     'Planet': fast, 'Escaped': slow, 'Connected Instead With': best,
                     'Escapee Leaves Sign (days)': round(exit_day, 1),
@@ -6365,8 +6398,17 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
                 if _is_connected(r) and _averse_to_ascendant(planetary_data[other]['longitude'], ascendant_lon):
                     _averse97.append(other)
                 if (r['applicant'] or r['light_name']) == planet and r['motion'] == 'Separating' and _is_connected(r):
-                    other_rulers = get_essential_rulers(planetary_data[other]['longitude'])
-                    if planet in (other_rulers['domicile'], other_rulers['exaltation']):
+                    # "separating from a planet RECEIVING IT": the departed
+                    # planet receives THIS one, so it must own the house or
+                    # exaltation of THIS planet's degree (3, 52: Mars receives
+                    # the Moon in Aries "because [Aries] is his house"). The
+                    # earlier test looked the other way round -- whether this
+                    # planet ruled the departed one's degree (Astra F08). fn 99
+                    # ("I am not sure that these conditions must both exist
+                    # at once") leaves the two clauses' conjunction open; the
+                    # engine applies each clause on its own, a reading.
+                    my_rulers = get_essential_rulers(planetary_data[planet]['longitude'])
+                    if other in (my_rulers['domicile'], my_rulers['exaltation']):
                         _sep97.append(other)
             if _averse97 or _sep97:
                 _parts = []
