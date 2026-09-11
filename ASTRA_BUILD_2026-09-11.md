@@ -336,3 +336,28 @@ order tried ("no sefstars.txt at the bundled path ..." / "found ... but Swiss Ep
 it from ...: <exception>"), so the next Windows screenshot is diagnostic. Tests: the bundled directory
 attached directly; a found-but-unreadable catalogue reported with the exception; the absent case's
 refusal names the path. Whether this is the Windows cause is for the owner's next build to show.
+
+### Page text carries no build process (owner, 2026-09-11, evening)
+
+The owner, reading the Windows build: "strip metacommentary from the build process from the final
+product. Referencing D3 & OCR artifacts isn't helpful to the end user." Policy, applied in one commit
+across every page string in `app.py` (about a hundred strings) and pinned by
+`test_page_strings_carry_no_build_process` (every non-docstring string literal is scanned):
+
+- KEPT: volume locators and footnotes; "a reading"; "not built"; "stated in no text in hand"; quoted
+  sentences; the units and the dispatch stated as a rule ("strength language -> the division").
+- DROPPED: dates; decision / order / finding ids (D-4, DEC-D-18, FINAL-A1, order GAP-39, PN4R-4c-4,
+  REL-5-7); process filenames (`PN4_REPAIRS_...`, `synthesis/13_open_decisions.md`,
+  `process/TIMING_SOURCES_REPORT...`, `OWNER_RULING_PLACES_VS_DYNAMICS`); "the owner", "ruled",
+  "decision sheet row", "the second blind reading"; "since <date>", "the earlier default", "retired
+  2026-09-11"; the OCR / corpus-repair narrative (the Timing notes' D-3 and 25″ paragraphs, ad81dd6).
+- REPHRASED: "the owner's ruling of 2026-09-11 (FINAL-A1)" -> nothing or "this app's convention";
+  "the canon's dispatch" -> "this app's convention for strength language"; "(decision D-23)" in every
+  polar refusal -> "the ascension has no unique inverse there"; "the corpus" (meaning the texts) ->
+  "these texts" / "the texts' own vocabulary"; "the project canon (OWNER_RULING_...)" in IX.9, 13's
+  statement (ii) -> "This app's convention on places and strength".
+- Comments and docstrings keep every id, date and filename: they are the audit trail.
+- While there, four stale scope claims on the Sources page were corrected (`NOT_IMPLEMENTED_COVERAGE`
+  still listed the releaser and house-master, 1.18's ascensional distribution, 2.13's bands and the
+  thirty fixed stars as not implemented; what remains unbuilt of each is named instead), and the
+  Reference page's planetary-years caption no longer says nothing in the app grants years.

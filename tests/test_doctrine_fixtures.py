@@ -3194,7 +3194,7 @@ def test_2_13_bands_are_end_inclusive_and_truncated_by_the_next_stake(engine):
 
 def test_2_13_refuses_at_the_poles(engine):
     out = _bands(engine, lat=70.0)
-    assert out["rows"] == [] and "D-23" in out["refused"]
+    assert out["rows"] == [] and "no unique inverse" in out["refused"]
 
 
 # --- DEC-D-18 (sheet row 11): spear-bearing, two display-only definitions ---------------------
@@ -3494,7 +3494,7 @@ def test_governor_condition_rows_read_essence_and_sign_and_judge_the_place_by_th
     row13 = engine["pn4_governor_condition"]("Jupiter", root, sr)[2]
     assert row13["Met"] == "yes" and "division 10" in row13["Criteria"] and "follows a stake\" met; sign half: met" in row13["Criteria"]
     for statement in ("(i) PN IV IX.9, 13 supplies the requirement itself",
-                      "(ii) The project canon (OWNER_RULING_PLACES_VS_DYNAMICS_2026-09-11) supplies its operational interpretation",
+                      "(ii) This app's convention on places and strength supplies its operational interpretation",
                       "(iii) Alcabitius and the axial 5-degree allowance come from that adopted convention, not from the text",
                       "IX.5, 4 fn 106 (p. 602)", "dynamic angularity (advancing or withdrawing), here and in 7, 11, and 14",
                       "IX.5, 9 (p. 603", "V.1, 28 fn 15"):
