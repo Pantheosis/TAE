@@ -26,10 +26,32 @@ def test_d4_control_the_unreversed_expedition_lot_is_untouched(engine):
 
 
 # --- D-11: the Lot of death stays projected from Saturn, labelled ---------
-def test_d11_lot_of_death_is_projected_from_saturn_and_says_it_is_an_emendation(engine):
+def test_d11_lot_of_death_is_stated_by_abu_mashar_and_printed_in_sahl_with_the_cusp_by_equation(engine):
+    """FINAL-A12 / decision sheet row 4 (owner, 2026-09-11): the projection
+    from Saturn is a rule Gr. Intr. VIII.4, 226 and VIII.6, 69 state; Sahl
+    8.6, 1 as printed agrees, his manuscripts reading the Ascendant (fn
+    89) -- "emendation" describes Sahl's transmission and lives in the
+    note, not the confidence field. The eighth's degree is "by equation"
+    (VIII.3, 14-15), this Lot's own rule whatever the shared switch says;
+    the whole-sign carried degree is a labelled variant row."""
     row = _lot(engine, "death")
-    assert row["project"] == "Saturn"
-    assert "emendation" in row["confidence"] and "fn. 89" in row["note"]
+    assert row["project"] == "Saturn" and row["cusp_rule"] == "quadrant cusp"
+    assert "VIII.4, 226" in row["source"] and "VIII.6, 69" in row["source"]
+    assert row["confidence"].startswith("stated (Gr. Intr. VIII.4, 226")
+    assert "emendation" not in row["confidence"] and "fn 89" in row["note"] and "emendation" in row["note"]
+    variant = _lot(engine, "death_ws")
+    assert variant["cusp_rule"] == "whole-sign place" and "not prescribed in any supplied passage" in variant["confidence"]
+    # the two rows differ only in the eighth's degree: with equal cusps they coincide
+    from datetime import datetime
+    chart = engine["calculate_traditional_chart"](datetime(1240, 5, 23, 13, 45), 43.7792, 11.2463)
+    p, asc, cusps, sect = chart["planetary_data"], chart["ascendant"], chart["houses"], chart["sect"]
+    death = engine["lot_by_id"]("death", p, asc, cusps, sect)
+    ws = engine["lot_by_id"]("death_ws", p, asc, cusps, sect)
+    expected = (p["Saturn"]["longitude"] + cusps[7] - p["Moon"]["longitude"]) % 360.0
+    assert death == pytest.approx(expected)
+    assert ws == pytest.approx((p["Saturn"]["longitude"] + (asc + 210.0) - p["Moon"]["longitude"]) % 360.0)
+    equal = tuple((asc + 30.0 * i) % 360.0 for i in range(12))
+    assert engine["lot_by_id"]("death", p, asc, equal, sect) == pytest.approx(engine["lot_by_id"]("death_ws", p, asc, equal, sect))
 
 
 # --- D-12: 12 degrees for either node, cited to the two sources that say so

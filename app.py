@@ -4873,12 +4873,16 @@ def calculate_classical_lots(asc, sun, moon, sect):
 # LOT_HOUSE_CUSP), 'lordN' (the domicile lord of the Nth whole-sign house),
 # or another Lot by id. Lots that feed other Lots are listed before them.
 #
-# "The second place", "the degree of the eighth place", "the ninth" (2.15,
-# 1; 8.6, 1; Ch. 9, 9): the text is whole-sign throughout, and Dykes' note 207
-# on 4.14 glosses the assets Lot as "from the lord of the second to the
-# second". In whole signs the degree of the Nth place is the Ascendant's
-# own degree carried into the Nth sign; the quadrant cusp is the other
-# reading, and was the only one computed until now. Sidebar switch.
+# "The second place", "the ninth" (2.15, 1; Ch. 9, 9): Sahl's Lots count
+# houses by sign, and Dykes' note 207 on 4.14 glosses the assets Lot as
+# "from the lord of the second to the second". In whole signs the degree of
+# the Nth place is the Ascendant's own degree carried into the Nth sign; the
+# quadrant cusp is the other reading. Sidebar switch for the rows whose text
+# names no construction. ONE ROW DECLARES ITS OWN: the Lot of death's eighth
+# is "by equation" (Gr. Intr. VIII.4, 226; VIII.6, 69; VIII.3, 14-15), the
+# calculated cusp -- Sahl's 8.6, 1 "the degree of the eighth place" names no
+# construction, and an earlier line here cited it for "whole-sign
+# throughout", which it does not say (owner, 2026-09-11; see the row).
 LOT_HOUSE_CUSP_OPTIONS = ('whole-sign place', 'quadrant cusp')   # the sidebar radio and _lot_point share these
 LOT_HOUSE_CUSP = LOT_HOUSE_CUSP_OPTIONS[0]
 LOT_DEFINITIONS = [
@@ -5005,14 +5009,37 @@ LOT_DEFINITIONS = [
          note='"Taken from Mercury to the Moon by day, and by night the reverse."'),
     dict(id='death', topic='Death', name='Lot of death',
          start='Moon', end='cusp8', project='Saturn', reverse_at_night=False,
-         source="Sahl, On Nativities Ch. 8.6, 1 (Saturn is Dykes' emendation, fn. 89)",
-         confidence="Dykes' emendation against Sahl's manuscripts (D-11, 2026-09-08)",
-         note='Projected from Saturn as printed: "taken by night and day from the Moon to the '
-              'degree of the eighth place, and cast out from Saturn." That "Saturn" is an '
-              'emendation -- fn. 89: "Reading with the Masha\'allah MSS for \'Ascendant\'. This '
-              'is the Lot as reported by Dorotheus (Carmen IV.3, 16)" -- so Sahl\'s own manuscripts '
-              'read the Ascendant, and Masha\'allah, Dorotheus and the edition read Saturn. Kept, '
-              'and labelled; the two projections differ in sign on about 93% of charts.'),
+         # This Lot's eighth degree is "by equation" (Gr. Intr. VIII.4, 226; VIII.6,
+         # 69): the calculated cusp, whatever the shared LOT_HOUSE_CUSP switch says
+         # for the Lots whose texts name no construction. Owner, 2026-09-11 (decision
+         # sheet row 4 / FINAL-A12); the whole-sign carried degree is the row below.
+         cusp_rule='quadrant cusp',
+         source="Gr. Intr. VIII.4, 226 with fn 128; VIII.6, 69; VIII.3, 11 and 14-15 (\"by equation\"); "
+                "Sahl, On Nativities 8.6, 1 as printed, Saturn being Dykes's reading for the MSS' \"Ascendant\" (fn 89)",
+         confidence="stated (Gr. Intr. VIII.4, 226; VIII.6, 69); Sahl 8.6, 1 as printed agrees, its manuscripts read "
+                    "the Ascendant (fn 89); the eighth's degree \"by equation\" is the Alcabitius cusp -- a declared "
+                    "convention, no text naming the algorithm (owner, 2026-09-11)",
+         note='"The Lot of death is taken by day and night from the degree of the Moon to the degree of the '
+              'eighth house by equation, and to it is added what Saturn has traveled in his sign, and it is '
+              'cast out from the beginning of Saturn\'s sign" (Gr. Intr. VIII.4, 226, Hermes\'s Lot, which 228 '
+              'calls "more correct" than the Persians\'; VIII.6, 69 the same) -- projection from Saturn\'s degree, '
+              'as VIII.3, 11 and fn 36 spell out. Sahl 8.6, 1 as printed: "taken by night and day from the Moon '
+              'to the degree of the eighth place, and cast out from Saturn"; that "Saturn" is Dykes\'s emendation '
+              'of Sahl\'s manuscripts -- fn 89: "Reading with the Masha\'allah MSS for \'Ascendant\'. This is the '
+              'Lot as reported by Dorotheus (Carmen IV.3, 16)" -- so the emendation is a fact about Sahl\'s '
+              'transmission, not about the rule. "By equation" is Abu Ma\'shar\'s own word for the cusp (VIII.3, '
+              '14: "by counting is one of the signs, and by equation ... another house"; 15\'s example cannot be '
+              'produced by a carried Ascendant degree); Sahl\'s "the degree of the eighth place" names no '
+              'construction. The Saturn and Ascendant projections differ in sign on about 93% of charts; the '
+              'cusp and the carried degree on about 12%.'),
+    dict(id='death_ws', topic='Death', name='Lot of death (variant: whole-sign eighth)',
+         start='Moon', end='cusp8', project='Saturn', reverse_at_night=False,
+         cusp_rule='whole-sign place',
+         source="Engine variant of the row above: the eighth's degree as the Ascendant's degree carried seven signs forward",
+         confidence="not prescribed in any supplied passage -- Sahl 8.6, 1 leaves the construction unspecified, "
+                    "Gr. Intr. VIII.4, 226 prescribes the cusp; shown for comparison (owner, 2026-09-11)",
+         note='Same arc and projection as the row above; only the eighth\'s degree differs. Kept as a labelled '
+              'variant so the earlier default (whole sign, a builder\'s reading of 2026-09-08) stays visible.'),
     dict(id='killer', topic='Death', name='Lot of the killer',
          start='lord1', end='Moon', project='Ascendant', reverse_at_night=True,
          source='Sahl, On Nativities Ch. 8.2, 17',
@@ -5110,7 +5137,7 @@ LOT_DEFINITIONS = [
          confidence='attested', note='"By day and by night from the Moon to Mars."'),
 ]
 
-def _lot_point(name, planetary_data, asc, cusps, sect, resolved):
+def _lot_point(name, planetary_data, asc, cusps, sect, resolved, cusp_rule=None):
     """Resolve one end of a Lot formula to a longitude, or None if the
     chart cannot supply it."""
     if name == 'Ascendant':
@@ -5127,7 +5154,12 @@ def _lot_point(name, planetary_data, asc, cusps, sect, resolved):
         return 19.0 if sect == 'Diurnal' else 33.0
     if name.startswith('cusp'):
         n = int(name[4:])
-        if LOT_HOUSE_CUSP == LOT_HOUSE_CUSP_OPTIONS[1]:
+        # The shared switch decides, unless the row declares its own rule (the
+        # Lot of death: "by equation", Gr. Intr. VIII.4, 226), which wins.
+        quadrant = LOT_HOUSE_CUSP == LOT_HOUSE_CUSP_OPTIONS[1]
+        if cusp_rule is not None:
+            quadrant = cusp_rule == LOT_HOUSE_CUSP_OPTIONS[1]
+        if quadrant:
             return cusps[n - 1]
         return (asc + 30.0 * (n - 1)) % 360.0
     if name.startswith('lord'):
@@ -5144,9 +5176,10 @@ def _lot_longitude(d, planetary_data, asc, cusps, sect, resolved):
     start, end = d['start'], d['end']
     if d['reverse_at_night'] and sect != 'Diurnal':
         start, end = end, start
-    a = _lot_point(start, planetary_data, asc, cusps, sect, resolved)
-    b = _lot_point(end, planetary_data, asc, cusps, sect, resolved)
-    p = _lot_point(d['project'], planetary_data, asc, cusps, sect, resolved)
+    rule = d.get('cusp_rule')
+    a = _lot_point(start, planetary_data, asc, cusps, sect, resolved, rule)
+    b = _lot_point(end, planetary_data, asc, cusps, sect, resolved, rule)
+    p = _lot_point(d['project'], planetary_data, asc, cusps, sect, resolved, rule)
     if a is None or b is None or p is None:
         return None
     return (p + b - a) % 360.0, start, end
@@ -5201,8 +5234,8 @@ def calculate_topical_lots(planetary_data, asc, cusps, sect):
             'Lord': SIGN_TO_DOMICILE.get(get_zodiac_sign(lon), '-'),
             'Formula': (f"{d['project']} + ({end} - {start})"
                         + ('' if not d['reverse_at_night'] else f'  [{arc} order]')
-                        + (f'  [{LOT_HOUSE_CUSP}]' if 'cusp' in (start, end, d['project'])
-                           or start.startswith('cusp') or end.startswith('cusp') else '')),
+                        + ((f"  [{d['cusp_rule']}, this Lot's own rule]" if d.get('cusp_rule') else f'  [{LOT_HOUSE_CUSP}]')
+                           if 'cusp' in (start, end, d['project']) or start.startswith('cusp') or end.startswith('cusp') else '')),
             'Standing': d['confidence'],
             'Source': d['source'],
             'Editor’s note': d['note'],
