@@ -105,7 +105,7 @@ PREFERENCES_PATH = _user_data_dir() / "preferences.json"
 READING_DEPTH_OPTIONS = ("Course text", "Course text and supplement")
 PREFERENCE_KEYS = (
     # doctrinal readings, each set on the page it affects
-    '_connection_rule', '_five_degree_all_cusps', '_eastern_rule', '_moon_rays_15', '_mars_west_18',
+    '_connection_rule', '_eastern_rule', '_moon_rays_15', '_mars_west_18',   # '_five_degree_all_cusps' retired 2026-09-11
     '_fitting_infortune', '_domain_rule', '_lot_house_cusp', '_pn4_monthly_turn', '_reading_depth',
     # display
     '_wheel_layout', '_chart_bounds', '_timing_bounds', '_wheel_order', '_timing_lots', '_timing_rays',
@@ -4440,39 +4440,50 @@ def get_house_number(longitude, cusps):
 # #44). Two independent witnesses to the same rule.
 FIVE_DEGREE_CARRYOVER = 5.0
 ANGLE_CUSP_INDICES = (0, 3, 6, 9)  # the four stakes, in swe.houses order
-# Whether the carryover applies at all twelve cusps or at the stakes only.
-# Sahl states it twice for the stakes (Aphorism #44, 88; On Nativities
-# 1.22, 9) and once for every house -- On Nativities 1.18, 19: "if there
-# were 5 degrees between a planet and the degree of the Ascendant from
-# behind it ... its strength will be in the Ascendant, and it will be fit
-# for releasing; AND LIKEWISE IN ALL OF THE HOUSES" (Dykes: "This is
-# Ptolemy's 5-degree rule"). The stakes reading stays the default because
-# two of the three statements give it; the switch flips the advancing
-# verdict of Sahl 83 for about 6% of placements, all succedent-to-cadent.
+# The carry-over applies at the FOUR STAKES ONLY. The owner's canon of
+# 2026-09-11 (OWNER_RULING_PLACES_VS_DYNAMICS): the five-degree rule is a
+# DYNAMICS rule and nothing else -- a planet that has passed one of the four
+# axial degrees (Asc, MC, Dsc, IC) by 0 to 5 degrees inclusive keeps the
+# stake's strength; it never applies at the eight intermediate cusps, never
+# moves a planet between whole-sign places, never touches aspects, and Lots
+# have no dynamic angularity. Sahl states it for the stakes twice (Aphorism
+# #44, 88; On Nativities 1.22, 9); 1.18, 19 -- "if there were 5 degrees
+# between a planet and the degree of the Ascendant from behind it ... its
+# strength will be in the Ascendant, and it will be fit for releasing; and
+# likewise in all of the houses" -- is READ AS THE FOUR STAKES, the course's
+# reading (Lesson 3 §4-5; Glossary s.v. Angles, succeedents, cadents), not
+# as an all-cusps form. The `five_degree_all_cusps` preference that offered
+# the all-cusps form was retired the same day; the constant stays for the
+# `angles_only` parameter's default and is no longer a reading.
 FIVE_DEGREE_ALL_CUSPS = False
 
 def get_effective_house(longitude, cusps, angles_only=None):
     """Quadrant house with the five-degree carryover applied: a planet
     within 5 degrees before a cusp is counted as already in that house.
 
-    MEASURED IN ECLIPTIC LONGITUDE, WHICH IS AN APPROXIMATION. Dykes' note
-    on Fifty Aphorisms #44 says the five degrees are reckoned "AS MEASURED
-    IN DIURNAL MOTION, hence Sahl's reference to the 'rear' of the stake" --
-    that is, in right ascension along the diurnal circle, not in zodiacal
-    degrees. The two coincide only near the equinoctial points and diverge
-    with latitude and with the obliquity of the rising sign. Implementing
-    it properly needs oblique-ascension geometry, which this file does not
-    yet have; until then this is a longitude proxy and is named as one
-    wherever it is reported. It affects Sahl 83 and Abu Ma'shar 39 and 42.
+    MEASURED IN ECLIPTIC LONGITUDE, BY CHOICE. Dykes' note on Fifty
+    Aphorisms #44 says the five degrees are reckoned "AS MEASURED IN
+    DIURNAL MOTION, hence Sahl's reference to the 'rear' of the stake" --
+    that is, along the diurnal circle, not in zodiacal degrees. The two
+    coincide only near the equinoctial points and diverge with latitude
+    and with the obliquity of the rising sign. The oblique-ascension
+    geometry exists in this file (_oblique_ascension, decision D-1) and is
+    not used here: the five degrees stay in longitude, a proxy named as
+    one wherever it is reported (the owner's ruling of 2026-09-11 keeps
+    the proxy and its label). It affects Sahl 83 and Abu Ma'shar 39 and 42,
+    and the releaser's places. Measured from the axial DEGREE, not "the
+    last five degrees of the preceding sign": Ascendant 10 Aries, planet 28
+    Pisces is 12 degrees away and not in the stake.
 
     Two of Sahl's three statements are about the stakes (Aphorism #44, 88;
     On Nativities 1.22, 9), and the transitions they describe (12th into
     1st, 3rd into 4th, 6th into 7th, 9th into 10th) are the cadent-to-
     angular ones, which is why the rule is phrased as not FALLING from the
     stake. The third, On Nativities 1.18, 19, ends "and likewise in all of
-    the houses". angles_only defaults to the stakes reading via
-    FIVE_DEGREE_ALL_CUSPS; the all-cusps reading is Sahl's too, not a later
-    generalisation, and is one switch away.
+    the houses": 1.18, 19's "likewise in all of the houses" is read as the
+    four stakes (the course's reading, adopted as canon 2026-09-11).
+    angles_only defaults to True via FIVE_DEGREE_ALL_CUSPS; the all-cusps
+    form is no longer offered as a reading.
 
     get_house_number() is deliberately left alone and still returns strict
     cusp membership. The two are separate facts and both are kept."""
@@ -5241,8 +5252,10 @@ NOT_IMPLEMENTED_COVERAGE = [
      "medicine' -- and a twelve-house scheme for war. Horary, and in tension with the fixed "
      "house meanings of Introduction Ch. 2, 4-29, which no text reconciles. Decision D-17 "
      "(2026-09-08): caveat only; this engine's house meanings are one topic's assignment."),
-    ("Gr. Intr. VII.6, 52", "Each planet's OWN nodes (\"their own Dragons\"). Only "
-     "the Moon's are computed."),
+    ("Gr. Intr. VII.6, 52", "Each planet's OWN nodes (\"their own Dragons\") are read since "
+     "2026-09-11 (order GAP-39) from the ephemeris's MEAN nodes within 12 degrees; only the "
+     "reading remains -- 52 does not say mean or true, and the chart's Moon's node is the TRUE "
+     "one (owner, 2026-09-07), so the two node kinds differ."),
     ("Gr. Intr. VII.3, 2 / VI.26, 3", "The ADVANCING AND WITHDRAWING QUADRANTS as a "
      "condition in its own right (ASC to MC and DSC to IC advancing: primary motion "
      "toward the meridian). Read from the margin of the Figure 90 reshoot and Dykes' "
@@ -6547,12 +6560,18 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
     speed. And 46's "beginning of easternization" is VII.2, 40-41's 12
     degrees for the inferiors, not a flat 15.
 
-    Still not implemented, for want of a source in hand rather than by
-    choice: the masculine and feminine DEGREES that 13 and 36 name
-    alongside the signs (the table is now in the corpus as Fig. 59, V.19,
-    but is not read here), and
-    52's "their own Dragons" -- each planet's own nodes, where only the
-    Moon's are computed here."""
+    Not implemented BY DECISION D-19 (2026-09-08; kept by the owner
+    2026-09-11, decision sheet row 15): the masculine and feminine DEGREES
+    that 13 and 36 name alongside the signs -- the table is in the corpus
+    as Gr. Intr. V.19, Figure 59 (V.19, 7 with fn 108), and D-19's ground is
+    that it disagrees with the sign's gender on half the zodiac and the
+    three schemes agree on a third of it, so reading "or male degrees"
+    into 13 and 36 would widen a vote the author does not commit to. (An
+    earlier line here said "for want of a source in hand rather than by
+    choice", which contradicted NOT_IMPLEMENTED_COVERAGE's D-19 entry.)
+    52's "their own Dragons" -- each planet's own nodes -- IS read below
+    since 2026-09-11 (order GAP-39), from the ephemeris's MEAN nodes: 52
+    does not say mean or true, a reading declared on the label."""
     with doctrine(ABU_MASHAR):
         rows = _pairwise_configurations(planetary_data)
         reception_rows = evaluate_reception(planetary_data, sect, sim)
@@ -7117,6 +7136,25 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
                     negative.append(f'With the {node_name} at its worst, {polarity} (52-55)')
                 else:
                     negative.append(f'With the {node_name}, {polarity} (52-55)')
+            # 52's FIRST clause: "Or they are with the Heads of their OWN Dragons,
+            # or with their Tails ... and between them are 12 degrees or less" --
+            # each planet's own nodes, read from the ephemeris at the moment
+            # (swe.nod_aps_ut). MEAN nodes: 52 does not say mean or true, a
+            # reading said on the label; the Moon's node above is the chart's
+            # TRUE node (owner, 2026-09-07). The luminaries have no nodes of
+            # their own in this sense. Order GAP-39, 2026-09-11.
+            if jd is not None and planet in PLANET_SWE_IDS and planet not in ('Sun', 'Moon'):
+                try:
+                    own = swe.nod_aps_ut(jd, PLANET_SWE_IDS[planet], swe.NODBIT_MEAN)
+                    own_head, own_tail = own[0][0] % 360.0, own[1][0] % 360.0
+                except Exception:
+                    own_head = own_tail = None
+                if own_head is not None:
+                    d_head = abs(((lon - own_head + 180) % 360) - 180)
+                    d_tail = abs(((lon - own_tail + 180) % 360) - 180)
+                    if min(d_head, d_tail) <= 12.0:
+                        negative.append(f"With its own {'Head' if d_head <= d_tail else 'Tail'} within 12 degrees "
+                                        f"(52, \"their own Dragons\"; the mean node, a reading -- 52 does not say mean or true)")
 
             # --- Enclosure by the infortunes (VII.6, 56-62) -------------------
             # Abu Ma'shar's OWN two types, not Sahl's borrowed: see
@@ -11795,7 +11833,6 @@ if st.sidebar.button("\U0001F4BE Save this chart"):
         st.sidebar.warning("Enter a name before saving.")
 
 CONNECTION_PROFILE = _reading("connection_rule", "_connection_rule", "Sahl")
-FIVE_DEGREE_ALL_CUSPS = _reading("five_degree_all_cusps", "_five_degree_all_cusps", False)
 EASTERN_RULE = _reading("eastern_rule", "_eastern_rule", EASTERN_RULE_OPTIONS[0])
 MOON_RAYS_ORB = 15.0 if _reading("moon_rays_15", "_moon_rays_15", False) else 12.0
 MARS_WEST_RAYS_18 = bool(_reading("mars_west_18", "_mars_west_18", False))
@@ -11817,7 +11854,6 @@ READING_DEPTH = _reading("reading_depth", "_reading_depth", READING_DEPTH_OPTION
 # and its reset. (label, widget key, store key, default, page it is set on)
 READINGS_REGISTRY = (
     ("Connection test used in the shared tables", "connection_rule", "_connection_rule", "Sahl", "Configurations"),
-    ("Five-degree carryover at all twelve cusps", "five_degree_all_cusps", "_five_degree_all_cusps", False, "Configurations"),
     ("VII.6, 27/45 eastern/western relative to the Sun", "eastern_rule", "_eastern_rule", EASTERN_RULE_OPTIONS[0], "Configurations"),
     ("Fitting infortune (Choices Ch. 1, 12)", "fitting_infortune", "_fitting_infortune", False, "Configurations"),
     ("Moon under the rays to 15 degrees", "moon_rays_15", "_moon_rays_15", False, "Chart"),
@@ -12562,10 +12598,6 @@ if location_query and lat is not None and lon is not None:
             def sahl_strength():
                 with st.container(border=True):
                     st.markdown("**Strength and weakness** — Ch.3, 77-112")
-                    _reading_checkbox("Five-degree carryover at all twelve cusps", "five_degree_all_cusps", "_five_degree_all_cusps",
-                                      help="Sahl states the rule for the stakes twice (Aphorism #44, 88; On Nativities 1.22, 9) "
-                                           "and once for every house (On Nativities 1.18, 19). Off = stakes only. "
-                                           "Affects: Strength of the Planets, testimony 83. Full text on the Sources page.")
                     _tick_grid(_gap, 'Strength of the Planets', 'Sahl, The Introduction Ch.3, 78-88', strength_data,
                                'Strength Testimonies', STRENGTH_COLUMNS,
                                glance="The eleven testimonies of a planet's strength at the time of judgment (Sahl, The Introduction Ch.3, 78-88), one column per testimony; the answer key under the grid spells each one out in words.",
@@ -13790,11 +13822,11 @@ if location_query and lat is not None and lon is not None:
             # text of each, as it stood in the sidebar, is here.
             st.subheader("Configurable readings")
             st.markdown(
-                "**Five-degree carryover at all twelve cusps** (Configurations page, Strength of the Planets) -- "
-                "Sahl states the rule for the stakes twice (Aphorism #44, 88; On Nativities 1.22, 9) "
-                "and once for every house (On Nativities 1.18, 19: 'and likewise in all of the houses'). "
-                "Off = stakes only. Flips the Sahl 83 verdict for about 6% of placements. "
-                "Affects: Strength of the Planets, testimony 83.\n\n"
+                "**Five-degree carryover at all twelve cusps** -- RETIRED 2026-09-11 (owner's ruling, "
+                "OWNER_RULING_PLACES_VS_DYNAMICS): the five-degree rule is a dynamics rule at the four axial "
+                "degrees only and has no all-cusps form under the canon; On Nativities 1.18, 19's 'and likewise "
+                "in all of the houses' is read as the four stakes (the course's reading, Lesson 3 §4-5). The "
+                "switch is gone; a stored preference for it is ignored.\n\n"
                 "**VII.6, 27/45 'eastern/western relative to the Sun'** (Configurations page, Planetary Condition) -- "
                 "'hemisphere': the whole half, excluding the rays (VII.2, 2; VII.6, 34). 'VII.2 band': only "
                 "the easternizing band 15/18 to 90 degrees (VII.2, 14-21) and the westernizing band 90 down to "

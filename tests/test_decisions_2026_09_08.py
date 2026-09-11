@@ -560,3 +560,42 @@ def test_d22_leaves_non_kind_three_receptions_alone(engine):
     assert ('Venus', 'Jupiter') in _reception_pairs(engine, '1240-01-18')
     assert ('Moon', 'Venus') in _reception_pairs(engine, '1240-10-05')
     assert ('Moon', 'Venus') not in _kind_pairs(engine, '1240-10-05', 'III ')
+
+
+# --- The five-degree switch retired (owner's ruling 2026-09-11, sheet row 3) ------------
+
+def test_five_degree_all_cusps_is_no_longer_a_reading(engine):
+    """The five-degree rule is a dynamics rule at the four stakes only; the
+    all-cusps form has no place under the canon and its switch is gone. A
+    stored preference for it is ignored on read."""
+    assert engine["FIVE_DEGREE_ALL_CUSPS"] is False
+    assert "_five_degree_all_cusps" not in engine["PREFERENCE_KEYS"]
+    from conftest import ui_source
+    assert "five_degree_all_cusps" not in ui_source().replace("'_five_degree_all_cusps' retired", "")
+    cusps = tuple(range(0, 360, 30))
+    assert engine["get_effective_house"](58.0, cusps) == 2            # 2 degrees before the third cusp: no carry-over
+    assert engine["get_effective_house"](88.0, cusps) == 4            # 2 degrees before the fourth's cusp (a stake): carried
+
+
+# --- GAP-39 (sheet row 15): VII.6, 52's own nodes read; D-19 kept and cited -----------
+
+def test_vii_6_52_flags_a_planet_within_twelve_degrees_of_its_own_node(engine):
+    """Gr. Intr. VII.6, 52: "Or they are with the Heads of their own Dragons,
+    or with their Tails ... and between them are 12 degrees or less". Mars's
+    mean ascending node at J2000 is near 7.7 Aries: Mars set at 10 Aries is
+    flagged, with the mean/true reading named; Saturn, far from his own
+    node (near 113 degrees), is not. The Moon's-node clause is untouched."""
+    from datetime import datetime
+    chart = engine["calculate_traditional_chart"](datetime(2000, 1, 1, 12), 0.0, 0.0)
+    p = chart["planetary_data"]
+    p["Mars"]["longitude"] = 10.0
+    p["North Node"]["longitude"] = 200.0            # the Moon's node well away from both
+    ess = engine["evaluate_essential_dignities"](p, chart["sect"])
+    acc = engine["evaluate_accidental_dignities"](p, chart["houses"], chart["sect"], chart["julian_day"])
+    out = engine["evaluate_abu_mashar_condition"](p, chart["houses"], chart["sect"], ess, acc,
+                                                  chart["julian_day"], chart["ascendant"])
+    mars = [l for l in out["Mars"]["Negative Labels"] if "its own" in l]
+    assert mars and "52" in mars[0] and "mean node" in mars[0] and "does not say mean or true" in mars[0], mars
+    assert not [l for l in out["Saturn"]["Negative Labels"] if "its own" in l]
+    doc = engine["evaluate_abu_mashar_condition"].__doc__
+    assert "Not implemented BY DECISION D-19" in doc and "V.19, 7" in doc
