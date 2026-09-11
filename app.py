@@ -9498,7 +9498,7 @@ def sahl_short_life_testimonies(chart_data, lot_fortune_lon):
                  'Counted': 'no -- "inverts it" (fn 127)', 'Source': '1.18, 6'})
     retro_partners = [q for q in PN4_SEVEN if q in p and q != lord_asc and p[q].get('speed_in_lon', 1.0) < 0 and connected(lord_asc, q)] if lord_asc in p else []
     rows.append({'Testimony': '7. The lord of the Ascendant connects with a <retrograde> planet, unless it receives it',
-                 'Met': 'yes' if retro_partners else 'no', 'Fact': ', '.join(retro_partners) or 'none' + ' (reception not tested here)',
+                 'Met': 'yes' if retro_partners else 'no', 'Fact': (', '.join(retro_partners) or 'none') + ' (reception not tested here)',
                  'Counted': 'no -- "equivalent" (fn 129)', 'Source': '1.18, 7'})
     count = sum(1 for r in rows[:4] if r['Met'] == 'yes')
     sentence = {0: 'no testimony of a short upbringing (1.18, 1-4)',

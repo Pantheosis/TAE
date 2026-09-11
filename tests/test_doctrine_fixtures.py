@@ -3534,6 +3534,17 @@ def test_short_life_testimonies_count_four_and_quote_the_sentence(engine):
     assert out["count"] == sum(1 for r in out["rows"][:4] if r["Met"] == "yes")
     assert all(r["Counted"].startswith("no") for r in out["rows"][4:])
     assert ("1.18, 8" in out["sentence"]) == (out["count"] == 1)
+    # 7 with no retrograde partner: the caveat is printed after "none"
+    assert out["rows"][6]["Met"] == "no" and out["rows"][6]["Fact"] == "none (reception not tested here)"
+    # 7 with one: Saturn at 29 59 Gemini, retrograde, the Sun (lord of the Leo
+    # Ascendant, 29 56 Pisces) applying to his square -- the caveat must stay
+    # on the row where it matters (cloud review B1: the precedence bug had
+    # it print only when there were NO partners)
+    import copy
+    chart2 = copy.deepcopy(chart)
+    chart2["planetary_data"]["Saturn"].update(longitude=89.99, speed_in_lon=-0.05)
+    row7 = engine["sahl_short_life_testimonies"](chart2, chart2["lot_of_fortune"])["rows"][6]
+    assert row7["Met"] == "yes" and row7["Fact"] == "Saturn (reception not tested here)"
 
 
 # --- PN4R-4n-7: the fixed stars of I.6, 7 and III.8, 9 -------------------------------------
