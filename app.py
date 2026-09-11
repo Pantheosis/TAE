@@ -8008,10 +8008,11 @@ PN4_QUADRUPLICITY = {
 # sixtieth of a second of arc -- is the rung that closes it, because 10"
 # is a day and 10"/24 = 25''' exactly.
 #
-# The corpus reads `every 25" one hour`, which would make an hour two and
-# a half days long. The page prints 25''' (photo-verified, p. 288:
-# PN4_READTHROUGH_FINDINGS_2026-09-10.md, D-07). The arithmetic settles it
-# without the photograph, and test_pn4_timing.py asserts both halves.
+# The corpus READ `every 25" one hour` until 2026-09-11, which would make
+# an hour two and a half days long; it now reads 25''' as the page prints
+# (photo-verified, p. 288: PN4_READTHROUGH_FINDINGS_2026-09-10.md, D-07;
+# repaired in PN4_REPAIRS_2026-09-11.md). The arithmetic settles it without
+# the photograph, and the tests assert both halves.
 PN4_IDEALISED_DAYS_PER_YEAR = 360.0
 PN4_IDEALISED_DAYS_PER_MONTH = 30.0
 
@@ -14126,8 +14127,9 @@ if location_query and lat is not None and lon is not None:
                     st.dataframe(pd.DataFrame(PN4_LADDER_ROWS), hide_index=True, width='stretch')
                     st.caption("An idealised year of twelve 30-day months (fn 17). The bottom rung is **25 thirds**, a "
                                "sixtieth of a second of arc: 10″ is a day, so an hour is 10″/24 = 25‴ exactly. "
-                               "The OCR'd corpus reads 25″, which would make an hour two and a half days long; the "
-                               "printed page has 25‴ (verified against the photograph of p. 288).")
+                               "The OCR'd corpus read 25″ until 2026-09-11, which would make an hour two and a half days "
+                               "long; the printed page has 25‴ (verified against the photograph of p. 288) and the corpus "
+                               "now reads it (PN4_REPAIRS_2026-09-11.md, D-07).")
 
                 st.subheader("The *fardar*",
                              help="IV.1, 2-4: the years are Sun 10, Venus 8, Mercury 13, Moon 9, Saturn 11, Jupiter 12, "
@@ -14231,13 +14233,14 @@ if location_query and lat is not None and lon is not None:
                     "*Revolutions* deferral, and was decided \"for implementation, yes; for reading, no\" while "
                     "PN IV was unread. PN IV has now been read, and the deferral it named is lifted for everything "
                     "above.\n\n"
-                    "**Two readings on this page come from the photograph rather than the OCR'd corpus.** "
-                    "(1) The bottom rung of the rate ladder is **25‴**, twenty-five thirds; the corpus reads "
+                    "**Two readings on this page came from the photograph rather than the OCR'd corpus, and the corpus "
+                    "was repaired to match on 2026-09-11 (`PN4_REPAIRS_2026-09-11.md`).** "
+                    "(1) The bottom rung of the rate ladder is **25‴**, twenty-five thirds; the corpus read "
                     "25″, which would make an hour two and a half days long, and the arithmetic settles it "
-                    "independently of the page. (2) The *fardar* order is taken from the prose of **IV.1, 2-4**, "
-                    "which gives it complete; the corpus has dropped fifteen of the eighteen planet glyphs from "
-                    "Figure 43 (p. 116), so the figure itself is not built from. Both are recorded in "
-                    "`PN4_READTHROUGH_FINDINGS_2026-09-10.md` (D-07, D-05).\n\n"
+                    "independently of the page; the corpus now reads 25‴. (2) The *fardar* order is taken from the "
+                    "prose of **IV.1, 2-4**, which gives it complete; the corpus's Figure 43 (p. 116) had dropped fifteen "
+                    "of its eighteen planet glyphs and is complete again, and the prose is still what is built from. "
+                    "Both are recorded in `PN4_READTHROUGH_FINDINGS_2026-09-10.md` (D-07, D-05).\n\n"
                     "**One printed error is deliberately not reproduced.** Intro Sect. 2 (p. 7) puts the monthly "
                     "revolutions at 12° **23′** when the natal Sun is at 12° **22′**. The page "
                     "genuinely prints that, and it is contradicted by the rule in its own sentence, by IX.1, 23, by "
