@@ -3371,3 +3371,15 @@ def test_small_and_mighty_days_take_any_start_point(engine):
     assert moon[-1]["to"] == pytest.approx(asc[-1]["to"])
     mighty = engine["pn4_mighty_days"](sr, engine["pn4_profect"](200.0, 3), "the revolution's Moon, profected")
     assert mighty[0]["from_lon"] == pytest.approx(290.0) and mighty[-1]["to"] == pytest.approx(365.25)
+
+
+# --- GAP-31: IX.9, 11-13 as facts; 13's place half stopped on the unit -----------------------
+
+def test_governor_condition_rows_read_essence_and_sign_and_stop_on_the_place_unit(engine):
+    root, sr, _ = _two_charts(engine, natal=dict(Jupiter=250.0, Sun=100.0), rev=dict(Jupiter=255.0, Sun=110.0))
+    rows = engine["pn4_governor_condition"]("Jupiter", root, sr)
+    assert [r["Source"] for r in rows] == ["IX.9, 11", "IX.9, 12", "IX.9, 13"]
+    assert "NOT JUDGED" in rows[0]["Criteria"] and "by the ecliptic proxy" in rows[0]["Criteria"]
+    assert "testimony in it met (house" in rows[1]["Criteria"]                    # Jupiter in Sagittarius, his house, both charts
+    assert rows[2]["Met"].startswith("not judged") and "unit awaits the owner" in rows[2]["Criteria"]
+    assert engine["pn4_governor_condition"](None, root, sr) == []

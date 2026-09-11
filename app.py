@@ -10076,6 +10076,93 @@ def pn4_governor(year_lord, distributor, partner, distribution_note, fardar_lord
     }
     return rows, summary
 
+def pn4_governor_condition(governor, chart_data, sr):
+    """IX.9, 11-13, the governor's condition, as FACTS with the conclusion
+    quoted (order GAP-31). 11, "in its essence": "the three superior ones
+    were easternizing from the Sun, in their halb, not retrograde, and not
+    made unfortunate, and the inferior ones westernizing from him, in the
+    same condition as well, and they are in their halb" -- read in the root
+    and the revolution; "made unfortunate" is a judgment (II.4, 2 says what
+    it consists of) and is shown as not judged, the infortunes looking at
+    it listed as facts. 12, "in terms of its sign": "the sign harmonized
+    with it by nature, or it had testimony in it" -- the first half is not
+    read, the second is a dignity of its own at its degree. 13, "in terms of
+    the rotation of the circle (and that is if it was in a stake or in what
+    follows a stake) as well as in its sign": THE PLACE HALF IS NOT APPLIED
+    -- the work order counts it by whole-sign place, the canon's dispatch
+    (strength language: "rotation of the circle", "rank, power") says the
+    divisions, and that conflict is the one class of question left to the
+    owner; both readings are printed, neither judged. halb: the diurnal
+    planets above the earth by day and below by night, the nocturnal the
+    reverse, Mercury by his phase -- by altitude where the horizon is
+    known, else by the ecliptic proxy (said in the row)."""
+    if not governor or governor not in PN4_SEVEN:
+        return []
+    superior = governor in ('Saturn', 'Jupiter', 'Mars')
+    rows = []
+
+    def facts(chart, label):
+        data = chart['planetary_data']
+        row = data.get(governor)
+        if not row:
+            return None
+        lon = row['longitude'] % 360.0
+        phase, side, _el = solar_phase(governor, lon, data['Sun']['longitude'], row.get('speed_in_lon'))
+        retro = row.get('speed_in_lon', 1.0) < 0
+        if chart.get('armc') is not None and chart.get('geo_lat') is not None and chart.get('obliquity') is not None:
+            above = _sin_altitude(lon, row.get('latitude', 0.0), row.get('distance', 1.0), chart['obliquity'], chart['armc'], chart['geo_lat']) > 0
+            how = 'by altitude'
+        else:
+            above = (lon - chart['ascendant']) % 360.0 > 180.0
+            how = 'by the ecliptic proxy'
+        day = chart['sect'] == 'Diurnal'
+        if governor == 'Mercury':
+            diurnal = side == 'eastern'
+        else:
+            diurnal = governor in DIURNAL_SECT_PLANETS
+        halb = (above if day else not above) if diurnal else (not above if day else above)
+        infortunes = [f"{p} by {a}" for p, a, _l, _d in _pn4_looks_at_sign(data, get_zodiac_sign(lon)) if p in INFORTUNES and p != governor]
+        return {'label': label, 'side': side or '-', 'retro': retro, 'halb': halb, 'how': how, 'infortunes': infortunes,
+                'sign': get_zodiac_sign(lon), 'lon': lon}
+
+    root, rev = facts(chart_data, 'root'), facts(sr, 'revolution')
+    if root is None or rev is None:
+        return []
+    want_side = 'eastern' if superior else 'western'
+    for f in (root, rev):
+        f['side_ok'] = f['side'] == want_side
+    essence_met = all(f['side_ok'] and f['halb'] and not f['retro'] for f in (root, rev))
+    rows.append({'Test': 'IX.9, 11: suitable in its essence',
+                 'Criteria': '; '.join(f"{f['label']}: {'eastern' if superior else 'western'} of the Sun {'met' if f['side_ok'] else 'not met'} ({f['side']}); "
+                                       f"in its halb {'met' if f['halb'] else 'not met'} ({f['how']}); not retrograde {'not met' if f['retro'] else 'met'}; "
+                                       f"not made unfortunate: NOT JUDGED (infortunes looking: {', '.join(f['infortunes']) or 'none'})" for f in (root, rev)),
+                 'Met': 'yes, on the judged criteria' if essence_met else 'no',
+                 'Conclusion (quoted)': '"it indicates strength in the soul, thought, cleverness, and excellence in judgment, and the goodness of [his] character"',
+                 'Source': 'IX.9, 11'})
+    own = []
+    for f in (root, rev):
+        r_ = get_essential_rulers(f['lon'])
+        dign = [k for k, v in (('house', r_['domicile']), ('exaltation', r_['exaltation']),
+                               ('triplicity', r_['triplicity_day'] if (chart_data['sect'] == 'Diurnal') else r_['triplicity_night']),
+                               ('bound', r_['term']), ('face', r_['face'])) if v == governor]
+        f['testimony'] = dign
+        own.append(bool(dign))
+    rows.append({'Test': 'IX.9, 12: suitable in terms of its sign',
+                 'Criteria': '; '.join(f"{f['label']}: in {f['sign']}, testimony in it {'met' if f['testimony'] else 'not met'} "
+                                       f"({', '.join(f['testimony']) or 'none of its dignities'}); harmonized by nature: NOT READ" for f in (root, rev)),
+                 'Met': 'yes, on the judged criteria' if all(own) else 'no',
+                 'Conclusion (quoted)': '"it indicates the strength of the body, and a suitable condition in it"', 'Source': 'IX.9, 12'})
+    wsh = get_wsh_house(rev['lon'], sr['ascendant'])
+    div = get_effective_house(rev['lon'], sr['houses']) if sr.get('houses') else None
+    rows.append({'Test': 'IX.9, 13: suitable in terms of the rotation of the circle, and in its sign',
+                 'Criteria': (f"place half NOT APPLIED -- unit awaits the owner: the work order counts \"in a stake or in what follows a "
+                              f"stake\" by whole-sign place from the revolution's Ascendant (here {wsh}), the canon's dispatch for "
+                              f"strength language (\"rotation of the circle\", \"rank, power\") says the Alcabitius division "
+                              f"(here {div if div is not None else '-'}); sign half: {'met' if own[1] else 'not met'} (12, in the revolution)"),
+                 'Met': 'not judged (place half stopped)',
+                 'Conclusion (quoted)': '"it indicates a suitability of condition in rank, power, and class"', 'Source': 'IX.9, 13'})
+    return rows
+
 def pn4_first_month_governor(natal_ascendant, natal_fortune, year_lon, sr_ascendant, sr_fortune):
     """IX.2, 4: the five conditions, one by one, and whether all hold."""
     year_sign = get_zodiac_sign(year_lon)
@@ -12203,6 +12290,10 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'standin_moon': standin_moon,
         'angle_planets': angle_planets,
         'turning_partner': sahl_turning_reaches_partner(segments, age, ascendant, chart_data['planetary_data']),
+        'governor_condition': pn4_governor_condition((pn4_governor(
+            year['lord'], (current or {}).get('distributor'), (current or {}).get('partner'), '', (fardar or {}).get('lord'), orb,
+            sr['ascendant'], pn4_moon_testimony(moon), moon['void'], (releaser_stand or {}).get('distributor'),
+            (releaser_stand or {}).get('partner'), releaser_note)[1]['primary'] or [None])[0], chart_data, sr),
         'hm_turning': sahl_house_master_turning(house_master, chart_data['planetary_data']) if house_master else [],
         # FINAL-A1 / sheet row 1: the house-master's years from 1.20, 7-34, by the division.
         'hm_years': (sahl_house_master_years(house_master, chart_data['planetary_data'], chart_data['houses'], chart_data['sect'],
@@ -13967,6 +14058,11 @@ if location_query and lat is not None and lon is not None:
                 gov_rows, gov = pn4['governor']
                 st.markdown(f"**IX.9:** {gov['text']}")
                 st.dataframe(pd.DataFrame(gov_rows), hide_index=True, width='stretch', height=_rows_height(8))
+                if pn4['governor_condition']:
+                    st.markdown(f"**IX.9, 11-13, the condition of the primary planet ({gov['primary'][0]}), as facts** -- the "
+                                "conclusions quoted, not pronounced; 13's place half is NOT applied: its unit (whole-sign place "
+                                "in the work order; the division under the canon's dispatch for strength language) awaits the owner.")
+                    st.dataframe(pd.DataFrame(pn4['governor_condition']), hide_index=True, width='stretch', height=_rows_height(3))
                 fm_rows, fm_verdict = pn4['first_month_governor']
                 st.markdown(f"**IX.2, 4:** {fm_verdict}")
                 st.dataframe(pd.DataFrame(fm_rows), hide_index=True, width='stretch', height=_rows_height(5))
@@ -13980,7 +14076,8 @@ if location_query and lat is not None and lon is not None:
                            "\"The first lord\" of the revolution's Ascendant is read as its domicile lord (fn 324). The "
                            "IX.2 test is strict and most years fail it, so its five conditions are shown one by one; "
                            "Dykes' fn 39 (age 39, everything in Cancer, the Moon) is the case it is checked against. "
-                           "IX.9, 11-13 and IX.2, 8-11, the judgments of the governor's condition, are not built.")
+                           "IX.9, 11-13 are shown as facts above (12's 'harmonized by nature' not read; 13's place half stopped on its "
+                           "unit, for the owner); IX.2, 8-11, the delineations, are not built.")
 
                 st.subheader("The Moon's connections in her sign, and the portions of the year (II.22)",
                              help="II.22, 1: \"the planet which the Moon connects with, so long as she is in her [current] "
