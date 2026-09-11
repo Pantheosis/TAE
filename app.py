@@ -5453,10 +5453,15 @@ WELLED_DEGREES = {
 # Capricorn" (Introduction Ch. 1, 18; On Nativities 1.38, 8 the same), and
 # "a place called the 'burned place,' and it is the end of Libra and the
 # beginning of Scorpio" (Introduction Ch. 1, 19; On Nativities 1.38, 9).
-# Sahl gives the burned place NO degrees; the 15 Libra-15 Scorpio span
-# this app once flagged is in no source in hand, and the 19
-# Libra-3 Scorpio span is Abu Ma'shar's own (VII.6, 40, HARSH_BURNED_PATH
-# below, used only where the table is his). Decision D-5, 2026-09-08.
+# Sahl gives the burned place NO degrees. The 15 Libra-15 Scorpio span this
+# app once flagged is the definition "often" given (Dykes, Carmen p. 258 fn
+# 104; the Course Glossary) and is not applied to Sahl; the 19 Libra-3
+# Scorpio span is Abu Ma'shar's own harsher band (VII.6, 40,
+# HARSH_BURNED_PATH below), applied where the table is his and BORROWED,
+# labelled as borrowed, for Sahl's condition 110 (Introduction 3, 110: "the
+# end of Libra and the beginning of Scorpio"). Decision D-5, 2026-09-08, as
+# implemented by the owner's sheet row 9 (2026-09-11); comment rewritten
+# after the build check (D5).
 DARK_SIGNS = {'Libra', 'Capricorn'}
 BURNED_PLACE_SIGNS = ('Libra', 'Scorpio')
 
@@ -7660,9 +7665,13 @@ def evaluate_corruption_of_the_moon(planetary_data, ascendant_lon, sect):
         # 15 Scorpio is the definition "often" given (Dykes, Carmen p. 258 fn
         # 104; the Course Glossary); Dorotheus's own (Carmen p. 258, 6: the
         # equinoctial point taken southward) is a different construction.
+        # Both readings are ON THE PAGE, in the clause (review D5).
         if HARSH_BURNED_PATH[0] <= lon < HARSH_BURNED_PATH[1]:
             hit(110, 'In the burned path, "the end of Libra and the beginning of Scorpio" -- Sahl gives no degrees; '
-                     "the 19 Libra-3 Scorpio span is Gr. Intr. VII.6, 40's harsher band (fn 120), borrowed")
+                     "the 19 Libra-3 Scorpio span is Gr. Intr. VII.6, 40's harsher band (fn 120), borrowed. "
+                     'READINGS, not tests: 15 Libra-15 Scorpio is the definition "often" given (Dykes, Carmen p. 258 fn 104; '
+                     "the Course Glossary), so it is not true that no source in hand states it; Dorotheus's own definition "
+                     "(Carmen p. 258, 6: the equinoctial point taken southward) is a different construction")
 
         # [9] (111) Wild -- empty of course, not connecting with any planet.
         # Sahl's own present-tense definition (not Abu Ma'shar's later,

@@ -2910,6 +2910,9 @@ def test_moon_corruption_110_keeps_the_borrowed_19_libra_3_scorpio_span_and_says
     assert t["matched"] is fires
     if fires:
         assert any("VII.6, 40" in str(c) and "no degrees" in str(c) for c in t["clauses"]), t["clauses"]
+        # the two readings are on the page, not only in a comment (review D5, 2026-09-11)
+        clause = next(str(c) for c in t["clauses"] if "VII.6, 40" in str(c))
+        assert "Carmen p. 258 fn 104" in clause and "Course Glossary" in clause and "different construction" in clause
 
 
 # --- REL-2-6 (sheet row 12): 1.15, 16's "good places" are Sahl's seven praised places, by whole-sign place ---
