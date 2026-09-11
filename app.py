@@ -167,22 +167,180 @@ def _sin_altitude(ecl_lon, ecl_lat, distance, obliquity, armc, geo_lat):
     p, d, h = map(math.radians, (geo_lat, decl, armc - ra))
     return math.sin(p) * math.sin(d) + math.cos(p) * math.cos(d) * math.cos(h)
 
+# --- The civil calendar ---------------------------------------------------
+# ONE policy, in one place. The digits of a civil date are a JULIAN-calendar
+# date before 1582-10-15 and a Gregorian one from that day on, as Solar Fire
+# and astro.com read them; the Swiss Ephemeris manual (s. 9.1) keeps the two
+# flags apart for exactly this reason. Using the wrong flag mis-dates a
+# historical chart by days (seven in the 1200s), which the Moon turns into
+# tens of degrees.
+#
+# Python's datetime is proleptic Gregorian and CANNOT HOLD a Julian-only day:
+# 1300-02-29 exists in the Julian calendar and not in the Gregorian. So the
+# carrier of a civil date in this file is CivilDate / CivilMoment below, and a
+# shift by a UTC offset is done on the Julian Day, never by datetime
+# arithmetic. The earlier adapter subtracted the offset with datetime,
+# producing Gregorian components, and then read those digits back as Julian:
+# local Julian 1300-03-01 00:30 at +02:00 came out a full day wrong (Astra
+# audit 2026-09-11, F01). Rounding a moment to the second is done on the JD
+# too, so that a carry across midnight is a date carry, not a clamp.
+PN4_GREGORIAN_REFORM_JD = 2299160.5     # 1582-10-15 00:00 UT, the first Gregorian day
+_MONTH_ABBR = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
+_MONTH_NAME = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+               'September', 'October', 'November', 'December')
+
+def civil_calendar(year, month, day):
+    """swe.JUL_CAL or swe.GREG_CAL for a civil date's digits, by the policy above."""
+    return swe.GREG_CAL if (int(year), int(month), int(day)) >= (1582, 10, 15) else swe.JUL_CAL
+
+def civil_is_valid(year, month, day):
+    """Whether the digits name a day in the calendar the policy assigns them:
+    1300-02-29 is valid (Julian), 1900-02-29 is not (Gregorian)."""
+    year, month, day = int(year), int(month), int(day)
+    if not (1 <= year <= 9999 and 1 <= month <= 12 and 1 <= day <= 31):
+        return False
+    cal = civil_calendar(year, month, day)
+    y, m, d, _h = swe.revjul(swe.julday(year, month, day, 0.0, cal), cal)
+    return (int(y), int(m), int(d)) == (year, month, day)
+
+def civil_to_jd(year, month, day, hour=0.0):
+    """The Julian Day of a civil moment (UT hour, decimal), calendar by policy."""
+    return swe.julday(int(year), int(month), int(day), float(hour), civil_calendar(year, month, day))
+
+def civil_local_to_jd_ut(year, month, day, hour_local, utc_offset_hours):
+    """A LOCAL civil moment to UT as a Julian Day: the calendar is decided by
+    the local digits, the offset (east positive, hours) is subtracted on the
+    JD. This is the sidebar's adapter for LMT and manual offsets."""
+    return civil_to_jd(year, month, day, hour_local) - float(utc_offset_hours) / 24.0
+
+def _format_civil(c, spec):
+    """strftime's common directives for CivilDate / CivilMoment: %Y %m %d %b
+    %B %H %M %S %%. Anything else is left in place."""
+    if not spec:
+        return c.isoformat()
+    out, i = [], 0
+    while i < len(spec):
+        ch = spec[i]
+        if ch == '%' and i + 1 < len(spec):
+            d = spec[i + 1]
+            rep = {'Y': f"{c.year:04d}", 'm': f"{c.month:02d}", 'd': f"{c.day:02d}",
+                   'b': _MONTH_ABBR[c.month - 1], 'B': _MONTH_NAME[c.month - 1],
+                   'H': f"{getattr(c, 'hour', 0):02d}", 'M': f"{getattr(c, 'minute', 0):02d}",
+                   'S': f"{getattr(c, 'second', 0):02d}", '%': '%'}.get(d)
+            if rep is not None:
+                out.append(rep)
+                i += 2
+                continue
+        out.append(ch)
+        i += 1
+    return ''.join(out)
+
+class CivilDate:
+    """A civil date as digits, read in the calendar civil_calendar() assigns
+    them. Carries a birth or target date where datetime.date used to, and
+    unlike it can hold a Julian-only day. Compares equal to anything with
+    the same year, month and day (a datetime.date included)."""
+    __slots__ = ('year', 'month', 'day')
+
+    def __init__(self, year, month, day):
+        self.year, self.month, self.day = int(year), int(month), int(day)
+
+    @classmethod
+    def of(cls, d):
+        return d if isinstance(d, cls) else cls(d.year, d.month, d.day)
+
+    @classmethod
+    def from_jd(cls, jd):
+        cal = swe.GREG_CAL if jd >= PN4_GREGORIAN_REFORM_JD else swe.JUL_CAL
+        y, m, d, _h = swe.revjul(jd, cal)
+        return cls(y, m, d)
+
+    def tuple(self):
+        return (self.year, self.month, self.day)
+
+    def __eq__(self, other):
+        try:
+            return self.tuple() == (int(other.year), int(other.month), int(other.day))
+        except (AttributeError, TypeError, ValueError):
+            return NotImplemented
+
+    def __lt__(self, other):
+        return self.jd() < CivilDate.of(other).jd()
+
+    def __hash__(self):
+        return hash(self.tuple())
+
+    def __sub__(self, other):
+        # a timedelta (days) back, or the number of days between two dates
+        if hasattr(other, 'days') and not hasattr(other, 'year'):
+            return CivilDate.from_jd(self.jd() - other.days)
+        return self.jd() - CivilDate.of(other).jd()
+
+    def __add__(self, other):
+        return CivilDate.from_jd(self.jd() + other.days)
+
+    def jd(self, hour=0.0):
+        return civil_to_jd(self.year, self.month, self.day, hour)
+
+    def replace(self, **kw):
+        return CivilDate(kw.get('year', self.year), kw.get('month', self.month), kw.get('day', self.day))
+
+    def calendar_name(self):
+        return 'Julian' if civil_calendar(self.year, self.month, self.day) == swe.JUL_CAL else 'Gregorian'
+
+    def isoformat(self):
+        return f"{self.year:04d}-{self.month:02d}-{self.day:02d}"
+
+    def __format__(self, spec):
+        return _format_civil(self, spec)
+
+    def __str__(self):
+        return self.isoformat()
+
+    def __repr__(self):
+        return f"CivilDate({self.year}, {self.month}, {self.day})"
+
+class CivilMoment(CivilDate):
+    """A CivilDate with a time of day (whole seconds), UT or local as the
+    caller says. from_jd rounds the JD to the second FIRST, so a moment a
+    fraction of a second before midnight carries into the next day."""
+    __slots__ = ('hour', 'minute', 'second')
+
+    def __init__(self, year, month, day, hour=0, minute=0, second=0):
+        super().__init__(year, month, day)
+        self.hour, self.minute, self.second = int(hour), int(minute), int(second)
+
+    @classmethod
+    def from_jd(cls, jd):
+        jd = round(float(jd) * 86400.0) / 86400.0
+        cal = swe.GREG_CAL if jd >= PN4_GREGORIAN_REFORM_JD else swe.JUL_CAL
+        y, m, d, hour = swe.revjul(jd, cal)
+        total = min(int(round(hour * 3600.0)), 24 * 3600 - 1)
+        return cls(y, m, d, total // 3600, (total % 3600) // 60, total % 60)
+
+    def hour_decimal(self):
+        return self.hour + self.minute / 60.0 + self.second / 3600.0
+
+    def jd(self, hour=None):
+        return civil_to_jd(self.year, self.month, self.day, self.hour_decimal() if hour is None else hour)
+
+    def isoformat(self):
+        return f"{super().isoformat()} {self.hour:02d}:{self.minute:02d}:{self.second:02d}"
+
+    def __repr__(self):
+        return f"CivilMoment({self.year}, {self.month}, {self.day}, {self.hour}, {self.minute}, {self.second})"
+
 def calculate_traditional_chart(dt_utc, lat, lon):
-    year, month, day = dt_utc.year, dt_utc.month, dt_utc.day
-    hour = dt_utc.hour + dt_utc.minute/60.0 + dt_utc.second/3600.0
+    """A chart from a UT moment given as anything with year, month, day,
+    hour, minute and second (a datetime or a CivilMoment); the digits are
+    read in the calendar the policy above assigns them."""
+    jd = civil_to_jd(dt_utc.year, dt_utc.month, dt_utc.day,
+                     dt_utc.hour + dt_utc.minute / 60.0 + dt_utc.second / 3600.0)
+    return calculate_traditional_chart_jd(jd, lat, lon)
 
-    # CRITICAL: Python's datetime is always proleptic Gregorian, and
-    # swe.julday() defaults to the Gregorian calendar flag. For dates before
-    # the Gregorian reform (Oct 15, 1582), professional astrological software
-    # (Solar Fire, Astro.com, etc.) interprets the same y/m/d digits as a
-    # JULIAN calendar date. Using the wrong flag silently mis-dates historical
-    # charts by several days (7 days in the 1200s, growing further back),
-    # which cascades into large positional errors — the Moon alone drifts
-    # ~13°/day, so a 7-day calendar error looks like a ~90° Moon error.
-    is_gregorian_date = (year, month, day) >= (1582, 10, 15)
-    cal_flag = swe.GREG_CAL if is_gregorian_date else swe.JUL_CAL
-    jd = swe.julday(year, month, day, hour, cal_flag)
-
+def calculate_traditional_chart_jd(jd, lat, lon):
+    """The chart at a Julian Day (UT). The sidebar arrives here directly, so
+    a Julian-only date and an offset across midnight need no datetime."""
     # The seven planets' ephemeris ids are PLANET_SWE_IDS, defined once with
     # the VII.6 material; the chart adds the TRUE Node (owner's decision of
     # 2026-09-07, matching the reference charts; the mean node sat 1-2 degrees
@@ -249,6 +407,11 @@ def calculate_traditional_chart(dt_utc, lat, lon):
         # ecliptic at the moment. Read by the Chart page's Calculation table.
         'armc': ascmc[2],
         'obliquity': obliquity,
+        # The place, so that evaluators needing the horizon (hayz: above or
+        # below the earth by ALTITUDE, Astra F04) can be handed it from the
+        # chart alone.
+        'geo_lat': lat,
+        'geo_lon': lon,
     }
 
 # ==========================================
@@ -263,6 +426,13 @@ def get_zodiac_sign(longitude):
     return SIGN_ORDER[int((longitude % 360.0) // 30)]
 
 def get_degree_string(longitude):
+    """A longitude as DD° Sgn MM'. Display policy: whole arcminutes,
+    TRUNCATED (12°27'40" prints 27'), with one tolerance -- a value within a
+    millionth of a minute of a whole minute IS that minute. Binary floats
+    put 30 + 1/60 a hair under 00° Tau 01' and int() printed 00' (Astra
+    F13); an entered whole minute now survives display. The carry at 60',
+    30° and 360° follows from working in total minutes. Nothing here
+    rounds the longitude itself; bound and degree tests read the float."""
     longitude = longitude % 360.0
     sign = get_zodiac_sign(longitude)
     deg = int(longitude % 30)
@@ -4413,7 +4583,7 @@ def _weekday_from_jd(jd_ut, utc_offset_hours):
     return int(math.floor(jd_ut + (utc_offset_hours / 24.0) + 0.5)) % 7
 
 @st.cache_data(max_entries=32, show_spinner=False)
-def calculate_chronocrats(jd_utc, lat, lon, local_dt, utc_offset_hours=0.0):
+def calculate_chronocrats(jd_utc, lat, lon, local_hour, utc_offset_hours=0.0):
     """Planetary Day (from the astrological day, which begins at Sunrise —
     not the calendar weekday) and Planetary Hour (from the unequal/temporal
     hour system, bracketed by real sunrise/sunset times for this date and
@@ -4474,7 +4644,7 @@ def calculate_chronocrats(jd_utc, lat, lon, local_dt, utc_offset_hours=0.0):
         # different lord depending on which branch had run.
         approximate = True
         day_lord = DAY_LORD_BY_WEEKDAY[_weekday_from_jd(jd_utc, utc_offset_hours)]
-        cycle_offset = local_dt.hour          # 0-23, one step per civil hour
+        cycle_offset = int(local_hour)        # 0-23, one step per civil hour
 
     start_index = CHALDEAN_HOUR_ORDER.index(day_lord)
     hour_lord = CHALDEAN_HOUR_ORDER[(start_index + cycle_offset) % 7]
@@ -10628,17 +10798,14 @@ PN4_YEAR_INDICATOR_ORDER = (
 
 # --- Assembling the page -------------------------------------------------
 
-PN4_GREGORIAN_REFORM_JD = 2299160.5
-
 def pn4_datetime_from_jd(jd):
-    """A UTC datetime from a Julian Day, in the calendar this file uses for
-    that epoch, so that feeding it back to calculate_traditional_chart --
-    which picks its own flag from the y/m/d digits -- round-trips."""
-    cal = swe.GREG_CAL if jd >= PN4_GREGORIAN_REFORM_JD else swe.JUL_CAL
-    y, m, d, hour = swe.revjul(jd, cal)
-    total = int(round(hour * 3600.0))
-    total = min(total, 24 * 3600 - 1)
-    return datetime(int(y), int(m), int(d), total // 3600, (total % 3600) // 60, total % 60)
+    """The UT civil moment of a Julian Day, as a CivilMoment (not a datetime,
+    which cannot hold a Julian-only day such as 1300-02-29): the calendar
+    is the one this file uses for that epoch, so feeding it back to
+    calculate_traditional_chart -- which reads the digits by the same
+    policy -- round-trips. The name is kept for its callers; it formats
+    with the same %Y-%m-%d %H:%M:%S directives a datetime does."""
+    return CivilMoment.from_jd(jd)
 
 def pn4_completed_years(birth_date, target_date):
     """Age in COMPLETED CIVIL ANNIVERSARIES -- the count II.3, 1 asks for
@@ -10655,10 +10822,9 @@ def pn4_birthday(birth_date, age):
     falls on 1 March in a common year, which is the first day the count
     of II.3, 1 turns."""
     year = birth_date.year + int(age)
-    try:
-        return birth_date.replace(year=year)
-    except ValueError:
-        return birth_date.replace(year=year, month=3, day=1)
+    if civil_is_valid(year, birth_date.month, birth_date.day):
+        return CivilDate(year, birth_date.month, birth_date.day)
+    return CivilDate(year, 3, 1)
 
 def pn4_ordinal(n):
     """1st, 2nd, 3rd, 4th ... 11th, 12th, 13th, 21st, 42nd."""
@@ -10674,12 +10840,13 @@ TIME_STANDARD_OPTIONS = ("LMT (Local Mean Time)", "Standard time (pytz)", "Manua
 TARGET_MODE_OPTIONS = ("Date", "Age")
 
 def parse_iso_date(text):
-    """A date from 'YYYY-MM-DD', or None. Years 1-9999; the calendar the
-    digits belong to is decided by calculate_traditional_chart."""
-    try:
-        return datetime.strptime(str(text).strip(), "%Y-%m-%d").date()
-    except (ValueError, TypeError):
+    """A CivilDate from 'YYYY-MM-DD', or None. Years 1-9999; the digits are
+    validated in the calendar civil_calendar() assigns them, so 1300-02-29
+    (a Julian leap day) is a date and 1900-02-29 is not."""
+    m = re.fullmatch(r"\s*(\d{1,4})-(\d{1,2})-(\d{1,2})\s*", str(text))
+    if not m or not civil_is_valid(*m.groups()):
         return None
+    return CivilDate(*m.groups())
 
 def parse_lat_lon(text):
     """'45.37, -84.95' typed into the place box, as (lat, lon), or None if
@@ -10759,8 +10926,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
     # from the revolution dates, not the calendar (Intro Sect. 9 p. 90).
     # Which month the target date falls in: the last monthly revolution at
     # or before it.
-    jd_target = swe.julday(target_date.year, target_date.month, target_date.day, 12.0,
-                           swe.GREG_CAL if (target_date.year, target_date.month, target_date.day) >= (1582, 10, 15) else swe.JUL_CAL)
+    jd_target = civil_to_jd(target_date.year, target_date.month, target_date.day, 12.0)
     month, jd_mr = 1, jd_sr
     for m in range(1, 13):
         jd_m = pn4_monthly_revolution_jd(jd_sr, natal_sun, m)
@@ -10987,7 +11153,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
                           'From day': f"{p['from_day']:.1f}", 'To day': f"{p['to_day']:.1f}"} for p in portions],
         'first_month_governor': pn4_first_month_governor(
             ascendant, chart_data['lot_of_fortune'], year['longitude'], sr['ascendant'], sr['lot_of_fortune']),
-        'age': age, 'month': month, 'jd_sr': jd_sr, 'jd_mr': jd_mr,
+        'age': age, 'month': month, 'jd_sr': jd_sr, 'jd_mr': jd_mr, 'jd_target': jd_target,
         'sr': sr, 'mr': mr, 'year': year, 'ninth': ninth, 'fardar': fardar,
         'segments': segments, 'current': current, 'ages': ages,
         'revolution_rows': revolution_rows, 'year_rows': year_rows,
@@ -11005,7 +11171,8 @@ def calculate_time_lords(ascendant_lon, birth_date, target_date):
     # year length. Profection turns on the birthday: dividing by 365.2425
     # let the sign advance up to a day early or late around it, and drifts
     # further the older the native is.
-    days_alive = (target_date - birth_date).days
+    days_alive = (civil_to_jd(target_date.year, target_date.month, target_date.day)
+                  - civil_to_jd(birth_date.year, birth_date.month, birth_date.day))
     integer_age = target_date.year - birth_date.year
     if (target_date.month, target_date.day) < (birth_date.month, birth_date.day):
         integer_age -= 1
@@ -11214,7 +11381,7 @@ date_string = st.sidebar.text_input(
          "are typed with their leading zeros (0787-08-10).")
 _parsed = parse_iso_date(date_string)
 if _parsed is None:
-    input_date = st.session_state.get("_date_last_good", datetime(1240, 5, 23).date())
+    input_date = st.session_state.get("_date_last_good", CivilDate(1240, 5, 23))
     st.sidebar.error(f"Date must be YYYY-MM-DD, e.g. 1240-05-23. Showing {input_date:%Y-%m-%d}.")
 else:
     input_date = _parsed
@@ -11322,7 +11489,7 @@ location_box = st.sidebar.empty()
 # bundle below is computed before the page runs. "Age 42" is the 42nd
 # birthday; a date shows its completed years beside it on the page. Saved
 # with the chart.
-_today = datetime.now().date()
+_today = CivilDate.of(datetime.now().date())
 target_mode = _reading("target_mode", "_target_mode", TARGET_MODE_OPTIONS[0])
 _date_target = parse_iso_date(_reading("target_date", "_target_date", _today.isoformat())) or _today
 if target_mode == TARGET_MODE_OPTIONS[1]:
@@ -11414,14 +11581,20 @@ def _readings_note():
 
 
 if location_query and lat is not None and lon is not None:
-    local_dt = datetime.combine(input_date, input_time)
+    # The local moment as digits in the policy's calendar (a CivilMoment,
+    # not a datetime: 1300-02-29 is a date here). The UT moment is a Julian
+    # Day, jd_ut, and the offset is subtracted on it -- see the calendar
+    # note above calculate_traditional_chart (Astra F01).
+    local_dt = CivilMoment(input_date.year, input_date.month, input_date.day,
+                           input_time.hour, input_time.minute, input_time.second)
     tz_name = None
     zone_note = ""
 
     if time_standard == TIME_STANDARD_OPTIONS[0]:
         # 15 degrees of longitude = 1 hour of time. East is +, West is -.
         offset_hours = lon / 15.0
-        dt_utc = local_dt - timedelta(hours=offset_hours)
+        jd_ut = civil_local_to_jd_ut(local_dt.year, local_dt.month, local_dt.day, local_dt.hour_decimal(), offset_hours)
+        dt_utc = pn4_datetime_from_jd(jd_ut)
         tz_name = "LMT"
         offset_str = (
             f"{'+' if offset_hours >= 0 else '-'}"
@@ -11432,7 +11605,8 @@ if location_query and lat is not None and lon is not None:
                                f"UT {dt_utc:%Y-%m-%d %H:%M:%S} · {_cal_note}")
     elif time_standard == TIME_STANDARD_OPTIONS[2]:
         utc_offset_hours = float(utc_offset_manual or 0.0)
-        dt_utc = local_dt - timedelta(hours=utc_offset_hours)
+        jd_ut = civil_local_to_jd_ut(local_dt.year, local_dt.month, local_dt.day, local_dt.hour_decimal(), utc_offset_hours)
+        dt_utc = pn4_datetime_from_jd(jd_ut)
         _tot = int(round(abs(utc_offset_hours) * 3600))
         tz_name = f"UTC{'+' if utc_offset_hours >= 0 else '-'}{_tot // 3600:02d}:{(_tot % 3600) // 60:02d}"
         time_standard_box.info(f"**Manual offset** {tz_name}  \n"
@@ -11442,13 +11616,25 @@ if location_query and lat is not None and lon is not None:
         tz_name = tf.timezone_at(lng=lon, lat=lat)
         if tz_name:
             local_tz = pytz.timezone(tz_name)
+            # A named zone needs a datetime, which is proleptic Gregorian: a
+            # Julian-only day (1300-02-29) has no place in it, and no zone
+            # kept standard time then anyway.
+            try:
+                _local_py = datetime(local_dt.year, local_dt.month, local_dt.day,
+                                     local_dt.hour, local_dt.minute, local_dt.second)
+            except ValueError:
+                time_standard_box.error(
+                    f"**{local_dt:%Y-%m-%d}** is a Julian-calendar date that no standard-time zone can "
+                    "place. Choose LMT or a manual offset."
+                )
+                st.stop()
             # is_dst=None makes pytz RAISE on the two clock times a named
             # zone cannot resolve on its own: the hour that occurs twice at
             # a DST fall-back, and the hour that never occurs at spring
             # forward. Without it pytz silently picks one, which moves the
             # chart by an hour with no indication that a choice was made.
             try:
-                localized_dt = local_tz.localize(local_dt, is_dst=None)
+                localized_dt = local_tz.localize(_local_py, is_dst=None)
             except pytz.exceptions.AmbiguousTimeError:
                 time_standard_box.error(
                     f"**{local_dt:%Y-%m-%d %H:%M}** happens twice in {tz_name} "
@@ -11463,11 +11649,12 @@ if location_query and lat is not None and lon is not None:
                     "Check the recorded time."
                 )
                 st.stop()
-            dt_utc = localized_dt.astimezone(pytz.utc)
             # This is the OFFSET, not the UTC clock time -- an earlier
             # version printed dt_utc's own time under the label "UTC offset".
             _off = localized_dt.utcoffset()
             utc_offset_hours = _off.total_seconds() / 3600.0
+            jd_ut = civil_local_to_jd_ut(local_dt.year, local_dt.month, local_dt.day, local_dt.hour_decimal(), utc_offset_hours)
+            dt_utc = pn4_datetime_from_jd(jd_ut)
             _sign = '+' if utc_offset_hours >= 0 else '-'
             _tot = int(abs(_off.total_seconds()))
             time_standard_box.info(
@@ -11478,7 +11665,7 @@ if location_query and lat is not None and lon is not None:
     location_box.success(f"**{escape(str(location_query))}**  \n{lat:.4f}, {lon:.4f}{zone_note}")
 
     if tz_name:
-        chart_data = calculate_traditional_chart(dt_utc, lat, lon)
+        chart_data = calculate_traditional_chart_jd(jd_ut, lat, lon)
         p_data = chart_data['planetary_data']
         sect = chart_data['sect']
         # D-13: named here, before any evaluator runs, since they read it.
@@ -11527,7 +11714,9 @@ if location_query and lat is not None and lon is not None:
             + [{'Condition': 'Escape', **row} for row in escape_data]
         )
         syzygy = calculate_prenatal_syzygy(chart_data['julian_day'], lat, lon, chart_data['houses'])
-        chronocrats = calculate_chronocrats(chart_data['julian_day'], lat, lon, local_dt, utc_offset_hours)
+        # The cached function takes the local HOUR (an int Streamlit can
+        # hash), not the CivilMoment; it reads nothing else of it.
+        chronocrats = calculate_chronocrats(chart_data['julian_day'], lat, lon, local_dt.hour, utc_offset_hours)
         classical_lots = calculate_classical_lots(chart_data['ascendant'], p_data['Sun']['longitude'], p_data['Moon']['longitude'], sect)
         topical_lots = calculate_topical_lots(p_data, chart_data['ascendant'], chart_data['houses'], sect)
         special_degrees = evaluate_special_degrees(p_data)
