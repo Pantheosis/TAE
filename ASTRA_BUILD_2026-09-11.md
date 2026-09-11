@@ -96,4 +96,130 @@ listed in §7.
 
 ## 6. Suite counts
 
-## 7. Report
+- Baseline, main 96fd547: 2723 passed (12:04).
+- After Phase 1 (5ed5841, C01): 2758 passed (12:11), 0 failed.
+
+## 6a. FINAL-A1 re-measured under the divisions (row 1's precondition)
+
+Predicate `process/adjudication/measures/FINAL_A1_divisions.py` = FINAL_A1.py with the
+house-master placed by `get_effective_house` (Alcabitius divisions, 5° at the stakes) instead
+of `get_wsh_house`; every other reading unchanged. Harness at engine 96fd547, 406 charts:
+
+| Predicate | definite grade under 1.20, 7-34 in full |
+|---|---|
+| FINAL_A1.py (whole signs, the FINAL card's unit) | 82.3% (316/384) |
+| FINAL_A1_divisions.py (divisions, the ruling's unit) | 83.3% (320/384) |
+
+22 charts name no house-master in both. The figure replaces FINAL-A1's 82.3% on the page and
+in the report; the sentence counts are re-derived by the grant function itself once built.
+
+## 7. Report (running)
+
+### Phase 1 -- the engine audit: DONE, all 23 expectations green
+
+| Id | Commit | What changed |
+|---|---|---|
+| harness | d7cf4d1 | 23 expectations adopted as `tests/test_astra_audit_repro.py` before any fix |
+| F01 | a48884a | `civil_calendar` policy in one place; `CivilDate`/`CivilMoment` carriers; `civil_local_to_jd_ut`, `calculate_traditional_chart_jd`; the sidebar subtracts the offset on the JD; `parse_iso_date` validates in the date's own calendar; chart dict carries `geo_lat`/`geo_lon` |
+| F13 | 0d7a30b | `get_degree_string` in total minutes with a 1e-6' tolerance, truncation kept |
+| F02 F03 F11 F12 | 55410ff | three counts of the year (`age` civil, `cycle` returns, `elapsed` 365.2425 d) with a "Count of the year" row; the containing return bracketed; "Active point" = degree reached; fardar sub-periods half-open against their own boundaries; wheel/strip "now" on the elapsed clock |
+| F04 F09 F10 | 2d65f7d | hayz by altitude when the horizon is supplied (`Hemisphere by` says which); connection ends at exactness (VII.5, 16, 34); eastern phases exclusive at completion, western inclusive |
+| F05 F06 F07 F08 | 9c8212b | escape only when the capture precedes the original contact; ingress bisected to 1e-4 d; steps split at stations; Sahl 3, 97's receiver judged at the departing planet's degree |
+| F14 + PN4R-4n-2 | 0fe9684 | twelfth-part provenance = Gr. Intr. V.18, 1-3 (Fig. 57) in four places + register; faces = V.15 Fig. 54; wells "64 cells" |
+| C01 | (next) | Virgo's partner Mercury "in preference to" Mars (V.14, 7; Fig. 53 Gr. Intr.; fn 100); "Figure 53 (PN IV)" in the Ages help |
+
+Readings declared in code, not silently taken: the 365.2425-day mapping (kept, labelled); the
+ecliptic-proxy fallback for hayz when no horizon is supplied; fn 99's open conjunction of 3, 97's
+two clauses (each applied on its own); 1e-9 degree machine tolerance at exactness (F09).
+
+### Phase 2 (READY orders) and Phase 3 (sheet rows), in commit order
+
+| Id / row | Commit | Note |
+|---|---|---|
+| CONV-SOLAR_BURNED_ORB | 93d5725 | VII.2, 44 as printed (6°) for the direct eastern inferior; `solar_phase` takes the motion; band labelled |
+| PN4R-4m-1 (+ follow-up) | 83200c0, aa21ba6 | III.2, 43 keyed to types 4, 5, 6 (the first commit landed with its tests red -- a gate bug in the build script, repaired in the follow-up) |
+| PN4R-4p-8 | a8f6ff8 | method 8 wraps at day 30 (IX.7, 39) |
+| PN4R-4n-5 (+ follow-up) | dbc0700, aa21ba6 | image filed by the revolution's cusps (I.6, 2), ordered from the cusp; judgment call recorded in §2 |
+| PN4R-4g-2 | 0be78b3 | row 9 from the three Ascendants (II.6, 1), whole-sign places |
+| Row 13 / PN4R-4d-1 | 8bffc00 | 12 + 1/6 + 1/120 d; three figures printed; 365.25 pinned |
+| Row 10 / DEC-D-15 | 58975f6 | "Dykes's table for Sahl, fn 175" |
+| Row 9 / DEC-D-5 | f471483 | 19°–3° kept, relabelled Gr. Intr. VII.6, 40 borrowed; readings recorded |
+| Row 12 / REL-2-6 | 12c7893 | `SAHL_GOOD_PLACES`, whole-sign place |
+| REL-2-3 | c95dd23 | 1.16, 4 named on the unwitnessed luminary's row and in NOT_APPLIED |
+| GAP-3 | fa38cf3 | 1.23, 33 and 1.24, 2 side by side; "ranks by scope" |
+| GAP-27 | 4b0e071 | the seven-day grant is method 2; caption, comment, register |
+| Row 15 / GAP-39 | 1f72824 | VII.6, 52 own nodes (mean, declared); D-19 cited |
+| Row 3 (engine orders) | 1f72824 + 2295574 | `five_degree_all_cusps` retired; `get_effective_house` docstring per the ruling |
+| Row 4 / FINAL-A12 | 4ed3a91 | Lot of death: stated by Gr. Intr., printed in Sahl; cusp "by equation" as the row's own rule; whole-sign variant row |
+| Row 7 / FINAL-A6 | 42259b9 | 1.7, 2 cited |
+| Row 8 / FINAL-A7 | 02e615d | the stand-in applied and named; the Moon directed |
+| Row 2 / FINAL-A2 | cb2fb94 | the join named; IX.8, 32 + fn 129 beside it; IX.8, 30's turning table; III.1, 5 and 1.16, 4 limits |
+| Rows 3, 6, 12 wording; reading (5) | 8d621de | readings (1)–(7) rewritten to the canon and its attribution; the Lot by whole-sign place; column renamed (fixture regenerated for it) |
+| Row 1 / FINAL-A1 | d00a116 | `sahl_house_master_years` from 1.20, 7-34 by the division; display column moved; On Times relabelled; D-3 control admits the one reader; register addenda |
+| Row 5 / FINAL-A4 | 9f3bf52 | `evaluate_ascensional_bands`: 2.13, 48-51 for the sect light's first triplicity lord; the per-planet grade labelled the engine's generalisation; Aphorism 45 as printed, not applied |
+| PN IV repairs wording | 8fde819 | the three 25″ / Figure 43 sentences now past tense |
+| Phase 4 (corpus) | 589cfc8 | DOCTRINAL_CAVEATS.md Aphorism 45 entry per FINAL-A4; FINAL addenda + FINAL_A1_divisions.py in the next corpus commit |
+
+`tests/fixtures/tables.json` was regenerated deliberately, each time verified by a set comparison
+of every page's (table, columns) entries: 8d621de (one column renamed; row 2's turning table
+added), d00a116 (two columns of the planetary-years table renamed), 9f3bf52 (one table added),
+65ce626 (one column name), 47ddfc2 (two tables), 839e208 (the orb table's columns, the proxies
+table, the angle-planet tables), 349301b, 49d2f3b (one table each).
+
+### Phase 2, second and third groups (after the full-suite gate at 5ed5841: 2758 passed)
+
+| Id / row | Commit | Note |
+|---|---|---|
+| citation form | 65ce626 | "Aphorism #45" for the checker (its floor had tripped in the full suite: 1959 passed, 1 failed at 8fde819) |
+| Row 11 / DEC-D-18 | 47ddfc2 | right-sidedness (2.5, 1-3) and the honor-guard (10.2.1, 10-15), display only, readings named |
+| PN4R-4e-2 | 045bac9 | VI.1, 8's column beside VI.1, 10's |
+| PN4R-4l-7 | 79b885d | II.3 twelfth-parts computed |
+| PN4R-4a-1, 4a-2 | 924b6d1 | III.7, 35's "not looking" read (three readings declared); 42 against every distribution, named |
+| DIS-9 | ce51745 | caveat row and comment name 7.4, 17; 5.3, 11-12; 6.5, 1 |
+| PN4R-4i-5 | 92e6480 | II.22, 23-25 row for any lord of the year; fn 319's void stand-in named as not read |
+| PN4R-4h-4 | 1b14860 | IX.2, 5's primary and partners |
+| GAP-37 / PN4R-4b-4 | 839e208 | planets in divisions 1, 10, 4 directed; unit = the order's (division with carry-over), recorded as a reading for the owner |
+| GAP-2 | 18dd4ad | the year of the turning reaching the partner's body |
+| PN4R-4f-6 | 349301b | VI.2, 4-5 triplicity lords with conditions |
+| PN4R-4g-5 | e3b6909 | #15 computed from VI.6, 1's three lords; #16-17 stay NOT tracked |
+| GAP-34 | ae45dd1 | VI.4 class, IX.2, 33 pairs, V.20 degree classes on II.3's rays |
+| PN4R-4c-4 | d5fc5a0 | small and mighty days from any point (selector) |
+| GAP-31 | 49d2f3b | IX.9, 11-12 as facts; **13's place half STOPPED** (unit: order says whole-sign place, canon says division) |
+
+### Phase 2, fourth group (the four BLOCKED REL-5 orders, unblocked by the owner's row 3, and the two remaining READY orders)
+
+| Id / row | Commit | Note |
+|---|---|---|
+| DIS-10 | 1027d99 | `sahl_father_lot_harmers`: 4.20, 31's harmers by sect (Mercury "if he was unfortunate" shown as a judgment not made; Saturn by night under 36's "from hostility"); 4.20, 32's two directions (the Lot's degree, and the Sun by day / Saturn by night) via `sahl_house_master_direction(start_lon=, target_planets=, sun_target=)`; fn 288 quoted as Dykes's, not applied; 33-35's choice not made |
+| REL-5-7 | 1027d99 | 1.23, 13-14 applied when a 1.23, 12 flag stands: the lord of the Ascendant directed in the house-master's stead, then the Ascendant's degree; 13's aggravation named; 1.23, 6 added to the not-applied list |
+| REL-5-1 | 29b835d | 1.19, 6 applied in `_sahl_examine_candidate`: the Moon within 15° of the Sun "not fit", the fullness consulted; Sahl's own 15 for this gate, separate from the Chart page's 12/15 switch; out of `SAHL_RELEASER_NOT_APPLIED` |
+| REL-5-2 | 29b835d | 1.20, 6 applied: a candidate in the places with no lord looking stands when a dignity lord is eastern with a share at the Ascendant's degree ("a share" read as any of the five, declared); that lord is house-master "by 1.20, 6"; a looking lord stays preferable; out of the not-applied list |
+| REL-5-3 | 29b835d | `sahl_short_life_testimonies`: 1.18, 1-4 counted (readings on each row: the Moon's first perfection followed forward; 4's two clauses one testimony, fn 130), 5-7 "equivalent, not counted" (fn 126, 129), 8/9/10 quoted by the count; beside the releaser, NOT disqualifying it |
+| PN4R-4n-7 | de4f5a8 | `SAHL_FIXED_STARS` (28, On Nativities 2.2's table in Dykes's identifications; the two Sahl does not carry left out, the two doubtful marked), `pn4_fixed_stars_in_image` (I.6, 7) and `pn4_fixed_stars_in_revolution` (III.8, 9); positions from a Swiss Ephemeris `sefstars.txt` found at run time (a package in the venv ships one) through a private link-only directory so the planets stay on Moshier (flag pinned by test); refuses with a sentence when absent; "the very degree"/"with" = within 1°, declared; both "not computed" captions reworded |
+
+Fixture regenerations in this group: 1027d99 (the father's-Lot tables), 29b835d (the short-life table), de4f5a8
+(the fixed-star tables on five of the six fixture dates). **Portability note for the owner:** the fixed-star tables
+appear in `tests/fixtures/tables.json` only because this interpreter carries a star catalogue
+(`kerykeion/sweph/sefstars.txt` in the root venv); on a machine without one the page says "not computed" and
+`test_pages_render`'s fixture comparison will differ by those tables, and the fixed-star unit test skips.
+One test rewritten to the source: `test_abu_connection_ends_one_minute_past_exact` had pinned the
+inversion of VII.5, 16; it is now `..._at_exactness_not_a_minute_past_it`. `tests/fixtures/
+tables.json` did NOT move: none of the six fixture charts changes a table cell under F04-F10.
+
+## Close (2026-09-11, evening)
+
+- Full suite at de4f5a8: 1981 passed, 1 failed -- the REL-2-3 fixture had Venus eastern with a share at the
+  Ascendant, which is 1.20, 6's case since REL-5-2; re-pinned with Venus western (ea12528).
+- Full suite at ea12528: **1982 passed, 0 failed** (9m 32s).
+- **Collected count: main 96fd547 collects 2723, this branch 1982.** The whole difference is
+  `tests/test_switch_matrix.py` (1977 -> 1154): retiring the five-degree all-cusps reading (row 3) removed a
+  two-valued dimension of the switch matrix. Every other file grew (audit harness +27, base tables +8,
+  decisions +2, doctrine fixtures +44, revolution wheels +1). So the "before/after" figures the prompt asks for are
+  2723 / 1982, and the second is not a loss of coverage but a retired switch.
+- Corpus branch `astra-session-2026-09-11`: ec439a5 (589cfc8 the Aphorism 45 caveat entry; ec439a5 the FINAL
+  addenda file and `FINAL_A1_divisions.py`). The FINAL_ADJUDICATION files and the Astra rulings were not edited.
+- For the owner (the only class of question left): GAP-31's IX.9, 13 place half (order: whole-sign place; canon:
+  division -- STOPPED, 49d2f3b); GAP-37's unit built as the order says (division with carry-over) with the doubt
+  recorded (839e208); PN4R-4n-5 judged no conflict (see above). The fixed-star fixture's portability note (fourth
+  group) is a second, practical item.
+- Merge: `astra-build-2026-09-11` fast-forwarded into `main` in the shared tree after this commit; not pushed.
