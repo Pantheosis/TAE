@@ -8466,26 +8466,59 @@ def pn4_distribution_at_age(segments, age_years):
 # stronger than the others". 1.20, 5: a house-master under the rays "is
 # deceptive, subtractive, corrupting" (a flag, not a disqualification).
 #
-# READINGS MADE HERE, each said on the page: (1) the places are quadrant
-# houses with the engine's five-degree carry-over (fn 109; Aphorism 44;
-# 1.22, 9), the same reckoning the years display uses; the day list is the
-# five places named, the night list every stake and succedent. (2)
-# "Looking" is the whole-sign aspect, and a lord in the candidate's own
-# sign counts as looking (1.20, 4 treats the bound lord in the Ascendant
-# with the releaser as the strongest of those looking). (3) A candidate is
-# not its own house-master except in 1.16's four signs; a luminary that is
-# its own bound, triplicity or face lord elsewhere is not counted as
-# "looking at" itself. (4) The triplicity lord is the lord of the sect
-# (day lord by day, night lord by night), as the engine reads it
-# everywhere. (5) The meeting is the last New Moon before birth and the
-# fullness the last Full Moon; the fullness's degree is the luminary above
-# the horizon at that moment, the engine's standing convention for a
-# preventional syzygy, since 1.15 does not say which. (6) "In good places"
-# for the Ascendant's lord (1.15, 16) is a stake or succedent, the class
-# every other candidate needs. (7) The day chart consults the Sun, the
-# meeting and the Ascendant only, and the night chart the Moon, the
-# fullness, the Lot and the Ascendant, as 6-14 order them; 1.15, 15's
-# summary names all five before the Ascendant and is quoted, not applied.
+# READINGS MADE HERE, each said on the page (rewritten 2026-09-11 after the
+# owner's ruling OWNER_RULING_PLACES_VS_DYNAMICS and the final adjudication):
+# (1) THE PLACES. "A stake or what follows a stake" (1.15, 6-16) is read as a
+# POWER test and counted by the Alcabitius divisions with the five-degree
+# allowance at the four axial degrees only (get_effective_house): a planet
+# 0-5 degrees past the Ascendant, Midheaven, setting degree or fourth into
+# the cadent division keeps the stake's power, measured from the axial
+# DEGREE, in longitude (a proxy). The warrant for the UNIT is the
+# translator's course convention adopted by the owner as canon -- Lesson 3
+# "A Chart Tour" §4-5, the Course Glossary s.v. Advancement, Carmen p. 108
+# fn 187 ("Dorotheus ... is using dynamic divisions to speak of the planets'
+# power, because one can only move from a stake to a decline by primary
+# motion") -- with fn 109 on 1.15, 6 agreeing ("quadrant divisions, not
+# whole signs"). The corpus's own vocabulary counts SIGNS: Introduction 2,
+# 31-35 defines the stakes, "what follows the stakes" and the falling
+# places as counted signs, and 1.20, 10 says "the sign of the west"; so the
+# division reading is the translator's, not Sahl's or Nawbakht's. 1.18, 19
+# ("its STRENGTH will be in the Ascendant ... and likewise in all of the
+# houses") is about strength and is read as the four stakes; Aphorism 44
+# and 1.22, 9 witness the five degrees, not the house system. The Lot of
+# Fortune, a candidate by night (1.15, 14), has no dynamic angularity and
+# is tested by its WHOLE-SIGN place (the canon; a change of 2026-09-11).
+# The meeting's and the fullness's degrees (1.15, 6-8, 12) are neither
+# planet nor Lot: the division is used for them, an OPEN reading the owner
+# has not ruled on. The day list is the five places 1.15, 6 names, the
+# night list every stake and succedent. (2) "Looking" is the whole-sign
+# aspect, and a lord in the candidate's own sign counts as looking (1.20, 4
+# treats the bound lord in the Ascendant with the releaser as the strongest
+# of those looking). (3) A candidate is not its own house-master except in
+# 1.16's four signs; a luminary that is its own bound, triplicity or face
+# lord elsewhere is not counted as "looking at" itself. (4) The triplicity
+# lord is the lord of the sect (day lord by day, night lord by night), as
+# the engine reads it everywhere. (5) The meeting is the last New Moon and
+# the fullness the last Full Moon before birth; the fullness's degree is
+# the luminary above the earth at that moment -- On Nativities 1.7, 2,
+# "take the portion of whichever of the two luminaries was above the
+# earth", stated for the Ascendant's degree and applied here by the shared
+# word "portion" (1.15, 12); when both or neither is up the engine takes
+# the Moon's degree, and no text says (FINAL-A6). (6) "In good places" for
+# the Ascendant's lord (1.15, 16) is Sahl's seven praised places
+# (Introduction 2, 37-44: "praised, powerful"; 1.30, 71 names them; fn 372
+# "good or advantageous"), counted by whole-sign place; no sentence defines
+# 16's phrase, an interpretation (owner, sheet row 12). (7) The day chart
+# consults the Sun, the meeting, then the Ascendant -- 1.15, 9: "if the
+# meeting and the Sun were both falling, then the releaser at that time
+# will be the Ascendant" closes the day list -- and the night chart the
+# Moon, the fullness, the Lot, then the Ascendant (10-14); 1.15, 15 lists
+# all five before the Ascendant and is read as the summary of the two
+# lists; read as a procedure it would consult the other sect's candidates
+# first, which changes the releaser in about one day chart in seven
+# (FINAL-A5, owner, sheet row 6). The meeting's gate (1.15, 8) states a
+# place test only; the looking-lord test applied to it is supplied from
+# 15's general wording, a reading.
 # NOT APPLIED: 1.19, 6 (the Moon within 15 degrees of the Sun "will not
 # be fit"), 1.20, 6 (an eastern lord with a share in the Ascendant may
 # assume the house-mastership without looking), 1.18, 8-10 (the short-life
@@ -8587,10 +8620,14 @@ def _sahl_looks(from_lon, to_lon):
         return None
     return 'in it' if apart == 0 else entry[0].lower()
 
-def _sahl_examine_candidate(label, lon, planetary_data, cusps, sect, places, self_planet=None):
+def _sahl_examine_candidate(label, lon, planetary_data, cusps, sect, places, self_planet=None, unit='division'):
     """One candidate of 1.15 against its two tests: the place, and a
-    dignity lord looking. Returns the facts and the verdict."""
-    place = get_effective_house(lon, cusps)
+    dignity lord looking. Returns the facts and the verdict. `unit` is
+    'division' (the Alcabitius division with the five-degree allowance at
+    the stakes -- the POWER reading of "a stake or what follows a stake",
+    the canon of 2026-09-11) or 'place' (the whole-sign place, for the Lot
+    of Fortune, which has no dynamic angularity)."""
+    place = get_effective_house(lon, cusps) if unit == 'division' else get_wsh_house(lon, cusps[0])
     in_places = place in places
     sign = get_zodiac_sign(lon)
     both = bool(self_planet and sign in SAHL_BOTH_AT_ONCE.get(self_planet, ()))
@@ -8700,7 +8737,8 @@ def sahl_releaser(planetary_data, ascendant_lon, cusps, sect, lot_of_fortune, me
                  ('the fullness (the last Full Moon)', fullness_lon, None),
                  ('the Lot of Fortune', lot_of_fortune, None)]
         places = SAHL_RELEASER_NIGHT_PLACES
-    cands = [_sahl_examine_candidate(label, lon, planetary_data, cusps, sect, places, self_planet)
+    cands = [_sahl_examine_candidate(label, lon, planetary_data, cusps, sect, places, self_planet,
+                                     unit='place' if label == 'the Lot of Fortune' else 'division')
              for label, lon, self_planet in order]
     cands.append(_sahl_ascendant_candidate(planetary_data, ascendant_lon, cusps, sect))
     chosen = next((c for c in cands if c['fit']), None)
@@ -8710,7 +8748,7 @@ def sahl_releaser(planetary_data, ascendant_lon, cusps, sect, lot_of_fortune, me
     for i, c in enumerate(cands):
         consulted = chosen is None or i <= cands.index(chosen)
         rows.append({'Candidate': c['candidate'], 'Degree': get_degree_string(c['longitude']),
-                     'House (quadrant, carry-over)': c['place'],
+                     'House (division, 5 deg at the stakes; the Lot by whole-sign place)': c['place'],
                      'Lords of its degree': '; '.join(f"{r} {p}: {a}" for r, p, a in c['lords']),
                      'Verdict': ('THE RELEASER -- ' if c is chosen else '' if consulted else 'not consulted, an earlier candidate qualified -- ')
                                 + c['why'],
@@ -13507,19 +13545,41 @@ if location_query and lat is not None and lon is not None:
                             st.markdown(f"Age {pn4['age']} is past the {PN4_DISTRIBUTION_SPAN_YEARS:g}-year table.")
                         st.dataframe(pd.DataFrame(pn4['releaser_rows']), hide_index=True, width='stretch',
                                      height=_rows_height(min(len(pn4['releaser_rows']), 12)))
-                st.caption("Readings made here, each one Sahl leaves open. (1) The places are quadrant houses with the "
-                           "five-degree carry-over (fn 109: \"quadrant divisions, not whole signs\"; Aphorism 44; 1.22, 9), "
-                           "the reckoning the Chart page's planetary-years table uses; the day list is the five places "
-                           "1.15, 6 names, the night list every stake and succedent. (2) \"Looking\" is the whole-sign "
-                           "aspect, and a lord in the candidate's own sign counts as looking (1.20, 4). (3) A candidate is "
-                           "not its own house-master except in 1.16's four signs. (4) The triplicity lord is the lord of "
-                           "the sect. (5) The meeting is the last New Moon and the fullness the last Full Moon before "
-                           "birth; the fullness's degree is the luminary above the horizon at that moment, the engine's "
-                           "convention for a preventional syzygy, since 1.15 does not say. (6) \"In good places\" for the "
-                           "Ascendant's lord (1.15, 16) is a stake or succedent. (7) The day chart consults the Sun, the "
-                           "meeting and the Ascendant only, the night chart the Moon, the fullness, the Lot and the "
-                           "Ascendant, as 6-14 order them; 1.15, 15's summary names all five before the Ascendant and is "
-                           "quoted, not applied. Not applied, and named: "
+                st.caption("Readings made here, each one Sahl leaves open. (1) THE PLACES: \"a stake or what follows a stake\" "
+                           "(1.15, 6-16) is read as a test of the planet's POWER and counted by the Alcabitius divisions with the "
+                           "five-degree allowance at the four axial degrees only -- a planet 0-5 degrees past the Ascendant, "
+                           "Midheaven, setting degree or fourth into the cadent division keeps the stake's power, measured from "
+                           "the axial degree, in longitude (a proxy). The warrant for the unit is the translator's course "
+                           "convention, adopted by the owner as canon on 2026-09-11: Lesson 3, A Chart Tour, §4-5; the Course "
+                           "Glossary s.v. Advancement; Carmen p. 108 fn 187, \"Dorotheus ... is using dynamic divisions to speak "
+                           "of the planets' power, because one can only move from a stake to a decline by primary motion\"; "
+                           "with fn 109 on 1.15, 6 agreeing (\"quadrant divisions, not whole signs\"). The corpus's own "
+                           "vocabulary counts SIGNS -- Introduction 2, 31-35 defines the stakes, \"what follows the stakes\" and "
+                           "the falling places as counted signs, and 1.20, 10 says \"the sign of the west\" -- so the division "
+                           "reading is the translator's, not Sahl's or Nawbakht's; 1.18, 19 (\"its strength will be in the "
+                           "Ascendant ... and likewise in all of the houses\") is about strength and is read as the four "
+                           "stakes; Aphorism 44 and 1.22, 9 witness the five degrees, not the house system. The Lot of Fortune "
+                           "(a candidate by night, 1.15, 14) has no dynamic angularity and is tested by its whole-sign place. "
+                           "The meeting's and the fullness's degrees (1.15, 6-8, 12) are neither planet nor Lot: the division is "
+                           "used for them, an open reading. The day list is the five places 1.15, 6 names, the night list every "
+                           "stake and succedent. (2) \"Looking\" is the whole-sign aspect, and a lord in the candidate's own "
+                           "sign counts as looking (1.20, 4). (3) A candidate is not its own house-master except in 1.16's four "
+                           "signs. (4) The triplicity lord is the lord of the sect. (5) The meeting is the last New Moon and the "
+                           "fullness the last Full Moon before birth; the fullness's degree is the luminary that was above the "
+                           "earth at the Full Moon: On Nativities 1.7, 2 (\"take the portion of whichever of the two luminaries "
+                           "was above the earth\"), stated there for the Ascendant's degree and applied here by the same word, "
+                           "\"portion\" (1.15, 12); when both or neither is above the earth the engine takes the Moon's degree; "
+                           "no text says. (6) \"In good places\" for the Ascendant's lord (1.15, 16): Sahl's seven praised "
+                           "places (Introduction 2, 37-44: \"praised, powerful\"; 1.30, 71 names them; fn 372 calls them "
+                           "\"good or advantageous\"), counted by whole-sign place; no sentence defines 16's phrase, so the "
+                           "identification is an interpretation. (7) The day chart consults the Sun, the meeting, then the "
+                           "Ascendant (1.15, 9: \"if the meeting and the Sun were both falling, then the releaser at that time "
+                           "will be the Ascendant\"); the night chart the Moon, the fullness, the Lot, then the Ascendant "
+                           "(10-14). 1.15, 15 lists all five before the Ascendant and is read as the summary of the two lists; "
+                           "read as a procedure it would consult the other sect's candidates first, which changes the releaser "
+                           "in about one day chart in seven. The meeting's gate (1.15, 8) states a place test only; the "
+                           "looking-lord test the engine applies to it is supplied from 15's general wording (a reading). "
+                           "Not applied, and named: "
                            + '; '.join(f"{c} ({t})" for c, t in SAHL_RELEASER_NOT_APPLIED) + ". "
                            "The YEARS the house-master grants are granted by nothing: On Times 4, 7 and On Nativities "
                            "1.20 disagree on where the greater years fall (corpus disagreement #2) and the Chart page "

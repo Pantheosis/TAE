@@ -3000,3 +3000,25 @@ def test_house_master_turning_reaches_the_cutters_bodies_oppositions_and_squares
     assert by_year[12] == by_year[0]
     assert all(r["Source"] == "PN IV IX.8, 30" for r in rows)
     assert 1 not in by_year and 4 not in by_year
+
+
+# --- Sheet row 3 (owner's ruling): the Lot of Fortune tested by whole-sign place, the planets by the division ---
+
+def test_lot_of_fortune_candidate_is_placed_by_whole_sign_and_the_moon_by_the_division(engine):
+    """A night chart with Scorpio rising at 5 Scorpio and unequal cusps
+    (the third division opening at 10 Sagittarius). The Moon at 13
+    Sagittarius stands in the second whole sign but the third division,
+    so by the POWER unit she is falling and fails; the fullness at 10
+    Virgo (the twelfth division and sign) fails; the Lot of Fortune at 15 Sagittarius has no
+    dynamic angularity and is tested by whole-sign place -- the second, a
+    succedent -- with Jupiter (its house and triplicity lord) in its sign,
+    so the Lot is the releaser. Under the old division test the Lot too
+    would have been falling (third division)."""
+    data, _ = _sahl_chart(215.0, Moon=253.0, Jupiter=250.0, Sun=100.0)
+    cusps = [215.0, 228.0, 250.0, 275.0, 305.0, 335.0, 35.0, 48.0, 70.0, 95.0, 125.0, 155.0]
+    r = engine["sahl_releaser"](data, 215.0, cusps, "Nocturnal", 255.0, 100.0, 160.0)
+    moon = next(c for c in r["candidates"] if c["Candidate"] == "the Moon")
+    lot = next(c for c in r["candidates"] if c["Candidate"] == "the Lot of Fortune")
+    key = "House (division, 5 deg at the stakes; the Lot by whole-sign place)"
+    assert moon[key] == 3 and "falling" in moon["Verdict"]
+    assert lot[key] == 2 and r["releaser"] == "the Lot of Fortune"
