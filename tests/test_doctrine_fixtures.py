@@ -383,12 +383,19 @@ def test_abu_aspect_window_is_twelve_for_every_pair(engine):
             assert engine["_is_connected_abu_mashar"](_sahl_row(engine, actor, d)) is expect, (actor, d)
 
 
-def test_abu_connection_ends_one_minute_past_exact(engine):
+def test_abu_connection_ends_at_exactness_not_a_minute_past_it(engine):
+    """Gr. Intr. VII.5, 16: 'if the light one passed by the slow one by one
+    minute or by less than that, then it has already SEPARATED'; 34 the
+    same for every connection. A pair 18 arcseconds past exact is
+    separated; the minute is not a grace interval (Astra F09). The old
+    pin here (connected up to 1' past) encoded the inversion."""
     m = 1.0 / 60.0
-    for d, expect in ((m - 1e-6, True), (m + 1e-6, False)):
+    for d in (1e-6, 0.005, m - 1e-6, m + 1e-6):
         row = engine["_pairwise_configurations"](pdata(Moon=(10 + d, MOON), Saturn=(130, SAT)))[0]
         assert row["motion"] == "Separating"
-        assert engine["_is_connected_abu_mashar"](row) is expect, d
+        assert engine["_is_connected_abu_mashar"](row) is False, d
+    exact = engine["_pairwise_configurations"](pdata(Moon=(10, MOON), Saturn=(130, SAT)))[0]
+    assert engine["_is_connected_abu_mashar"](exact) is True
 
 
 # --- CODE-04: the Fig. 14 tolerance is bounded ----------------------------

@@ -1537,19 +1537,30 @@ def solar_phase(planet, lon, sun_lon):
     side = 'eastern' if signed < 0 else 'western'
     idx = 0 if side == 'eastern' else 1
     if elongation <= CAZIMI_ORB:
-        return 'Cazimi', side, elongation
+        return 'Cazimi', side, elongation          # VII.2, 7-9: 16' inclusive, both sides
+    # Endpoint ownership differs by side (Astra F10). EAST: a planet leaves
+    # burning, and later the rays, "when these three planets come to the
+    # COMPLETION of these degrees" (VII.2, 12; 14; 40-41 for the inferiors:
+    # "distant ... at a FULL 7 degrees ... they have passed beyond burning"),
+    # so exactly 6 (10, 7) east is already "simply under the rays" and
+    # exactly 15 (18, 12) east already easternizing. WEST: the phases are
+    # entered AT their degrees -- "until there come to be 15 degrees ... and
+    # when they come to these degrees they shift over" (VII.2, 31-32, 34) --
+    # so the western bounds stay inclusive.
+    within = (lambda x, lim: x < lim) if side == 'eastern' else (lambda x, lim: x <= lim)
     burned = SOLAR_BURNED_ORB.get(planet, (8.5, 8.5))[idx]
-    if elongation <= burned:
+    if within(elongation, burned):
         return 'Burned', side, elongation
     rays = solar_rays_orb(planet)[idx]
-    if elongation <= rays:
+    if within(elongation, rays):
         return 'Under the rays', side, elongation
     setting = SOLAR_SETTING_DEGREES.get(planet)
     if side == 'western' and setting is not None and elongation <= setting:
         return 'Degrees of setting', side, elongation
     return None, side, elongation
 
-def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None):
+def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None,
+                                  armc=None, obliquity=None, geo_lat=None):
     """Accidental dignity scoring: house angularity (Whole Sign, anchored to
     the Ascendant, with the 6/8/12 malefic-house override), planetary joys,
     domain/hayz, motion & speed, and solar phase.
@@ -1557,7 +1568,15 @@ def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None):
     The point weights (+5 angular, -5 combust, and so on) are this app's own
     convenience for ranking, not anybody's doctrine -- no source in hand adds
     these conditions up. What IS sourced is the geometry each test uses, and
-    each of those carries its citation at the point of use."""
+    each of those carries its citation at the point of use.
+
+    `armc`, `obliquity` and `geo_lat` are the chart's horizon. With them the
+    domain's "above the earth / below the earth" (Gr. Intr. VII.1, 37;
+    VII.6, 13) is decided by the planet's ALTITUDE from its full ecliptic
+    position (_sin_altitude, as sect and the syzygy already are); without
+    them it falls back to the ecliptic proxy (lon - Ascendant) % 360 > 180,
+    which misplaces a body within a degree or two of the horizon and says
+    so in the row ('Hemisphere by'). Astra audit F04, 2026-09-11."""
     sun_lon = planetary_data['Sun']['longitude']
     ascendant = natal_houses[0]
     is_diurnal_chart = (sect == 'Diurnal')
@@ -1595,7 +1614,13 @@ def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None):
         # from its solar phase (morning riser = diurnal, evening star =
         # nocturnal) rather than being fixed.
         current_sign = get_zodiac_sign(lon)
-        is_above_horizon = (lon - ascendant) % 360 > 180.0
+        if armc is not None and obliquity is not None and geo_lat is not None:
+            is_above_horizon = _sin_altitude(lon, data.get('latitude', 0.0), data.get('distance', 1.0),
+                                             obliquity, armc, geo_lat) > 0.0
+            hemisphere_by = 'altitude'
+        else:
+            is_above_horizon = (lon - ascendant) % 360 > 180.0
+            hemisphere_by = 'ecliptic proxy (no horizon supplied)'
 
         if planet == 'Mercury':
             signed = ((lon - sun_lon + 180.0) % 360.0) - 180.0
@@ -1746,6 +1771,7 @@ def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None):
 
         results[planet] = {
             'Accidental Score': score, 'House': house_num, 'Joy': is_joy, 'Hayz': is_hayz,
+            'Above the earth': is_above_horizon, 'Hemisphere by': hemisphere_by,
             'ContraryDomain': contrary_domain, 'Station': station,
             'Stationary': is_stationary, 'Retrograde': is_retrograde, 'Swift': is_swift,
             'Cazimi': is_cazimi, 'Combust': is_combust, 'UnderBeams': is_under_beams,
@@ -2203,14 +2229,18 @@ def _is_connected_abu_mashar(row):
     # BEYOND ITS ASSOCIATE BY 1' OR LESS, THEN IT HAS ALREADY SEPARATED
     # FROM IT -- except that they will both be BLENDING IN NATURE."
     #
-    # So for Abu Ma'shar a connection ends essentially at the exact degree.
-    # His activation distances below are approach windows, not two-sided
-    # orbs, and this test previously applied them to separating pairs as
-    # well -- treating a planet 10 degrees past exact as still connected,
-    # which 34 denies outright. The residue he does allow is a mixing of
-    # natures, which this file already reports separately as the body
-    # overlap, never as a connection.
-    if row['motion'] == 'Separating' and abs(row['deviation']) > (1.0 / 60.0):
+    # So for Abu Ma'shar a connection ends AT the exact degree: VII.5, 16
+    # says the same of the assembly ("if the light one passed by the slow
+    # one by one minute or by less than that, then it has already
+    # SEPARATED"). "By 1' or less" is the amount that already counts as
+    # separated, not a grace interval after exactness -- an earlier version
+    # kept a pair connected for up to a minute past exact, inverting the
+    # sentence it quoted (Astra F09). His activation distances below are
+    # approach windows, not two-sided orbs. The residue he does allow is a
+    # mixing of natures, which this file reports separately as the body
+    # overlap, never as a connection. The 1e-9 degree is machine tolerance
+    # at exactness, nothing doctrinal.
+    if row['motion'] == 'Separating' and abs(row['deviation']) > 1e-9:
         return False
     if row['assembly']:
         return row['dist'] <= 15.0
@@ -9902,8 +9932,10 @@ def pn4_ii3_examination(chart_data, sr, year, jd_sr):
     r_in = [p for p, a, _l, _d in r_looks if a == 'in it']
     r_rays = [(p, a, lon, deg) for p, a, lon, deg in r_looks if a != 'in it']
     ess_n, ess_r = evaluate_essential_dignities(natal, chart_data['sect']), evaluate_essential_dignities(rev, sr['sect'])
-    acc_n = evaluate_accidental_dignities(natal, chart_data['houses'], chart_data['sect'], chart_data.get('julian_day'))
-    acc_r = evaluate_accidental_dignities(rev, sr['houses'], sr['sect'], jd_sr)
+    acc_n = evaluate_accidental_dignities(natal, chart_data['houses'], chart_data['sect'], chart_data.get('julian_day'),
+                                          armc=chart_data.get('armc'), obliquity=chart_data.get('obliquity'), geo_lat=chart_data.get('geo_lat'))
+    acc_r = evaluate_accidental_dignities(rev, sr['houses'], sr['sect'], jd_sr,
+                                          armc=sr.get('armc'), obliquity=sr.get('obliquity'), geo_lat=sr.get('geo_lat'))
 
     def labels(planet, ess, acc):
         return ', '.join((ess.get(planet, {}).get('Essential Labels') or []) + (acc.get(planet, {}).get('Accidental Labels') or [])) or 'none'
@@ -10200,7 +10232,8 @@ def pn4_i7_planets(chart_data, sr):
     natal = chart_data['planetary_data']
     for label, chart in (('root', chart_data), ('revolution', sr)):
         data, asc, sect = chart['planetary_data'], chart['ascendant'], chart['sect']
-        acc = evaluate_accidental_dignities(data, chart['houses'], sect, chart.get('julian_day'))
+        acc = evaluate_accidental_dignities(data, chart['houses'], sect, chart.get('julian_day'),
+                                            armc=chart.get('armc'), obliquity=chart.get('obliquity'), geo_lat=chart.get('geo_lat'))
         pairs = _pairwise_configurations(data)
         try:
             receptions = evaluate_reception(data, sect)
@@ -11723,7 +11756,8 @@ if location_query and lat is not None and lon is not None:
         SOFTENED_INFORTUNE = fitting_infortune(chart_data['ascendant']) if FITTING_INFORTUNE else None
 
         essential = evaluate_essential_dignities(p_data, sect)
-        accidental = evaluate_accidental_dignities(p_data, chart_data['houses'], sect, chart_data['julian_day'])
+        accidental = evaluate_accidental_dignities(p_data, chart_data['houses'], sect, chart_data['julian_day'],
+                                                   armc=chart_data['armc'], obliquity=chart_data['obliquity'], geo_lat=lat)
         aspects = evaluate_ptolemaic_aspects(p_data)
         transfers = evaluate_transfers_of_light(p_data)
         collections = evaluate_collections_of_light(p_data)
