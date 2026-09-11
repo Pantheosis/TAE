@@ -8883,6 +8883,107 @@ def sahl_house_master_years(planet, planetary_data, cusps, sect, essential):
             'division': q, 'facts': {'share': share, 'eastern': east, 'westernizing': west, 'retrograde': retro,
                                      'under the rays': rays, 'fall': fall}, 'readings': SAHL_1_20_READINGS}
 
+# --- Spear-bearing: two stated definitions, DISPLAY ONLY (owner, 2026-09-11, decision sheet row 11 / DEC-D-18) ---
+# A. Right-sidedness, Sahl, On Nativities 2.5, 2-3 ("what is called the
+#    'spear-bearing' of the planets", the chapter head): 2 "If you found one
+#    of the two planets in square or sextile to its companion, and they were
+#    both in their exaltations or their houses, or one of them was in its
+#    exaltation and the other in its house, or one of its shares, and each one
+#    of the two was casting rays upon its companion, then that is a strong
+#    right-sidedness." 3 "And if they were not in their houses nor exaltations,
+#    but they were both of the sect of the day or the sect of the night, then
+#    that is also called right-sidedness (though it is below [the first
+#    version])." 1: "especially if the diurnal planets were right-siding by
+#    day, and the nocturnal ones by night".
+# B. The honor-guard, Ptolemy in Sahl, On Nativities 10.2.1, 10-15: 10 "the
+#    planets formed an honor-guard for them (and that is if the planets were
+#    eastern from the Sun and western from the Moon)"; 13 "no honor-guard ...
+#    and they do not look at them"; 14 "the luminaries were not in the stakes,
+#    and there was an honor-guard (and it is spear-bearing) in the stakes";
+#    15 neither in the stakes.
+# Neither enters a score; each table names its source. Readings, the engine's:
+# in A, "casting rays upon its companion" = the pair is Connected under the
+# Configurations page's connection rule; "one of its shares" = a share
+# (triplicity, bound or face) held by the partner of a planet in its house or
+# exaltation; "of the sect of the day or ... night" = both planets of one sect
+# (Mercury has none of his own here and is not counted). In B, "eastern from
+# the Sun" = rising before him (the solar phase's side), "western from the
+# Moon" = rising after her (the shorter arc); "in the stakes" = the whole-sign
+# places 1, 4, 7, 10 (a topic of rank, the canon's places); "look at" = the
+# whole-sign aspect. The course material named as a possible arbiter of the
+# definition has not been opened; both stated forms are shown.
+def evaluate_right_sidedness(planetary_data, sect):
+    """On Nativities 2.5, 2-3, per pair in whole-sign sextile or square. Display only."""
+    ess = evaluate_essential_dignities(planetary_data, sect)
+    pairs = {frozenset((r['light_name'], r['heavy_name'])): r for r in _pairwise_configurations(planetary_data)
+             if r['aspect_name'] != 'Aversion'}
+    names = [p for p in PN4_SEVEN if p in planetary_data]
+    rows = []
+    for i, a in enumerate(names):
+        for b in names[i + 1:]:
+            apart = (int(planetary_data[b]['longitude'] % 360 // 30) - int(planetary_data[a]['longitude'] % 360 // 30)) % 12
+            apart = min(apart, 12 - apart)
+            if apart not in (2, 3):
+                continue
+            aspect = 'sextile' if apart == 2 else 'square'
+            r = pairs.get(frozenset((a, b)))
+            rays = bool(r) and _is_connected(r)
+            def dign(p):
+                e = ess.get(p, {})
+                strong = [k for k in ('Domicile', 'Exalt') if e.get(k)]
+                share = [k for k in ('Triplicity', 'Term', 'Face') if e.get(k)]
+                return strong, share
+            sa, sha = dign(a)
+            sb, shb = dign(b)
+            strong = bool(sa) and bool(sb) or (bool(sa) and bool(shb)) or (bool(sb) and bool(sha))
+            same_sect = ((a in DIURNAL_SECT_PLANETS and b in DIURNAL_SECT_PLANETS)
+                         or (a in NOCTURNAL_SECT_PLANETS and b in NOCTURNAL_SECT_PLANETS))
+            in_sect = (sect == 'Diurnal' and a in DIURNAL_SECT_PLANETS and b in DIURNAL_SECT_PLANETS) or                       (sect != 'Diurnal' and a in NOCTURNAL_SECT_PLANETS and b in NOCTURNAL_SECT_PLANETS)
+            if strong and rays:
+                grade = 'strong right-sidedness (2.5, 2)'
+            elif same_sect and not (sa or sb):
+                grade = 'right-sidedness by sect, "below the first" (2.5, 3)'
+            else:
+                grade = '-'
+            rows.append({'Pair': f"{a} and {b}", 'Aspect (whole sign)': aspect,
+                         'Casting rays on each other': "yes (Connected under the page's rule)" if rays else 'no',
+                         'Dignities': f"{a}: {', '.join(sa + sha) or 'none'}; {b}: {', '.join(sb + shb) or 'none'}",
+                         'One sect': 'yes' if same_sect else 'no',
+                         'In the sect of the chart (2.5, 1)': 'yes' if in_sect else 'no',
+                         'Grade': grade, 'Source': 'Sahl, On Nativities 2.5, 1-3'})
+    return rows
+
+def evaluate_honor_guard(planetary_data, ascendant_lon):
+    """On Nativities 10.2.1, 10-15 (Ptolemy in Sahl): per planet, eastern
+    from the Sun and western from the Moon, in the stakes, looking at the
+    luminaries; the luminaries' signs and places. Display only; which of
+    10-15 the configuration matches is stated as facts, not pronounced."""
+    sun, moon = planetary_data['Sun']['longitude'] % 360.0, planetary_data['Moon']['longitude'] % 360.0
+    rows = []
+    for lum in ('Sun', 'Moon'):
+        lon = planetary_data[lum]['longitude'] % 360.0
+        sign = get_zodiac_sign(lon)
+        place = get_wsh_house(lon, ascendant_lon)
+        rows.append({'Planet': lum, 'Role': 'luminary', 'Sign': f"{sign} ({'male' if sign in MASCULINE_SIGNS else 'female'})",
+                     'Whole-sign place': place, 'In a stake': 'yes' if place in (1, 4, 7, 10) else 'no',
+                     'Eastern from the Sun': '-', 'Western from the Moon': '-', 'Looks at the luminaries': '-',
+                     'Source': '10.2.1, 10-15'})
+    for p in ('Saturn', 'Jupiter', 'Mars', 'Venus', 'Mercury'):
+        if p not in planetary_data:
+            continue
+        lon = planetary_data[p]['longitude'] % 360.0
+        east_of_sun = ((lon - sun + 180.0) % 360.0) - 180.0 < 0
+        west_of_moon = ((lon - moon + 180.0) % 360.0) - 180.0 > 0
+        place = get_wsh_house(lon, ascendant_lon)
+        looks = [l for l in ('Sun', 'Moon') if _sahl_looks(lon, planetary_data[l]['longitude'])]
+        rows.append({'Planet': p, 'Role': 'honor-guard' if east_of_sun and west_of_moon else '-',
+                     'Sign': get_zodiac_sign(lon), 'Whole-sign place': place,
+                     'In a stake': 'yes' if place in (1, 4, 7, 10) else 'no',
+                     'Eastern from the Sun': 'yes' if east_of_sun else 'no',
+                     'Western from the Moon': 'yes' if west_of_moon else 'no',
+                     'Looks at the luminaries': ', '.join(looks) or 'neither', 'Source': '10.2.1, 10'})
+    return rows
+
 # --- Sahl, On Nativities 2.13, 48-51: the sect light's first triplicity lord by ascensional band ---
 # 48: "of the more powerful indications of good fortune is if the first lord of
 # the triplicity of the glowing one [fn 190: the sect light] is in a stake or
@@ -12388,6 +12489,8 @@ if location_query and lat is not None and lon is not None:
         strength_data = evaluate_strength_of_planets(p_data, essential, accidental, chart_data['ascendant'], sect, chart_data['houses'])
         weakness_data = evaluate_weakness_of_planets(p_data, essential, accidental, chart_data['ascendant'], sect)
         ascensional_bands = evaluate_ascensional_bands(p_data, chart_data['ascendant'], chart_data['mc'], chart_data['obliquity'], lat, sect)
+        right_sidedness = evaluate_right_sidedness(p_data, sect)
+        honor_guard = evaluate_honor_guard(p_data, chart_data['ascendant'])
         _moon = evaluate_corruption_of_the_moon(p_data, chart_data['ascendant'], sect)
         # Count is "how many of Sahl's ten testimonies", never the number of
         # clauses that matched: 104 and 109 can each be met by several
@@ -13027,6 +13130,28 @@ if location_query and lat is not None and lon is not None:
                                     "next actual stake; the five-degree allowance (Aphorism #44) lies on the other side of the stake and is "
                                     "not inherited. Refused where the ascension has no inverse (D-23). Carmen's third band (\"needy\") "
                                     "differs from Sahl's 50 (\"the middle of assets\"); Sahl says \"the first lord\", Carmen \"the lord\"."))
+                    _finding(_gap, 'Right-sidedness, "the spear-bearing of the planets" (Sahl, On Nativities 2.5, 1-3) -- display only',
+                             'Sahl, On Nativities 2.5, 1-3; owner, 2026-09-11 (DEC-D-18): a finding table, no score', right_sidedness,
+                             glance=("2.5, 2: a pair in square or sextile, both in their exaltations or houses (or one in each, or one of "
+                                     "them in one of its shares), each casting rays upon the other -- \"a strong right-sidedness\"; 3: "
+                                     "not in their houses or exaltations but both of one sect -- \"also called right-sidedness (though it "
+                                     "is below [the first version])\"; 1: especially the diurnal planets by day and the nocturnal by night."),
+                             notes=("Readings, the engine's: \"casting rays upon its companion\" = the pair is Connected under the "
+                                    "Configurations page's connection rule; \"one of its shares\" = a triplicity, bound or face held by "
+                                    "the partner of a planet in its house or exaltation; \"of the sect of the day or ... night\" = both "
+                                    "planets of one sect, Mercury not counted. A second stated definition, the honor-guard of 10.2.1, "
+                                    "10-15, is the next table; the course material named as a possible arbiter between them has not "
+                                    "been opened, so both are shown and neither enters a score."))
+                    _finding(_gap, 'The honor-guard, "and it is spear-bearing" (Ptolemy in Sahl, On Nativities 10.2.1, 10-15) -- display only',
+                             'Sahl, On Nativities 10.2.1, 10-15; owner, 2026-09-11 (DEC-D-18): a finding table, no score', honor_guard,
+                             glance=("10: the planets \"formed an honor-guard for [the luminaries] (and that is if the planets were eastern "
+                                     "from the Sun and western from the Moon)\"; 10-15 read the luminaries' signs (male or female), their "
+                                     "stakes, the guards' stakes and whether they look at the luminaries, into ranks from \"an elevated "
+                                     "king\" to \"weak with toil\" -- the delineation is not pronounced here, the facts are shown."),
+                             notes=("Readings, the engine's: \"eastern from the Sun\" = rising before him (the solar phase's side); "
+                                    "\"western from the Moon\" = rising after her, by the shorter arc; \"in the stakes\" = the whole-sign "
+                                    "places 1, 4, 7, 10 (rank is a topic; the canon's places); \"look at\" = the whole-sign aspect. "
+                                    "Examples in 10.2.7 are not reproduced."))
                     _finding(_gap, 'Corruption of the Moon', 'Sahl, The Introduction Ch.3, 103-112', moon_corruption_data,
                               glance="Sahl's own ten defects of the Moon, item [16] of his sixteen -- a different list from Abu Ma'shar's eleven corruptions in the Planetary Condition table.",
                               notes="Sahl's ten (103-112): burned within 12 degrees of the Sun; in her own fall or connecting with a planet in its own fall; approaching the Sun's opposition within 12 degrees; assembled with, square or opposed by an infortune, or enclosed between the two; with the Head or Tail in one sign under 12 degrees; in Gemini or in the sign's last bound; falling from the stakes or connecting with a planet that is; in the burned path, the end of Libra and beginning of Scorpio; wild, empty of course; slow, or waning in light.\n\nAbu Ma'shar's eleven (VII.6, 63-74) are not a variant of this list. He has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear there. His list is scored in the Planetary Condition table, this one is not scored anywhere.")

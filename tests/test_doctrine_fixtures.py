@@ -3132,3 +3132,33 @@ def test_2_13_bands_are_end_inclusive_and_truncated_by_the_next_stake(engine):
 def test_2_13_refuses_at_the_poles(engine):
     out = _bands(engine, lat=70.0)
     assert out["rows"] == [] and "D-23" in out["refused"]
+
+
+# --- DEC-D-18 (sheet row 11): spear-bearing, two display-only definitions ---------------------
+
+def test_right_sidedness_strong_and_by_sect(engine):
+    """2.5, 2: Jupiter in Cancer (exaltation) sextile Venus in Taurus
+    (domicile), connected -- strong. 2.5, 3: Saturn at 10 Leo and Jupiter at
+    10 Libra, neither in house nor exaltation nor any share, both diurnal,
+    sextile and connected -- "below the first". Jupiter at 6 Leo and Mars
+    at 10 Libra (opposite sects, no dignities) in sextile: no grade."""
+    p = pdata(Sun=280.0, Moon=160.0, Mercury=270.0, Venus=40.0, Mars=210.0, Jupiter=100.0, Saturn=330.0)
+    rows = {r["Pair"]: r for r in engine["evaluate_right_sidedness"](p, "Diurnal")}
+    assert rows["Jupiter and Venus"]["Grade"].startswith("strong")
+    p = pdata(Sun=280.0, Moon=160.0, Mercury=270.0, Venus=300.0, Mars=210.0, Jupiter=190.0, Saturn=130.0)
+    rows = {r["Pair"]: r for r in engine["evaluate_right_sidedness"](p, "Diurnal")}
+    assert "below the first" in rows["Saturn and Jupiter"]["Grade"] and rows["Saturn and Jupiter"]["One sect"] == "yes"
+    p = pdata(Sun=280.0, Moon=160.0, Mercury=270.0, Venus=300.0, Mars=190.0, Jupiter=126.0, Saturn=330.0)
+    rows = {r["Pair"]: r for r in engine["evaluate_right_sidedness"](p, "Diurnal")}
+    assert rows["Jupiter and Mars"]["Grade"] == "-" and rows["Jupiter and Mars"]["One sect"] == "no"
+
+
+def test_honor_guard_reads_eastern_from_the_sun_and_western_from_the_moon(engine):
+    """10.2.1, 10: Mars at 5 Capricorn rises before a Sun at 10 Capricorn
+    (eastern from him) and after a Moon at 20 Sagittarius (western from
+    her): an honor-guard; Saturn at 20 Capricorn is western from both."""
+    p = pdata(Sun=280.0, Moon=260.0, Mercury=300.0, Venus=310.0, Mars=275.0, Jupiter=100.0, Saturn=290.0)
+    rows = {r["Planet"]: r for r in engine["evaluate_honor_guard"](p, 270.0)}
+    assert rows["Mars"]["Role"] == "honor-guard" and rows["Mars"]["In a stake"] == "yes"
+    assert rows["Saturn"]["Role"] == "-" and rows["Saturn"]["Eastern from the Sun"] == "no"
+    assert rows["Sun"]["Sign"].endswith("(female)") and rows["Sun"]["In a stake"] == "yes"
