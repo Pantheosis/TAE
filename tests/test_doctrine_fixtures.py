@@ -3022,3 +3022,66 @@ def test_lot_of_fortune_candidate_is_placed_by_whole_sign_and_the_moon_by_the_di
     key = "House (division, 5 deg at the stakes; the Lot by whole-sign place)"
     assert moon[key] == 3 and "falling" in moon["Verdict"]
     assert lot[key] == 2 and r["releaser"] == "the Lot of Fortune"
+
+
+# --- FINAL-A1 (sheet row 1): the house-master's years from 1.20, 7-34, by the division ---------
+
+def _years(engine, planet, sect="Nocturnal", **planets):
+    data, cusps = _sahl_chart(215.0, **planets)                 # Scorpio rising; the cusps equal the signs
+    ess = engine["evaluate_essential_dignities"](data, sect)
+    return engine["sahl_house_master_years"](planet, data, cusps, sect, ess)
+
+
+def test_house_master_years_greater_in_an_enhanced_stake_and_middle_in_a_bare_one(engine):
+    """1.20, 10: Jupiter at 15 Taurus (the seventh, "the sign of the west";
+    his own bound, 14-22), eastern of a Sun at 10 Gemini, direct, not under
+    the rays -- enhanced, the greater years (79). 1.20, 20 with fn 158: the
+    same Jupiter at 5 Taurus (Venus's bound, no share) is a bare stake,
+    direct and unburned -- the middle years (45.5)."""
+    g = _years(engine, "Jupiter", Jupiter=45.0, Sun=70.0)
+    assert (g["grade"], g["sentence"], g["years"], g["division"]) == ("greater", "1.20, 10", 79, 7)
+    assert "the sign of the west" in g["text"]
+    g = _years(engine, "Jupiter", Jupiter=35.0, Sun=70.0)
+    assert (g["grade"], g["sentence"], g["years"]) == ("middle", "1.20, 20", 45.5)
+
+
+def test_house_master_years_second_eighth_falling_and_the_third_retrograde(engine):
+    """16: the second or eighth = middle (Jupiter at 15 Gemini, the eighth).
+    28: the other falling places = lesser (Jupiter at 15 Aries, the sixth).
+    33: the third, retrograde under the rays = days, no count restated
+    (Mercury at 15 Capricorn retrograde with the Sun at 20 Capricorn).
+    34: with that in its fall = hours (Jupiter there: Capricorn is his fall)."""
+    assert (_years(engine, "Jupiter", Jupiter=75.0, Sun=70.0)["sentence"]) == "1.20, 16"
+    g = _years(engine, "Jupiter", Jupiter=15.0, Sun=70.0)
+    assert (g["grade"], g["sentence"], g["years"]) == ("lesser", "1.20, 28", 12)
+    data, cusps = _sahl_chart(215.0, Mercury=285.0, Sun=290.0)
+    data["Mercury"]["speed_in_lon"] = -0.5
+    ess = engine["evaluate_essential_dignities"](data, "Diurnal")
+    g = engine["sahl_house_master_years"]("Mercury", data, cusps, "Diurnal", ess)
+    assert (g["grade"], g["sentence"], g["years"]) == ("days", "1.20, 33", None) and "not restated" in g["text"]
+    data, cusps = _sahl_chart(215.0, Jupiter=285.0, Sun=290.0)
+    data["Jupiter"]["speed_in_lon"] = -0.05
+    ess = engine["evaluate_essential_dignities"](data, "Diurnal")
+    g = engine["sahl_house_master_years"]("Jupiter", data, cusps, "Diurnal", ess)
+    assert (g["grade"], g["sentence"]) == ("hours", "1.20, 34")
+    assert any("14-15" in f for f in g["flags"])           # a superior, retrograde and burned: 14-15 printed, not applied
+
+
+def test_house_master_years_are_by_the_division_not_the_sign(engine):
+    """The unit is the owner's: a planet 3 degrees before the tenth cusp is
+    in the tenth DIVISION by the five-degree allowance, though in the
+    ninth SIGN. Cusps unequal here; Jupiter at 12 Leo, the Midheaven cusp
+    at 15 Leo, in his own triplicity by night, eastern, direct: the
+    greater years by 10 -- by whole sign he would have been in the ninth."""
+    data, _ = _sahl_chart(215.0, Jupiter=132.0, Sun=170.0)
+    cusps = [215.0, 245.0, 275.0, 305.0, 335.0, 5.0, 35.0, 65.0, 95.0, 135.0, 165.0, 190.0]
+    ess = engine["evaluate_essential_dignities"](data, "Nocturnal")
+    g = engine["sahl_house_master_years"]("Jupiter", data, cusps, "Nocturnal", ess)
+    assert g["division"] == 10 and engine["get_wsh_house"](132.0, 215.0) == 10   # both tenth here: Leo IS the tenth sign
+    data, _ = _sahl_chart(215.0, Jupiter=132.0, Sun=170.0)
+    cusps = [215.0, 245.0, 275.0, 305.0, 335.0, 5.0, 35.0, 65.0, 105.0, 135.0, 165.0, 190.0]
+    g = engine["sahl_house_master_years"]("Jupiter", data, cusps, "Nocturnal", ess)
+    assert g["division"] == 10 and (g["grade"], g["sentence"]) == ("greater", "1.20, 10")
+    cusps2 = [215.0, 245.0, 275.0, 305.0, 335.0, 5.0, 35.0, 65.0, 105.0, 140.0, 165.0, 190.0]   # the cusp 8 degrees on: the ninth division
+    g2 = engine["sahl_house_master_years"]("Jupiter", data, cusps2, "Nocturnal", ess)
+    assert g2["division"] == 9 and g2["sentence"] == "1.20, 26"

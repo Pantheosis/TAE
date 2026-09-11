@@ -354,17 +354,21 @@ def test_d2_control_abu_mashars_profile_keeps_the_same_pair_received_unmarked(en
     assert rec and not any("brought down" in str(v) for r in rec for v in r.values()), rec
 
 
-# --- D-3: the planetary years shown beside the two placement rules, applied to nothing
-def test_d3_years_display_reads_both_rules_and_names_the_silence(engine):
+# --- D-3: the planetary years beside 1.20's grade (the natal grant) and On Times 4, 7 (a question chart)
+def test_d3_years_display_reads_1_20_in_full_by_the_division_and_on_times_for_comparison(engine):
     c = _fixture_chart(engine, "1240-05-23")
     p, sect = c["planetary_data"], c["sect"]
     ess = engine["evaluate_essential_dignities"](p, sect)
     rows = engine["evaluate_planetary_years_display"](p, c["houses"], c["ascendant"], sect, ess)
     assert [r["Planet"] for r in rows] == ["Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]
     for r in rows:
-        assert r["On Times 4, 7 would grant"].startswith(("greater", "middle", "lesser", "in a stake but not eastern"))
-        assert r["On Nativities 1.20 would grant"].startswith(("greater", "middle", "not stated"))
+        assert r["On Times 4, 7 (a question chart, 4, 2): for comparison"].startswith(("greater", "middle", "lesser", "in a stake but not eastern"))
+        assert r["On Nativities 1.20 grants (as house-master)"].startswith(
+            ("greater (1.20", "middle (1.20", "lesser (1.20", "months (1.20", "days (1.20", "hours (1.20",
+             "days and hours (1.20", "middle as months and days (1.20", "1.20 silent"))
         assert (r["Lesser"], r["Greater"]) == (engine["PLANETARY_YEARS"][r["Planet"]]["lesser"], engine["PLANETARY_YEARS"][r["Planet"]]["greater"])
+        g = engine["sahl_house_master_years"](r["Planet"], p, c["houses"], sect, ess)
+        assert g["division"] == r["Division (5 deg at the stakes)"]
 
 
 # Who may read PLANETARY_YEARS, and which of its columns. Extending either
@@ -387,9 +391,19 @@ D3_GRANT_READERS = {
     # (Lesson 5), a table and nothing else: no caller reads a row to grant
     # anything, and the page reads no chart. UI_REVIEW_2026-09-10.md §3.
     "reference_planetary_years_rows",
+    # Added 2026-09-11 with FINAL-A1 (decision sheet row 1, the owner): the
+    # house-master's years ARE granted, from Sahl, On Nativities 1.20, 7-34
+    # read in full -- the corpus's one natal grant, On Times 4 being a
+    # question-chart chapter (4, 2) and 1.23, 68 pointing to 1.20. The
+    # reader applies a grant to ONE planet, the house-master 1.15 names,
+    # prints the sentence it rests on, and places by the division (the
+    # owner's unit). This is the thing the control used to forbid; it is
+    # admitted by the owner's decision, not by a reading.
+    "sahl_house_master_years",
 }
 D3_FARDAR_READERS = {"evaluate_planetary_years_display", "pn4_fardar_sequence",
-                     "pn4_activation_ages", "reference_planetary_years_rows"}
+                     "pn4_activation_ages", "reference_planetary_years_rows",
+                     "sahl_house_master_years"}          # reads the grant keys only (FINAL-A1); listed because it reads the table
 D3_GRANT_KEYS = ("lesser", "middle", "greater", "mighty")
 
 
@@ -411,13 +425,14 @@ def test_d3_control_the_GRANTED_years_are_applied_by_nothing():
     PN IV, so this control is no longer "nothing reads PLANETARY_YEARS" --
     pn4_fardar_sequence now reads it. What it guards is narrower.
 
-    The LESSER, MIDDLE, GREATER and MIGHTY years stay display-only. PN IV
-    turned out not to say which planet is the house-master or how many
-    years it grants -- Abu Ma'shar defers it to a book outside this corpus
-    (IX.8, 123) -- so corpus disagreement #2 stays open on the merits and
-    nothing chooses a row of that table. The FARDAR column is a different
-    kind of number, a period length rather than a grant, and IV.1, 2 gives
-    it outright.
+    The LESSER, MIDDLE, GREATER and MIGHTY years are applied by ONE reader
+    only: sahl_house_master_years (FINAL-A1, owner 2026-09-11), which grants
+    the house-master its years from Sahl, On Nativities 1.20, 7-34. PN IV
+    does not say which planet is the house-master or how many years it
+    grants (IX.8, 123); On Times 4, 7 is a question-chart rule; 1.20 is the
+    corpus's one natal grant. Nothing else may choose a row of that table.
+    The FARDAR column is a different kind of number, a period length rather
+    than a grant, and IV.1, 2 gives it outright.
 
     TWO CHECKS, and they catch different things. The key-level one runs
     first so that a genuine attempt to apply a grant gets the doctrinal

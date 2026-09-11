@@ -7876,27 +7876,21 @@ def reference_planetary_years_rows():
              'Mighty': y['mighty'], 'Fardar (years)': y['fardar']} for p, y in PLANETARY_YEARS.items()]
 
 def evaluate_planetary_years_display(planetary_data, cusps, ascendant_lon, sect, essential):
-    """Figure 146 beside each planet's placement, with what the two
-    placement rules in the corpus would grant it -- shown, not applied.
+    """Figure 146 beside each planet's placement, with the grade On
+    Nativities 1.20, 7-34 would give it AS HOUSE-MASTER (the corpus's one
+    natal grant, FINAL-A1; placed by the DIVISION, the POWER unit of the
+    owner's ruling of 2026-09-11 -- this column had read whole signs and
+    only 10, 11, 16 and 17), and what On Times 4, 7 would give it -- a
+    rule for a QUESTION chart ("in the hour of the question", 4, 2), shown
+    for comparison only. The grant is applied to one planet, the
+    house-master the Timing page names from 1.15; here every planet is
+    shown as if it were.
 
-    On Times Ch. 4, 7 (of the ruler of the releaser): "if the ruler was in
-    a stake, eastern, it grants its greater years; or if it was in what
-    follows the stakes, it grants its middle years; and if it was falling,
-    it grants its lesser years." Stake/succedent/falling by the app's
-    quadrant place with the five-degree carryover, as elsewhere.
-
-    On Nativities 1.20 (of the house-master): 10 "in the Ascendant or in the
-    Midheaven, or in the sign of the west, or the eleventh, enhanced by what
-    I explained [7-9: in its own share, eastern, direct, of the sect] ...
-    the greater years"; 11 "under the earth, eastern, in one of its shares,
-    enhanced ... its greater years"; 16 "in the second or eighth ... its
-    middle years"; 17 "in the house of hope or the fifth, and was not in
-    something of its shares, and was not eastern ... its middle years".
-    Whole signs, as 10 says "sign of the west". Where neither sentence
-    reaches a placement the column says so rather than inventing a value.
-    The two rules disagree on where the greater years are granted (04 §3
-    #2), which is one reason D-3 keeps them on the page and out of the
-    engine."""
+    On Times 4, 7 (of the ruler of the question's victor): "if the ruler
+    was in a stake, eastern, it grants its greater years; or if it was in
+    what follows the stakes, it grants its middle years; and if it was
+    falling, it grants its lesser years." Stake/succedent/falling by the
+    division with the five-degree carry-over, as elsewhere."""
     rows = []
     sun_lon = planetary_data['Sun']['longitude']
     for planet in ('Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon'):
@@ -7911,32 +7905,29 @@ def evaluate_planetary_years_display(planetary_data, cusps, ascendant_lon, sect,
         else:
             side = solar_phase(planet, lon, sun_lon, planetary_data[planet].get('speed_in_lon'))[1] or '-'
         eastern = side == 'eastern'
-        # On Times 4, 7
+        # On Times 4, 7 -- the question-chart rule, for comparison
         if q in ANGLE_HOUSES:
             times = 'greater (in a stake, eastern; 4, 7)' if eastern else 'in a stake but not eastern: 4, 7 gives no value'
         elif q in SUCCEDENT_HOUSES:
             times = 'middle (follows the stakes; 4, 7)'
         else:
             times = 'lesser (falling; 4, 7)'
-        # On Nativities 1.20
-        under_earth = q in (1, 2, 3, 4, 5, 6)
-        if ws in (1, 10, 7, 11):
-            nat = 'greater if enhanced (1.20, 10)' + ('' if (in_share and eastern) else ' -- not enhanced here (7-9)')
-            if ws == 11 and not in_share and not eastern:
-                nat = 'middle (11th, not in a share, not eastern; 1.20, 17)'
-        elif under_earth and eastern and in_share:
-            nat = 'greater (under the earth, eastern, in a share; 1.20, 11)'
-        elif ws in (2, 8):
-            nat = 'middle (1.20, 16)'
-        elif ws == 5 and not in_share and not eastern:
-            nat = 'middle (5th, not in a share, not eastern; 1.20, 17)'
+        # On Nativities 1.20, 7-34 in full, by the division
+        g = sahl_house_master_years(planet, planetary_data, cusps, sect, essential)
+        if g['grade'] is None:
+            nat = '1.20 silent'
+        elif g['years'] is not None:
+            nat = f"{g['grade']} ({g['sentence']})"
         else:
-            nat = 'not stated in 1.20'
+            nat = f"{g['grade']} ({g['sentence']}; count not restated)"
+        if g['flags']:
+            nat += ' -- 14-15 printed, not applied'
         rows.append({
             'Planet': planet, 'Lesser': years['lesser'], 'Middle': years['middle'], 'Greater': years['greater'],
             'Mighty': years['mighty'], 'Fardar': years['fardar'],
-            'WS place': ws, 'Quadrant place': q, 'Side of the Sun': side, 'In a share': 'yes' if in_share else 'no',
-            'On Times 4, 7 would grant': times, 'On Nativities 1.20 would grant': nat,
+            'WS place': ws, 'Division (5 deg at the stakes)': q, 'Side of the Sun': side, 'In a share': 'yes' if in_share else 'no',
+            'On Nativities 1.20 grants (as house-master)': nat,
+            'On Times 4, 7 (a question chart, 4, 2): for comparison': times,
         })
     return rows
 
@@ -8433,10 +8424,12 @@ def pn4_distribution_at_age(segments, age_years):
 # on 2026-09-10, on process/TIMING_SOURCES_REPORT_2026-09-10.md, to build
 # it from Sahl instead: the RELEASER per Nawbakht, On Nativities 1.15
 # (with 1.16 and the ranking of 1.20, 1-4), and the HOUSE-MASTER DIRECTED
-# per Masha'allah, On Nativities 1.23, 2. The years the house-master would
-# grant are still granted by nothing: On Times 4, 7 and On Nativities 1.20
-# disagree on where the greater years fall (corpus disagreement #2), the
-# D-3 control stands, and Masha'allah's direction needs no years.
+# per Masha'allah, On Nativities 1.23, 2. The years the house-master
+# grants are, since 2026-09-11 (FINAL-A1, the owner), granted from On
+# Nativities 1.20, 7-34 read in full (sahl_house_master_years): On Times 4
+# is a question-chart chapter and 1.23, 68 points to 1.20, so corpus
+# disagreement #2 was a tie between a horary rule and a natal one. The D-3
+# control admits that one reader by name.
 #
 # 1.15, 6-9 (day): "look ... at the Sun and the meeting: because if you
 # found the Sun in the Ascendant, the Midheaven, the house of hope, or in
@@ -8720,6 +8713,175 @@ def _sahl_rank_house_master(cand, planetary_data, cusps):
         r.pop('_key')
     return rows
 
+# On Nativities 1.20, 7-34: the sentences applied, in the reading FINAL-A1
+# set out and the owner adopted (2026-09-11), each with the clause it turns on.
+SAHL_1_20_SENTENCES = {
+    10: ("greater", "in the Ascendant or in the Midheaven, or in the sign of the west, or the eleventh, enhanced by what I explained ... the <greater> years"),
+    11: ("greater", "under the earth, eastern, in one of its shares, enhanced ... its greater years (and by night in the fourth and fifth, it indicates the greater years)"),
+    16: ("middle", "in the second or eighth ... its middle years"),
+    17: ("middle", "in the house of hope or the fifth, and was not in something of its shares, and was not eastern ... its middle years"),
+    18: ("middle", "under the rays of the Sun in a stake ... its middle years"),
+    19: ("middle as months and days", "alien, westernizing in the places ... its middle years as months and days"),
+    20: ("middle", "in the stakes, easternizing, or not easternizing so long as it is not retrograde and not burned ... its middle years"),
+    21: ("lesser", "under the rays of the Sun, retrograde in a stake ... its lesser years"),
+    22: ("lesser", "alien, westernizing, retrograde ... the lesser ones"),
+    23: ("lesser", "in the eleventh or fifth, retrograde ... its lesser years"),
+    "23b": ("months", "[in the eleventh or fifth, retrograde,] and if it was under the rays of the Sun ... months"),
+    24: ("days and hours", "and if along with that it was in its fall ... days and hours"),
+    25: ("months", "in the second and eighth, retrograde, under the rays of the Sun ... months"),
+    26: ("middle", "in the ninth, in one of its shares, eastern ... its middle years"),
+    27: ("lesser", "[in the ninth,] if it does not have a share nor easternization ... its lesser years"),
+    28: ("lesser", "in the <other> [places] falling from the stakes ... its lesser years"),
+    29: ("months", "[in the ninth,] under the rays of the Sun, retrograde ... months"),
+    30: ("middle", "in the third, [uncertain] in its house or share ... its middle years"),
+    31: ("lesser", "[in the third,] if it does not have a share nor easternization ... its lesser years"),
+    32: ("months", "[in the third,] if it was retrograde ... months"),
+    33: ("days", "[in the third,] if it was retrograde under the rays ... days"),
+    34: ("hours", "[in the third,] and if with that it was in its fall ... hours"),
+}
+SAHL_1_20_READINGS = (
+    "Readings of 1.20 made here (FINAL-A1; the owner's ruling of 2026-09-11 on the unit): the house-master is placed by "
+    "the Alcabitius DIVISION with the five-degree allowance at the four axial degrees -- 1.20's grades are a POWER "
+    "judgment -- and 10's \"the sign of the west\" is the corpus's sign vocabulary, not a house system (the same "
+    "attribution as the releaser's places); \"enhanced\" (7-9) = in a share, eastern, direct, not under the rays, 8's "
+    "sect aspects not tested; \"a share\" = any of its five dignities at its own degree; \"eastern\" and "
+    "\"westernizing\" by the solar phase's side; \"under the rays\" = burned or under the rays; \"alien\" = in no "
+    "share; 10 and 20 as fn 158 reads them (an enhanced stake = the greater years, a bare stake direct and unburned = the "
+    "middle); \"under the earth\" (11) = the fourth division, and the fifth by night (11's parenthesis); 12 is subsumed "
+    "by 10 (the house of Good Fortune is the eleventh, fn 153); 13 is illegible in part and not applied; 14-15 are printed "
+    "and not applied (fn 156: the sense is unclear); 19 and 22 (alien, westernizing) are applied only where no placement "
+    "sentence reaches; where a sentence names months, days or hours without a count, none is invented. Placements no "
+    "sentence reaches print \"1.20 silent\". On Times 4, 7 is a rule for a question chart (\"in the hour of the "
+    "question\", 4, 2) and is shown on the Chart page for comparison only. 1.23, 53 and 61: these years are what the "
+    "infortunes may cut off."
+)
+
+def _sahl_1_20_grade(q, share, east, west, retro, rays, fall, night):
+    """1.20, 10-34 as a decision on the facts; q is the DIVISION (1-12).
+    Returns (sentence key, grade) or (None, None) where no sentence reaches."""
+    enhanced = share and east and not retro and not rays
+    if q in (1, 4, 7, 10):
+        if rays and retro:
+            return 21, 'lesser'
+        if q in (1, 10, 7) and enhanced:
+            return 10, 'greater'
+        if q == 4 and east and share:
+            return 11, 'greater'
+        if rays:
+            return 18, 'middle'
+        if not retro:
+            return 20, 'middle'
+        return None, None
+    if q == 11:
+        if enhanced:
+            return 10, 'greater'
+        if retro:
+            if rays and fall:
+                return 24, 'days and hours'
+            if rays:
+                return '23b', 'months'
+            return 23, 'lesser'
+        if not share and not east:
+            return 17, 'middle'
+        return None, None
+    if q in (2, 8):
+        if retro and rays:
+            return 25, 'months'
+        return 16, 'middle'
+    if q == 5:
+        if night and east and share:
+            return 11, 'greater'
+        if retro:
+            if rays and fall:
+                return 24, 'days and hours'
+            if rays:
+                return '23b', 'months'
+            return 23, 'lesser'
+        if not share and not east:
+            return 17, 'middle'
+        return None, None
+    if q == 9:
+        if rays and retro:
+            return 29, 'months'
+        if share and east:
+            return 26, 'middle'
+        if not share and not east:
+            return 27, 'lesser'
+        return None, None
+    if q == 3:
+        if retro and rays and fall:
+            return 34, 'hours'
+        if retro and rays:
+            return 33, 'days'
+        if retro:
+            return 32, 'months'
+        if share:
+            return 30, 'middle'
+        if not east:
+            return 31, 'lesser'
+        return None, None
+    if q in (6, 12):
+        return 28, 'lesser'
+    return None, None
+
+def sahl_house_master_years(planet, planetary_data, cusps, sect, essential):
+    """The years On Nativities 1.20, 7-34 grants a house-master (Nawbakht;
+    the section 1.23, 68 -- Masha'allah -- sends the reader to: "according
+    to what I explained to you in the section on the house-master"). The
+    corpus's ONE natal grant: On Times 4, 7 is stated for a question chart
+    ("in the hour of the question", 4, 2) and is no natal rival (FINAL-A1,
+    owner 2026-09-11, decision sheet row 1). The placement is the DIVISION
+    (the POWER unit of the owner's ruling; re-measured under it, 83.3% of
+    384 house-masters in the 406-chart harness receive a definite grade,
+    against 82.3% under whole signs). Returns a dict: 'grade', 'sentence',
+    'years' (the count where the grade names one), 'text' (the grade with
+    its sentence quoted), 'flags' (14-15 printed where it would apply; 13),
+    'division', 'readings'; None if the planet is absent. Not the Sun's
+    grant only in the sense that the Sun has no solar phase."""
+    row = planetary_data.get(planet)
+    if not row:
+        return None
+    lon = row['longitude'] % 360.0
+    q = get_effective_house(lon, cusps)
+    ess = essential.get(planet, {})
+    share = any(ess.get(k) for k in ('Domicile', 'Exalt', 'Triplicity', 'Term', 'Face'))
+    fall, exile = bool(ess.get('Fall')), bool(ess.get('Detriment'))
+    if planet == 'Sun':
+        east = west = rays = False
+    else:
+        phase, side = solar_phase(planet, lon, planetary_data['Sun']['longitude'], row.get('speed_in_lon'))[:2]
+        east, west = side == 'eastern', side == 'western'
+        rays = phase in ('Burned', 'Under the rays')
+    retro = (row.get('speed_in_lon') or 0.0) < 0.0
+    night = sect != 'Diurnal'
+    key, grade = _sahl_1_20_grade(q, share, east, west, retro, rays, fall, night)
+    if key is None and not share and west:
+        key, grade = (22, 'lesser') if retro else (19, 'middle as months and days')
+    years = None
+    if grade in ('greater', 'middle', 'lesser'):
+        years = PLANETARY_YEARS[planet][grade]
+    elif grade == 'middle as months and days':
+        years = PLANETARY_YEARS[planet]['middle']
+    n = str(key).rstrip('b') if key is not None else None
+    if key is None:
+        text = f"1.20 silent: no sentence of 10-34 reaches {planet} in division {q} with these facts"
+    elif years is not None:
+        text = (f"the {grade} years, {years:g} ({planet}) -- 1.20, {n}: \"{SAHL_1_20_SENTENCES[key][1]}\"")
+    else:
+        text = (f"{grade} -- 1.20, {n}: \"{SAHL_1_20_SENTENCES[key][1]}\" (the count is not restated by the "
+                f"sentence; none is invented)")
+    flags = []
+    if planet in ('Saturn', 'Jupiter', 'Mars') and (exile or west or retro or rays):
+        flags.append('1.20, 14-15, printed and not applied (fn 156: "to me the meaning is still unclear"): "Know that exile, '
+                     'setting, retrogradation, and burning do not stick to the superior planets, but they do stick to the '
+                     'inferior planets. And if a superior one was in the condition which sticks to it, it is corrupting, for it '
+                     'indicates its lesser years as months or days."')
+    if q == 5 and planet == 'Venus':
+        flags.append('1.20, 13 (Venus in her own shares in the fifth, eastern, the governor) is illegible in part and not applied.')
+    return {'grade': grade, 'sentence': (f"1.20, {n}" if n else None), 'years': years, 'text': text, 'flags': flags,
+            'division': q, 'facts': {'share': share, 'eastern': east, 'westernizing': west, 'retrograde': retro,
+                                     'under the rays': rays, 'fall': fall}, 'readings': SAHL_1_20_READINGS}
+
 def sahl_releaser(planetary_data, ascendant_lon, cusps, sect, lot_of_fortune, meeting_lon, fullness_lon):
     """Nawbakht's selection (On Nativities 1.15, 6-16) with 1.16's
     exception and 1.20, 2-5's ranking of the house-master. Returns
@@ -8954,9 +9116,10 @@ def sahl_house_master_flags(house_master, planetary_data, cusps):
 # WHICH of the greater, middle and lesser years applies is chosen "in
 # accordance with what its position in the rotation of the circle
 # indicated in the root" (III.7, 35) -- a placement rule PN IV
-# presupposes and never states. That is corpus disagreement #2, which
-# PN IV does not adjudicate (IX.8, 123), so ALL THREE are shown and none
-# is chosen, exactly as the planetary-years table does.
+# presupposes and never states (IX.8, 123). Since 2026-09-11 the
+# house-master's own years come from Sahl, On Nativities 1.20 (FINAL-A1);
+# III.7's ages are a different use of the table, so ALL THREE are still
+# shown here and none is chosen.
 
 PN4_MANIFESTATION_BY_QUADRUPLICITY = {
     'fixed': ('once in the lifespan', 'III.7, 35'),
@@ -11564,6 +11727,10 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'hm_this_year': hm_this_year, 'hm_revolution': hm_revolution, 'hm_flags': hm_flags,
         'standin_moon': standin_moon,
         'hm_turning': sahl_house_master_turning(house_master, chart_data['planetary_data']) if house_master else [],
+        # FINAL-A1 / sheet row 1: the house-master's years from 1.20, 7-34, by the division.
+        'hm_years': (sahl_house_master_years(house_master, chart_data['planetary_data'], chart_data['houses'], chart_data['sect'],
+                                             evaluate_essential_dignities(chart_data['planetary_data'], chart_data['sect']))
+                     if house_master else None),
         'ii3': pn4_ii3_examination(chart_data, sr, year, jd_sr),
         'iii2_type': pn4_static_type(current['distributor'], current['partner']) if current else None,
         'iii2_checklist': pn4_distribution_checklist(chart_data, sr, year['longitude'], current),
@@ -13502,6 +13669,16 @@ if location_query and lat is not None and lon is not None:
                     st.markdown("**The lords looking at the releaser, ranked** (1.15, 13; 1.20, 2-5) -- the first is the house-master:")
                     st.dataframe(pd.DataFrame(rel['ranking']), hide_index=True, width='stretch',
                                  height=_rows_height(len(rel['ranking'])))
+                if pn4['hm_years']:
+                    _y = pn4['hm_years']
+                    st.markdown(f"**The house-master's years** (Sahl, *On Nativities* 1.20, 7-34, Nawbakht -- the section "
+                                f"1.23, 68, Masha'allah, sends the reader to): **{_y['text']}**. Placed by division "
+                                f"{_y['division']} (the POWER unit). These are the years the infortunes may cut off (1.23, 53 and "
+                                f"61) and the input PN IV III.2, 110-111's gate names (\"only if those years matched the years of "
+                                f"the lifespan which his indicator in the root had already pointed out\").")
+                    for _f in _y['flags']:
+                        st.markdown(f"- {_f}")
+                    st.caption(_y['readings'])
                 if rel['releaser'] is None:
                     st.markdown("**The stand-in (Sahl, *On Nativities* 1.32, 11-14, al-Andarzaghar).** The Ascendant's "
                                 "distribution in the tab \"from the Ascendant\" is \"the first of them\" (13); the Moon, "
@@ -13581,9 +13758,12 @@ if location_query and lat is not None and lon is not None:
                            "looking-lord test the engine applies to it is supplied from 15's general wording (a reading). "
                            "Not applied, and named: "
                            + '; '.join(f"{c} ({t})" for c, t in SAHL_RELEASER_NOT_APPLIED) + ". "
-                           "The YEARS the house-master grants are granted by nothing: On Times 4, 7 and On Nativities "
-                           "1.20 disagree on where the greater years fall (corpus disagreement #2) and the Chart page "
-                           "shows both columns applied to no one. On Times 4, 2-5's shorter list (victor by testimony, "
+                           "The YEARS the house-master grants are granted from On Nativities 1.20, 7-34 read in full (owner, "
+                           "2026-09-11, FINAL-A1), above: On Times 4 is a question-chart chapter (\"in the hour of the "
+                           "question\", 4, 2) and 1.23, 68 sends the reader to \"the section on the house-master\", so the "
+                           "corpus holds one natal grant and corpus disagreement #2 was a tie between a horary rule and a "
+                           "natal one; the Chart page's Planetary years table shows 1.20's grade for every planet and On "
+                           "Times 4, 7 for comparison. On Times 4, 2-5's shorter list (victor by testimony, "
                            "seven candidates) and Masha'allah's ray in the Ascendant (1.23, 46-50) are the other two "
                            "procedures in the corpus, not built. No worked example exists in Sahl.")
 
@@ -13876,10 +14056,11 @@ if location_query and lat is not None and lon is not None:
                 st.subheader('Chronocrator Matrix (Active Time Lords)', help='Two rows: the lord of the year by annual profection, and the Egyptian bound lord of the Ascendant directed symbolically at one degree per year -- which is not a distribution, as its label says. Abu Ma\'shar names the shortcut himself and grades it: "there is an approximation in it, but the correct [approach] is that this way of directing is like the direction of the Sun every day" (IX.7, 32). The ascensional method he prefers is the jar bakhtar table above.')
                 st.dataframe(pd.DataFrame(time_lords_data), hide_index=True, width='stretch')
                 st.subheader("Planetary years (Gr. Intr. VII.8, Figure 146) -- display only",
-                             help="The lesser, middle, greater and mighty years and the fardar of each planet, beside its placement and what "
-                                  "the two placement rules in the corpus would grant it. Nothing here is applied: how many years the "
-                                  "house-master grants is the question PN IV does not answer (IX.8, 123) and Sahl's two books answer "
-                                  "differently; which planet it is, the Timing page now takes from On Nativities 1.15.")
+                             help="The lesser, middle, greater and mighty years and the fardar of each planet, beside its placement, "
+                                  "the grade On Nativities 1.20, 7-34 would give it as house-master (placed by the division, the "
+                                  "POWER unit; owner, 2026-09-11) and what On Times 4, 7 -- a question-chart rule, 4, 2 -- would "
+                                  "give it, for comparison. Applied to one planet only: the house-master the Timing page names "
+                                  "from On Nativities 1.15, whose grant is printed there with its sentence.")
                 st.dataframe(pd.DataFrame(planetary_years_data), hide_index=True, width='stretch', height=_rows_height(len(planetary_years_data)))
 
             with st.expander("What Persian Nativities IV does not settle", icon=":material/help:"):
@@ -13897,9 +14078,12 @@ if location_query and lat is not None and lon is not None:
                     "per 1.23, 2 (Masha'allah), in the chapter named The releaser, with every reading that step needed said "
                     "there; the releaser's distribution feeds the governor's testimony #3 and the luminary proxies. "
                     "The distribution **from the Ascendant** remains the *jar bakhtar* of II.2, 6-7.\n\n"
-                    "**Where the greater years are granted** (*On Times* 4, 7 against *On Nativities* 1.20, 10-17). "
-                    "PN IV is silent and Sahl's two books disagree, so the disagreement stays open, the Planetary years "
-                    "table still chooses no row, and the house-master is directed instead of granting.\n\n"
+                    "**Where the greater years are granted.** Decided 2026-09-11 (FINAL-A1, the owner): *On Nativities* "
+                    "1.20, 7-34 is the corpus's one natal grant -- *On Times* 4 is a question-chart chapter (\"in the hour "
+                    "of the question\", 4, 2) and 1.23, 68 sends the reader to \"the section on the house-master\" -- so "
+                    "the house-master's years are granted from 1.20 in The releaser chapter, placed by the division; the "
+                    "Planetary years table shows 1.20's grade for every planet and *On Times* 4, 7 for comparison; PN IV is "
+                    "silent (IX.8, 123) and III.2, 110-111's gate now has the input it names.\n\n"
                     "**Directing anything that is not the Ascendant or the meridian.** III.1, 12 sends the reader to "
                     "\"what we stated in our book [on that topic]\" for every other point. Dykes' fn 16 identifies the "
                     "method as Ptolemy's proportional semi-arcs, but that is an editor's note rather than Abu Ma'shar's "

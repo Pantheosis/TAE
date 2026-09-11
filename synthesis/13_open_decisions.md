@@ -927,3 +927,15 @@ in any aspect). The ¶63 overlap ran `evaluate_non_reception` and `evaluate_rece
 engine code was changed to obtain any figure. D-22's Kind III overlap ran the same two Sahl
 evaluators over the same 406 charts (`kind3_freq.py`). D-19–D-21's figures are from the same 406 charts via
 `01_abu_mashar_book_v_excerpt.md`'s `bookv_check.py` (Figures 59–64 parsed from the corpus).
+
+
+## Addenda, 2026-09-11 -- the owner's decision sheet (process/IMPLEMENTATION_BRIEF_2026-09-11.md §2), built on branch astra-build-2026-09-11
+
+| Decision | Outcome (owner, 2026-09-11) | Where |
+|---|---|---|
+| D-3, the years | **Granted** from Sahl, *On Nativities* 1.20, 7-34 read in full (FINAL-A1; sheet row 1): *On Times* 4 is a question-chart chapter (4, 2) and 1.23, 68 points to 1.20, so corpus disagreement #2 was a tie between a horary rule and a natal one. Unit: the Alcabitius DIVISION with 5° at the stakes (the POWER unit of OWNER_RULING_PLACES_VS_DYNAMICS); re-measured 83.3% (320/384) definite grades against 82.3% under whole signs. One reader admitted to `D3_GRANT_READERS`: `sahl_house_master_years`. | `sahl_house_master_years`, `evaluate_planetary_years_display` |
+| D-5 as implemented | **Keep 19° Libra-3° Scorpio, relabelled** (sheet row 9): Sahl gives no degrees; the span is Gr. Intr. VII.6, 40's harsher band (fn 120), borrowed; firing on the two whole signs rejected as over-reading Sahl. Readings recorded, not tested: 15-15 "often defined" (Carmen p. 258 fn 104; Course Glossary); Dorotheus's own construction (Carmen p. 258, 6). | `evaluate_corruption_of_the_moon` [8] |
+| D-11 | **Relabelled and re-defaulted** (sheet row 4 / FINAL-A12): stated by Gr. Intr. VIII.4, 226 and VIII.6, 69, printed in Sahl 8.6, 1 with fn 89's variant; "emendation" is a fact about Sahl's transmission and leaves the confidence field; this Lot's eighth degree is "by equation" (VIII.3, 14-15), the cusp, its own rule; the whole-sign carried degree a labelled variant row. | `LOT_DEFINITIONS['death']`, `death_ws` |
+| D-15 | **Relabelled** (sheet row 10): the 18° west switch is Dykes's table in 1.22 and fn 175, not Sahl's; the 15 is Gr. Intr. VII.2, 31. | `SOLAR_RAYS_ORB` comment, the checkbox, the Sources page |
+| D-19 | **Kept** (sheet row 15 / GAP-39); the docstring cites it (V.19, 7; fn 108) instead of "for want of a source"; VII.6, 52's own-node clause built from the mean nodes, the mean/true reading declared. | `evaluate_abu_mashar_condition` |
+| The five-degree all-cusps reading | **Retired** (sheet row 3 / the owner's ruling): the rule is a dynamics rule at the four axial degrees only. | `get_effective_house`; the preference is gone |
