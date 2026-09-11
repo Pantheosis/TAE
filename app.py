@@ -15454,19 +15454,10 @@ if location_query and lat is not None and lon is not None:
 
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
                 st.markdown(
-                    "**Decision D-3 is closed** (2026-09-10). It asked whether Sahl's *On Times* fell under the "
-                    "*Revolutions* deferral, and was decided \"for implementation, yes; for reading, no\" while "
-                    "PN IV was unread. PN IV has now been read, and the deferral it named is lifted for everything "
-                    "above.\n\n"
-                    "**Two readings on this page came from the photograph rather than the OCR'd corpus, and the corpus "
-                    "was repaired to match on 2026-09-11 (`PN4_REPAIRS_2026-09-11.md`).** "
-                    "(1) The bottom rung of the rate ladder is **25‴**, twenty-five thirds; the corpus read "
-                    "25″, which would make an hour two and a half days long, and the arithmetic settles it "
-                    "independently of the page; the corpus now reads 25‴. (2) The *fardar* order is taken from the "
-                    "prose of **IV.1, 2-4**, which gives it complete; the corpus's Figure 43 (p. 116) had dropped fifteen "
-                    "of its eighteen planet glyphs and is complete again, and the prose is still what is built from. "
-                    "Both are recorded in `PN4_READTHROUGH_FINDINGS_2026-09-10.md` (D-07, D-05).\n\n"
-                    "**One printed error is deliberately not reproduced.** Intro Sect. 2 (p. 7) puts the monthly "
+                    "**The rate ladder's bottom rung is 25‴** -- twenty-five thirds of a degree to the hour, III.1, 13 "
+                    "(25″ would make an hour two and a half days long; the arithmetic settles it) -- and **the *fardar* "
+                    "order is the prose's, IV.1, 2-4**, of which Figure 43 (p. 116) is the table.\n\n"
+                    "**One printed error is not reproduced.** Intro Sect. 2 (p. 7) puts the monthly "
                     "revolutions at 12° **23′** when the natal Sun is at 12° **22′**. The page "
                     "genuinely prints that, and it is contradicted by the rule in its own sentence, by IX.1, 23, by "
                     "IX.3, 2, and by Dykes' own worked example at Intro Sect. 9 p. 95. The degree **and minute** are "
@@ -15482,9 +15473,10 @@ if location_query and lat is not None and lon is not None:
                     "years; or if it was in what follows the stakes, it grants its middle years; and if it was "
                     "falling, it grants its lesser years.\" **On Nativities 1.20, 10-17:** greater in the Ascendant, "
                     "Midheaven, sign of the west or eleventh when enhanced (10), or under the earth, eastern, in a "
-                    "share (11); middle in the second or eighth (16), or in the eleventh or fifth when not in a share "
-                    "and not eastern (17). The two disagree, PN IV does not adjudicate them "
-                    "(synthesis/04_timing_open_questions.md Sect. 3 #2), and no row is chosen.")
+                    "share, enhanced (11); middle in the second or eighth (16), or in the eleventh or fifth when not in a share "
+                    "and not eastern (17). The two disagree, PN IV does not adjudicate them, and no row is chosen; "
+                    "the house-master's years on the Releaser tab are Sahl's 1.20 in full, On Times 4, 7 being a "
+                    "question-chart rule.")
 
         def page_sources():
             st.header("Sources and readings")
