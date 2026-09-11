@@ -10244,7 +10244,9 @@ def pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat, e
                 add('root', 'time lord', f"{planet}, {name}", natal[planet]['longitude'], 'I.6, 6')
     if orb and orb in natal:
         add('root', 'time lord', f"{orb}, lord of the orb", natal[orb]['longitude'], 'I.6, 6')
-    rows.sort(key=lambda r: (r['House'], r['lon']))
+    # by degree within the house, counted FROM ITS CUSP: a quadrant house
+    # can straddle 0 Aries, where raw longitude would put its last degrees first.
+    rows.sort(key=lambda r: (r['House'], (r['lon'] - sr['houses'][r['House'] - 1]) % 360.0))
     for r in rows:
         del r['lon']
     counts['total of I.6, 8'] = counts['planets'] + counts['rays'] + counts['nodes'] + counts['twelfth-parts of houses'] + counts['twelfth-parts of planets']

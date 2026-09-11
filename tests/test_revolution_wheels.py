@@ -344,12 +344,19 @@ def test_image_files_by_the_revolutions_cusps_not_whole_signs(engine):
     fixture charts some planet's quadrant house differs from its
     whole-sign house from the revolution's Ascendant, which is the change
     (order PN4R-4n-5; the lane measured 92.6% of charts)."""
+    def lon_of(position):
+        deg, sgn, mins = position.split(" ")
+        sign = next(z for z in engine["SIGN_ORDER"] if z.startswith(sgn))
+        return engine["SIGN_ORDER"].index(sign) * 30 + int(deg.rstrip("\u00b0")) + int(mins.rstrip("'")) / 60.0
+
     differs = False
     for date_str in [None] + list(CHARTS):
         chart, latlon, b = _bundle(engine, date_str)
         rows, _counts = b["image"]
         for r in rows:
-            assert r["House"] == engine["get_house_number"](r["lon"], b["sr"]["houses"]), r
-            if r["Kind"] == "planet" and r["House"] != engine["get_wsh_house"](r["lon"], b["sr"]["ascendant"]):
+            lon = lon_of(r["Position"])              # the printed minute; a cusp inside that minute is allowed either way
+            houses = {engine["get_house_number"](lon, b["sr"]["houses"]), engine["get_house_number"](lon + 1 / 60.0, b["sr"]["houses"])}
+            assert r["House"] in houses, r
+            if r["Kind"] == "planet" and r["House"] != engine["get_wsh_house"](lon, b["sr"]["ascendant"]):
                 differs = True
     assert differs

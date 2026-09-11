@@ -2144,7 +2144,6 @@ def test_pn4_bound_transit_sentence_is_keyed_to_the_type(engine):
     assert key(6, "fortune", False)[0] == 43
     assert key(4, "fortune", True)[0] == 43 and key(5, "fortune", False)[0] == 43
     assert key(2, "fortune", True)[0] is None and key(3, "fortune", False)[0] is None and key(None, "fortune", True)[0] is None
-    assert key(2, "fortune", True)[0] == 43 and "40-42" in key(2, "fortune", True)[1]
     assert key(1, None, True)[0] is None and "Sun, the Moon or Mercury" in key(1, None, True)[1]
     assert key(1, "fortune", True)[0] is None
     gated = {k for k, (_c, _t, d) in engine["PN4_BOUND_TRANSIT_SENTENCES"].items() if d}
@@ -2181,7 +2180,8 @@ def test_pn4_bound_transits_quote_the_sentence_and_read_iii_8_7(engine):
     root, sr, _ = _two_charts(engine, rev=dict(Venus=22.5, Saturn=340.0, Sun=190.0))
     rows = engine["pn4_bound_transits"](root, sr, current, "Saturn")
     body = next(r for r in rows if r["In the bound, in the revolution"].startswith("Venus by body"))
-    assert "speak of a ray" in body["Sentence"]
+    # a fortune's BODY under type 6 is 43 (40's premise holds; order PN4R-4m-1), still under 40-42's unjudged conditions
+    assert "III.2, 43" in body["Sentence"] and "40-42" in body["Sentence"]
     assert engine["pn4_bound_transits"](root, sr, None, "Saturn") == []
 
 
@@ -2227,10 +2227,12 @@ def test_pn4_revolution_image_counts_as_i_6_8(engine):
     for r in rows:
         by_house.setdefault(r["House"], []).append(r["Position"])
     assert sorted(by_house) == list(range(1, 13))
-    # within a house the degree-in-sign never decreases (all points of one whole-sign house share a sign)
-    deg = lambda s: int(s.split("\u00b0")[0]) * 60 + int(s.split(" ")[-1].rstrip("'"))
+    # within a house the degree FROM THE HOUSE'S CUSP never decreases (I.6, 2:
+    # the revolution's cusps; a quadrant house spans two signs and may straddle 0 Aries)
+    lon_of = lambda s: engine["SIGN_ORDER"].index(next(z for z in engine["SIGN_ORDER"] if z.startswith(s.split(" ")[1]))) * 30 \
+        + int(s.split("\u00b0")[0]) + int(s.split(" ")[-1].rstrip("'")) / 60.0
     for house, positions in by_house.items():
-        vals = [deg(p) for p in positions]
+        vals = [round((lon_of(p) - b["sr"]["houses"][house - 1]) % 360.0, 6) for p in positions]
         assert vals == sorted(vals), house
     assert rows == b["image"][0]
 
