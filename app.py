@@ -10027,8 +10027,10 @@ def pn4_twelfth_part(lon):
     step = int(within // 2.5)
     return (((sign_idx + step) % 12) * 30.0 + (within - step * 2.5) * 12.0) % 360.0
 
-def pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat):
-    """I.6, 3-8: every point of the image, as rows, and the count."""
+def pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat, elapsed=None):
+    """I.6, 3-8: every point of the image, as rows, and the count. `elapsed`
+    is the elapsed years the distribution's endpoint is read at (I.6, 6);
+    the integer `age` when not given."""
     natal, rev = chart_data['planetary_data'], sr['planetary_data']
     r_asc = sr['ascendant']
     rows = []
@@ -10069,7 +10071,7 @@ def pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat):
     add('root', 'point', 'Ascendant of the root', chart_data['ascendant'], 'I.6, 5')
     add('root', 'point', 'Terminal point of the year', year['longitude'], 'I.6, 5')
     if current:
-        endpoint = _pn4_seg_degree({'from': float(age)}, chart_data['ascendant'], chart_data, lat)
+        endpoint = _pn4_seg_degree({'from': float(age if elapsed is None else elapsed)}, chart_data['ascendant'], chart_data, lat)
         add('root', 'time lord', 'Endpoint of the distribution (the degree reached now)', endpoint, 'I.6, 6; fn 34')
         for name, planet in (('the distributor', current['distributor']), ('the partner in the management', current['partner'])):
             if planet and planet in natal:
@@ -10501,7 +10503,13 @@ def pn4_fardar_at_age(age_years, sect):
             sub_lord, sub_from, sub_to = None, None, None
             if subs:
                 each = years / 7.0
-                k = min(int(offset // each), 6)
+                # The sub-period is found against the SAME boundaries it
+                # reports (start + k*each), not by offset // each: the
+                # floating quotient of a returned sub_to fed back in came
+                # out a hair under the next integer and named the expired
+                # sub-period again (Astra F12). Half-open, like the main
+                # periods: a sub-period does not own its own end.
+                k = next((j for j in range(7) if within < start + (j + 1) * each), 6)
                 sub_lord = subs[k][0]
                 sub_from, sub_to = start + k * each, start + (k + 1) * each
             return {
@@ -10918,31 +10926,61 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
     the natal hour lord the lord of the orb (VI.1) starts from."""
     natal_sun = chart_data['planetary_data']['Sun']['longitude']
     ascendant = chart_data['ascendant']
+    jd_target = civil_to_jd(target_date.year, target_date.month, target_date.day, 12.0)
+
+    # THREE COUNTS OF THE YEAR, kept apart (Astra F02/F03):
+    #  age     -- completed CIVIL anniversaries, II.3, 1's count for the
+    #             profection ("for every year the native has completed"),
+    #             the lord of the orb (VI.1, by year) and the age labels;
+    #  cycle   -- completed SOLAR RETURNS, I.2, 1-3's year ("when he came
+    #             back to his position ... a solar year will have been
+    #             concluded"): the revolution, its months and its day
+    #             clocks belong to the return that CONTAINS the target,
+    #             return_n <= target < return_(n+1). Seeded from the civil
+    #             age and then bracketed by the actual returns, so a target
+    #             a few hours before this year's return is in the preceding
+    #             cycle's twelfth month, not in a revolution still to come;
+    #  elapsed -- ELAPSED years on the 365.2425-day mean year, the Fig. 22
+    #             mapping this file already uses for the Date column: the
+    #             fardar's sevenths (IV.1, 5-6; 11: "1 year, 5 months, 4
+    #             days, and approximately 6 hours") and the distributions
+    #             (III.1, 13: 5' a month, 1' six days) change at fractional
+    #             boundaries, and Figure 22 changes a distributor mid-year.
+    #             Feeding them the integer age froze every change until the
+    #             next birthday.
     age = pn4_completed_years(birth_date, target_date)
+    elapsed = (jd_target - chart_data['julian_day']) / PN4_DIRECTION_YEAR_DAYS
 
     # I.2, 1-4: the revolution of the year, cast for the birth location.
-    jd_sr = pn4_solar_revolution_jd(chart_data['julian_day'], natal_sun, age)
-    sr = calculate_traditional_chart(pn4_datetime_from_jd(jd_sr), lat, lon)
+    cycle = age
+    jd_sr = pn4_solar_revolution_jd(chart_data['julian_day'], natal_sun, cycle)
+    while cycle > 0 and jd_sr > jd_target:
+        cycle -= 1
+        jd_sr = pn4_solar_revolution_jd(chart_data['julian_day'], natal_sun, cycle)
+    jd_sr_next = pn4_solar_revolution_jd(chart_data['julian_day'], natal_sun, cycle + 1)
+    while jd_sr_next <= jd_target:
+        cycle += 1
+        jd_sr, jd_sr_next = jd_sr_next, pn4_solar_revolution_jd(chart_data['julian_day'], natal_sun, cycle + 1)
+    sr = calculate_traditional_chart_jd(jd_sr, lat, lon)
 
     # IX.1, 9-10: the sign of the year is also month 1, and the months run
     # from the revolution dates, not the calendar (Intro Sect. 9 p. 90).
     # Which month the target date falls in: the last monthly revolution at
     # or before it.
-    jd_target = civil_to_jd(target_date.year, target_date.month, target_date.day, 12.0)
     month, jd_mr = 1, jd_sr
     for m in range(1, 13):
         jd_m = pn4_monthly_revolution_jd(jd_sr, natal_sun, m)
         if jd_m <= jd_target:
             month, jd_mr = m, jd_m
-    mr = calculate_traditional_chart(pn4_datetime_from_jd(jd_mr), lat, lon)
+    mr = calculate_traditional_chart_jd(jd_mr, lat, lon)
 
     year = pn4_sign_of_the_year(ascendant, age)
     ninth = pn4_first_ninth_part_lord(year['sign'])
-    fardar = pn4_fardar_at_age(age, chart_data['sect'])
+    fardar = pn4_fardar_at_age(elapsed, chart_data['sect'])
     ages = pn4_age_of_man(age)
     segments = pn4_distribution_from_ascendant(
         chart_data['planetary_data'], ascendant, chart_data['obliquity'], lat)
-    current = pn4_distribution_at_age(segments, float(age)) if segments else None
+    current = pn4_distribution_at_age(segments, elapsed) if segments else None
 
     # III.1, 12: the meridian, by right ascension -- the Midheaven and the
     # fourth, each from its own degree. Never refuses (see the function).
@@ -10952,10 +10990,16 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         segs = pn4_distribution_from_meridian(
             chart_data['planetary_data'], chart_data['mc'], chart_data['obliquity'], point)
         meridian[point] = {'degree': start_lon, 'segments': segs,
-                           'current': pn4_distribution_at_age(segs, float(age))}
+                           'current': pn4_distribution_at_age(segs, elapsed)}
 
     # --- The revolution of the year (I.2, 1-4; I.7, 2) ---
     revolution_rows = [
+        {'Item': 'Count of the year',
+         'Value': (f"{age} completed civil years (the profection's count); {cycle} solar returns completed "
+                   f"(the revolution's cycle); {elapsed:.3f} years elapsed at 365.2425 days a year (the Figure 22 "
+                   f"mapping, which the fardar and the distributions run on)"
+                   + (" -- the civil birthday and the Sun's return fall either side of this date" if age != cycle else '')),
+         'Source': 'II.3, 1; I.2, 1-3; IV.1, 5-6 and 11; III.1, 13'},
         {'Item': 'Moment of the revolution (UTC)', 'Value': f"{pn4_datetime_from_jd(jd_sr):%Y-%m-%d %H:%M:%S}",
          'Source': 'I.2, 1: the Sun returns to his rooted position'},
         {'Item': 'Ascendant of the year', 'Value': get_degree_string(sr['ascendant']),
@@ -10979,8 +11023,12 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
          'Active point': f"{year['sign']} ({get_degree_string(year['longitude'])})",
          'Ruler': year['lord'], 'Source': 'II.3, 1; I.2, 5'},
         {'#': 2, 'Indicator': PN4_YEAR_INDICATOR_ORDER[1],
+         # I.6, 6 with fn 34: "the very degree which the distribution had
+         # reached" -- the direction's degree AT the target, not the bound's
+         # opening degree (Astra F11); the opening stands in the
+         # distribution table's "Opened by".
          'Active point': ('refused above the polar circle' if segments is None
-                          else (f"{get_degree_string(_pn4_seg_degree(current, ascendant, chart_data, lat))}"
+                          else (f"{get_degree_string(_pn4_seg_degree({'from': elapsed}, ascendant, chart_data, lat))}"
                                 if current else
                                 f"age {age} is past the {PN4_DISTRIBUTION_SPAN_YEARS:g}-year table")),
          'Ruler': (current or {}).get('distributor', '-') if segments is not None else '-',
@@ -10992,8 +11040,8 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
                    if segments is not None and current else '-'),
          'Source': 'III.1, 15-16, 23-25'},
         {'#': 4, 'Indicator': PN4_YEAR_INDICATOR_ORDER[3],
-         'Active point': (f"age {age}: cycle {fardar['cycle']}, year "
-                          f"{age % PN4_FARDAR_CYCLE_YEARS:g} of 75" if fardar else '-'),
+         'Active point': (f"{elapsed:.2f} years elapsed: cycle {fardar['cycle']}, year "
+                          f"{elapsed % PN4_FARDAR_CYCLE_YEARS:.2f} of 75" if fardar else '-'),
          'Ruler': (f"{fardar['lord']}" + (f" / {fardar['sub_lord']}" if fardar['sub_lord'] else " (no sub-period)")) if fardar else '-',
          'Source': 'IV.1, 2-8; II.1, 9'},
     ]
@@ -11022,7 +11070,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
             'Sub-periods': ', '.join(s[0] for s in subs) if subs
                            else 'none -- "they do not have houses" (IV.1, 8)',
             'Active': 'yes' if fardar and fardar['lord'] == lord and fardar['cycle'] >= 1
-                      and start <= (age % PN4_FARDAR_CYCLE_YEARS) < start + years else '',
+                      and start <= (elapsed % PN4_FARDAR_CYCLE_YEARS) < start + years else '',
         })
         start += years
 
@@ -11066,7 +11114,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
 
     # --- II.22, 1-4: the Moon's connections in her sign, and the portions ---
     moon = pn4_moon_connections(sr['planetary_data'], jd_sr)
-    year_days = pn4_solar_revolution_jd(chart_data['julian_day'], natal_sun, age + 1) - jd_sr
+    year_days = jd_sr_next - jd_sr
     portions = pn4_moon_portions(moon['connections'], year_days)
 
     # --- SAHL: the releaser (On Nativities 1.15-1.16, 1.20), its distribution
@@ -11077,7 +11125,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
                              syzygies['fullness']['longitude'])
     releaser_segments = sahl_releaser_distribution(chart_data['planetary_data'], releaser['longitude'],
                                                    chart_data['obliquity'], lat)
-    releaser_current = pn4_distribution_at_age(releaser_segments, float(age)) if releaser_segments else None
+    releaser_current = pn4_distribution_at_age(releaser_segments, elapsed) if releaser_segments else None
     releaser_rows = _pn4_distribution_rows(releaser_segments, releaser_current, origin_jd=chart_data['julian_day'])
     if releaser['longitude'] is None:
         releaser_note = 'no releaser by On Nativities 1.15 (the releaser section)'
@@ -11140,7 +11188,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'iii2_checklist': pn4_distribution_checklist(chart_data, sr, year['longitude'], current),
         'iii2_transitions': pn4_year_transitions(segments, age),
         'bound_transits': pn4_bound_transits(chart_data, sr, current, year['lord']) if current else None,
-        'image': pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat),
+        'image': pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat, elapsed=elapsed),
         'i7_ascendant': pn4_i7_ascendant(chart_data, sr),
         'i7_planets': pn4_i7_planets(chart_data, sr),
         'day_methods': pn4_day_methods(
@@ -11155,7 +11203,8 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
                           'From day': f"{p['from_day']:.1f}", 'To day': f"{p['to_day']:.1f}"} for p in portions],
         'first_month_governor': pn4_first_month_governor(
             ascendant, chart_data['lot_of_fortune'], year['longitude'], sr['ascendant'], sr['lot_of_fortune']),
-        'age': age, 'month': month, 'jd_sr': jd_sr, 'jd_mr': jd_mr, 'jd_target': jd_target,
+        'age': age, 'cycle': cycle, 'elapsed_years': elapsed,
+        'month': month, 'jd_sr': jd_sr, 'jd_sr_next': jd_sr_next, 'jd_mr': jd_mr, 'jd_target': jd_target,
         'sr': sr, 'mr': mr, 'year': year, 'ninth': ninth, 'fardar': fardar,
         'segments': segments, 'current': current, 'ages': ages,
         'revolution_rows': revolution_rows, 'year_rows': year_rows,
@@ -12657,7 +12706,7 @@ if location_query and lat is not None and lon is not None:
                 _distribution = None
                 if _cur and pn4['segments']:
                     _distribution = {'start': chart_data['ascendant'],
-                                     'end': _pn4_seg_degree({'from': float(pn4['age'])}, chart_data['ascendant'], chart_data, lat)}
+                                     'end': _pn4_seg_degree({'from': pn4['elapsed_years']}, chart_data['ascendant'], chart_data, lat)}
                 _badges = {}
                 for _planet, _letter in (((_cur or {}).get('distributor'), 'D'), ((_cur or {}).get('partner'), 'P'),
                                          ((pn4['fardar'] or {}).get('lord'), 'F'), ((pn4['fardar'] or {}).get('sub_lord'), 'f'),
@@ -12950,7 +12999,7 @@ if location_query and lat is not None and lon is not None:
                                "ascension has no unique inverse, and an arc of direction from the Ascendant is not "
                                "defined (the domain of decision D-23).")
                 else:
-                    _strip = generate_distribution_strip_svg(pn4['segments'], float(pn4['age']), 'years',
+                    _strip = generate_distribution_strip_svg(pn4['segments'], pn4['elapsed_years'], 'years',
                                                              PN4_DISTRIBUTION_SPAN_YEARS, 'The distribution from the Ascendant')
                     st.image(_strip, width='stretch')
                     st.download_button("Download this strip (SVG)", _strip, key="dl_strip_asc", mime="image/svg+xml",
@@ -13022,7 +13071,7 @@ if location_query and lat is not None and lon is not None:
                 for point in PN4_MERIDIAN_POINTS:
                     m = pn4['meridian'][point]
                     cur = m['current']
-                    _strip = generate_distribution_strip_svg(m['segments'], float(pn4['age']), 'years',
+                    _strip = generate_distribution_strip_svg(m['segments'], pn4['elapsed_years'], 'years',
                                                              PN4_DISTRIBUTION_SPAN_YEARS, f'The distribution from the {point}')
                     st.image(_strip, width='stretch')
                     st.download_button("Download this strip (SVG)", _strip, key=f"dl_strip_{point[:4].lower()}",
@@ -13085,7 +13134,7 @@ if location_query and lat is not None and lon is not None:
                     if pn4['releaser_segments'] is None:
                         st.warning("Refused at this latitude, as the Ascendant's distribution is (decision D-23).")
                     else:
-                        _rstrip = generate_distribution_strip_svg(pn4['releaser_segments'], float(pn4['age']), 'years',
+                        _rstrip = generate_distribution_strip_svg(pn4['releaser_segments'], pn4['elapsed_years'], 'years',
                                                                   PN4_DISTRIBUTION_SPAN_YEARS, 'The distribution from the releaser')
                         st.image(_rstrip, width='stretch')
                         st.download_button("Download this strip (SVG)", _rstrip, key="dl_strip_releaser", mime="image/svg+xml",
@@ -13146,7 +13195,7 @@ if location_query and lat is not None and lon is not None:
                                     f"bodies, squares and oppositions of Saturn and Mars and to the Sun's degree, forward, "
                                     f"a year to a degree of the birth latitude's ascensions, within {PN4_DISTRIBUTION_SPAN_YEARS:g} years:")
                         if pn4['hm_direction']:
-                            _hstrip = generate_hit_strip_svg(pn4['hm_direction'], float(pn4['age']),
+                            _hstrip = generate_hit_strip_svg(pn4['hm_direction'], pn4['elapsed_years'],
                                                              PN4_DISTRIBUTION_SPAN_YEARS, 'The house-master directed')
                             st.image(_hstrip, width='stretch')
                             st.download_button("Download this strip (SVG)", _hstrip, key="dl_strip_hm", mime="image/svg+xml",

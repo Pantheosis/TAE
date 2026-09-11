@@ -107,7 +107,7 @@ def test_multiwheel_refuses_zero_or_four_rings(engine):
 
 def test_bounds_ring_tints_the_bound_the_distribution_stands_in(engine):
     chart, latlon, b = _bundle(engine)
-    end = engine["_pn4_seg_degree"]({"from": float(b["age"])}, chart["ascendant"], chart, latlon[0])
+    end = engine["_pn4_seg_degree"]({"from": b["elapsed_years"]}, chart["ascendant"], chart, latlon[0])
     svg = engine["generate_multiwheel_svg"](_rings(engine, chart, b, 2), "x", bounds=True,
                                             distribution={"start": chart["ascendant"], "end": end})
     root = ET.fromstring(svg)
@@ -208,9 +208,9 @@ def test_natal_wheel_bounds_ring_is_a_toggle(engine, bounds):
 def test_strips_carry_one_bar_per_segment_and_one_now(engine, date_str):
     chart, latlon, b = _bundle(engine, date_str)
     strip = engine["generate_distribution_strip_svg"]
-    cases = [(b["segments"], float(b["age"]), "years", engine["PN4_DISTRIBUTION_SPAN_YEARS"])]
+    cases = [(b["segments"], b["elapsed_years"], "years", engine["PN4_DISTRIBUTION_SPAN_YEARS"])]
     for point in engine["PN4_MERIDIAN_POINTS"]:
-        cases.append((b["meridian"][point]["segments"], float(b["age"]), "years", engine["PN4_DISTRIBUTION_SPAN_YEARS"]))
+        cases.append((b["meridian"][point]["segments"], b["elapsed_years"], "years", engine["PN4_DISTRIBUTION_SPAN_YEARS"]))
     cases.append((b["small_days"], b["day_of_year"], "days", None))
     cases.append((b["mighty_days"], b["day_of_year"], "days", None))
     for segments, now, unit, span in cases:
@@ -245,7 +245,7 @@ def test_hit_strip_carries_one_tick_per_target_and_one_now(engine, date_str):
     if not rows:
         pytest.skip("no house-master direction for this chart")
     span = engine["PN4_DISTRIBUTION_SPAN_YEARS"]
-    svg = engine["generate_hit_strip_svg"](rows, float(b["age"]), span, "Hits & more")
+    svg = engine["generate_hit_strip_svg"](rows, b["elapsed_years"], span, "Hits & more")
     root = ET.fromstring(svg)
     hits = [l for l in root.iter(SVG + "line") if l.get("class") == "hit"]
     assert len(hits) == len(rows)
@@ -253,7 +253,7 @@ def test_hit_strip_carries_one_tick_per_target_and_one_now(engine, date_str):
     for r in rows:
         assert by_target[r["Target"]] == pytest.approx(float(r["Arc (years)"]), abs=1e-3)
     nows = [l for l in root.iter(SVG + "line") if l.get("class") == "now"]
-    assert len(nows) == (1 if 0.0 <= float(b["age"]) <= span else 0)
+    assert len(nows) == (1 if 0.0 <= b["elapsed_years"] <= span else 0)
     assert "Hits &amp; more" in svg
     texts = [t.text for t in root.iter(SVG + "text") if t.text]
     assert any(engine["POINT_GLYPHS"]["Saturn"] in t or engine["POINT_GLYPHS"]["Mars"] in t for t in texts)
