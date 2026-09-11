@@ -9594,7 +9594,7 @@ def pn4_named_lords_of_the_orb(natal_hour_lord, completed_years):
 # and the Great Introduction, and the engine's Lots are paired to them
 # below with the two places they differ on the night reversal named.
 # "Whichever had the shift in the root" (VI.2, 6, 8) is the sect planet,
-# per fn 16 and 19. The triplicity-lord examinations of VI.2, 4-5 and all
+# per fn 16 and 19. The triplicity lords of VI.2, 4-5 are pn4_turning_triplicity_lords (2026-09-11); all
 # the delineation are not built. No worked example exists; Figures 90-91
 # are Dykes' diagrams.
 
@@ -9672,6 +9672,48 @@ def _pn4_natal_planets_in_sign(planetary_data, sign):
 def pn4_turned_sign(natal_lon, completed_years):
     """VI.2, 1: "a year for every sign", from the point's own position."""
     return get_zodiac_sign(pn4_profect(natal_lon, int(completed_years)))
+
+def _pn4_condition_string(data, planet):
+    """A planet's condition as the II.3 examination prints it: sign, motion,
+    side of the Sun, solar phase. '-' when the planet is absent."""
+    r = data.get(planet)
+    if not r:
+        return '-'
+    motion = 'retrograde' if r.get('speed_in_lon', 1.0) < 0 else 'direct'
+    phase, side, _el = solar_phase(planet, r['longitude'], data['Sun']['longitude'], r.get('speed_in_lon'))
+    return f"{get_zodiac_sign(r['longitude'])}, {motion}, {side or '-'}{', ' + phase.lower() if phase else ''}"
+
+def pn4_turning_triplicity_lords(chart_data, sr):
+    """VI.2, 4-5: the triplicity lords examined beside the turning. 4, for
+    assets: "every one of the lords of the triplicities of the luminary
+    which had the shift in the root" (fn 13: the sect light), "what its
+    condition was at that time, and what its condition is in the revolution
+    of that year". 5, for siblings: "the triplicity lords of the sign in
+    which Mars was at the root ... (and the first lord of its triplicity
+    indicates the older ones of the siblings, and the second lord ... the
+    middle ones ..., and the third ... the younger ones)". Six rows, the
+    Dorothean lords in the engine's order (day lord, night lord, partner --
+    by night the night lord first), each with its condition in both charts
+    as the II.3 evaluators print it. fn 14's age mapping is the editor's
+    and is not applied (order PN4R-4f-6, 2026-09-11)."""
+    natal, rev = chart_data['planetary_data'], sr['planetary_data']
+    sect = chart_data['sect']
+    light = 'Sun' if sect == 'Diurnal' else 'Moon'
+    rows = []
+    for topic, planet, cite in (('assets', light, 'VI.2, 4; fn 13 (the sect light)'), ('siblings', 'Mars', 'VI.2, 5')):
+        if planet not in natal:
+            continue
+        sign = get_zodiac_sign(natal[planet]['longitude'])
+        trip = TRIPLICITY[SIGN_ELEMENT[sign]]
+        order = [trip['Day'], trip['Night'], trip['Participating']] if sect == 'Diurnal' else [trip['Night'], trip['Day'], trip['Participating']]
+        for rank, lord in zip(('first', 'second', 'third'), order):
+            rows.append({'Topic': topic, 'Triplicity of': f"{sign} ({planet} in the root)", 'Order': rank, 'Lord': lord,
+                         'Root condition': _pn4_condition_string(natal, lord),
+                         'Revolution condition': _pn4_condition_string(rev, lord),
+                         'Siblings (5)': ({'first': 'the older', 'second': 'the middle', 'third': 'the younger'}[rank]
+                                          if topic == 'siblings' else '-'),
+                         'Source': cite})
+    return rows
 
 def pn4_turning_rows(chart_data, completed_years):
     """The turning table of VI.2, 1-26 for one age: every planet, every
@@ -12087,6 +12129,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'orb': orb, 'orb_rows': orb_rows, 'natal_hour_lord': natal_hour_lord,
         'hour_approximate': hour_approximate,
         'turning_rows': pn4_turning_rows(chart_data, age),
+        'turning_triplicity_rows': pn4_turning_triplicity_lords(chart_data, sr),
         'further_rows': pn4_further_indicators(chart_data, sr, year['longitude'], moon),
         'governor': pn4_governor(
             year['lord'], (current or {}).get('distributor'), (current or {}).get('partner'),
@@ -13956,6 +13999,12 @@ if location_query and lat is not None and lon is not None:
                 st.markdown(f"Turned by **{pn4['age']}** completed years, a sign for each (VI.2, 1).")
                 st.dataframe(pd.DataFrame(pn4['turning_rows']), hide_index=True, width='stretch',
                              height=_rows_height(min(len(pn4['turning_rows']), 16)))
+                st.markdown("**The triplicity lords examined beside the turning (VI.2, 4-5)** -- the sect light's for assets "
+                            "(4; fn 13), the lords of Mars's natal sign for siblings (5: the first the older, the second the "
+                            "middle, the third the younger); each lord's condition in the root and in the revolution, as the "
+                            "II.3 examination prints it. fn 14's age mapping is the editor's and is not applied.")
+                st.dataframe(pd.DataFrame(pn4['turning_triplicity_rows']), hide_index=True, width='stretch',
+                             height=_rows_height(len(pn4['turning_triplicity_rows'])))
                 st.caption("The direction \"a year for every degree\" is not built and each row says so: for planets and "
                            "Lots it is III.1, 12's third case, whose method PN IV does not state; for the cusps VI.2, 21 "
                            "names \"the portions of the hours and the right circle\", semi-arcs, and gives no procedure. "
@@ -13964,7 +14013,7 @@ if location_query and lat is not None and lon is not None:
                            "Sahl and the Great Introduction, and the engine's Lots are paired to them here, with the two "
                            "places they differ on the night reversal named in the row. \"Whichever had the shift in the "
                            "root\" for the parents (VI.2, 6, 8) is read as the sect planet, per fn 16 and 19. The "
-                           "triplicity lords of VI.2, 4-5 and the delineations are not built. No worked example exists; "
+                           "triplicity lords of VI.2, 4-5 are the table above (since 2026-09-11); the delineations are not built. No worked example exists; "
                            "Figures 90-91 are Dykes' diagrams.")
 
             with tab_dist:

@@ -3306,3 +3306,19 @@ def test_turning_reaches_the_partners_natal_body_while_it_holds(engine):
     assert not r["holds"] and r["verdict"] == "-"
     seg[0]["partner"] = None
     assert engine["sahl_turning_reaches_partner"](seg, 4, 5.0, p) is None
+
+
+# --- PN4R-4f-6: VI.2, 4-5's triplicity lords beside the turning -----------------------------
+
+def test_turning_triplicity_lords_for_assets_and_siblings(engine):
+    """Day chart, Sun in Cancer (water: Venus, Mars, Moon by day) for assets
+    (VI.2, 4); Mars in Aquarius (air: Saturn, Mercury, Jupiter) for siblings
+    (VI.2, 5), the first lord the older siblings. Conditions come from both
+    charts."""
+    root, sr, _ = _two_charts(engine, natal=dict(Sun=100.0, Mars=310.0), rev=dict(Venus=200.0, Saturn=10.0))
+    rows = engine["pn4_turning_triplicity_lords"](root, sr)
+    assets = [r for r in rows if r["Topic"] == "assets"]
+    sibs = [r for r in rows if r["Topic"] == "siblings"]
+    assert [r["Lord"] for r in assets] == ["Venus", "Mars", "Moon"] and assets[0]["Source"].startswith("VI.2, 4")
+    assert [r["Lord"] for r in sibs] == ["Saturn", "Mercury", "Jupiter"] and sibs[0]["Siblings (5)"] == "the older"
+    assert assets[0]["Revolution condition"].startswith("Libra") and sibs[0]["Revolution condition"].startswith("Aries")
