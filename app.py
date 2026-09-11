@@ -8539,10 +8539,12 @@ def pn4_distribution_at_age(segments, age_years):
 # (FINAL-A5, owner, sheet row 6). The meeting's gate (1.15, 8) states a
 # place test only; the looking-lord test applied to it is supplied from
 # 15's general wording, a reading.
-# NOT APPLIED: 1.19, 6 (the Moon within 15 degrees of the Sun "will not
-# be fit"), 1.20, 6 (an eastern lord with a share in the Ascendant may
-# assume the house-mastership without looking), 1.18, 8-10 (the short-life
-# testimonies weaken or void the releaser), and Dorotheus's feminized
+# APPLIED since 2026-09-11 (the BLOCKED orders, unblocked by the owner's
+# ruling on row 3): 1.19, 6 (the Moon within 15 degrees of the Sun "will
+# not be fit" -- the fullness is consulted; REL-5-1), 1.20, 6 (an eastern
+# lord with a share in the Ascendant is house-master without looking;
+# REL-5-2). SHOWN, not applied: 1.18, 8-10 (the short-life testimonies,
+# counted beside the releaser; REL-5-3). NOT APPLIED: Dorotheus's feminized
 # seventh (1.15, 5, which Nawbakht rejects) -- each is named on the page
 # where it would bite. APPLIED since 2026-09-11 (FINAL-A7): 1.32, 11-13's
 # stand-in in the empty case -- al-Andarzaghar's chapter "On the matter of
@@ -8572,9 +8574,7 @@ SAHL_RELEASER_NOT_APPLIED = (
     ('1.16, 4', 'al-Andarzaghar keeps a luminary "powerful in the places of the releaser" as releaser "even if a house-master '
                 'is not looking"; Nawbakht\'s 1.15, 7 gate (no lord looking, not the releaser) is applied instead -- two '
                 'chapters of one book, opposite rules'),
-    ('1.19, 6', 'the Moon within 15 degrees of the Sun "will not be fit to take up the role of the manager"'),
-    ('1.20, 6', 'an eastern lord with a share in the Ascendant may be house-master without looking at the releaser'),
-    ('1.18, 8-10', 'one short-life testimony makes the releaser "weak and not fit, except through reception"; two, with no releaser, "one will not know his lifespan except by revolving his years"'),
+    ('1.18, 8-10', 'one short-life testimony makes the releaser "weak and not fit, except through reception"; two, with no releaser, "one will not know his lifespan except by revolving his years" -- counted and shown beside the releaser since 2026-09-11 (REL-5-3), not disqualifying it'),
     ('1.15, 5', "Dorotheus's releaser in the seventh in a feminine sign, which Nawbakht tested and rejected"),
 )
 
@@ -8662,12 +8662,39 @@ def _sahl_examine_candidate(label, lon, planetary_data, cusps, sect, places, sel
         if aspect:
             looking.append((rank, planet, aspect))
     fit = in_places and (bool(looking) or both)
+    # 1.20, 6 (order REL-5-2, applied): "if you found the releaser in a good
+    # position, and its lord eastern and having a share in the Ascendant (even
+    # if it was in the second from it, not looking at it), then it will assume
+    # the responsibility of being the house-master with it, unless in that
+    # nativity there was a planet preferable to it" -- read: a candidate in the
+    # places with no lord looking keeps its standing when one of its dignity
+    # lords is eastern of the Sun and holds a share (any of the five) at the
+    # Ascendant's degree; that lord is the house-master "by 1.20, 6"; a looking
+    # lord, being "preferable", takes precedence (the ranking runs as before).
+    sharer_1_20_6 = None
+    if in_places and not looking and not both:
+        asc_rulers = get_essential_rulers(cusps[0])
+        asc_shares = {asc_rulers[k] for k in ('domicile', 'exaltation', 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night', 'term', 'face')}
+        for rank, planet, _aspect in lords:
+            row = planetary_data.get(planet)
+            if not row or planet == self_planet or planet == 'Sun':
+                continue
+            side = solar_phase(planet, row['longitude'], planetary_data['Sun']['longitude'], row.get('speed_in_lon'))[1]
+            if side == 'eastern' and planet in asc_shares:
+                sharer_1_20_6 = (rank, planet)
+                break
+        if sharer_1_20_6:
+            fit = True
     if not in_places:
         why = f"falling: house {place} is not among the places (1.15, {'6' if places is SAHL_RELEASER_DAY_PLACES else '11-14'})"
     elif both:
         why = f"{self_planet} in {sign}: both releaser and house-master (1.16, 1-2)"
     elif looking:
         why = f"house {place}; looked at by " + ', '.join(f"{p} ({r}, {a})" for r, p, a in looking)
+    elif sharer_1_20_6:
+        why = (f"house {place}; no lord looks, but {sharer_1_20_6[1]}, its {sharer_1_20_6[0]} lord, is eastern with a share in "
+               f"the Ascendant -- house-master by 1.20, 6 (\"even if it was in the second from it, not looking at it\"; "
+               f"\"a share\" read as any of the five dignities at the Ascendant's degree)")
     else:
         why = f"house {place}, but no lord of its bound, house, exaltation, triplicity or face looks at it (1.15, 7, Nawbakht)"
         if self_planet in ('Sun', 'Moon'):
@@ -8678,9 +8705,23 @@ def _sahl_examine_candidate(label, lon, planetary_data, cusps, sect, places, sel
             # case; Nawbakht's is applied, the other named (order REL-2-3).
             why += ("; al-Andarzaghar's 1.16, 4 would keep it as releaser \"even if a house-master is not "
                     "looking\" -- not applied")
+    # 1.19, 6 (order REL-5-1, applied): "if the Moon was under the rays, she
+    # will not be fit to take up [the role of the] manager (and that is if
+    # there was 15 degrees between her and the Sun, in front of him and behind
+    # him)" -- Dorotheus in Sahl; manager = releaser (1.30, 35). Sahl's own 15
+    # for THIS gate, separate from the Chart page's 12/15 solar-phase switch.
+    # Applied: the fullness is consulted next.
+    under_1_19_6 = False
+    if self_planet == 'Moon' and 'Sun' in planetary_data:
+        elong = abs(((lon - planetary_data['Sun']['longitude'] + 180.0) % 360.0) - 180.0)
+        if elong <= 15.0:
+            under_1_19_6 = True
+            fit = False
+            why += (f"; within 15 degrees of the Sun ({elong:.1f}): \"not fit to take up [the role of the] manager\" "
+                    f"(Dorotheus, 1.19, 6; manager = releaser, 1.30, 35) -- applied, the fullness is consulted")
     return {'candidate': label, 'longitude': lon % 360.0, 'place': place, 'in_places': in_places,
             'lords': lords, 'looking': looking, 'both_at_once': both, 'self_planet': self_planet,
-            'fit': fit, 'why': why}
+            'fit': fit, 'why': why, 'sharer_1_20_6': sharer_1_20_6, 'under_1_19_6': under_1_19_6}
 
 def _sahl_ascendant_candidate(planetary_data, ascendant_lon, cusps, sect):
     """1.15, 15-16: the Ascendant "being looked at by the fortunes, and
@@ -8717,6 +8758,14 @@ def _sahl_rank_house_master(cand, planetary_data, cusps):
     if cand['both_at_once']:
         return [{'Planet': cand['self_planet'], 'Shares': 'its own house or exaltation, and triplicity',
                  'Looks by': 'is the releaser', 'Rank': 'both releaser and house-master (1.16, 1-2)', 'Under the rays': '-'}]
+    if not cand['looking'] and cand.get('sharer_1_20_6'):
+        rank, planet = cand['sharer_1_20_6']
+        phase = solar_phase(planet, planetary_data[planet]['longitude'], planetary_data['Sun']['longitude'],
+                            planetary_data[planet].get('speed_in_lon'))[0]
+        return [{'Planet': planet, 'Shares': rank, 'Looks by': 'not looking',
+                 'Rank': 'house-master by 1.20, 6: eastern, with a share in the Ascendant, "not looking at it"',
+                 'Under the rays': (f"{phase}: \"deceptive, subtractive, corrupting\" (1.20, 5)"
+                                    if phase in ('Burned', 'Under the rays') else 'no' if phase != 'Cazimi' else 'Cazimi')}]
     by_planet = {}
     for rank, planet, aspect in cand['looking']:
         d = by_planet.setdefault(planet, {'ranks': [], 'aspect': aspect})
@@ -9251,6 +9300,105 @@ def sahl_house_master_in_revolution(house_master, chart_data, sr):
         {'Fact': "In a stake of the Ascendant of the year", 'Reads': f"house {house} from the revolution's Ascendant" + (' -- a stake' if house in (1, 4, 7, 10) else '') + (' -- the Ascendant itself, "worse"' if house == 1 else ''), 'Source': '1.23, 4'},
         {'Fact': 'With an infortune in its sign', 'Reads': ', '.join(with_infortune) or 'none', 'Source': '1.23, 2-4'},
     ]
+
+def sahl_short_life_testimonies(chart_data, lot_fortune_lon):
+    """Sahl, On Nativities 1.18, 1-10 (Masha'allah, fn 125): the testimonies
+    of a short upbringing, counted, and 8-10's sentence for the count --
+    shown beside the releaser and NOT disqualifying it (order REL-5-3).
+    Counted (1-4): 1 the Moon's connection "with a retrograde planet not
+    receiving her"; 2 "the handing over of her management to the lord of
+    the eighth, or the eighth [from] her house"; 3 "to a planet under the
+    earth while she is above the earth by day"; 4 "the retrogradation of
+    the lord of the Lot of Fortune, and the presence of an infortune in a
+    stake ... if it was inimical to the Ascendant or did not have a
+    testimony in the Ascendant". Not counted, "equivalent" (5-7; fn 126,
+    129): 5 the lord of the Ascendant connecting with the lord of the
+    eighth; 6 the lord of the Ascendant retrograde, "unless it was Mercury"
+    (fn 127: inverts); 7 its connection with a <retrograde> planet "or one
+    in its first slowness ... (unless it receives it)". Readings: the
+    Moon's "connection" and "handing over" = her first perfection before
+    she leaves her sign (the natal chart followed forward); "receiving" per
+    evaluate_reception; "under the earth" by altitude where the horizon is
+    known; "in a stake" the whole-sign places 1, 4, 7, 10; "inimical to the
+    Ascendant" is not read, "no testimony in the Ascendant" = no dignity of
+    its own at the Ascendant's degree; 4's two clauses are read as one
+    testimony (fn 130 makes 8-10 count 1, 2, 3)."""
+    p = chart_data['planetary_data']
+    asc = chart_data['ascendant']
+    sect = chart_data['sect']
+    asc_sign = get_zodiac_sign(asc)
+    eighth = SIGN_ORDER[(SIGN_ORDER.index(asc_sign) + 7) % 12]
+    moon_sign = get_zodiac_sign(p['Moon']['longitude'])
+    eighth_from_moon = SIGN_ORDER[(SIGN_ORDER.index(moon_sign) + 7) % 12]
+    lord_asc = SIGN_TO_DOMICILE.get(asc_sign)
+    lord_8 = SIGN_TO_DOMICILE.get(eighth)
+    rows = []
+    # the Moon's first perfection in her sign
+    try:
+        conns = _pn4_luminary_connections(p, chart_data['julian_day'], 'Moon', 6, 0.25, applying_only=False)['connections']
+    except Exception:
+        conns = []
+    first = conns[0] if conns else None
+    received = set()
+    with doctrine(SAHL):
+        for r in evaluate_reception(p, sect):
+            if r.get('Received') == 'Moon' and r.get('Receiver'):
+                received.add(r['Receiver'])
+    t1 = bool(first) and p.get(first['planet'], {}).get('speed_in_lon', 1.0) < 0 and first['planet'] not in received
+    rows.append({'Testimony': '1. The Moon connects with a retrograde planet not receiving her', 'Met': 'yes' if t1 else 'no',
+                 'Fact': (f"her first perfection in {moon_sign}: {first['planet']} by {first['aspect']} on day {first['day']:.1f}, "
+                          f"{'retrograde' if p.get(first['planet'], {}).get('speed_in_lon', 1.0) < 0 else 'direct'}, "
+                          f"{'receiving her' if first['planet'] in received else 'not receiving her'}") if first else 'no perfection before she leaves her sign',
+                 'Counted': 'yes', 'Source': '1.18, 1'})
+    t2 = bool(first) and first['planet'] in (lord_8, SIGN_TO_DOMICILE.get(eighth_from_moon))
+    rows.append({'Testimony': '2. She hands her management to the lord of the eighth, or of the eighth from her house',
+                 'Met': 'yes' if t2 else 'no',
+                 'Fact': f"lord of the eighth ({eighth}): {lord_8}; of the eighth from the Moon ({eighth_from_moon}): "
+                         f"{SIGN_TO_DOMICILE.get(eighth_from_moon)}; her first perfection: {first['planet'] if first else 'none'}",
+                 'Counted': 'yes', 'Source': '1.18, 2'})
+    def above(planet):
+        row = p[planet]
+        if chart_data.get('armc') is not None and chart_data.get('geo_lat') is not None:
+            return _sin_altitude(row['longitude'], row.get('latitude', 0.0), row.get('distance', 1.0),
+                                 chart_data['obliquity'], chart_data['armc'], chart_data['geo_lat']) > 0
+        return (row['longitude'] - asc) % 360.0 > 180.0
+    t3 = bool(first) and sect == 'Diurnal' and above('Moon') and not above(first['planet'])
+    rows.append({'Testimony': '3. By day, she above the earth hands over to a planet under the earth', 'Met': 'yes' if t3 else 'no',
+                 'Fact': (f"{'day' if sect == 'Diurnal' else 'night'} chart; the Moon {'above' if above('Moon') else 'below'} the earth; "
+                          + (f"{first['planet']} {'above' if above(first['planet']) else 'below'}" if first else 'no perfection')),
+                 'Counted': 'yes', 'Source': '1.18, 3'})
+    lord_lot = SIGN_TO_DOMICILE.get(get_zodiac_sign(lot_fortune_lon))
+    lot_retro = lord_lot in p and p[lord_lot].get('speed_in_lon', 1.0) < 0
+    asc_r = get_essential_rulers(asc)
+    asc_dign = {asc_r['domicile'], asc_r['exaltation'], asc_r['triplicity_day'] if sect == 'Diurnal' else asc_r['triplicity_night'], asc_r['term'], asc_r['face']}
+    bad = [q for q in SAHL_INFORTUNES if q in p and get_wsh_house(p[q]['longitude'], asc) in (1, 4, 7, 10) and q not in asc_dign]
+    t4 = lot_retro and bool(bad)
+    rows.append({'Testimony': "4. The lord of the Lot of Fortune retrograde, and an infortune in a stake with no testimony in the Ascendant",
+                 'Met': 'yes' if t4 else 'no',
+                 'Fact': f"lord of the Lot {lord_lot}: {'retrograde' if lot_retro else 'direct'}; infortunes in a stake without a dignity at the Ascendant's degree: {', '.join(bad) or 'none'} (\"inimical to the Ascendant\" not read)",
+                 'Counted': 'yes', 'Source': '1.18, 4'})
+    # 5-7: equivalent, not counted
+    pairs = {frozenset((r['light_name'], r['heavy_name'])): r for r in _pairwise_configurations(p) if r['aspect_name'] != 'Aversion'}
+    def connected(a, b):
+        r = pairs.get(frozenset((a, b)))
+        with doctrine(SAHL):
+            return bool(r) and _is_connected(r)
+    rows.append({'Testimony': '5. The lord of the Ascendant connects with the lord of the eighth', 'Met': 'yes' if lord_asc and lord_8 and lord_asc != lord_8 and connected(lord_asc, lord_8) else 'no',
+                 'Fact': f"{lord_asc} and {lord_8}" + (' (the same planet)' if lord_asc == lord_8 else ''), 'Counted': 'no -- "equivalent" (fn 126)', 'Source': '1.18, 5'})
+    rows.append({'Testimony': '6. The lord of the Ascendant retrograde (unless Mercury)',
+                 'Met': 'yes' if lord_asc in p and p[lord_asc].get('speed_in_lon', 1.0) < 0 and lord_asc != 'Mercury' else 'no',
+                 'Fact': f"{lord_asc}: {'retrograde' if lord_asc in p and p[lord_asc].get('speed_in_lon', 1.0) < 0 else 'direct'}",
+                 'Counted': 'no -- "inverts it" (fn 127)', 'Source': '1.18, 6'})
+    retro_partners = [q for q in PN4_SEVEN if q in p and q != lord_asc and p[q].get('speed_in_lon', 1.0) < 0 and connected(lord_asc, q)] if lord_asc in p else []
+    rows.append({'Testimony': '7. The lord of the Ascendant connects with a <retrograde> planet, unless it receives it',
+                 'Met': 'yes' if retro_partners else 'no', 'Fact': ', '.join(retro_partners) or 'none' + ' (reception not tested here)',
+                 'Counted': 'no -- "equivalent" (fn 129)', 'Source': '1.18, 7'})
+    count = sum(1 for r in rows[:4] if r['Met'] == 'yes')
+    sentence = {0: 'no testimony of a short upbringing (1.18, 1-4)',
+                1: '"the releaser will be weak and not fit, except through the reception of that releaser, [which indicates] fitness" (1.18, 8)',
+                2: '"if ... there were two testimonies of what I mentioned, and the native did not have a releaser, one will not know his lifespan except by revolving [his] years" (1.18, 9; fn 130)'}.get(
+                    count, '"if ... there were three testimonies of what I mentioned, then he will not be brought up" (1.18, 10)')
+    return {'rows': rows, 'count': count, 'sentence': sentence}
 
 def sahl_father_lot_harmers(sect, planetary_data, lot_lon, sun_lon):
     """Sahl, On Nativities 4.20, 31: "if the nativity was by day, the
@@ -12328,6 +12476,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'hm_this_year': hm_this_year, 'hm_revolution': hm_revolution, 'hm_flags': hm_flags,
         'standin_moon': standin_moon,
         'angle_planets': angle_planets,
+        'short_life': sahl_short_life_testimonies(chart_data, chart_data['lot_of_fortune']),
         # DIS-10: the father's Lot (4.20, 31-36): the harmers, and 32's two directions
         'father_lot': (lambda lot: (None if lot is None else {
             'lot': lot,
@@ -14394,6 +14543,11 @@ if location_query and lat is not None and lon is not None:
                     st.markdown("**The lords looking at the releaser, ranked** (1.15, 13; 1.20, 2-5) -- the first is the house-master:")
                     st.dataframe(pd.DataFrame(rel['ranking']), hide_index=True, width='stretch',
                                  height=_rows_height(len(rel['ranking'])))
+                _sl = pn4['short_life']
+                st.markdown(f"**The short-life testimonies (Sahl, *On Nativities* 1.18, 1-10, Masha'allah, fn 125): {_sl['count']} of "
+                            f"the four counted** -- {_sl['sentence']}. Shown beside the releaser; they do not disqualify it here. "
+                            f"5-7 are \"equivalent\" and not counted (fn 126, 129).")
+                st.dataframe(pd.DataFrame(_sl['rows']), hide_index=True, width='stretch', height=_rows_height(7))
                 if pn4['hm_years']:
                     _y = pn4['hm_years']
                     st.markdown(f"**The house-master's years** (Sahl, *On Nativities* 1.20, 7-34, Nawbakht -- the section "

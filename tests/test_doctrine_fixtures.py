@@ -3424,3 +3424,57 @@ def test_bundle_redirects_to_the_lord_of_the_ascendant_when_the_house_master_is_
         assert b["hm_redirect"]["lord"] == engine["SIGN_TO_DOMICILE"][engine["get_zodiac_sign"](chart["ascendant"])]
         assert b["hm_redirect"]["ascendant_direction"] is not None
     assert b["father_lot"] is not None and b["father_lot"]["second"] == ("Sun" if chart["sect"] == "Diurnal" else "Saturn")
+
+
+# --- REL-5-1: 1.19, 6 applied; REL-5-2: 1.20, 6 applied; REL-5-3: 1.18, 1-10 counted --------------
+
+def test_moon_within_fifteen_degrees_of_the_sun_is_not_fit_and_the_fullness_is_consulted(engine):
+    """Night chart, Scorpio rising; the Moon at 10 Leo (the tenth), the Sun
+    at 20 Leo, 10 degrees off, with the Sun (her house lord) in her sign
+    and Jupiter (fire's night triplicity lord) trining her from
+    Sagittarius: fit by 1.15, 11-14, "not fit" by 1.19, 6, so the fullness
+    (15 Taurus, the seventh, Venus in it) is the releaser. With the Sun 30
+    degrees off, the Moon is the releaser."""
+    r = engine["sahl_releaser"](*_night(engine, Moon=130.0, Sun=140.0, Jupiter=250.0, Venus=45.0), 15.0, 15.0, 45.0)
+    moon = next(c for c in r["candidates"] if c["Candidate"] == "the Moon")
+    assert "1.19, 6" in moon["Verdict"] and r["releaser"] == "the fullness (the last Full Moon)"
+    r2 = engine["sahl_releaser"](*_night(engine, Moon=130.0, Sun=160.0, Jupiter=250.0, Venus=45.0), 15.0, 15.0, 45.0)
+    assert r2["releaser"] == "the Moon"
+    assert not any(c == "1.19, 6" for c, _t in engine["SAHL_RELEASER_NOT_APPLIED"])
+
+
+def _night(engine, **planets):
+    data, cusps = _sahl_chart(215.0, **planets)
+    return data, 215.0, cusps, "Nocturnal"
+
+
+def test_eastern_lord_with_a_share_in_the_ascendant_is_house_master_without_looking(engine):
+    """Day chart, Scorpio rising; the Sun at 15 Virgo (the eleventh) with
+    no lord of his degree looking: Venus (bound, day triplicity and face
+    of 15 Virgo) in Leo, Mercury (house and exaltation) in Leo too. Venus
+    rises before the Sun (eastern) and holds a share at the Ascendant's
+    degree (water's day triplicity): house-master by 1.20, 6, the Sun
+    kept as releaser. Control: Venus in Libra, western -- 1.15, 7 sends
+    the search on."""
+    data, cusps = _sahl_chart(225.0, Sun=165.0, Venus=130.0, Mercury=145.0)
+    r = engine["sahl_releaser"](data, 225.0, cusps, "Diurnal", 15.0, 15.0, 15.0)
+    sun = next(c for c in r["candidates"] if c["Candidate"] == "the Sun")
+    assert "1.20, 6" in sun["Verdict"] and r["releaser"] == "the Sun" and r["house_master"] == "Venus"
+    assert "1.20, 6" in r["ranking"][0]["Rank"]
+    assert not any(c == "1.20, 6" for c, _t in engine["SAHL_RELEASER_NOT_APPLIED"])
+    data, cusps = _sahl_chart(225.0, Sun=165.0, Venus=200.0, Mercury=145.0)
+    r = engine["sahl_releaser"](data, 225.0, cusps, "Diurnal", 15.0, 15.0, 15.0)
+    assert r["releaser"] != "the Sun"
+
+
+def test_short_life_testimonies_count_four_and_quote_the_sentence(engine):
+    """A real chart with the lord of the Lot of Fortune retrograde and an
+    infortune in a stake without a dignity at the Ascendant counts
+    testimony 4; the count and 1.18, 8-10's sentence follow the count."""
+    cast = engine["calculate_traditional_chart"]
+    chart = cast(datetime(1985, 3, 20, 14, 30), 51.5, -0.12)
+    out = engine["sahl_short_life_testimonies"](chart, chart["lot_of_fortune"])
+    assert [r["Source"] for r in out["rows"]] == ["1.18, 1", "1.18, 2", "1.18, 3", "1.18, 4", "1.18, 5", "1.18, 6", "1.18, 7"]
+    assert out["count"] == sum(1 for r in out["rows"][:4] if r["Met"] == "yes")
+    assert all(r["Counted"].startswith("no") for r in out["rows"][4:])
+    assert ("1.18, 8" in out["sentence"]) == (out["count"] == 1)
