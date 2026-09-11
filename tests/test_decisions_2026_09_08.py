@@ -216,7 +216,12 @@ def test_d21_control_no_row_is_a_verdict(engine):
 
 
 # --- D-15: Mars's western orb, 15 by default, 18 by switch ---------------
-def test_d15_mars_west_orb_defaults_to_abu_mashars_15_and_switches_to_sahls_18(engine, monkeypatch):
+def test_d15_mars_west_orb_defaults_to_gr_intr_15_and_switches_to_dykess_18_for_sahl(engine, monkeypatch):
+    """15 is Gr. Intr. VII.2, 31; the 18 of the switch is Dykes's table in
+    On Nativities 1.22 with fn 175 (VII.2, 30's westernizing boundary read
+    into an 18-degree 'under the rays'), Sahl's own sentences being silent
+    on Mars west -- relabelled from "Sahl's table" on 2026-09-11 (decision
+    sheet row 10). The constants do not change."""
     assert engine["MARS_WEST_RAYS_18"] is False
     assert engine["solar_rays_orb"]("Mars") == (18.0, 15.0)
     monkeypatch.setitem(engine, "MARS_WEST_RAYS_18", True)

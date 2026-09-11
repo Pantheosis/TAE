@@ -1492,11 +1492,14 @@ SOLAR_RAYS_ORB = {
 # in front of him and behind him)" -- On Nativities 1.22 covers only the
 # five planets, so the Moon has two witnesses that disagree. Sidebar switch.
 MOON_RAYS_ORB = 12.0
-# Mars going under the rays on the WESTERN side: 15 degrees is Abu
-# Ma'shar's (VII.2, 30-31, the default); Sahl's table has him westernize
-# at 18 (On Nativities 1.22, and fn. 175 works his western figure to about
-# 18). Both give 18 east. Chart-page switch like the Moon's; decision
-# D-15, 2026-09-08. Rare: a 3-degree band on one planet.
+# Mars going under the rays on the WESTERN side: 15 degrees is Gr. Intr.
+# VII.2, 31's ("in the degrees of setting until there come to be 15 degrees
+# between them and the Sun"; the default). The 18 of the switch is DYKES'S
+# chapter-head table in On Nativities 1.22 and his fn 175, which works
+# VII.2, 30's westernizing boundary into an 18-degree "under the rays" --
+# Sahl's own sentences are silent on Mars west (the label said "Sahl's
+# table" until 2026-09-11; decision sheet row 10, DEC-D-15). Both give 18
+# east. Chart-page switch like the Moon's. Rare: a 3-degree band on one planet.
 MARS_WEST_RAYS_18 = False
 
 def solar_rays_orb(planet):
@@ -12190,8 +12193,10 @@ if location_query and lat is not None and lon is not None:
                                        "and 72-73 give 12. Affects: the Solar phase column here, and on the Configurations "
                                        "page Weakness (93), Planetary Condition and Corruption of the Moon. Full text on the Sources page.")
                 _reading_checkbox("Mars under the rays to 18° west", "mars_west_18", "_mars_west_18",
-                                  help="Sahl's table (On Nativities 1.22; fn. 175) has Mars westernize at 18 degrees; "
-                                       "Gr. Intr. VII.2, 30-31 puts him under the rays at 15 on the western side. Both "
+                                  help="Dykes's table for Sahl (the chapter head of On Nativities 1.22, with fn 175, which "
+                                       "reads VII.2, 30's westernizing boundary into 18 degrees) has Mars under the rays "
+                                       "at 18 west; Sahl's own sentences are silent on Mars west. Gr. Intr. VII.2, 31 puts "
+                                       "him under the rays at 15 on the western side. Both "
                                        "give 18 east. Affects: the Solar phase column here and every test that reads it "
                                        "(Weakness 93, Planetary Condition 27/34/45). Decision D-15.")
             # True planets only — angles, nodes, and Lot of Fortune
@@ -13738,9 +13743,10 @@ if location_query and lat is not None and lon is not None:
                 "Gr. Intr. VII.2, 61 and 72-73 give 12; Sahl gives 15 for the Moon's fitness as releaser. "
                 "Affects: the Solar phase column of Planetary Positions; on the Configurations page, "
                 "Weakness of the Planets (93), Planetary Condition and Corruption of the Moon.\n\n"
-                "**Mars under the rays to 18 degrees west (Sahl, On Nativities 1.22)** (Chart page, Planetary Positions) -- "
-                "Gr. Intr. VII.2, 30-31 has Mars under the rays at 15 on the western side; Sahl's table has him "
-                "westernize at 18 (fn. 175). Both agree on 18 east. Affects: the Solar phase column and every test that "
+                "**Mars under the rays to 18 degrees west (Dykes's table in On Nativities 1.22, fn 175)** (Chart page, Planetary Positions) -- "
+                "Gr. Intr. VII.2, 31 has Mars under the rays at 15 on the western side; Dykes's chapter-head table for "
+                "Sahl, with fn 175 reading VII.2, 30's westernizing boundary into 18, has him at 18; Sahl's own sentences "
+                "are silent on Mars west. Both agree on 18 east. Affects: the Solar phase column and every test that "
                 "reads it; a 3-degree band on one planet.\n\n"
                 "**Fitting infortune (Sahl, Choices Ch. 1, 12)** (Configurations page, beside the Connection test) -- "
                 "\"the infortunes are perhaps more fitting for him, since [one] may be the lord of the original Ascendant\"; "
