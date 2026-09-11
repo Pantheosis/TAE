@@ -1288,24 +1288,25 @@ def test_pn4_small_days_start_from_the_revolutions_ascendant(engine):
 # consequence, the zodiacal measure, the crossing of the sign boundary
 # under IX.7, 24, the bound-window opening, and the point directed.
 
-MIGHTY_DAY = 12 + 4 / 24 + 10 / 1440 + 30 / 86400
+MIGHTY_DAY = 12 + 1 / 6 + 1 / 120                          # IX.7, 25's parenthetical: 12.175 d
+MIGHTY_DAY_HYBRID = 12 + 4 / 24 + 10 / 1440 + 30 / 86400    # Dykes's "<4 hours>" + the minutes read as clock time
 
 
-def test_pn4_mighty_days_rate_as_printed_and_its_year(engine):
-    """IX.7, 25: "12 days, <4 hours>, 10 minutes, and 30 seconds" a
-    degree, applied AS PRINTED; IX.7, 28: thirty of them "comes to
-    365 1/4 days, approximately". Thirty of the printed rate is 365d 5h
-    15m -- 365.22 days, short of 365 1/4 by 45 minutes, which is what
-    "approximately" is covering and what fn 177 corrects. The fixture
-    holds the printed number, not the correction, and holds the gap so
-    that silently repairing the rate to fn 177's would fail here."""
+def test_pn4_mighty_days_rate_is_the_authors_fraction_and_its_year_is_365_and_a_quarter(engine):
+    """IX.7, 25: "12 days, <4 hours>, 10 minutes, and 30 seconds (and that
+    is 1/6 of a day and half a sixth of a tenth of a day)" a degree. The
+    parenthetical is the author's own number, 12 + 1/6 + 1/120 = 12.175 d,
+    and thirty of them are 365 1/4 days exactly (IX.7, 28). The "<4 hours>"
+    is Dykes's pointed-bracket supply and the hybrid 12 d 4 h 10 m 30 s
+    (365 d 5 h 15 m for thirty) is neither the manuscript's number nor the
+    author's; it was applied 2026-09-10 as "the printed rate" and replaced
+    by the owner on 2026-09-11 (sheet row 13). The fixture rejects it."""
     assert engine["pn4_mighty_days_arc_to_days"](1.0) == pytest.approx(MIGHTY_DAY)
     segs = engine["pn4_mighty_days"](pdata(Sun=100.0, Moon=200.0), 10.0)
     assert segs[0]["from"] == 0.0
     year = segs[-1]["to"]
-    assert year == pytest.approx(30 * MIGHTY_DAY)
-    assert 365.25 - year == pytest.approx(45 / 1440, abs=1e-6)
-    assert year != pytest.approx(365.25, abs=1e-3)
+    assert year == pytest.approx(365.25, abs=1e-9)
+    assert year != pytest.approx(30 * MIGHTY_DAY_HYBRID, abs=1e-3)
     for a, b in zip(segs, segs[1:]):
         assert a["to"] == pytest.approx(b["from"], abs=1e-9) and a["to"] > a["from"]
 

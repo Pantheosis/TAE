@@ -8276,16 +8276,23 @@ def pn4_small_days(sr_planetary_data, sr_ascendant_lon):
 # them "comes to 365 1/4 days, approximately the number of days of the
 # year" (IX.7, 28) -- the profected thirty degrees treated as the year.
 #
-# THE PRINTED RATE, on purpose. Thirty of 12d 4h 10m 30s is 365d 5h 15m
-# (365.22 days), not the 365 1/4 the sentence says "approximately"; fn
-# 177 says both the units and the parenthetical fractions are wrong and
-# gives 12d 4h 12m for a 365.25-day year. The "<4 hours>" is Dykes'
-# insertion. The number printed is the author's and is what is applied;
-# the page prints the correction beside it. Zodiacal by construction --
+# THE AUTHOR'S OWN FRACTION. IX.7, 25 prints "12 days, <4 hours>, 10
+# minutes, and 30 seconds (and that is 1/6 of a day and half a sixth of a
+# tenth of a day)". Three figures stand in that sentence: (1) the
+# manuscript's 12;10,30 days -- "10 minutes and 30 seconds" as sexagesimal
+# fractions OF A DAY, 10/60 + 30/3600 = 0.175 d = 4 h 12 m; (2) the author's
+# parenthetical, 1/6 + 1/120 = 0.175 d, the same number stated in words,
+# thirty of which are 365 1/4 days EXACTLY (IX.7, 28's "approximately");
+# (3) Dykes's hybrid 12 d 4 h 10 m 30 s = 12.17396 d, his pointed-bracket
+# "<4 hours>" supplied and the manuscript's minutes and seconds read as
+# clock time on top of it, thirty of which are 365 d 5 h 15 m -- fn 177
+# then gives 12 d 4 h 12 m for a 365 1/4-day year, which is (1) and (2)
+# again. APPLIED: (2), 12 + 1/6 + 1/120 = 12.175 d a degree. The owner's
+# decision of 2026-09-11 (decision sheet row 13; order PN4R-4d-1),
+# replacing the hybrid applied 2026-09-10 as "the printed rate". The page
+# prints all three and says which is applied. Zodiacal by construction --
 # there is no ascension anywhere in the sentence; fn 175's report that
-# Birchfield would prefer ascensions is an editor's note. Decided by the
-# owner 2026-09-10 between the printed rate, the corrected rate, and
-# stopping at the sign's end.
+# Birchfield would prefer ascensions is an editor's note.
 #
 # The direction does NOT stop at the end of the sign of the year: it
 # starts at the terminal degree and runs thirty degrees, so its last
@@ -8296,11 +8303,12 @@ def pn4_small_days(sr_planetary_data, sr_ascendant_lon):
 # the opening partner behind the degree within its bound. IX.7, 27's
 # extension to the Lots of the parents and every house and Lot is not
 # built. No worked example exists in PN IV.
-PN4_MIGHTY_DAYS_PER_DEGREE = 12.0 + 4.0 / 24.0 + 10.0 / 1440.0 + 30.0 / 86400.0   # IX.7, 25, as printed
+PN4_MIGHTY_DAYS_PER_DEGREE = 12.0 + 1.0 / 6.0 + 1.0 / 120.0   # IX.7, 25's parenthetical: 12.175 d; thirty = 365.25 d
 PN4_MIGHTY_DAYS_SPAN_DEGREES = 30.0                                                # IX.7, 28: thirty degrees, the year
 
 def pn4_mighty_days_arc_to_days(arc_degrees):
-    """IX.7, 25: 12 days, 4 hours, 10 minutes and 30 seconds a degree."""
+    """IX.7, 25's own fraction: 12 + 1/6 + 1/120 days a degree (12.175 d);
+    see PN4_MIGHTY_DAYS_PER_DEGREE for the three figures in that sentence."""
     return float(arc_degrees) * PN4_MIGHTY_DAYS_PER_DEGREE
 
 def pn4_mighty_days(sr_planetary_data, terminal_lon):
@@ -13417,7 +13425,8 @@ if location_query and lat is not None and lon is not None:
                                   "year terminated at, from the Ascendant of the root\" -- the terminal point -- and a body "
                                   "or ray already in its bound manages until another meets it, else the lord of the bound "
                                   "\"then the lord of the bound which follows it\" (IX.7, 24). IX.7, 25: the arc times "
-                                  "\"12 days, 4 hours, 10 minutes, and 30 seconds\", from the first day of the revolution; "
+                                  "\"12 days, <4 hours>, 10 minutes, and 30 seconds (and that is 1/6 of a day and half a sixth "
+                                  "of a tenth of a day)\" -- the parenthetical's 12.175 d a degree is applied -- from the first day of the revolution; "
                                   "IX.7, 28: thirty of them are the year, \"approximately\", and this is the mighty days. "
                                   "The profected thirty degrees treated as a year, walked degree by degree.")
                 md_cur = pn4['mighty_days_current']
@@ -13437,10 +13446,14 @@ if location_query and lat is not None and lon is not None:
                                 f"{pn4['day_of_year']:.1f} is outside the thirty degrees ({PN4_MIGHTY_DAYS_SPAN_DEGREES * PN4_MIGHTY_DAYS_PER_DEGREE:.2f} days)")
                 st.dataframe(pd.DataFrame(pn4['mighty_days_rows']), hide_index=True, width='stretch',
                              height=_rows_height(min(len(pn4['mighty_days_rows']), 12)))
-                st.caption("The rate is applied as printed. Thirty of 12 d 4 h 10 m 30 s is 365 d 5 h 15 m, not the "
-                           "365 1/4 the sentence calls it \"approximately\"; Dykes' fn 177 says both the units and the "
-                           "parenthetical fractions are wrong and gives 12 d 4 h 12 m for a 365 1/4-day year, and the "
-                           "\"4 hours\" is his insertion. The book's number is the book's. Zodiacal by construction -- "
+                st.caption("The rate. IX.7, 25 prints \"12 days, <4 hours>, 10 minutes, and 30 seconds (and that is 1/6 of "
+                           "a day and half a sixth of a tenth of a day)\". Three figures stand in that sentence: the "
+                           "manuscript's 12;10,30 days (10 minutes and 30 seconds as sexagesimal fractions OF A DAY, "
+                           "12.175 d); the author's parenthetical, 12 + 1/6 + 1/120 = 12.175 d, thirty of which are "
+                           "365 1/4 days exactly (IX.7, 28); and Dykes's hybrid 12 d 4 h 10 m 30 s (12.17396 d; thirty "
+                           "of them 365 d 5 h 15 m), his \"<4 hours>\" supplied and the minutes read as clock time -- "
+                           "fn 177 gives 12 d 4 h 12 m for a 365 1/4-day year, which is the author's fraction again. "
+                           "APPLIED: the author's parenthetical, 12.175 d a degree (owner, 2026-09-11). Zodiacal by construction -- "
                            "no ascension appears in the sentence; fn 175's report that ascensions would make more sense "
                            "is an editor's note. The direction does not stop at the end of the sign of the year: it "
                            "starts at the terminal degree and runs thirty degrees, so its last part lies in the bounds "
