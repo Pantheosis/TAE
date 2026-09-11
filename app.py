@@ -433,11 +433,13 @@ def get_degree_string(longitude):
     F13); an entered whole minute now survives display. The carry at 60',
     30° and 360° follows from working in total minutes. Nothing here
     rounds the longitude itself; bound and degree tests read the float."""
-    longitude = longitude % 360.0
-    sign = get_zodiac_sign(longitude)
-    deg = int(longitude % 30)
-    minute = int((longitude % 1) * 60)
-    return f"{deg:02d}° {sign[:3]} {minute:02d}'"
+    total = (longitude % 360.0) * 60.0
+    nearest = round(total)
+    if abs(total - nearest) < 1e-6:
+        total = nearest
+    total = int(total) % (360 * 60)
+    deg_total, minute = divmod(total, 60)
+    return f"{deg_total % 30:02d}° {SIGN_ORDER[deg_total // 30][:3]} {minute:02d}'"
 
 # ---- The chart wheel ---------------------------------------------------
 # Redesigned 2026-09-07 (brief: WHEEL_REDESIGN_2026-09-07.md, decisions
