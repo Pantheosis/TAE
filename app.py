@@ -12691,6 +12691,15 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
     mighty_days_current = pn4_distribution_at_age(mighty_days, day_of_year)
     mighty_days_rows = _pn4_distribution_rows(mighty_days, mighty_days_current, unit='days', origin_jd=jd_sr)
 
+    # IX.9, 1-10 once; the condition rows (11-13) read its primary.
+    governor = pn4_governor(
+        year['lord'], (current or {}).get('distributor'), (current or {}).get('partner'),
+        ('refused above the polar circle' if segments is None
+         else f"age {age} is past the {PN4_DISTRIBUTION_SPAN_YEARS:g}-year table"),
+        (fardar or {}).get('lord'), orb, sr['ascendant'],
+        pn4_moon_testimony(moon), moon['void'],
+        (releaser_stand or {}).get('distributor'), (releaser_stand or {}).get('partner'), releaser_note)
+
     return {
         'activation_rows': activation_rows,
         'distribution_rows': distribution_rows,
@@ -12704,13 +12713,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'turning_rows': pn4_turning_rows(chart_data, age),
         'turning_triplicity_rows': pn4_turning_triplicity_lords(chart_data, sr),
         'further_rows': pn4_further_indicators(chart_data, sr, year['longitude'], moon, jd_sr=jd_sr),
-        'governor': pn4_governor(
-            year['lord'], (current or {}).get('distributor'), (current or {}).get('partner'),
-            ('refused above the polar circle' if segments is None
-             else f"age {age} is past the {PN4_DISTRIBUTION_SPAN_YEARS:g}-year table"),
-            (fardar or {}).get('lord'), orb, sr['ascendant'],
-            pn4_moon_testimony(moon), moon['void'],
-            (releaser_stand or {}).get('distributor'), (releaser_stand or {}).get('partner'), releaser_note),
+        'governor': governor,
         'moon': moon, 'moon_portions': portions, 'year_days': year_days,
         'proxies': proxies, 'sun_handover': sun,
         'syzygies': syzygies, 'releaser': releaser, 'releaser_segments': releaser_segments,
@@ -12752,10 +12755,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
             if lord in chart_data['planetary_data'] else [],
         }) if any('1.23, 12' in f for f in hm_flags) else None)(SIGN_TO_DOMICILE.get(get_zodiac_sign(ascendant))),
         'turning_partner': sahl_turning_reaches_partner(segments, age, ascendant, chart_data['planetary_data']),
-        'governor_condition': pn4_governor_condition((pn4_governor(
-            year['lord'], (current or {}).get('distributor'), (current or {}).get('partner'), '', (fardar or {}).get('lord'), orb,
-            sr['ascendant'], pn4_moon_testimony(moon), moon['void'], (releaser_stand or {}).get('distributor'),
-            (releaser_stand or {}).get('partner'), releaser_note)[1]['primary'] or [None])[0], chart_data, sr),
+        'governor_condition': pn4_governor_condition((governor[1]['primary'] or [None])[0], chart_data, sr),
         'hm_turning': sahl_house_master_turning(house_master, chart_data['planetary_data']) if house_master else [],
         # FINAL-A1 / sheet row 1: the house-master's years from 1.20, 7-34, by the division.
         'hm_years': (sahl_house_master_years(house_master, chart_data['planetary_data'], chart_data['houses'], chart_data['sect'],
