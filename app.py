@@ -10716,8 +10716,10 @@ def pn4_luminary_proxies(year_lord, chart_data, sr, moon=None, sun=None, release
 # four sentences are quoted with the cell left to the reader (owner's
 # decision 2026-09-10). The engine's own evaluators supply the facts --
 # essential and accidental dignity, solar phase, reception -- run on the
-# revolution's data as they run on the root's. Not read: twelfth-parts;
-# fn 37-41's classes of sign (helpful, hostile, matching in ascensions)
+# revolution's data as they run on the root's. Read since 2026-09-11 (orders
+# PN4R-4l-7 and GAP-34): the twelfth-parts, and fn 37-41's classes of sign
+# (VI.4's loving/hating/hostile by aspect; IX.2, 33's pairs) and of degree
+# (V.20). Earlier text here: not read; fn 37-41's classes of sign (helpful, hostile, matching in ascensions)
 # and of degree (bright, dark, smoky). The delineations II.4-II.21 are
 # not built. No worked example exists; Figure 55 is Dykes' table.
 
@@ -10770,6 +10772,26 @@ def _pn4_lots_in_sign(chart, sign):
             names.append(d['name'])
     return names
 
+def _pn4_sign_class_facts(from_lon, aspect, target_sign, ray_deg):
+    """II.3, 2's classes of sign and of degree, as facts (order GAP-34):
+    fn 37 -> Gr. Intr. VI.4, 4-6, the aspect's kind (sextile and trine
+    loving, square hating, opposition hostile); fn 38 -> IX.2, 33, the two
+    signs matching in ascensions, in daylight, or in one belt (one domicile
+    lord); fn 39, 41 -> Gr. Intr. V.20, the body's and the ray's degree
+    class (bright, dusky, empty, dark) -- the editor's "probably"."""
+    kind = {'sextile': 'loving', 'trine': 'loving', 'square': 'hating', 'opposition': 'hostile'}.get(aspect, aspect)
+    a_sign = get_zodiac_sign(from_lon)
+    pair = frozenset({a_sign, target_sign})
+    matches = []
+    if pair in EQUAL_ASCENSION_PAIRS:
+        matches.append('matching in ascensions')
+    if pair in EQUAL_DAYLIGHT_PAIRS:
+        matches.append('matching in daylight')
+    if SIGN_TO_DOMICILE.get(a_sign) == SIGN_TO_DOMICILE.get(target_sign):
+        matches.append('one belt')
+    return (f"{kind} (VI.4, 4-6); {', '.join(matches) if matches else 'no match'} (IX.2, 33); body in a "
+            f"{_brightness_category(from_lon)} degree, the ray in a {_brightness_category(ray_deg)} degree (V.20, 'probably')")
+
 def _pn4_twelfth_parts_in_sign(data, sign):
     """The planets whose twelfth-part (Gr. Intr. V.18, 3, Figure 57) falls in
     the sign, as the II.3, 2 examination asks."""
@@ -10802,9 +10824,10 @@ def pn4_ii3_examination(chart_data, sr, year, jd_sr):
          'Source': 'II.3, 2; VI.4; Gr. Intr. V.18, 3 (Figure 57)'},
         {'Question': '[4-7] Who looks at it or casts rays at it, from which sign and degree, and to what bound and face',
          'Reads': ('; '.join(f"{_pn4_tag(p)} by {a} from {get_degree_string(lon)}, the ray at {get_degree_string(deg)} "
-                             f"(bound of {pn4_bound_lord(deg)}, face of {get_essential_rulers(deg)['face']})"
+                             f"(bound of {pn4_bound_lord(deg)}, face of {get_essential_rulers(deg)['face']}) -- "
+                             f"{_pn4_sign_class_facts(lon, a, sign, deg)}"
                              for p, a, lon, deg in rays) or 'none'),
-         'Source': 'II.3, 2; fn 37-41 (the classes of sign and degree are not read)'},
+         'Source': 'II.3, 2; fn 37 (Gr. Intr. VI.4, 4-6); fn 38 (IX.2, 33); fn 39, 41 (Gr. Intr. V.20, "probably")'},
         {'Question': '[8] Whether it falls away from the view of the planets and their rays',
          'Reads': 'yes: devoid of them' if not looks else 'no', 'Source': 'II.3, 2'},
     ]
@@ -13879,7 +13902,10 @@ if location_query and lat is not None and lon is not None:
                            "evaluators (essential and accidental dignity, solar phase, reception under the Configurations "
                            "page's rule), and Figure 55's cell is not chosen. \"Domain\" is read as sect (fn 46, 48); "
                            "\"westernization from the Sun\" is shown as the solar side (fn 47). Aspects to the sign and to "
-                           "the lord are by whole sign. Not read: twelfth-parts; fn 37-41's classes of sign and of degree. "
+                           "the lord are by whole sign. Read since 2026-09-11: the twelfth-parts (Gr. Intr. V.18, 3) and fn 37-41's "
+                           "classes of sign (VI.4, 4-6: loving, hating, hostile by aspect; IX.2, 33: matching in ascensions, in "
+                           "daylight, or one belt) and of degree (V.20's bright, dusky, empty and dark degrees, the editor's "
+                           "\"probably\"), as facts on rows [3] and [4-7]. "
                            "The delineations of II.4-II.21 are not built. No worked example exists; Figure 55 is Dykes' "
                            "table.")
 

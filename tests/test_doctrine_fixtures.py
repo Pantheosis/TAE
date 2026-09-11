@@ -3339,3 +3339,20 @@ def test_indicator_fifteen_reads_the_three_lords_connections_when_given_the_mome
     r15 = next(r for r in b["further_rows"] if r["#"] == 15)
     assert "the lord of the natal Ascendant" in r15["Reads"] and "the lord of the revolution's Ascendant" in r15["Reads"]
     assert "NOT computed" not in r15["Reads"] and r15["Source"] == "II.1, 20; VI.6, 1-3"
+
+
+# --- GAP-34: II.3, 2's classes of sign and of degree, as facts ---------------------------
+
+def test_ii3_rays_carry_the_classes_of_sign_and_degree(engine):
+    """Terminal sign Cancer; the Moon at 20 Libra squares it: "hating" (VI.4);
+    Libra and Cancer match in neither ascensions nor daylight and have
+    different lords (IX.2, 33); the body's and the ray's degree classes are
+    V.20's. A trine from Pisces (Mercury at 5 Pisces) is "loving"."""
+    root, sr, _ = _ii3_pair(engine, year_lon=95.0)
+    year = {"sign": "Cancer", "longitude": 95.0, "lord": "Moon"}
+    reads = engine["pn4_ii3_examination"](root, sr, year, 2451545.0)["root_rows"][3]["Reads"]
+    moon = [part for part in reads.split("; ") if part.startswith("Moon")]
+    assert moon and "hating (VI.4, 4-6)" in reads and "(IX.2, 33)" in reads and "(V.20, 'probably')" in reads
+    assert engine["_pn4_sign_class_facts"](335.0, "trine", "Cancer", 95.0).startswith("loving")
+    assert "matching in ascensions" in engine["_pn4_sign_class_facts"](100.0, "sextile", "Sagittarius", 250.0)   # Cancer-Sagittarius (IX.2, 33)
+    assert "one belt" in engine["_pn4_sign_class_facts"](40.0, "square", "Libra", 190.0)                        # Taurus-Libra, Venus
