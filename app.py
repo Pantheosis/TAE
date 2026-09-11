@@ -8077,16 +8077,20 @@ def evaluate_planetary_years_display(planetary_data, cusps, ascendant_lon, sect,
 # an editor's note), it does not list it among the year's indicators
 # (II.2), it works no example of it (the III.1, 19-45 example directs the
 # Ascendant only), and its partner-at-birth rule (III.1, 23-25) is worded
-# for the Ascendant and carried to the meridian by analogy. Planets IN the
-# Midheaven, which III.1, 12 also assigns to right ascension, are not
-# directed.
+# for the Ascendant and carried to the meridian by analogy. A planet ON the
+# degree of the Midheaven or the fourth (or the Ascendant), which III.1, 12
+# also assigns to that ascension, is directed as the degree is since
+# 2026-09-11 (GAP-37, the owner's ruling (e): the degree itself, numerical
+# tolerance, no orb -- PN4_ASCENSION_RULE, pn4_axis_of).
 #
 # The third case of III.1, 12 -- everything that is neither the Ascendant
 # nor the meridian, directed "according to what we stated in our book [on
 # that topic]" -- is absent. PN IV defers the method to a book it
 # does not reproduce; Dykes' fn 16 identifies it as Ptolemy's proportional
-# semi-arcs, but that is an editor's note, not Abu Ma'shar's sentence, and
-# the reconstructions of it differ. Named and refused rather than guessed.
+# semi-arcs (VI.2, 21 fn 33 the same), but that is an editor's note, not
+# Abu Ma'shar's sentence. Named as unavailable, never as a prohibition
+# (III.1, 5 directs all planets and Lots); authorised as a new work order
+# after the 2026-09-11 PR merges, an outside-corpus import.
 
 PN4_SEVEN = ('Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon')
 
@@ -8156,25 +8160,54 @@ def pn4_direction_unit(chart_level):
 # --- III.1, 12: which ascensions measure which point ----------------------
 # III.1, 12, and the STATE of each of its three cases in this engine. The
 # table must not flatten them: the first two cases are built, each for the
-# DEGREE of its point and not for "the things in it"; the third case's
-# method is not in PN IV at all, being deferred to a book he does not
-# reproduce, so it is not buildable from this corpus without importing a
-# reconstruction. The state strings are asserted verbatim by
-# test_pn4_printed_reference_tables_derive_from_the_rules, so directing a
-# planet on an angle, or building the third case, means changing them.
+# DEGREE of its point and for a planet ON that degree itself; the third
+# case's method is not in PN IV at all, being deferred to a book he does
+# not reproduce (fn 16: Ptolemy's proportional semi-arcs; VI.2, 21 fn 33
+# "That is, by normal proportional semi-arcs"), so it is not built from
+# this corpus. The owner's ruling of 2026-09-11 (evening; GAP-37 /
+# PN4R-4b-4, reading (e)): "in the Ascendant / Midheaven / fourth" means
+# ON the axial degree, recognised with a NUMERICAL tolerance
+# (PN4_AXIS_TOLERANCE, floating-point equality -- not an astrological orb:
+# no 3, no 5, no band); get_effective_house and the five-degree carry-over
+# have no role in method selection; every planet not on an axis is listed
+# with the sentence below, a computational gap and never a prohibition
+# (III.1, 5 directs all planets and Lots), with no fall-back to RA or OA.
+# The Descendant stays out (fn 15: omitted by the author). Proportional
+# semi-arcs are authorised as a NEW work order after the PR merges; when
+# built, the sentence is replaced by the arc. The state strings are
+# asserted verbatim by test_pn4_printed_reference_tables_derive_from_the_rules.
+PN4_AXIS_TOLERANCE = 1e-9   # degrees: floating-point equality with the axial degree, documented, not an orb
+PN4_SEMIARCS_UNAVAILABLE = 'Requires proportional semi-arcs; calculation unavailable.'
 PN4_ASCENSION_RULE = {
     'Ascendant': ('oblique ascensions of the birth latitude',
-                  'applied to the degree of the Ascendant and to the planets in it (the first division, carried over)'),
+                  'applied to the degree of the Ascendant and to a planet on the degree itself (numerical tolerance, no orb)'),
     'Midheaven': ('right ascensions',
-                  'applied to the degrees of the Midheaven and the fourth and to the planets in them (the tenth and fourth divisions, carried over)'),
+                  'applied to the degrees of the Midheaven and the fourth and to a planet on the degree itself (numerical tolerance, no orb)'),
     'Fourth (IC)': ('right ascensions',
-                    'applied to the degrees of the Midheaven and the fourth and to the planets in them (the tenth and fourth divisions, carried over)'),
-    'anything else': ('proportional semi-arcs', 'method not stated in PN IV'),
+                    'applied to the degrees of the Midheaven and the fourth and to a planet on the degree itself (numerical tolerance, no orb)'),
+    'anything else': ('proportional semi-arcs',
+                      PN4_SEMIARCS_UNAVAILABLE + " Not a prohibition: III.1, 5 directs all planets and Lots; the method is "
+                      "Ptolemy's as Dykes identifies it (III.1, 12 fn 16; VI.2, 21 fn 33), the formula stated in no text in hand"),
 }
 
 def pn4_ascension_measure(point):
     """III.1, 12. Returns (measure, state) -- see PN4_ASCENSION_RULE."""
     return PN4_ASCENSION_RULE.get(point, PN4_ASCENSION_RULE['anything else'])
+
+def pn4_axis_of(lon, ascendant_lon, mc_lon, tolerance=PN4_AXIS_TOLERANCE):
+    """III.1, 12 under the ruling (e): which of the three axial degrees the
+    longitude is ON -- 'Ascendant', 'Midheaven', 'Fourth (IC)' -- or None.
+    The wrapped signed offset from each axis is compared with the numerical
+    tolerance; the Descendant is not an axis of III.1, 12 (fn 15)."""
+    def off(a, b):
+        return abs(((a - b + 180.0) % 360.0) - 180.0)
+    if off(lon, ascendant_lon) <= tolerance:
+        return 'Ascendant'
+    if off(lon, mc_lon) <= tolerance:
+        return 'Midheaven'
+    if off(lon, mc_lon + 180.0) <= tolerance:
+        return 'Fourth (IC)'
+    return None
 
 def _pn4_sentence_case(text):
     """Upper-case the first letter only. str.capitalize() would lower the
@@ -12666,29 +12699,31 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
                                                 origin_jd=chart_data['julian_day'])
                     if releaser['releaser'] is None else None)
     # --- III.1, 12: "the Ascendant and the things in it ... what is in the
-    # Midheaven or the fourth" -- the PLANETS in those places directed as their
-    # degrees are (orders GAP-37 / PN4R-4b-4; the degrees alone until
-    # 2026-09-11). "In" is the Alcabitius division with the five-degree
-    # carry-over, the order's unit -- recorded as a reading for the owner,
-    # since the canon confines the carry-over to power and this is a
-    # positional test. First-division planets by the oblique ascension, tenth-
-    # and fourth-division planets by right ascension.
+    # Midheaven or the fourth" -- a planet ON an axial degree directed as
+    # that degree is (orders GAP-37 / PN4R-4b-4; the owner's ruling (e) of
+    # 2026-09-11, evening: the degree itself, PN4_AXIS_TOLERANCE, no orb; the
+    # division and the carry-over play no part). Every other planet is
+    # listed with PN4_SEMIARCS_UNAVAILABLE -- a computational gap, not a
+    # prohibition (III.1, 5) -- and is NOT directed by RA or OA instead.
     angle_planets = []
     for planet in PN4_SEVEN:
         if planet not in chart_data['planetary_data']:
             continue
         p_lon = chart_data['planetary_data'][planet]['longitude']
-        q = get_effective_house(p_lon, chart_data['houses'])
-        if q == 1:
+        axis = pn4_axis_of(p_lon, ascendant, chart_data['mc'])
+        if axis == 'Ascendant':
             segs = pn4_distribution_from_ascendant(chart_data['planetary_data'], p_lon, chart_data['obliquity'], lat)
             where, how = 'the Ascendant', 'oblique ascension of the birth latitude'
-        elif q in (10, 4):
+        elif axis in ('Midheaven', 'Fourth (IC)'):
+            where = 'the Midheaven' if axis == 'Midheaven' else 'the fourth'
             segs = pn4_distribution_from_meridian(chart_data['planetary_data'], chart_data['mc'], chart_data['obliquity'],
-                                                  start_lon=p_lon, label=f"{planet} in {'the Midheaven' if q == 10 else 'the fourth'}")
-            where, how = ('the Midheaven' if q == 10 else 'the fourth'), 'right ascension'
+                                                  start_lon=p_lon, label=f"{planet} in {where}")
+            how = 'right ascension'
         else:
+            angle_planets.append({'planet': planet, 'axis': None, 'where': 'not on an axial degree',
+                                  'how': PN4_SEMIARCS_UNAVAILABLE, 'segments': None, 'current': None, 'rows': []})
             continue
-        angle_planets.append({'planet': planet, 'division': q, 'where': where, 'how': how, 'segments': segs,
+        angle_planets.append({'planet': planet, 'axis': axis, 'where': where, 'how': how, 'segments': segs,
                               'current': pn4_distribution_at_age(segs, elapsed) if segs else None,
                               'rows': _pn4_distribution_rows(segs, pn4_distribution_at_age(segs, elapsed) if segs else None,
                                                              origin_jd=chart_data['julian_day'])})
@@ -14814,26 +14849,31 @@ if location_query and lat is not None and lon is not None:
                            "a meridian direction exists in PN IV -- III.1, 19-45 directs the Ascendant only -- so the "
                            "engine is checked by arithmetic and against the editor's four-minutes-a-degree animation "
                            "(Appendix A), not against the author's numbers. (4) The partner-at-birth rule of III.1, 23-25 "
-                           "is worded for the Ascendant and is carried here by analogy. (5) The two degrees AND the planets "
-                           "in the tenth and fourth divisions are directed by right ascension, and the planets in the first by "
-                           "the oblique ascension, as III.1, 12 assigns them (\"the Ascendant and the things in it ... what is "
-                           "in the Midheaven or the fourth\"), below; \"in\" is read as the Alcabitius division with the "
-                           "five-degree carry-over -- a reading recorded for the owner, the carry-over being a power rule "
-                           "under the canon and this a positional test.")
-                if pn4['angle_planets']:
-                    st.markdown("**The planets in the Ascendant, the Midheaven and the fourth, directed as their degrees are "
-                                "(III.1, 12):**")
-                    for ap in pn4['angle_planets']:
-                        st.markdown(f"**{ap['planet']}** in {ap['where']} (division {ap['division']}), by the {ap['how']}"
-                                    + (f" -- now: distributor **{ap['current']['distributor']}**, partner "
-                                       f"**{ap['current']['partner'] or 'none'}**" if ap['current'] else '') + ":")
-                        if ap['segments'] is None:
-                            st.warning("Refused at this latitude (decision D-23).")
-                        else:
-                            st.dataframe(pd.DataFrame(ap['rows']), hide_index=True, width='stretch',
-                                         height=_rows_height(min(len(ap['rows']), 8)))
-                else:
-                    st.markdown("No planet stands in the first, tenth or fourth division of this chart.")
+                           "is worded for the Ascendant and is carried here by analogy. (5) III.1, 12 assigns \"the Ascendant "
+                           "and the things in it\" to the oblique ascensions and \"what is in the Midheaven or the fourth\" to "
+                           "the right ascensions: \"in\" is read as ON THE AXIAL DEGREE ITSELF (the owner's ruling of "
+                           "2026-09-11), recognised with a numerical tolerance (floating-point equality), not an astrological "
+                           "orb -- no 3 degrees, no 5, no band; the Alcabitius division and the five-degree carry-over play no "
+                           "part in choosing the method. A planet on one of the three degrees is directed as that degree is, "
+                           "below. Every planet not on an axis is listed with \"" + PN4_SEMIARCS_UNAVAILABLE + "\" -- a "
+                           "computational gap, NOT a prohibition: III.1, 5 directs all planets and Lots, and the method for "
+                           "\"what is not in these three positions\" is Ptolemy's proportional semi-arcs as Dykes identifies it "
+                           "(III.1, 12 fn 16; VI.2, 21 fn 33), stated in no text in hand and not built; no right or oblique "
+                           "ascension is substituted for it. The Descendant is not one of the three positions (fn 15).")
+                st.markdown("**The planets, each with its measure under III.1, 12** (on an axial degree, directed as that "
+                            "degree is; otherwise the sentence):")
+                for ap in pn4['angle_planets']:
+                    if ap['axis'] is None:
+                        st.markdown(f"**{ap['planet']}** -- {ap['how']}")
+                        continue
+                    st.markdown(f"**{ap['planet']}** on the degree of {ap['where']}, by the {ap['how']}"
+                                + (f" -- now: distributor **{ap['current']['distributor']}**, partner "
+                                   f"**{ap['current']['partner'] or 'none'}**" if ap['current'] else '') + ":")
+                    if ap['segments'] is None:
+                        st.warning("Refused at this latitude (decision D-23).")
+                    else:
+                        st.dataframe(pd.DataFrame(ap['rows']), hide_index=True, width='stretch',
+                                     height=_rows_height(min(len(ap['rows']), 8)))
 
             with tab_rel:
                 # --- SAHL: the releaser and the house-master (2026-09-10) ---

@@ -2486,10 +2486,12 @@ def test_pn4_printed_reference_tables_derive_from_the_rules(engine):
     # changing these strings too.
     applied = {k: v for k, v in state.items() if v.startswith("applied")}
     assert sorted(applied) == ["Ascendant, and things in it", "Midheaven, or the fourth"]
-    # since 2026-09-11 (GAP-37 / PN4R-4b-4) the planets in those divisions are directed as their degrees are
-    assert applied["Ascendant, and things in it"] == "applied to the degree of the Ascendant and to the planets in it (the first division, carried over)"
-    assert applied["Midheaven, or the fourth"] == "applied to the degrees of the Midheaven and the fourth and to the planets in them (the tenth and fourth divisions, carried over)"
-    assert state["Anything else"] == "method not stated in PN IV"
+    # since 2026-09-11 (GAP-37 / PN4R-4b-4, the owner's ruling (e)) a planet ON an axial degree is directed as it is
+    assert applied["Ascendant, and things in it"] == "applied to the degree of the Ascendant and to a planet on the degree itself (numerical tolerance, no orb)"
+    assert applied["Midheaven, or the fourth"] == "applied to the degrees of the Midheaven and the fourth and to a planet on the degree itself (numerical tolerance, no orb)"
+    assert state["Anything else"].startswith("Requires proportional semi-arcs; calculation unavailable.")
+    assert "III.1, 12 fn 16; VI.2, 21 fn 33" in state["Anything else"] and "stated in no text in hand" in state["Anything else"]
+    assert "Not a prohibition: III.1, 5" in state["Anything else"]
 
 
 # --- III.7, 32-42: when a natal indication comes out ----------------------
@@ -3325,22 +3327,57 @@ def test_first_month_governor_names_the_primary_sign_when_the_strict_test_fails(
 
 # --- GAP-37 / PN4R-4b-4: the planets in the Midheaven, the fourth and the Ascendant, directed -----
 
-def test_planets_in_the_angular_divisions_are_directed_as_their_degrees_are(engine):
-    """III.1, 12. A meridian distribution from a planet's own degree runs by
-    right ascension from that degree; the bundle lists every planet whose
-    division is 1, 10 or 4 with its own table."""
-    p = pdata(Sun=100.0, Moon=200.0, Mercury=110.0, Venus=130.0, Mars=300.0, Jupiter=250.0, Saturn=20.0)
-    segs = engine["pn4_distribution_from_meridian"](p, 15.0, 23.44, start_lon=22.0, label="Saturn in the Midheaven")
-    assert segs and segs[0]["from"] == 0.0 and segs[0]["from_lon"] == pytest.approx(22.0)
+def test_planets_on_an_axial_degree_are_directed_as_it_is_and_the_rest_require_semiarcs(engine):
+    """III.1, 12 under the owner's ruling (e) of 2026-09-11 (GAP-37 /
+    PN4R-4b-4): "in the Ascendant / Midheaven / fourth" is ON the axial
+    degree, floating-point equality, no orb. The signed-offset table of
+    GAP-37_astra_reading.md: dl = wrap(planet - MC) in {-6, -3, 0, +3, +6},
+    only 0 selects right ascension, the four others "requires semi-arcs";
+    the exact Ascendant and IC; wraparound (an axis at 0, a point just
+    under 360); and independence from the five-degree setting."""
+    axis_of = engine["pn4_axis_of"]
+    asc, mc = 100.0, 10.0
+    for dl in (-6.0, -3.0, 3.0, 6.0):
+        assert axis_of((mc + dl) % 360.0, asc, mc) is None, dl
+    assert axis_of(mc, asc, mc) == "Midheaven"
+    assert axis_of(asc, asc, mc) == "Ascendant" and axis_of((mc + 180.0) % 360.0, asc, mc) == "Fourth (IC)"
+    assert axis_of(mc + 2e-9, asc, mc) is None and axis_of(mc + 5e-10, asc, mc) == "Midheaven"   # the documented tolerance
+    assert axis_of(360.0 - 1e-12, asc, 0.0) == "Midheaven" and axis_of(359.9, asc, 0.0) is None    # wraparound
+    assert axis_of(280.0, asc, mc) is None                                                          # the Descendant is not an axis (fn 15)
+    # a real chart: Saturn moved onto the Midheaven's degree, then 3 degrees on
     cast = engine["calculate_traditional_chart"]
     birth, lat, lon = datetime(1985, 3, 20, 14, 30), 51.5, -0.12
     chart = cast(birth, lat, lon)
-    b = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(2027, 6, 1).date(), engine["PN4_MONTHLY_TURN_OPTIONS"][0])
-    for ap in b["angle_planets"]:
-        assert ap["division"] in (1, 10, 4) and ap["division"] == engine["get_effective_house"](chart["planetary_data"][ap["planet"]]["longitude"], chart["houses"])
-        assert ap["how"] == ("oblique ascension of the birth latitude" if ap["division"] == 1 else "right ascension")
-    expected = [pl for pl in engine["PN4_SEVEN"] if engine["get_effective_house"](chart["planetary_data"][pl]["longitude"], chart["houses"]) in (1, 10, 4)]
-    assert [ap["planet"] for ap in b["angle_planets"]] == expected
+    bundle = lambda c: engine["pn4_timing_bundle"](c, lat, lon, birth.date(), datetime(2027, 6, 1).date(), engine["PN4_MONTHLY_TURN_OPTIONS"][0])
+    import copy
+    on = copy.deepcopy(chart)
+    on["planetary_data"]["Saturn"]["longitude"] = chart["mc"]
+    aps = {ap["planet"]: ap for ap in bundle(on)["angle_planets"]}
+    assert set(aps) == set(engine["PN4_SEVEN"])                                                    # every planet is listed
+    assert aps["Saturn"]["axis"] == "Midheaven" and aps["Saturn"]["how"] == "right ascension" and aps["Saturn"]["segments"]
+    assert aps["Saturn"]["segments"][0]["from_lon"] == pytest.approx(chart["mc"])
+    for pl, ap in aps.items():
+        if pl != "Saturn":
+            assert ap["axis"] is None and ap["how"] == "Requires proportional semi-arcs; calculation unavailable." and ap["segments"] is None
+    near = copy.deepcopy(chart)
+    near["planetary_data"]["Saturn"]["longitude"] = (chart["mc"] + 3.0) % 360.0                    # in the tenth division, carried or not: unavailable
+    assert engine["get_effective_house"](near["planetary_data"]["Saturn"]["longitude"], chart["houses"]) == 10
+    ap = {a["planet"]: a for a in bundle(near)["angle_planets"]}["Saturn"]
+    assert ap["axis"] is None and ap["how"].startswith("Requires proportional semi-arcs")
+    old = engine["FIVE_DEGREE_CARRYOVER"]
+    try:
+        engine["FIVE_DEGREE_CARRYOVER"] = 0.0                                                      # the five-degree setting has no role here
+        assert {a["planet"]: a for a in bundle(near)["angle_planets"]}["Saturn"]["axis"] is None
+        assert {a["planet"]: a for a in bundle(on)["angle_planets"]}["Saturn"]["axis"] == "Midheaven"
+    finally:
+        engine["FIVE_DEGREE_CARRYOVER"] = old
+    on_asc = copy.deepcopy(chart)
+    on_asc["planetary_data"]["Venus"]["longitude"] = chart["ascendant"]
+    ap = {a["planet"]: a for a in bundle(on_asc)["angle_planets"]}["Venus"]
+    assert ap["axis"] == "Ascendant" and ap["how"] == "oblique ascension of the birth latitude"
+    on_ic = copy.deepcopy(chart)
+    on_ic["planetary_data"]["Mars"]["longitude"] = (chart["mc"] + 180.0) % 360.0
+    assert {a["planet"]: a for a in bundle(on_ic)["angle_planets"]}["Mars"]["axis"] == "Fourth (IC)"
 
 
 # --- GAP-2: the year of the turning reaching the partner's body (1.24, 4-5; 1.23, 23) ---------

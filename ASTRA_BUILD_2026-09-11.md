@@ -260,7 +260,7 @@ other stakes). The retrograde-under-the-rays and under-the-rays cases keep a def
 | B1 precedence | f1a9cdf | `sahl_short_life_testimonies` testimony 7: `(', '.join(retro_partners) or 'none') + ' (reception not tested here)'`; the fixture pins the caveat with and without a retrograde partner. |
 | B2 double call | 7ea2bc0 | `pn4_timing_bundle` computes `pn4_governor` once; `governor_condition` reads its primary. No output change. |
 | B4 dead `if True:` | 23c8f28 | Deleted in `evaluate_escape`, the append dedented. (A second, pre-existing `if True:` in the UI's `_restore_chart` is not the finding's and was left.) |
-| C GAP-31 (ruled: DIVISIONS, adopted reading) | (this commit) | IX.9, 13's place half built with `get_effective_house` in the revolution; "Met" is yes when the division is 1/4/7/10 or 2/5/8/11 AND 12's sign condition holds in the revolution. The row carries the three statements separately -- (i) the text supplies the requirement, (ii) the canon its operational interpretation, (iii) Alcabitius and the axial 5° from that convention -- and the QUALIFIED confidence with IX.5, 4 fn 106 (p. 602) quoted, IX.5, 9 (p. 603) as the closest parallel, V.1, 28 fn 15 beside it. "Unit awaits the owner" dropped from row and captions; the caption says the unit is the canon's. Fixture: on the tenth cusp met; the cusp 6° on (ninth division) not met; 4° on (carried) met; a stake with no testimony -> no; without cusps "not computed". THE ORDER'S "WHOLE-SIGN PLACE" IS CORRECTED BY RULING. Corpus: a dated addendum to `OWNER_RULING_PLACES_VS_DYNAMICS_2026-09-11.md` with both witnesses verified (fn 106 at `persian_nativities_iv.md` line 12345, IX.5, 4 on p. 602, IX.5, 7-9 on p. 603; fn 15 at line 8461, p. 400). |
+| C GAP-31 (ruled: DIVISIONS, adopted reading) | 47cc309 | IX.9, 13's place half built with `get_effective_house` in the revolution; "Met" is yes when the division is 1/4/7/10 or 2/5/8/11 AND 12's sign condition holds in the revolution. The row carries the three statements separately -- (i) the text supplies the requirement, (ii) the canon its operational interpretation, (iii) Alcabitius and the axial 5° from that convention -- and the QUALIFIED confidence with IX.5, 4 fn 106 (p. 602) quoted, IX.5, 9 (p. 603) as the closest parallel, V.1, 28 fn 15 beside it. "Unit awaits the owner" dropped from row and captions; the caption says the unit is the canon's. Fixture: on the tenth cusp met; the cusp 6° on (ninth division) not met; 4° on (carried) met; a stake with no testimony -> no; without cusps "not computed". THE ORDER'S "WHOLE-SIGN PLACE" IS CORRECTED BY RULING. Corpus: a dated addendum to `OWNER_RULING_PLACES_VS_DYNAMICS_2026-09-11.md` with both witnesses verified (fn 106 at `persian_nativities_iv.md` line 12345, IX.5, 4 on p. 602, IX.5, 7-9 on p. 603; fn 15 at line 8461, p. 400). |
 
 The owner's GAP-31 ruling, quoted: "DIVISIONS -- approved as an ADOPTED DYNAMIC-FITNESS READING, not as the
 text's own unit. Build 13's place half with `get_effective_house` (Alcabitius divisions, the 5° allowance at the
@@ -276,3 +276,25 @@ left open in the closest parallel (IX.5, 9, p. 603, fortunes 'in the stakes or w
 rank, reputation, class, and their endurance', the same triad as IX.9, 13). Cite fn 106 on the page as the
 sign-vocabulary witness (it is closer and more directly comparable than V.1, 28 fn 15, which may be cited beside it
 but not instead). Drop 'unit awaits the owner'; the row cites IX.9, 13 and the caption says the unit is the canon's."
+
+### GAP-37 / PN4R-4b-4 (ruled: (e) EXACT AXES, numerical tolerance only)
+
+| Item | Commit | What was done |
+|---|---|---|
+| C GAP-37 | (this commit) | `pn4_axis_of(lon, asc, mc)`: on the Ascendant / Midheaven / IC degree by `PN4_AXIS_TOLERANCE = 1e-9` degrees (floating-point equality, documented, not an orb); the Descendant not an axis (fn 15). `pn4_timing_bundle` lists EVERY planet: on an axis -> directed as that degree is (Asc by OA, MC/IC by RA, unchanged); otherwise `PN4_SEMIARCS_UNAVAILABLE` = "Requires proportional semi-arcs; calculation unavailable." with no fall-back to RA or OA. `get_effective_house` and the carry-over leave the path. Caption item (5) and `PN4_ASCENSION_RULE`'s three strings rewritten ("a planet on the degree itself (numerical tolerance, no orb)"; 'anything else' = the sentence, "Not a prohibition: III.1, 5 directs all planets and Lots", the method "Ptolemy's as Dykes identifies it (III.1, 12 fn 16; VI.2, 21 fn 33), the formula stated in no text in hand" -- both footnotes verified in the corpus: fn 16 at `persian_nativities_iv.md` line 6125, fn 33 at line 9122). Tests: the signed-offset table (dl in {-6, -3, 0, +3, +6}: only 0 selects RA), the exact Asc and IC, the tolerance's edge (2e-9 out, 5e-10 in), wraparound (axis at 0, a point 1e-12 under 360), independence from `FIVE_DEGREE_CARRYOVER`, a real chart with Saturn moved onto the MC and 3° past it (tenth division, unavailable), Venus on the Ascendant, Mars on the IC; the tautological comparison to `get_effective_house` is gone. THE ORDER'S UNIT (division with carry-over) IS SUPERSEDED BY RULING. `tables.json`: the seven angle-planet tables under "The distribution from the Midheaven and the fourth" (2 + 2 + 2 + 1 on four dates) removed -- no fixture planet stands on an axial degree to the tolerance; the two meridian tables per date stay. Corpus: the (e) addendum to `OWNER_RULING_PLACES_VS_DYNAMICS_2026-09-11.md`. |
+
+The owner's GAP-37 ruling, quoted: "(e) EXACT AXES, numerical tolerance only. ... 'In the Ascendant / Midheaven /
+fourth' means ON the axial degree, recognised with a documented NUMERICAL tolerance (floating-point equality, not an
+astrological orb -- no 3°, no 5°, no band). The three axial degrees themselves stay directed exactly as now (Asc by
+OA, MC and IC by RA). Every planet not on an axis is listed with the sentence 'Requires proportional semi-arcs;
+calculation unavailable.' -- a computational gap, NEVER a prohibition: III.1, 5 directs all planets and Lots. Do not
+fall back to RA or OA to produce a number; do not say PN IV excludes the planet. `get_effective_house` leaves this
+path entirely; the 5° carry-over and the divisions have no role in method selection. ... The Descendant stays out
+(fn 15: omitted by the author)."
+
+**Left for the next order (authorised by the owner, AFTER the PR merges -- not in this round):** (f) Ptolemy's
+proportional semi-arc direction for off-axis points, an OUTSIDE-CORPUS IMPORT authorised by the owner, to be
+labelled on the page "Ptolemy's method as Dykes identifies it (III.1, 12 fn 16; VI.2, 21 fn 33); the formula is
+stated in no text in hand"; readings to declare when built: body vs ecliptic projection, upper vs lower
+culmination, the Descendant's descension, the tolerance. The engine's `_semiarcs`, `_ra_decl`,
+`_oblique_ascension` are the primitives. When (f) lands, the "unavailable" sentence is replaced by the arc.
