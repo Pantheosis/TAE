@@ -2936,16 +2936,19 @@ def test_ascendant_candidates_lord_is_judged_by_the_seven_praised_places(engine,
 def test_unwitnessed_luminary_row_names_nawbakhts_gate_and_al_andarzaghars_rule(engine):
     """Scorpio rising by day, the Sun at 15 Virgo (the eleventh, one of
     1.15, 6's five places): its lords are Venus (bound, triplicity, face)
-    and Mercury (house, exaltation); with both in Leo, the adjacent sign,
-    neither looks. Nawbakht's 1.15, 7 sends the search on; the row
-    says so and names al-Andarzaghar's 1.16, 4, which would keep the Sun
-    "even if a house-master is not looking". Control: Mercury in Pisces
+    and Mercury (house, exaltation); with Mercury in Leo, the adjacent
+    sign, and Venus in Libra, the next, neither looks. Nawbakht's 1.15, 7
+    sends the search on; the row says so and names al-Andarzaghar's 1.16,
+    4, which would keep the Sun "even if a house-master is not looking".
+    (Venus is western here: since 2026-09-11, REL-5-2, an eastern Venus
+    with her day-triplicity share at the Ascendant would be house-master by
+    1.20, 6, and that case has its own test.) Control: Mercury in Pisces
     opposes Virgo, the Sun is the releaser and the row cites neither."""
-    r = _releaser(engine, 215.0, "Diurnal", Sun=165.0, Mercury=145.0)
+    r = _releaser(engine, 215.0, "Diurnal", Sun=165.0, Mercury=145.0, Venus=200.0)
     sun = next(c for c in r["candidates"] if c["Candidate"] == "the Sun")
     assert "1.15, 7" in sun["Verdict"] and "1.16, 4" in sun["Verdict"] and r["releaser"] != "the Sun"
     assert any(c == "1.16, 4" for c, _t in engine["SAHL_RELEASER_NOT_APPLIED"])
-    r2 = _releaser(engine, 215.0, "Diurnal", Sun=165.0, Mercury=340.0)
+    r2 = _releaser(engine, 215.0, "Diurnal", Sun=165.0, Mercury=340.0, Venus=200.0)
     sun2 = next(c for c in r2["candidates"] if c["Candidate"] == "the Sun")
     assert r2["releaser"] == "the Sun" and "1.15, 7" not in sun2["Verdict"] and "1.16, 4" not in sun2["Verdict"]
 
