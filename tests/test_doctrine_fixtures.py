@@ -3322,3 +3322,20 @@ def test_turning_triplicity_lords_for_assets_and_siblings(engine):
     assert [r["Lord"] for r in assets] == ["Venus", "Mars", "Moon"] and assets[0]["Source"].startswith("VI.2, 4")
     assert [r["Lord"] for r in sibs] == ["Saturn", "Mercury", "Jupiter"] and sibs[0]["Siblings (5)"] == "the older"
     assert assets[0]["Revolution condition"].startswith("Libra") and sibs[0]["Revolution condition"].startswith("Aries")
+
+
+# --- PN4R-4g-5: indicator #15, the lords' connections in the revolution ---------------------
+
+def test_indicator_fifteen_reads_the_three_lords_connections_when_given_the_moment(engine):
+    """Without the revolution's moment the row says so; with it, each of
+    VI.6, 1's three lords is followed until it leaves its sign and its
+    perfections with the other house lords are listed."""
+    rows = _rows(engine)
+    assert rows[15]["Reads"].startswith("NOT computed here")
+    cast = engine["calculate_traditional_chart"]
+    birth, lat, lon = datetime(1985, 3, 20, 14, 30), 51.5, -0.12
+    chart = cast(birth, lat, lon)
+    b = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(2027, 6, 1).date(), engine["PN4_MONTHLY_TURN_OPTIONS"][0])
+    r15 = next(r for r in b["further_rows"] if r["#"] == 15)
+    assert "the lord of the natal Ascendant" in r15["Reads"] and "the lord of the revolution's Ascendant" in r15["Reads"]
+    assert "NOT computed" not in r15["Reads"] and r15["Source"] == "II.1, 20; VI.6, 1-3"

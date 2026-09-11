@@ -9797,7 +9797,7 @@ def _pn4_house_from(lon, from_lon):
     """Whole-sign house of `lon` counted from the sign of `from_lon`."""
     return get_wsh_house(lon, from_lon)
 
-def pn4_further_indicators(chart_data, sr, year_lon, moon=None):
+def pn4_further_indicators(chart_data, sr, year_lon, moon=None, jd_sr=None):
     """Indicators 6-19 of the year (II.1, 11-24): one row each, the fact
     it reads computed where it is a lookup on the root and the
     revolution, and stated as not computed where it is not."""
@@ -9899,10 +9899,38 @@ def pn4_further_indicators(chart_data, sr, year_lon, moon=None):
                  'Reads': '; '.join(moves) + ' (natal house -> from the natal Ascendant / the terminal sign / the revolution Ascendant)',
                  'Source': 'II.1, 19; VI.5, 1-4'})
     # 15
-    rows.append({'#': 15, 'Indicator': 'The connections of the lords of the houses with each other',
-                 'Reads': "NOT computed: VI.6, 3-7 read the lords' connections in the revolution; the engine's connection "
-                          "test is a static one for the natal chart under the Configurations page's rule",
-                 'Source': 'II.1, 20; VI.6, 3-7'})
+    # II.1, 20 with VI.6, 1-3: the lord of the natal Ascendant, of the terminal
+    # sign and of the revolution's Ascendant, each followed in the revolution
+    # until it leaves its sign, its perfections with the other house lords
+    # listed (order PN4R-4g-5; every planet rules some house, so each
+    # perfection names the houses its partner rules from the revolution's
+    # Ascendant). Horizon by the planet's pace.
+    if jd_sr is None:
+        rows.append({'#': 15, 'Indicator': 'The connections of the lords of the houses with each other',
+                     'Reads': "NOT computed here: needs the revolution's moment (VI.6, 3 reads the lords' connections in the revolution)",
+                     'Source': 'II.1, 20; VI.6, 1-3'})
+    else:
+        horizons = {'Moon': (6, 0.25), 'Sun': (40, 1.0), 'Mercury': (40, 1.0), 'Venus': (60, 1.0), 'Mars': (120, 1.0),
+                    'Jupiter': (400, 2.0), 'Saturn': (900, 3.0)}
+        ruled = {}
+        for h in range(1, 13):
+            owner = SIGN_TO_DOMICILE.get(SIGN_ORDER[(SIGN_ORDER.index(get_zodiac_sign(r_asc)) + h - 1) % 12])
+            ruled.setdefault(owner, []).append(str(h))
+        parts = []
+        for label, from_lon in (('the lord of the natal Ascendant', n_asc), ('the lord of the terminal sign', year_lon),
+                                ("the lord of the revolution's Ascendant", r_asc)):
+            L = lord(from_lon)
+            if L not in rev:
+                parts.append(f"{label} ({L}): absent from the revolution")
+                continue
+            h, step = horizons.get(L, (60, 1.0))
+            found = _pn4_luminary_connections(rev, jd_sr, L, h, step, applying_only=False)
+            hits = [f"{c['planet']} (lord of house{'s' if len(ruled.get(c['planet'], [])) > 1 else ''} "
+                    f"{'/'.join(ruled.get(c['planet'], ['-']))}) by {c['aspect']} on day {c['day']:.1f}" for c in found['connections']]
+            exit_note = f"leaves {found['sign']} on day {found['exit_day']:.1f}" if found['exit_day'] is not None else f"stays in {found['sign']} within {h} days"
+            parts.append(f"{label} ({L}, {exit_note}): " + ('; '.join(hits) if hits else 'no perfection before leaving its sign'))
+        rows.append({'#': 15, 'Indicator': 'The connections of the lords of the houses with each other',
+                     'Reads': ' | '.join(parts), 'Source': 'II.1, 20; VI.6, 1-3'})
     # 16, 17
     rows.append({'#': 16, 'Indicator': "Each planet's shifting through the houses, bounds, bodies, rays, twelfth-parts and Lots during the year",
                  'Reads': 'NOT tracked: the year\'s transits are not followed', 'Source': 'II.1, 21; Books V, VI, VIII'})
@@ -12130,7 +12158,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'hour_approximate': hour_approximate,
         'turning_rows': pn4_turning_rows(chart_data, age),
         'turning_triplicity_rows': pn4_turning_triplicity_lords(chart_data, sr),
-        'further_rows': pn4_further_indicators(chart_data, sr, year['longitude'], moon),
+        'further_rows': pn4_further_indicators(chart_data, sr, year['longitude'], moon, jd_sr=jd_sr),
         'governor': pn4_governor(
             year['lord'], (current or {}).get('distributor'), (current or {}).get('partner'),
             ('refused above the polar circle' if segments is None
