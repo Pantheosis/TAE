@@ -69,12 +69,28 @@ you're distributing beyond yourself/trusted users.
   `desktop_launcher.py` forces `gui="qt"` on Windows; macOS keeps using
   its native Cocoa/WebKit backend, since that already works well there
   with no equivalent runtime-availability problem.
-- **pyswisseph / ephemeris precision:** `app.py` never calls
-  `swe.set_ephe_path()`, so it already falls back to the built-in Moshier
-  ephemeris (no external `.se1` files needed). This is arc-second-level
-  precision, which is far finer than anything the app displays (minutes of
-  arc) — no need to bundle Swiss Ephemeris data files unless you have a
-  specific reason to want JPL-grade precision.
+- **pyswisseph / ephemeris precision:** the planets run on the built-in
+  Moshier ephemeris (no external `.se1` files needed). This is
+  arc-second-level precision, which is far finer than anything the app
+  displays (minutes of arc) — no need to bundle Swiss Ephemeris planetary
+  files unless you have a specific reason to want JPL-grade precision.
+  The invariant that matters is that NO `.se1` FILE IS BUNDLED OR NEEDED
+  and the planets stay on Moshier; `app.py` does call
+  `swe.set_ephe_path()`, once, in `_fixed_star_catalogue_ready`, but it
+  points it at a private directory (`<user data dir>/ephe_stars/`) holding
+  nothing but a link to the star catalogue, so `FLG_SWIEPH` planet calls
+  find no planetary file there and fall back to Moshier exactly as before
+  (pinned by the flag test: `swe.calc_ut(2451545.0, swe.MARS)[1] == 260`,
+  Moshier + speed). Since 2026-09-11 the app SHIPS that catalogue:
+  `ephe/sefstars.txt` (137 KB, the Swiss Ephemeris fixed-star file, copied
+  unmodified from the `kerykeion` package, which redistributes it under
+  AGPL-3.0 — the app's own licence; see `ephe/README.md`). `app.py` looks
+  for it there first, beside itself (`Path(__file__).parent / "ephe"`,
+  the same way it reads `atlas.db`), before `$SE_EPHE_PATH`, the user data
+  directory and the site-packages scan; `build.spec` lists it in `datas`
+  so the frozen app carries it. The fixed-star tables (PN IV I.6, 7 and
+  III.8, 9) therefore render identically on every checkout and in the
+  frozen app; only with the file removed does the page say "not computed".
 - **timezonefinder:** ships a sizeable internal dataset (tens of MB) that
   `collect_all("timezonefinder")` in `build.spec` should pull in
   automatically. This is the single biggest contributor to final build

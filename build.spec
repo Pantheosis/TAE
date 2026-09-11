@@ -71,7 +71,11 @@ hiddenimports += ["swisseph"]
 # GeoNames lookup database queried in place of a network geocoding API.
 # app_icon.ico is loaded at runtime via _resource_path("app_icon.ico") for
 # the pywebview window icon, and doubles as the .exe icon below.
-datas += [("app.py", "."), ("atlas.db", "."), ("app_icon.ico", ".")]
+# ephe/sefstars.txt is the Swiss Ephemeris fixed-star catalogue the app
+# ships (AGPL-3.0, see ephe/README.md); app.py looks for it first, beside
+# itself, exactly as it reads atlas.db. No .se1 planetary file is bundled:
+# the planets stay on the built-in Moshier ephemeris (BUILD_NOTES.md).
+datas += [("app.py", "."), ("atlas.db", "."), ("app_icon.ico", "."), ("ephe/sefstars.txt", "ephe")]
 
 a = Analysis(
     ["desktop_launcher.py"],

@@ -11367,9 +11367,10 @@ def pn4_twelfth_part(lon):
 # (his identifications, with Rhetorius Ch. 58's natures); the two stars of
 # that table Sahl does not carry (Deneb Adige, Arcturus) are left out, the two
 # he carries doubtfully (Alphecca, fn 73; Menkalinan, fn 75) are kept and
-# marked. Positions: the Swiss Ephemeris star catalogue (sefstars.txt), found
-# at run time and never copied into this repository; without it the table
-# says so and computes nothing. Readings, the engine's: "the very degree" and
+# marked. Positions: the Swiss Ephemeris star catalogue (sefstars.txt),
+# SHIPPED with the app as ephe/sefstars.txt (AGPL-3.0, see ephe/README.md)
+# and found first there; without any catalogue the table says so and
+# computes nothing. Readings, the engine's: "the very degree" and
 # "with" are both read as within one degree of longitude; "the stakes" for
 # I.6, 7's planets are the whole-sign places 1, 4, 7, 10; latitude is ignored.
 SAHL_FIXED_STARS = (
@@ -11389,14 +11390,17 @@ _FIXED_STAR_STATE = {'checked': False, 'ready': False, 'where': None}
 def _fixed_star_catalogue_ready():
     """Find a Swiss Ephemeris star catalogue and point the ephemeris at a
     private directory holding only a link to it, so the planets (Moshier,
-    no planetary files) are untouched. Looked for: $SE_EPHE_PATH, the
-    engine's own data directory, and any package in this interpreter's
-    site-packages that ships one."""
+    no planetary files) are untouched. Looked for, in this order: the
+    catalogue SHIPPED with the app (`ephe/sefstars.txt` beside app.py, the
+    same directory `atlas.db` is read from; owner's decision 2026-09-11,
+    the app is to be portable), then $SE_EPHE_PATH, the engine's own data
+    directory, and any package in this interpreter's site-packages that
+    ships one. The private link is re-pointed at whichever was found."""
     if _FIXED_STAR_STATE['checked']:
         return _FIXED_STAR_STATE['ready']
     _FIXED_STAR_STATE['checked'] = True
     import glob, sys
-    candidates = []
+    candidates = [str(Path(__file__).parent / 'ephe' / 'sefstars.txt')]
     if os.environ.get('SE_EPHE_PATH'):
         candidates.append(os.path.join(os.environ['SE_EPHE_PATH'], 'sefstars.txt'))
     try:
@@ -11413,12 +11417,13 @@ def _fixed_star_catalogue_ready():
         private = _user_data_dir() / 'ephe_stars'
         private.mkdir(parents=True, exist_ok=True)
         link = private / 'sefstars.txt'
-        if not link.exists():
-            try:
-                link.symlink_to(source)
-            except OSError:
-                import shutil
-                shutil.copyfile(source, link)
+        if link.exists() or link.is_symlink():      # an older link may point elsewhere
+            link.unlink()
+        try:
+            link.symlink_to(source)
+        except OSError:
+            import shutil
+            shutil.copyfile(source, link)
         swe.set_ephe_path(str(private))
         swe.fixstar2_ut('Spica', 2451545.0, swe.FLG_SWIEPH)
         _FIXED_STAR_STATE.update(ready=True, where=source)
@@ -14425,7 +14430,7 @@ if location_query and lat is not None and lon is not None:
                             "2.2, in Dykes's identifications (the table at that chapter's end, with Rhetorius Ch. 58's natures); "
                             "PN IV names no stars of its own. \"The very degree\" and \"with\" are read as within one degree "
                             "of longitude; the planets \"in the stakes\" by whole-sign place; latitude ignored. Positions from "
-                            "the Swiss Ephemeris star catalogue, found at run time.")
+                            "the Swiss Ephemeris star catalogue the app ships (ephe/sefstars.txt).")
                 if _fs['refused']:
                     st.warning(f"Not computed: {_fs['refused']}.")
                 else:

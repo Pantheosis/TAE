@@ -3561,6 +3561,59 @@ def test_fixed_stars_resolve_and_regulus_on_the_ascendant_is_written_down(engine
     assert swe.calc_ut(2451545.0, swe.MARS)[1] == 260
 
 
+def test_fixed_star_catalogue_found_is_the_one_the_app_ships(engine):
+    """Owner, 2026-09-11 (checker §5, portability): the app ships
+    ephe/sefstars.txt beside app.py and looks there first, before
+    $SE_EPHE_PATH, the user data directory and the site-packages scan; so
+    the render is the same on every checkout and the fixture's star tables
+    need no exclusion. The private link is re-pointed at the file found."""
+    from pathlib import Path
+    bundled = Path(engine["__file__"]).parent / "ephe" / "sefstars.txt"
+    assert bundled.is_file() and bundled.stat().st_size > 100_000
+    assert (Path(engine["__file__"]).parent / "ephe" / "README.md").is_file()
+    engine["_FIXED_STAR_STATE"].update(checked=False, ready=False, where=None)
+    assert engine["_fixed_star_catalogue_ready"]() is True
+    assert Path(engine["_FIXED_STAR_STATE"]["where"]).resolve() == bundled.resolve()
+    link = engine["_user_data_dir"]() / "ephe_stars" / "sefstars.txt"
+    assert link.exists() and (not link.is_symlink() or link.resolve() == bundled.resolve())
+    assert [p for p in link.parent.iterdir()] == [link]              # nothing else in the private directory: no .se1
+    import swisseph as swe
+    assert swe.calc_ut(2451545.0, swe.MARS)[1] == 260                 # Moshier + speed: the planets untouched
+    from conftest import app_source
+    assert '("ephe/sefstars.txt", "ephe")' in (Path(engine["__file__"]).parent / "build.spec").read_text()
+    assert "the Swiss Ephemeris star catalogue the app ships (ephe/sefstars.txt)" in app_source()
+
+
+def test_without_any_star_catalogue_the_page_says_not_computed_and_the_unit_test_skips(engine, monkeypatch):
+    """The fallback is real: with every sefstars.txt made invisible (the
+    bundled file, $SE_EPHE_PATH, the user data dir and the site-packages
+    scan -- the checker's absent-catalogue plugin, as a test), the engine
+    refuses with its sentence, the unit test above skips, and the Timing
+    page renders a "Not computed" warning in place of the two star tables."""
+    import os
+    real_isfile = os.path.isfile
+    monkeypatch.setattr(os.path, "isfile", lambda p: False if str(p).endswith("sefstars.txt") else real_isfile(p))
+    state = engine["_FIXED_STAR_STATE"]
+    state.update(checked=False, ready=False, where=None)
+    try:
+        assert engine["_fixed_star_catalogue_ready"]() is False
+        out = engine["pn4_fixed_stars_in_image"]({"planetary_data": pdata(Sun=0.0, Moon=0.0), "ascendant": 0.0, "mc": 270.0}, 2451545.0)
+        assert out["rows"] == [] and "catalogue" in out["refused"]
+        state.update(checked=False, ready=False, where=None)
+        with pytest.raises(pytest.skip.Exception):
+            test_fixed_stars_resolve_and_regulus_on_the_ascendant_is_written_down(engine)
+        from conftest import make_app, assert_no_exception
+        at = make_app(date="1240-05-23", page="timing").run()
+        assert_no_exception(at, "timing without a star catalogue")
+        assert any(w.value.startswith("Not computed: no Swiss Ephemeris star catalogue") for w in at.main.warning)
+        assert not any(h == "The image of the revolution of the year: its points (I.6, 3-8)" and "Star" in c
+                       for h, c in __import__("conftest").table_inventory(at))
+    finally:
+        state.update(checked=False, ready=False, where=None)
+    monkeypatch.undo()
+    assert engine["_fixed_star_catalogue_ready"]() is True            # found again once the file is visible
+
+
 # --- CONV-ESSENTIAL_DIGNITY_WEIGHTS: the governor of the syzygy degree, 1.7, 3-7 --------------
 
 def _syzygy_of(engine, lon, sect):
