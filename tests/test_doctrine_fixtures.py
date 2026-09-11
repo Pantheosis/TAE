@@ -3110,8 +3110,8 @@ def test_2_13_grades_the_sect_lights_first_triplicity_lord_only_and_the_display_
     assert "below the first" in rows["Sun"]["2.13, 48-51 (the sect light's first triplicity lord only)"]
     assert rows["Mercury"]["2.13, 48-51 (the sect light's first triplicity lord only)"] == "-"
     assert rows["Mercury"]["Engine grade (generalised from 2.13, 48-51)"] == "first 15 degrees of ascension"
-    assert rows["Mercury"]["Aphorism 45 as printed (15 zodiacal degrees; not applied)"] == "within"
-    assert rows["Sun"]["Aphorism 45 as printed (15 zodiacal degrees; not applied)"] == "beyond"
+    assert rows["Mercury"]["Aphorism #45 as printed (15 zodiacal degrees; not applied)"] == "within"
+    assert rows["Sun"]["Aphorism #45 as printed (15 zodiacal degrees; not applied)"] == "beyond"
     assert rows["Sun"]["Follows the stake"].startswith("Ascendant")
 
 
