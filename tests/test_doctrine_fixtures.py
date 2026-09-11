@@ -3075,6 +3075,41 @@ def test_house_master_years_second_eighth_falling_and_the_third_retrograde(engin
     assert any("14-15" in f for f in g["flags"])           # a superior, retrograde and burned: 14-15 printed, not applied
 
 
+def test_house_master_years_eleven_needs_enhanced_so_the_retrograde_fourth_is_not_greater(engine):
+    """1.20, 11: "under the earth, eastern, in one of its shares, ENHANCED,
+    then it also indicates its greater years (and by night in the fourth
+    and fifth ...)". Enhanced is 7-9: in a share, eastern, direct, not under
+    the rays. Jupiter at 15 Aquarius (the fourth from Scorpio; his own
+    bound, 13-20), eastern of a Sun at 10 Pisces, direct: 11, the greater
+    years. The same Jupiter RETROGRADE is not enhanced and no sentence of
+    1.20 reaches him ("1.20 silent"); under the rays and direct he falls to
+    18's middle as the other stakes do; retrograde under the rays to 21.
+    By night in the fifth (15 Pisces, his own house) the same: direct
+    greater, retrograde 23's lesser (review D2, 2026-09-11)."""
+    g = _years(engine, "Jupiter", sect="Diurnal", Jupiter=315.0, Sun=340.0)
+    assert (g["grade"], g["sentence"], g["division"]) == ("greater", "1.20, 11", 4)
+    data, cusps = _sahl_chart(215.0, Jupiter=315.0, Sun=340.0)
+    data["Jupiter"]["speed_in_lon"] = -0.05
+    ess = engine["evaluate_essential_dignities"](data, "Diurnal")
+    g = engine["sahl_house_master_years"]("Jupiter", data, cusps, "Diurnal", ess)
+    assert g["sentence"] != "1.20, 11" and g["grade"] != "greater" and "silent" in g["text"]
+    g = _years(engine, "Jupiter", sect="Diurnal", Jupiter=315.0, Sun=320.0)          # 5 degrees from the Sun: under the rays, direct
+    assert (g["grade"], g["sentence"]) == ("middle", "1.20, 18")
+    data, cusps = _sahl_chart(215.0, Jupiter=315.0, Sun=320.0)
+    data["Jupiter"]["speed_in_lon"] = -0.05
+    ess = engine["evaluate_essential_dignities"](data, "Diurnal")
+    g = engine["sahl_house_master_years"]("Jupiter", data, cusps, "Diurnal", ess)
+    assert (g["grade"], g["sentence"]) == ("lesser", "1.20, 21")
+    g = _years(engine, "Jupiter", sect="Nocturnal", Jupiter=345.0, Sun=10.0)
+    assert (g["grade"], g["sentence"], g["division"]) == ("greater", "1.20, 11", 5)
+    data, cusps = _sahl_chart(215.0, Jupiter=345.0, Sun=10.0)
+    data["Jupiter"]["speed_in_lon"] = -0.05
+    ess = engine["evaluate_essential_dignities"](data, "Nocturnal")
+    g = engine["sahl_house_master_years"]("Jupiter", data, cusps, "Nocturnal", ess)
+    assert (g["grade"], g["sentence"]) == ("lesser", "1.20, 23")
+    assert "12 (greater) and 23 (lesser) conflict as printed" in engine["SAHL_1_20_READINGS"]
+
+
 def test_house_master_years_are_by_the_division_not_the_sign(engine):
     """The unit is the owner's: a planet 3 degrees before the tenth cusp is
     in the tenth DIVISION by the five-degree allowance, though in the

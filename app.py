@@ -8913,8 +8913,11 @@ SAHL_1_20_READINGS = (
     "sect aspects not tested; \"a share\" = any of its five dignities at its own degree; \"eastern\" and "
     "\"westernizing\" by the solar phase's side; \"under the rays\" = burned or under the rays; \"alien\" = in no "
     "share; 10 and 20 as fn 158 reads them (an enhanced stake = the greater years, a bare stake direct and unburned = the "
-    "middle); \"under the earth\" (11) = the fourth division, and the fifth by night (11's parenthesis); 12 is subsumed "
-    "by 10 (the house of Good Fortune is the eleventh, fn 153); 13 is illegible in part and not applied; 14-15 are printed "
+    "middle); \"under the earth\" (11) = the fourth division, and the fifth by night (11's parenthesis), 11's \"enhanced\" "
+    "required of both (a retrograde or under-the-rays planet there is not 11's greater; review D2, 2026-09-11); 12 is "
+    "subsumed by 10 (the house of Good Fortune is the eleventh, fn 153) -- 12 does not say direct or unburned, so for a "
+    "diurnal planet in the eleventh, eastern, in a share and retrograde, 12 (greater) and 23 (lesser) conflict as "
+    "printed, and 23 is applied; 13 is illegible in part and not applied; 14-15 are printed "
     "and not applied (fn 156: the sense is unclear); 19 and 22 (alien, westernizing) are applied only where no placement "
     "sentence reaches; where a sentence names months, days or hours without a count, none is invented. Placements no "
     "sentence reaches print \"1.20 silent\". On Times 4, 7 is a rule for a question chart (\"in the hour of the "
@@ -8931,7 +8934,7 @@ def _sahl_1_20_grade(q, share, east, west, retro, rays, fall, night):
             return 21, 'lesser'
         if q in (1, 10, 7) and enhanced:
             return 10, 'greater'
-        if q == 4 and east and share:
+        if q == 4 and enhanced:                 # 11: "under the earth, eastern, in one of its shares, ENHANCED"
             return 11, 'greater'
         if rays:
             return 18, 'middle'
@@ -8955,7 +8958,7 @@ def _sahl_1_20_grade(q, share, east, west, retro, rays, fall, night):
             return 25, 'months'
         return 16, 'middle'
     if q == 5:
-        if night and east and share:
+        if night and enhanced:                  # 11's parenthesis carries 11's "enhanced"
             return 11, 'greater'
         if retro:
             if rays and fall:
