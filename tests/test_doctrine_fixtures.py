@@ -3657,17 +3657,39 @@ def test_fixed_star_catalogue_found_is_the_one_the_app_ships(engine):
     bundled = Path(engine["__file__"]).parent / "ephe" / "sefstars.txt"
     assert bundled.is_file() and bundled.stat().st_size > 100_000
     assert (Path(engine["__file__"]).parent / "ephe" / "README.md").is_file()
-    engine["_FIXED_STAR_STATE"].update(checked=False, ready=False, where=None)
-    assert engine["_fixed_star_catalogue_ready"]() is True
+    engine["_FIXED_STAR_STATE"].update(checked=False, ready=False, where=None, why=None)
+    assert engine["_fixed_star_catalogue_ready"]() is True and engine["_FIXED_STAR_STATE"]["why"] is None
     assert Path(engine["_FIXED_STAR_STATE"]["where"]).resolve() == bundled.resolve()
-    link = engine["_user_data_dir"]() / "ephe_stars" / "sefstars.txt"
-    assert link.exists() and (not link.is_symlink() or link.resolve() == bundled.resolve())
-    assert [p for p in link.parent.iterdir()] == [link]              # nothing else in the private directory: no .se1
+    # the bundled directory is attached DIRECTLY: no link, no copy, no user
+    # data directory involved (the Windows build's failure point, 2026-09-11);
+    # it holds nothing Swiss Ephemeris would read for a planet
+    assert sorted(p.name for p in bundled.parent.iterdir()) == ["README.md", "sefstars.txt"]
     import swisseph as swe
     assert swe.calc_ut(2451545.0, swe.MARS)[1] == 260                 # Moshier + speed: the planets untouched
     from conftest import app_source
     assert '("ephe/sefstars.txt", "ephe")' in (Path(engine["__file__"]).parent / "build.spec").read_text()
     assert "the Swiss Ephemeris star catalogue the app ships (ephe/sefstars.txt)" in app_source()
+
+
+def test_a_catalogue_found_but_unreadable_is_reported_as_such(engine, monkeypatch):
+    """The Windows build of 2026-09-11 printed "no catalogue is available"
+    when the file was there and the attach had failed. The refusal now
+    names the file found and the exception."""
+    import swisseph as swe
+    def boom(*a, **k):
+        raise OSError("SwissEph file 'sefstars.txt' not found (simulated)")
+    monkeypatch.setattr(swe, "fixstar2_ut", boom)
+    state = engine["_FIXED_STAR_STATE"]
+    state.update(checked=False, ready=False, where=None, why=None)
+    try:
+        assert engine["_fixed_star_catalogue_ready"]() is False
+        why = engine["fixed_star_refusal"]()
+        assert "found " in why and "ephe/sefstars.txt but Swiss Ephemeris could not read it from" in why.replace("\\", "/")
+        assert "simulated" in why
+    finally:
+        state.update(checked=False, ready=False, where=None, why=None)
+    monkeypatch.undo()
+    assert engine["_fixed_star_catalogue_ready"]() is True
 
 
 def test_without_any_star_catalogue_the_page_says_not_computed_and_the_unit_test_skips(engine, monkeypatch):
@@ -3680,12 +3702,13 @@ def test_without_any_star_catalogue_the_page_says_not_computed_and_the_unit_test
     real_isfile = os.path.isfile
     monkeypatch.setattr(os.path, "isfile", lambda p: False if str(p).endswith("sefstars.txt") else real_isfile(p))
     state = engine["_FIXED_STAR_STATE"]
-    state.update(checked=False, ready=False, where=None)
+    state.update(checked=False, ready=False, where=None, why=None)
     try:
         assert engine["_fixed_star_catalogue_ready"]() is False
         out = engine["pn4_fixed_stars_in_image"]({"planetary_data": pdata(Sun=0.0, Moon=0.0), "ascendant": 0.0, "mc": 270.0}, 2451545.0)
         assert out["rows"] == [] and "catalogue" in out["refused"]
-        state.update(checked=False, ready=False, where=None)
+        assert "no sefstars.txt at the bundled path" in out["refused"]                # the refusal says WHY
+        state.update(checked=False, ready=False, where=None, why=None)
         with pytest.raises(pytest.skip.Exception):
             test_fixed_stars_resolve_and_regulus_on_the_ascendant_is_written_down(engine)
         from conftest import make_app, assert_no_exception
@@ -3695,7 +3718,7 @@ def test_without_any_star_catalogue_the_page_says_not_computed_and_the_unit_test
         assert not any(h == "The image of the revolution of the year: its points (I.6, 3-8)" and "Star" in c
                        for h, c in __import__("conftest").table_inventory(at))
     finally:
-        state.update(checked=False, ready=False, where=None)
+        state.update(checked=False, ready=False, where=None, why=None)
     monkeypatch.undo()
     assert engine["_fixed_star_catalogue_ready"]() is True            # found again once the file is visible
 

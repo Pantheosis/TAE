@@ -73,8 +73,10 @@ hiddenimports += ["swisseph"]
 # the pywebview window icon, and doubles as the .exe icon below.
 # ephe/sefstars.txt is the Swiss Ephemeris fixed-star catalogue the app
 # ships (AGPL-3.0, see ephe/README.md); app.py looks for it first, beside
-# itself, exactly as it reads atlas.db. No .se1 planetary file is bundled:
-# the planets stay on the built-in Moshier ephemeris (BUILD_NOTES.md).
+# itself, exactly as it reads atlas.db, and points the ephemeris at that
+# directory directly. No .se1 planetary file is bundled and none may be
+# put in ephe/: the planets stay on the built-in Moshier ephemeris
+# (BUILD_NOTES.md).
 datas += [("app.py", "."), ("atlas.db", "."), ("app_icon.ico", "."), ("ephe/sefstars.txt", "ephe")]
 
 a = Analysis(

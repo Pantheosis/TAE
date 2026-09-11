@@ -11446,22 +11446,48 @@ SAHL_FIXED_STARS = (
     ('Denebola', 'Saturn-Venus'), ('Zosma', 'Saturn-Venus'), ('Alphard', 'Saturn-Venus'), ('Aldebaran', 'Mars-Venus'),
 )
 FIXED_STAR_ORB = 1.0
-_FIXED_STAR_STATE = {'checked': False, 'ready': False, 'where': None}
+_FIXED_STAR_STATE = {'checked': False, 'ready': False, 'where': None, 'why': None}
+
+def _fixed_star_attach(ephe_dir, source):
+    """Point Swiss Ephemeris at `ephe_dir` and prove the catalogue reads
+    (Spica at J2000). Records the source on success; the exception's text
+    on failure, so the page can say what actually went wrong."""
+    try:
+        swe.set_ephe_path(str(ephe_dir))
+        swe.fixstar2_ut('Spica', 2451545.0, swe.FLG_SWIEPH)
+        _FIXED_STAR_STATE.update(ready=True, where=str(source), why=None)
+        return True
+    except Exception as exc:
+        _fixed_star_why(f"found {source} but Swiss Ephemeris could not read it from {ephe_dir}: {exc!r}")
+        return False
+
+def _fixed_star_why(text):
+    """Accumulate the reasons, in the order tried, for the page."""
+    _FIXED_STAR_STATE['why'] = text if not _FIXED_STAR_STATE['why'] else f"{_FIXED_STAR_STATE['why']}; then {text}"
 
 def _fixed_star_catalogue_ready():
     """Find a Swiss Ephemeris star catalogue and point the ephemeris at a
-    private directory holding only a link to it, so the planets (Moshier,
-    no planetary files) are untouched. Looked for, in this order: the
-    catalogue SHIPPED with the app (`ephe/sefstars.txt` beside app.py, the
-    same directory `atlas.db` is read from; owner's decision 2026-09-11,
-    the app is to be portable), then $SE_EPHE_PATH, the engine's own data
-    directory, and any package in this interpreter's site-packages that
-    ships one. The private link is re-pointed at whichever was found."""
+    directory holding nothing but it, so the planets (Moshier, no planetary
+    files) are untouched. Looked for, in this order: the catalogue SHIPPED
+    with the app (`ephe/sefstars.txt` beside app.py, the same directory
+    `atlas.db` is read from; owner's decision 2026-09-11, the app is to be
+    portable) -- that directory holds no `.se1` file by construction, so
+    the ephemeris is pointed at it DIRECTLY, with no link, no copy and no
+    writable user directory (the symlink-or-copy into the user data dir
+    was the step a Windows build could fail on, 2026-09-11); then
+    $SE_EPHE_PATH, the engine's own data directory, and any package in this
+    interpreter's site-packages that ships one, each linked (copied where
+    links are not allowed) into a private `ephe_stars` directory under the
+    user data dir. `_FIXED_STAR_STATE['why']` says what failed, for the
+    page."""
     if _FIXED_STAR_STATE['checked']:
         return _FIXED_STAR_STATE['ready']
     _FIXED_STAR_STATE['checked'] = True
     import glob, sys
-    candidates = [str(Path(__file__).parent / 'ephe' / 'sefstars.txt')]
+    bundled = Path(__file__).parent / 'ephe' / 'sefstars.txt'
+    if os.path.isfile(str(bundled)) and _fixed_star_attach(bundled.parent, bundled):
+        return True
+    candidates = []
     if os.environ.get('SE_EPHE_PATH'):
         candidates.append(os.path.join(os.environ['SE_EPHE_PATH'], 'sefstars.txt'))
     try:
@@ -11473,6 +11499,7 @@ def _fixed_star_catalogue_ready():
             candidates += glob.glob(os.path.join(base, '*', 'sweph', 'sefstars.txt')) + glob.glob(os.path.join(base, '*', 'sefstars.txt'))
     source = next((c for c in candidates if c and os.path.isfile(c)), None)
     if source is None:
+        _fixed_star_why(f"no sefstars.txt at the bundled path {bundled}, in $SE_EPHE_PATH, in the user data directory or in site-packages")
         return False
     try:
         private = _user_data_dir() / 'ephe_stars'
@@ -11485,12 +11512,17 @@ def _fixed_star_catalogue_ready():
         except OSError:
             import shutil
             shutil.copyfile(source, link)
-        swe.set_ephe_path(str(private))
-        swe.fixstar2_ut('Spica', 2451545.0, swe.FLG_SWIEPH)
-        _FIXED_STAR_STATE.update(ready=True, where=source)
-        return True
-    except Exception:
+    except Exception as exc:
+        _fixed_star_why(f"found {source} but could not link it into {_user_data_dir() / 'ephe_stars'}: {exc!r}")
         return False
+    return _fixed_star_attach(private, source)
+
+def fixed_star_refusal():
+    """The sentence the page prints when no catalogue is attached, with the
+    reason recorded by the search."""
+    _fixed_star_catalogue_ready()
+    return ("no Swiss Ephemeris star catalogue (sefstars.txt) is attached; nothing is computed"
+            + (f" -- {_FIXED_STAR_STATE['why']}" if _FIXED_STAR_STATE['why'] else ''))
 
 def fixed_star_longitudes(jd):
     """{name: longitude} for Sahl's stars at jd, or None without a catalogue."""
@@ -11521,7 +11553,7 @@ def pn4_fixed_stars_in_image(chart_data, jd):
     """I.6, 7's four natal places. Returns {'rows', 'refused'}."""
     stars = fixed_star_longitudes(jd)
     if stars is None:
-        return {'rows': [], 'refused': 'no Swiss Ephemeris star catalogue (sefstars.txt) is available to this interpreter; nothing is computed'}
+        return {'rows': [], 'refused': fixed_star_refusal()}
     p = chart_data['planetary_data']
     asc = chart_data['ascendant']
     places = [('the very degree of the Ascendant', asc), ('the very degree of the Midheaven', chart_data['mc']),
@@ -11535,7 +11567,7 @@ def pn4_fixed_stars_in_revolution(sr, jd_sr, year_lon, endpoint_lon):
     """III.8, 9's places in the revolution. Returns {'rows', 'refused'}."""
     stars = fixed_star_longitudes(jd_sr)
     if stars is None:
-        return {'rows': [], 'refused': 'no star catalogue available'}
+        return {'rows': [], 'refused': fixed_star_refusal()}
     rev = sr['planetary_data']
     places = [('the Ascendant of the year', sr['ascendant']), ('the degree of the tenth from it', sr['mc']),
               ('the degree of the terminal point', year_lon)]

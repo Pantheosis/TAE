@@ -320,3 +320,19 @@ culmination, the Descendant's descension, the tolerance. The engine's `_semiarcs
 - Corpus `astra-session-2026-09-11`: 7c1f1cd (the two measures, the D2 addendum, the caveats correction, the
   rulings addendum; the check prompt, the check report, the fix prompt and the GAP-37 reading filed).
 - Not certified by the builder: the owner will have the checker re-run its §2 and §5 against 3b5fce2.
+
+### Review round, follow-up (2026-09-11, later): the Windows build
+
+The owner's Windows build of the branch printed "Not computed: no Swiss Ephemeris star catalogue
+(sefstars.txt) is available to this interpreter" while the Linux run shows the tables. Read from the
+code, not reproduced (no Windows box here): the file is in the bundle (`_internal/ephe/sefstars.txt`),
+so the failure was in the attach -- a symlink (refused on Windows without Developer Mode), the copy
+into `%APPDATA%\TraditionalAstrologyEngine\ephe_stars`, or Swiss Ephemeris's narrow `fopen` on that
+path -- and `except Exception: return False` turned it into the wrong sentence. Fixed (this commit):
+the bundled directory is attached DIRECTLY (`swe.set_ephe_path(ephe/)`; it holds only the catalogue and
+a README, so the Moshier invariant stands, the flag test pins it), with no link, copy or user directory;
+the link-or-copy path remains for a catalogue found elsewhere; and the refusal now says WHY, in the
+order tried ("no sefstars.txt at the bundled path ..." / "found ... but Swiss Ephemeris could not read
+it from ...: <exception>"), so the next Windows screenshot is diagnostic. Tests: the bundled directory
+attached directly; a found-but-unreadable catalogue reported with the exception; the absent case's
+refusal names the path. Whether this is the Windows cause is for the owner's next build to show.
