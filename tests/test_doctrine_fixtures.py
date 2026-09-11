@@ -2057,7 +2057,7 @@ def test_pn4_ii3_examines_the_sign_of_the_terminal_point_in_the_root(engine):
     assert rows[0]["Reads"] == "house 4 from the natal Ascendant, a stake"
     assert rows[1]["Reads"].startswith("house of Moon (neither); exaltation of Jupiter (fortune); triplicity of Venus (fortune) (day)")
     assert rows[2]["Reads"].startswith("planets: Sun (neither), Mercury (neither); Lots:")
-    assert "twelfth-parts not computed" in rows[2]["Reads"]
+    assert "twelfth-parts of: " in rows[2]["Reads"]                                   # computed since 2026-09-11 (PN4R-4l-7)
     assert "Moon (neither) by square from 20\u00b0 Lib 00', the ray at 20\u00b0 Can 00' (bound of Jupiter, face of Moon)" in rows[3]["Reads"]
     assert rows[4]["Reads"] == "no"
 
@@ -2074,7 +2074,7 @@ def test_pn4_ii3_examines_the_revolution_and_reads_conditions_as_labels(engine):
     year = {"sign": "Cancer", "longitude": 95.0, "lord": "Moon"}
     out = engine["pn4_ii3_examination"](root, sr, year, 2451545.0)
     rows = out["revolution_rows"]
-    assert rows[0]["Reads"] == "Saturn (infortune)"
+    assert rows[0]["Reads"].startswith("Saturn (infortune); twelfth-parts of: ")     # PN4R-4l-7
     assert "Mars (infortune) by trine from 10\u00b0 Sco 00'" in rows[1]["Reads"]           # 10 Scorpio trines Cancer
     assert "Jupiter (fortune) by opposition from 10\u00b0 Cap 00'" in rows[1]["Reads"]
     assert rows[2]["Reads"] == "no"
@@ -3180,3 +3180,21 @@ def test_named_lords_of_the_orb_show_both_vi_1_10_and_vi_1_8(engine):
     early = {r["Position"]: r for r in engine["pn4_named_lords_of_the_orb"]("Venus", 2)}["Sign of the terminal point"]
     assert early[k10] == early[k8]
     assert {r["Position"]: r for r in engine["pn4_named_lords_of_the_orb"]("Venus", 5)}["Midheaven of the root"][k8] == "-"
+
+
+# --- PN4R-4l-7: II.3, 2 [3]'s twelfth-parts, computed -------------------------------------
+
+def test_ii3_lists_the_planets_whose_twelfth_parts_fall_in_the_terminal_sign(engine):
+    """Terminal sign Cancer. Saturn at 4 Gemini: its second twelfth-part
+    (2.5-5 of Gemini) is Cancer, so Saturn's twelfth-part falls in the
+    sign; Mars at 20 Capricorn (twelfth-part in Virgo) does not."""
+    root, sr, _ = _ii3_pair(engine, year_lon=95.0)
+    root["planetary_data"]["Saturn"]["longitude"] = 64.0
+    root["planetary_data"]["Mars"]["longitude"] = 290.0
+    year = {"sign": "Cancer", "longitude": 95.0, "lord": "Moon"}
+    out = engine["pn4_ii3_examination"](root, sr, year, 2451545.0)
+    reads = out["root_rows"][2]["Reads"]
+    assert "twelfth-parts of: " in reads and "Saturn" in reads.split("twelfth-parts of: ")[1]
+    assert "Mars" not in reads.split("twelfth-parts of: ")[1]
+    assert "not computed" not in reads and "V.18, 3" in out["root_rows"][2]["Source"]
+    assert "twelfth-parts of:" in out["revolution_rows"][0]["Reads"]

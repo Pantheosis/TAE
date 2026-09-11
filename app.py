@@ -10574,6 +10574,11 @@ def _pn4_lots_in_sign(chart, sign):
             names.append(d['name'])
     return names
 
+def _pn4_twelfth_parts_in_sign(data, sign):
+    """The planets whose twelfth-part (Gr. Intr. V.18, 3, Figure 57) falls in
+    the sign, as the II.3, 2 examination asks."""
+    return ', '.join(p for p in PN4_SEVEN if p in data and get_zodiac_sign(pn4_twelfth_part(data[p]['longitude'])) == sign) or 'none'
+
 def pn4_ii3_examination(chart_data, sr, year, jd_sr):
     """II.3, 2-19 as facts. Returns {root_rows, revolution_rows, lord_rows,
     refinement_rows, figure_55}."""
@@ -10597,8 +10602,8 @@ def pn4_ii3_examination(chart_data, sr, year, jd_sr):
          'Source': 'II.3, 2'},
         {'Question': '[3] Which planets, Lots and twelfth-parts are in it in the root',
          'Reads': f"planets: {_pn4_natal_planets_in_sign(natal, sign)}; Lots: "
-                  f"{', '.join(_pn4_lots_in_sign(chart_data, sign)) or 'none'}; twelfth-parts not computed",
-         'Source': 'II.3, 2; VI.4'},
+                  f"{', '.join(_pn4_lots_in_sign(chart_data, sign)) or 'none'}; twelfth-parts of: {_pn4_twelfth_parts_in_sign(natal, sign)}",
+         'Source': 'II.3, 2; VI.4; Gr. Intr. V.18, 3 (Figure 57)'},
         {'Question': '[4-7] Who looks at it or casts rays at it, from which sign and degree, and to what bound and face',
          'Reads': ('; '.join(f"{_pn4_tag(p)} by {a} from {get_degree_string(lon)}, the ray at {get_degree_string(deg)} "
                              f"(bound of {pn4_bound_lord(deg)}, face of {get_essential_rulers(deg)['face']})"
@@ -10623,8 +10628,9 @@ def pn4_ii3_examination(chart_data, sr, year, jd_sr):
 
     involved = [p for p, _a, _l, _d in r_looks]
     revolution_rows = [
-        {'Question': '[1] Which revolution planets are in it (twelfth-parts not computed)',
-         'Reads': ', '.join(_pn4_tag(p) for p in r_in) or 'none', 'Source': 'II.3, 3; VI.3'},
+        {'Question': '[1] Which revolution planets are in it, and whose twelfth-parts',
+         'Reads': (', '.join(_pn4_tag(p) for p in r_in) or 'none') + f"; twelfth-parts of: {_pn4_twelfth_parts_in_sign(rev, sign)}",
+         'Source': 'II.3, 3; VI.3; Gr. Intr. V.18, 3 (Figure 57)'},
         {'Question': '[2, 4, 5] Who looks at it, and from what direction',
          'Reads': '; '.join(f"{_pn4_tag(p)} by {a} from {get_degree_string(lon)}" for p, a, lon, _d in r_rays) or 'none',
          'Source': 'II.3, 3'},
