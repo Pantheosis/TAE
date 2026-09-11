@@ -223,3 +223,28 @@ tables.json` did NOT move: none of the six fixture charts changes a table cell u
   recorded (839e208); PN4R-4n-5 judged no conflict (see above). The fixed-star fixture's portability note (fourth
   group) is a second, practical item.
 - Merge: `astra-build-2026-09-11` fast-forwarded into `main` in the shared tree after this commit; not pushed.
+
+## Review round (2026-09-11, from `BUILD_FIX_PROMPT_2026-09-11.md`; the checker's report `BUILD_CHECK_REPORT_2026-09-11.md` §2, §5 and the cloud review of PR #1)
+
+Appended, not rewritten. One commit per item; the builder does not certify its own work.
+
+| Item | Commit | What was done |
+|---|---|---|
+| A1 / D1 CONV-ESSENTIAL_DIGNITY_WEIGHTS | 8c43dc4 | Built as the order words it: `sahl_syzygy_governor` applies 1.7, 4 (direct, looking at the syzygy's sign), 1.7, 3 (the eastern one preferred, the engine's solar-phase side; the Sun has no side), 1.7, 7's tie-break (a stake by the DIVISION -- strength language under the canon, said on the page -- or own dignity); "stronger in its [own] place" (4) and 5-6 not modelled, a tie left a tie, said. Conditions read at the NATIVITY (Dykes's comment; the order's predicate), declared. The almuten row relabelled "Almuten by 5/4/3/2/1 points (the course's technique; the weights are stated in no text in hand)". The log's earlier "said on the row" (§2) was wrong: there was no row until this commit. Fixture: a lord in aversion dropped while the almuten names it; a retrograde lord dropped; the tie-break and a declared tie. `tables.json`: one table added on the victors page for each of the six dates ("Governor of the syzygy degree: the five lords under 1.7, 3-7", 7 columns). |
+| A2 / D2 1.20, 11 "enhanced" | 9b1d0dc | `_sahl_1_20_grade`: `q == 4 and enhanced`, `night and enhanced` (11 as printed, 7-9 with fn 152). Fall-through checked by probe: the fourth retrograde -> "1.20 silent"; under the rays direct -> 18; both -> 21; the fifth by night retrograde -> 23. Fixture pins all six. Readings string: the requirement said; 12 vs 23 for a diurnal planet in the eleventh, eastern, in a share, retrograde named as a conflict as printed (23 applied). |
+| A2 re-measure | (this commit) | Both corpus measures (`FINAL_A1.py`, `FINAL_A1_divisions.py`, `grade_1_20`) carry the same two one-line changes; harness at engine 9b1d0dc, 406 charts. See the table below. Restated in the `sahl_house_master_years` docstring and in `SAHL_1_20_READINGS` on the Releaser page; corpus addendum in `FINAL_ADJUDICATION_2026-09-11_ADDENDA.md`. |
+
+### FINAL-A1 re-measured with 11's "enhanced" (review D2)
+
+| Predicate | at c6d3b3a, old measure | at 9b1d0dc, measure fixed |
+|---|---|---|
+| FINAL_A1.py (whole signs) | 82.5% (320/388) | **82.0% (318/388)** |
+| FINAL_A1_divisions.py (divisions) | 83.5% (324/388) | **82.5% (320/388)** |
+
+The denominator is 388, not §6a's 384: REL-5-2's 1.20, 6 (29b835d) names four more house-masters
+(the checker's §5 notes the same), and all four receive a grade. So the build's 82.3% / 83.3%
+(316/384, 320/384 at 96fd547) had become 82.5% / 83.5% by c6d3b3a before D2; D2 moves two
+house-masters by whole signs and four by the division from "greater (11)" to no sentence (a
+retrograde planet in the fourth, not under the rays, reaches nothing in 1.20 -- the same as the
+other stakes). The retrograde-under-the-rays and under-the-rays cases keep a definite grade (21,
+18) and do not move the figure.

@@ -8922,7 +8922,9 @@ SAHL_1_20_READINGS = (
     "sentence reaches; where a sentence names months, days or hours without a count, none is invented. Placements no "
     "sentence reaches print \"1.20 silent\". On Times 4, 7 is a rule for a question chart (\"in the hour of the "
     "question\", 4, 2) and is shown on the Chart page for comparison only. 1.23, 53 and 61: these years are what the "
-    "infortunes may cut off."
+    "infortunes may cut off. Measured on the 406-chart harness (FINAL_A1_divisions.py, engine 9b1d0dc): 82.5% (320/388) "
+    "of the named house-masters receive a definite grade by the division, 82.0% (318/388) by whole signs (the build's "
+    "83.3% / 82.3% were 320/384 and 316/384, before 1.20, 6 named four more and before 11's \"enhanced\" was applied)."
 )
 
 def _sahl_1_20_grade(q, share, east, west, retro, rays, fall, night):
@@ -9000,9 +9002,12 @@ def sahl_house_master_years(planet, planetary_data, cusps, sect, essential):
     corpus's ONE natal grant: On Times 4, 7 is stated for a question chart
     ("in the hour of the question", 4, 2) and is no natal rival (FINAL-A1,
     owner 2026-09-11, decision sheet row 1). The placement is the DIVISION
-    (the POWER unit of the owner's ruling; re-measured under it, 83.3% of
-    384 house-masters in the 406-chart harness receive a definite grade,
-    against 82.3% under whole signs). Returns a dict: 'grade', 'sentence',
+    (the POWER unit of the owner's ruling; re-measured under it with 11's
+    "enhanced" applied, 82.5% (320/388) of the house-masters in the
+    406-chart harness receive a definite grade, against 82.0% (318/388)
+    under whole signs -- the build's 83.3% / 82.3% were 320/384 and
+    316/384, before REL-5-2's 1.20, 6 named four more house-masters and
+    before review D2; engine 9b1d0dc). Returns a dict: 'grade', 'sentence',
     'years' (the count where the grade names one), 'text' (the grade with
     its sentence quoted), 'flags' (14-15 printed where it would apply; 13),
     'division', 'readings'; None if the planet is absent. Not the Sun's
