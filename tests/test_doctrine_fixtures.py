@@ -2874,3 +2874,16 @@ def test_direct_eastern_inferior_leaves_burning_at_six_degrees_as_vii_2_44_print
     assert "VII.2, 44" in engine["solar_phase_note"](planet, "eastern", 1.0, 6.5)
     assert engine["solar_phase_note"](planet, "eastern", 1.0, 7.5) == ""
     assert engine["solar_phase_note"]("Mars", "eastern", 1.0, 6.5) == ""
+
+
+# --- PN4R-4g-2: indicator #9 from the three places of II.6, 1 -----------------
+
+def test_pn4_indicator_nine_reads_the_lord_of_the_years_house_from_the_three_places(engine):
+    """II.6, 1: "in one of the stakes of the Ascendant of the root, or of
+    the terminal point, or of the Ascendant of the revolution" -- three
+    counts, in row 14's format; the row had read the revolution's alone."""
+    rows = _rows(engine)
+    reads = rows[9]["Reads"]
+    assert "from the natal Ascendant / the terminal sign / the revolution Ascendant" in reads
+    assert " in house " in reads and reads.split(" in house ")[1].split(" (")[0].count("/") == 2
+    assert "II.6, 1" in rows[9]["Source"]

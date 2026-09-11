@@ -9160,10 +9160,16 @@ def pn4_further_indicators(chart_data, sr, year_lon, moon=None):
     # 9
     ly = lord(year_lon)
     ly_lon = rev.get(ly, {}).get('longitude')
+    # II.6, 1, the first chapter this row cites, names THREE Ascendants --
+    # "one of the stakes of the Ascendant of the root, or of the terminal
+    # point, or of the Ascendant of the revolution" -- so the house is read
+    # from each, in row 14's format (order PN4R-4g-2; it read the
+    # revolution's alone). Whole-sign places, the topic unit.
     rows.append({'#': 9, 'Indicator': 'The lord of the year in one of the twelve houses of the revolution',
-                 'Reads': (f"{ly} in house {_pn4_house_from(ly_lon, r_asc)} of the revolution "
-                           f"({get_zodiac_sign(ly_lon)}, {get_degree_string(ly_lon)})") if ly_lon is not None else '-',
-                 'Source': 'II.1, 14; II.6, II.9, II.12, II.15, II.18, II.21'})
+                 'Reads': (f"{ly} ({get_zodiac_sign(ly_lon)}, {get_degree_string(ly_lon)}) in house "
+                           + ' / '.join(str(_pn4_house_from(ly_lon, from_lon)) for _l, from_lon in places)
+                           + " (from the natal Ascendant / the terminal sign / the revolution Ascendant)") if ly_lon is not None else '-',
+                 'Source': 'II.1, 14; II.6, 1 (the three Ascendants); II.6, II.9, II.12, II.15, II.18, II.21'})
     # 10
     parts = []
     for label, from_lon in places:
