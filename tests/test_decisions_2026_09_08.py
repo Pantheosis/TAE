@@ -41,6 +41,11 @@ def test_d11_lot_of_death_is_stated_by_abu_mashar_and_printed_in_sahl_with_the_c
     assert "emendation" not in row["confidence"] and "fn 89" in row["note"] and "emendation" in row["note"]
     variant = _lot(engine, "death_ws")
     assert variant["cusp_rule"] == "whole-sign place" and "not prescribed in any supplied passage" in variant["confidence"]
+    # the Lots page's STANDING paragraph says the same (review D4, 2026-09-11)
+    from conftest import ui_source
+    src = ui_source()
+    assert "The Lot of death is projected from Saturn: STATED by Abu Ma\\'shar (Gr. Intr. VIII.4, 226; VIII.6, 69), and Sahl 8.6, 1 as printed agrees, his manuscripts reading the Ascendant (fn 89" in src
+    assert "is projected from Saturn by Dykes" not in src
     # the two rows differ only in the eighth's degree: with equal cusps they coincide
     from datetime import datetime
     chart = engine["calculate_traditional_chart"](datetime(1240, 5, 23, 13, 45), 43.7792, 11.2463)
