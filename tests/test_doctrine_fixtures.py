@@ -2130,14 +2130,19 @@ def test_pn4_bound_transit_sentence_is_keyed_to_the_type(engine):
     entrant: 38 a fortune alone with an infortune entering; 54 both
     fortunes with an infortune entering; 46 both infortunes with a
     fortune's ray, 47 with an infortune's ray, and a body says the
-    sentences speak of rays; 43 a fortune entering a bad distribution,
-    under 40-42's unjudged conditions; the neutrals, none."""
+    sentences speak of rays; 43 a fortune entering where a rooted infortune
+    is in the bound -- 40's premise, which types 4, 5 and 6 have and types
+    2 and 3 do not (order PN4R-4m-1) -- under 40-42's unjudged conditions;
+    a fortune's BODY under type 6 takes 43 too; the neutrals, none."""
     key = engine["pn4_bound_transit_sentence"]
     assert key(1, "infortune", False) == (38, "")
     assert key(7, "infortune", True) == (54, "")
     assert key(6, "fortune", True) == (46, "")
     assert key(6, "infortune", True) == (47, "")
-    assert key(6, "fortune", False)[0] is None and "speak of a ray" in key(6, "fortune", False)[1]
+    assert key(6, "infortune", False)[0] is None and "speak of a ray" in key(6, "infortune", False)[1]
+    assert key(6, "fortune", False)[0] == 43
+    assert key(4, "fortune", True)[0] == 43 and key(5, "fortune", False)[0] == 43
+    assert key(2, "fortune", True)[0] is None and key(3, "fortune", False)[0] is None and key(None, "fortune", True)[0] is None
     assert key(2, "fortune", True)[0] == 43 and "40-42" in key(2, "fortune", True)[1]
     assert key(1, None, True)[0] is None and "Sun, the Moon or Mercury" in key(1, None, True)[1]
     assert key(1, "fortune", True)[0] is None

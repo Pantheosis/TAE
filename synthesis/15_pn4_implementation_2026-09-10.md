@@ -820,8 +820,9 @@ the one sentence that speaks of it, quoted, with III.8, 7's condition on the two
 
 **Stated, and keyed by type.** Each sentence names its type and its entrant, so the pairing is the
 sentence's own. Said in the row: the Sun, Moon and Mercury are addressed by none; 46–47 speak of
-rays, so a body in a type-6 bound is not paired; 43 is shown under 40–42's conditions, which are
-not judged; III.8, 7 is a condition on the lord of the year and the distributor and is shown as
+rays, so an infortune's body in a type-6 bound is not paired; 43 is keyed to types 4, 5 and 6 (40's
+premise, a rooted infortune's body or ray in the bound) and shown under 40–42's conditions, which are
+not judged (re-keyed 2026-09-11, order PN4R-4m-1: it had been keyed to types 2, 3 and none); III.8, 7 is a condition on the lord of the year and the distributor and is shown as
 facts (in its own share or not; a fortune with it or not) with the sentence quoted when both are
 infortunes.
 

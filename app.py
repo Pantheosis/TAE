@@ -9703,12 +9703,19 @@ def pn4_bound_transit_sentence(type_number, entrant_nature, by_ray):
         return 38, ''
     if type_number == 7 and entrant_nature == 'infortune':
         return 54, ''
+    # 43's premise is 40's: "in that bound in the root is a powerful,
+    # corrupting infortune or its rays" -- which types 4, 5 and 6 have (an
+    # infortune distributing or partnering) and types 2 and 3 do not. An
+    # earlier version keyed 43 to 2, 3 and None (order PN4R-4m-1, 2026-09-11).
+    under_40 = "under III.2, 40-42's conditions -- a corrupting infortune in the bound, a weak fortune -- which are not judged here"
     if type_number == 6:
-        if not by_ray:
-            return None, 'III.2, 46-47 speak of a ray cast into the bound, not a body in it'
-        return (46 if entrant_nature == 'fortune' else 47), ''
-    if entrant_nature == 'fortune' and type_number in (2, 3, 5, None):
-        return 43, "under III.2, 40-42's conditions -- a corrupting infortune in the bound, a weak fortune -- which are not judged here"
+        if by_ray:
+            return (46 if entrant_nature == 'fortune' else 47), ''
+        if entrant_nature == 'fortune':
+            return 43, under_40
+        return None, 'III.2, 46-47 speak of a ray cast into the bound, not a body in it'
+    if entrant_nature == 'fortune' and type_number in (4, 5):
+        return 43, under_40
     return None, 'no sentence of III.2 pairs this entrant with this type'
 
 def pn4_bound_transits(chart_data, sr, current, year_lord):
