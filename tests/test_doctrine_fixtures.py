@@ -3285,3 +3285,24 @@ def test_planets_in_the_angular_divisions_are_directed_as_their_degrees_are(engi
         assert ap["how"] == ("oblique ascension of the birth latitude" if ap["division"] == 1 else "right ascension")
     expected = [pl for pl in engine["PN4_SEVEN"] if engine["get_effective_house"](chart["planetary_data"][pl]["longitude"], chart["houses"]) in (1, 10, 4)]
     assert [ap["planet"] for ap in b["angle_planets"]] == expected
+
+
+# --- GAP-2: the year of the turning reaching the partner's body (1.24, 4-5; 1.23, 23) ---------
+
+def test_turning_reaches_the_partners_natal_body_while_it_holds(engine):
+    """Ascendant 5 Aries; at age 4 the year of the turning is Leo. A current
+    segment whose partner is Jupiter, natal in Leo: "preferable" (1.23,
+    23); the partner Saturn in Leo: "the infortunes are worse"; a partner in
+    Virgo: not reached."""
+    seg = [{"from": 0.0, "to": 10.0, "from_lon": 5.0, "distributor": "Mars", "partner": "Jupiter", "partner_aspect": "trine",
+            "partner_from": "", "opened_by": ""}]
+    p = pdata(Jupiter=130.0, Saturn=135.0, Venus=160.0, Sun=100.0, Moon=200.0, Mercury=110.0, Mars=300.0)
+    r = engine["sahl_turning_reaches_partner"](seg, 4, 5.0, p)
+    assert r["holds"] and r["sign_of_year"] == "Leo" and "preferable" in r["verdict"]
+    seg[0]["partner"] = "Saturn"
+    assert "worse" in engine["sahl_turning_reaches_partner"](seg, 4, 5.0, p)["verdict"]
+    seg[0]["partner"] = "Venus"
+    r = engine["sahl_turning_reaches_partner"](seg, 4, 5.0, p)
+    assert not r["holds"] and r["verdict"] == "-"
+    seg[0]["partner"] = None
+    assert engine["sahl_turning_reaches_partner"](seg, 4, 5.0, p) is None

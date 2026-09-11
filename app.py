@@ -9240,6 +9240,32 @@ def sahl_house_master_in_revolution(house_master, chart_data, sr):
         {'Fact': 'With an infortune in its sign', 'Reads': ', '.join(with_infortune) or 'none', 'Source': '1.23, 2-4'},
     ]
 
+def sahl_turning_reaches_partner(segments, age, ascendant_lon, planetary_data):
+    """Sahl, On Nativities 1.24, 4-5 with 1.23, 23: "if you came to the year
+    of the turning before the departure of its light, it is preferable; and
+    likewise the infortunes are worse" -- the year of the turning (the
+    profection of the Ascendant, a sign a year) reaching the sign that holds
+    the NATAL BODY of the partner of the Ascendant's current distribution,
+    while that partner still holds the bound. Body only; the ray reading is
+    not applied. Returns None when there is no current segment or partner
+    (order GAP-2, 2026-09-11)."""
+    seg = pn4_distribution_at_age(segments, float(age)) if segments else None
+    partner = (seg or {}).get('partner')
+    if not partner or partner not in planetary_data:
+        return None
+    year = pn4_sign_of_the_year(ascendant_lon, int(age))
+    partner_sign = get_zodiac_sign(planetary_data[partner]['longitude'])
+    holds = year['sign'] == partner_sign
+    nature = pn4_nature(partner)
+    verdict = ('"preferable" (1.23, 23)' if nature == 'fortune' else '"the infortunes are worse" (1.23, 23)'
+               if nature == 'infortune' else 'neither a fortune nor an infortune: 1.23, 23 gives no verdict') if holds else '-'
+    return {'partner': partner, 'partner_sign': partner_sign, 'sign_of_year': year['sign'], 'holds': holds,
+            'distributor': seg['distributor'], 'verdict': verdict,
+            'text': (f"The year of the turning ({year['sign']}) {'reaches' if holds else 'does not reach'} the sign of the "
+                     f"partner's natal body ({partner} in {partner_sign}) while {partner} partners {seg['distributor']}"
+                     + (f": {verdict}" if holds else '') + " -- Sahl, On Nativities 1.24, 4-5; 1.23, 23 (body only; the ray "
+                     "reading is not applied)")}
+
 def sahl_house_master_turning(house_master, planetary_data, span_years=PN4_DISTRIBUTION_SPAN_YEARS):
     """PN IV IX.8, 30: "if the turning of the years from any of the five
     releasers (or from the indicator of the lifespan) reached their bodies,
@@ -12077,6 +12103,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'hm_this_year': hm_this_year, 'hm_revolution': hm_revolution, 'hm_flags': hm_flags,
         'standin_moon': standin_moon,
         'angle_planets': angle_planets,
+        'turning_partner': sahl_turning_reaches_partner(segments, age, ascendant, chart_data['planetary_data']),
         'hm_turning': sahl_house_master_turning(house_master, chart_data['planetary_data']) if house_master else [],
         # FINAL-A1 / sheet row 1: the house-master's years from 1.20, 7-34, by the division.
         'hm_years': (sahl_house_master_years(house_master, chart_data['planetary_data'], chart_data['houses'], chart_data['sect'],
@@ -13968,6 +13995,8 @@ if location_query and lat is not None and lon is not None:
                             f" &nbsp;|&nbsp; partner met: {cur['partner_from']}")
                     st.dataframe(pd.DataFrame(pn4['distribution_rows']), hide_index=True, width='stretch',
                                  height=_rows_height(min(len(pn4['distribution_rows']), 16)))
+                    if pn4['turning_partner']:
+                        st.markdown(f"**Sahl, the year of the turning and the partner:** {pn4['turning_partner']['text']}")
                     st.caption("III.1, 23-25: at birth the partner is whatever body or ray lies between the beginning of "
                                "the Ascendant's sign and its degree; if there is none, \"the distributor without a planet "
                                "partnering with her\". III.2, 103-104 ranks partners body > opposition > square > trine > "
