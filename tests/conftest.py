@@ -77,7 +77,6 @@ READING_DEPTHS = ["Course text", "Course text and supplement"]
 SWITCHES = {
     # name: (store key, alternatives, page, view, widget kind, label prefix)
     "connection": ("_connection_rule", ["Sahl", "Abu Ma'shar"], "configurations", None, "radio", "Connection test"),
-    "five_degree": ("_five_degree_all_cusps", [False, True], "configurations", None, "checkbox", "Five-degree carryover"),
     "eastern": ("_eastern_rule", ["hemisphere", "VII.2 band"], "configurations", None, "radio", "VII.6, 27/45"),
     "moon_rays": ("_moon_rays_15", [False, True], "chart", None, "checkbox", "Moon under the rays"),
     "mars_west": ("_mars_west_18", [False, True], "chart", None, "checkbox", "Mars under the rays"),
