@@ -1992,12 +1992,14 @@ def test_pn4_sun_handover_is_applying_and_inside_his_sign(engine):
 
 
 def test_pn4_proxies_only_for_a_luminary_year_and_admit_the_releaser(engine):
-    """The proxies exist only when the Sun or the Moon is lord of the year
-    (II.13, 1; II.22, 1), and their first member needs the longevity
+    """The luminary proxies exist when the Sun or the Moon is lord of the
+    year (II.13, 1; II.22, 1) -- any other lord gets II.22, 23-25's one row
+    -- and their first member needs the longevity
     releaser: that row says so. Leo's and Cancer's occupants are read
     from both charts; the Moon's rows carry the II.22 computation."""
     root, sr, _y = _two_charts(engine, natal=dict(Venus=140.0), rev=dict(Mars=100.0, Saturn=145.0))
-    assert engine["pn4_luminary_proxies"]("Mars", root, sr) is None
+    mars = engine["pn4_luminary_proxies"]("Mars", root, sr)          # II.22, 23-25 (PN4R-4i-5): one row for any other lord
+    assert len(mars) == 1 and mars[0]["Source"] == "II.22, 23-25" and "Mars in Cancer, the house of Moon" in mars[0]["Reads"]
     moon = {"sign": "Libra", "moon_lon": 200.0, "exit_day": 1.5, "void": False, "house_lord": "Venus",
             "connections": [{"day": 0.4, "planet": "Jupiter", "aspect": "sextile", "moon_at": 205.0}]}
     sun = {"sign": "Cancer", "moon_lon": 100.0, "exit_day": 20.0, "void": True, "house_lord": "Moon", "connections": []}
@@ -2028,7 +2030,9 @@ def test_pn4_bundle_shows_proxies_in_a_luminary_year_only(engine):
     b = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(1985 + sun_age, 6, 1).date(), rule)
     assert b["year"]["lord"] == "Sun" and b["sun_handover"] is not None and len(b["proxies"]) == 5
     b = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(1985 + mars_age, 6, 1).date(), rule)
-    assert b["proxies"] is None and b["sun_handover"] is None
+    # II.22, 23-25 (order PN4R-4i-5): a Mars year gets the one row for any lord -- the house he stands in
+    assert b["sun_handover"] is None and len(b["proxies"]) == 1 and b["proxies"][0]["Source"] == "II.22, 23-25"
+    assert "Mars in " in b["proxies"][0]["Reads"] and "the house of " in b["proxies"][0]["Reads"]
 
 
 # --- II.3, 2-19: the sign of the terminal point and its lord (built 2026-09-10)

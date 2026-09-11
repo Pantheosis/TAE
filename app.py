@@ -10474,9 +10474,36 @@ def pn4_luminary_proxies(year_lord, chart_data, sr, moon=None, sun=None, release
     given, is {'distributor', 'sign', 'lord', 'note'} from the releaser's
     distribution (Sahl, On Nativities 1.15, 22), and fills the first
     proxy of each version; its 'note' explains an absence."""
-    if year_lord not in ('Sun', 'Moon'):
-        return None
     natal, rev = chart_data['planetary_data'], sr['planetary_data']
+    if year_lord not in ('Sun', 'Moon'):
+        # II.22, 23: "in all of the times you should look at the lord of the
+        # year, whether it was the Moon or not, connecting or empty in course,
+        # in whichever planet's house it is, in the revolution"; 25: "the
+        # indication of the lord of the year will be like that when[ever] it
+        # is in a house of one of the planets." One row, the house and its
+        # lord's condition in the revolution (order PN4R-4i-5; the function
+        # had returned None for every lord but the luminaries). The void
+        # stand-in of fn 319 (no perfection before leaving the sign) would
+        # need the revolution's moment and is not read here.
+        row = rev.get(year_lord)
+        if not row:
+            return None
+        sign = get_zodiac_sign(row['longitude'])
+        host = SIGN_TO_DOMICILE.get(sign, '-')
+
+        def condition(data, planet):
+            r = data.get(planet)
+            if not r:
+                return '-'
+            motion = 'retrograde' if r.get('speed_in_lon', 1.0) < 0 else 'direct'
+            phase, side, _el = solar_phase(planet, r['longitude'], data['Sun']['longitude'], r.get('speed_in_lon'))
+            return f"{get_zodiac_sign(r['longitude'])}, {motion}, {side or '-'}{', ' + phase.lower() if phase else ''}"
+
+        return [{'Proxy': '[II.22, 23] The house the lord of the year stands in, in the revolution',
+                 'Reads': (f"{year_lord} in {sign}, the house of {host}; {host}'s condition in the revolution: "
+                           f"{condition(rev, host)} -- 24-25 judge the year by that lord's condition (not pronounced here); "
+                           f"whether {year_lord} is connecting or empty in course is not read"),
+                 'Source': 'II.22, 23-25'}]
     r_dist = (releaser or {}).get('distributor')
     r_sign = (releaser or {}).get('sign')
     r_note = f"unavailable: {releaser['note']}" if releaser and releaser.get('note') else PN4_PROXY_RELEASER
@@ -13806,8 +13833,7 @@ if location_query and lat is not None and lon is not None:
                                   "1-5 give the Moon's list. Dykes' fn 237 reads these as proxies standing in for the "
                                   "luminary.")
                 if pn4['proxies'] is None:
-                    st.markdown(f"This year's lord is **{pn4['year']['lord']}**; the proxies apply only when the Sun or "
-                                f"the Moon is lord of the year.")
+                    st.markdown(f"This year's lord is **{pn4['year']['lord']}**, absent from the revolution.")
                 else:
                     st.markdown(f"This year's lord is **{pn4['year']['lord']}**.")
                     st.dataframe(pd.DataFrame(pn4['proxies']), hide_index=True, width='stretch',
