@@ -3356,3 +3356,18 @@ def test_ii3_rays_carry_the_classes_of_sign_and_degree(engine):
     assert engine["_pn4_sign_class_facts"](335.0, "trine", "Cancer", 95.0).startswith("loving")
     assert "matching in ascensions" in engine["_pn4_sign_class_facts"](100.0, "sextile", "Sagittarius", 250.0)   # Cancer-Sagittarius (IX.2, 33)
     assert "one belt" in engine["_pn4_sign_class_facts"](40.0, "square", "Libra", 190.0)                        # Taurus-Libra, Venus
+
+
+# --- PN4R-4c-4: the small and mighty days from any point ---------------------------------
+
+def test_small_and_mighty_days_take_any_start_point(engine):
+    """IX.7, 31 / 27. From the revolution's Moon the small days open on her
+    degree with the same shape as the Ascendant's; the mighty days from a
+    profected point likewise; the labels name the point."""
+    sr = pdata(Sun=100.0, Moon=200.0, Mercury=110.0, Venus=130.0, Mars=300.0, Jupiter=250.0, Saturn=20.0)
+    moon = engine["pn4_small_days"](sr, 200.0, "the revolution's Moon")
+    asc = engine["pn4_small_days"](sr, 15.0)
+    assert moon[0]["from_lon"] == pytest.approx(200.0) and moon[0]["from"] == 0.0 and set(moon[0]) == set(asc[0])
+    assert moon[-1]["to"] == pytest.approx(asc[-1]["to"])
+    mighty = engine["pn4_mighty_days"](sr, engine["pn4_profect"](200.0, 3), "the revolution's Moon, profected")
+    assert mighty[0]["from_lon"] == pytest.approx(290.0) and mighty[-1]["to"] == pytest.approx(365.25)

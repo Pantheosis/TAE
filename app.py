@@ -8352,14 +8352,17 @@ def pn4_small_days_arc_to_days(arc_degrees):
     """IX.7, 29: a day for every 59' 08"."""
     return float(arc_degrees) / PN4_SMALL_DAYS_RATE
 
-def pn4_small_days(sr_planetary_data, sr_ascendant_lon):
+def pn4_small_days(sr_planetary_data, sr_ascendant_lon, point_label='Ascendant of the revolution'):
     """The revolution's Ascendant distributed round the revolution chart
     for one year (IX.7, 29-31). Segments in DAYS from the revolution, each
     {from, to, from_lon, distributor, partner, partner_aspect, ...}; the
     last ends at the full circuit, 360 / (59' 08"), about 365.28 days.
     Never refuses: the measure is the zodiac itself."""
+    # IX.7, 31: "you work like that with everything of the planets, Lots, and
+    # houses, of whatever you want the direction of" -- any start point, by
+    # its label (order PN4R-4c-4; the revolution's Ascendant alone until 2026-09-11).
     segments = _pn4_distribute(sr_planetary_data, sr_ascendant_lon, lambda lon: lon % 360.0,
-                               360.0, 'Ascendant of the revolution',
+                               360.0, point_label,
                                opening_window='bound', epoch='the revolution')
     for seg in segments:
         seg['from'] = pn4_small_days_arc_to_days(seg['from'])
@@ -8413,14 +8416,16 @@ def pn4_mighty_days_arc_to_days(arc_degrees):
     see PN4_MIGHTY_DAYS_PER_DEGREE for the three figures in that sentence."""
     return float(arc_degrees) * PN4_MIGHTY_DAYS_PER_DEGREE
 
-def pn4_mighty_days(sr_planetary_data, terminal_lon):
+def pn4_mighty_days(sr_planetary_data, terminal_lon, point_label='terminal point of the year'):
     """The terminal degree of the year directed through the revolution
     chart for the year (IX.7, 23-28). Segments in DAYS from the
     revolution, each {from, to, from_lon, distributor, partner, ...}; the
     last ends at thirty degrees, 365.22 days at the printed rate. Never
     refuses: the measure is the zodiac itself."""
+    # IX.7, 27: the same direction from the profected degree of any point
+    # (order PN4R-4c-4; the terminal point alone until 2026-09-11).
     segments = _pn4_distribute(sr_planetary_data, terminal_lon, lambda lon: lon % 360.0,
-                               PN4_MIGHTY_DAYS_SPAN_DEGREES, 'terminal point of the year',
+                               PN4_MIGHTY_DAYS_SPAN_DEGREES, point_label,
                                opening_window='bound', epoch='the revolution')
     for seg in segments:
         seg['from'] = pn4_mighty_days_arc_to_days(seg['from'])
@@ -14414,6 +14419,35 @@ if location_query and lat is not None and lon is not None:
                                   "another meets it; otherwise the bound lords, until a planet or ray is reached. IX.7, 31 "
                                   "names it the small days. A second distribution, running inside the year at its own "
                                   "rate; the Ascendant's distribution above runs across the years.")
+                # IX.7, 31 / 27: the same two directions from any planet, house or Lot (order PN4R-4c-4)
+                _sr_pd, _sr_ch = pn4['sr']['planetary_data'], pn4['sr']
+                _day_points = {'the revolution\'s Ascendant (the table below)': None}
+                _day_points.update({f"the revolution's {p_}": (_sr_pd[p_]['longitude'], f"the revolution's {p_}") for p_ in PN4_SEVEN if p_ in _sr_pd})
+                _day_points.update({f"the revolution's house {i_ + 1} (cusp {get_degree_string(c_)})": (c_, f"the revolution's house {i_ + 1}")
+                                    for i_, c_ in enumerate(list(_sr_ch['houses'])[:12])})
+                for _lr in calculate_topical_lots(_sr_pd, _sr_ch['ascendant'], _sr_ch['houses'], _sr_ch['sect']):
+                    _day_points[f"the revolution's {_lr['Lot']}"] = (lot_by_id(next(d['id'] for d in LOT_DEFINITIONS if d['name'] == _lr['Lot']),
+                                                                              _sr_pd, _sr_ch['ascendant'], _sr_ch['houses'], _sr_ch['sect']),
+                                                                    f"the revolution's {_lr['Lot']}")
+                _day_choice = st.selectbox("Also direct, for the small days (IX.7, 31) and the mighty days (IX.7, 27), from",
+                                           list(_day_points), key="pn4_day_point")
+                _extra = _day_points[_day_choice]
+                if _extra is not None:
+                    _x_lon, _x_label = _extra
+                    _x_small = pn4_small_days(_sr_pd, _x_lon, _x_label)
+                    _x_cur = pn4_distribution_at_age(_x_small, pn4['day_of_year'])
+                    st.markdown(f"**Small days from {_x_label}** at {get_degree_string(_x_lon)} (IX.7, 31)"
+                                + (f" -- now: distributor **{_x_cur['distributor']}**, partner **{_x_cur['partner'] or 'none'}**" if _x_cur else '') + ":")
+                    st.dataframe(pd.DataFrame(_pn4_distribution_rows(_x_small, _x_cur, unit='days', origin_jd=pn4['jd_sr'])),
+                                 hide_index=True, width='stretch', height=_rows_height(8))
+                    _x_prof = pn4_profect(_x_lon, pn4['age'])
+                    _x_mighty = pn4_mighty_days(_sr_pd, _x_prof, f"{_x_label}, profected")
+                    _x_mcur = pn4_distribution_at_age(_x_mighty, pn4['day_of_year'])
+                    st.markdown(f"**Mighty days from {_x_label} profected** to {get_degree_string(_x_prof)} (IX.7, 27: the "
+                                f"point turned {pn4['age']} signs, its degree kept)"
+                                + (f" -- now: distributor **{_x_mcur['distributor']}**, partner **{_x_mcur['partner'] or 'none'}**" if _x_mcur else '') + ":")
+                    st.dataframe(pd.DataFrame(_pn4_distribution_rows(_x_mighty, _x_mcur, unit='days', origin_jd=pn4['jd_sr'])),
+                                 hide_index=True, width='stretch', height=_rows_height(8))
                 sd_cur = pn4['small_days_current']
                 sr_asc = pn4['sr']['ascendant']
                 _strip = generate_distribution_strip_svg(pn4['small_days'], pn4['day_of_year'], 'days', None, 'The small days')
@@ -14484,7 +14518,7 @@ if location_query and lat is not None and lon is not None:
                            "of the next sign, which is what \"then to the lord of the bound which follows it\" "
                            "describes. Read into the sentence, as for the small days: the revolution's bodies and rays; "
                            "days from the moment of the revolution; the opening partner behind the degree within its "
-                           "bound. IX.7, 27's extension to the Lots of the parents and every house and Lot is not built. "
+                           "bound. IX.7, 27's extension to every planet, house and Lot is the selector above (since 2026-09-11). "
                            "No worked example of it exists in PN IV.")
 
                 st.subheader("The nine methods for the days and hours (IX.7, 1-72)",
