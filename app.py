@@ -8433,6 +8433,9 @@ SAHL_DIGNITY_RANK = ('bound', 'house', 'exaltation', 'triplicity', 'face')   # 1
 SAHL_GOOD_PLACES = (1, 10, 7, 4, 11, 9, 5)
 SAHL_BOTH_AT_ONCE = {'Sun': ('Aries', 'Leo'), 'Moon': ('Taurus', 'Cancer')}  # 1.16, 1-2
 SAHL_RELEASER_NOT_APPLIED = (
+    ('1.16, 4', 'al-Andarzaghar keeps a luminary "powerful in the places of the releaser" as releaser "even if a house-master '
+                'is not looking"; Nawbakht\'s 1.15, 7 gate (no lord looking, not the releaser) is applied instead -- two '
+                'chapters of one book, opposite rules'),
     ('1.19, 6', 'the Moon within 15 degrees of the Sun "will not be fit to take up the role of the manager"'),
     ('1.20, 6', 'an eastern lord with a share in the Ascendant may be house-master without looking at the releaser'),
     ('1.18, 8-10', 'one short-life testimony makes the releaser "weak and not fit, except through reception"; two, with no releaser, "one will not know his lifespan except by revolving his years"'),
@@ -8524,7 +8527,15 @@ def _sahl_examine_candidate(label, lon, planetary_data, cusps, sect, places, sel
     elif looking:
         why = f"house {place}; looked at by " + ', '.join(f"{p} ({r}, {a})" for r, p, a in looking)
     else:
-        why = f"house {place}, but no lord of its bound, house, exaltation, triplicity or face looks at it (1.15, 7)"
+        why = f"house {place}, but no lord of its bound, house, exaltation, triplicity or face looks at it (1.15, 7, Nawbakht)"
+        if self_planet in ('Sun', 'Moon'):
+            # 1.16, 4 (al-Andarzaghar): a luminary "powerful in the places of
+            # the releaser ... (even if a house-master is not looking, and it
+            # [itself] is not the house-master)" is still directed as the
+            # releaser. Two chapters of one book state opposite gates for this
+            # case; Nawbakht's is applied, the other named (order REL-2-3).
+            why += ("; al-Andarzaghar's 1.16, 4 would keep it as releaser \"even if a house-master is not "
+                    "looking\" -- not applied")
     return {'candidate': label, 'longitude': lon % 360.0, 'place': place, 'in_places': in_places,
             'lords': lords, 'looking': looking, 'both_at_once': both, 'self_planet': self_planet,
             'fit': fit, 'why': why}
