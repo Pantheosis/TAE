@@ -4630,9 +4630,12 @@ def calculate_prenatal_syzygy(jd_natal, lat, lon, natal_houses):
     active_triplicity_lord = rulers['triplicity_day'] if is_diurnal_syzygy else rulers['triplicity_night']
     active_triplicity_label = 'Day' if is_diurnal_syzygy else 'Night'
 
-    # Almuten / Syzygy Lord: weighted score across the essential dignities
-    # ruling this degree (only the sect-appropriate triplicity lord counts,
-    # not the Participating ruler, matching standard almuten scoring).
+    # Almuten by 5/4/3/2/1 points: weighted score across the essential
+    # dignities ruling this degree (only the sect-appropriate triplicity
+    # lord counts, not the Participating ruler, matching standard almuten
+    # scoring). The course's technique; the weights are stated in no text
+    # in hand. Sahl's own procedure for the governor of this degree (On
+    # Nativities 1.7, 3-7) is sahl_syzygy_governor, shown beside it.
     scores = {}
     def _add_score(planet, pts):
         if planet and planet != '-':
@@ -4658,6 +4661,93 @@ def calculate_prenatal_syzygy(jd_natal, lat, lon, natal_houses):
         'almuten': almuten,
         'almuten_score': almuten_score,
     }
+
+# --- The governor of the syzygy degree, Sahl, On Nativities 1.7, 3-7 --------
+# (CONV-ESSENTIAL_DIGNITY_WEIGHTS, 2026-09-11.) Sahl states his own
+# procedure for the one in charge of the degree of the meeting or
+# opposition; the 5/4/3/2/1 almuten above is the course's technique and is
+# kept beside it under its own name. 1.7, 3: "you will know the one in
+# charge of that portion from five things: the lord of the house,
+# triplicity, exaltation, bound, and image, and the eastern one of them".
+# 1.7, 4: "Then see which of them is stronger in its [own] place, and is
+# direct in course, looking at the sign of the meeting or opposition".
+# 1.7, 7: "if they were both in power equally, [then] whichever of them was
+# in a stake or in its own house, triplicity, bound, or exaltation, and had
+# superiority over its associate in this respect, that is the governor."
+# "In a stake" is strength language and dispatches to the DIVISION under
+# the canon (OWNER_RULING_PLACES_VS_DYNAMICS), said on the row. 1.7, 5-6
+# (the lord of the best; the one changing more quickly into the superior
+# condition) and 4's "stronger in its [own] place" are not modelled.
+SAHL_1_7_LOOKING_SIGN_COUNTS = (0, 2, 3, 4, 6)   # the same sign or a whole-sign aspect to it
+
+def sahl_syzygy_governor(syzygy, p_data, cusps, sect):
+    """The governor of the syzygy degree by On Nativities 1.7, 3-7, from
+    the natal chart (the conditions -- motion, looking, easternness, the
+    stake -- read at the nativity, the moment the chapter is casting; the
+    text does not say the lunation's moment, a reading said on the row).
+    Returns the governor (or '-' / a tie), the candidates with each test,
+    and a one-line account for the page."""
+    r = syzygy['rulers']
+    lords = [r['domicile'], r['exaltation'], syzygy['active_triplicity_lord'], r['term'], r['face']]
+    claims = {}
+    for kind, lord in zip(('house', 'exaltation', 'triplicity', 'bound', 'image'), lords):
+        if lord and lord != '-' and lord in p_data:
+            claims.setdefault(lord, []).append(kind)
+    sun_lon = p_data['Sun']['longitude']
+    syz_sign_idx = int((syzygy['syzygy_longitude'] % 360.0) // 30)
+    rows = []
+    for planet, kinds in claims.items():
+        d = p_data[planet]
+        lon = d['longitude']
+        speed = d.get('speed_in_lon', 0.0)
+        direct = planet in ('Sun', 'Moon') or speed >= 0.0
+        apart = (int((lon % 360.0) // 30) - syz_sign_idx) % 12
+        apart = min(apart, 12 - apart)
+        looking = apart in SAHL_1_7_LOOKING_SIGN_COUNTS
+        _, side, _ = solar_phase(planet, lon, sun_lon, speed)
+        eastern = side == 'eastern'
+        division = get_effective_house(lon, cusps)
+        own = get_essential_rulers(lon)
+        own_trip = own['triplicity_day'] if sect == 'Diurnal' else own['triplicity_night']
+        own_dignities = [name for name, holder in (('house', own['domicile']), ('exaltation', own['exaltation']),
+                                                    ('triplicity', own_trip), ('bound', own['term'])) if holder == planet]
+        in_stake = division in (1, 4, 7, 10)
+        rows.append({
+            'Planet': planet,
+            'Claim on the degree (1.7, 3)': ', '.join(kinds),
+            'Direct (1.7, 4)': 'yes' if direct else 'no (retrograde)',
+            'Looking at the sign (1.7, 4)': ('yes (' + ('the same sign' if apart == 0 else ASPECT_BY_SIGN_COUNT[apart][0].lower()) + ')')
+                                          if looking else f'no (in aversion, {apart} sign{"s" if apart != 1 else ""} off)',
+            'Eastern (1.7, 3)': ('the Sun has no side' if planet == 'Sun' else ('yes' if eastern else 'no (western)')),
+            'Stake or own dignity (1.7, 7)': (f'division {division}' + (' (a stake)' if in_stake else '')
+                                              + ('; own ' + ', '.join(own_dignities) if own_dignities else '')),
+            '_passes': direct and looking, '_eastern': eastern, '_tie': (1 if in_stake else 0) + len(own_dignities),
+        })
+    passing = [row for row in rows if row['_passes']]
+    if not passing:
+        governor, how = '-', 'no lord of the degree is both direct and looking at its sign (1.7, 4)'
+    else:
+        pool = [row for row in passing if row['_eastern']] or passing
+        note = '1.7, 3: the eastern one preferred' if pool is not passing and len(passing) > 1 else ''
+        best = max(row['_tie'] for row in pool)
+        top = [row for row in pool if row['_tie'] == best]
+        if len(top) == 1:
+            governor = top[0]['Planet']
+            how = f"{governor}: direct, looking at the sign of the {'meeting' if syzygy['event_type'] == 'Conjunctional' else 'opposition'} (1.7, 4)"
+            if note:
+                how += f'; {note}'
+            if len(pool) > 1:
+                how += f"; 1.7, 7's stake or own dignity decides ({top[0]['Stake or own dignity (1.7, 7)']})"
+        else:
+            governor = ' / '.join(row['Planet'] for row in top)
+            how = (f"tie between {governor}: each direct and looking, equal under 1.7, 7; 1.7, 5-6 (the lord of the best; "
+                   f"the one changed more quickly into the superior condition) are not modelled")
+    for row in rows:
+        row['Verdict'] = 'THE GOVERNOR' if row['Planet'] == governor else ('candidate' if row['_passes'] else 'dropped by 1.7, 4')
+        for k in ('_passes', '_eastern', '_tie'):
+            del row[k]
+    return {'governor': governor, 'how': how, 'rows': rows}
+
 
 # --- Planetary Day & Hour (Chronocrats) ----------------------------------
 
@@ -13233,6 +13323,7 @@ if location_query and lat is not None and lon is not None:
             + [{'Condition': 'Escape', **row} for row in escape_data]
         )
         syzygy = calculate_prenatal_syzygy(chart_data['julian_day'], lat, lon, chart_data['houses'])
+        syzygy_governor = sahl_syzygy_governor(syzygy, p_data, chart_data['houses'], sect)
         # The cached function takes the local HOUR (an int Streamlit can
         # hash), not the CivilMoment; it reads nothing else of it.
         chronocrats = calculate_chronocrats(chart_data['julian_day'], lat, lon, local_dt.hour, utc_offset_hours)
@@ -14056,9 +14147,29 @@ if location_query and lat is not None and lon is not None:
                 {"Metric": "Triplicity Lords", "Value": triplicity_str},
                 {"Metric": "Term Lord", "Value": r['term']},
                 {"Metric": "Face Lord", "Value": r['face']},
-                {"Metric": "Syzygy Lord (Almuten)", "Value": f"{syzygy['almuten']} (Score: {syzygy['almuten_score']})"},
+                {"Metric": "Governor of the syzygy degree (Sahl, On Nativities 1.7, 3-7)",
+                 "Value": f"{syzygy_governor['governor']} -- {syzygy_governor['how']}"},
+                {"Metric": "Almuten by 5/4/3/2/1 points (the course's technique; the weights are stated in no text in hand)",
+                 "Value": f"{syzygy['almuten']} (Score: {syzygy['almuten_score']})"},
             ]
             st.dataframe(pd.DataFrame(syzygy_rows), hide_index=True, width='stretch')
+            with st.expander("Governor of the syzygy degree: the five lords under 1.7, 3-7"):
+                st.dataframe(pd.DataFrame(syzygy_governor['rows']), hide_index=True, width='stretch',
+                             height=_rows_height(len(syzygy_governor['rows'])))
+                st.caption("Sahl, On Nativities 1.7, 3: \"you will know the one in charge of that portion from five things: the "
+                           "lord of the house, triplicity, exaltation, bound, and image, and the eastern one of them\"; 4: \"Then see "
+                           "which of them is stronger in its [own] place, and is direct in course, looking at the sign of the meeting or "
+                           "opposition\"; 7: \"if they were both in power equally, [then] whichever of them was in a stake or in its own "
+                           "house, triplicity, bound, or exaltation ... that is the governor.\" [Sahl I p. 265]. APPLIED: the five lords "
+                           "of the degree (the sect's triplicity lord) are the candidates; a retrograde one, or one not looking at the "
+                           "syzygy's sign (the same sign or a whole-sign aspect), is dropped (4); the eastern one is preferred (3, by the "
+                           "engine's solar-phase side; the Sun has no side); on a tie, the stake or own dignity (7). READINGS: 'in a "
+                           "stake' is strength language and is read by the DIVISION (Alcabitius, the five degrees at the four axial "
+                           "degrees), the canon's dispatch, not the text's unit; the conditions are read at the NATIVITY, the moment "
+                           "the chapter is casting (Dykes's comment), the text not saying the lunation's; 'stronger in its [own] place' "
+                           "(4) and 5-6 (the lord of the best; the one changed more quickly) are NOT modelled -- a tie is left a tie. "
+                           "The almuten row is the course's 5/4/3/2/1 technique, kept beside this and named; where the two differ, "
+                           "the difference is the finding.")
             st.subheader('Victor of the Chart', help="Ibn Ezra's worksheet reproduced cell for cell, so it can be checked against a hand-filled sheet. The seven planets are the columns.")
             st.caption("ibn Ezra's victor #1, 1485/1537")
             # The two same-tradition pairings are the grids a student fills

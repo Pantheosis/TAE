@@ -3506,3 +3506,70 @@ def test_fixed_stars_resolve_and_regulus_on_the_ascendant_is_written_down(engine
     # the planets did not move when the star catalogue was attached
     import swisseph as swe
     assert swe.calc_ut(2451545.0, swe.MARS)[1] == 260
+
+
+# --- CONV-ESSENTIAL_DIGNITY_WEIGHTS: the governor of the syzygy degree, 1.7, 3-7 --------------
+
+def _syzygy_of(engine, lon, sect):
+    r = engine["get_essential_rulers"](lon)
+    return {"rulers": r, "active_triplicity_lord": r["triplicity_day"] if sect == "Diurnal" else r["triplicity_night"],
+            "syzygy_longitude": lon, "event_type": "Conjunctional"}
+
+
+def _governor(engine, sect="Diurnal", syzygy_lon=15.0, **planets):
+    data, cusps = _sahl_chart(215.0, **{k: (v[0] if isinstance(v, tuple) else v) for k, v in planets.items()})
+    for k, v in planets.items():
+        if isinstance(v, tuple):
+            data[k]["speed_in_lon"] = v[1]
+    return engine["sahl_syzygy_governor"](_syzygy_of(engine, syzygy_lon, sect), data, cusps, sect)
+
+
+def test_syzygy_governor_drops_a_lord_in_aversion_and_the_almuten_names_another(engine):
+    """1.7, 4: a meeting at 15 Aries; by day the Sun holds exaltation,
+    triplicity and image (the 5/4/3/2/1 almuten, 8 points) but stands in
+    Taurus, in aversion to Aries, so he is dropped; Mars, the house lord in
+    Leo (trine), direct, is the governor. The two rows name different
+    planets, which is the order's finding."""
+    g = _governor(engine, Sun=40.0, Mars=130.0, Mercury=45.0)
+    assert g["governor"] == "Mars" and "1.7, 4" in g["how"]
+    by = {r["Planet"]: r for r in g["rows"]}
+    assert by["Sun"]["Verdict"] == "dropped by 1.7, 4" and by["Sun"]["Looking at the sign (1.7, 4)"].startswith("no (in aversion")
+    assert by["Mars"]["Looking at the sign (1.7, 4)"] == "yes (trine)" and by["Mars"]["Verdict"] == "THE GOVERNOR"
+    assert by["Sun"]["Claim on the degree (1.7, 3)"] == "exaltation, triplicity, image"
+
+
+def test_syzygy_governor_drops_a_retrograde_lord_and_prefers_the_eastern_one(engine):
+    """The same degree; Mars retrograde in Leo (trine, dropped by 4), the
+    Sun in Cancer (square) and Mercury in Gemini (sextile) both direct and
+    looking; Mercury, eastern of the Sun, is preferred by 1.7, 3 (the Sun
+    has no side)."""
+    g = _governor(engine, Sun=100.0, Mars=(130.0, -0.3), Mercury=75.0)
+    assert g["governor"] == "Mercury" and "1.7, 3: the eastern one preferred" in g["how"]
+    by = {r["Planet"]: r for r in g["rows"]}
+    assert by["Mars"]["Direct (1.7, 4)"] == "no (retrograde)" and by["Mars"]["Verdict"] == "dropped by 1.7, 4"
+    assert by["Sun"]["Eastern (1.7, 3)"] == "the Sun has no side" and by["Sun"]["Verdict"] == "candidate"
+
+
+def test_syzygy_governor_tie_break_is_the_stake_or_own_dignity_by_the_division(engine):
+    """1.7, 7: Mars at 0 Cancer and Mercury at 5 Cancer, both eastern of a
+    Sun at 10 Cancer, direct, square to Aries, both in the ninth division;
+    Mars holds his own bound there (Cancer 0-7 is Mars's), Mercury nothing
+    -- Mars. Then Mercury at 15 Cancer (13-19 is his bound) and Mars at 3,
+    the Sun at 20 Cancer so both stay eastern: each with one own dignity,
+    neither in a stake -> a tie, named as one, 5-6 not modelled."""
+    g = _governor(engine, Sun=100.0, Mars=90.0, Mercury=95.0)
+    assert g["governor"] == "Mars" and "1.7, 7's stake or own dignity decides" in g["how"]
+    g = _governor(engine, Sun=110.0, Mars=93.0, Mercury=105.0)
+    assert g["governor"] == "Mars / Mercury" and "not modelled" in g["how"]
+    by = {r["Planet"]: r for r in g["rows"]}
+    assert by["Mars"]["Stake or own dignity (1.7, 7)"] == "division 9; own bound"
+    assert by["Mercury"]["Stake or own dignity (1.7, 7)"] == "division 9; own bound"
+
+
+def test_syzygy_governor_rows_are_on_the_victors_page_with_the_relabelled_almuten():
+    from conftest import ui_source
+    src = ui_source()
+    assert 'Governor of the syzygy degree (Sahl, On Nativities 1.7, 3-7)' in src
+    assert "Almuten by 5/4/3/2/1 points (the course's technique; the weights are stated in no text in hand)" in src
+    assert '"Syzygy Lord (Almuten)"' not in src
+    assert "is strength language and is read by the DIVISION (Alcabitius, the five degrees at the four axial" in src
