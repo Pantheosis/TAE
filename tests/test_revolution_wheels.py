@@ -126,8 +126,8 @@ def test_bounds_ring_tints_the_bound_the_distribution_stands_in(engine):
 def test_year_over_root_agrees_with_the_inventory_cell_for_cell(engine, date_str, dykes):
     """Every point the picture draws -- the default set and the three
     toggles' sets -- must be a row of pn4_revolution_image with the same
-    position (to the printed minute) and the same whole-sign house from
-    the revolution's Ascendant; and every planet, node, Fortune, ray and
+    position (to the printed minute) and the same house by the
+    revolution's cusps (I.6, 2; order PN4R-4n-5); and every planet, node, Fortune, ray and
     twelfth-part row of the inventory must be drawn. Lots the inventory
     lists with 'many or few' are checked one way: drawn implies listed."""
     chart, latlon, b = _bundle(engine, date_str)
@@ -175,7 +175,7 @@ def test_year_over_root_agrees_with_the_inventory_cell_for_cell(engine, date_str
                                                        if c == which and p.startswith(name + " (")]
             assert candidates, f"drawn but not in the inventory: {which} {name}"
             position = engine["get_degree_string"](lon)
-            house = engine["get_wsh_house"](lon, r_asc)
+            house = engine["get_house_number"](lon, b["sr"]["houses"])     # I.6, 2: the revolution's cusps
             assert any(r["Position"] == position and r["House"] == house for r in candidates), (which, name, position, house)
             drawn.add((which, candidates[0]["Point"]))
     for r in rows:
@@ -335,3 +335,21 @@ def test_timing_page_has_six_chapters_and_every_table_inside_them():
     # The wheel controls: a selectbox for the view, the rest behind the popover.
     assert at.main.selectbox(key="timing_wheel_view").value == "Year"
     assert at.main.radio(key="wheel_order").value.startswith("Nativity")
+
+
+def test_image_files_by_the_revolutions_cusps_not_whole_signs(engine):
+    """PN IV I.6, 2: the houses of the image are calculated "by their
+    degrees and minutes ... the ascensions of the right circle". Every row
+    carries the quadrant house of its degree; on at least one of the
+    fixture charts some planet's quadrant house differs from its
+    whole-sign house from the revolution's Ascendant, which is the change
+    (order PN4R-4n-5; the lane measured 92.6% of charts)."""
+    differs = False
+    for date_str in [None] + list(CHARTS):
+        chart, latlon, b = _bundle(engine, date_str)
+        rows, _counts = b["image"]
+        for r in rows:
+            assert r["House"] == engine["get_house_number"](r["lon"], b["sr"]["houses"]), r
+            if r["Kind"] == "planet" and r["House"] != engine["get_wsh_house"](r["lon"], b["sr"]["ascendant"]):
+                differs = True
+    assert differs

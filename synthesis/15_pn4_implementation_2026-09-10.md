@@ -862,8 +862,9 @@ note**, over leaving the twelfth-parts out.
 | **I.6, 7** + fn 35 | a fixed star on the Ascendant, Midheaven, a luminary or an angular planet | yes — not computed |
 | **I.6, 8–11** + Figure 52, fn 36 | the count: 14, 98, 2+2, 24+14 = 154, the Lots apart; by degree within a house | yes — the count is a fixture |
 
-**Stated as a drawing, built as a table.** Every point of I.6, 3–6 is listed by whole-sign house
-from the revolution's Ascendant, ordered by degree within the house, with its bound (I.6, 6's
+**Stated as a drawing, built as a table.** Every point of I.6, 3–6 is listed by the revolution's
+house cusps (I.6, 2, "by their degrees and minutes ... the ascensions of the right circle"; it was
+filed by whole sign, fn 33's drawing convention, until 2026-09-11, order PN4R-4n-5), ordered by degree within the house, with its bound (I.6, 6's
 "in their signs and bounds"). The twelfth-part construction is stated at Gr. Intr. V.18, 1-3
 (Figure 57); the engine's `_twelfth_part_sign` and `pn4_twelfth_part` carry it and cite it (this
 line said "stated in no text in hand" until 2026-09-11, having been written before Book V of the

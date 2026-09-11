@@ -10166,7 +10166,13 @@ def pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat, e
 
     def add(chart, kind, point, lon, cite):
         lon %= 360.0
-        rows.append({'lon': lon, 'House': get_wsh_house(lon, r_asc), 'Chart': chart, 'Kind': kind, 'Point': point,
+        # I.6, 2: the image's houses are "calculat[ed] ... by their degrees
+        # and minutes, in the way that you calculate the houses by the
+        # portions of hours and the ascensions of the right circle" -- the
+        # revolution's cusps (the Alcabitius set this engine computes), not
+        # whole signs; fn 33's whole-sign Figure 51 was Dykes's simplification
+        # "for clarity". Filed by whole sign until 2026-09-11 (order PN4R-4n-5).
+        rows.append({'lon': lon, 'House': get_house_number(lon, sr['houses']), 'Chart': chart, 'Kind': kind, 'Point': point,
                      'Position': get_degree_string(lon), 'Bound': pn4_bound_lord(lon), 'Source': cite})
 
     counts = {'planets': 0, 'rays': 0, 'nodes': 0, 'twelfth-parts of houses': 0, 'twelfth-parts of planets': 0, 'Lots': 0}
@@ -12902,8 +12908,11 @@ if location_query and lat is not None and lon is not None:
                 st.markdown("The count: " + ", ".join(f"{k} {v}" for k, v in image_counts.items())
                             + f" -- I.6, 8 counts 154 without the Lots{' and the count agrees' if image_counts['total of I.6, 8'] == 154 else ', and this chart differs'}.")
                 st.dataframe(pd.DataFrame(image_rows), hide_index=True, width='stretch', height=_rows_height(16))
-                st.caption("A table, not the wheel of I.6, 1: every point by whole-sign house from the revolution's "
-                           "Ascendant (Dykes drew Figure 51 that way, fn 33; Figure 52 is the count table), ordered by degree within the house, with each "
+                st.caption("A table, not the wheel of I.6, 1: every point by the revolution's house cusps -- I.6, 2: "
+                           "\"calculating the houses by their degrees and minutes, in the way that you calculate the houses by "
+                           "the portions of hours and the ascensions of the right circle\" (the Alcabitius cusps this engine "
+                           "computes; Dykes drew Figure 51 by whole signs \"for clarity\", fn 33; Figure 52 is the count table), "
+                           "ordered by degree within the house, with each "
                            "point's bound. The twelfth-part construction -- 2.5 degrees to a sign, beginning with the sign "
                            "itself -- is stated at Gr. Intr. V.18, 1-3 (Figure 57). The fixed stars of I.6, 7 are not computed. The Lots are this "
                            "engine's, \"many or few\"; the count line excludes them as I.6, 8 does.")
