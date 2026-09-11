@@ -11229,7 +11229,8 @@ def pn4_ii3_examination(chart_data, sr, year, jd_sr):
 # degree within the house. The twelfth-part construction -- 2.5 degrees
 # to a sign, beginning with the sign itself -- is Gr. Intr. V.18, 1-3's
 # (Figure 57), as _twelfth_part_sign says. The fixed stars of I.6, 7 are
-# not computed. The Lots are the
+# pn4_fixed_stars_in_image (Sahl's list, On Nativities 2.2; the Swiss
+# Ephemeris catalogue; since 2026-09-11, order PN4R-4n-7). The Lots are the
 # engine's, "many or few" (I.6, 8). Decided by the owner 2026-09-10.
 
 def pn4_twelfth_part(lon):
@@ -11243,6 +11244,136 @@ def pn4_twelfth_part(lon):
     sign_idx, within = int(lon // 30), lon % 30.0
     step = int(within // 2.5)
     return (((sign_idx + step) % 12) * 30.0 + (within - step * 2.5) * 12.0) % 360.0
+
+# --- The fixed stars: I.6, 7 and III.8, 9 (order PN4R-4n-7, 2026-09-11) --------
+# I.6, 7: "if ... in the root of the nativity, one of the fixed stars was in
+# the very degree of the Ascendant, or in the very degree of the stake of the
+# Midheaven, or with one of the luminaries, or with one of the seven planets
+# which are in the stakes, then write it down in them." III.8, 9: "if in the
+# revolution of the year one of the fixed stars indicative of good fortune
+# was in the Ascendant of the year, or in the degree of the tenth from it, or
+# in the degree of the terminal point, or in the degree of the distribution,
+# or with their lords, or with one of the luminaries, it indicates good
+# fortune in that year." WHICH stars: PN IV names none; the list is Sahl's,
+# On Nativities 2.2 (al-Andarzaghar's chapter on the greatest good fortune),
+# where Dykes's table at the chapter's end identifies each star Sahl names
+# (his identifications, with Rhetorius Ch. 58's natures); the two stars of
+# that table Sahl does not carry (Deneb Adige, Arcturus) are left out, the two
+# he carries doubtfully (Alphecca, fn 73; Menkalinan, fn 75) are kept and
+# marked. Positions: the Swiss Ephemeris star catalogue (sefstars.txt), found
+# at run time and never copied into this repository; without it the table
+# says so and computes nothing. Readings, the engine's: "the very degree" and
+# "with" are both read as within one degree of longitude; "the stakes" for
+# I.6, 7's planets are the whole-sign places 1, 4, 7, 10; latitude is ignored.
+SAHL_FIXED_STARS = (
+    ('Spica', 'Venus-Mercury'), ('Vega', 'Venus-Mercury'), ('Fomalhaut', 'Venus-Mercury'),
+    ('Alphecca', 'Venus-Mercury (doubtful in Sahl, fn 73)'),
+    ('Regulus', 'Jupiter-Mars'), ('Altair', 'Jupiter-Mars'), ('Antares', 'Jupiter-Mars (fn 74)'), ('Sirius', 'Jupiter-Mars'),
+    ('Rigel', 'Jupiter-Saturn'), ('Alnilam', 'Jupiter-Saturn'), ('Menkalinan', 'Jupiter-Saturn (doubtful in Sahl, fn 75)'),
+    ('Rukbat', 'Jupiter-Saturn'), ('Algol', 'Jupiter-Saturn'), ('Capella', 'Jupiter-Saturn'),
+    ('Pollux', 'Mars'), ('Zuben Eschamali', 'Jupiter-Venus'), ('Castor', 'Jupiter-Venus'),
+    ('Bellatrix', 'Mars-Venus'), ('Procyon', 'Mars-Venus'), ('Betelgeuse', 'Mars-Venus'), ('Alpheratz', 'Mars-Venus'),
+    ('Scheat', 'Mars-Venus'), ('Toliman', 'Venus-Jupiter'), ('Acamar', 'Venus-Jupiter'),
+    ('Denebola', 'Saturn-Venus'), ('Zosma', 'Saturn-Venus'), ('Alphard', 'Saturn-Venus'), ('Aldebaran', 'Mars-Venus'),
+)
+FIXED_STAR_ORB = 1.0
+_FIXED_STAR_STATE = {'checked': False, 'ready': False, 'where': None}
+
+def _fixed_star_catalogue_ready():
+    """Find a Swiss Ephemeris star catalogue and point the ephemeris at a
+    private directory holding only a link to it, so the planets (Moshier,
+    no planetary files) are untouched. Looked for: $SE_EPHE_PATH, the
+    engine's own data directory, and any package in this interpreter's
+    site-packages that ships one."""
+    if _FIXED_STAR_STATE['checked']:
+        return _FIXED_STAR_STATE['ready']
+    _FIXED_STAR_STATE['checked'] = True
+    import glob, sys
+    candidates = []
+    if os.environ.get('SE_EPHE_PATH'):
+        candidates.append(os.path.join(os.environ['SE_EPHE_PATH'], 'sefstars.txt'))
+    try:
+        candidates.append(str(_user_data_dir() / 'ephe' / 'sefstars.txt'))
+    except Exception:
+        pass
+    for base in sys.path:
+        if base and base.endswith('site-packages'):
+            candidates += glob.glob(os.path.join(base, '*', 'sweph', 'sefstars.txt')) + glob.glob(os.path.join(base, '*', 'sefstars.txt'))
+    source = next((c for c in candidates if c and os.path.isfile(c)), None)
+    if source is None:
+        return False
+    try:
+        private = _user_data_dir() / 'ephe_stars'
+        private.mkdir(parents=True, exist_ok=True)
+        link = private / 'sefstars.txt'
+        if not link.exists():
+            try:
+                link.symlink_to(source)
+            except OSError:
+                import shutil
+                shutil.copyfile(source, link)
+        swe.set_ephe_path(str(private))
+        swe.fixstar2_ut('Spica', 2451545.0, swe.FLG_SWIEPH)
+        _FIXED_STAR_STATE.update(ready=True, where=source)
+        return True
+    except Exception:
+        return False
+
+def fixed_star_longitudes(jd):
+    """{name: longitude} for Sahl's stars at jd, or None without a catalogue."""
+    if not _fixed_star_catalogue_ready():
+        return None
+    out = {}
+    for name, _nature in SAHL_FIXED_STARS:
+        try:
+            out[name] = swe.fixstar2_ut(name, jd, swe.FLG_SWIEPH)[0][0] % 360.0
+        except Exception:
+            continue
+    return out
+
+def _star_hits(stars, places, orb=FIXED_STAR_ORB):
+    """Rows of (star, place, distance) for every star within orb of a place."""
+    rows = []
+    for name, nature in SAHL_FIXED_STARS:
+        if name not in stars:
+            continue
+        for label, lon in places:
+            d = abs(((stars[name] - lon + 180.0) % 360.0) - 180.0)
+            if d <= orb:
+                rows.append({'Star': name, 'Longitude': get_degree_string(stars[name]), 'Nature (Rhetorius, per Dykes)': nature,
+                             'Place': label, 'Distance': f"{d:.2f} deg"})
+    return rows
+
+def pn4_fixed_stars_in_image(chart_data, jd):
+    """I.6, 7's four natal places. Returns {'rows', 'refused'}."""
+    stars = fixed_star_longitudes(jd)
+    if stars is None:
+        return {'rows': [], 'refused': 'no Swiss Ephemeris star catalogue (sefstars.txt) is available to this interpreter; nothing is computed'}
+    p = chart_data['planetary_data']
+    asc = chart_data['ascendant']
+    places = [('the very degree of the Ascendant', asc), ('the very degree of the Midheaven', chart_data['mc']),
+              ('with the Sun', p['Sun']['longitude']), ('with the Moon', p['Moon']['longitude'])]
+    for planet in ('Saturn', 'Jupiter', 'Mars', 'Venus', 'Mercury'):
+        if planet in p and get_wsh_house(p[planet]['longitude'], asc) in (1, 4, 7, 10):
+            places.append((f"with {planet}, in a stake (whole-sign place {get_wsh_house(p[planet]['longitude'], asc)})", p[planet]['longitude']))
+    return {'rows': _star_hits(stars, places), 'refused': None, 'source_dir': _FIXED_STAR_STATE['where']}
+
+def pn4_fixed_stars_in_revolution(sr, jd_sr, year_lon, endpoint_lon):
+    """III.8, 9's places in the revolution. Returns {'rows', 'refused'}."""
+    stars = fixed_star_longitudes(jd_sr)
+    if stars is None:
+        return {'rows': [], 'refused': 'no star catalogue available'}
+    rev = sr['planetary_data']
+    places = [('the Ascendant of the year', sr['ascendant']), ('the degree of the tenth from it', sr['mc']),
+              ('the degree of the terminal point', year_lon)]
+    if endpoint_lon is not None:
+        places.append(('the degree of the distribution', endpoint_lon))
+    for label, lon in list(places):
+        lord = SIGN_TO_DOMICILE.get(get_zodiac_sign(lon))
+        if lord in rev:
+            places.append((f"with {lord}, lord of {label.replace('the ', '', 1)}", rev[lord]['longitude']))
+    places += [('with the Sun of the revolution', rev['Sun']['longitude']), ('with the Moon of the revolution', rev['Moon']['longitude'])]
+    return {'rows': _star_hits(stars, places), 'refused': None}
 
 def pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat, elapsed=None):
     """I.6, 3-8: every point of the image, as rows, and the count. `elapsed`
@@ -12476,6 +12607,10 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'hm_this_year': hm_this_year, 'hm_revolution': hm_revolution, 'hm_flags': hm_flags,
         'standin_moon': standin_moon,
         'angle_planets': angle_planets,
+        'fixed_stars': pn4_fixed_stars_in_image(chart_data, chart_data['julian_day']),
+        'fixed_stars_revolution': pn4_fixed_stars_in_revolution(
+            sr, jd_sr, year['longitude'],
+            (_pn4_seg_degree({'from': elapsed}, ascendant, chart_data, lat) if (segments and current) else None)),
         'short_life': sahl_short_life_testimonies(chart_data, chart_data['lot_of_fortune']),
         # DIS-10: the father's Lot (4.20, 31-36): the harmers, and 32's two directions
         'father_lot': (lambda lot: (None if lot is None else {
@@ -14155,8 +14290,27 @@ if location_query and lat is not None and lon is not None:
                            "computes; Dykes drew Figure 51 by whole signs \"for clarity\", fn 33; Figure 52 is the count table), "
                            "ordered by degree within the house, with each "
                            "point's bound. The twelfth-part construction -- 2.5 degrees to a sign, beginning with the sign "
-                           "itself -- is stated at Gr. Intr. V.18, 1-3 (Figure 57). The fixed stars of I.6, 7 are not computed. The Lots are this "
+                           "itself -- is stated at Gr. Intr. V.18, 1-3 (Figure 57). The fixed stars of I.6, 7 are the table below. The Lots are this "
                            "engine's, \"many or few\"; the count line excludes them as I.6, 8 does.")
+                _fs, _fsr = pn4['fixed_stars'], pn4['fixed_stars_revolution']
+                st.markdown("**The fixed stars (I.6, 7 in the root; III.8, 9 in the revolution)** -- Sahl's list, *On Nativities* "
+                            "2.2, in Dykes's identifications (the table at that chapter's end, with Rhetorius Ch. 58's natures); "
+                            "PN IV names no stars of its own. \"The very degree\" and \"with\" are read as within one degree "
+                            "of longitude; the planets \"in the stakes\" by whole-sign place; latitude ignored. Positions from "
+                            "the Swiss Ephemeris star catalogue, found at run time.")
+                if _fs['refused']:
+                    st.warning(f"Not computed: {_fs['refused']}.")
+                else:
+                    st.markdown("*In the root (I.6, 7):*")
+                    if _fs['rows']:
+                        st.dataframe(pd.DataFrame(_fs['rows']), hide_index=True, width='stretch', height=_rows_height(min(len(_fs['rows']), 8)))
+                    else:
+                        st.markdown("None of Sahl's stars stands within a degree of the Ascendant, the Midheaven, a luminary or an angular planet.")
+                    st.markdown("*In the revolution (III.8, 9):*")
+                    if _fsr['rows']:
+                        st.dataframe(pd.DataFrame(_fsr['rows']), hide_index=True, width='stretch', height=_rows_height(min(len(_fsr['rows']), 8)))
+                    else:
+                        st.markdown("None within a degree of the year's Ascendant, its tenth, the terminal point, the distribution's degree, their lords or the luminaries.")
 
                 st.subheader("The reading checklist (I.7, 1-26)",
                              help="\"If you made the image of the revolution of the year, then understand:\" (I.7, 1) -- "

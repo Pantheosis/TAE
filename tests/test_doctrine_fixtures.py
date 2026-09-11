@@ -3478,3 +3478,28 @@ def test_short_life_testimonies_count_four_and_quote_the_sentence(engine):
     assert out["count"] == sum(1 for r in out["rows"][:4] if r["Met"] == "yes")
     assert all(r["Counted"].startswith("no") for r in out["rows"][4:])
     assert ("1.18, 8" in out["sentence"]) == (out["count"] == 1)
+
+
+# --- PN4R-4n-7: the fixed stars of I.6, 7 and III.8, 9 -------------------------------------
+
+def test_fixed_stars_resolve_and_regulus_on_the_ascendant_is_written_down(engine):
+    """With the catalogue: Regulus stands near 29 50 Leo at J2000 (149.8); a
+    chart whose Ascendant is set to that degree writes Regulus down "in the
+    very degree of the Ascendant", and one a degree and a half off does
+    not. Without the catalogue the table refuses and says so."""
+    if not engine["_fixed_star_catalogue_ready"]():
+        out = engine["pn4_fixed_stars_in_image"]({"planetary_data": pdata(Sun=0.0, Moon=0.0), "ascendant": 0.0, "mc": 270.0}, 2451545.0)
+        assert out["rows"] == [] and "catalogue" in out["refused"]
+        pytest.skip("no star catalogue in this interpreter")
+    stars = engine["fixed_star_longitudes"](2451545.0)
+    assert len(stars) == len(engine["SAHL_FIXED_STARS"]) == 28
+    assert stars["Regulus"] == pytest.approx(149.83, abs=0.05)
+    chart = {"planetary_data": pdata(Sun=10.0, Moon=200.0, Mercury=20.0, Venus=30.0, Mars=300.0, Jupiter=250.0, Saturn=100.0),
+             "ascendant": stars["Regulus"] + 0.4, "mc": 60.0}
+    out = engine["pn4_fixed_stars_in_image"](chart, 2451545.0)
+    assert any(r["Star"] == "Regulus" and r["Place"].startswith("the very degree of the Ascendant") for r in out["rows"])
+    chart["ascendant"] = stars["Regulus"] + 1.5
+    assert not any(r["Star"] == "Regulus" for r in engine["pn4_fixed_stars_in_image"](chart, 2451545.0)["rows"])
+    # the planets did not move when the star catalogue was attached
+    import swisseph as swe
+    assert swe.calc_ut(2451545.0, swe.MARS)[1] == 260
