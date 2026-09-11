@@ -2842,3 +2842,24 @@ def test_sahl_releaser_in_the_bundle_feeds_the_governor_and_the_proxies(engine):
     assert engine["pn4_luminary_proxies"]("Moon", chart, b["sr"], b["moon"], None, None)[0]["Reads"].startswith("unavailable: the sign")
     syz = b["syzygies"]
     assert 0.0 <= syz["meeting"]["longitude"] < 360.0 and syz["fullness"]["jd"] < chart["julian_day"] and syz["meeting"]["jd"] < chart["julian_day"]
+
+
+# --- CONV-SOLAR_BURNED_ORB: VII.2, 44 as printed for the direct eastern inferior ---
+
+@pytest.mark.parametrize("planet", ["Venus", "Mercury"])
+def test_direct_eastern_inferior_leaves_burning_at_six_degrees_as_vii_2_44_prints(engine, planet):
+    """VII.2, 44: an inferior that has gone direct in the east (43) is
+    "simply under the rays until there are 6 degrees between them and [the
+    Sun]"; fn 43 doubts the 6 and keeps it. Applied as printed: at 6.5
+    degrees east and direct, 'Under the rays'; retrograde there (37/40's
+    7), 'Burned'; 6.5 west and direct (47's 7), 'Burned'; 5.5 east and
+    direct (45), 'Burned'; with no speed the 7 stands."""
+    sp = engine["solar_phase"]
+    assert sp(planet, 93.5, 100.0, 1.0)[0] == "Under the rays"
+    assert sp(planet, 93.5, 100.0, -0.5)[0] == "Burned"
+    assert sp(planet, 106.5, 100.0, 1.0)[0] == "Burned"
+    assert sp(planet, 94.5, 100.0, 1.0)[0] == "Burned"
+    assert sp(planet, 93.5, 100.0)[0] == "Burned"
+    assert "VII.2, 44" in engine["solar_phase_note"](planet, "eastern", 1.0, 6.5)
+    assert engine["solar_phase_note"](planet, "eastern", 1.0, 7.5) == ""
+    assert engine["solar_phase_note"]("Mars", "eastern", 1.0, 6.5) == ""

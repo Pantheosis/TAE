@@ -1529,12 +1529,24 @@ EASTERN_RULE = EASTERN_RULE_OPTIONS[0]
 # is the later Lilly-era convention and belongs to neither.
 CAZIMI_ORB = 16.0 / 60.0
 
-def solar_phase(planet, lon, sun_lon):
+def solar_phase(planet, lon, sun_lon, speed_in_lon=None):
     """Where a planet stands relative to the Sun, per Gr. Intr. VII.2 and
     Sahl, On Nativities Ch.1.22. Returns (phase, side, elongation) where
     phase is one of 'Cazimi', 'Burned', 'Under the rays', 'Degrees of
     setting' or None, and side is 'eastern' (rising before the Sun, a
-    morning star) or 'western'."""
+    morning star) or 'western'.
+
+    `speed_in_lon` matters for Venus and Mercury on the eastern side only:
+    VII.2 gives the inferiors TWO eastern burned limits -- 7 degrees while
+    they leave the Sun after the conjunction (37, 40) and, AS PRINTED, 6
+    degrees when they have stationed, "go direct in the east" (43) and
+    close on him again (44: "simply under the rays until there are 6
+    degrees between them and [the Sun]", then 45 "burned under the rays").
+    Dykes fn 43: "To me it seems this should be 7 as in 40, but this is
+    what the text says." The text's 6 is applied to a direct eastern
+    inferior (order CONV-SOLAR_BURNED_ORB, 2026-09-11); a retrograde one
+    keeps 37/40's 7, the western side 47's 7. Without a speed the 7
+    stands, a reading solar_phase_note says on the row."""
     if planet == 'Sun':
         return None, None, 0.0
     signed = ((lon - sun_lon + 180.0) % 360.0) - 180.0
@@ -1554,6 +1566,8 @@ def solar_phase(planet, lon, sun_lon):
     # so the western bounds stay inclusive.
     within = (lambda x, lim: x < lim) if side == 'eastern' else (lambda x, lim: x <= lim)
     burned = SOLAR_BURNED_ORB.get(planet, (8.5, 8.5))[idx]
+    if planet in ('Venus', 'Mercury') and side == 'eastern' and speed_in_lon is not None and speed_in_lon > 0:
+        burned = INFERIOR_DIRECT_EASTERN_BURNED   # VII.2, 44 as printed; see the docstring
     if within(elongation, burned):
         return 'Burned', side, elongation
     rays = solar_rays_orb(planet)[idx]
@@ -1563,6 +1577,26 @@ def solar_phase(planet, lon, sun_lon):
     if side == 'western' and setting is not None and elongation <= setting:
         return 'Degrees of setting', side, elongation
     return None, side, elongation
+
+# VII.2, 44 as printed: the direct eastern inferior's burned limit. fn 43
+# reads it as an error for 40's 7; the engine applies the printed 6 and
+# labels the band where the two differ (6-7 degrees). CONV-SOLAR_BURNED_ORB.
+INFERIOR_DIRECT_EASTERN_BURNED = 6.0
+
+def solar_phase_note(planet, side, speed_in_lon, elongation):
+    """The label suffix for the one band where VII.2, 44's printed 6 and
+    fn 43's 7 disagree: a direct eastern Venus or Mercury 6-7 degrees from
+    the Sun. Empty elsewhere. Without a speed the row says the 7 of 37/40
+    was used."""
+    if planet not in ('Venus', 'Mercury') or side != 'eastern':
+        return ''
+    if not (INFERIOR_DIRECT_EASTERN_BURNED <= elongation < SOLAR_BURNED_ORB[planet][0]):
+        return ''
+    if speed_in_lon is None:
+        return " -- motion unknown: 37/40's 7 degrees used, not 44's printed 6"
+    if speed_in_lon > 0:
+        return " -- VII.2, 44 as printed (6 degrees), not 40's 7; Dykes fn 43: 'should be 7 as in 40'"
+    return " -- retrograde in the east: 37/40's 7 degrees, not 44's 6"
 
 def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None,
                                   armc=None, obliquity=None, geo_lat=None):
@@ -1758,7 +1792,7 @@ def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None,
             labels.append("Swift (+2)")
 
         # --- Solar phase (Gr. Intr. VII.2; Sahl, On Nativities 1.22) --
-        phase, side, elongation = solar_phase(planet, lon, sun_lon)
+        phase, side, elongation = solar_phase(planet, lon, sun_lon, speed)
         is_cazimi = phase == 'Cazimi'
         is_combust = phase == 'Burned'
         is_under_beams = phase == 'Under the rays'
@@ -1767,10 +1801,10 @@ def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None,
             labels.append("Cazimi/in the heart (+5)")
         elif is_combust:
             score -= 5
-            labels.append(f"Burned, {side} ({elongation:.1f} deg) (-5)")
+            labels.append(f"Burned, {side} ({elongation:.1f} deg) (-5)" + solar_phase_note(planet, side, speed, elongation))
         elif is_under_beams:
             score -= 2
-            labels.append(f"Under the rays, {side} ({elongation:.1f} deg) (-2)")
+            labels.append(f"Under the rays, {side} ({elongation:.1f} deg) (-2)" + solar_phase_note(planet, side, speed, elongation))
         elif phase == 'Degrees of setting':
             labels.append(f"In the degrees of setting ({elongation:.1f} deg)")
 
@@ -5142,7 +5176,7 @@ def calculate_topical_lots(planetary_data, asc, cusps, sect):
             # says whether its condition holds instead of leaving the
             # reader to check.
             _ph, _sd, _el = solar_phase('Saturn', planetary_data['Saturn']['longitude'],
-                                         planetary_data['Sun']['longitude'])
+                                         planetary_data['Sun']['longitude'], planetary_data['Saturn'].get('speed_in_lon'))
             active = 'yes' if _ph in ('Burned', 'Under the rays', 'Cazimi') else 'NO -- Saturn is not under the rays'
         rows.append({
             'Topic': d['topic'],
@@ -7786,7 +7820,7 @@ def evaluate_planetary_years_display(planetary_data, cusps, ascendant_lon, sect,
         if planet == 'Sun':
             side = '-'
         else:
-            side = solar_phase(planet, lon, sun_lon)[1] or '-'
+            side = solar_phase(planet, lon, sun_lon, planetary_data[planet].get('speed_in_lon'))[1] or '-'
         eastern = side == 'eastern'
         # On Times 4, 7
         if q in ANGLE_HOUSES:
@@ -8506,7 +8540,8 @@ def _sahl_rank_house_master(cand, planetary_data, cusps):
         best = min(SAHL_DIGNITY_RANK.index(r) for r in d['ranks'])
         in_asc_with = (cand['place'] == 1 and 'bound' in d['ranks']
                        and get_effective_house(planetary_data[planet]['longitude'], cusps) == 1)
-        phase = solar_phase(planet, planetary_data[planet]['longitude'], planetary_data['Sun']['longitude'])[0]
+        phase = solar_phase(planet, planetary_data[planet]['longitude'], planetary_data['Sun']['longitude'],
+                            planetary_data[planet].get('speed_in_lon'))[0]
         rows.append({'Planet': planet, 'Shares': ', '.join(d['ranks']), 'Looks by': d['aspect'],
                      '_key': (0 if in_asc_with else 1, -len(d['ranks']), best),
                      'Rank': ('the bound lord in the Ascendant with the releaser: "stronger than the others" (1.20, 4)'
@@ -8641,7 +8676,7 @@ def sahl_house_master_in_revolution(house_master, chart_data, sr):
     if house_master not in rev:
         return []
     lon = rev[house_master]['longitude']
-    phase, side, elong = solar_phase(house_master, lon, rev['Sun']['longitude'])
+    phase, side, elong = solar_phase(house_master, lon, rev['Sun']['longitude'], rev[house_master].get('speed_in_lon'))
     house = get_wsh_house(lon, sr['ascendant'])
     with_infortune = [p for p in SAHL_INFORTUNES if p != house_master and p in rev
                       and get_zodiac_sign(rev[p]['longitude']) == get_zodiac_sign(lon)]
@@ -9744,7 +9779,7 @@ def pn4_distribution_checklist(chart_data, sr, year_lon, current):
         if not row:
             return '-'
         motion = 'retrograde' if row.get('speed_in_lon', 1.0) < 0 else 'direct'
-        phase, side, _el = solar_phase(planet, row['longitude'], data['Sun']['longitude'])
+        phase, side, _el = solar_phase(planet, row['longitude'], data['Sun']['longitude'], row.get('speed_in_lon'))
         return f"{get_zodiac_sign(row['longitude'])}, {motion}, {side or '-'}{', ' + phase.lower() if phase else ''}"
 
     def in_bound(items):
@@ -10019,7 +10054,7 @@ def pn4_ii3_examination(chart_data, sr, year, jd_sr):
         if not row:
             return {}
         e, a = ess.get(lord, {}), acc.get(lord, {})
-        phase, side, _el = solar_phase(lord, row['longitude'], data['Sun']['longitude'])
+        phase, side, _el = solar_phase(lord, row['longitude'], data['Sun']['longitude'], row.get('speed_in_lon'))
         claim = [k for k in ('Domicile', 'Exalt', 'Triplicity', 'Term', 'Face') if e.get(k)]
         infortunes = [f"{p} by {asp}" for p, asp, _l, _d in _pn4_looks_at_sign(data, get_zodiac_sign(row['longitude']))
                       if p in INFORTUNES and p != lord]
@@ -10300,7 +10335,7 @@ def pn4_i7_planets(chart_data, sr):
             row = data[planet]
             lon = row['longitude']
             a = acc.get(planet, {})
-            phase, side, _el = solar_phase(planet, lon, data['Sun']['longitude'])
+            phase, side, _el = solar_phase(planet, lon, data['Sun']['longitude'], data.get(planet, {}).get('speed_in_lon'))
             my_idx = int(lon // 30)
             assembled, looks, averse = [], [], []
             for other in PN4_SEVEN:
@@ -12145,7 +12180,7 @@ if location_query and lat is not None and lon is not None:
                     continue
                 lon_p = d['longitude']
                 q = get_effective_house(lon_p, chart_data['houses'])
-                phase, side, elong = solar_phase(p, lon_p, p_data['Sun']['longitude'])
+                phase, side, elong = solar_phase(p, lon_p, p_data['Sun']['longitude'], p_data[p].get('speed_in_lon'))
                 acc_p = accidental[p]
                 ws_place = get_wsh_house(lon_p, chart_data['ascendant'])
                 pos_list.append({
