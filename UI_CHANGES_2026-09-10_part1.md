@@ -106,3 +106,21 @@ checking main back out) flipped the other session's working tree twice mid-suite
 restored `tables.json` to HEAD to lift my edits out, reverted its fixture. Everything of mine now
 lives in the worktree; the branch was rebased cleanly onto `e07344d`; the convention script found
 no author-only locators in the other session's text. Lesson recorded in memory.
+
+## Third pass, same day: instant chapters, capitalised labels, the deferred book named
+
+- **The flicker** the owner saw on every chapter click was the rerun that remembered the chapter
+  across pages. Both tab controls are now client-side: no key, no `on_change`. A click switches
+  instantly and reruns nothing; the frontend keeps the chapter across reruns caused by the page's
+  own controls (verified: changing the target left Distributions selected); the page opens on its
+  first chapter when returned to. The one-line way back is in the code. Streamlit 1.62 offers no
+  middle way: any Python-side memory of the tab needs a rerun.
+- **Labels capitalised** as the owner asked: The Revolution · Indicators of the Year · Distributions
+  · The Releaser · Days & Months · Fardar, Ages & Reference Tables; Aspects & Connections · Handing
+  Over & Reception · Prevented Connections · Strength & Weakness · Abu Ma'shar (Supplement).
+- **IX.8, 123.** The owner asked whether "the book outside the corpus" that PN IV defers the
+  releaser to is the Great Introduction. The sentence reads "the book which we worked on concerning
+  nativities", and Dykes' fn 315 (with fn 46 and IX's fn 3) identifies it as Abu Ma'shar's *Book of
+  the Judgments of Nativities* (Bodleian Hunt. 546). The Great Introduction has only the Lot of the
+  releaser (Book VIII). The Timing page's caption now names the book.
+- **The audit** of the whole app after these passes is `consolidated_texts/process/UI_AUDIT_2026-09-10.md`.
