@@ -253,6 +253,12 @@ def test_d15_mars_west_orb_defaults_to_gr_intr_15_and_switches_to_dykess_18_for_
     assert engine["solar_rays_orb"]("Mars") == (18.0, 15.0)
     monkeypatch.setitem(engine, "MARS_WEST_RAYS_18", True)
     assert engine["solar_rays_orb"]("Mars") == (18.0, 18.0)
+    # the switch's label on the page (review round, 2026-09-11: pinned)
+    from conftest import ui_source
+    src = ui_source()
+    assert '"Mars under the rays to 18° west"' in src
+    assert "Dykes's table for Sahl (the chapter head of On Nativities 1.22, with fn 175, which " in src
+    assert "Gr. Intr. VII.2, 31 puts " in src and '"Sahl\'s table"' not in src
 
 
 def test_d15_a_mars_16_degrees_west_changes_phase_only_under_the_switch(engine, monkeypatch):

@@ -9595,7 +9595,8 @@ def sahl_turning_reaches_partner(segments, age, ascendant_lon, planetary_data):
             'text': (f"The year of the turning ({year['sign']}) {'reaches' if holds else 'does not reach'} the sign of the "
                      f"partner's natal body ({partner} in {partner_sign}) while {partner} partners {seg['distributor']}"
                      + (f": {verdict}" if holds else '') + " -- Sahl, On Nativities 1.24, 4-5; 1.23, 23 (body only; the ray "
-                     "reading is not applied)")}
+                     "reading is not applied; 1.23, 23's \"in an excellent position relative to the Ascendant\" -- 1.24, 5 the "
+                     "same -- is not judged)")}
 
 def sahl_house_master_turning(house_master, planetary_data, span_years=PN4_DISTRIBUTION_SPAN_YEARS):
     """PN IV IX.8, 30: "if the turning of the years from any of the five
@@ -11424,9 +11425,10 @@ def pn4_twelfth_part(lon):
 # On Nativities 2.2 (al-Andarzaghar's chapter on the greatest good fortune),
 # where Dykes's table at the chapter's end identifies each star Sahl names
 # (his identifications, with Rhetorius Ch. 58's natures); the two stars of
-# that table Sahl does not carry (Deneb Adige, Arcturus) are left out, the two
-# he carries doubtfully (Alphecca, fn 73; Menkalinan, fn 75) are kept and
-# marked. Positions: the Swiss Ephemeris star catalogue (sefstars.txt),
+# that table Sahl does not carry (Deneb Adige, Arcturus) are left out; the two
+# he carries under ANOTHER nature (Alphecca as Jupiter-Mercury, fn 73;
+# Menkalinan with Jupiter-Mars, fn 75 -- not "doubtful", as an earlier label
+# said) are kept with Rhetorius's nature and Sahl's named. Positions: the Swiss Ephemeris star catalogue (sefstars.txt),
 # SHIPPED with the app as ephe/sefstars.txt (AGPL-3.0, see ephe/README.md)
 # and found first there; without any catalogue the table says so and
 # computes nothing. Readings, the engine's: "the very degree" and
@@ -11434,9 +11436,9 @@ def pn4_twelfth_part(lon):
 # I.6, 7's planets are the whole-sign places 1, 4, 7, 10; latitude is ignored.
 SAHL_FIXED_STARS = (
     ('Spica', 'Venus-Mercury'), ('Vega', 'Venus-Mercury'), ('Fomalhaut', 'Venus-Mercury'),
-    ('Alphecca', 'Venus-Mercury (doubtful in Sahl, fn 73)'),
+    ('Alphecca', 'Venus-Mercury (Sahl, following al-Andarzaghar, classifies it as Jupiter-Mercury, fn 73)'),
     ('Regulus', 'Jupiter-Mars'), ('Altair', 'Jupiter-Mars'), ('Antares', 'Jupiter-Mars (fn 74)'), ('Sirius', 'Jupiter-Mars'),
-    ('Rigel', 'Jupiter-Saturn'), ('Alnilam', 'Jupiter-Saturn'), ('Menkalinan', 'Jupiter-Saturn (doubtful in Sahl, fn 75)'),
+    ('Rigel', 'Jupiter-Saturn'), ('Alnilam', 'Jupiter-Saturn'), ('Menkalinan', 'Jupiter-Saturn (Sahl, following al-Andarzaghar, classifies it with Jupiter-Mars, fn 75)'),
     ('Rukbat', 'Jupiter-Saturn'), ('Algol', 'Jupiter-Saturn'), ('Capella', 'Jupiter-Saturn'),
     ('Pollux', 'Mars'), ('Zuben Eschamali', 'Jupiter-Venus'), ('Castor', 'Jupiter-Venus'),
     ('Bellatrix', 'Mars-Venus'), ('Procyon', 'Mars-Venus'), ('Betelgeuse', 'Mars-Venus'), ('Alpheratz', 'Mars-Venus'),
@@ -15148,7 +15150,11 @@ if location_query and lat is not None and lon is not None:
                                                                               _sr_pd, _sr_ch['ascendant'], _sr_ch['houses'], _sr_ch['sect']),
                                                                     f"the revolution's {_lr['Lot']}")
                 _day_choice = st.selectbox("Also direct, for the small days (IX.7, 31) and the mighty days (IX.7, 27), from",
-                                           list(_day_points), key="pn4_day_point")
+                                           list(_day_points), key="pn4_day_point",
+                                           help="IX.7, 31: \"you work like that with everything of the planets, Lots, and houses\". "
+                                                "A READING: the \"houses\" are offered as the revolution's Alcabitius cusps, "
+                                                "the degree this engine computes for each house -- IX.7, 31 says \"houses\" and "
+                                                "names no degree (order PN4R-4c-4).")
                 _extra = _day_points[_day_choice]
                 if _extra is not None:
                     _x_lon, _x_label = _extra

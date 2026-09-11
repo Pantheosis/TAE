@@ -3260,6 +3260,11 @@ def test_ii3_lists_the_planets_whose_twelfth_parts_fall_in_the_terminal_sign(eng
     assert "twelfth-parts of: " in reads and "Saturn" in reads.split("twelfth-parts of: ")[1]
     assert "Mars" not in reads.split("twelfth-parts of: ")[1]
     assert "not computed" not in reads and "V.18, 3" in out["root_rows"][2]["Source"]
+    # the provenance strings (PN4R-4n-2 / F14; review round 2026-09-11: pinned)
+    assert out["root_rows"][2]["Source"] == "II.3, 2; VI.4; Gr. Intr. V.18, 3 (Figure 57)"
+    from conftest import function_source, ui_source
+    assert "PROVENANCE: Gr. Intr. V.18, 1-3 (Figure 57) STATES the construction" in function_source("_twelfth_part_sign")
+    assert "is stated at Gr. Intr. V.18, 1-3 (Figure 57)" in ui_source()
     assert "twelfth-parts of:" in out["revolution_rows"][0]["Reads"]
 
 
@@ -3392,6 +3397,7 @@ def test_turning_reaches_the_partners_natal_body_while_it_holds(engine):
     p = pdata(Jupiter=130.0, Saturn=135.0, Venus=160.0, Sun=100.0, Moon=200.0, Mercury=110.0, Mars=300.0)
     r = engine["sahl_turning_reaches_partner"](seg, 4, 5.0, p)
     assert r["holds"] and r["sign_of_year"] == "Leo" and "preferable" in r["verdict"]
+    assert '"in an excellent position relative to the Ascendant" -- 1.24, 5 the same -- is not judged' in r["text"]
     seg[0]["partner"] = "Saturn"
     assert "worse" in engine["sahl_turning_reaches_partner"](seg, 4, 5.0, p)["verdict"]
     seg[0]["partner"] = "Venus"
@@ -3625,6 +3631,10 @@ def test_fixed_stars_resolve_and_regulus_on_the_ascendant_is_written_down(engine
         pytest.skip("no star catalogue in this interpreter")
     stars = engine["fixed_star_longitudes"](2451545.0)
     assert len(stars) == len(engine["SAHL_FIXED_STARS"]) == 28
+    natures = dict(engine["SAHL_FIXED_STARS"])
+    assert natures["Alphecca"] == "Venus-Mercury (Sahl, following al-Andarzaghar, classifies it as Jupiter-Mercury, fn 73)"
+    assert natures["Menkalinan"] == "Jupiter-Saturn (Sahl, following al-Andarzaghar, classifies it with Jupiter-Mars, fn 75)"
+    assert not any("doubtful" in n for n in natures.values())
     assert stars["Regulus"] == pytest.approx(149.83, abs=0.05)
     chart = {"planetary_data": pdata(Sun=10.0, Moon=200.0, Mercury=20.0, Venus=30.0, Mars=300.0, Jupiter=250.0, Saturn=100.0),
              "ascendant": stars["Regulus"] + 0.4, "mc": 60.0}
