@@ -3431,13 +3431,41 @@ def test_small_and_mighty_days_take_any_start_point(engine):
 
 # --- GAP-31: IX.9, 11-13 as facts; 13's place half stopped on the unit -----------------------
 
-def test_governor_condition_rows_read_essence_and_sign_and_stop_on_the_place_unit(engine):
-    root, sr, _ = _two_charts(engine, natal=dict(Jupiter=250.0, Sun=100.0), rev=dict(Jupiter=255.0, Sun=110.0))
+def test_governor_condition_rows_read_essence_and_sign_and_judge_the_place_by_the_division(engine):
+    """IX.9, 11-13. 13's place half by the DIVISION in the revolution (the
+    owner's ruling of 2026-09-11, evening: an adopted dynamic-fitness
+    reading, not the text's unit; GAP-31). Pisces rising in the revolution
+    with equal cusps: Jupiter at 15 Sagittarius on the tenth cusp is "in a
+    stake" and in his house -- met; with the tenth cusp 6 degrees on he is
+    in the ninth division (not carried) -- not met; 4 degrees on, carried
+    by the axial allowance -- met. Without cusps the place half is not
+    computed. The three statements and the qualified confidence (IX.5, 4
+    fn 106) are on the row."""
+    root, sr, _ = _two_charts(engine, natal=dict(Jupiter=250.0, Sun=100.0), rev=dict(Jupiter=255.0, Sun=110.0), r_asc=345.0)
     rows = engine["pn4_governor_condition"]("Jupiter", root, sr)
     assert [r["Source"] for r in rows] == ["IX.9, 11", "IX.9, 12", "IX.9, 13"]
     assert "NOT JUDGED" in rows[0]["Criteria"] and "by the ecliptic proxy" in rows[0]["Criteria"]
     assert "testimony in it met (house" in rows[1]["Criteria"]                    # Jupiter in Sagittarius, his house, both charts
-    assert rows[2]["Met"].startswith("not judged") and "unit awaits the owner" in rows[2]["Criteria"]
+    assert rows[2]["Met"] == "not computed" and "not computed (no cusps)" in rows[2]["Criteria"]
+    sr["houses"] = [(345.0 + 30.0 * i) % 360.0 for i in range(12)]
+    row13 = engine["pn4_governor_condition"]("Jupiter", root, sr)[2]
+    assert row13["Met"] == "yes" and "division 10" in row13["Criteria"] and "follows a stake\" met; sign half: met" in row13["Criteria"]
+    for statement in ("(i) PN IV IX.9, 13 supplies the requirement itself",
+                      "(ii) The project canon (OWNER_RULING_PLACES_VS_DYNAMICS_2026-09-11) supplies its operational interpretation",
+                      "(iii) Alcabitius and the axial 5-degree allowance come from that adopted convention, not from the text",
+                      "IX.5, 4 fn 106 (p. 602)", "dynamic angularity (advancing or withdrawing), here and in 7, 11, and 14",
+                      "IX.5, 9 (p. 603", "V.1, 28 fn 15"):
+        assert statement in row13["Criteria"], statement
+    assert "unit awaits the owner" not in row13["Criteria"]
+    sr["houses"][9] = 261.0                                                        # the tenth cusp 6 degrees on: the ninth division
+    row13 = engine["pn4_governor_condition"]("Jupiter", root, sr)[2]
+    assert row13["Met"] == "no" and "division 9" in row13["Criteria"]
+    sr["houses"][9] = 259.0                                                        # 4 degrees on: carried into the tenth
+    assert engine["pn4_governor_condition"]("Jupiter", root, sr)[2]["Met"] == "yes"
+    sr["houses"][9] = 255.0
+    sr["planetary_data"]["Jupiter"]["longitude"] = 185.0                           # 5 Libra: the seventh, a stake, no testimony of his
+    row13 = engine["pn4_governor_condition"]("Jupiter", root, sr)[2]
+    assert row13["Met"] == "no" and "follows a stake\" met; sign half: not met" in row13["Criteria"]
     assert engine["pn4_governor_condition"](None, root, sr) == []
 
 

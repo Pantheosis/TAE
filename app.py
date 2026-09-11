@@ -10381,11 +10381,22 @@ def pn4_governor_condition(governor, chart_data, sr):
     with it by nature, or it had testimony in it" -- the first half is not
     read, the second is a dignity of its own at its degree. 13, "in terms of
     the rotation of the circle (and that is if it was in a stake or in what
-    follows a stake) as well as in its sign": THE PLACE HALF IS NOT APPLIED
-    -- the work order counts it by whole-sign place, the canon's dispatch
-    (strength language: "rotation of the circle", "rank, power") says the
-    divisions, and that conflict is the one class of question left to the
-    owner; both readings are printed, neither judged. halb: the diurnal
+    follows a stake) as well as in its sign": the place half is JUDGED BY
+    THE DIVISION (get_effective_house, Alcabitius, the five degrees at the
+    four axial degrees) in the revolution -- the owner's ruling of
+    2026-09-11 (evening), an ADOPTED DYNAMIC-FITNESS READING under the
+    canon (OWNER_RULING_PLACES_VS_DYNAMICS), not the text's own unit: the
+    text supplies the requirement (13, with 12's sign condition), the
+    canon its operational interpretation (strength/fitness language -> the
+    divisions), and Alcabitius with the axial allowance come from that
+    convention. Historical confidence in the exclusive division reading is
+    QUALIFIED: IX.5, 4 fn 106 (p. 602) glosses "rotation" as "either to
+    their being in the good or bad places, or to their dynamic angularity
+    (advancing or withdrawing), here and in 7, 11, and 14" -- both spatial
+    readings left open in the closest parallel (IX.5, 9, p. 603: fortunes
+    "in the stakes or what follows them" -> "might, power, rank,
+    reputation, class", the same triad as IX.9, 13). The work order's
+    "whole-sign place" was corrected by the ruling. halb: the diurnal
     planets above the earth by day and below by night, the nocturnal the
     reverse, Mercury by his phase -- by altitude where the horizon is
     known, else by the ecliptic proxy (said in the row)."""
@@ -10445,16 +10456,32 @@ def pn4_governor_condition(governor, chart_data, sr):
                                        f"({', '.join(f['testimony']) or 'none of its dignities'}); harmonized by nature: NOT READ" for f in (root, rev)),
                  'Met': 'yes, on the judged criteria' if all(own) else 'no',
                  'Conclusion (quoted)': '"it indicates the strength of the body, and a suitable condition in it"', 'Source': 'IX.9, 12'})
-    wsh = get_wsh_house(rev['lon'], sr['ascendant'])
     div = get_effective_house(rev['lon'], sr['houses']) if sr.get('houses') else None
+    place_ok = div in PN4_STAKES_AND_SUCCEDENTS if div is not None else None
     rows.append({'Test': 'IX.9, 13: suitable in terms of the rotation of the circle, and in its sign',
-                 'Criteria': (f"place half NOT APPLIED -- unit awaits the owner: the work order counts \"in a stake or in what follows a "
-                              f"stake\" by whole-sign place from the revolution's Ascendant (here {wsh}), the canon's dispatch for "
-                              f"strength language (\"rotation of the circle\", \"rank, power\") says the Alcabitius division "
-                              f"(here {div if div is not None else '-'}); sign half: {'met' if own[1] else 'not met'} (12, in the revolution)"),
-                 'Met': 'not judged (place half stopped)',
+                 'Criteria': (f"place half: in the revolution, division {div if div is not None else '-'} -- \"in a stake or in what "
+                              f"follows a stake\" {'met' if place_ok else ('not met' if place_ok is not None else 'not computed (no cusps)')}; "
+                              f"sign half: {'met' if own[1] else 'not met'} (12, in the revolution). "
+                              + PN4_IX_9_13_UNIT_STATEMENTS),
+                 'Met': ('yes' if (place_ok and own[1]) else 'no') if place_ok is not None else 'not computed',
                  'Conclusion (quoted)': '"it indicates a suitability of condition in rank, power, and class"', 'Source': 'IX.9, 13'})
     return rows
+
+PN4_STAKES_AND_SUCCEDENTS = (1, 4, 7, 10, 2, 5, 8, 11)
+# The three statements the owner's ruling of 2026-09-11 (evening) asks the
+# page to carry, separately, on IX.9, 13's place half.
+PN4_IX_9_13_UNIT_STATEMENTS = (
+    "(i) PN IV IX.9, 13 supplies the requirement itself: \"in a stake or in what follows a stake\", together with the "
+    "additional sign-condition requirement (\"as well as in its sign\", from 12). "
+    "(ii) The project canon (OWNER_RULING_PLACES_VS_DYNAMICS_2026-09-11) supplies its operational interpretation: "
+    "strength/fitness language -> the divisions. "
+    "(iii) Alcabitius and the axial 5-degree allowance come from that adopted convention, not from the text. "
+    "Historical confidence in the exclusive division reading is QUALIFIED: IX.5, 4 fn 106 (p. 602) glosses \"rotation\" as "
+    "\"either to their being in the good or bad places, or to their dynamic angularity (advancing or withdrawing), here and "
+    "in 7, 11, and 14\" -- both spatial readings expressly left open in the closest parallel, IX.5, 9 (p. 603: fortunes \"in "
+    "the stakes or what follows them\" -> \"might, power, rank, reputation, class\", the same triad as IX.9, 13); V.1, 28 fn "
+    "15 (\"the house which that sign occupies\") beside it."
+)
 
 def pn4_first_month_governor(natal_ascendant, natal_fortune, year_lon, sr_ascendant, sr_fortune):
     """IX.2, 4: the five conditions, one by one, and whether all hold."""
@@ -14561,8 +14588,10 @@ if location_query and lat is not None and lon is not None:
                 st.dataframe(pd.DataFrame(gov_rows), hide_index=True, width='stretch', height=_rows_height(8))
                 if pn4['governor_condition']:
                     st.markdown(f"**IX.9, 11-13, the condition of the primary planet ({gov['primary'][0]}), as facts** -- the "
-                                "conclusions quoted, not pronounced; 13's place half is NOT applied: its unit (whole-sign place "
-                                "in the work order; the division under the canon's dispatch for strength language) awaits the owner.")
+                                "conclusions quoted, not pronounced; 13's place half (\"in a stake or in what follows a stake\") is "
+                                "judged by the Alcabitius DIVISION in the revolution, the five degrees at the four axial degrees -- "
+                                "the unit is the CANON'S (an adopted dynamic-fitness reading, owner 2026-09-11), not the text's; "
+                                "the row states the three parts and the qualified confidence (IX.5, 4 fn 106).")
                     st.dataframe(pd.DataFrame(pn4['governor_condition']), hide_index=True, width='stretch', height=_rows_height(3))
                 fm_rows, fm_verdict = pn4['first_month_governor']
                 st.markdown(f"**IX.2, 4:** {fm_verdict}")
@@ -14577,8 +14606,8 @@ if location_query and lat is not None and lon is not None:
                            "\"The first lord\" of the revolution's Ascendant is read as its domicile lord (fn 324). The "
                            "IX.2 test is strict and most years fail it, so its five conditions are shown one by one; "
                            "Dykes' fn 39 (age 39, everything in Cancer, the Moon) is the case it is checked against. "
-                           "IX.9, 11-13 are shown as facts above (12's 'harmonized by nature' not read; 13's place half stopped on its "
-                           "unit, for the owner); IX.2, 8-11, the delineations, are not built.")
+                           "IX.9, 11-13 are shown as facts above (12's 'harmonized by nature' not read; 13's place half by the "
+                           "division, the canon's unit, ruled 2026-09-11); IX.2, 8-11, the delineations, are not built.")
 
                 st.subheader("The Moon's connections in her sign, and the portions of the year (II.22)",
                              help="II.22, 1: \"the planet which the Moon connects with, so long as she is in her [current] "
