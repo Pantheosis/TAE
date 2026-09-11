@@ -5,9 +5,15 @@ The 2026-09-08 audit (synthesis/10_on_nativities_citation_audit.md) found
 four citations of chapters that do not exist -- "Ch. 11.5", "Ch. 10.2.9",
 "Ch. 3.1.2" -- and several more that name a real chapter but the wrong
 one (5.2 for 5.3, 7.4 for 7.2, 11.4 for 11.2, 3.12 for 3.13). Paragraph
-numbers cannot be pinned mechanically from the OCR (bold markers, LaTeX
-degree signs and footnote superscripts make "44" ambiguous), so this test
-holds only what it can hold everywhere: the chapter number.
+numbers CAN be pinned mechanically -- an earlier version of this docstring
+said they could not, and the 2026-09-10 read-through (process/
+SAHL_READTHROUGH_FINDINGS_2026-09-10.md Sec. 1c) measured 154 of 187
+citation instances carrying an explicit sentence number, against a corpus
+that numbers its sentences in the body text. What defeats a naive matcher
+is only that sentences run *inline* within a paragraph, so a line-leading
+match finds roughly half; process/sahl_corpus.py is a working accessor.
+This test nonetheless holds only the chapter number -- extending it to the
+sentence is possible and has not been done.
 
 CHAPTERS is vendored from the headings of on_nativities.md (173 headings:
 12 chapter-level, 161 sub-level), extracted 2026-09-08, so the test runs in
