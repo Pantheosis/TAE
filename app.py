@@ -5298,7 +5298,11 @@ NOT_IMPLEMENTED_COVERAGE = [
      "condition in its own right (ASC to MC and DSC to IC advancing: primary motion "
      "toward the meridian). Read from the margin of the Figure 90 reshoot and Dykes' "
      "note on On Nativities 10.3; distinct from Sahl 83, which is his own Ch.3, 4. "
-     "Recorded as ADVANCING_BY_QUADRANT_FIG90, not yet scored."),
+     "Recorded as ADVANCING_BY_QUADRANT_FIG90, not yet scored. Sahl's own natal timing uses "
+     "the quadrants (On Nativities 7.4, 17, marriage: \"the two eastern quarters, in what is "
+     "between the Ascendant and the Midheaven, and what is opposite that\"; 5.3, 11-12, children) "
+     "and a clockwise scheme for chronic illness (6.5, 1); On Times 1, 14's preference for "
+     "Masha'allah's hemispheres (On Choices 6, 16-17) is On Times 1's alone (order DIS-9)."),
     ("Gr. Intr. VII.5, 32-33", "Mixing of natures BY RAY across a sign boundary "
      "(Fig. 121: Moon 29 59' Aquarius, Saturn's trine ray at 1 Pisces). Only the "
      "body-to-body case of VII.4, 13-14 is reported."),
@@ -5877,6 +5881,14 @@ FEMININE_QUADRANT_HOUSES = {1, 2, 3, 7, 8, 9}
 # the 2026-09-07 review (synthesis/05, Tier 3) and the report it reviewed
 # (synthesis/04, A4) differ, it is only on whether Ch. 6, 30 counts as a
 # use of the scheme; this comment follows the review and cites 16-17 alone.
+#
+# And Sahl's OWN natal timing uses the quadrants that On Times 1, 14 sets
+# aside: On Nativities 7.4, 17 (marriage: the Moon "in the two eastern
+# quarters, in what is between the Ascendant and the Midheaven, and what is
+# opposite that"), 5.3, 11-12 (children), and a clockwise scheme for chronic
+# illness at 6.5, 1. So "Sahl prefers Masha'allah's hemispheres" is true of
+# On Times 1 alone; any future build of those three rules uses the scheme its
+# own sentence names (order DIS-9, 2026-09-11). Nothing here is scored.
 ADVANCING_BY_QUADRANT_FIG90 = {4, 5, 6, 10, 11, 12}   # Gr. Intr. VII.3, 2 / VI.26, 3; not Sahl 83
 
 # Approximate geocentric distance range (AU) per planet, used only as a

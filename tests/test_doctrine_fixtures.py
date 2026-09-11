@@ -3235,3 +3235,10 @@ def test_activation_confirmation_names_the_distribution_that_confirms(engine):
             assert r["Planet"] in (seg["distributor"], seg["partner"])
     only_asc = engine["pn4_activation_ages"](points, 23.44, 43.78, asc_segs)
     assert all("Ascendant's" in c for r in only_asc for c in r["Confirmed by the distribution"].split(";") if "as " in c)
+
+
+# --- DIS-9: the caveat row names Sahl's own quadrant timing beside On Times 1's hemispheres ----
+
+def test_quick_and_slow_places_caveat_names_sahls_own_natal_timing(engine):
+    row = next(t for c, t in engine["NOT_IMPLEMENTED_COVERAGE"] if "ADVANCING_BY_QUADRANT_FIG90" in t)
+    assert "7.4, 17" in row and "5.3, 11-12" in row and "6.5, 1" in row and "On Choices 6, 16-17" in row
