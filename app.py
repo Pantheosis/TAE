@@ -10976,18 +10976,42 @@ def pn4_monthly_indicators(month, completed_years, sign_of_year_lon, natal_fortu
 # one in turn is stronger in indication than the one which is after it".
 # The first four are implemented; the rest are delineation material.
 #
-# This ordering resolves corpus disagreement #1 BY SCOPE, not by
-# combination. Within a single year the lord of the year outranks the
-# distributor (II.1, 25; II.23, 1). Across several years the distribution
-# is stronger, because "the indication of the lord of the terminal point
-# is only over the condition of THAT YEAR: but as for the lord of the
-# distribution, sometimes its indication ... is for SEVERAL YEARS", and
-# the year's indicators are then read "as witnesses" to it (III.2, 2-3).
-# The two statements are indexed to different scopes and do not conflict.
+# PN IV's own order is applied on the PN IV page and RANKS BY SCOPE. Within
+# a single year the lord of the year outranks the distributor (II.1, 25;
+# II.23, 1). Across several years the distribution is stronger, because
+# "the indication of the lord of the terminal point is only over the
+# condition of THAT YEAR: but as for the lord of the distribution,
+# sometimes its indication ... is for SEVERAL YEARS", and the year's
+# indicators are then read "as witnesses" to it (III.2, 2-3).
+#
+# This does not RESOLVE corpus disagreement #1 (an earlier comment said it
+# did, "by scope"): Sahl's two consecutive chapters rank the pair in
+# opposite orders AS PRINTED -- 1.23, 33 "the lord of the distribution is
+# like a tender [of sheep], and the lord of the year like a hireling"
+# (the distributor over the lord of the year) against 1.24, 2 "turning is
+# the foundation of the work of the stars ... and it is stronger <than>
+# the distributor of time" (the turning over the distributor); Dykes fn
+# 245 emends the second ("stronger when combined with the distributor"),
+# not adopted. Each of PN IV's two scoped rankings agrees with one Sahl
+# sentence: II.1, 25 with 1.24, 2 within the year, III.2, 2-3 with 1.23,
+# 33 across years. Both Sahl sentences are shown side by side on the page
+# (PN4_YEAR_INDICATOR_SCOPE_NOTE; order GAP-3, 2026-09-11).
 #
 # Dykes' Introduction Sect. 3 (p. 21, point 3) states the opposite --
 # distributions "tend to be more powerful than profections" -- and cites no
 # Abu Ma'shar sentence for it. II.1, 25 governs here, not Intro Sect. 3.
+PN4_YEAR_INDICATOR_SCOPE_NOTE = (
+    "The order above is PN IV's, which ranks the lord of the year and the distributor BY SCOPE: within the year the "
+    "lord of the year is the stronger (II.1, 25; II.23, 1), across several years the distribution (III.2, 2-3). "
+    "Sahl's two consecutive chapters rank them in opposite orders as printed -- On Nativities 1.23, 33: \"the lord "
+    "of the distribution is like a tender [of sheep], and the lord of the year like a hireling; so if the tender "
+    "committed himself to his sheep in a powerful way, the hireling would have not power over harming the sheep\" "
+    "(the distributor over the lord of the year); 1.24, 2: \"turning is the foundation of the work of the stars and "
+    "[their] appointed time, and it is stronger <than> the distributor of time\" (the turning over the distributor). "
+    "Dykes fn 245 emends the second (\"stronger when combined with the distributor\"), not adopted here. PN IV's "
+    "within-the-year ranking agrees with 1.24, 2 and its across-years ranking with 1.23, 33; the disagreement stands "
+    "recorded, not resolved."
+)
 PN4_YEAR_INDICATOR_ORDER = (
     'The sign of the terminal point, and its lord',
     'The distribution and the distributor',
@@ -12997,9 +13021,10 @@ if location_query and lat is not None and lon is not None:
                                   "is stronger in indication than the one which is after it\". The first five are computed "
                                   "here; the rest are delineation material. Note the order: WITHIN A YEAR the lord of the "
                                   "year outranks the distributor (II.1, 25; II.23, 1). Across several years the "
-                                  "distribution is the stronger (III.2, 2-3) -- the two are indexed to different scopes, "
-                                  "which is how PN IV resolves the corpus disagreement.")
+                                  "distribution is the stronger (III.2, 2-3) -- PN IV ranks them by scope; Sahl's 1.23, 33 "
+                                  "and 1.24, 2 contradict each other as printed (the caption under the table).")
                 st.dataframe(pd.DataFrame(pn4['year_rows']), hide_index=True, width='stretch')
+                st.caption(PN4_YEAR_INDICATOR_SCOPE_NOTE)
 
                 st.subheader("The sign of the terminal point and its lord, examined (II.3, 2-19)",
                              help="II.3, 2: examine the sign of the terminal point in the root -- which house of the circle, "

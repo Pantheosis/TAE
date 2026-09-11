@@ -2943,3 +2943,13 @@ def test_unwitnessed_luminary_row_names_nawbakhts_gate_and_al_andarzaghars_rule(
     r2 = _releaser(engine, 215.0, "Diurnal", Sun=165.0, Mercury=340.0)
     sun2 = next(c for c in r2["candidates"] if c["Candidate"] == "the Sun")
     assert r2["releaser"] == "the Sun" and "1.15, 7" not in sun2["Verdict"] and "1.16, 4" not in sun2["Verdict"]
+
+
+# --- GAP-3: Sahl 1.23, 33 and 1.24, 2 shown side by side; PN IV ranks by scope ---
+
+def test_year_indicator_note_shows_sahls_two_sentences_and_does_not_claim_to_resolve_them(engine):
+    note = engine["PN4_YEAR_INDICATOR_SCOPE_NOTE"]
+    assert "1.23, 33" in note and "1.24, 2" in note and "fn 245" in note
+    assert "tender [of sheep]" in note and "stronger <than> the distributor of time" in note
+    assert "II.1, 25" in note and "III.2, 2-3" in note
+    assert "resolves the corpus disagreement" not in note and "not resolved" in note
