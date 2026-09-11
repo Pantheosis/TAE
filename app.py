@@ -8882,6 +8882,103 @@ def sahl_house_master_years(planet, planetary_data, cusps, sect, essential):
             'division': q, 'facts': {'share': share, 'eastern': east, 'westernizing': west, 'retrograde': retro,
                                      'under the rays': rays, 'fall': fall}, 'readings': SAHL_1_20_READINGS}
 
+# --- Sahl, On Nativities 2.13, 48-51: the sect light's first triplicity lord by ascensional band ---
+# 48: "of the more powerful indications of good fortune is if the first lord of
+# the triplicity of the glowing one [fn 190: the sect light] is in a stake or
+# what follows it, and that is the 15 degrees which follows it, by degrees of
+# ascensions: for if it was like that, it indicates praise and good fortune
+# (and what is less [than that] in degrees is preferable). 49 Now if it was in
+# the second 15 degrees, it indicates his good fortune is below the first
+# [type]. 50 And if it was in the third 15 degrees, it indicates [what is in]
+# the middle of assets. 51 And what is after that in degrees, up to the next
+# stake, is of the nativities of the poor." Read in the corpus 2026-09-11 (the
+# owner's addendum required it) before this was built. fn 189: Carmen I.28,
+# 1-6; the printed Carmen (p. 108, the owner's photograph) has the same four
+# parts, its third 15 "middling in assets", then "needy" to the next stake, and
+# says "the lord" where Sahl says "the first lord" -- cite 2.13 for "first".
+# 2.3, 4 with fns 82-83 is the same rule misreported from the sign's start.
+#
+# A DIFFERENT RULE from Aphorism 45 (FINAL-A4, CLOSED; owner, sheet row 5):
+# the aphorism speaks of EVERY planet and of being "in the situation of one
+# who is in the stake" (90-92, with a zodiacal example, 10 to 25 Aries); fn 57
+# calls it "misstated" and measured in ascensions. The aphorism stays as
+# printed and is NOT applied; 2.13 is built under its own name for one planet;
+# the per-planet table is the ENGINE'S GENERALISATION of 2.13 and is labelled
+# so (DIS-12 addendum). The 2026-09-07 policy "implement the editor's
+# ascensional correction of Aphorism 45" is retired by the same ruling.
+#
+# CONVENTIONS, the engine's, none a sentence of any text: the interval is the
+# one between consecutive ACTUAL stakes in zodiacal order (Asc, IC, Dsc, MC),
+# measured from the stake the planet FOLLOWS (zodiacally after it -- 2.13
+# "what follows it"; Intro 2, 33 "rising up to them"; Aph. 45's 10 to 25
+# Aries); oblique ascension at the horizon (the Descendant by the oblique
+# descension, i.e. the OA of the opposite degree) and RIGHT ascension at the
+# meridian (Carmen gives one rising instruction for all four; the split is a
+# declared engine convention); the planet's ECLIPTIC degree, latitude ignored;
+# bands end-inclusive, 0-15, 15-30, 30-45, the remainder to the next stake; a
+# planet on the next stake re-anchors at zero; the five-degree allowance of
+# Aphorism 44 lies on the OTHER side of the stake and is NOT inherited here
+# (51's "up to the next stake" stands). Refused where the ascension has no
+# inverse (D-23), as every ascensional measure here is.
+SAHL_2_13_BANDS = (
+    (15.0, 'first 15 degrees of ascension', 'praise and good fortune (48; "what is less [than that] in degrees is preferable")'),
+    (30.0, 'second 15 degrees', 'good fortune below the first type (49)'),
+    (45.0, 'third 15 degrees', 'the middle of assets (50; the printed Carmen I.28, 6 reads "needy" here -- a variant, not harmonised)'),
+    (None, 'the remainder, up to the next stake', 'of the nativities of the poor (51)'),
+)
+
+def evaluate_ascensional_bands(planetary_data, ascendant_lon, mc_lon, obliquity, geo_lat, sect):
+    """Every planet's ascensional distance past the stake it follows, in
+    2.13's three bands and remainder -- the ENGINE'S GENERALISATION, display
+    only, an ordinal preference and no score -- with 2.13, 48-51's own
+    judgment applied to the one planet the text names, the sect light's
+    first triplicity lord; and Aphorism 45 AS PRINTED (15 zodiacal degrees)
+    beside it, not applied. Returns {'rows', 'judged', 'first_lord',
+    'refused'}; 'refused' carries the reason at the poles."""
+    if not _ascensional_method_applies(obliquity, geo_lat):
+        return {'rows': [], 'judged': None, 'first_lord': None,
+                'refused': f"refused at latitude {geo_lat:.1f}: the ascensions have no unique inverse here (decision D-23)"}
+    asc, mc = ascendant_lon % 360.0, mc_lon % 360.0
+    stakes = [('Ascendant', asc), ('fourth (IC)', (mc + 180.0) % 360.0), ('setting degree (Dsc)', (asc + 180.0) % 360.0), ('Midheaven', mc)]
+
+    def measure(stake_name, stake_lon, lon):
+        """The directed distance from the stake to the degree, in the stake's ascension."""
+        if stake_name == 'Ascendant':
+            return (_oblique_ascension(lon, obliquity, geo_lat) - _oblique_ascension(stake_lon, obliquity, geo_lat)) % 360.0
+        if stake_name.startswith('setting'):
+            return (_oblique_ascension((lon + 180.0) % 360.0, obliquity, geo_lat)
+                    - _oblique_ascension((stake_lon + 180.0) % 360.0, obliquity, geo_lat)) % 360.0
+        return (_ra_decl(lon, obliquity)[0] - _ra_decl(stake_lon, obliquity)[0]) % 360.0
+
+    light = 'Sun' if sect == 'Diurnal' else 'Moon'
+    trip = TRIPLICITY[SIGN_ELEMENT[get_zodiac_sign(planetary_data[light]['longitude'])]]
+    first_lord = trip['Day'] if sect == 'Diurnal' else trip['Night']
+    rows, judged = [], None
+    for planet in PN4_SEVEN:
+        if planet not in planetary_data:
+            continue
+        lon = planetary_data[planet]['longitude'] % 360.0
+        # the stake the planet follows: the nearest one zodiacally behind it
+        name, s_lon = min(stakes, key=lambda st: (lon - st[1]) % 360.0)
+        nxt_name, nxt_lon = min(((n, l) for n, l in stakes if n != name), key=lambda st: (st[1] - lon) % 360.0)
+        x = measure(name, s_lon, lon)
+        to_next = measure(name, s_lon, nxt_lon)
+        if x > to_next:                      # numerical guard: the planet cannot be past the next stake
+            x = to_next
+        band = next((label for limit, label, _j in SAHL_2_13_BANDS if limit is not None and x <= limit), SAHL_2_13_BANDS[-1][1])
+        judgment = next((j for limit, label, j in SAHL_2_13_BANDS if label == band))
+        printed = (lon - s_lon) % 360.0 <= 15.0
+        row = {'Planet': planet, 'Follows the stake': f"{name} ({get_degree_string(s_lon)})",
+               'Ascensional distance': f"{x:.2f} deg ({'oblique' if name in ('Ascendant',) or name.startswith('setting') else 'right'} ascension)",
+               'To the next stake': f"{to_next:.2f} deg ({nxt_name})",
+               'Engine grade (generalised from 2.13, 48-51)': band,
+               'Aphorism 45 as printed (15 zodiacal degrees; not applied)': 'within' if printed else 'beyond',
+               '2.13, 48-51 (the sect light\'s first triplicity lord only)': judgment if planet == first_lord else '-'}
+        rows.append(row)
+        if planet == first_lord:
+            judged = {'planet': planet, 'band': band, 'judgment': judgment, 'distance': x, 'stake': name}
+    return {'rows': rows, 'judged': judged, 'first_lord': first_lord, 'refused': None}
+
 def sahl_releaser(planetary_data, ascendant_lon, cusps, sect, lot_of_fortune, meeting_lon, fullness_lon):
     """Nawbakht's selection (On Nativities 1.15, 6-16) with 1.16's
     exception and 1.20, 2-5's ranking of the house-master. Returns
@@ -12289,6 +12386,7 @@ if location_query and lat is not None and lon is not None:
         non_reception_data = evaluate_non_reception(p_data, sect)
         strength_data = evaluate_strength_of_planets(p_data, essential, accidental, chart_data['ascendant'], sect, chart_data['houses'])
         weakness_data = evaluate_weakness_of_planets(p_data, essential, accidental, chart_data['ascendant'], sect)
+        ascensional_bands = evaluate_ascensional_bands(p_data, chart_data['ascendant'], chart_data['mc'], chart_data['obliquity'], lat, sect)
         _moon = evaluate_corruption_of_the_moon(p_data, chart_data['ascendant'], sect)
         # Count is "how many of Sahl's ten testimonies", never the number of
         # clauses that matched: 104 and 109 can each be met by several
@@ -12900,6 +12998,34 @@ if location_query and lat is not None and lon is not None:
                                'Weakness Testimonies', WEAKNESS_COLUMNS,
                                glance="The ten testimonies of a planet's weakness at the time of judgment (Sahl, The Introduction Ch.3, 91-100), one column per testimony; the answer key under the grid spells each one out in words.",
                                notes="The ten (91-100): falling and averse to the Ascendant (the 6th or 12th), retrograde, under the rays, connecting with an infortune by assembly, square or opposition, enclosed between both infortunes, in its own fall, connecting with a falling planet or separating from a would-be receiver, alien (no house, exaltation or triplicity where it sits), with the Node and no latitude, or inverted (in detriment). Distinct from the Abu Ma'shar-based Planetary Condition table in his view, which scores a broader, later scheme.")
+                    _ab = ascensional_bands
+                    _finding(_gap, "The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the engine's generalisation",
+                             "Sahl, On Nativities 2.13, 48-51 (fn 189: Carmen I.28, 1-6); Fifty Aphorisms 45, 90-92 with fn 57, as printed and not applied",
+                             _ab['rows'] or [{'Refused': _ab['refused']}],
+                             glance=("2.13, 48: \"if the first lord of the triplicity of the glowing one is in a stake or what follows it, "
+                                     "and that is the 15 degrees which follows it, by degrees of ascensions ... it indicates praise and good "
+                                     "fortune (and what is less [than that] in degrees is preferable)\"; 49 the second 15, \"below the "
+                                     "first\"; 50 the third, \"the middle of assets\"; 51 \"what is after that in degrees, up to the next "
+                                     "stake, is of the nativities of the poor\". Stated for ONE planet, the sect light's first triplicity "
+                                     "lord (fn 190), and applied to it in the last column"
+                                     + (f" -- here {_ab['first_lord']}: {_ab['judged']['judgment']}" if _ab['judged'] else '') + "."),
+                             notes=("ENGINE ANGULAR-PROXIMITY GRADE, GENERALISED FROM SAHL, ON NATIVITIES 2.13, 48-51: the per-planet column "
+                                    "applies 2.13's distances to every planet, which no text does -- an ordinal preference, no score; "
+                                    "Aphorism 45 with fn 57 is credited for the universal-band analogy and Carmen I.28 for \"the more that it "
+                                    "is closer to the degree of the stake, the more elevated\". APHORISM 45 AS PRINTED: \"every planet which "
+                                    "is [distant] from the stake in what follows it, by 15 degrees, is in the situation of one who is in the "
+                                    "stake; and if it increases [beyond that], then it does not have strength\" (90-92; the example 10 to 25 "
+                                    "Aries). Dykes, fn 57: \"misstated here\" -- the source (Carmen I.28, 1-7; 2.13, 48-51 \"repeated "
+                                    "correctly\") measures ascensions. Shown as printed in its own column, not applied; a different rule from "
+                                    "2.13 (every planet, angular strength, one band) and not harmonised with it (FINAL-A4, owner 2026-09-11; "
+                                    "the 2026-09-07 policy to implement the editor's correction of the aphorism is retired). CONVENTIONS, "
+                                    "the engine's: the stake a planet FOLLOWS (zodiacally behind it: 2.13 \"what follows it\", Introduction "
+                                    "2, 33 \"rising up to them\"); oblique ascension at the horizon (the setting degree by the oblique "
+                                    "descension) and right ascension at the meridian, a split Carmen's single rising instruction does not "
+                                    "state; the ecliptic degree, latitude ignored; bands end-inclusive at 15, 30 and 45, truncated by the "
+                                    "next actual stake; the five-degree allowance (Aphorism 44) lies on the other side of the stake and is "
+                                    "not inherited. Refused where the ascension has no inverse (D-23). Carmen's third band (\"needy\") "
+                                    "differs from Sahl's 50 (\"the middle of assets\"); Sahl says \"the first lord\", Carmen \"the lord\"."))
                     _finding(_gap, 'Corruption of the Moon', 'Sahl, The Introduction Ch.3, 103-112', moon_corruption_data,
                               glance="Sahl's own ten defects of the Moon, item [16] of his sixteen -- a different list from Abu Ma'shar's eleven corruptions in the Planetary Condition table.",
                               notes="Sahl's ten (103-112): burned within 12 degrees of the Sun; in her own fall or connecting with a planet in its own fall; approaching the Sun's opposition within 12 degrees; assembled with, square or opposed by an infortune, or enclosed between the two; with the Head or Tail in one sign under 12 degrees; in Gemini or in the sign's last bound; falling from the stakes or connecting with a planet that is; in the burned path, the end of Libra and beginning of Scorpio; wild, empty of course; slow, or waning in light.\n\nAbu Ma'shar's eleven (VII.6, 63-74) are not a variant of this list. He has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear there. His list is scored in the Planetary Condition table, this one is not scored anywhere.")

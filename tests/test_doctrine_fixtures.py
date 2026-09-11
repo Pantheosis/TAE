@@ -3085,3 +3085,50 @@ def test_house_master_years_are_by_the_division_not_the_sign(engine):
     cusps2 = [215.0, 245.0, 275.0, 305.0, 335.0, 5.0, 35.0, 65.0, 105.0, 140.0, 165.0, 190.0]   # the cusp 8 degrees on: the ninth division
     g2 = engine["sahl_house_master_years"]("Jupiter", data, cusps2, "Nocturnal", ess)
     assert g2["division"] == 9 and g2["sentence"] == "1.20, 26"
+
+
+# --- FINAL-A4 (sheet row 5): 2.13, 48-51 under its own name; the engine's generalisation labelled; Aphorism 45 as printed ---
+
+def _bands(engine, lat=0.0, sect="Diurnal", asc=0.0, mc=270.0, **planets):
+    base = dict(Sun=20.0, Moon=200.0, Mercury=110.0, Venus=130.0, Mars=300.0, Jupiter=250.0, Saturn=160.0)
+    base.update(planets)
+    return engine["evaluate_ascensional_bands"](pdata(**base), asc, mc, 23.4392911, lat, sect)
+
+
+def test_2_13_grades_the_sect_lights_first_triplicity_lord_only_and_the_display_grades_all(engine):
+    """Day chart, the Sun at 20 Aries: the fire triplicity's first lord by
+    day is the Sun himself. At the equator with 0 Aries rising the
+    ascension from the Ascendant equals right ascension: 20 Aries is 18.4
+    degrees of ascension past the stake -- the SECOND band, "good fortune
+    below the first" (49). Mercury at 10 Aries stands in the first band
+    of the same stake with the engine's grade only, no 2.13 judgment; by
+    Aphorism 45 as printed Mercury (10 zodiacal degrees) is within and
+    the Sun (20) beyond, neither applied."""
+    out = _bands(engine, Sun=20.0, Mercury=10.0)
+    rows = {r["Planet"]: r for r in out["rows"]}
+    assert out["first_lord"] == "Sun" and out["judged"]["band"] == "second 15 degrees"
+    assert "below the first" in rows["Sun"]["2.13, 48-51 (the sect light's first triplicity lord only)"]
+    assert rows["Mercury"]["2.13, 48-51 (the sect light's first triplicity lord only)"] == "-"
+    assert rows["Mercury"]["Engine grade (generalised from 2.13, 48-51)"] == "first 15 degrees of ascension"
+    assert rows["Mercury"]["Aphorism 45 as printed (15 zodiacal degrees; not applied)"] == "within"
+    assert rows["Sun"]["Aphorism 45 as printed (15 zodiacal degrees; not applied)"] == "beyond"
+    assert rows["Sun"]["Follows the stake"].startswith("Ascendant")
+
+
+def test_2_13_bands_are_end_inclusive_and_truncated_by_the_next_stake(engine):
+    """At the equator RA(x) < x in Aries, so a planet whose RA is exactly
+    15 sits in band one (end-inclusive); the Midheaven at 30 Aries makes
+    a planet at 40 Aries follow the MIDHEAVEN by right ascension, not the
+    Ascendant, and the remainder is bounded by the next actual stake."""
+    out = _bands(engine, Sun=16.0, mc=30.0)                     # RA(16 Aries) = 14.7: band one, inclusive of 15
+    assert {r["Planet"]: r for r in out["rows"]}["Sun"]["Engine grade (generalised from 2.13, 48-51)"] == "first 15 degrees of ascension"
+    out = _bands(engine, Sun=40.0, mc=30.0)
+    sun = {r["Planet"]: r for r in out["rows"]}["Sun"]
+    assert sun["Follows the stake"].startswith("Midheaven") and "right ascension" in sun["Ascensional distance"]
+    out = _bands(engine, Sun=60.0, mc=270.0)                    # 60 Aries-Taurus: RA 57.8 past the Ascendant, the remainder
+    assert {r["Planet"]: r for r in out["rows"]}["Sun"]["Engine grade (generalised from 2.13, 48-51)"] == "the remainder, up to the next stake"
+
+
+def test_2_13_refuses_at_the_poles(engine):
+    out = _bands(engine, lat=70.0)
+    assert out["rows"] == [] and "D-23" in out["refused"]
