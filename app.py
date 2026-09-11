@@ -8820,6 +8820,38 @@ def sahl_house_master_in_revolution(house_master, chart_data, sr):
         {'Fact': 'With an infortune in its sign', 'Reads': ', '.join(with_infortune) or 'none', 'Source': '1.23, 2-4'},
     ]
 
+def sahl_house_master_turning(house_master, planetary_data, span_years=PN4_DISTRIBUTION_SPAN_YEARS):
+    """PN IV IX.8, 30: "if the turning of the years from any of the five
+    releasers (or from the indicator of the lifespan) reached their bodies,
+    oppositions, or squares, then they also kill" -- the indicator of the
+    lifespan (Sahl's house-master, 1.30, 35) TURNED a year a sign from its
+    natal sign, which IX.8, 32 says is the only operation for it ("the
+    indicator of the lifespan alone is turned in the signs, sign-by-sign,
+    and is not directed degree-by-degree"). One row per year of age in
+    which the turned sign holds a cutter's body or is its opposition or
+    square sign; "their" is the cutters' -- Saturn and Mars, the infortunes
+    the direction table already targets (IX.8, 6-19 name the cutters more
+    widely; the two bodies and their rays are the ones both authors share).
+    Whole-sign turning, as VI.2, 1's. PN IV's own rule, shown beside
+    Sahl's direction (FINAL-A2, decision sheet row 2, 2026-09-11)."""
+    if house_master not in planetary_data:
+        return []
+    start_idx = int(planetary_data[house_master]['longitude'] % 360.0 // 30)
+    cutters = []
+    for p in SAHL_INFORTUNES:
+        if p in planetary_data and p != house_master:
+            idx = int(planetary_data[p]['longitude'] % 360.0 // 30)
+            cutters += [(idx, f"{p}'s body"), ((idx + 6) % 12, f"{p}'s opposition"),
+                        ((idx + 3) % 12, f"{p}'s square (left)"), ((idx - 3) % 12, f"{p}'s square (right)")]
+    rows = []
+    for year in range(int(span_years)):
+        sign_idx = (start_idx + year) % 12
+        hits = [label for idx, label in cutters if idx == sign_idx]
+        if hits:
+            rows.append({'Year of age': year, 'Turned sign': SIGN_ORDER[sign_idx],
+                         'Reaches': ', '.join(hits), 'Source': 'PN IV IX.8, 30'})
+    return rows
+
 def sahl_house_master_flags(house_master, planetary_data, cusps):
     """1.23, 12: "perhaps one will not be able to be guided by the
     governor ... if the governor is one of the infortunes, or it is the
@@ -11493,6 +11525,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'releaser_stand': releaser_stand, 'house_master': house_master, 'hm_direction': hm_direction,
         'hm_this_year': hm_this_year, 'hm_revolution': hm_revolution, 'hm_flags': hm_flags,
         'standin_moon': standin_moon,
+        'hm_turning': sahl_house_master_turning(house_master, chart_data['planetary_data']) if house_master else [],
         'ii3': pn4_ii3_examination(chart_data, sr, year, jd_sr),
         'iii2_type': pn4_static_type(current['distributor'], current['partner']) if current else None,
         'iii2_checklist': pn4_distribution_checklist(chart_data, sr, year['longitude'], current),
@@ -13537,6 +13570,32 @@ if location_query and lat is not None and lon is not None:
                                         f"facts for the house-master, for the record (1.23, 3-4):")
                         st.dataframe(pd.DataFrame(pn4['hm_revolution']), hide_index=True, width='stretch',
                                      height=_rows_height(len(pn4['hm_revolution'])))
+                    st.markdown(
+                        "**The join, and the denial beside it.** The house-master directed here is selected by NAWBAKHT'S "
+                        "rule (1.15, 13: the dignity lord looking at the releaser) and directed by MASHA'ALLAH'S operation "
+                        "(1.23, 2, \"direct it\" -- the governor); 1.23, 40 and 43 call Masha'allah's governor \"the "
+                        "house-master\" in Sahl's own words, but his governor is found by reception (1.23, 1), and the two "
+                        "rules name different planets in about a third of charts. The join is this engine's; no sentence "
+                        "states it. Abu Ma'shar denies the direction: \"the indicator of the lifespan alone is turned in "
+                        "the signs, sign-by-sign, and is not directed degree-by-degree\" (PN IV IX.8, 32; fn 129: \"Some "
+                        "texts say that one can also distribute the house-master itself, but to me that seems like a "
+                        "misunderstanding\"). Shown as Sahl's, with the denial beside it (owner, 2026-09-11, decision "
+                        "sheet row 2). Two limits of the denial, from the second blind reading: IX.8, 32 restricts the "
+                        "ROLE -- the planet may still be directed in another capacity, since \"all of the planets and Lots "
+                        "are [also] directed\" (III.1, 5); and 1.16, 4 (direct the luminary \"even if a house-master is "
+                        "not looking\") is a provision the 1.16 exception built above does not cover. IX.8, 30's turning, "
+                        "the one operation Abu Ma'shar licenses for the indicator, follows as PN IV's:")
+                    if pn4['hm_turning']:
+                        st.dataframe(pd.DataFrame(pn4['hm_turning']), hide_index=True, width='stretch',
+                                     height=_rows_height(min(len(pn4['hm_turning']), 12)))
+                    else:
+                        st.markdown("The turned sign reaches no cutter's body, opposition or square within the span.")
+                    st.caption(f"**{pn4['house_master']}** turned a year a sign from its natal sign (whole signs, as VI.2, 1), "
+                               "the years in which the sign reaches a cutter's body, opposition or square: \"if the turning of "
+                               "the years from any of the five releasers (or from the indicator of the lifespan) reached their "
+                               "bodies, oppositions, or squares, then they also kill\" (PN IV IX.8, 30); \"the rest of the "
+                               "rays' direction ... is a weak testimony\" (31) and is not shown. Read: \"their\" as Saturn's "
+                               "and Mars's, the cutters the direction table targets.")
                 st.caption("Readings: \"the degree of burning\" is the Sun's natal degree; \"a year for every degree of "
                            "ascensions\" is the oblique ascension of the birth latitude applied to the house-master's own "
                            "degree, as 1.15, 17, 1.16, 4 and 1.18, 21 apply \"the ascensions of that city\" to the "

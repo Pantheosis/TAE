@@ -2980,3 +2980,23 @@ def test_no_releaser_names_the_stand_in_and_the_moon_is_directed(engine):
     assert "1.32, 11" in r["verdict"] and "the first of them is the Ascendant, then the Moon" in r["verdict"]
     assert "not applied" not in r["verdict"]
     assert not any(c == "1.32, 11-13" for c, _t in engine["SAHL_RELEASER_NOT_APPLIED"])
+
+
+# --- FINAL-A2 (sheet row 2): IX.8, 30's turning of the indicator, a year a sign ---------------
+
+def test_house_master_turning_reaches_the_cutters_bodies_oppositions_and_squares(engine):
+    """Jupiter the house-master at 15 Aries; Saturn at 10 Gemini, Mars at
+    20 Libra. Turned a year a sign from Aries: year 0 (Aries) is Mars's
+    opposition sign; year 2 (Gemini) Saturn's body; year 3 (Cancer) Mars's
+    square (right: Libra less three signs); year 6 (Libra) Mars's body;
+    year 12 Aries again. Years 1 and 4 reach nothing."""
+    p = pdata(Jupiter=(15.0, 0.08), Saturn=(70.0, 0.03), Mars=(200.0, 0.5), Sun=(300.0, 1.0), Moon=(10.0, 13.0))
+    rows = engine["sahl_house_master_turning"]("Jupiter", p, span_years=13)
+    by_year = {r["Year of age"]: r["Reaches"] for r in rows}
+    assert "Mars's opposition" in by_year[0] and by_year[0].count(",") == 0
+    assert by_year[2] == "Saturn's body"
+    assert by_year[3] == "Mars's square (right)"
+    assert by_year[6] == "Mars's body"
+    assert by_year[12] == by_year[0]
+    assert all(r["Source"] == "PN IV IX.8, 30" for r in rows)
+    assert 1 not in by_year and 4 not in by_year
