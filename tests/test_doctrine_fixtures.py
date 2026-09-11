@@ -2393,6 +2393,12 @@ def test_pn4_ix7_month_days_two_ways(engine):
     assert rows[0]["Way 1: a day per degree, now at"].startswith("14\u00b0 Ari 00'")
     assert rows[0]["Way 2: the day's sign"] == "Taurus"                                     # 4 // 2.5 = 1
     assert rows[0]["Way 2: this hour's sign"] == "Sagittarius"                              # 36 h into the slot: the eighth five-hour portion
+    # IX.7, 39: "it will return to the position which it began from" -- day
+    # 30.3 is 0.3 into the next month, 10 Ari 18' by way [1], Aries by way [2].
+    late = engine["pn4_ix7_month_days"](30.3, [("x", 10.0)])
+    assert late[0]["Way 1: a day per degree, now at"].startswith("10\u00b0 Ari 18'")
+    assert late[0]["Way 2: the day's sign"] == "Aries"
+    assert late[0]["Source"] == "IX.7, 35-39"
 
 
 def test_pn4_bundle_carries_the_day_methods(engine):

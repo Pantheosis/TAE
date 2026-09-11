@@ -10514,7 +10514,10 @@ def pn4_ix7_month_days(days_since_month, starts):
     """Method 8, IX.7, 34-39, for each of the seven starts (name, lon):
     way [1] a day per degree; way [2] a day per twelve degrees, 2 1/2 days
     to a sign, five hours to a sign within that."""
-    d = days_since_month
+    # IX.7, 39: past the thirtieth day "in the management of the days and
+    # hours it will return to the position which it began from" -- both
+    # ways wrap at 30 (order PN4R-4p-8; way [1] had run on into day 31).
+    d = days_since_month % 30.0
     rows = []
     for name, lon in starts:
         way1 = (lon + d) % 360.0
@@ -10525,7 +10528,7 @@ def pn4_ix7_month_days(days_since_month, starts):
         rows.append({'Start': name, 'Position': get_degree_string(lon),
                      'Way 1: a day per degree, now at': f"{get_degree_string(way1)} (bound of {pn4_bound_lord(way1)})",
                      'Way 2: the day\'s sign': way2_sign, 'Way 2: this hour\'s sign': way2_hour,
-                     'Source': 'IX.7, 35-38'})
+                     'Source': 'IX.7, 35-39'})
     return rows
 
 def pn4_ix7_ninth_parts(days_since_revolution, start_sign, start_offset_days=0.0):
