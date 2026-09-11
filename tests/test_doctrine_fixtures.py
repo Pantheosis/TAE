@@ -2964,3 +2964,19 @@ def test_orb_lord_holds_the_first_week_of_ix_7_7(engine):
     assert m2["week"] == "Venus" and m2["day"] == "Venus"
     from conftest import engine_source
     assert "IX.7, 7-8 are not built" not in engine_source()
+
+
+# --- FINAL-A7 (sheet row 8): the stand-in of 1.32, 11-13 in the empty case ---------------
+
+def test_no_releaser_names_the_stand_in_and_the_moon_is_directed(engine):
+    """Scorpio rising by day: the Sun at 10 Cancer (ninth, falling) and the
+    meeting at 15 Aries (sixth) fail; no fortune looks at Scorpio (Venus
+    and Jupiter both in Sagittarius, the adjacent sign), so the Ascendant
+    fails 1.15, 16. The verdict now quotes 1.32, 13 across the page break
+    -- "the first of them is the Ascendant, then the Moon" -- and 1.32,
+    11-13 is no longer listed as not applied."""
+    r = _releaser(engine, 215.0, "Diurnal", Venus=240.0, Jupiter=250.0)
+    assert r["releaser"] is None
+    assert "1.32, 11" in r["verdict"] and "the first of them is the Ascendant, then the Moon" in r["verdict"]
+    assert "not applied" not in r["verdict"]
+    assert not any(c == "1.32, 11-13" for c, _t in engine["SAHL_RELEASER_NOT_APPLIED"])

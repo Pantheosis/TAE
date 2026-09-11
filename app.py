@@ -8489,9 +8489,16 @@ def pn4_distribution_at_age(segments, age_years):
 # NOT APPLIED: 1.19, 6 (the Moon within 15 degrees of the Sun "will not
 # be fit"), 1.20, 6 (an eastern lord with a share in the Ascendant may
 # assume the house-mastership without looking), 1.18, 8-10 (the short-life
-# testimonies weaken or void the releaser), Dorotheus's feminized seventh
-# (1.15, 5, which Nawbakht rejects), and 1.32, 11-13's stand-in when no
-# candidate qualifies -- each is named on the page where it would bite.
+# testimonies weaken or void the releaser), and Dorotheus's feminized
+# seventh (1.15, 5, which Nawbakht rejects) -- each is named on the page
+# where it would bite. APPLIED since 2026-09-11 (FINAL-A7): 1.32, 11-13's
+# stand-in in the empty case -- al-Andarzaghar's chapter "On the matter of
+# survival for one who does not live" answers the question Nawbakht's "no
+# foundation" leaves, a complement not a contradiction; "the first of them
+# is the Ascendant, then the Moon" is 1.32, 13 as printed across the p.
+# 346/347 break, so the Ascendant's distribution is labelled the stand-in
+# and the Moon is directed after it (1.32, 12: whichever first connects
+# with an infortune kills; 14: if no fortune looks).
 
 SAHL_RELEASER_DAY_PLACES = (1, 10, 11, 7, 8)          # 1.15, 6 and 8, "these five places"
 SAHL_RELEASER_NIGHT_PLACES = (1, 4, 7, 10, 2, 5, 8, 11)  # 1.15, 11-14, "a stake or what follows a stake"
@@ -8516,7 +8523,6 @@ SAHL_RELEASER_NOT_APPLIED = (
     ('1.20, 6', 'an eastern lord with a share in the Ascendant may be house-master without looking at the releaser'),
     ('1.18, 8-10', 'one short-life testimony makes the releaser "weak and not fit, except through reception"; two, with no releaser, "one will not know his lifespan except by revolving his years"'),
     ('1.15, 5', "Dorotheus's releaser in the seventh in a feminine sign, which Nawbakht tested and rejected"),
-    ('1.32, 11-13', 'when none of the four qualifies, direct "whichever one of them that you find to be stronger" -- the Ascendant first, then the Moon'),
 )
 
 def sahl_prenatal_meeting_and_fullness(jd_natal, lat, lon):
@@ -8710,8 +8716,11 @@ def sahl_releaser(planetary_data, ascendant_lon, cusps, sect, lot_of_fortune, me
                                 + c['why'],
                      'Source': ('1.15, 6-9' if day else '1.15, 10-14') if c['candidate'] != 'the Ascendant' else '1.15, 15-16'})
     if chosen is None:
-        verdict = ('No releaser: none of the candidates qualifies and the Ascendant fails 1.15, 16 -- "the native does '
-                   'not have a foundation for his lifespan". 1.32, 11-13\'s stand-in is not applied.')
+        verdict = ('No releaser by Nawbakht\'s rule (1.15, 16: "the native does not have a foundation for his '
+                   'lifespan"). For one who does not live, al-Andarzaghar directs the strongest of the four anyway '
+                   '(1.32, 11), "the first of them is the Ascendant, then the Moon" (13): the Ascendant\'s distribution '
+                   '(the tab "from the Ascendant") is that stand-in, and the Moon is directed after it, below; '
+                   'whichever first connects with an infortune kills (12), if no fortune looks (14).')
     elif house_master is None:
         verdict = f"The releaser is {chosen['candidate']}; no house-master, nothing looks at it."
     else:
@@ -11436,6 +11445,11 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         releaser_stand = {'distributor': releaser_current['distributor'], 'partner': releaser_current['partner'],
                           'sign': get_zodiac_sign(_deg), 'lord': SIGN_TO_DOMICILE.get(get_zodiac_sign(_deg), '-'),
                           'degree': _deg, 'note': None}
+    # FINAL-A7: in the empty case the Moon is directed after the Ascendant
+    # (1.32, 11-13), by the same operation as the house-master's.
+    standin_moon = (sahl_house_master_direction(chart_data['planetary_data'], 'Moon', chart_data['obliquity'], lat,
+                                                origin_jd=chart_data['julian_day'])
+                    if releaser['releaser'] is None else None)
     house_master = releaser['house_master']
     hm_direction = sahl_house_master_direction(chart_data['planetary_data'], house_master, chart_data['obliquity'],
                                                lat, origin_jd=chart_data['julian_day']) if house_master else None
@@ -11478,6 +11492,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'releaser_current': releaser_current, 'releaser_rows': releaser_rows, 'releaser_note': releaser_note,
         'releaser_stand': releaser_stand, 'house_master': house_master, 'hm_direction': hm_direction,
         'hm_this_year': hm_this_year, 'hm_revolution': hm_revolution, 'hm_flags': hm_flags,
+        'standin_moon': standin_moon,
         'ii3': pn4_ii3_examination(chart_data, sr, year, jd_sr),
         'iii2_type': pn4_static_type(current['distributor'], current['partner']) if current else None,
         'iii2_checklist': pn4_distribution_checklist(chart_data, sr, year['longitude'], current),
@@ -13416,6 +13431,20 @@ if location_query and lat is not None and lon is not None:
                     st.markdown("**The lords looking at the releaser, ranked** (1.15, 13; 1.20, 2-5) -- the first is the house-master:")
                     st.dataframe(pd.DataFrame(rel['ranking']), hide_index=True, width='stretch',
                                  height=_rows_height(len(rel['ranking'])))
+                if rel['releaser'] is None:
+                    st.markdown("**The stand-in (Sahl, *On Nativities* 1.32, 11-14, al-Andarzaghar).** The Ascendant's "
+                                "distribution in the tab \"from the Ascendant\" is \"the first of them\" (13); the Moon, "
+                                "\"then the Moon\", directed from her natal degree to the infortunes and to burning by the "
+                                "operation of 1.23, 2 (1.32, 12: \"if you directed the Sun or Moon in their courses to the "
+                                "infortunes ... it kills, whichever of these four connects first with the infortune\"; 14: "
+                                "\"if the fortunes are not looking at it\" -- the aspect of the fortunes is not judged here):")
+                    if pn4['standin_moon'] is None:
+                        st.warning("Refused at this latitude, as every direction by the oblique ascension is (decision D-23).")
+                    elif pn4['standin_moon']:
+                        st.dataframe(pd.DataFrame(pn4['standin_moon']), hide_index=True, width='stretch',
+                                     height=_rows_height(len(pn4['standin_moon'])))
+                    else:
+                        st.markdown("No target within the span for the Moon.")
                 _syz = pn4['syzygies']
                 st.markdown(f"The meeting (the last New Moon before birth) was at **{get_degree_string(_syz['meeting']['longitude'])}** "
                             f"on {pn4_datetime_from_jd(_syz['meeting']['jd']):%Y-%m-%d} UT; the fullness (the last Full Moon) at "
