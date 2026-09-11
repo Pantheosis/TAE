@@ -9480,9 +9480,22 @@ def pn4_named_lords_of_the_orb(natal_hour_lord, completed_years):
         ('Tenth from the sign of the year', (k - 1 + 9) % 12 + 1, 'VI.1, 19'),
         ('Eleventh from the sign of the year', (k - 1 + 10) % 12 + 1, 'VI.1, 19'),
     )
-    return [{'Position': label, 'House': house, 'Hour from the natal hour': house,
-             'Lord of the hour': pn4_hour_lord_of_house(natal_hour_lord, house) or '-',
-             'Source': cite} for label, house, cite in positions]
+    age = int(completed_years)
+    rows = []
+    for label, house, cite in positions:
+        # VI.1, 8's assignment: "the lord of the thirteenth hour from it belongs
+        # to the Ascendant of the root and the thirteenth year" -- the hour lord
+        # this house RECEIVED when the profection last reached it, which is a
+        # different planet from VI.1, 10's first-cycle naming from age 12 on
+        # (order PN4R-4e-2). '-' while the loop has not yet reached the house.
+        step = age - ((age - (house - 1)) % 12)
+        rows.append({'Position': label, 'House': house,
+                     "By VI.1, 10's naming (first cycle): hour": house,
+                     "Lord of the hour (VI.1, 10)": pn4_hour_lord_of_house(natal_hour_lord, house) or '-',
+                     "By VI.1, 8's assignment (the hour lord the house received when the profection last reached it)":
+                         (pn4_hour_lord_from_natal(natal_hour_lord, step) or '-') if step >= 0 and natal_hour_lord else '-',
+                     'Source': cite})
+    return rows
 
 # --- VI.2, 1-26: the turning of the houses of the root ---------------------
 # "every one of the seven planets, the twelve houses, and the twelve Lots,
@@ -13658,7 +13671,11 @@ if location_query and lat is not None and lon is not None:
                                   "years. Judged \"just as you judge by means of the lord of the year\" (VI.1, 12). "
                                   "Row 5 above is this year's. The table here is VI.1, 18-19: six positions whose hour "
                                   "lords are named by VI.1, 10 -- \"the lord of the hour of the house of assets\" is the "
-                                  "second hour lord from the natal one -- read as hour k for house k.")
+                                  "second hour lord from the natal one -- read as hour k for house k. VI.1, 10 fixes the "
+                                  "name to the first cycle; VI.1, 8's assignment (\"the lord of the thirteenth hour from it "
+                                  "belongs to the Ascendant of the root and the thirteenth year\") gives a different planet for "
+                                  "the same name from age 12 on; both are shown, neither is stated for 18-19, and the reset "
+                                  "Dykes proposes (Intro Sect. 13, \"my idea\") is a third answer, his own.")
                 st.dataframe(pd.DataFrame(pn4['orb_rows']), hide_index=True, width='stretch',
                              height=_rows_height(len(pn4['orb_rows'])))
                 st.caption("What PN IV presupposes here rather than states: the planetary hours. Their sequence from "

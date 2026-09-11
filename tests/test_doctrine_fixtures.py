@@ -1405,17 +1405,17 @@ def test_pn4_named_lords_of_the_orb_by_vi_1_10s_naming(engine):
     Saturn")."""
     rows = engine["pn4_named_lords_of_the_orb"]("Venus", 14)     # age 14: sign of the year in house 3
     by = {r["Position"]: r for r in rows}
-    assert by["Ascendant of the root"]["Lord of the hour"] == "Venus"
-    assert by["Midheaven of the root"]["Lord of the hour"] == "Moon"          # hour 10
-    assert by["House of hope of the root"]["Lord of the hour"] == "Saturn"    # hour 11
+    assert by["Ascendant of the root"]["Lord of the hour (VI.1, 10)"] == "Venus"
+    assert by["Midheaven of the root"]["Lord of the hour (VI.1, 10)"] == "Moon"          # hour 10
+    assert by["House of hope of the root"]["Lord of the hour (VI.1, 10)"] == "Saturn"    # hour 11
     assert by["Sign of the terminal point"]["House"] == 3
-    assert by["Sign of the terminal point"]["Lord of the hour"] == "Moon"     # hour 3
+    assert by["Sign of the terminal point"]["Lord of the hour (VI.1, 10)"] == "Moon"     # hour 3
     assert by["Tenth from the sign of the year"]["House"] == 12
     assert by["Eleventh from the sign of the year"]["House"] == 1
-    assert by["Eleventh from the sign of the year"]["Lord of the hour"] == "Venus"
+    assert by["Eleventh from the sign of the year"]["Lord of the hour (VI.1, 10)"] == "Venus"
     # Dykes' "reset" would make the third house's lord at age 14 the natal
     # lord (Venus); VI.1, 10's naming keeps it the third hour lord (Moon).
-    assert by["Sign of the terminal point"]["Lord of the hour"] != "Venus"
+    assert by["Sign of the terminal point"]["Lord of the hour (VI.1, 10)"] != "Venus"
 
 
 def test_pn4_bundle_carries_the_lord_of_the_orb_as_indicator_five(engine):
@@ -3162,3 +3162,21 @@ def test_honor_guard_reads_eastern_from_the_sun_and_western_from_the_moon(engine
     assert rows["Mars"]["Role"] == "honor-guard" and rows["Mars"]["In a stake"] == "yes"
     assert rows["Saturn"]["Role"] == "-" and rows["Saturn"]["Eastern from the Sun"] == "no"
     assert rows["Sun"]["Sign"].endswith("(female)") and rows["Sun"]["In a stake"] == "yes"
+
+
+# --- PN4R-4e-2: the six named lords of the orb by VI.1, 10 and by VI.1, 8 -------------------
+
+def test_named_lords_of_the_orb_show_both_vi_1_10_and_vi_1_8(engine):
+    """Natal hour lord Venus, 14 completed years: the sign of the terminal
+    point is the third house; by VI.1, 10 its lord is the third hour from
+    Venus (the Moon); by VI.1, 8 the hour lord it received when the
+    profection last reached it is the fifteenth hour, which is the year's
+    lord of the orb. At 2 completed years both columns agree."""
+    rows = {r["Position"]: r for r in engine["pn4_named_lords_of_the_orb"]("Venus", 14)}
+    k10, k8 = "Lord of the hour (VI.1, 10)", "By VI.1, 8's assignment (the hour lord the house received when the profection last reached it)"
+    r = rows["Sign of the terminal point"]
+    assert r["House"] == 3 and r[k10] == engine["pn4_hour_lord_from_natal"]("Venus", 2)
+    assert r[k8] == engine["pn4_lord_of_the_orb"]("Venus", 14) and r[k8] != r[k10]
+    early = {r["Position"]: r for r in engine["pn4_named_lords_of_the_orb"]("Venus", 2)}["Sign of the terminal point"]
+    assert early[k10] == early[k8]
+    assert {r["Position"]: r for r in engine["pn4_named_lords_of_the_orb"]("Venus", 5)}["Midheaven of the root"][k8] == "-"
