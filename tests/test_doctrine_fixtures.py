@@ -1713,11 +1713,11 @@ def test_pn4_first_month_governor_fails_one_condition_at_a_time(engine):
     (fn 36); the natal Lot outside the Ascendant fails the first two."""
     year_lon = engine["pn4_profect"](5.0, 39)
     rows, verdict = engine["pn4_first_month_governor"](5.0, 10.0, year_lon, 95.0, 125.0)
-    assert [r["Holds"] for r in rows] == ["yes", "yes", "yes", "no", "yes"]
+    assert [r["Holds"] for r in rows][:5] == ["yes", "yes", "yes", "no", "yes"]      # the sixth row is IX.2, 5's tally (PN4R-4h-4)
     assert verdict.startswith("no governor: 1 of the five conditions fail")
     fixed = engine["pn4_profect"](35.0, 39)                          # Taurus -> Leo
     rows, _v = engine["pn4_first_month_governor"](35.0, 40.0, fixed, 125.0, 130.0)
-    assert [r["Holds"] for r in rows] == ["yes", "yes", "yes", "yes", "no"]
+    assert [r["Holds"] for r in rows][:5] == ["yes", "yes", "yes", "yes", "no"]
     rows, _v = engine["pn4_first_month_governor"](5.0, 40.0, year_lon, 95.0, 110.0)
     assert [r["Holds"] for r in rows][:2] == ["no", "no"]
 
@@ -3246,3 +3246,21 @@ def test_activation_confirmation_names_the_distribution_that_confirms(engine):
 def test_quick_and_slow_places_caveat_names_sahls_own_natal_timing(engine):
     row = next(t for c, t in engine["NOT_IMPLEMENTED_COVERAGE"] if "ADVANCING_BY_QUADRANT_FIG90" in t)
     assert "7.4, 17" in row and "5.3, 11-12" in row and "6.5, 1" in row and "On Choices 6, 16-17" in row
+
+
+# --- PN4R-4h-4: IX.2, 5's partial rule when the strict governor fails ------------------------
+
+def test_first_month_governor_names_the_primary_sign_when_the_strict_test_fails(engine):
+    """Natal Ascendant 5 Aries, natal Lot 5 Cancer (not in the Ascendant, so
+    the strict test fails); the terminal sign Leo (offset four): the Lot's
+    terminal is Scorpio; the revolution's Ascendant and Lot both in Leo;
+    Leo's first ninth-part is Aries. Leo holds three of five -- primary,
+    Scorpio and Aries the partners. With the revolution's Ascendant and Lot
+    in Scorpio the tally is Leo 1, Scorpio 3, Aries 1 -- Scorpio primary."""
+    rows, verdict = engine["pn4_first_month_governor"](5.0, 95.0, 125.0, 130.0, 135.0)
+    assert verdict.startswith("no governor") and "Primary: Leo (3 of five" in verdict and "Scorpio" in verdict.split("partners:")[1]
+    assert rows[-1]["Source"] == "IX.2, 5; fn 38"
+    rows, verdict = engine["pn4_first_month_governor"](5.0, 95.0, 125.0, 220.0, 225.0)
+    assert "Primary: Scorpio (3 of five" in verdict
+    rows, verdict = engine["pn4_first_month_governor"](5.0, 5.0, 185.0, 190.0, 195.0)     # Libra, convertible: the strict case
+    assert "govern the first month" in verdict and len(rows) == 5

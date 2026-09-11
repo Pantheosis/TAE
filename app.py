@@ -9987,9 +9987,38 @@ def pn4_first_month_governor(natal_ascendant, natal_fortune, year_lon, sr_ascend
     rows = [{'Condition': c, 'Holds': 'yes' if ok else 'no', 'Reads': reads, 'Source': cite}
             for c, ok, reads, cite in conditions]
     holds = all(ok for _c, ok, _r, _s in conditions)
-    verdict = (f"{year_sign} and its lord {SIGN_TO_DOMICILE.get(year_sign, '-')} govern the first month, and the "
-               f"year with it (fn 37)" if holds else
-               f"no governor: {sum(1 for _c, ok, _r, _s in conditions if not ok)} of the five conditions fail")
+    if holds:
+        verdict = (f"{year_sign} and its lord {SIGN_TO_DOMICILE.get(year_sign, '-')} govern the first month, and the "
+                   f"year with it (fn 37)")
+    else:
+        # IX.2, 5: "while if [only] the generality of the indications belonged
+        # to one of them, it will be primary for obtaining information about
+        # the year, while the remaining [ones] will have a partnership with it"
+        # -- the sign holding most of the five rooted indicators (order
+        # PN4R-4h-4). The Lot's terminal point is the Lot's sign turned the
+        # same number of signs as the Ascendant's.
+        offset = (SIGN_ORDER.index(year_sign) - SIGN_ORDER.index(asc_sign)) % 12
+        five = {'the terminal point from the Ascendant': year_sign,
+                'the terminal point from the Lot': SIGN_ORDER[(SIGN_ORDER.index(lot_sign) + offset) % 12],
+                "the revolution's Ascendant": get_zodiac_sign(sr_ascendant),
+                "the revolution's Lot of Fortune": get_zodiac_sign(sr_fortune),
+                'the first ninth-part of the sign of the year': pn4_first_ninth_part_lord(year_sign)['ninth_part_sign']}
+        tally = {}
+        for label, sign in five.items():
+            tally.setdefault(sign, []).append(label)
+        top = max(len(v) for v in tally.values())
+        leaders = [s for s, v in tally.items() if len(v) == top]
+        failed = sum(1 for _c, ok, _r, _s in conditions if not ok)
+        if len(leaders) == 1 and top >= 2:
+            primary = leaders[0]
+            partners = ', '.join(f"{s} ({', '.join(v)})" for s, v in tally.items() if s != primary)
+            verdict = (f"no governor: {failed} of the five conditions fail. Primary: {primary} ({top} of five: "
+                       f"{', '.join(tally[primary])}), partners: {partners} (IX.2, 5; fn 38: the month)")
+        else:
+            verdict = (f"no governor: {failed} of the five conditions fail. No primary: tied "
+                       f"({'; '.join(f'{s}: {len(v)}' for s, v in tally.items())}) (IX.2, 5)")
+        rows.append({'Condition': 'IX.2, 5: the sign holding most of the five rooted indicators is primary, the rest partners',
+                     'Holds': '-', 'Reads': '; '.join(f"{l}: {s}" for l, s in five.items()), 'Source': 'IX.2, 5; fn 38'})
     return rows, verdict
 
 # --- II.22, 1-4: the Moon's connections in her sign; the portions of the year
