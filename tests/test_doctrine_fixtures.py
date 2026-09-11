@@ -2905,3 +2905,22 @@ def test_moon_corruption_110_keeps_the_borrowed_19_libra_3_scorpio_span_and_says
     assert t["matched"] is fires
     if fires:
         assert any("VII.6, 40" in str(c) and "no degrees" in str(c) for c in t["clauses"]), t["clauses"]
+
+
+# --- REL-2-6 (sheet row 12): 1.15, 16's "good places" are Sahl's seven praised places, by whole-sign place ---
+
+@pytest.mark.parametrize("mars, place, releaser", [(93.0, 9, "the Ascendant"), (267.0, 2, None)])
+def test_ascendant_candidates_lord_is_judged_by_the_seven_praised_places(engine, mars, place, releaser):
+    """Scorpio rising by day; the Sun at 10 Cancer (the ninth, falling) and
+    the meeting at 15 Aries (the sixth) fail, so the Ascendant is examined:
+    Venus in Leo squares it (a fortune looking); its lord Mars in his own
+    bound. In the NINTH (3 Cancer, Mars's bound 0-7) the ninth is one of
+    the seven praised places (Introduction 2, 42; 1.30, 71) though not a
+    succedent, so the Ascendant is the releaser; in the SECOND (27
+    Sagittarius, Mars's bound 26-30) the second is a succedent but not a
+    praised place, so it is not. The old reading (stake or succedent) gave
+    the opposite on both."""
+    r = _releaser(engine, 215.0, "Diurnal", Mars=mars, Venus=130.0, Jupiter=250.0)
+    asc = next(c for c in r["candidates"] if c["Candidate"] == "the Ascendant")
+    assert f"whole-sign place {place}" in asc["Verdict"] and "seven praised places" in asc["Verdict"]
+    assert r["releaser"] == releaser

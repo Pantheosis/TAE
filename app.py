@@ -8420,6 +8420,17 @@ def pn4_distribution_at_age(segments, age_years):
 SAHL_RELEASER_DAY_PLACES = (1, 10, 11, 7, 8)          # 1.15, 6 and 8, "these five places"
 SAHL_RELEASER_NIGHT_PLACES = (1, 4, 7, 10, 2, 5, 8, 11)  # 1.15, 11-14, "a stake or what follows a stake"
 SAHL_DIGNITY_RANK = ('bound', 'house', 'exaltation', 'triplicity', 'face')   # 1.20, 2
+# 1.15, 16's "in good places" for the Ascendant's lord: Sahl's SEVEN praised
+# places -- Introduction 2, 37-44 ranks the Ascendant, tenth, seventh,
+# fourth, eleventh, ninth and fifth and closes "these seven places are
+# praised, powerful"; 1.30, 71 names "the seven places (which are the stakes
+# and the trines of the Ascendant, and the eleventh)"; fn 372 calls them
+# "good or advantageous". No sentence defines 16's phrase, so the
+# identification is an interpretation (the engine had used the eight-place
+# stake-or-succedent class of 1.15, 11 as reading 6). Counted by WHOLE-SIGN
+# PLACE: topic language, the canon of 2026-09-11. Owner, decision sheet row
+# 12 (REL-2-6), corroborated blind (astra_2026-09-11/1.15_readings_ruling Q2).
+SAHL_GOOD_PLACES = (1, 10, 7, 4, 11, 9, 5)
 SAHL_BOTH_AT_ONCE = {'Sun': ('Aries', 'Leo'), 'Moon': ('Taurus', 'Cancer')}  # 1.16, 1-2
 SAHL_RELEASER_NOT_APPLIED = (
     ('1.19, 6', 'the Moon within 15 degrees of the Sun "will not be fit to take up the role of the manager"'),
@@ -8533,14 +8544,15 @@ def _sahl_ascendant_candidate(planetary_data, ascendant_lon, cusps, sect):
     lord_place = None
     if lord_row:
         own = [rank for rank, planet in _sahl_dignity_lords(lord_row['longitude'], sect) if planet == lord]
-        lord_place = get_effective_house(lord_row['longitude'], cusps)
-    good_place = lord_place in SAHL_RELEASER_NIGHT_PLACES
+        lord_place = get_wsh_house(lord_row['longitude'], ascendant_lon)      # a PLACE, whole sign (see SAHL_GOOD_PLACES)
+    good_place = lord_place in SAHL_GOOD_PLACES
     fit = bool(fortunes_looking) and bool(own) and good_place
     cand.update({
         'in_places': True, 'fit': fit,
         'why': (f"looked at by {', '.join(f'{p} ({a})' for p, a in fortunes_looking) or 'no fortune'}; its lord {lord} "
-                f"{'in its own ' + ' and '.join(own) if own else 'in none of its own shares'}, house {lord_place} "
-                f"({'a good place' if good_place else 'not a stake or succedent -- reading 6'}) (1.15, 16)"),
+                f"{'in its own ' + ' and '.join(own) if own else 'in none of its own shares'}, whole-sign place {lord_place} "
+                f"({'one of' if good_place else 'not one of'} Sahl's seven praised places, Introduction 2, 37-44; 1.30, 71 -- "
+                f"an interpretation of 16's 'good places') (1.15, 16)"),
     })
     return cand
 
