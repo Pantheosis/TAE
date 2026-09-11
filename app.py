@@ -4552,10 +4552,15 @@ def calculate_prenatal_syzygy(jd_natal, lat, lon, natal_houses):
     - If the Moon is less than 180° ahead of the Sun at birth, the preceding
       syzygy was a conjunction (Coniunctio) — the birth is 'Conjunctional'.
     - Otherwise it was an opposition (Praeventio) — the birth is
-      'Preventional', and per medieval practice the Syzygy degree is taken
-      from whichever luminary was above the horizon (in the diurnal
-      hemisphere) at that prenatal Full Moon, defaulting to the Moon if
-      that can't be determined.
+      'Preventional', and the Syzygy degree is taken from whichever
+      luminary was above the horizon at that prenatal Full Moon: Sahl, On
+      Nativities 1.7, 2, "if it was after the opposition, then take the
+      portion of whichever of the two luminaries was above the earth"
+      (stated there for the Ascendant's degree; fn 33: the portion is the
+      degree; Dykes's comment fixes "above the earth" at the lunation's
+      moment). When both or neither is above the earth the Moon's degree
+      is taken -- the engine's choice, no text says (FINAL-A6, 2026-09-11;
+      the line here said "per medieval practice" and cited nothing).
 
     The exact moment is located by a Newton-style root search on the
     Sun/Moon ephemeris (not just an average-synodic-month estimate), then
@@ -8520,9 +8525,12 @@ def sahl_prenatal_meeting_and_fullness(jd_natal, lat, lon):
     calculate_prenatal_syzygy, both always -- 1.15 consults the meeting by
     day and the fullness by night, whichever was nearer. The meeting's
     degree is the luminaries' common longitude; the fullness's is the
-    luminary above the horizon at that moment (reading 5 above), else
-    the Moon's. Returns {'meeting': {...}, 'fullness': {...}} with
-    'longitude', 'jd' and 'degree_of'."""
+    luminary above the horizon at that moment -- On Nativities 1.7, 2,
+    "take the portion of whichever of the two luminaries was above the
+    earth", stated for the Ascendant's degree and applied to 1.15, 12 by
+    the shared word "portion" (FINAL-A6) -- else the Moon's, the engine's
+    choice where both or neither is up. Returns {'meeting': {...},
+    'fullness': {...}} with 'longitude', 'jd' and 'degree_of'."""
     AVG_REL_SPEED = 12.19075
     sun0 = swe.calc_ut(jd_natal, swe.SUN)[0][0]
     moon0 = swe.calc_ut(jd_natal, swe.MOON)[0][0]
