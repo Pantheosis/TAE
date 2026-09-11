@@ -3550,13 +3550,12 @@ def evaluate_escape(planetary_data, sim):
             original = _perfection_day(sim, fast, slow, r['target'], after_day=ingress_day)
             if original is not None and original <= best_day:
                 continue
-            if True:
-                results.append({
-                    'Planet': fast, 'Escaped': slow, 'Connected Instead With': best,
-                    'Escapee Leaves Sign (days)': round(exit_day, 1),
-                    'Applicant Follows In (days)': round(ingress_day, 1),
-                    'Meets Its Body (days)': round(best_day, 1),
-                })
+            results.append({
+                'Planet': fast, 'Escaped': slow, 'Connected Instead With': best,
+                'Escapee Leaves Sign (days)': round(exit_day, 1),
+                'Applicant Follows In (days)': round(ingress_day, 1),
+                'Meets Its Body (days)': round(best_day, 1),
+            })
         return results
 
 # Sahl's precedence among the three kinds of contact a planet can hold,
