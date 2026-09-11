@@ -309,3 +309,14 @@ culmination, the Descendant's descension, the tolerance. The engine's `_semiarcs
 | GAP-2 | (this commit) | The row's text now says 1.23, 23's "in an excellent position relative to the Ascendant" (1.24, 5 the same) is not judged; pinned. |
 | PN4R-4a-2 | (this commit, log only) | Recorded here, as the checker asked: III.7, 42 is checked against the RELEASER'S DISTRIBUTION as the fourth distribution, not the house-master's direction the order named, because the house-master's direction (`sahl_house_master_direction`) is a target list -- the arcs from the house-master's degree to each cutter -- not a bound distribution with a distributor and partner, and III.7, 42 asks which distribution's distributor and partner confirm the indication; the releaser's is the one bound distribution the page has that the order's list lacked. A departure from the order's letter, right in substance; the cell names its distribution. |
 | PN4R-4n-7 | (this commit) | Alphecca and Menkalinan relabelled: not "doubtful in Sahl" -- fn 73 "Sahl (following al-Andarzaghar) classifies this as Jupiter-Mercury", fn 75 "... with Jupiter-Mars"; the table shows Rhetorius's nature with Sahl's named; the comment corrected; pinned. |
+
+### Review round: suite and shas
+
+- Full suite in the worktree at 3b5fce2: **1990 passed, 0 failed** (8m 47s). Collected 1982 -> 1990: A1 +4
+  (the governor fixtures), A2 +1, A3 +1, A6 +2 (the bundled catalogue; the absent-catalogue fallback).
+- `tests/fixtures/tables.json` moved twice, deliberately: 8c43dc4 (+1 table per date on the victors page,
+  "Governor of the syzygy degree: the five lords under 1.7, 3-7"); c71be46 (-7 angle-planet tables under
+  "The distribution from the Midheaven and the fourth", the ruling (e) leaving no fixture planet on an axis).
+- Corpus `astra-session-2026-09-11`: 7c1f1cd (the two measures, the D2 addendum, the caveats correction, the
+  rulings addendum; the check prompt, the check report, the fix prompt and the GAP-37 reading filed).
+- Not certified by the builder: the owner will have the checker re-run its §2 and §5 against 3b5fce2.
