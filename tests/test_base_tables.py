@@ -83,7 +83,7 @@ def test_sign_elements_match_introduction_ch1_14_17(engine):
     assert engine["SIGN_ELEMENT"] == SIGN_ELEMENT
 
 
-# --- Faces: the Chaldean faces (convention; no table in corpus or course) ---
+# --- Faces: Gr. Intr. V.15, 1-7, Figure 54 (Aries from Mars, then down the spheres) ---
 # Standard sequence from Aries 0: Mars, Sun, Venus, Mercury, Moon, Saturn,
 # Jupiter, repeating. Derived in app.py from CHALDEAN_ORDER; pinned as the
 # 36 lords it must produce so the derivation cannot drift.
@@ -436,3 +436,15 @@ def test_prose_tables_have_full_shape(engine):
     assert set(ml) == set(range(1, 13)) and all(set(ml[h]) == set(range(1, 13)) for h in ml)
     assert set(ph) == set(range(1, 13))
     assert all(set(ph[h]) == set(PLANETS) and all(set(v) == {'Good', 'Bad'} for v in ph[h].values()) for h in ph)
+
+
+# --- Twelfth-parts: Gr. Intr. V.18, 1-3, Figure 57 (order PN4R-4n-2) ---------
+
+@pytest.mark.parametrize("lon, expected", [(17.3, 207.6), (45.0, 210.0), (0.0, 0.0), (2.4, 28.8), (29.99, 359.88)])
+def test_twelfth_part_is_v18_3s_calculation(engine, lon, expected):
+    """V.18, 3: "you see how much there is from the beginning of the sign up
+    to the degree and minute whose twelfth-part you want to know, and you
+    multiply it by 12, and you cast out what it amounts to from the
+    beginning of that sign, 30 for every sign"."""
+    assert engine["pn4_twelfth_part"](lon) == pytest.approx((int(lon // 30) * 30 + (lon % 30) * 12) % 360)
+    assert engine["pn4_twelfth_part"](lon) == pytest.approx(expected)

@@ -5238,7 +5238,8 @@ NOT_IMPLEMENTED_COVERAGE = [
 # int(lon % 30) + 1 against them. Corrected 2026-09-08 against the owner's
 # photographs of V.21 (p. 308), not the OCR capture: Aries gained 29,
 # Gemini's 13 became 12, Pisces gained 28; confirmed a third time the same
-# day against Fig. 62's own page image, all 62 cells. (The earlier text
+# day against Fig. 62's own page image, all 64 cells -- PN IV's Figure
+# 98 has 62, differing in three (CORPUS_MANIFEST). (The earlier text
 # cited Fig. 98, which in Abu Ma'shar's volume is "Speed relative to
 # apogee" -- but Persian Nativities IV's Fig. 98 IS the wells table, so
 # name the volume before "correcting" this.) Pinned cell by cell in
@@ -7155,13 +7156,18 @@ def _twelfth_part_sign(lon):
     mapped onto the twelve signs in order, 2.5 degrees apiece, beginning
     with the sign itself.
 
-    NOTE ON PROVENANCE: both authors USE twelfth-parts -- Abu Ma'shar makes
-    the Moon's twelfth-part falling to Saturn or Mars her fifth corruption
-    (VII.6, 68) and counts assembly with them among the ways planets meet
-    (VII.4, 2), and Sahl devotes On Nativities Ch.2.6 to them -- but neither
-    passage in hand states the formula. This is the standard Hellenistic and
-    Arabic construction, supplied from convention rather than from the texts
-    available to this project."""
+    PROVENANCE: Gr. Intr. V.18, 1-3 (Figure 57) STATES the construction --
+    each sign "divided ... into twelve divisions, so that each division is
+    2 1/2 degrees" (1), "the first division of it is like the nature of the
+    sign itself" (2), and the short calculation: take the degree and minute
+    from the beginning of the sign, "multiply it by 12, and ... cast out
+    what it amounts to from the beginning of that sign, 30 for every sign"
+    (3). Both authors use it: the Moon's twelfth-part falling to Saturn or
+    Mars is her fifth corruption (VII.6, 68), assembly with them is one of
+    the ways planets meet (VII.4, 2), and Sahl devotes On Nativities 2.6 to
+    them. An earlier note here said no text in hand stated the formula; it
+    was written before Book V of the Great Introduction entered the corpus
+    (Astra audit F14; work order PN4R-4n-2, 2026-09-11)."""
     sign_idx = int(lon // 30)
     step = int((lon % 30.0) // 2.5)
     return get_zodiac_sign(((sign_idx + step) % 12) * 30.0 + 15.0)
@@ -10084,18 +10090,18 @@ def pn4_ii3_examination(chart_data, sr, year, jd_sr):
 # the revolution's Ascendant (fn 33: Dykes drew it that way for clarity;
 # I.6, 2's quadrant cusps are listed as points of their own), ordered by
 # degree within the house. The twelfth-part construction -- 2.5 degrees
-# to a sign, beginning with the sign itself -- is not stated in any text
-# in hand and is supplied from convention, as _twelfth_part_sign already
-# says for the Moon's fifth corruption; it is used here on the same
-# terms. The fixed stars of I.6, 7 are not computed. The Lots are the
+# to a sign, beginning with the sign itself -- is Gr. Intr. V.18, 1-3's
+# (Figure 57), as _twelfth_part_sign says. The fixed stars of I.6, 7 are
+# not computed. The Lots are the
 # engine's, "many or few" (I.6, 8). Decided by the owner 2026-09-10.
 
 def pn4_twelfth_part(lon):
     """The twelfth-part of a degree, as a longitude: each 2.5 degrees of a
     sign maps to one whole sign in order, beginning with the sign itself,
     and the position inside the 2.5 is spread over that sign's 30.
-    The sign agrees with _twelfth_part_sign (the engine's existing
-    construction); the degree is the same convention carried through."""
+    Gr. Intr. V.18, 3's own calculation (the degree and minute from the
+    sign's beginning times 12, cast out from that sign's beginning); the
+    sign agrees with _twelfth_part_sign."""
     lon %= 360.0
     sign_idx, within = int(lon // 30), lon % 30.0
     step = int(within // 2.5)
@@ -12847,8 +12853,7 @@ if location_query and lat is not None and lon is not None:
                 st.caption("A table, not the wheel of I.6, 1: every point by whole-sign house from the revolution's "
                            "Ascendant (Dykes drew Figure 51 that way, fn 33; Figure 52 is the count table), ordered by degree within the house, with each "
                            "point's bound. The twelfth-part construction -- 2.5 degrees to a sign, beginning with the sign "
-                           "itself -- is stated in no text in hand and is supplied from convention, as the Chart page says "
-                           "of the Moon's fifth corruption. The fixed stars of I.6, 7 are not computed. The Lots are this "
+                           "itself -- is stated at Gr. Intr. V.18, 1-3 (Figure 57). The fixed stars of I.6, 7 are not computed. The Lots are this "
                            "engine's, \"many or few\"; the count line excludes them as I.6, 8 does.")
 
                 st.subheader("The reading checklist (I.7, 1-26)",

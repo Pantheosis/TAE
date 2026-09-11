@@ -863,10 +863,10 @@ note**, over leaving the twelfth-parts out.
 
 **Stated as a drawing, built as a table.** Every point of I.6, 3–6 is listed by whole-sign house
 from the revolution's Ascendant, ordered by degree within the house, with its bound (I.6, 6's
-"in their signs and bounds"). The twelfth-part construction is stated in no text in hand; the
-engine's `_twelfth_part_sign` already supplies it from convention for the Moon's fifth corruption
-and says so, and `pn4_twelfth_part` carries the same convention through to the degree and is
-pinned to agree with it on the sign. The fixed stars are not computed and the page says so. The
+"in their signs and bounds"). The twelfth-part construction is stated at Gr. Intr. V.18, 1-3
+(Figure 57); the engine's `_twelfth_part_sign` and `pn4_twelfth_part` carry it and cite it (this
+line said "stated in no text in hand" until 2026-09-11, having been written before Book V of the
+Great Introduction entered the corpus -- work order PN4R-4n-2). The fixed stars are not computed and the page says so. The
 Lots are the engine's, outside the count as I.6, 8 leaves them.
 
 **What was built.** `pn4_twelfth_part`, `pn4_revolution_image` (rows and counts); the bundle
