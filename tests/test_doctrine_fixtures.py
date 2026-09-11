@@ -3198,3 +3198,40 @@ def test_ii3_lists_the_planets_whose_twelfth_parts_fall_in_the_terminal_sign(eng
     assert "Mars" not in reads.split("twelfth-parts of: ")[1]
     assert "not computed" not in reads and "V.18, 3" in out["root_rows"][2]["Source"]
     assert "twelfth-parts of:" in out["revolution_rows"][0]["Reads"]
+
+
+# --- PN4R-4a-1 and 4a-2: III.7, 35's "not looking"; III.7, 42 against every distribution -----
+
+def test_fixed_sign_planet_that_looks_at_the_ascendant_is_not_given_35s_once(engine):
+    """Saturn at 10 Taurus (fixed) under a Leo Ascendant: Taurus squares
+    Leo, so 35's "not looking" does not hold and the row names 36; under
+    an Aries Ascendant Taurus is in aversion and the "once" stands. With no
+    Ascendant given the quadruplicity label is printed as before."""
+    look = next(r for r in engine["pn4_activation_ages"](pdata(Saturn=40.0), 23.44, 43.78, ascendant_lon=125.0) if r["Planet"] == "Saturn")
+    assert "III.7, 36" in look["Manifests"] and "square" in look["Manifests"]
+    avert = next(r for r in engine["pn4_activation_ages"](pdata(Saturn=40.0), 23.44, 43.78, ascendant_lon=5.0) if r["Planet"] == "Saturn")
+    assert avert["Manifests"].startswith("once in the lifespan") and "III.7, 35" in avert["Manifests"]
+    plain = next(r for r in engine["pn4_activation_ages"](pdata(Saturn=40.0), 23.44, 43.78) if r["Planet"] == "Saturn")
+    assert plain["Manifests"] == "once in the lifespan (III.7, 35)"
+
+
+def test_activation_confirmation_names_the_distribution_that_confirms(engine):
+    """A planet confirmed by the Midheaven's distribution and not by the
+    Ascendant's is now confirmed, with the distribution named."""
+    points = pdata(Mercury=40.0, Saturn=200.0, Sun=100.0, Moon=300.0)
+    asc_segs = engine["pn4_distribution_from_ascendant"](points, 110.0, 23.44, 43.78)
+    mc_segs = engine["pn4_distribution_from_meridian"](points, 20.0, 23.44, 'Midheaven')
+    rows = engine["pn4_activation_ages"](points, 23.44, 43.78, distributions={"the Ascendant's distribution": asc_segs,
+                                                                             "the Midheaven's distribution": mc_segs})
+    claims = [c for r in rows for c in r["Confirmed by the distribution"].split(";") if "as " in c]
+    assert claims and all(("Ascendant's" in c) or ("Midheaven's" in c) for c in claims)
+    for r in rows:
+        for c in r["Confirmed by the distribution"].split(";"):
+            if "as " not in c:
+                continue
+            age = float(c.split("(")[1].split(",")[0])
+            segs = mc_segs if "Midheaven's" in c else asc_segs
+            seg = engine["pn4_distribution_at_age"](segs, age)
+            assert r["Planet"] in (seg["distributor"], seg["partner"])
+    only_asc = engine["pn4_activation_ages"](points, 23.44, 43.78, asc_segs)
+    assert all("Ascendant's" in c for r in only_asc for c in r["Confirmed by the distribution"].split(";") if "as " in c)

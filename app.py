@@ -9338,13 +9338,27 @@ def pn4_sign_ascensions(sign, obliquity, geo_lat):
             - _oblique_ascension(start, obliquity, geo_lat)) % 360.0
 
 def pn4_activation_ages(planetary_data, obliquity, geo_lat, segments=None,
-                        max_age=PN4_DISTRIBUTION_SPAN_YEARS):
+                        max_age=PN4_DISTRIBUTION_SPAN_YEARS, distributions=None, ascendant_lon=None):
     """III.7, 32-42, one row per planet.
 
-    `segments` is the output of pn4_distribution_from_ascendant; when it is
-    given, each candidate age is checked against it for Abu Ma'shar's
-    confirmation (III.7, 42) -- is this planet the distributor or the
-    manager at that age?"""
+    `distributions` is a mapping {label: segments} -- the Ascendant's, the
+    Midheaven's, the fourth's and the releaser's -- and each candidate age
+    is checked against EVERY one of them for Abu Ma'shar's confirmation
+    (III.7, 42): is this planet the distributor or the manager at that age,
+    and in which distribution (order PN4R-4a-2; it had been checked against
+    the Ascendant's alone). `segments` alone is the Ascendant's, kept for
+    older callers. `ascendant_lon`, when given, lets III.7, 35's own
+    condition be read: the "once" is for a fixed-sign distributor that is
+    "NOT looking at the position of the distribution"; a fixed-sign planet
+    that looks falls under 36, "whenever it distributes" if strong (order
+    PN4R-4a-1). The position of the distribution is read as the
+    Ascendant's sign at birth, "looking" as the whole-sign aspect, a planet
+    in the sign itself counted as looking -- three readings; whether the
+    position is the current bound's sign or its degree is a further
+    silence, said on the page."""
+    if distributions is None and segments is not None:
+        distributions = {"the Ascendant's distribution": segments}
+    distributions = distributions or {}
     rows = []
     for planet in PN4_SEVEN:
         row = planetary_data.get(planet)
@@ -9353,6 +9367,14 @@ def pn4_activation_ages(planetary_data, obliquity, geo_lat, segments=None,
         sign = get_zodiac_sign(row['longitude'])
         kind = PN4_QUADRUPLICITY[sign]
         manifests, cite = PN4_MANIFESTATION_BY_QUADRUPLICITY[kind]
+        if kind == 'fixed' and ascendant_lon is not None:
+            aspect = _sahl_looks(row['longitude'], ascendant_lon)
+            if aspect:
+                manifests, cite = (f"looks at the position of the distribution (whole-sign {aspect} to the Ascendant's sign): "
+                                   f"III.7, 36 applies if strong, which the chapter does not define; III.7, 35's \"once\" is for "
+                                   f"the non-looking case"), 'III.7, 35-36'
+            else:
+                manifests, cite = 'once in the lifespan (not looking at the position of the distribution)', 'III.7, 35'
         ascensions = pn4_sign_ascensions(sign, obliquity, geo_lat)
         years = PLANETARY_YEARS[planet]
 
@@ -9364,10 +9386,11 @@ def pn4_activation_ages(planetary_data, obliquity, geo_lat, segments=None,
         for label, age in candidates.items():
             if age is None or not (0.0 < age <= max_age):
                 continue
-            seg = pn4_distribution_at_age(segments, age) if segments else None
-            if seg and planet in (seg['distributor'], seg['partner']):
-                role = 'distributor' if seg['distributor'] == planet else 'manager'
-                confirmed.append(f"{label} ({age:.2f}, as {role})")
+            for dist_label, segs in distributions.items():
+                seg = pn4_distribution_at_age(segs, age) if segs else None
+                if seg and planet in (seg['distributor'], seg['partner']):
+                    role = 'distributor' if seg['distributor'] == planet else 'manager'
+                    confirmed.append(f"{label} ({age:.2f}, as {role}, {dist_label})")
 
         rows.append({
             'Planet': planet, 'Natal sign': sign, 'Quadruplicity': kind,
@@ -11852,9 +11875,6 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         })
         start += years
 
-    # --- III.7, 32-42: when each natal indication comes out ---
-    activation_rows = pn4_activation_ages(
-        chart_data['planetary_data'], chart_data['obliquity'], lat, segments)
 
     # --- the distributions, as forward tables (III.1, 11-16) ---
     distribution_rows = _pn4_distribution_rows(segments, current, origin_jd=chart_data['julian_day'])
@@ -11901,6 +11921,13 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
     standin_moon = (sahl_house_master_direction(chart_data['planetary_data'], 'Moon', chart_data['obliquity'], lat,
                                                 origin_jd=chart_data['julian_day'])
                     if releaser['releaser'] is None else None)
+    # --- III.7, 32-42: when each natal indication comes out -- confirmed (42)
+    # against every distribution on the page (order PN4R-4a-2) ---
+    activation_rows = pn4_activation_ages(
+        chart_data['planetary_data'], chart_data['obliquity'], lat, ascendant_lon=ascendant,
+        distributions={"the Ascendant's distribution": segments,
+                       **{f"the {point}'s distribution": m['segments'] for point, m in meridian.items()},
+                       "the releaser's distribution": releaser_segments})
     house_master = releaser['house_master']
     hm_direction = sahl_house_master_direction(chart_data['planetary_data'], house_master, chart_data['obliquity'],
                                                lat, origin_jd=chart_data['julian_day']) if house_master else None
@@ -14311,9 +14338,14 @@ if location_query and lat is not None and lon is not None:
                            "**Two things in Dykes' fn 191 are also absent**: the SUM of the ascensions and the years, and "
                            "a third, a half and two-thirds of it, are introduced with \"if we follow Valens\" and appear "
                            "in no sentence of III.7; and his worked figure of 20.17 ascensional times for Taurus at 45N "
-                           "is not reproduced, the exact computation giving 20.09. III.7, 36 raises a row to \"whenever it "
-                           "distributes\" when the planet looks at the position of the distribution and is \"strong in "
-                           "[its] indication\" -- strength is nowhere defined in the chapter, so no row is promoted here. "
+                           "is not reproduced, the exact computation giving 20.09. III.7, 35's \"once\" is for a fixed-sign "
+                           "planet \"NOT looking at the position of the distribution\"; the looking is computed here as the "
+                           "whole-sign aspect from the natal sign to the Ascendant's sign at birth (a planet in the sign counted "
+                           "as looking) -- whether the position is the current bound's sign or its degree, and whether "
+                           "co-presence counts, are silences -- and a looking fixed planet's row says III.7, 36 applies "
+                           "\"whenever it distributes\" IF strong, which the chapter does not define, so no row is promoted. "
+                           "The confirmation column (III.7, 42) is checked against every distribution on this page: the "
+                           "Ascendant's, the Midheaven's, the fourth's and the releaser's, each named. "
                            "III.7, 37 exempts the manager, which \"will produce its indication\" whenever it manages.")
 
                 st.subheader("The Ages of Man",
