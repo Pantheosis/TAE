@@ -3138,6 +3138,21 @@ def _bands(engine, lat=0.0, sect="Diurnal", asc=0.0, mc=270.0, **planets):
     return engine["evaluate_ascensional_bands"](pdata(**base), asc, mc, 23.4392911, lat, sect)
 
 
+def test_2_13_band_strings_report_the_printed_carmen_band_for_band(engine):
+    """Review D3 (2026-09-11): the printed Carmen I.28 (p. 108, the owner's
+    photograph, read by this session) has the same four parts as Sahl
+    2.13, 48-51 -- 5: the third 15 "middling in assets and good fortune"
+    (= 50), 6: after these degrees up to the next stake "needy [and]
+    wretches" (= 51). The earlier strings put "needy" on the third band."""
+    bands = engine["SAHL_2_13_BANDS"]
+    assert bands[2][2] == 'the middle of assets (50; Carmen I.28, 5 "middling in assets and good fortune")'
+    assert bands[3][2] == 'of the nativities of the poor (51; Carmen I.28, 6 "needy [and] wretches")'
+    assert not any("variant" in b[2] or "differs" in b[2] for b in bands)
+    from conftest import ui_source
+    src = ui_source()
+    assert "the same four parts band for band" in src and "Carmen's third band" not in src
+
+
 def test_2_13_grades_the_sect_lights_first_triplicity_lord_only_and_the_display_grades_all(engine):
     """Day chart, the Sun at 20 Aries: the fire triplicity's first lord by
     day is the Sun himself. At the equator with 0 Aries rising the

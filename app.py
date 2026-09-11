@@ -9198,8 +9198,8 @@ def evaluate_honor_guard(planetary_data, ascendant_lon):
 SAHL_2_13_BANDS = (
     (15.0, 'first 15 degrees of ascension', 'praise and good fortune (48; "what is less [than that] in degrees is preferable")'),
     (30.0, 'second 15 degrees', 'good fortune below the first type (49)'),
-    (45.0, 'third 15 degrees', 'the middle of assets (50; the printed Carmen I.28, 6 reads "needy" here -- a variant, not harmonised)'),
-    (None, 'the remainder, up to the next stake', 'of the nativities of the poor (51)'),
+    (45.0, 'third 15 degrees', 'the middle of assets (50; Carmen I.28, 5 "middling in assets and good fortune")'),
+    (None, 'the remainder, up to the next stake', 'of the nativities of the poor (51; Carmen I.28, 6 "needy [and] wretches")'),
 )
 
 def evaluate_ascensional_bands(planetary_data, ascendant_lon, mc_lon, obliquity, geo_lat, sect):
@@ -13946,8 +13946,8 @@ if location_query and lat is not None and lon is not None:
                                     "descension) and right ascension at the meridian, a split Carmen's single rising instruction does not "
                                     "state; the ecliptic degree, latitude ignored; bands end-inclusive at 15, 30 and 45, truncated by the "
                                     "next actual stake; the five-degree allowance (Aphorism #44) lies on the other side of the stake and is "
-                                    "not inherited. Refused where the ascension has no inverse (D-23). Carmen's third band (\"needy\") "
-                                    "differs from Sahl's 50 (\"the middle of assets\"); Sahl says \"the first lord\", Carmen \"the lord\"."))
+                                    "not inherited. Refused where the ascension has no inverse (D-23). The printed Carmen I.28, 3-6 "
+                                    "(p. 108) has the same four parts band for band; Sahl says \"the first lord\", Carmen \"the lord\"."))
                     _finding(_gap, 'Right-sidedness, "the spear-bearing of the planets" (Sahl, On Nativities 2.5, 1-3) -- display only',
                              'Sahl, On Nativities 2.5, 1-3; owner, 2026-09-11 (DEC-D-18): a finding table, no score', right_sidedness,
                              glance=("2.5, 2: a pair in square or sextile, both in their exaltations or houses (or one in each, or one of "
