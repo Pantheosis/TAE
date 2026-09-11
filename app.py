@@ -1270,8 +1270,13 @@ CHALDEAN_ORDER = ['Mars', 'Sun', 'Venus', 'Mercury', 'Moon', 'Saturn', 'Jupiter'
 ESSENTIAL_DIGNITY_WEIGHTS = {'domicile': 5, 'exaltation': 4, 'triplicity': 3, 'term': 2, 'face': 1}
 
 # Dorothean triplicity rulers, keyed by element, each with the Day/Night/
-# Participating lord (classical reconstruction as used in medieval Abbasid
-# practice — e.g. Dorotheus via al-Biruni/Abu Ma'shar).
+# Participating lord: Gr. Intr. V.14, 6-9 and Figure 53 (Gr. Intr.), which
+# state the four rows as they stand here. One exception the element key
+# cannot hold: the earth triplicity's partner is Mars "except that Mercury
+# acts as partner to them both in Virgo especially" (V.14, 7; the figure's
+# earth row reads "Mars (and Mercury when in Virgo)"; fn 100: Mercury
+# "rather than (or in preference to) Mars"). get_essential_rulers applies
+# it per sign (Astra audit C01, 2026-09-11). The partner enters no score.
 TRIPLICITY = {
     'Fire':  {'Day': 'Sun',   'Night': 'Jupiter', 'Participating': 'Saturn'},
     'Earth': {'Day': 'Venus', 'Night': 'Moon',    'Participating': 'Mars'},
@@ -4471,7 +4476,9 @@ def get_essential_rulers(longitude):
         'exaltation': SIGN_TO_EXALTATION.get(sign, '-'),
         'triplicity_day': triplicity['Day'],
         'triplicity_night': triplicity['Night'],
-        'triplicity_participating': triplicity['Participating'],
+        # Virgo's partner is Mercury "in preference to" Mars -- Gr. Intr. V.14,
+        # 7 with Figure 53 (Gr. Intr.) and fn 100; Taurus and Capricorn keep Mars.
+        'triplicity_participating': 'Mercury' if sign == 'Virgo' else triplicity['Participating'],
         'term': term_lord,
         'face': face_lord,
     }
@@ -13494,14 +13501,14 @@ if location_query and lat is not None and lon is not None:
                            "III.7, 37 exempts the manager, which \"will produce its indication\" whenever it manages.")
 
                 st.subheader("The Ages of Man",
-                             help="I.8, 10-26 and Figure 53: Ptolemy's seven ages, ordered by sphere from the lowest "
+                             help="I.8, 10-26 and Figure 53 (PN IV): Ptolemy's seven ages, ordered by sphere from the lowest "
                                   "upward -- not the quadrant scheme of Sahl, On Nativities 3.9. Each span is a planet's "
                                   "lesser years, or a half or a tenth of its lesser or middle years (I.8, 9). The Moon's 4 "
                                   "is a tenth of her middle years, 39 1/2 (I.8, 12) -- an independent witness for the "
                                   "luminary construction of the middle years used elsewhere in this app.")
                 st.dataframe(pd.DataFrame(pn4['age_rows']), hide_index=True, width='stretch',
                              height=_rows_height(len(pn4['age_rows'])))
-                st.caption("The last age is open-ended: Figure 53 tabulates Saturn as 30 years and ages 68-97, but the "
+                st.caption("The last age is open-ended: Figure 53 (PN IV) tabulates Saturn as 30 years and ages 68-97, but the "
                            "prose governs -- the seventh age runs \"until the end of his lifespan\" (I.8, 25). Abu Ma'shar "
                            "refuses to subdivide an age into sevenths the way a *fardar* is subdivided, so there is no "
                            "sub-lord here (I.8, 34-35).")
@@ -13709,12 +13716,13 @@ if location_query and lat is not None and lon is not None:
                 rows.append({'Sign': sign, 'Domicile': SIGN_TO_DOMICILE[sign],
                              'Exaltation': f"{exalted} ({EXALTATION_DEGREES[exalted]}°)" if exalted else '-',
                              'Triplicity, day': trip['Day'], 'Triplicity, night': trip['Night'],
-                             'Participating': trip['Participating'],
+                             'Participating': get_essential_rulers(i * 30 + 15)['triplicity_participating'],
                              'Faces (1st, 2nd, 3rd)': ' · '.join(faces)})
             st.dataframe(pd.DataFrame(rows), hide_index=True, width='stretch', height=_rows_height(12))
             st.caption("Sources: Sahl, The Introduction Ch. 1 and Handy Tables (Tables of Dignities). Exaltation degrees: "
                        "the standard scheme; Hermes' differ by a degree for Saturn, Mars, the Sun, Venus and the Moon. "
-                       "Triplicity lords are Dorothean. Faces are read at 5, 15 and 25 degrees of each sign.")
+                       "Triplicity lords are Dorothean (Gr. Intr. V.14, 6-9; Figure 53 (Gr. Intr.)); Virgo's partner is "
+                       "Mercury 'in preference to' Mars (V.14, 7; fn 100). Faces are read at 5, 15 and 25 degrees of each sign.")
 
             st.subheader("Egyptian bounds",
                          help="Lesson 9, and the bounds every distribution of Part 2 runs through (III.1, 11). The "

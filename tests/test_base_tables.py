@@ -448,3 +448,15 @@ def test_twelfth_part_is_v18_3s_calculation(engine, lon, expected):
     beginning of that sign, 30 for every sign"."""
     assert engine["pn4_twelfth_part"](lon) == pytest.approx((int(lon // 30) * 30 + (lon % 30) * 12) % 360)
     assert engine["pn4_twelfth_part"](lon) == pytest.approx(expected)
+
+
+# --- Virgo's partner: Gr. Intr. V.14, 7, Figure 53 (Gr. Intr.), fn 100 (Astra C01) ---
+
+@pytest.mark.parametrize("lon, partner", [(45.0, "Mars"), (165.0, "Mercury"), (285.0, "Mars")])
+def test_earth_triplicity_partner_is_mercury_in_virgo_only(engine, lon, partner):
+    """V.14, 7: the partner is Mars "except that Mercury acts as partner to
+    them both in Virgo especially"; fn 100: "rather than (or in preference
+    to) Mars". The day and night lords are untouched."""
+    r = engine["get_essential_rulers"](lon)
+    assert r["triplicity_participating"] == partner
+    assert (r["triplicity_day"], r["triplicity_night"]) == ("Venus", "Moon")
