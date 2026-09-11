@@ -383,12 +383,19 @@ def test_abu_aspect_window_is_twelve_for_every_pair(engine):
             assert engine["_is_connected_abu_mashar"](_sahl_row(engine, actor, d)) is expect, (actor, d)
 
 
-def test_abu_connection_ends_one_minute_past_exact(engine):
+def test_abu_connection_ends_at_exactness_not_a_minute_past_it(engine):
+    """Gr. Intr. VII.5, 16: 'if the light one passed by the slow one by one
+    minute or by less than that, then it has already SEPARATED'; 34 the
+    same for every connection. A pair 18 arcseconds past exact is
+    separated; the minute is not a grace interval (Astra F09). The old
+    pin here (connected up to 1' past) encoded the inversion."""
     m = 1.0 / 60.0
-    for d, expect in ((m - 1e-6, True), (m + 1e-6, False)):
+    for d in (1e-6, 0.005, m - 1e-6, m + 1e-6):
         row = engine["_pairwise_configurations"](pdata(Moon=(10 + d, MOON), Saturn=(130, SAT)))[0]
         assert row["motion"] == "Separating"
-        assert engine["_is_connected_abu_mashar"](row) is expect, d
+        assert engine["_is_connected_abu_mashar"](row) is False, d
+    exact = engine["_pairwise_configurations"](pdata(Moon=(10, MOON), Saturn=(130, SAT)))[0]
+    assert engine["_is_connected_abu_mashar"](exact) is True
 
 
 # --- CODE-04: the Fig. 14 tolerance is bounded ----------------------------
@@ -1281,24 +1288,25 @@ def test_pn4_small_days_start_from_the_revolutions_ascendant(engine):
 # consequence, the zodiacal measure, the crossing of the sign boundary
 # under IX.7, 24, the bound-window opening, and the point directed.
 
-MIGHTY_DAY = 12 + 4 / 24 + 10 / 1440 + 30 / 86400
+MIGHTY_DAY = 12 + 1 / 6 + 1 / 120                          # IX.7, 25's parenthetical: 12.175 d
+MIGHTY_DAY_HYBRID = 12 + 4 / 24 + 10 / 1440 + 30 / 86400    # Dykes's "<4 hours>" + the minutes read as clock time
 
 
-def test_pn4_mighty_days_rate_as_printed_and_its_year(engine):
-    """IX.7, 25: "12 days, <4 hours>, 10 minutes, and 30 seconds" a
-    degree, applied AS PRINTED; IX.7, 28: thirty of them "comes to
-    365 1/4 days, approximately". Thirty of the printed rate is 365d 5h
-    15m -- 365.22 days, short of 365 1/4 by 45 minutes, which is what
-    "approximately" is covering and what fn 177 corrects. The fixture
-    holds the printed number, not the correction, and holds the gap so
-    that silently repairing the rate to fn 177's would fail here."""
+def test_pn4_mighty_days_rate_is_the_authors_fraction_and_its_year_is_365_and_a_quarter(engine):
+    """IX.7, 25: "12 days, <4 hours>, 10 minutes, and 30 seconds (and that
+    is 1/6 of a day and half a sixth of a tenth of a day)" a degree. The
+    parenthetical is the author's own number, 12 + 1/6 + 1/120 = 12.175 d,
+    and thirty of them are 365 1/4 days exactly (IX.7, 28). The "<4 hours>"
+    is Dykes's pointed-bracket supply and the hybrid 12 d 4 h 10 m 30 s
+    (365 d 5 h 15 m for thirty) is neither the manuscript's number nor the
+    author's; it was applied 2026-09-10 as "the printed rate" and replaced
+    by the owner on 2026-09-11 (sheet row 13). The fixture rejects it."""
     assert engine["pn4_mighty_days_arc_to_days"](1.0) == pytest.approx(MIGHTY_DAY)
     segs = engine["pn4_mighty_days"](pdata(Sun=100.0, Moon=200.0), 10.0)
     assert segs[0]["from"] == 0.0
     year = segs[-1]["to"]
-    assert year == pytest.approx(30 * MIGHTY_DAY)
-    assert 365.25 - year == pytest.approx(45 / 1440, abs=1e-6)
-    assert year != pytest.approx(365.25, abs=1e-3)
+    assert year == pytest.approx(365.25, abs=1e-9)
+    assert year != pytest.approx(30 * MIGHTY_DAY_HYBRID, abs=1e-3)
     for a, b in zip(segs, segs[1:]):
         assert a["to"] == pytest.approx(b["from"], abs=1e-9) and a["to"] > a["from"]
 
@@ -1397,17 +1405,17 @@ def test_pn4_named_lords_of_the_orb_by_vi_1_10s_naming(engine):
     Saturn")."""
     rows = engine["pn4_named_lords_of_the_orb"]("Venus", 14)     # age 14: sign of the year in house 3
     by = {r["Position"]: r for r in rows}
-    assert by["Ascendant of the root"]["Lord of the hour"] == "Venus"
-    assert by["Midheaven of the root"]["Lord of the hour"] == "Moon"          # hour 10
-    assert by["House of hope of the root"]["Lord of the hour"] == "Saturn"    # hour 11
+    assert by["Ascendant of the root"]["Lord of the hour (VI.1, 10)"] == "Venus"
+    assert by["Midheaven of the root"]["Lord of the hour (VI.1, 10)"] == "Moon"          # hour 10
+    assert by["House of hope of the root"]["Lord of the hour (VI.1, 10)"] == "Saturn"    # hour 11
     assert by["Sign of the terminal point"]["House"] == 3
-    assert by["Sign of the terminal point"]["Lord of the hour"] == "Moon"     # hour 3
+    assert by["Sign of the terminal point"]["Lord of the hour (VI.1, 10)"] == "Moon"     # hour 3
     assert by["Tenth from the sign of the year"]["House"] == 12
     assert by["Eleventh from the sign of the year"]["House"] == 1
-    assert by["Eleventh from the sign of the year"]["Lord of the hour"] == "Venus"
+    assert by["Eleventh from the sign of the year"]["Lord of the hour (VI.1, 10)"] == "Venus"
     # Dykes' "reset" would make the third house's lord at age 14 the natal
     # lord (Venus); VI.1, 10's naming keeps it the third hour lord (Moon).
-    assert by["Sign of the terminal point"]["Lord of the hour"] != "Venus"
+    assert by["Sign of the terminal point"]["Lord of the hour (VI.1, 10)"] != "Venus"
 
 
 def test_pn4_bundle_carries_the_lord_of_the_orb_as_indicator_five(engine):
@@ -1705,11 +1713,11 @@ def test_pn4_first_month_governor_fails_one_condition_at_a_time(engine):
     (fn 36); the natal Lot outside the Ascendant fails the first two."""
     year_lon = engine["pn4_profect"](5.0, 39)
     rows, verdict = engine["pn4_first_month_governor"](5.0, 10.0, year_lon, 95.0, 125.0)
-    assert [r["Holds"] for r in rows] == ["yes", "yes", "yes", "no", "yes"]
+    assert [r["Holds"] for r in rows][:5] == ["yes", "yes", "yes", "no", "yes"]      # the sixth row is IX.2, 5's tally (PN4R-4h-4)
     assert verdict.startswith("no governor: 1 of the five conditions fail")
     fixed = engine["pn4_profect"](35.0, 39)                          # Taurus -> Leo
     rows, _v = engine["pn4_first_month_governor"](35.0, 40.0, fixed, 125.0, 130.0)
-    assert [r["Holds"] for r in rows] == ["yes", "yes", "yes", "yes", "no"]
+    assert [r["Holds"] for r in rows][:5] == ["yes", "yes", "yes", "yes", "no"]
     rows, _v = engine["pn4_first_month_governor"](5.0, 40.0, year_lon, 95.0, 110.0)
     assert [r["Holds"] for r in rows][:2] == ["no", "no"]
 
@@ -1984,12 +1992,14 @@ def test_pn4_sun_handover_is_applying_and_inside_his_sign(engine):
 
 
 def test_pn4_proxies_only_for_a_luminary_year_and_admit_the_releaser(engine):
-    """The proxies exist only when the Sun or the Moon is lord of the year
-    (II.13, 1; II.22, 1), and their first member needs the longevity
+    """The luminary proxies exist when the Sun or the Moon is lord of the
+    year (II.13, 1; II.22, 1) -- any other lord gets II.22, 23-25's one row
+    -- and their first member needs the longevity
     releaser: that row says so. Leo's and Cancer's occupants are read
     from both charts; the Moon's rows carry the II.22 computation."""
     root, sr, _y = _two_charts(engine, natal=dict(Venus=140.0), rev=dict(Mars=100.0, Saturn=145.0))
-    assert engine["pn4_luminary_proxies"]("Mars", root, sr) is None
+    mars = engine["pn4_luminary_proxies"]("Mars", root, sr)          # II.22, 23-25 (PN4R-4i-5): one row for any other lord
+    assert len(mars) == 1 and mars[0]["Source"] == "II.22, 23-25" and "Mars in Cancer, the house of Moon" in mars[0]["Reads"]
     moon = {"sign": "Libra", "moon_lon": 200.0, "exit_day": 1.5, "void": False, "house_lord": "Venus",
             "connections": [{"day": 0.4, "planet": "Jupiter", "aspect": "sextile", "moon_at": 205.0}]}
     sun = {"sign": "Cancer", "moon_lon": 100.0, "exit_day": 20.0, "void": True, "house_lord": "Moon", "connections": []}
@@ -2020,7 +2030,9 @@ def test_pn4_bundle_shows_proxies_in_a_luminary_year_only(engine):
     b = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(1985 + sun_age, 6, 1).date(), rule)
     assert b["year"]["lord"] == "Sun" and b["sun_handover"] is not None and len(b["proxies"]) == 5
     b = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(1985 + mars_age, 6, 1).date(), rule)
-    assert b["proxies"] is None and b["sun_handover"] is None
+    # II.22, 23-25 (order PN4R-4i-5): a Mars year gets the one row for any lord -- the house he stands in
+    assert b["sun_handover"] is None and len(b["proxies"]) == 1 and b["proxies"][0]["Source"] == "II.22, 23-25"
+    assert "Mars in " in b["proxies"][0]["Reads"] and "the house of " in b["proxies"][0]["Reads"]
 
 
 # --- II.3, 2-19: the sign of the terminal point and its lord (built 2026-09-10)
@@ -2049,7 +2061,7 @@ def test_pn4_ii3_examines_the_sign_of_the_terminal_point_in_the_root(engine):
     assert rows[0]["Reads"] == "house 4 from the natal Ascendant, a stake"
     assert rows[1]["Reads"].startswith("house of Moon (neither); exaltation of Jupiter (fortune); triplicity of Venus (fortune) (day)")
     assert rows[2]["Reads"].startswith("planets: Sun (neither), Mercury (neither); Lots:")
-    assert "twelfth-parts not computed" in rows[2]["Reads"]
+    assert "twelfth-parts of: " in rows[2]["Reads"]                                   # computed since 2026-09-11 (PN4R-4l-7)
     assert "Moon (neither) by square from 20\u00b0 Lib 00', the ray at 20\u00b0 Can 00' (bound of Jupiter, face of Moon)" in rows[3]["Reads"]
     assert rows[4]["Reads"] == "no"
 
@@ -2066,7 +2078,7 @@ def test_pn4_ii3_examines_the_revolution_and_reads_conditions_as_labels(engine):
     year = {"sign": "Cancer", "longitude": 95.0, "lord": "Moon"}
     out = engine["pn4_ii3_examination"](root, sr, year, 2451545.0)
     rows = out["revolution_rows"]
-    assert rows[0]["Reads"] == "Saturn (infortune)"
+    assert rows[0]["Reads"].startswith("Saturn (infortune); twelfth-parts of: ")     # PN4R-4l-7
     assert "Mars (infortune) by trine from 10\u00b0 Sco 00'" in rows[1]["Reads"]           # 10 Scorpio trines Cancer
     assert "Jupiter (fortune) by opposition from 10\u00b0 Cap 00'" in rows[1]["Reads"]
     assert rows[2]["Reads"] == "no"
@@ -2123,15 +2135,19 @@ def test_pn4_bound_transit_sentence_is_keyed_to_the_type(engine):
     entrant: 38 a fortune alone with an infortune entering; 54 both
     fortunes with an infortune entering; 46 both infortunes with a
     fortune's ray, 47 with an infortune's ray, and a body says the
-    sentences speak of rays; 43 a fortune entering a bad distribution,
-    under 40-42's unjudged conditions; the neutrals, none."""
+    sentences speak of rays; 43 a fortune entering where a rooted infortune
+    is in the bound -- 40's premise, which types 4, 5 and 6 have and types
+    2 and 3 do not (order PN4R-4m-1) -- under 40-42's unjudged conditions;
+    a fortune's BODY under type 6 takes 43 too; the neutrals, none."""
     key = engine["pn4_bound_transit_sentence"]
     assert key(1, "infortune", False) == (38, "")
     assert key(7, "infortune", True) == (54, "")
     assert key(6, "fortune", True) == (46, "")
     assert key(6, "infortune", True) == (47, "")
-    assert key(6, "fortune", False)[0] is None and "speak of a ray" in key(6, "fortune", False)[1]
-    assert key(2, "fortune", True)[0] == 43 and "40-42" in key(2, "fortune", True)[1]
+    assert key(6, "infortune", False)[0] is None and "speak of a ray" in key(6, "infortune", False)[1]
+    assert key(6, "fortune", False)[0] == 43
+    assert key(4, "fortune", True)[0] == 43 and key(5, "fortune", False)[0] == 43
+    assert key(2, "fortune", True)[0] is None and key(3, "fortune", False)[0] is None and key(None, "fortune", True)[0] is None
     assert key(1, None, True)[0] is None and "Sun, the Moon or Mercury" in key(1, None, True)[1]
     assert key(1, "fortune", True)[0] is None
     gated = {k for k, (_c, _t, d) in engine["PN4_BOUND_TRANSIT_SENTENCES"].items() if d}
@@ -2168,7 +2184,8 @@ def test_pn4_bound_transits_quote_the_sentence_and_read_iii_8_7(engine):
     root, sr, _ = _two_charts(engine, rev=dict(Venus=22.5, Saturn=340.0, Sun=190.0))
     rows = engine["pn4_bound_transits"](root, sr, current, "Saturn")
     body = next(r for r in rows if r["In the bound, in the revolution"].startswith("Venus by body"))
-    assert "speak of a ray" in body["Sentence"]
+    # a fortune's BODY under type 6 is 43 (40's premise holds; order PN4R-4m-1), still under 40-42's unjudged conditions
+    assert "III.2, 43" in body["Sentence"] and "40-42" in body["Sentence"]
     assert engine["pn4_bound_transits"](root, sr, None, "Saturn") == []
 
 
@@ -2214,10 +2231,12 @@ def test_pn4_revolution_image_counts_as_i_6_8(engine):
     for r in rows:
         by_house.setdefault(r["House"], []).append(r["Position"])
     assert sorted(by_house) == list(range(1, 13))
-    # within a house the degree-in-sign never decreases (all points of one whole-sign house share a sign)
-    deg = lambda s: int(s.split("\u00b0")[0]) * 60 + int(s.split(" ")[-1].rstrip("'"))
+    # within a house the degree FROM THE HOUSE'S CUSP never decreases (I.6, 2:
+    # the revolution's cusps; a quadrant house spans two signs and may straddle 0 Aries)
+    lon_of = lambda s: engine["SIGN_ORDER"].index(next(z for z in engine["SIGN_ORDER"] if z.startswith(s.split(" ")[1]))) * 30 \
+        + int(s.split("\u00b0")[0]) + int(s.split(" ")[-1].rstrip("'")) / 60.0
     for house, positions in by_house.items():
-        vals = [deg(p) for p in positions]
+        vals = [round((lon_of(p) - b["sr"]["houses"][house - 1]) % 360.0, 6) for p in positions]
         assert vals == sorted(vals), house
     assert rows == b["image"][0]
 
@@ -2381,6 +2400,12 @@ def test_pn4_ix7_month_days_two_ways(engine):
     assert rows[0]["Way 1: a day per degree, now at"].startswith("14\u00b0 Ari 00'")
     assert rows[0]["Way 2: the day's sign"] == "Taurus"                                     # 4 // 2.5 = 1
     assert rows[0]["Way 2: this hour's sign"] == "Sagittarius"                              # 36 h into the slot: the eighth five-hour portion
+    # IX.7, 39: "it will return to the position which it began from" -- day
+    # 30.3 is 0.3 into the next month, 10 Ari 18' by way [1], Aries by way [2].
+    late = engine["pn4_ix7_month_days"](30.3, [("x", 10.0)])
+    assert late[0]["Way 1: a day per degree, now at"].startswith("10\u00b0 Ari 18'")
+    assert late[0]["Way 2: the day's sign"] == "Aries"
+    assert late[0]["Source"] == "IX.7, 35-39"
 
 
 def test_pn4_bundle_carries_the_day_methods(engine):
@@ -2461,9 +2486,12 @@ def test_pn4_printed_reference_tables_derive_from_the_rules(engine):
     # changing these strings too.
     applied = {k: v for k, v in state.items() if v.startswith("applied")}
     assert sorted(applied) == ["Ascendant, and things in it", "Midheaven, or the fourth"]
-    assert applied["Ascendant, and things in it"] == "applied to the degree of the Ascendant"
-    assert applied["Midheaven, or the fourth"] == "applied to the degrees of the Midheaven and the fourth"
-    assert state["Anything else"] == "method not stated in PN IV"
+    # since 2026-09-11 (GAP-37 / PN4R-4b-4, the owner's ruling (e)) a planet ON an axial degree is directed as it is
+    assert applied["Ascendant, and things in it"] == "applied to the degree of the Ascendant and to a planet on the degree itself (numerical tolerance, no orb)"
+    assert applied["Midheaven, or the fourth"] == "applied to the degrees of the Midheaven and the fourth and to a planet on the degree itself (numerical tolerance, no orb)"
+    assert state["Anything else"].startswith("Requires proportional semi-arcs; calculation unavailable.")
+    assert "III.1, 12 fn 16; VI.2, 21 fn 33" in state["Anything else"] and "stated in no text in hand" in state["Anything else"]
+    assert "Not a prohibition: III.1, 5" in state["Anything else"]
 
 
 # --- III.7, 32-42: when a natal indication comes out ----------------------
@@ -2835,3 +2863,905 @@ def test_sahl_releaser_in_the_bundle_feeds_the_governor_and_the_proxies(engine):
     assert engine["pn4_luminary_proxies"]("Moon", chart, b["sr"], b["moon"], None, None)[0]["Reads"].startswith("unavailable: the sign")
     syz = b["syzygies"]
     assert 0.0 <= syz["meeting"]["longitude"] < 360.0 and syz["fullness"]["jd"] < chart["julian_day"] and syz["meeting"]["jd"] < chart["julian_day"]
+
+
+# --- CONV-SOLAR_BURNED_ORB: VII.2, 44 as printed for the direct eastern inferior ---
+
+@pytest.mark.parametrize("planet", ["Venus", "Mercury"])
+def test_direct_eastern_inferior_leaves_burning_at_six_degrees_as_vii_2_44_prints(engine, planet):
+    """VII.2, 44: an inferior that has gone direct in the east (43) is
+    "simply under the rays until there are 6 degrees between them and [the
+    Sun]"; fn 43 doubts the 6 and keeps it. Applied as printed: at 6.5
+    degrees east and direct, 'Under the rays'; retrograde there (37/40's
+    7), 'Burned'; 6.5 west and direct (47's 7), 'Burned'; 5.5 east and
+    direct (45), 'Burned'; with no speed the 7 stands."""
+    sp = engine["solar_phase"]
+    assert sp(planet, 93.5, 100.0, 1.0)[0] == "Under the rays"
+    assert sp(planet, 93.5, 100.0, -0.5)[0] == "Burned"
+    assert sp(planet, 106.5, 100.0, 1.0)[0] == "Burned"
+    assert sp(planet, 94.5, 100.0, 1.0)[0] == "Burned"
+    assert sp(planet, 93.5, 100.0)[0] == "Burned"
+    assert "VII.2, 44" in engine["solar_phase_note"](planet, "eastern", 1.0, 6.5)
+    assert engine["solar_phase_note"](planet, "eastern", 1.0, 7.5) == ""
+    assert engine["solar_phase_note"]("Mars", "eastern", 1.0, 6.5) == ""
+
+
+# --- PN4R-4g-2: indicator #9 from the three places of II.6, 1 -----------------
+
+def test_pn4_indicator_nine_reads_the_lord_of_the_years_house_from_the_three_places(engine):
+    """II.6, 1: "in one of the stakes of the Ascendant of the root, or of
+    the terminal point, or of the Ascendant of the revolution" -- three
+    counts, in row 14's format; the row had read the revolution's alone."""
+    rows = _rows(engine)
+    reads = rows[9]["Reads"]
+    assert "from the natal Ascendant / the terminal sign / the revolution Ascendant" in reads
+    assert " in house " in reads and reads.split(" in house ")[1].split(" (")[0].count("/") == 2
+    assert "II.6, 1" in rows[9]["Source"]
+
+
+# --- DEC-D-5 as implemented (sheet row 9): condition 110 keeps 19 Libra-3 Scorpio, labelled Abu Ma'shar's ---
+
+@pytest.mark.parametrize("moon, fires", [(182.0, False), (205.0, True), (212.9, True), (213.0, False), (235.0, False)])
+def test_moon_corruption_110_keeps_the_borrowed_19_libra_3_scorpio_span_and_says_whose_it_is(engine, moon, fires):
+    """Introduction 3, 110: "at the end of Libra and the beginning of
+    Scorpio" -- no degrees. The span tested is Gr. Intr. VII.6, 40's
+    (fn 120), borrowed and named as such; the Moon at 2 Libra or 25
+    Scorpio does not fire (owner, 2026-09-11)."""
+    fig = pdata(Moon=(moon, MOON), Venus=(155, VENUS), Mercury=(335, MERC), Sun=(0, 1.0), North_Node=(80, 0.0))
+    t = engine["evaluate_corruption_of_the_moon"](fig, 0.0, "Diurnal")["testimonies"][110]
+    assert t["matched"] is fires
+    if fires:
+        assert any("VII.6, 40" in str(c) and "no degrees" in str(c) for c in t["clauses"]), t["clauses"]
+        # the two readings are on the page, not only in a comment (review D5, 2026-09-11)
+        clause = next(str(c) for c in t["clauses"] if "VII.6, 40" in str(c))
+        assert "Carmen p. 258 fn 104" in clause and "Course Glossary" in clause and "different construction" in clause
+
+
+# --- REL-2-6 (sheet row 12): 1.15, 16's "good places" are Sahl's seven praised places, by whole-sign place ---
+
+@pytest.mark.parametrize("mars, place, releaser", [(93.0, 9, "the Ascendant"), (267.0, 2, None)])
+def test_ascendant_candidates_lord_is_judged_by_the_seven_praised_places(engine, mars, place, releaser):
+    """Scorpio rising by day; the Sun at 10 Cancer (the ninth, falling) and
+    the meeting at 15 Aries (the sixth) fail, so the Ascendant is examined:
+    Venus in Leo squares it (a fortune looking); its lord Mars in his own
+    bound. In the NINTH (3 Cancer, Mars's bound 0-7) the ninth is one of
+    the seven praised places (Introduction 2, 42; 1.30, 71) though not a
+    succedent, so the Ascendant is the releaser; in the SECOND (27
+    Sagittarius, Mars's bound 26-30) the second is a succedent but not a
+    praised place, so it is not. The old reading (stake or succedent) gave
+    the opposite on both."""
+    r = _releaser(engine, 215.0, "Diurnal", Mars=mars, Venus=130.0, Jupiter=250.0)
+    asc = next(c for c in r["candidates"] if c["Candidate"] == "the Ascendant")
+    assert f"whole-sign place {place}" in asc["Verdict"] and "seven praised places" in asc["Verdict"]
+    assert r["releaser"] == releaser
+
+
+# --- REL-2-3: 1.15, 7's gate against 1.16, 4, named on the row -----------------
+
+def test_unwitnessed_luminary_row_names_nawbakhts_gate_and_al_andarzaghars_rule(engine):
+    """Scorpio rising by day, the Sun at 15 Virgo (the eleventh, one of
+    1.15, 6's five places): its lords are Venus (bound, triplicity, face)
+    and Mercury (house, exaltation); with Mercury in Leo, the adjacent
+    sign, and Venus in Libra, the next, neither looks. Nawbakht's 1.15, 7
+    sends the search on; the row says so and names al-Andarzaghar's 1.16,
+    4, which would keep the Sun "even if a house-master is not looking".
+    (Venus is western here: since 2026-09-11, REL-5-2, an eastern Venus
+    with her day-triplicity share at the Ascendant would be house-master by
+    1.20, 6, and that case has its own test.) Control: Mercury in Pisces
+    opposes Virgo, the Sun is the releaser and the row cites neither."""
+    r = _releaser(engine, 215.0, "Diurnal", Sun=165.0, Mercury=145.0, Venus=200.0)
+    sun = next(c for c in r["candidates"] if c["Candidate"] == "the Sun")
+    assert "1.15, 7" in sun["Verdict"] and "1.16, 4" in sun["Verdict"] and r["releaser"] != "the Sun"
+    assert any(c == "1.16, 4" for c, _t in engine["SAHL_RELEASER_NOT_APPLIED"])
+    r2 = _releaser(engine, 215.0, "Diurnal", Sun=165.0, Mercury=340.0, Venus=200.0)
+    sun2 = next(c for c in r2["candidates"] if c["Candidate"] == "the Sun")
+    assert r2["releaser"] == "the Sun" and "1.15, 7" not in sun2["Verdict"] and "1.16, 4" not in sun2["Verdict"]
+
+
+# --- GAP-3: Sahl 1.23, 33 and 1.24, 2 shown side by side; PN IV ranks by scope ---
+
+def test_year_indicator_note_shows_sahls_two_sentences_and_does_not_claim_to_resolve_them(engine):
+    note = engine["PN4_YEAR_INDICATOR_SCOPE_NOTE"]
+    assert "1.23, 33" in note and "1.24, 2" in note and "fn 245" in note
+    assert "tender [of sheep]" in note and "stronger <than> the distributor of time" in note
+    assert "II.1, 25" in note and "III.2, 2-3" in note
+    assert "resolves the corpus disagreement" not in note and "not resolved" in note
+
+
+# --- GAP-27: the seven-day grant of IX.7, 7-9 is built (method 2), and the page no longer says otherwise ---
+
+def test_orb_lord_holds_the_first_week_of_ix_7_7(engine):
+    """IX.7, 7: the lord of the orb "grants 7 days"; at day 0 of the
+    revolution the week, the day and the hour are its own."""
+    m2 = engine["pn4_ix7_weeks_from_orb"](0.0, "Venus")
+    assert m2["week"] == "Venus" and m2["day"] == "Venus"
+    from conftest import engine_source
+    assert "IX.7, 7-8 are not built" not in engine_source()
+
+
+# --- FINAL-A7 (sheet row 8): the stand-in of 1.32, 11-13 in the empty case ---------------
+
+def test_no_releaser_names_the_stand_in_and_the_moon_is_directed(engine):
+    """Scorpio rising by day: the Sun at 10 Cancer (ninth, falling) and the
+    meeting at 15 Aries (sixth) fail; no fortune looks at Scorpio (Venus
+    and Jupiter both in Sagittarius, the adjacent sign), so the Ascendant
+    fails 1.15, 16. The verdict now quotes 1.32, 13 across the page break
+    -- "the first of them is the Ascendant, then the Moon" -- and 1.32,
+    11-13 is no longer listed as not applied."""
+    r = _releaser(engine, 215.0, "Diurnal", Venus=240.0, Jupiter=250.0)
+    assert r["releaser"] is None
+    assert "1.32, 11" in r["verdict"] and "the first of them is the Ascendant, then the Moon" in r["verdict"]
+    assert "not applied" not in r["verdict"]
+    assert not any(c == "1.32, 11-13" for c, _t in engine["SAHL_RELEASER_NOT_APPLIED"])
+
+
+# --- FINAL-A2 (sheet row 2): IX.8, 30's turning of the indicator, a year a sign ---------------
+
+def test_house_master_turning_reaches_the_cutters_bodies_oppositions_and_squares(engine):
+    """Jupiter the house-master at 15 Aries; Saturn at 10 Gemini, Mars at
+    20 Libra. Turned a year a sign from Aries: year 0 (Aries) is Mars's
+    opposition sign; year 2 (Gemini) Saturn's body; year 3 (Cancer) Mars's
+    square (right: Libra less three signs); year 6 (Libra) Mars's body;
+    year 12 Aries again. Years 1 and 4 reach nothing."""
+    p = pdata(Jupiter=(15.0, 0.08), Saturn=(70.0, 0.03), Mars=(200.0, 0.5), Sun=(300.0, 1.0), Moon=(10.0, 13.0))
+    rows = engine["sahl_house_master_turning"]("Jupiter", p, span_years=13)
+    by_year = {r["Year of age"]: r["Reaches"] for r in rows}
+    assert "Mars's opposition" in by_year[0] and by_year[0].count(",") == 0
+    assert by_year[2] == "Saturn's body"
+    assert by_year[3] == "Mars's square (right)"
+    assert by_year[6] == "Mars's body"
+    assert by_year[12] == by_year[0]
+    assert all(r["Source"] == "PN IV IX.8, 30" for r in rows)
+    assert 1 not in by_year and 4 not in by_year
+
+
+# --- Sheet row 3 (owner's ruling): the Lot of Fortune tested by whole-sign place, the planets by the division ---
+
+def test_lot_of_fortune_candidate_is_placed_by_whole_sign_and_the_moon_by_the_division(engine):
+    """A night chart with Scorpio rising at 5 Scorpio and unequal cusps
+    (the third division opening at 10 Sagittarius). The Moon at 13
+    Sagittarius stands in the second whole sign but the third division,
+    so by the POWER unit she is falling and fails; the fullness at 10
+    Virgo (the twelfth division and sign) fails; the Lot of Fortune at 15 Sagittarius has no
+    dynamic angularity and is tested by whole-sign place -- the second, a
+    succedent -- with Jupiter (its house and triplicity lord) in its sign,
+    so the Lot is the releaser. Under the old division test the Lot too
+    would have been falling (third division)."""
+    data, _ = _sahl_chart(215.0, Moon=253.0, Jupiter=250.0, Sun=100.0)
+    cusps = [215.0, 228.0, 250.0, 275.0, 305.0, 335.0, 35.0, 48.0, 70.0, 95.0, 125.0, 155.0]
+    r = engine["sahl_releaser"](data, 215.0, cusps, "Nocturnal", 255.0, 100.0, 160.0)
+    moon = next(c for c in r["candidates"] if c["Candidate"] == "the Moon")
+    lot = next(c for c in r["candidates"] if c["Candidate"] == "the Lot of Fortune")
+    key = "House (division, 5 deg at the stakes; the Lot by whole-sign place)"
+    assert moon[key] == 3 and "falling" in moon["Verdict"]
+    assert lot[key] == 2 and r["releaser"] == "the Lot of Fortune"
+
+
+# --- FINAL-A1 (sheet row 1): the house-master's years from 1.20, 7-34, by the division ---------
+
+def _years(engine, planet, sect="Nocturnal", **planets):
+    data, cusps = _sahl_chart(215.0, **planets)                 # Scorpio rising; the cusps equal the signs
+    ess = engine["evaluate_essential_dignities"](data, sect)
+    return engine["sahl_house_master_years"](planet, data, cusps, sect, ess)
+
+
+def test_house_master_years_greater_in_an_enhanced_stake_and_middle_in_a_bare_one(engine):
+    """1.20, 10: Jupiter at 15 Taurus (the seventh, "the sign of the west";
+    his own bound, 14-22), eastern of a Sun at 10 Gemini, direct, not under
+    the rays -- enhanced, the greater years (79). 1.20, 20 with fn 158: the
+    same Jupiter at 5 Taurus (Venus's bound, no share) is a bare stake,
+    direct and unburned -- the middle years (45.5)."""
+    g = _years(engine, "Jupiter", Jupiter=45.0, Sun=70.0)
+    assert (g["grade"], g["sentence"], g["years"], g["division"]) == ("greater", "1.20, 10", 79, 7)
+    assert "the sign of the west" in g["text"]
+    g = _years(engine, "Jupiter", Jupiter=35.0, Sun=70.0)
+    assert (g["grade"], g["sentence"], g["years"]) == ("middle", "1.20, 20", 45.5)
+
+
+def test_house_master_years_second_eighth_falling_and_the_third_retrograde(engine):
+    """16: the second or eighth = middle (Jupiter at 15 Gemini, the eighth).
+    28: the other falling places = lesser (Jupiter at 15 Aries, the sixth).
+    33: the third, retrograde under the rays = days, no count restated
+    (Mercury at 15 Capricorn retrograde with the Sun at 20 Capricorn).
+    34: with that in its fall = hours (Jupiter there: Capricorn is his fall)."""
+    assert (_years(engine, "Jupiter", Jupiter=75.0, Sun=70.0)["sentence"]) == "1.20, 16"
+    g = _years(engine, "Jupiter", Jupiter=15.0, Sun=70.0)
+    assert (g["grade"], g["sentence"], g["years"]) == ("lesser", "1.20, 28", 12)
+    data, cusps = _sahl_chart(215.0, Mercury=285.0, Sun=290.0)
+    data["Mercury"]["speed_in_lon"] = -0.5
+    ess = engine["evaluate_essential_dignities"](data, "Diurnal")
+    g = engine["sahl_house_master_years"]("Mercury", data, cusps, "Diurnal", ess)
+    assert (g["grade"], g["sentence"], g["years"]) == ("days", "1.20, 33", None) and "not restated" in g["text"]
+    data, cusps = _sahl_chart(215.0, Jupiter=285.0, Sun=290.0)
+    data["Jupiter"]["speed_in_lon"] = -0.05
+    ess = engine["evaluate_essential_dignities"](data, "Diurnal")
+    g = engine["sahl_house_master_years"]("Jupiter", data, cusps, "Diurnal", ess)
+    assert (g["grade"], g["sentence"]) == ("hours", "1.20, 34")
+    assert any("14-15" in f for f in g["flags"])           # a superior, retrograde and burned: 14-15 printed, not applied
+
+
+def test_house_master_years_eleven_needs_enhanced_so_the_retrograde_fourth_is_not_greater(engine):
+    """1.20, 11: "under the earth, eastern, in one of its shares, ENHANCED,
+    then it also indicates its greater years (and by night in the fourth
+    and fifth ...)". Enhanced is 7-9: in a share, eastern, direct, not under
+    the rays. Jupiter at 15 Aquarius (the fourth from Scorpio; his own
+    bound, 13-20), eastern of a Sun at 10 Pisces, direct: 11, the greater
+    years. The same Jupiter RETROGRADE is not enhanced and no sentence of
+    1.20 reaches him ("1.20 silent"); under the rays and direct he falls to
+    18's middle as the other stakes do; retrograde under the rays to 21.
+    By night in the fifth (15 Pisces, his own house) the same: direct
+    greater, retrograde 23's lesser (review D2, 2026-09-11)."""
+    g = _years(engine, "Jupiter", sect="Diurnal", Jupiter=315.0, Sun=340.0)
+    assert (g["grade"], g["sentence"], g["division"]) == ("greater", "1.20, 11", 4)
+    data, cusps = _sahl_chart(215.0, Jupiter=315.0, Sun=340.0)
+    data["Jupiter"]["speed_in_lon"] = -0.05
+    ess = engine["evaluate_essential_dignities"](data, "Diurnal")
+    g = engine["sahl_house_master_years"]("Jupiter", data, cusps, "Diurnal", ess)
+    assert g["sentence"] != "1.20, 11" and g["grade"] != "greater" and "silent" in g["text"]
+    g = _years(engine, "Jupiter", sect="Diurnal", Jupiter=315.0, Sun=320.0)          # 5 degrees from the Sun: under the rays, direct
+    assert (g["grade"], g["sentence"]) == ("middle", "1.20, 18")
+    data, cusps = _sahl_chart(215.0, Jupiter=315.0, Sun=320.0)
+    data["Jupiter"]["speed_in_lon"] = -0.05
+    ess = engine["evaluate_essential_dignities"](data, "Diurnal")
+    g = engine["sahl_house_master_years"]("Jupiter", data, cusps, "Diurnal", ess)
+    assert (g["grade"], g["sentence"]) == ("lesser", "1.20, 21")
+    g = _years(engine, "Jupiter", sect="Nocturnal", Jupiter=345.0, Sun=10.0)
+    assert (g["grade"], g["sentence"], g["division"]) == ("greater", "1.20, 11", 5)
+    data, cusps = _sahl_chart(215.0, Jupiter=345.0, Sun=10.0)
+    data["Jupiter"]["speed_in_lon"] = -0.05
+    ess = engine["evaluate_essential_dignities"](data, "Nocturnal")
+    g = engine["sahl_house_master_years"]("Jupiter", data, cusps, "Nocturnal", ess)
+    assert (g["grade"], g["sentence"]) == ("lesser", "1.20, 23")
+    assert "12 (greater) and 23 (lesser) conflict as printed" in engine["SAHL_1_20_READINGS"]
+
+
+def test_house_master_years_are_by_the_division_not_the_sign(engine):
+    """The unit is the owner's: a planet 3 degrees before the tenth cusp is
+    in the tenth DIVISION by the five-degree allowance, though in the
+    ninth SIGN. Cusps unequal here; Jupiter at 12 Leo, the Midheaven cusp
+    at 15 Leo, in his own triplicity by night, eastern, direct: the
+    greater years by 10 -- by whole sign he would have been in the ninth."""
+    data, _ = _sahl_chart(215.0, Jupiter=132.0, Sun=170.0)
+    cusps = [215.0, 245.0, 275.0, 305.0, 335.0, 5.0, 35.0, 65.0, 95.0, 135.0, 165.0, 190.0]
+    ess = engine["evaluate_essential_dignities"](data, "Nocturnal")
+    g = engine["sahl_house_master_years"]("Jupiter", data, cusps, "Nocturnal", ess)
+    assert g["division"] == 10 and engine["get_wsh_house"](132.0, 215.0) == 10   # both tenth here: Leo IS the tenth sign
+    data, _ = _sahl_chart(215.0, Jupiter=132.0, Sun=170.0)
+    cusps = [215.0, 245.0, 275.0, 305.0, 335.0, 5.0, 35.0, 65.0, 105.0, 135.0, 165.0, 190.0]
+    g = engine["sahl_house_master_years"]("Jupiter", data, cusps, "Nocturnal", ess)
+    assert g["division"] == 10 and (g["grade"], g["sentence"]) == ("greater", "1.20, 10")
+    cusps2 = [215.0, 245.0, 275.0, 305.0, 335.0, 5.0, 35.0, 65.0, 105.0, 140.0, 165.0, 190.0]   # the cusp 8 degrees on: the ninth division
+    g2 = engine["sahl_house_master_years"]("Jupiter", data, cusps2, "Nocturnal", ess)
+    assert g2["division"] == 9 and g2["sentence"] == "1.20, 26"
+
+
+# --- FINAL-A4 (sheet row 5): 2.13, 48-51 under its own name; the engine's generalisation labelled; Aphorism 45 as printed ---
+
+def _bands(engine, lat=0.0, sect="Diurnal", asc=0.0, mc=270.0, **planets):
+    base = dict(Sun=20.0, Moon=200.0, Mercury=110.0, Venus=130.0, Mars=300.0, Jupiter=250.0, Saturn=160.0)
+    base.update(planets)
+    return engine["evaluate_ascensional_bands"](pdata(**base), asc, mc, 23.4392911, lat, sect)
+
+
+def test_2_13_band_strings_report_the_printed_carmen_band_for_band(engine):
+    """Review D3 (2026-09-11): the printed Carmen I.28 (p. 108, the owner's
+    photograph, read by this session) has the same four parts as Sahl
+    2.13, 48-51 -- 5: the third 15 "middling in assets and good fortune"
+    (= 50), 6: after these degrees up to the next stake "needy [and]
+    wretches" (= 51). The earlier strings put "needy" on the third band."""
+    bands = engine["SAHL_2_13_BANDS"]
+    assert bands[2][2] == 'the middle of assets (50; Carmen I.28, 5 "middling in assets and good fortune")'
+    assert bands[3][2] == 'of the nativities of the poor (51; Carmen I.28, 6 "needy [and] wretches")'
+    assert not any("variant" in b[2] or "differs" in b[2] for b in bands)
+    from conftest import ui_source
+    src = ui_source()
+    assert "the same four parts band for band" in src and "Carmen's third band" not in src
+
+
+def test_2_13_grades_the_sect_lights_first_triplicity_lord_only_and_the_display_grades_all(engine):
+    """Day chart, the Sun at 20 Aries: the fire triplicity's first lord by
+    day is the Sun himself. At the equator with 0 Aries rising the
+    ascension from the Ascendant equals right ascension: 20 Aries is 18.4
+    degrees of ascension past the stake -- the SECOND band, "good fortune
+    below the first" (49). Mercury at 10 Aries stands in the first band
+    of the same stake with the engine's grade only, no 2.13 judgment; by
+    Aphorism 45 as printed Mercury (10 zodiacal degrees) is within and
+    the Sun (20) beyond, neither applied."""
+    out = _bands(engine, Sun=20.0, Mercury=10.0)
+    rows = {r["Planet"]: r for r in out["rows"]}
+    assert out["first_lord"] == "Sun" and out["judged"]["band"] == "second 15 degrees"
+    assert "below the first" in rows["Sun"]["2.13, 48-51 (the sect light's first triplicity lord only)"]
+    assert rows["Mercury"]["2.13, 48-51 (the sect light's first triplicity lord only)"] == "-"
+    assert rows["Mercury"]["Engine grade (generalised from 2.13, 48-51)"] == "first 15 degrees of ascension"
+    assert rows["Mercury"]["Aphorism #45 as printed (15 zodiacal degrees; not applied)"] == "within"
+    assert rows["Sun"]["Aphorism #45 as printed (15 zodiacal degrees; not applied)"] == "beyond"
+    assert rows["Sun"]["Follows the stake"].startswith("Ascendant")
+
+
+def test_2_13_bands_are_end_inclusive_and_truncated_by_the_next_stake(engine):
+    """At the equator RA(x) < x in Aries, so a planet whose RA is exactly
+    15 sits in band one (end-inclusive); the Midheaven at 30 Aries makes
+    a planet at 40 Aries follow the MIDHEAVEN by right ascension, not the
+    Ascendant, and the remainder is bounded by the next actual stake."""
+    out = _bands(engine, Sun=16.0, mc=30.0)                     # RA(16 Aries) = 14.7: band one, inclusive of 15
+    assert {r["Planet"]: r for r in out["rows"]}["Sun"]["Engine grade (generalised from 2.13, 48-51)"] == "first 15 degrees of ascension"
+    out = _bands(engine, Sun=40.0, mc=30.0)
+    sun = {r["Planet"]: r for r in out["rows"]}["Sun"]
+    assert sun["Follows the stake"].startswith("Midheaven") and "right ascension" in sun["Ascensional distance"]
+    out = _bands(engine, Sun=60.0, mc=270.0)                    # 60 Aries-Taurus: RA 57.8 past the Ascendant, the remainder
+    assert {r["Planet"]: r for r in out["rows"]}["Sun"]["Engine grade (generalised from 2.13, 48-51)"] == "the remainder, up to the next stake"
+
+
+def test_2_13_refuses_at_the_poles(engine):
+    out = _bands(engine, lat=70.0)
+    assert out["rows"] == [] and "D-23" in out["refused"]
+
+
+# --- DEC-D-18 (sheet row 11): spear-bearing, two display-only definitions ---------------------
+
+def test_right_sidedness_strong_and_by_sect(engine):
+    """2.5, 2: Jupiter in Cancer (exaltation) sextile Venus in Taurus
+    (domicile), connected -- strong. 2.5, 3: Saturn at 10 Leo and Jupiter at
+    10 Libra, neither in house nor exaltation nor any share, both diurnal,
+    sextile and connected -- "below the first". Jupiter at 6 Leo and Mars
+    at 10 Libra (opposite sects, no dignities) in sextile: no grade."""
+    p = pdata(Sun=280.0, Moon=160.0, Mercury=270.0, Venus=40.0, Mars=210.0, Jupiter=100.0, Saturn=330.0)
+    rows = {r["Pair"]: r for r in engine["evaluate_right_sidedness"](p, "Diurnal")}
+    assert rows["Jupiter and Venus"]["Grade"].startswith("strong")
+    p = pdata(Sun=280.0, Moon=160.0, Mercury=270.0, Venus=300.0, Mars=210.0, Jupiter=190.0, Saturn=130.0)
+    rows = {r["Pair"]: r for r in engine["evaluate_right_sidedness"](p, "Diurnal")}
+    assert "below the first" in rows["Saturn and Jupiter"]["Grade"] and rows["Saturn and Jupiter"]["One sect"] == "yes"
+    p = pdata(Sun=280.0, Moon=160.0, Mercury=270.0, Venus=300.0, Mars=190.0, Jupiter=126.0, Saturn=330.0)
+    rows = {r["Pair"]: r for r in engine["evaluate_right_sidedness"](p, "Diurnal")}
+    assert rows["Jupiter and Mars"]["Grade"] == "-" and rows["Jupiter and Mars"]["One sect"] == "no"
+
+
+def test_honor_guard_reads_eastern_from_the_sun_and_western_from_the_moon(engine):
+    """10.2.1, 10: Mars at 5 Capricorn rises before a Sun at 10 Capricorn
+    (eastern from him) and after a Moon at 20 Sagittarius (western from
+    her): an honor-guard; Saturn at 20 Capricorn is western from both."""
+    p = pdata(Sun=280.0, Moon=260.0, Mercury=300.0, Venus=310.0, Mars=275.0, Jupiter=100.0, Saturn=290.0)
+    rows = {r["Planet"]: r for r in engine["evaluate_honor_guard"](p, 270.0)}
+    assert rows["Mars"]["Role"] == "honor-guard" and rows["Mars"]["In a stake"] == "yes"
+    assert rows["Saturn"]["Role"] == "-" and rows["Saturn"]["Eastern from the Sun"] == "no"
+    assert rows["Sun"]["Sign"].endswith("(female)") and rows["Sun"]["In a stake"] == "yes"
+
+
+# --- PN4R-4e-2: the six named lords of the orb by VI.1, 10 and by VI.1, 8 -------------------
+
+def test_named_lords_of_the_orb_show_both_vi_1_10_and_vi_1_8(engine):
+    """Natal hour lord Venus, 14 completed years: the sign of the terminal
+    point is the third house; by VI.1, 10 its lord is the third hour from
+    Venus (the Moon); by VI.1, 8 the hour lord it received when the
+    profection last reached it is the fifteenth hour, which is the year's
+    lord of the orb. At 2 completed years both columns agree."""
+    rows = {r["Position"]: r for r in engine["pn4_named_lords_of_the_orb"]("Venus", 14)}
+    k10, k8 = "Lord of the hour (VI.1, 10)", "By VI.1, 8's assignment (the hour lord the house received when the profection last reached it)"
+    r = rows["Sign of the terminal point"]
+    assert r["House"] == 3 and r[k10] == engine["pn4_hour_lord_from_natal"]("Venus", 2)
+    assert r[k8] == engine["pn4_lord_of_the_orb"]("Venus", 14) and r[k8] != r[k10]
+    early = {r["Position"]: r for r in engine["pn4_named_lords_of_the_orb"]("Venus", 2)}["Sign of the terminal point"]
+    assert early[k10] == early[k8]
+    assert {r["Position"]: r for r in engine["pn4_named_lords_of_the_orb"]("Venus", 5)}["Midheaven of the root"][k8] == "-"
+
+
+# --- PN4R-4l-7: II.3, 2 [3]'s twelfth-parts, computed -------------------------------------
+
+def test_ii3_lists_the_planets_whose_twelfth_parts_fall_in_the_terminal_sign(engine):
+    """Terminal sign Cancer. Saturn at 4 Gemini: its second twelfth-part
+    (2.5-5 of Gemini) is Cancer, so Saturn's twelfth-part falls in the
+    sign; Mars at 20 Capricorn (twelfth-part in Virgo) does not."""
+    root, sr, _ = _ii3_pair(engine, year_lon=95.0)
+    root["planetary_data"]["Saturn"]["longitude"] = 64.0
+    root["planetary_data"]["Mars"]["longitude"] = 290.0
+    year = {"sign": "Cancer", "longitude": 95.0, "lord": "Moon"}
+    out = engine["pn4_ii3_examination"](root, sr, year, 2451545.0)
+    reads = out["root_rows"][2]["Reads"]
+    assert "twelfth-parts of: " in reads and "Saturn" in reads.split("twelfth-parts of: ")[1]
+    assert "Mars" not in reads.split("twelfth-parts of: ")[1]
+    assert "not computed" not in reads and "V.18, 3" in out["root_rows"][2]["Source"]
+    # the provenance strings (PN4R-4n-2 / F14; review round 2026-09-11: pinned)
+    assert out["root_rows"][2]["Source"] == "II.3, 2; VI.4; Gr. Intr. V.18, 3 (Figure 57)"
+    from conftest import function_source, ui_source
+    assert "PROVENANCE: Gr. Intr. V.18, 1-3 (Figure 57) STATES the construction" in function_source("_twelfth_part_sign")
+    assert "is stated at Gr. Intr. V.18, 1-3 (Figure 57)" in ui_source()
+    assert "twelfth-parts of:" in out["revolution_rows"][0]["Reads"]
+
+
+# --- PN4R-4a-1 and 4a-2: III.7, 35's "not looking"; III.7, 42 against every distribution -----
+
+def test_fixed_sign_planet_that_looks_at_the_ascendant_is_not_given_35s_once(engine):
+    """Saturn at 10 Taurus (fixed) under a Leo Ascendant: Taurus squares
+    Leo, so 35's "not looking" does not hold and the row names 36; under
+    an Aries Ascendant Taurus is in aversion and the "once" stands. With no
+    Ascendant given the quadruplicity label is printed as before."""
+    look = next(r for r in engine["pn4_activation_ages"](pdata(Saturn=40.0), 23.44, 43.78, ascendant_lon=125.0) if r["Planet"] == "Saturn")
+    assert "III.7, 36" in look["Manifests"] and "square" in look["Manifests"]
+    avert = next(r for r in engine["pn4_activation_ages"](pdata(Saturn=40.0), 23.44, 43.78, ascendant_lon=5.0) if r["Planet"] == "Saturn")
+    assert avert["Manifests"].startswith("once in the lifespan") and "III.7, 35" in avert["Manifests"]
+    plain = next(r for r in engine["pn4_activation_ages"](pdata(Saturn=40.0), 23.44, 43.78) if r["Planet"] == "Saturn")
+    assert plain["Manifests"] == "once in the lifespan (III.7, 35)"
+
+
+def test_activation_confirmation_names_the_distribution_that_confirms(engine):
+    """A planet confirmed by the Midheaven's distribution and not by the
+    Ascendant's is now confirmed, with the distribution named."""
+    points = pdata(Mercury=40.0, Saturn=200.0, Sun=100.0, Moon=300.0)
+    asc_segs = engine["pn4_distribution_from_ascendant"](points, 110.0, 23.44, 43.78)
+    mc_segs = engine["pn4_distribution_from_meridian"](points, 20.0, 23.44, 'Midheaven')
+    rows = engine["pn4_activation_ages"](points, 23.44, 43.78, distributions={"the Ascendant's distribution": asc_segs,
+                                                                             "the Midheaven's distribution": mc_segs})
+    claims = [c for r in rows for c in r["Confirmed by the distribution"].split(";") if "as " in c]
+    assert claims and all(("Ascendant's" in c) or ("Midheaven's" in c) for c in claims)
+    for r in rows:
+        for c in r["Confirmed by the distribution"].split(";"):
+            if "as " not in c:
+                continue
+            age = float(c.split("(")[1].split(",")[0])
+            segs = mc_segs if "Midheaven's" in c else asc_segs
+            seg = engine["pn4_distribution_at_age"](segs, age)
+            assert r["Planet"] in (seg["distributor"], seg["partner"])
+    only_asc = engine["pn4_activation_ages"](points, 23.44, 43.78, asc_segs)
+    assert all("Ascendant's" in c for r in only_asc for c in r["Confirmed by the distribution"].split(";") if "as " in c)
+
+
+# --- DIS-9: the caveat row names Sahl's own quadrant timing beside On Times 1's hemispheres ----
+
+def test_quick_and_slow_places_caveat_names_sahls_own_natal_timing(engine):
+    row = next(t for c, t in engine["NOT_IMPLEMENTED_COVERAGE"] if "ADVANCING_BY_QUADRANT_FIG90" in t)
+    assert "7.4, 17" in row and "5.3, 11-12" in row and "6.5, 1" in row and "On Choices 6, 16-17" in row
+
+
+# --- PN4R-4h-4: IX.2, 5's partial rule when the strict governor fails ------------------------
+
+def test_first_month_governor_names_the_primary_sign_when_the_strict_test_fails(engine):
+    """Natal Ascendant 5 Aries, natal Lot 5 Cancer (not in the Ascendant, so
+    the strict test fails); the terminal sign Leo (offset four): the Lot's
+    terminal is Scorpio; the revolution's Ascendant and Lot both in Leo;
+    Leo's first ninth-part is Aries. Leo holds three of five -- primary,
+    Scorpio and Aries the partners. With the revolution's Ascendant and Lot
+    in Scorpio the tally is Leo 1, Scorpio 3, Aries 1 -- Scorpio primary."""
+    rows, verdict = engine["pn4_first_month_governor"](5.0, 95.0, 125.0, 130.0, 135.0)
+    assert verdict.startswith("no governor") and "Primary: Leo (3 of five" in verdict and "Scorpio" in verdict.split("partners:")[1]
+    assert rows[-1]["Source"] == "IX.2, 5; fn 38"
+    rows, verdict = engine["pn4_first_month_governor"](5.0, 95.0, 125.0, 220.0, 225.0)
+    assert "Primary: Scorpio (3 of five" in verdict
+    rows, verdict = engine["pn4_first_month_governor"](5.0, 5.0, 185.0, 190.0, 195.0)     # Libra, convertible: the strict case
+    assert "govern the first month" in verdict and len(rows) == 5
+
+
+# --- GAP-37 / PN4R-4b-4: the planets in the Midheaven, the fourth and the Ascendant, directed -----
+
+def test_planets_on_an_axial_degree_are_directed_as_it_is_and_the_rest_require_semiarcs(engine):
+    """III.1, 12 under the owner's ruling (e) of 2026-09-11 (GAP-37 /
+    PN4R-4b-4): "in the Ascendant / Midheaven / fourth" is ON the axial
+    degree, floating-point equality, no orb. The signed-offset table of
+    GAP-37_astra_reading.md: dl = wrap(planet - MC) in {-6, -3, 0, +3, +6},
+    only 0 selects right ascension, the four others "requires semi-arcs";
+    the exact Ascendant and IC; wraparound (an axis at 0, a point just
+    under 360); and independence from the five-degree setting."""
+    axis_of = engine["pn4_axis_of"]
+    asc, mc = 100.0, 10.0
+    for dl in (-6.0, -3.0, 3.0, 6.0):
+        assert axis_of((mc + dl) % 360.0, asc, mc) is None, dl
+    assert axis_of(mc, asc, mc) == "Midheaven"
+    assert axis_of(asc, asc, mc) == "Ascendant" and axis_of((mc + 180.0) % 360.0, asc, mc) == "Fourth (IC)"
+    assert axis_of(mc + 2e-9, asc, mc) is None and axis_of(mc + 5e-10, asc, mc) == "Midheaven"   # the documented tolerance
+    assert axis_of(360.0 - 1e-12, asc, 0.0) == "Midheaven" and axis_of(359.9, asc, 0.0) is None    # wraparound
+    assert axis_of(280.0, asc, mc) is None                                                          # the Descendant is not an axis (fn 15)
+    # a real chart: Saturn moved onto the Midheaven's degree, then 3 degrees on
+    cast = engine["calculate_traditional_chart"]
+    birth, lat, lon = datetime(1985, 3, 20, 14, 30), 51.5, -0.12
+    chart = cast(birth, lat, lon)
+    bundle = lambda c: engine["pn4_timing_bundle"](c, lat, lon, birth.date(), datetime(2027, 6, 1).date(), engine["PN4_MONTHLY_TURN_OPTIONS"][0])
+    import copy
+    on = copy.deepcopy(chart)
+    on["planetary_data"]["Saturn"]["longitude"] = chart["mc"]
+    aps = {ap["planet"]: ap for ap in bundle(on)["angle_planets"]}
+    assert set(aps) == set(engine["PN4_SEVEN"])                                                    # every planet is listed
+    assert aps["Saturn"]["axis"] == "Midheaven" and aps["Saturn"]["how"] == "right ascension" and aps["Saturn"]["segments"]
+    assert aps["Saturn"]["segments"][0]["from_lon"] == pytest.approx(chart["mc"])
+    for pl, ap in aps.items():
+        if pl != "Saturn":
+            assert ap["axis"] is None and ap["how"] == "Requires proportional semi-arcs; calculation unavailable." and ap["segments"] is None
+    near = copy.deepcopy(chart)
+    near["planetary_data"]["Saturn"]["longitude"] = (chart["mc"] + 3.0) % 360.0                    # in the tenth division, carried or not: unavailable
+    assert engine["get_effective_house"](near["planetary_data"]["Saturn"]["longitude"], chart["houses"]) == 10
+    ap = {a["planet"]: a for a in bundle(near)["angle_planets"]}["Saturn"]
+    assert ap["axis"] is None and ap["how"].startswith("Requires proportional semi-arcs")
+    old = engine["FIVE_DEGREE_CARRYOVER"]
+    try:
+        engine["FIVE_DEGREE_CARRYOVER"] = 0.0                                                      # the five-degree setting has no role here
+        assert {a["planet"]: a for a in bundle(near)["angle_planets"]}["Saturn"]["axis"] is None
+        assert {a["planet"]: a for a in bundle(on)["angle_planets"]}["Saturn"]["axis"] == "Midheaven"
+    finally:
+        engine["FIVE_DEGREE_CARRYOVER"] = old
+    on_asc = copy.deepcopy(chart)
+    on_asc["planetary_data"]["Venus"]["longitude"] = chart["ascendant"]
+    ap = {a["planet"]: a for a in bundle(on_asc)["angle_planets"]}["Venus"]
+    assert ap["axis"] == "Ascendant" and ap["how"] == "oblique ascension of the birth latitude"
+    on_ic = copy.deepcopy(chart)
+    on_ic["planetary_data"]["Mars"]["longitude"] = (chart["mc"] + 180.0) % 360.0
+    assert {a["planet"]: a for a in bundle(on_ic)["angle_planets"]}["Mars"]["axis"] == "Fourth (IC)"
+
+
+# --- GAP-2: the year of the turning reaching the partner's body (1.24, 4-5; 1.23, 23) ---------
+
+def test_turning_reaches_the_partners_natal_body_while_it_holds(engine):
+    """Ascendant 5 Aries; at age 4 the year of the turning is Leo. A current
+    segment whose partner is Jupiter, natal in Leo: "preferable" (1.23,
+    23); the partner Saturn in Leo: "the infortunes are worse"; a partner in
+    Virgo: not reached."""
+    seg = [{"from": 0.0, "to": 10.0, "from_lon": 5.0, "distributor": "Mars", "partner": "Jupiter", "partner_aspect": "trine",
+            "partner_from": "", "opened_by": ""}]
+    p = pdata(Jupiter=130.0, Saturn=135.0, Venus=160.0, Sun=100.0, Moon=200.0, Mercury=110.0, Mars=300.0)
+    r = engine["sahl_turning_reaches_partner"](seg, 4, 5.0, p)
+    assert r["holds"] and r["sign_of_year"] == "Leo" and "preferable" in r["verdict"]
+    assert '"in an excellent position relative to the Ascendant" -- 1.24, 5 the same -- is not judged' in r["text"]
+    seg[0]["partner"] = "Saturn"
+    assert "worse" in engine["sahl_turning_reaches_partner"](seg, 4, 5.0, p)["verdict"]
+    seg[0]["partner"] = "Venus"
+    r = engine["sahl_turning_reaches_partner"](seg, 4, 5.0, p)
+    assert not r["holds"] and r["verdict"] == "-"
+    seg[0]["partner"] = None
+    assert engine["sahl_turning_reaches_partner"](seg, 4, 5.0, p) is None
+
+
+# --- PN4R-4f-6: VI.2, 4-5's triplicity lords beside the turning -----------------------------
+
+def test_turning_triplicity_lords_for_assets_and_siblings(engine):
+    """Day chart, Sun in Cancer (water: Venus, Mars, Moon by day) for assets
+    (VI.2, 4); Mars in Aquarius (air: Saturn, Mercury, Jupiter) for siblings
+    (VI.2, 5), the first lord the older siblings. Conditions come from both
+    charts."""
+    root, sr, _ = _two_charts(engine, natal=dict(Sun=100.0, Mars=310.0), rev=dict(Venus=200.0, Saturn=10.0))
+    rows = engine["pn4_turning_triplicity_lords"](root, sr)
+    assets = [r for r in rows if r["Topic"] == "assets"]
+    sibs = [r for r in rows if r["Topic"] == "siblings"]
+    assert [r["Lord"] for r in assets] == ["Venus", "Mars", "Moon"] and assets[0]["Source"].startswith("VI.2, 4")
+    assert [r["Lord"] for r in sibs] == ["Saturn", "Mercury", "Jupiter"] and sibs[0]["Siblings (5)"] == "the older"
+    assert assets[0]["Revolution condition"].startswith("Libra") and sibs[0]["Revolution condition"].startswith("Aries")
+
+
+# --- PN4R-4g-5: indicator #15, the lords' connections in the revolution ---------------------
+
+def test_indicator_fifteen_reads_the_three_lords_connections_when_given_the_moment(engine):
+    """Without the revolution's moment the row says so; with it, each of
+    VI.6, 1's three lords is followed until it leaves its sign and its
+    perfections with the other house lords are listed."""
+    rows = _rows(engine)
+    assert rows[15]["Reads"].startswith("NOT computed here")
+    cast = engine["calculate_traditional_chart"]
+    birth, lat, lon = datetime(1985, 3, 20, 14, 30), 51.5, -0.12
+    chart = cast(birth, lat, lon)
+    b = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(2027, 6, 1).date(), engine["PN4_MONTHLY_TURN_OPTIONS"][0])
+    r15 = next(r for r in b["further_rows"] if r["#"] == 15)
+    assert "the lord of the natal Ascendant" in r15["Reads"] and "the lord of the revolution's Ascendant" in r15["Reads"]
+    assert "NOT computed" not in r15["Reads"] and r15["Source"] == "II.1, 20; VI.6, 1-3"
+
+
+# --- GAP-34: II.3, 2's classes of sign and of degree, as facts ---------------------------
+
+def test_ii3_rays_carry_the_classes_of_sign_and_degree(engine):
+    """Terminal sign Cancer; the Moon at 20 Libra squares it: "hating" (VI.4);
+    Libra and Cancer match in neither ascensions nor daylight and have
+    different lords (IX.2, 33); the body's and the ray's degree classes are
+    V.20's. A trine from Pisces (Mercury at 5 Pisces) is "loving"."""
+    root, sr, _ = _ii3_pair(engine, year_lon=95.0)
+    year = {"sign": "Cancer", "longitude": 95.0, "lord": "Moon"}
+    reads = engine["pn4_ii3_examination"](root, sr, year, 2451545.0)["root_rows"][3]["Reads"]
+    moon = [part for part in reads.split("; ") if part.startswith("Moon")]
+    assert moon and "hating (VI.4, 4-6)" in reads and "(IX.2, 33)" in reads and "(V.20, 'probably')" in reads
+    assert engine["_pn4_sign_class_facts"](335.0, "trine", "Cancer", 95.0).startswith("loving")
+    assert "matching in ascensions" in engine["_pn4_sign_class_facts"](100.0, "sextile", "Sagittarius", 250.0)   # Cancer-Sagittarius (IX.2, 33)
+    assert "one belt" in engine["_pn4_sign_class_facts"](40.0, "square", "Libra", 190.0)                        # Taurus-Libra, Venus
+
+
+# --- PN4R-4c-4: the small and mighty days from any point ---------------------------------
+
+def test_small_and_mighty_days_take_any_start_point(engine):
+    """IX.7, 31 / 27. From the revolution's Moon the small days open on her
+    degree with the same shape as the Ascendant's; the mighty days from a
+    profected point likewise; the labels name the point."""
+    sr = pdata(Sun=100.0, Moon=200.0, Mercury=110.0, Venus=130.0, Mars=300.0, Jupiter=250.0, Saturn=20.0)
+    moon = engine["pn4_small_days"](sr, 200.0, "the revolution's Moon")
+    asc = engine["pn4_small_days"](sr, 15.0)
+    assert moon[0]["from_lon"] == pytest.approx(200.0) and moon[0]["from"] == 0.0 and set(moon[0]) == set(asc[0])
+    assert moon[-1]["to"] == pytest.approx(asc[-1]["to"])
+    mighty = engine["pn4_mighty_days"](sr, engine["pn4_profect"](200.0, 3), "the revolution's Moon, profected")
+    assert mighty[0]["from_lon"] == pytest.approx(290.0) and mighty[-1]["to"] == pytest.approx(365.25)
+
+
+# --- GAP-31: IX.9, 11-13 as facts; 13's place half stopped on the unit -----------------------
+
+def test_governor_condition_rows_read_essence_and_sign_and_judge_the_place_by_the_division(engine):
+    """IX.9, 11-13. 13's place half by the DIVISION in the revolution (the
+    owner's ruling of 2026-09-11, evening: an adopted dynamic-fitness
+    reading, not the text's unit; GAP-31). Pisces rising in the revolution
+    with equal cusps: Jupiter at 15 Sagittarius on the tenth cusp is "in a
+    stake" and in his house -- met; with the tenth cusp 6 degrees on he is
+    in the ninth division (not carried) -- not met; 4 degrees on, carried
+    by the axial allowance -- met. Without cusps the place half is not
+    computed. The three statements and the qualified confidence (IX.5, 4
+    fn 106) are on the row."""
+    root, sr, _ = _two_charts(engine, natal=dict(Jupiter=250.0, Sun=100.0), rev=dict(Jupiter=255.0, Sun=110.0), r_asc=345.0)
+    rows = engine["pn4_governor_condition"]("Jupiter", root, sr)
+    assert [r["Source"] for r in rows] == ["IX.9, 11", "IX.9, 12", "IX.9, 13"]
+    assert "NOT JUDGED" in rows[0]["Criteria"] and "by the ecliptic proxy" in rows[0]["Criteria"]
+    assert "testimony in it met (house" in rows[1]["Criteria"]                    # Jupiter in Sagittarius, his house, both charts
+    assert rows[2]["Met"] == "not computed" and "not computed (no cusps)" in rows[2]["Criteria"]
+    sr["houses"] = [(345.0 + 30.0 * i) % 360.0 for i in range(12)]
+    row13 = engine["pn4_governor_condition"]("Jupiter", root, sr)[2]
+    assert row13["Met"] == "yes" and "division 10" in row13["Criteria"] and "follows a stake\" met; sign half: met" in row13["Criteria"]
+    for statement in ("(i) PN IV IX.9, 13 supplies the requirement itself",
+                      "(ii) The project canon (OWNER_RULING_PLACES_VS_DYNAMICS_2026-09-11) supplies its operational interpretation",
+                      "(iii) Alcabitius and the axial 5-degree allowance come from that adopted convention, not from the text",
+                      "IX.5, 4 fn 106 (p. 602)", "dynamic angularity (advancing or withdrawing), here and in 7, 11, and 14",
+                      "IX.5, 9 (p. 603", "V.1, 28 fn 15"):
+        assert statement in row13["Criteria"], statement
+    assert "unit awaits the owner" not in row13["Criteria"]
+    sr["houses"][9] = 261.0                                                        # the tenth cusp 6 degrees on: the ninth division
+    row13 = engine["pn4_governor_condition"]("Jupiter", root, sr)[2]
+    assert row13["Met"] == "no" and "division 9" in row13["Criteria"]
+    sr["houses"][9] = 259.0                                                        # 4 degrees on: carried into the tenth
+    assert engine["pn4_governor_condition"]("Jupiter", root, sr)[2]["Met"] == "yes"
+    sr["houses"][9] = 255.0
+    sr["planetary_data"]["Jupiter"]["longitude"] = 185.0                           # 5 Libra: the seventh, a stake, no testimony of his
+    row13 = engine["pn4_governor_condition"]("Jupiter", root, sr)[2]
+    assert row13["Met"] == "no" and "follows a stake\" met; sign half: not met" in row13["Criteria"]
+    assert engine["pn4_governor_condition"](None, root, sr) == []
+
+
+# --- DIS-10: the father's Lot, 4.20, 31-36 ---------------------------------------------------
+
+def test_father_lot_harmers_by_sect_and_saturns_hostility_by_night(engine):
+    """By night the harmers are Mars (and Mercury if unfortunate, a judgment
+    not made); Saturn is not a harmer -- he indicates the father (32) -- and
+    appears under 36 with his aspect to the Lot; here he squares it. By
+    day Saturn is a stated harmer."""
+    p = pdata(Sun=100.0, Moon=200.0, Mercury=110.0, Venus=130.0, Mars=300.0, Jupiter=250.0, Saturn=20.0)
+    rows = engine["sahl_father_lot_harmers"]("Nocturnal", p, 110.0, 100.0)          # the Lot at 20 Cancer: Saturn in Aries squares it
+    by = {(r["Harmer"], r["Source"]): r for r in rows}
+    assert ("Mars", "4.20, 31") in by and ("Saturn", "4.20, 31") not in by and ("Saturn", "4.20, 36") in by
+    assert "from hostility" in by[("Saturn", "4.20, 36")]["Looks at the Lot"]
+    assert "judgment" in by[("Mercury", "4.20, 31")]["Named by 31"]
+    day = {r["Harmer"] for r in engine["sahl_father_lot_harmers"]("Diurnal", p, 110.0, 100.0) if r["Source"] == "4.20, 31"}
+    assert day == {"Mars", "Saturn", "Mercury"}
+
+
+def test_direction_from_a_degree_to_a_chosen_target_list(engine):
+    """The operation of 1.23, 2 from any start degree to any planets: from
+    the Lot's degree to Mars and Mercury only, no Sun target."""
+    p = pdata(Sun=100.0, Moon=200.0, Mercury=110.0, Venus=130.0, Mars=300.0, Jupiter=250.0, Saturn=20.0)
+    rows = engine["sahl_house_master_direction"](p, None, 23.44, 43.78, start_lon=95.0, target_planets=("Mars", "Mercury"), sun_target=False)
+    assert rows and all(r["Target"].split("'")[0] in ("Mars", "Mercury") for r in rows)
+    assert not any("Sun" in r["Target"] for r in rows)
+
+
+# --- REL-5-7: 1.23, 13-14, the redirection when a 1.23, 12 flag fires -------------------------
+
+def test_bundle_redirects_to_the_lord_of_the_ascendant_when_the_house_master_is_flagged(engine):
+    cast = engine["calculate_traditional_chart"]
+    birth, lat, lon = datetime(1985, 3, 20, 14, 30), 51.5, -0.12
+    chart = cast(birth, lat, lon)
+    b = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(2027, 6, 1).date(), engine["PN4_MONTHLY_TURN_OPTIONS"][0])
+    flagged = any("1.23, 12" in f for f in b["hm_flags"])
+    assert (b["hm_redirect"] is not None) == flagged
+    if flagged:
+        assert b["hm_redirect"]["lord"] == engine["SIGN_TO_DOMICILE"][engine["get_zodiac_sign"](chart["ascendant"])]
+        assert b["hm_redirect"]["ascendant_direction"] is not None
+    assert b["father_lot"] is not None and b["father_lot"]["second"] == ("Sun" if chart["sect"] == "Diurnal" else "Saturn")
+
+
+# --- REL-5-1: 1.19, 6 applied; REL-5-2: 1.20, 6 applied; REL-5-3: 1.18, 1-10 counted --------------
+
+def test_moon_within_fifteen_degrees_of_the_sun_is_not_fit_and_the_fullness_is_consulted(engine):
+    """Night chart, Scorpio rising; the Moon at 10 Leo (the tenth), the Sun
+    at 20 Leo, 10 degrees off, with the Sun (her house lord) in her sign
+    and Jupiter (fire's night triplicity lord) trining her from
+    Sagittarius: fit by 1.15, 11-14, "not fit" by 1.19, 6, so the fullness
+    (15 Taurus, the seventh, Venus in it) is the releaser. With the Sun 30
+    degrees off, the Moon is the releaser."""
+    r = engine["sahl_releaser"](*_night(engine, Moon=130.0, Sun=140.0, Jupiter=250.0, Venus=45.0), 15.0, 15.0, 45.0)
+    moon = next(c for c in r["candidates"] if c["Candidate"] == "the Moon")
+    assert "1.19, 6" in moon["Verdict"] and r["releaser"] == "the fullness (the last Full Moon)"
+    r2 = engine["sahl_releaser"](*_night(engine, Moon=130.0, Sun=160.0, Jupiter=250.0, Venus=45.0), 15.0, 15.0, 45.0)
+    assert r2["releaser"] == "the Moon"
+    assert not any(c == "1.19, 6" for c, _t in engine["SAHL_RELEASER_NOT_APPLIED"])
+
+
+def _night(engine, **planets):
+    data, cusps = _sahl_chart(215.0, **planets)
+    return data, 215.0, cusps, "Nocturnal"
+
+
+def test_eastern_lord_with_a_share_in_the_ascendant_is_house_master_without_looking(engine):
+    """Day chart, Scorpio rising; the Sun at 15 Virgo (the eleventh) with
+    no lord of his degree looking: Venus (bound, day triplicity and face
+    of 15 Virgo) in Leo, Mercury (house and exaltation) in Leo too. Venus
+    rises before the Sun (eastern) and holds a share at the Ascendant's
+    degree (water's day triplicity): house-master by 1.20, 6, the Sun
+    kept as releaser. Control: Venus in Libra, western -- 1.15, 7 sends
+    the search on."""
+    data, cusps = _sahl_chart(225.0, Sun=165.0, Venus=130.0, Mercury=145.0)
+    r = engine["sahl_releaser"](data, 225.0, cusps, "Diurnal", 15.0, 15.0, 15.0)
+    sun = next(c for c in r["candidates"] if c["Candidate"] == "the Sun")
+    assert "1.20, 6" in sun["Verdict"] and r["releaser"] == "the Sun" and r["house_master"] == "Venus"
+    assert "1.20, 6" in r["ranking"][0]["Rank"]
+    assert not any(c == "1.20, 6" for c, _t in engine["SAHL_RELEASER_NOT_APPLIED"])
+    data, cusps = _sahl_chart(225.0, Sun=165.0, Venus=200.0, Mercury=145.0)
+    r = engine["sahl_releaser"](data, 225.0, cusps, "Diurnal", 15.0, 15.0, 15.0)
+    assert r["releaser"] != "the Sun"
+
+
+def test_short_life_testimonies_count_four_and_quote_the_sentence(engine):
+    """A real chart with the lord of the Lot of Fortune retrograde and an
+    infortune in a stake without a dignity at the Ascendant counts
+    testimony 4; the count and 1.18, 8-10's sentence follow the count."""
+    cast = engine["calculate_traditional_chart"]
+    chart = cast(datetime(1985, 3, 20, 14, 30), 51.5, -0.12)
+    out = engine["sahl_short_life_testimonies"](chart, chart["lot_of_fortune"])
+    assert [r["Source"] for r in out["rows"]] == ["1.18, 1", "1.18, 2", "1.18, 3", "1.18, 4", "1.18, 5", "1.18, 6", "1.18, 7"]
+    assert out["count"] == sum(1 for r in out["rows"][:4] if r["Met"] == "yes")
+    assert all(r["Counted"].startswith("no") for r in out["rows"][4:])
+    assert ("1.18, 8" in out["sentence"]) == (out["count"] == 1)
+    # 7 with no retrograde partner: the caveat is printed after "none"
+    assert out["rows"][6]["Met"] == "no" and out["rows"][6]["Fact"] == "none (reception not tested here)"
+    # 7 with one: Saturn at 29 59 Gemini, retrograde, the Sun (lord of the Leo
+    # Ascendant, 29 56 Pisces) applying to his square -- the caveat must stay
+    # on the row where it matters (cloud review B1: the precedence bug had
+    # it print only when there were NO partners)
+    import copy
+    chart2 = copy.deepcopy(chart)
+    chart2["planetary_data"]["Saturn"].update(longitude=89.99, speed_in_lon=-0.05)
+    row7 = engine["sahl_short_life_testimonies"](chart2, chart2["lot_of_fortune"])["rows"][6]
+    assert row7["Met"] == "yes" and row7["Fact"] == "Saturn (reception not tested here)"
+
+
+# --- PN4R-4n-7: the fixed stars of I.6, 7 and III.8, 9 -------------------------------------
+
+def test_fixed_stars_resolve_and_regulus_on_the_ascendant_is_written_down(engine):
+    """With the catalogue: Regulus stands near 29 50 Leo at J2000 (149.8); a
+    chart whose Ascendant is set to that degree writes Regulus down "in the
+    very degree of the Ascendant", and one a degree and a half off does
+    not. Without the catalogue the table refuses and says so."""
+    if not engine["_fixed_star_catalogue_ready"]():
+        out = engine["pn4_fixed_stars_in_image"]({"planetary_data": pdata(Sun=0.0, Moon=0.0), "ascendant": 0.0, "mc": 270.0}, 2451545.0)
+        assert out["rows"] == [] and "catalogue" in out["refused"]
+        pytest.skip("no star catalogue in this interpreter")
+    stars = engine["fixed_star_longitudes"](2451545.0)
+    assert len(stars) == len(engine["SAHL_FIXED_STARS"]) == 28
+    natures = dict(engine["SAHL_FIXED_STARS"])
+    assert natures["Alphecca"] == "Venus-Mercury (Sahl, following al-Andarzaghar, classifies it as Jupiter-Mercury, fn 73)"
+    assert natures["Menkalinan"] == "Jupiter-Saturn (Sahl, following al-Andarzaghar, classifies it with Jupiter-Mars, fn 75)"
+    assert not any("doubtful" in n for n in natures.values())
+    assert stars["Regulus"] == pytest.approx(149.83, abs=0.05)
+    chart = {"planetary_data": pdata(Sun=10.0, Moon=200.0, Mercury=20.0, Venus=30.0, Mars=300.0, Jupiter=250.0, Saturn=100.0),
+             "ascendant": stars["Regulus"] + 0.4, "mc": 60.0}
+    out = engine["pn4_fixed_stars_in_image"](chart, 2451545.0)
+    assert any(r["Star"] == "Regulus" and r["Place"].startswith("the very degree of the Ascendant") for r in out["rows"])
+    chart["ascendant"] = stars["Regulus"] + 1.5
+    assert not any(r["Star"] == "Regulus" for r in engine["pn4_fixed_stars_in_image"](chart, 2451545.0)["rows"])
+    # the planets did not move when the star catalogue was attached
+    import swisseph as swe
+    assert swe.calc_ut(2451545.0, swe.MARS)[1] == 260
+
+
+def test_fixed_star_catalogue_found_is_the_one_the_app_ships(engine):
+    """Owner, 2026-09-11 (checker §5, portability): the app ships
+    ephe/sefstars.txt beside app.py and looks there first, before
+    $SE_EPHE_PATH, the user data directory and the site-packages scan; so
+    the render is the same on every checkout and the fixture's star tables
+    need no exclusion. The private link is re-pointed at the file found."""
+    from pathlib import Path
+    bundled = Path(engine["__file__"]).parent / "ephe" / "sefstars.txt"
+    assert bundled.is_file() and bundled.stat().st_size > 100_000
+    assert (Path(engine["__file__"]).parent / "ephe" / "README.md").is_file()
+    engine["_FIXED_STAR_STATE"].update(checked=False, ready=False, where=None)
+    assert engine["_fixed_star_catalogue_ready"]() is True
+    assert Path(engine["_FIXED_STAR_STATE"]["where"]).resolve() == bundled.resolve()
+    link = engine["_user_data_dir"]() / "ephe_stars" / "sefstars.txt"
+    assert link.exists() and (not link.is_symlink() or link.resolve() == bundled.resolve())
+    assert [p for p in link.parent.iterdir()] == [link]              # nothing else in the private directory: no .se1
+    import swisseph as swe
+    assert swe.calc_ut(2451545.0, swe.MARS)[1] == 260                 # Moshier + speed: the planets untouched
+    from conftest import app_source
+    assert '("ephe/sefstars.txt", "ephe")' in (Path(engine["__file__"]).parent / "build.spec").read_text()
+    assert "the Swiss Ephemeris star catalogue the app ships (ephe/sefstars.txt)" in app_source()
+
+
+def test_without_any_star_catalogue_the_page_says_not_computed_and_the_unit_test_skips(engine, monkeypatch):
+    """The fallback is real: with every sefstars.txt made invisible (the
+    bundled file, $SE_EPHE_PATH, the user data dir and the site-packages
+    scan -- the checker's absent-catalogue plugin, as a test), the engine
+    refuses with its sentence, the unit test above skips, and the Timing
+    page renders a "Not computed" warning in place of the two star tables."""
+    import os
+    real_isfile = os.path.isfile
+    monkeypatch.setattr(os.path, "isfile", lambda p: False if str(p).endswith("sefstars.txt") else real_isfile(p))
+    state = engine["_FIXED_STAR_STATE"]
+    state.update(checked=False, ready=False, where=None)
+    try:
+        assert engine["_fixed_star_catalogue_ready"]() is False
+        out = engine["pn4_fixed_stars_in_image"]({"planetary_data": pdata(Sun=0.0, Moon=0.0), "ascendant": 0.0, "mc": 270.0}, 2451545.0)
+        assert out["rows"] == [] and "catalogue" in out["refused"]
+        state.update(checked=False, ready=False, where=None)
+        with pytest.raises(pytest.skip.Exception):
+            test_fixed_stars_resolve_and_regulus_on_the_ascendant_is_written_down(engine)
+        from conftest import make_app, assert_no_exception
+        at = make_app(date="1240-05-23", page="timing").run()
+        assert_no_exception(at, "timing without a star catalogue")
+        assert any(w.value.startswith("Not computed: no Swiss Ephemeris star catalogue") for w in at.main.warning)
+        assert not any(h == "The image of the revolution of the year: its points (I.6, 3-8)" and "Star" in c
+                       for h, c in __import__("conftest").table_inventory(at))
+    finally:
+        state.update(checked=False, ready=False, where=None)
+    monkeypatch.undo()
+    assert engine["_fixed_star_catalogue_ready"]() is True            # found again once the file is visible
+
+
+# --- CONV-ESSENTIAL_DIGNITY_WEIGHTS: the governor of the syzygy degree, 1.7, 3-7 --------------
+
+def _syzygy_of(engine, lon, sect):
+    r = engine["get_essential_rulers"](lon)
+    return {"rulers": r, "active_triplicity_lord": r["triplicity_day"] if sect == "Diurnal" else r["triplicity_night"],
+            "syzygy_longitude": lon, "event_type": "Conjunctional"}
+
+
+def _governor(engine, sect="Diurnal", syzygy_lon=15.0, **planets):
+    data, cusps = _sahl_chart(215.0, **{k: (v[0] if isinstance(v, tuple) else v) for k, v in planets.items()})
+    for k, v in planets.items():
+        if isinstance(v, tuple):
+            data[k]["speed_in_lon"] = v[1]
+    return engine["sahl_syzygy_governor"](_syzygy_of(engine, syzygy_lon, sect), data, cusps, sect)
+
+
+def test_syzygy_governor_drops_a_lord_in_aversion_and_the_almuten_names_another(engine):
+    """1.7, 4: a meeting at 15 Aries; by day the Sun holds exaltation,
+    triplicity and image (the 5/4/3/2/1 almuten, 8 points) but stands in
+    Taurus, in aversion to Aries, so he is dropped; Mars, the house lord in
+    Leo (trine), direct, is the governor. The two rows name different
+    planets, which is the order's finding."""
+    g = _governor(engine, Sun=40.0, Mars=130.0, Mercury=45.0)
+    assert g["governor"] == "Mars" and "1.7, 4" in g["how"]
+    by = {r["Planet"]: r for r in g["rows"]}
+    assert by["Sun"]["Verdict"] == "dropped by 1.7, 4" and by["Sun"]["Looking at the sign (1.7, 4)"].startswith("no (in aversion")
+    assert by["Mars"]["Looking at the sign (1.7, 4)"] == "yes (trine)" and by["Mars"]["Verdict"] == "THE GOVERNOR"
+    assert by["Sun"]["Claim on the degree (1.7, 3)"] == "exaltation, triplicity, image"
+
+
+def test_syzygy_governor_drops_a_retrograde_lord_and_prefers_the_eastern_one(engine):
+    """The same degree; Mars retrograde in Leo (trine, dropped by 4), the
+    Sun in Cancer (square) and Mercury in Gemini (sextile) both direct and
+    looking; Mercury, eastern of the Sun, is preferred by 1.7, 3 (the Sun
+    has no side)."""
+    g = _governor(engine, Sun=100.0, Mars=(130.0, -0.3), Mercury=75.0)
+    assert g["governor"] == "Mercury" and "1.7, 3: the eastern one preferred" in g["how"]
+    by = {r["Planet"]: r for r in g["rows"]}
+    assert by["Mars"]["Direct (1.7, 4)"] == "no (retrograde)" and by["Mars"]["Verdict"] == "dropped by 1.7, 4"
+    assert by["Sun"]["Eastern (1.7, 3)"] == "the Sun has no side" and by["Sun"]["Verdict"] == "candidate"
+
+
+def test_syzygy_governor_tie_break_is_the_stake_or_own_dignity_by_the_division(engine):
+    """1.7, 7: Mars at 0 Cancer and Mercury at 5 Cancer, both eastern of a
+    Sun at 10 Cancer, direct, square to Aries, both in the ninth division;
+    Mars holds his own bound there (Cancer 0-7 is Mars's), Mercury nothing
+    -- Mars. Then Mercury at 15 Cancer (13-19 is his bound) and Mars at 3,
+    the Sun at 20 Cancer so both stay eastern: each with one own dignity,
+    neither in a stake -> a tie, named as one, 5-6 not modelled."""
+    g = _governor(engine, Sun=100.0, Mars=90.0, Mercury=95.0)
+    assert g["governor"] == "Mars" and "1.7, 7's stake or own dignity decides" in g["how"]
+    g = _governor(engine, Sun=110.0, Mars=93.0, Mercury=105.0)
+    assert g["governor"] == "Mars / Mercury" and "not modelled" in g["how"]
+    by = {r["Planet"]: r for r in g["rows"]}
+    assert by["Mars"]["Stake or own dignity (1.7, 7)"] == "division 9; own bound"
+    assert by["Mercury"]["Stake or own dignity (1.7, 7)"] == "division 9; own bound"
+
+
+def test_syzygy_governor_rows_are_on_the_victors_page_with_the_relabelled_almuten():
+    from conftest import ui_source
+    src = ui_source()
+    assert 'Governor of the syzygy degree (Sahl, On Nativities 1.7, 3-7)' in src
+    assert "Almuten by 5/4/3/2/1 points (the course's technique; the weights are stated in no text in hand)" in src
+    assert '"Syzygy Lord (Almuten)"' not in src
+    assert "is strength language and is read by the DIVISION (Alcabitius, the five degrees at the four axial" in src

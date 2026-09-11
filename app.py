@@ -105,7 +105,7 @@ PREFERENCES_PATH = _user_data_dir() / "preferences.json"
 READING_DEPTH_OPTIONS = ("Course text", "Course text and supplement")
 PREFERENCE_KEYS = (
     # doctrinal readings, each set on the page it affects
-    '_connection_rule', '_five_degree_all_cusps', '_eastern_rule', '_moon_rays_15', '_mars_west_18',
+    '_connection_rule', '_eastern_rule', '_moon_rays_15', '_mars_west_18',   # '_five_degree_all_cusps' retired 2026-09-11
     '_fitting_infortune', '_domain_rule', '_lot_house_cusp', '_pn4_monthly_turn', '_reading_depth',
     # display
     '_wheel_layout', '_chart_bounds', '_timing_bounds', '_wheel_order', '_timing_lots', '_timing_rays',
@@ -167,22 +167,180 @@ def _sin_altitude(ecl_lon, ecl_lat, distance, obliquity, armc, geo_lat):
     p, d, h = map(math.radians, (geo_lat, decl, armc - ra))
     return math.sin(p) * math.sin(d) + math.cos(p) * math.cos(d) * math.cos(h)
 
+# --- The civil calendar ---------------------------------------------------
+# ONE policy, in one place. The digits of a civil date are a JULIAN-calendar
+# date before 1582-10-15 and a Gregorian one from that day on, as Solar Fire
+# and astro.com read them; the Swiss Ephemeris manual (s. 9.1) keeps the two
+# flags apart for exactly this reason. Using the wrong flag mis-dates a
+# historical chart by days (seven in the 1200s), which the Moon turns into
+# tens of degrees.
+#
+# Python's datetime is proleptic Gregorian and CANNOT HOLD a Julian-only day:
+# 1300-02-29 exists in the Julian calendar and not in the Gregorian. So the
+# carrier of a civil date in this file is CivilDate / CivilMoment below, and a
+# shift by a UTC offset is done on the Julian Day, never by datetime
+# arithmetic. The earlier adapter subtracted the offset with datetime,
+# producing Gregorian components, and then read those digits back as Julian:
+# local Julian 1300-03-01 00:30 at +02:00 came out a full day wrong (Astra
+# audit 2026-09-11, F01). Rounding a moment to the second is done on the JD
+# too, so that a carry across midnight is a date carry, not a clamp.
+PN4_GREGORIAN_REFORM_JD = 2299160.5     # 1582-10-15 00:00 UT, the first Gregorian day
+_MONTH_ABBR = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
+_MONTH_NAME = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+               'September', 'October', 'November', 'December')
+
+def civil_calendar(year, month, day):
+    """swe.JUL_CAL or swe.GREG_CAL for a civil date's digits, by the policy above."""
+    return swe.GREG_CAL if (int(year), int(month), int(day)) >= (1582, 10, 15) else swe.JUL_CAL
+
+def civil_is_valid(year, month, day):
+    """Whether the digits name a day in the calendar the policy assigns them:
+    1300-02-29 is valid (Julian), 1900-02-29 is not (Gregorian)."""
+    year, month, day = int(year), int(month), int(day)
+    if not (1 <= year <= 9999 and 1 <= month <= 12 and 1 <= day <= 31):
+        return False
+    cal = civil_calendar(year, month, day)
+    y, m, d, _h = swe.revjul(swe.julday(year, month, day, 0.0, cal), cal)
+    return (int(y), int(m), int(d)) == (year, month, day)
+
+def civil_to_jd(year, month, day, hour=0.0):
+    """The Julian Day of a civil moment (UT hour, decimal), calendar by policy."""
+    return swe.julday(int(year), int(month), int(day), float(hour), civil_calendar(year, month, day))
+
+def civil_local_to_jd_ut(year, month, day, hour_local, utc_offset_hours):
+    """A LOCAL civil moment to UT as a Julian Day: the calendar is decided by
+    the local digits, the offset (east positive, hours) is subtracted on the
+    JD. This is the sidebar's adapter for LMT and manual offsets."""
+    return civil_to_jd(year, month, day, hour_local) - float(utc_offset_hours) / 24.0
+
+def _format_civil(c, spec):
+    """strftime's common directives for CivilDate / CivilMoment: %Y %m %d %b
+    %B %H %M %S %%. Anything else is left in place."""
+    if not spec:
+        return c.isoformat()
+    out, i = [], 0
+    while i < len(spec):
+        ch = spec[i]
+        if ch == '%' and i + 1 < len(spec):
+            d = spec[i + 1]
+            rep = {'Y': f"{c.year:04d}", 'm': f"{c.month:02d}", 'd': f"{c.day:02d}",
+                   'b': _MONTH_ABBR[c.month - 1], 'B': _MONTH_NAME[c.month - 1],
+                   'H': f"{getattr(c, 'hour', 0):02d}", 'M': f"{getattr(c, 'minute', 0):02d}",
+                   'S': f"{getattr(c, 'second', 0):02d}", '%': '%'}.get(d)
+            if rep is not None:
+                out.append(rep)
+                i += 2
+                continue
+        out.append(ch)
+        i += 1
+    return ''.join(out)
+
+class CivilDate:
+    """A civil date as digits, read in the calendar civil_calendar() assigns
+    them. Carries a birth or target date where datetime.date used to, and
+    unlike it can hold a Julian-only day. Compares equal to anything with
+    the same year, month and day (a datetime.date included)."""
+    __slots__ = ('year', 'month', 'day')
+
+    def __init__(self, year, month, day):
+        self.year, self.month, self.day = int(year), int(month), int(day)
+
+    @classmethod
+    def of(cls, d):
+        return d if isinstance(d, cls) else cls(d.year, d.month, d.day)
+
+    @classmethod
+    def from_jd(cls, jd):
+        cal = swe.GREG_CAL if jd >= PN4_GREGORIAN_REFORM_JD else swe.JUL_CAL
+        y, m, d, _h = swe.revjul(jd, cal)
+        return cls(y, m, d)
+
+    def tuple(self):
+        return (self.year, self.month, self.day)
+
+    def __eq__(self, other):
+        try:
+            return self.tuple() == (int(other.year), int(other.month), int(other.day))
+        except (AttributeError, TypeError, ValueError):
+            return NotImplemented
+
+    def __lt__(self, other):
+        return self.jd() < CivilDate.of(other).jd()
+
+    def __hash__(self):
+        return hash(self.tuple())
+
+    def __sub__(self, other):
+        # a timedelta (days) back, or the number of days between two dates
+        if hasattr(other, 'days') and not hasattr(other, 'year'):
+            return CivilDate.from_jd(self.jd() - other.days)
+        return self.jd() - CivilDate.of(other).jd()
+
+    def __add__(self, other):
+        return CivilDate.from_jd(self.jd() + other.days)
+
+    def jd(self, hour=0.0):
+        return civil_to_jd(self.year, self.month, self.day, hour)
+
+    def replace(self, **kw):
+        return CivilDate(kw.get('year', self.year), kw.get('month', self.month), kw.get('day', self.day))
+
+    def calendar_name(self):
+        return 'Julian' if civil_calendar(self.year, self.month, self.day) == swe.JUL_CAL else 'Gregorian'
+
+    def isoformat(self):
+        return f"{self.year:04d}-{self.month:02d}-{self.day:02d}"
+
+    def __format__(self, spec):
+        return _format_civil(self, spec)
+
+    def __str__(self):
+        return self.isoformat()
+
+    def __repr__(self):
+        return f"CivilDate({self.year}, {self.month}, {self.day})"
+
+class CivilMoment(CivilDate):
+    """A CivilDate with a time of day (whole seconds), UT or local as the
+    caller says. from_jd rounds the JD to the second FIRST, so a moment a
+    fraction of a second before midnight carries into the next day."""
+    __slots__ = ('hour', 'minute', 'second')
+
+    def __init__(self, year, month, day, hour=0, minute=0, second=0):
+        super().__init__(year, month, day)
+        self.hour, self.minute, self.second = int(hour), int(minute), int(second)
+
+    @classmethod
+    def from_jd(cls, jd):
+        jd = round(float(jd) * 86400.0) / 86400.0
+        cal = swe.GREG_CAL if jd >= PN4_GREGORIAN_REFORM_JD else swe.JUL_CAL
+        y, m, d, hour = swe.revjul(jd, cal)
+        total = min(int(round(hour * 3600.0)), 24 * 3600 - 1)
+        return cls(y, m, d, total // 3600, (total % 3600) // 60, total % 60)
+
+    def hour_decimal(self):
+        return self.hour + self.minute / 60.0 + self.second / 3600.0
+
+    def jd(self, hour=None):
+        return civil_to_jd(self.year, self.month, self.day, self.hour_decimal() if hour is None else hour)
+
+    def isoformat(self):
+        return f"{super().isoformat()} {self.hour:02d}:{self.minute:02d}:{self.second:02d}"
+
+    def __repr__(self):
+        return f"CivilMoment({self.year}, {self.month}, {self.day}, {self.hour}, {self.minute}, {self.second})"
+
 def calculate_traditional_chart(dt_utc, lat, lon):
-    year, month, day = dt_utc.year, dt_utc.month, dt_utc.day
-    hour = dt_utc.hour + dt_utc.minute/60.0 + dt_utc.second/3600.0
+    """A chart from a UT moment given as anything with year, month, day,
+    hour, minute and second (a datetime or a CivilMoment); the digits are
+    read in the calendar the policy above assigns them."""
+    jd = civil_to_jd(dt_utc.year, dt_utc.month, dt_utc.day,
+                     dt_utc.hour + dt_utc.minute / 60.0 + dt_utc.second / 3600.0)
+    return calculate_traditional_chart_jd(jd, lat, lon)
 
-    # CRITICAL: Python's datetime is always proleptic Gregorian, and
-    # swe.julday() defaults to the Gregorian calendar flag. For dates before
-    # the Gregorian reform (Oct 15, 1582), professional astrological software
-    # (Solar Fire, Astro.com, etc.) interprets the same y/m/d digits as a
-    # JULIAN calendar date. Using the wrong flag silently mis-dates historical
-    # charts by several days (7 days in the 1200s, growing further back),
-    # which cascades into large positional errors — the Moon alone drifts
-    # ~13°/day, so a 7-day calendar error looks like a ~90° Moon error.
-    is_gregorian_date = (year, month, day) >= (1582, 10, 15)
-    cal_flag = swe.GREG_CAL if is_gregorian_date else swe.JUL_CAL
-    jd = swe.julday(year, month, day, hour, cal_flag)
-
+def calculate_traditional_chart_jd(jd, lat, lon):
+    """The chart at a Julian Day (UT). The sidebar arrives here directly, so
+    a Julian-only date and an offset across midnight need no datetime."""
     # The seven planets' ephemeris ids are PLANET_SWE_IDS, defined once with
     # the VII.6 material; the chart adds the TRUE Node (owner's decision of
     # 2026-09-07, matching the reference charts; the mean node sat 1-2 degrees
@@ -249,6 +407,11 @@ def calculate_traditional_chart(dt_utc, lat, lon):
         # ecliptic at the moment. Read by the Chart page's Calculation table.
         'armc': ascmc[2],
         'obliquity': obliquity,
+        # The place, so that evaluators needing the horizon (hayz: above or
+        # below the earth by ALTITUDE, Astra F04) can be handed it from the
+        # chart alone.
+        'geo_lat': lat,
+        'geo_lon': lon,
     }
 
 # ==========================================
@@ -263,11 +426,20 @@ def get_zodiac_sign(longitude):
     return SIGN_ORDER[int((longitude % 360.0) // 30)]
 
 def get_degree_string(longitude):
-    longitude = longitude % 360.0
-    sign = get_zodiac_sign(longitude)
-    deg = int(longitude % 30)
-    minute = int((longitude % 1) * 60)
-    return f"{deg:02d}° {sign[:3]} {minute:02d}'"
+    """A longitude as DD° Sgn MM'. Display policy: whole arcminutes,
+    TRUNCATED (12°27'40" prints 27'), with one tolerance -- a value within a
+    millionth of a minute of a whole minute IS that minute. Binary floats
+    put 30 + 1/60 a hair under 00° Tau 01' and int() printed 00' (Astra
+    F13); an entered whole minute now survives display. The carry at 60',
+    30° and 360° follows from working in total minutes. Nothing here
+    rounds the longitude itself; bound and degree tests read the float."""
+    total = (longitude % 360.0) * 60.0
+    nearest = round(total)
+    if abs(total - nearest) < 1e-6:
+        total = nearest
+    total = int(total) % (360 * 60)
+    deg_total, minute = divmod(total, 60)
+    return f"{deg_total % 30:02d}° {SIGN_ORDER[deg_total // 30][:3]} {minute:02d}'"
 
 # ---- The chart wheel ---------------------------------------------------
 # Redesigned 2026-09-07 (brief: WHEEL_REDESIGN_2026-09-07.md, decisions
@@ -1098,8 +1270,13 @@ CHALDEAN_ORDER = ['Mars', 'Sun', 'Venus', 'Mercury', 'Moon', 'Saturn', 'Jupiter'
 ESSENTIAL_DIGNITY_WEIGHTS = {'domicile': 5, 'exaltation': 4, 'triplicity': 3, 'term': 2, 'face': 1}
 
 # Dorothean triplicity rulers, keyed by element, each with the Day/Night/
-# Participating lord (classical reconstruction as used in medieval Abbasid
-# practice — e.g. Dorotheus via al-Biruni/Abu Ma'shar).
+# Participating lord: Gr. Intr. V.14, 6-9 and Figure 53 (Gr. Intr.), which
+# state the four rows as they stand here. One exception the element key
+# cannot hold: the earth triplicity's partner is Mars "except that Mercury
+# acts as partner to them both in Virgo especially" (V.14, 7; the figure's
+# earth row reads "Mars (and Mercury when in Virgo)"; fn 100: Mercury
+# "rather than (or in preference to) Mars"). get_essential_rulers applies
+# it per sign (Astra audit C01, 2026-09-11). The partner enters no score.
 TRIPLICITY = {
     'Fire':  {'Day': 'Sun',   'Night': 'Jupiter', 'Participating': 'Saturn'},
     'Earth': {'Day': 'Venus', 'Night': 'Moon',    'Participating': 'Mars'},
@@ -1315,11 +1492,14 @@ SOLAR_RAYS_ORB = {
 # in front of him and behind him)" -- On Nativities 1.22 covers only the
 # five planets, so the Moon has two witnesses that disagree. Sidebar switch.
 MOON_RAYS_ORB = 12.0
-# Mars going under the rays on the WESTERN side: 15 degrees is Abu
-# Ma'shar's (VII.2, 30-31, the default); Sahl's table has him westernize
-# at 18 (On Nativities 1.22, and fn. 175 works his western figure to about
-# 18). Both give 18 east. Chart-page switch like the Moon's; decision
-# D-15, 2026-09-08. Rare: a 3-degree band on one planet.
+# Mars going under the rays on the WESTERN side: 15 degrees is Gr. Intr.
+# VII.2, 31's ("in the degrees of setting until there come to be 15 degrees
+# between them and the Sun"; the default). The 18 of the switch is DYKES'S
+# chapter-head table in On Nativities 1.22 and his fn 175, which works
+# VII.2, 30's westernizing boundary into an 18-degree "under the rays" --
+# Sahl's own sentences are silent on Mars west (the label said "Sahl's
+# table" until 2026-09-11; decision sheet row 10, DEC-D-15). Both give 18
+# east. Chart-page switch like the Moon's. Rare: a 3-degree band on one planet.
 MARS_WEST_RAYS_18 = False
 
 def solar_rays_orb(planet):
@@ -1352,12 +1532,24 @@ EASTERN_RULE = EASTERN_RULE_OPTIONS[0]
 # is the later Lilly-era convention and belongs to neither.
 CAZIMI_ORB = 16.0 / 60.0
 
-def solar_phase(planet, lon, sun_lon):
+def solar_phase(planet, lon, sun_lon, speed_in_lon=None):
     """Where a planet stands relative to the Sun, per Gr. Intr. VII.2 and
     Sahl, On Nativities Ch.1.22. Returns (phase, side, elongation) where
     phase is one of 'Cazimi', 'Burned', 'Under the rays', 'Degrees of
     setting' or None, and side is 'eastern' (rising before the Sun, a
-    morning star) or 'western'."""
+    morning star) or 'western'.
+
+    `speed_in_lon` matters for Venus and Mercury on the eastern side only:
+    VII.2 gives the inferiors TWO eastern burned limits -- 7 degrees while
+    they leave the Sun after the conjunction (37, 40) and, AS PRINTED, 6
+    degrees when they have stationed, "go direct in the east" (43) and
+    close on him again (44: "simply under the rays until there are 6
+    degrees between them and [the Sun]", then 45 "burned under the rays").
+    Dykes fn 43: "To me it seems this should be 7 as in 40, but this is
+    what the text says." The text's 6 is applied to a direct eastern
+    inferior (order CONV-SOLAR_BURNED_ORB, 2026-09-11); a retrograde one
+    keeps 37/40's 7, the western side 47's 7. Without a speed the 7
+    stands, a reading solar_phase_note says on the row."""
     if planet == 'Sun':
         return None, None, 0.0
     signed = ((lon - sun_lon + 180.0) % 360.0) - 180.0
@@ -1365,19 +1557,52 @@ def solar_phase(planet, lon, sun_lon):
     side = 'eastern' if signed < 0 else 'western'
     idx = 0 if side == 'eastern' else 1
     if elongation <= CAZIMI_ORB:
-        return 'Cazimi', side, elongation
+        return 'Cazimi', side, elongation          # VII.2, 7-9: 16' inclusive, both sides
+    # Endpoint ownership differs by side (Astra F10). EAST: a planet leaves
+    # burning, and later the rays, "when these three planets come to the
+    # COMPLETION of these degrees" (VII.2, 12; 14; 40-41 for the inferiors:
+    # "distant ... at a FULL 7 degrees ... they have passed beyond burning"),
+    # so exactly 6 (10, 7) east is already "simply under the rays" and
+    # exactly 15 (18, 12) east already easternizing. WEST: the phases are
+    # entered AT their degrees -- "until there come to be 15 degrees ... and
+    # when they come to these degrees they shift over" (VII.2, 31-32, 34) --
+    # so the western bounds stay inclusive.
+    within = (lambda x, lim: x < lim) if side == 'eastern' else (lambda x, lim: x <= lim)
     burned = SOLAR_BURNED_ORB.get(planet, (8.5, 8.5))[idx]
-    if elongation <= burned:
+    if planet in ('Venus', 'Mercury') and side == 'eastern' and speed_in_lon is not None and speed_in_lon > 0:
+        burned = INFERIOR_DIRECT_EASTERN_BURNED   # VII.2, 44 as printed; see the docstring
+    if within(elongation, burned):
         return 'Burned', side, elongation
     rays = solar_rays_orb(planet)[idx]
-    if elongation <= rays:
+    if within(elongation, rays):
         return 'Under the rays', side, elongation
     setting = SOLAR_SETTING_DEGREES.get(planet)
     if side == 'western' and setting is not None and elongation <= setting:
         return 'Degrees of setting', side, elongation
     return None, side, elongation
 
-def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None):
+# VII.2, 44 as printed: the direct eastern inferior's burned limit. fn 43
+# reads it as an error for 40's 7; the engine applies the printed 6 and
+# labels the band where the two differ (6-7 degrees). CONV-SOLAR_BURNED_ORB.
+INFERIOR_DIRECT_EASTERN_BURNED = 6.0
+
+def solar_phase_note(planet, side, speed_in_lon, elongation):
+    """The label suffix for the one band where VII.2, 44's printed 6 and
+    fn 43's 7 disagree: a direct eastern Venus or Mercury 6-7 degrees from
+    the Sun. Empty elsewhere. Without a speed the row says the 7 of 37/40
+    was used."""
+    if planet not in ('Venus', 'Mercury') or side != 'eastern':
+        return ''
+    if not (INFERIOR_DIRECT_EASTERN_BURNED <= elongation < SOLAR_BURNED_ORB[planet][0]):
+        return ''
+    if speed_in_lon is None:
+        return " -- motion unknown: 37/40's 7 degrees used, not 44's printed 6"
+    if speed_in_lon > 0:
+        return " -- VII.2, 44 as printed (6 degrees), not 40's 7; Dykes fn 43: 'should be 7 as in 40'"
+    return " -- retrograde in the east: 37/40's 7 degrees, not 44's 6"
+
+def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None,
+                                  armc=None, obliquity=None, geo_lat=None):
     """Accidental dignity scoring: house angularity (Whole Sign, anchored to
     the Ascendant, with the 6/8/12 malefic-house override), planetary joys,
     domain/hayz, motion & speed, and solar phase.
@@ -1385,7 +1610,15 @@ def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None):
     The point weights (+5 angular, -5 combust, and so on) are this app's own
     convenience for ranking, not anybody's doctrine -- no source in hand adds
     these conditions up. What IS sourced is the geometry each test uses, and
-    each of those carries its citation at the point of use."""
+    each of those carries its citation at the point of use.
+
+    `armc`, `obliquity` and `geo_lat` are the chart's horizon. With them the
+    domain's "above the earth / below the earth" (Gr. Intr. VII.1, 37;
+    VII.6, 13) is decided by the planet's ALTITUDE from its full ecliptic
+    position (_sin_altitude, as sect and the syzygy already are); without
+    them it falls back to the ecliptic proxy (lon - Ascendant) % 360 > 180,
+    which misplaces a body within a degree or two of the horizon and says
+    so in the row ('Hemisphere by'). Astra audit F04, 2026-09-11."""
     sun_lon = planetary_data['Sun']['longitude']
     ascendant = natal_houses[0]
     is_diurnal_chart = (sect == 'Diurnal')
@@ -1423,7 +1656,13 @@ def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None):
         # from its solar phase (morning riser = diurnal, evening star =
         # nocturnal) rather than being fixed.
         current_sign = get_zodiac_sign(lon)
-        is_above_horizon = (lon - ascendant) % 360 > 180.0
+        if armc is not None and obliquity is not None and geo_lat is not None:
+            is_above_horizon = _sin_altitude(lon, data.get('latitude', 0.0), data.get('distance', 1.0),
+                                             obliquity, armc, geo_lat) > 0.0
+            hemisphere_by = 'altitude'
+        else:
+            is_above_horizon = (lon - ascendant) % 360 > 180.0
+            hemisphere_by = 'ecliptic proxy (no horizon supplied)'
 
         if planet == 'Mercury':
             signed = ((lon - sun_lon + 180.0) % 360.0) - 180.0
@@ -1556,7 +1795,7 @@ def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None):
             labels.append("Swift (+2)")
 
         # --- Solar phase (Gr. Intr. VII.2; Sahl, On Nativities 1.22) --
-        phase, side, elongation = solar_phase(planet, lon, sun_lon)
+        phase, side, elongation = solar_phase(planet, lon, sun_lon, speed)
         is_cazimi = phase == 'Cazimi'
         is_combust = phase == 'Burned'
         is_under_beams = phase == 'Under the rays'
@@ -1565,15 +1804,16 @@ def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None):
             labels.append("Cazimi/in the heart (+5)")
         elif is_combust:
             score -= 5
-            labels.append(f"Burned, {side} ({elongation:.1f} deg) (-5)")
+            labels.append(f"Burned, {side} ({elongation:.1f} deg) (-5)" + solar_phase_note(planet, side, speed, elongation))
         elif is_under_beams:
             score -= 2
-            labels.append(f"Under the rays, {side} ({elongation:.1f} deg) (-2)")
+            labels.append(f"Under the rays, {side} ({elongation:.1f} deg) (-2)" + solar_phase_note(planet, side, speed, elongation))
         elif phase == 'Degrees of setting':
             labels.append(f"In the degrees of setting ({elongation:.1f} deg)")
 
         results[planet] = {
             'Accidental Score': score, 'House': house_num, 'Joy': is_joy, 'Hayz': is_hayz,
+            'Above the earth': is_above_horizon, 'Hemisphere by': hemisphere_by,
             'ContraryDomain': contrary_domain, 'Station': station,
             'Stationary': is_stationary, 'Retrograde': is_retrograde, 'Swift': is_swift,
             'Cazimi': is_cazimi, 'Combust': is_combust, 'UnderBeams': is_under_beams,
@@ -2031,14 +2271,18 @@ def _is_connected_abu_mashar(row):
     # BEYOND ITS ASSOCIATE BY 1' OR LESS, THEN IT HAS ALREADY SEPARATED
     # FROM IT -- except that they will both be BLENDING IN NATURE."
     #
-    # So for Abu Ma'shar a connection ends essentially at the exact degree.
-    # His activation distances below are approach windows, not two-sided
-    # orbs, and this test previously applied them to separating pairs as
-    # well -- treating a planet 10 degrees past exact as still connected,
-    # which 34 denies outright. The residue he does allow is a mixing of
-    # natures, which this file already reports separately as the body
-    # overlap, never as a connection.
-    if row['motion'] == 'Separating' and abs(row['deviation']) > (1.0 / 60.0):
+    # So for Abu Ma'shar a connection ends AT the exact degree: VII.5, 16
+    # says the same of the assembly ("if the light one passed by the slow
+    # one by one minute or by less than that, then it has already
+    # SEPARATED"). "By 1' or less" is the amount that already counts as
+    # separated, not a grace interval after exactness -- an earlier version
+    # kept a pair connected for up to a minute past exact, inverting the
+    # sentence it quoted (Astra F09). His activation distances below are
+    # approach windows, not two-sided orbs. The residue he does allow is a
+    # mixing of natures, which this file reports separately as the body
+    # overlap, never as a connection. The 1e-9 degree is machine tolerance
+    # at exactness, nothing doctrinal.
+    if row['motion'] == 'Separating' and abs(row['deviation']) > 1e-9:
         return False
     if row['assembly']:
         return row['dist'] <= 15.0
@@ -2844,9 +3088,16 @@ def evaluate_handing_over(planetary_data, sect):
 # records each planet's sign-exit and station days, shared by every
 # detector below rather than recomputed per-condition.
 
-def _bisect_crossing(test_fn, day_lo, day_hi, tol=0.02, max_iter=40):
+def _bisect_crossing(test_fn, day_lo, day_hi, tol=1e-4, max_iter=60):
     """Assumes exactly one transition of test_fn's boolean value inside
-    [day_lo, day_hi]; returns the midpoint of the final bracket."""
+    [day_lo, day_hi]; returns the midpoint of the final bracket.
+
+    tol is 1e-4 day (about nine seconds), the same order as the contact
+    root-finder's, because an ingress found here is used as a HARD CUTOFF
+    against contacts found there: at the old 0.02-day bracket (29 minutes)
+    a sextile perfected three minutes before the Moon left her sign was
+    placed after the recorded exit and lost (Astra F06; PN IV II.22, 1-4
+    counts only what she connects with "so long as she is in her sign")."""
     val_lo = test_fn(day_lo)
     for _ in range(max_iter):
         if day_hi - day_lo < tol:
@@ -2896,18 +3147,30 @@ def _simulate_forward_uncached(planetary_data, jd, horizon_days=200, step_days=1
         days, lons, speeds = series[p]['day'], series[p]['lon'], series[p]['speed']
         pid = PLANET_SWE_IDS[p]
         for i in range(len(days) - 1):
-            sign0 = int(lons[i] // 30)
-            if int(lons[i + 1] // 30) != sign0:
-                def _sign_test(day, _pid=pid, _sign0=sign0):
-                    res, _ = swe.calc_ut(jd + day, _pid)
-                    return int(res[0] // 30) == _sign0
-                events[p]['sign_exits'].append(_bisect_crossing(_sign_test, days[i], days[i + 1]))
+            # A station first: the longitude is monotonic on each side of
+            # it and NOT across the whole step, so a planet can leave a sign
+            # and come back inside one sample (Mercury stationing just past
+            # 0 of the next sign) and show the same sign at both ends. The
+            # step is split at the station and each monotonic piece searched
+            # for its own crossing (Astra F07; Gr. Intr. VII.5, 117-119 and
+            # Aphorism 48, 99-102 order stations and sign changes).
+            pieces = [(days[i], lons[i]), (days[i + 1], lons[i + 1])]
             if (speeds[i] > 0) != (speeds[i + 1] > 0):
                 kind = 'first' if speeds[i] > 0 else 'second'
                 def _speed_test(day, _pid=pid, _positive=(speeds[i] > 0)):
                     res, _ = swe.calc_ut(jd + day, _pid)
                     return (res[3] > 0) == _positive
-                events[p]['stations'].append((_bisect_crossing(_speed_test, days[i], days[i + 1]), kind))
+                station_day = _bisect_crossing(_speed_test, days[i], days[i + 1])
+                events[p]['stations'].append((station_day, kind))
+                station_lon = swe.calc_ut(jd + station_day, pid)[0][0]
+                pieces.insert(1, (station_day, station_lon))
+            for (d0, l0), (d1, l1) in zip(pieces, pieces[1:]):
+                sign0 = int(l0 // 30)
+                if int(l1 // 30) != sign0:
+                    def _sign_test(day, _pid=pid, _sign0=sign0):
+                        res, _ = swe.calc_ut(jd + day, _pid)
+                        return int(res[0] // 30) == _sign0
+                    events[p]['sign_exits'].append(_bisect_crossing(_sign_test, d0, d1))
 
     return {'series': series, 'events': events, 'jd': jd, 'horizon_days': horizon_days}
 
@@ -2965,7 +3228,7 @@ def _sign_ingress_day(sim, planet, sign_idx, after_day=0.0, before_day=None):
             continue
         if before_day is not None and day > before_day:
             break
-        if int(_lon_at(sim, planet, day + 0.02) // 30) == sign_idx % 12:
+        if int(_lon_at(sim, planet, day + 1e-3) // 30) == sign_idx % 12:
             return day
     return None
 
@@ -3248,7 +3511,7 @@ def evaluate_escape(planetary_data, sim):
             # "before it reaches it, the one it is connecting with shifts over"
             if _perfection_day(sim, fast, slow, r['target'], before_day=exit_day) is not None:
                 continue
-            new_sign = int(_lon_at(sim, slow, exit_day + 0.02) // 30)
+            new_sign = int(_lon_at(sim, slow, exit_day + 1e-3) // 30)
             # "when the one handing over changes [to THAT NEXT SIGN]" -- the
             # applicant follows it across the same boundary, which is what
             # Fig. 139 shows: Venus and Mercury are both in Virgo, Mercury
@@ -3257,7 +3520,7 @@ def evaluate_escape(planetary_data, sim):
             # any later arrival in that sign -- otherwise the Moon qualifies
             # against everything, since she re-enters every sign each month.
             next_exit = next((d for d in sim['events'][fast]['sign_exits'] if d > exit_day), None)
-            if next_exit is None or int(_lon_at(sim, fast, next_exit + 0.02) // 30) != new_sign:
+            if next_exit is None or int(_lon_at(sim, fast, next_exit + 1e-3) // 30) != new_sign:
                 continue
             ingress_day = next_exit
             # "there is one of the planets closer to it" -- the body it meets
@@ -3273,13 +3536,26 @@ def evaluate_escape(planetary_data, sim):
                     continue
                 if best_day is None or day < best_day:
                     best, best_day = other, day
-            if best is not None:
-                results.append({
-                    'Planet': fast, 'Escaped': slow, 'Connected Instead With': best,
-                    'Escapee Leaves Sign (days)': round(exit_day, 1),
-                    'Applicant Follows In (days)': round(ingress_day, 1),
-                    'Meets Its Body (days)': round(best_day, 1),
-                })
+            if best is None:
+                continue
+            # "there is one of the planets CLOSER to it than [the first one],
+            # so its connection is with the other planet, and its connection
+            # with the first one is nullified": the capture must come BEFORE
+            # the original connection would have perfected in the new sign.
+            # If the applicant reaches the escapee first, nothing is
+            # nullified and there is no Escape (Astra F05; Sahl, Introduction
+            # 3, 57 fn 77 says the same from the other side: crossing over
+            # and connecting with B "before there is a connection with
+            # another planet" completes the ORIGINAL situation).
+            original = _perfection_day(sim, fast, slow, r['target'], after_day=ingress_day)
+            if original is not None and original <= best_day:
+                continue
+            results.append({
+                'Planet': fast, 'Escaped': slow, 'Connected Instead With': best,
+                'Escapee Leaves Sign (days)': round(exit_day, 1),
+                'Applicant Follows In (days)': round(ingress_day, 1),
+                'Meets Its Body (days)': round(best_day, 1),
+            })
         return results
 
 # Sahl's precedence among the three kinds of contact a planet can hold,
@@ -4163,39 +4439,50 @@ def get_house_number(longitude, cusps):
 # #44). Two independent witnesses to the same rule.
 FIVE_DEGREE_CARRYOVER = 5.0
 ANGLE_CUSP_INDICES = (0, 3, 6, 9)  # the four stakes, in swe.houses order
-# Whether the carryover applies at all twelve cusps or at the stakes only.
-# Sahl states it twice for the stakes (Aphorism #44, 88; On Nativities
-# 1.22, 9) and once for every house -- On Nativities 1.18, 19: "if there
-# were 5 degrees between a planet and the degree of the Ascendant from
-# behind it ... its strength will be in the Ascendant, and it will be fit
-# for releasing; AND LIKEWISE IN ALL OF THE HOUSES" (Dykes: "This is
-# Ptolemy's 5-degree rule"). The stakes reading stays the default because
-# two of the three statements give it; the switch flips the advancing
-# verdict of Sahl 83 for about 6% of placements, all succedent-to-cadent.
+# The carry-over applies at the FOUR STAKES ONLY. The owner's canon of
+# 2026-09-11 (OWNER_RULING_PLACES_VS_DYNAMICS): the five-degree rule is a
+# DYNAMICS rule and nothing else -- a planet that has passed one of the four
+# axial degrees (Asc, MC, Dsc, IC) by 0 to 5 degrees inclusive keeps the
+# stake's strength; it never applies at the eight intermediate cusps, never
+# moves a planet between whole-sign places, never touches aspects, and Lots
+# have no dynamic angularity. Sahl states it for the stakes twice (Aphorism
+# #44, 88; On Nativities 1.22, 9); 1.18, 19 -- "if there were 5 degrees
+# between a planet and the degree of the Ascendant from behind it ... its
+# strength will be in the Ascendant, and it will be fit for releasing; and
+# likewise in all of the houses" -- is READ AS THE FOUR STAKES, the course's
+# reading (Lesson 3 §4-5; Glossary s.v. Angles, succeedents, cadents), not
+# as an all-cusps form. The `five_degree_all_cusps` preference that offered
+# the all-cusps form was retired the same day; the constant stays for the
+# `angles_only` parameter's default and is no longer a reading.
 FIVE_DEGREE_ALL_CUSPS = False
 
 def get_effective_house(longitude, cusps, angles_only=None):
     """Quadrant house with the five-degree carryover applied: a planet
     within 5 degrees before a cusp is counted as already in that house.
 
-    MEASURED IN ECLIPTIC LONGITUDE, WHICH IS AN APPROXIMATION. Dykes' note
-    on Fifty Aphorisms #44 says the five degrees are reckoned "AS MEASURED
-    IN DIURNAL MOTION, hence Sahl's reference to the 'rear' of the stake" --
-    that is, in right ascension along the diurnal circle, not in zodiacal
-    degrees. The two coincide only near the equinoctial points and diverge
-    with latitude and with the obliquity of the rising sign. Implementing
-    it properly needs oblique-ascension geometry, which this file does not
-    yet have; until then this is a longitude proxy and is named as one
-    wherever it is reported. It affects Sahl 83 and Abu Ma'shar 39 and 42.
+    MEASURED IN ECLIPTIC LONGITUDE, BY CHOICE. Dykes' note on Fifty
+    Aphorisms #44 says the five degrees are reckoned "AS MEASURED IN
+    DIURNAL MOTION, hence Sahl's reference to the 'rear' of the stake" --
+    that is, along the diurnal circle, not in zodiacal degrees. The two
+    coincide only near the equinoctial points and diverge with latitude
+    and with the obliquity of the rising sign. The oblique-ascension
+    geometry exists in this file (_oblique_ascension, decision D-1) and is
+    not used here: the five degrees stay in longitude, a proxy named as
+    one wherever it is reported (the owner's ruling of 2026-09-11 keeps
+    the proxy and its label). It affects Sahl 83 and Abu Ma'shar 39 and 42,
+    and the releaser's places. Measured from the axial DEGREE, not "the
+    last five degrees of the preceding sign": Ascendant 10 Aries, planet 28
+    Pisces is 12 degrees away and not in the stake.
 
     Two of Sahl's three statements are about the stakes (Aphorism #44, 88;
     On Nativities 1.22, 9), and the transitions they describe (12th into
     1st, 3rd into 4th, 6th into 7th, 9th into 10th) are the cadent-to-
     angular ones, which is why the rule is phrased as not FALLING from the
     stake. The third, On Nativities 1.18, 19, ends "and likewise in all of
-    the houses". angles_only defaults to the stakes reading via
-    FIVE_DEGREE_ALL_CUSPS; the all-cusps reading is Sahl's too, not a later
-    generalisation, and is one switch away.
+    the houses": 1.18, 19's "likewise in all of the houses" is read as the
+    four stakes (the course's reading, adopted as canon 2026-09-11).
+    angles_only defaults to True via FIVE_DEGREE_ALL_CUSPS; the all-cusps
+    form is no longer offered as a reading.
 
     get_house_number() is deliberately left alone and still returns strict
     cusp membership. The two are separate facts and both are kept."""
@@ -4236,7 +4523,9 @@ def get_essential_rulers(longitude):
         'exaltation': SIGN_TO_EXALTATION.get(sign, '-'),
         'triplicity_day': triplicity['Day'],
         'triplicity_night': triplicity['Night'],
-        'triplicity_participating': triplicity['Participating'],
+        # Virgo's partner is Mercury "in preference to" Mars -- Gr. Intr. V.14,
+        # 7 with Figure 53 (Gr. Intr.) and fn 100; Taurus and Capricorn keep Mars.
+        'triplicity_participating': 'Mercury' if sign == 'Virgo' else triplicity['Participating'],
         'term': term_lord,
         'face': face_lord,
     }
@@ -4262,10 +4551,15 @@ def calculate_prenatal_syzygy(jd_natal, lat, lon, natal_houses):
     - If the Moon is less than 180° ahead of the Sun at birth, the preceding
       syzygy was a conjunction (Coniunctio) — the birth is 'Conjunctional'.
     - Otherwise it was an opposition (Praeventio) — the birth is
-      'Preventional', and per medieval practice the Syzygy degree is taken
-      from whichever luminary was above the horizon (in the diurnal
-      hemisphere) at that prenatal Full Moon, defaulting to the Moon if
-      that can't be determined.
+      'Preventional', and the Syzygy degree is taken from whichever
+      luminary was above the horizon at that prenatal Full Moon: Sahl, On
+      Nativities 1.7, 2, "if it was after the opposition, then take the
+      portion of whichever of the two luminaries was above the earth"
+      (stated there for the Ascendant's degree; fn 33: the portion is the
+      degree; Dykes's comment fixes "above the earth" at the lunation's
+      moment). When both or neither is above the earth the Moon's degree
+      is taken -- the engine's choice, no text says (FINAL-A6, 2026-09-11;
+      the line here said "per medieval practice" and cited nothing).
 
     The exact moment is located by a Newton-style root search on the
     Sun/Moon ephemeris (not just an average-synodic-month estimate), then
@@ -4335,9 +4629,12 @@ def calculate_prenatal_syzygy(jd_natal, lat, lon, natal_houses):
     active_triplicity_lord = rulers['triplicity_day'] if is_diurnal_syzygy else rulers['triplicity_night']
     active_triplicity_label = 'Day' if is_diurnal_syzygy else 'Night'
 
-    # Almuten / Syzygy Lord: weighted score across the essential dignities
-    # ruling this degree (only the sect-appropriate triplicity lord counts,
-    # not the Participating ruler, matching standard almuten scoring).
+    # Almuten by 5/4/3/2/1 points: weighted score across the essential
+    # dignities ruling this degree (only the sect-appropriate triplicity
+    # lord counts, not the Participating ruler, matching standard almuten
+    # scoring). The course's technique; the weights are stated in no text
+    # in hand. Sahl's own procedure for the governor of this degree (On
+    # Nativities 1.7, 3-7) is sahl_syzygy_governor, shown beside it.
     scores = {}
     def _add_score(planet, pts):
         if planet and planet != '-':
@@ -4363,6 +4660,93 @@ def calculate_prenatal_syzygy(jd_natal, lat, lon, natal_houses):
         'almuten': almuten,
         'almuten_score': almuten_score,
     }
+
+# --- The governor of the syzygy degree, Sahl, On Nativities 1.7, 3-7 --------
+# (CONV-ESSENTIAL_DIGNITY_WEIGHTS, 2026-09-11.) Sahl states his own
+# procedure for the one in charge of the degree of the meeting or
+# opposition; the 5/4/3/2/1 almuten above is the course's technique and is
+# kept beside it under its own name. 1.7, 3: "you will know the one in
+# charge of that portion from five things: the lord of the house,
+# triplicity, exaltation, bound, and image, and the eastern one of them".
+# 1.7, 4: "Then see which of them is stronger in its [own] place, and is
+# direct in course, looking at the sign of the meeting or opposition".
+# 1.7, 7: "if they were both in power equally, [then] whichever of them was
+# in a stake or in its own house, triplicity, bound, or exaltation, and had
+# superiority over its associate in this respect, that is the governor."
+# "In a stake" is strength language and dispatches to the DIVISION under
+# the canon (OWNER_RULING_PLACES_VS_DYNAMICS), said on the row. 1.7, 5-6
+# (the lord of the best; the one changing more quickly into the superior
+# condition) and 4's "stronger in its [own] place" are not modelled.
+SAHL_1_7_LOOKING_SIGN_COUNTS = (0, 2, 3, 4, 6)   # the same sign or a whole-sign aspect to it
+
+def sahl_syzygy_governor(syzygy, p_data, cusps, sect):
+    """The governor of the syzygy degree by On Nativities 1.7, 3-7, from
+    the natal chart (the conditions -- motion, looking, easternness, the
+    stake -- read at the nativity, the moment the chapter is casting; the
+    text does not say the lunation's moment, a reading said on the row).
+    Returns the governor (or '-' / a tie), the candidates with each test,
+    and a one-line account for the page."""
+    r = syzygy['rulers']
+    lords = [r['domicile'], r['exaltation'], syzygy['active_triplicity_lord'], r['term'], r['face']]
+    claims = {}
+    for kind, lord in zip(('house', 'exaltation', 'triplicity', 'bound', 'image'), lords):
+        if lord and lord != '-' and lord in p_data:
+            claims.setdefault(lord, []).append(kind)
+    sun_lon = p_data['Sun']['longitude']
+    syz_sign_idx = int((syzygy['syzygy_longitude'] % 360.0) // 30)
+    rows = []
+    for planet, kinds in claims.items():
+        d = p_data[planet]
+        lon = d['longitude']
+        speed = d.get('speed_in_lon', 0.0)
+        direct = planet in ('Sun', 'Moon') or speed >= 0.0
+        apart = (int((lon % 360.0) // 30) - syz_sign_idx) % 12
+        apart = min(apart, 12 - apart)
+        looking = apart in SAHL_1_7_LOOKING_SIGN_COUNTS
+        _, side, _ = solar_phase(planet, lon, sun_lon, speed)
+        eastern = side == 'eastern'
+        division = get_effective_house(lon, cusps)
+        own = get_essential_rulers(lon)
+        own_trip = own['triplicity_day'] if sect == 'Diurnal' else own['triplicity_night']
+        own_dignities = [name for name, holder in (('house', own['domicile']), ('exaltation', own['exaltation']),
+                                                    ('triplicity', own_trip), ('bound', own['term'])) if holder == planet]
+        in_stake = division in (1, 4, 7, 10)
+        rows.append({
+            'Planet': planet,
+            'Claim on the degree (1.7, 3)': ', '.join(kinds),
+            'Direct (1.7, 4)': 'yes' if direct else 'no (retrograde)',
+            'Looking at the sign (1.7, 4)': ('yes (' + ('the same sign' if apart == 0 else ASPECT_BY_SIGN_COUNT[apart][0].lower()) + ')')
+                                          if looking else f'no (in aversion, {apart} sign{"s" if apart != 1 else ""} off)',
+            'Eastern (1.7, 3)': ('the Sun has no side' if planet == 'Sun' else ('yes' if eastern else 'no (western)')),
+            'Stake or own dignity (1.7, 7)': (f'division {division}' + (' (a stake)' if in_stake else '')
+                                              + ('; own ' + ', '.join(own_dignities) if own_dignities else '')),
+            '_passes': direct and looking, '_eastern': eastern, '_tie': (1 if in_stake else 0) + len(own_dignities),
+        })
+    passing = [row for row in rows if row['_passes']]
+    if not passing:
+        governor, how = '-', 'no lord of the degree is both direct and looking at its sign (1.7, 4)'
+    else:
+        pool = [row for row in passing if row['_eastern']] or passing
+        note = '1.7, 3: the eastern one preferred' if pool is not passing and len(passing) > 1 else ''
+        best = max(row['_tie'] for row in pool)
+        top = [row for row in pool if row['_tie'] == best]
+        if len(top) == 1:
+            governor = top[0]['Planet']
+            how = f"{governor}: direct, looking at the sign of the {'meeting' if syzygy['event_type'] == 'Conjunctional' else 'opposition'} (1.7, 4)"
+            if note:
+                how += f'; {note}'
+            if len(pool) > 1:
+                how += f"; 1.7, 7's stake or own dignity decides ({top[0]['Stake or own dignity (1.7, 7)']})"
+        else:
+            governor = ' / '.join(row['Planet'] for row in top)
+            how = (f"tie between {governor}: each direct and looking, equal under 1.7, 7; 1.7, 5-6 (the lord of the best; "
+                   f"the one changed more quickly into the superior condition) are not modelled")
+    for row in rows:
+        row['Verdict'] = 'THE GOVERNOR' if row['Planet'] == governor else ('candidate' if row['_passes'] else 'dropped by 1.7, 4')
+        for k in ('_passes', '_eastern', '_tie'):
+            del row[k]
+    return {'governor': governor, 'how': how, 'rows': rows}
+
 
 # --- Planetary Day & Hour (Chronocrats) ----------------------------------
 
@@ -4413,7 +4797,7 @@ def _weekday_from_jd(jd_ut, utc_offset_hours):
     return int(math.floor(jd_ut + (utc_offset_hours / 24.0) + 0.5)) % 7
 
 @st.cache_data(max_entries=32, show_spinner=False)
-def calculate_chronocrats(jd_utc, lat, lon, local_dt, utc_offset_hours=0.0):
+def calculate_chronocrats(jd_utc, lat, lon, local_hour, utc_offset_hours=0.0):
     """Planetary Day (from the astrological day, which begins at Sunrise —
     not the calendar weekday) and Planetary Hour (from the unequal/temporal
     hour system, bracketed by real sunrise/sunset times for this date and
@@ -4474,7 +4858,7 @@ def calculate_chronocrats(jd_utc, lat, lon, local_dt, utc_offset_hours=0.0):
         # different lord depending on which branch had run.
         approximate = True
         day_lord = DAY_LORD_BY_WEEKDAY[_weekday_from_jd(jd_utc, utc_offset_hours)]
-        cycle_offset = local_dt.hour          # 0-23, one step per civil hour
+        cycle_offset = int(local_hour)        # 0-23, one step per civil hour
 
     start_index = CHALDEAN_HOUR_ORDER.index(day_lord)
     hour_lord = CHALDEAN_HOUR_ORDER[(start_index + cycle_offset) % 7]
@@ -4583,12 +4967,16 @@ def calculate_classical_lots(asc, sun, moon, sect):
 # LOT_HOUSE_CUSP), 'lordN' (the domicile lord of the Nth whole-sign house),
 # or another Lot by id. Lots that feed other Lots are listed before them.
 #
-# "The second place", "the degree of the eighth place", "the ninth" (2.15,
-# 1; 8.6, 1; Ch. 9, 9): the text is whole-sign throughout, and Dykes' note 207
-# on 4.14 glosses the assets Lot as "from the lord of the second to the
-# second". In whole signs the degree of the Nth place is the Ascendant's
-# own degree carried into the Nth sign; the quadrant cusp is the other
-# reading, and was the only one computed until now. Sidebar switch.
+# "The second place", "the ninth" (2.15, 1; Ch. 9, 9): Sahl's Lots count
+# houses by sign, and Dykes' note 207 on 4.14 glosses the assets Lot as
+# "from the lord of the second to the second". In whole signs the degree of
+# the Nth place is the Ascendant's own degree carried into the Nth sign; the
+# quadrant cusp is the other reading. Sidebar switch for the rows whose text
+# names no construction. ONE ROW DECLARES ITS OWN: the Lot of death's eighth
+# is "by equation" (Gr. Intr. VIII.4, 226; VIII.6, 69; VIII.3, 14-15), the
+# calculated cusp -- Sahl's 8.6, 1 "the degree of the eighth place" names no
+# construction, and an earlier line here cited it for "whole-sign
+# throughout", which it does not say (owner, 2026-09-11; see the row).
 LOT_HOUSE_CUSP_OPTIONS = ('whole-sign place', 'quadrant cusp')   # the sidebar radio and _lot_point share these
 LOT_HOUSE_CUSP = LOT_HOUSE_CUSP_OPTIONS[0]
 LOT_DEFINITIONS = [
@@ -4715,14 +5103,37 @@ LOT_DEFINITIONS = [
          note='"Taken from Mercury to the Moon by day, and by night the reverse."'),
     dict(id='death', topic='Death', name='Lot of death',
          start='Moon', end='cusp8', project='Saturn', reverse_at_night=False,
-         source="Sahl, On Nativities Ch. 8.6, 1 (Saturn is Dykes' emendation, fn. 89)",
-         confidence="Dykes' emendation against Sahl's manuscripts (D-11, 2026-09-08)",
-         note='Projected from Saturn as printed: "taken by night and day from the Moon to the '
-              'degree of the eighth place, and cast out from Saturn." That "Saturn" is an '
-              'emendation -- fn. 89: "Reading with the Masha\'allah MSS for \'Ascendant\'. This '
-              'is the Lot as reported by Dorotheus (Carmen IV.3, 16)" -- so Sahl\'s own manuscripts '
-              'read the Ascendant, and Masha\'allah, Dorotheus and the edition read Saturn. Kept, '
-              'and labelled; the two projections differ in sign on about 93% of charts.'),
+         # This Lot's eighth degree is "by equation" (Gr. Intr. VIII.4, 226; VIII.6,
+         # 69): the calculated cusp, whatever the shared LOT_HOUSE_CUSP switch says
+         # for the Lots whose texts name no construction. Owner, 2026-09-11 (decision
+         # sheet row 4 / FINAL-A12); the whole-sign carried degree is the row below.
+         cusp_rule='quadrant cusp',
+         source="Gr. Intr. VIII.4, 226 with fn 128; VIII.6, 69; VIII.3, 11 and 14-15 (\"by equation\"); "
+                "Sahl, On Nativities 8.6, 1 as printed, Saturn being Dykes's reading for the MSS' \"Ascendant\" (fn 89)",
+         confidence="stated (Gr. Intr. VIII.4, 226; VIII.6, 69); Sahl 8.6, 1 as printed agrees, its manuscripts read "
+                    "the Ascendant (fn 89); the eighth's degree \"by equation\" is the Alcabitius cusp -- a declared "
+                    "convention, no text naming the algorithm (owner, 2026-09-11)",
+         note='"The Lot of death is taken by day and night from the degree of the Moon to the degree of the '
+              'eighth house by equation, and to it is added what Saturn has traveled in his sign, and it is '
+              'cast out from the beginning of Saturn\'s sign" (Gr. Intr. VIII.4, 226, Hermes\'s Lot, which 228 '
+              'calls "more correct" than the Persians\'; VIII.6, 69 the same) -- projection from Saturn\'s degree, '
+              'as VIII.3, 11 and fn 36 spell out. Sahl 8.6, 1 as printed: "taken by night and day from the Moon '
+              'to the degree of the eighth place, and cast out from Saturn"; that "Saturn" is Dykes\'s emendation '
+              'of Sahl\'s manuscripts -- fn 89: "Reading with the Masha\'allah MSS for \'Ascendant\'. This is the '
+              'Lot as reported by Dorotheus (Carmen IV.3, 16)" -- so the emendation is a fact about Sahl\'s '
+              'transmission, not about the rule. "By equation" is Abu Ma\'shar\'s own word for the cusp (VIII.3, '
+              '14: "by counting is one of the signs, and by equation ... another house"; 15\'s example cannot be '
+              'produced by a carried Ascendant degree); Sahl\'s "the degree of the eighth place" names no '
+              'construction. The Saturn and Ascendant projections differ in sign on about 93% of charts; the '
+              'cusp and the carried degree on about 12%.'),
+    dict(id='death_ws', topic='Death', name='Lot of death (variant: whole-sign eighth)',
+         start='Moon', end='cusp8', project='Saturn', reverse_at_night=False,
+         cusp_rule='whole-sign place',
+         source="Engine variant of the row above: the eighth's degree as the Ascendant's degree carried seven signs forward",
+         confidence="not prescribed in any supplied passage -- Sahl 8.6, 1 leaves the construction unspecified, "
+                    "Gr. Intr. VIII.4, 226 prescribes the cusp; shown for comparison (owner, 2026-09-11)",
+         note='Same arc and projection as the row above; only the eighth\'s degree differs. Kept as a labelled '
+              'variant so the earlier default (whole sign, a builder\'s reading of 2026-09-08) stays visible.'),
     dict(id='killer', topic='Death', name='Lot of the killer',
          start='lord1', end='Moon', project='Ascendant', reverse_at_night=True,
          source='Sahl, On Nativities Ch. 8.2, 17',
@@ -4820,7 +5231,7 @@ LOT_DEFINITIONS = [
          confidence='attested', note='"By day and by night from the Moon to Mars."'),
 ]
 
-def _lot_point(name, planetary_data, asc, cusps, sect, resolved):
+def _lot_point(name, planetary_data, asc, cusps, sect, resolved, cusp_rule=None):
     """Resolve one end of a Lot formula to a longitude, or None if the
     chart cannot supply it."""
     if name == 'Ascendant':
@@ -4837,7 +5248,12 @@ def _lot_point(name, planetary_data, asc, cusps, sect, resolved):
         return 19.0 if sect == 'Diurnal' else 33.0
     if name.startswith('cusp'):
         n = int(name[4:])
-        if LOT_HOUSE_CUSP == LOT_HOUSE_CUSP_OPTIONS[1]:
+        # The shared switch decides, unless the row declares its own rule (the
+        # Lot of death: "by equation", Gr. Intr. VIII.4, 226), which wins.
+        quadrant = LOT_HOUSE_CUSP == LOT_HOUSE_CUSP_OPTIONS[1]
+        if cusp_rule is not None:
+            quadrant = cusp_rule == LOT_HOUSE_CUSP_OPTIONS[1]
+        if quadrant:
             return cusps[n - 1]
         return (asc + 30.0 * (n - 1)) % 360.0
     if name.startswith('lord'):
@@ -4854,9 +5270,10 @@ def _lot_longitude(d, planetary_data, asc, cusps, sect, resolved):
     start, end = d['start'], d['end']
     if d['reverse_at_night'] and sect != 'Diurnal':
         start, end = end, start
-    a = _lot_point(start, planetary_data, asc, cusps, sect, resolved)
-    b = _lot_point(end, planetary_data, asc, cusps, sect, resolved)
-    p = _lot_point(d['project'], planetary_data, asc, cusps, sect, resolved)
+    rule = d.get('cusp_rule')
+    a = _lot_point(start, planetary_data, asc, cusps, sect, resolved, rule)
+    b = _lot_point(end, planetary_data, asc, cusps, sect, resolved, rule)
+    p = _lot_point(d['project'], planetary_data, asc, cusps, sect, resolved, rule)
     if a is None or b is None or p is None:
         return None
     return (p + b - a) % 360.0, start, end
@@ -4900,7 +5317,7 @@ def calculate_topical_lots(planetary_data, asc, cusps, sect):
             # says whether its condition holds instead of leaving the
             # reader to check.
             _ph, _sd, _el = solar_phase('Saturn', planetary_data['Saturn']['longitude'],
-                                         planetary_data['Sun']['longitude'])
+                                         planetary_data['Sun']['longitude'], planetary_data['Saturn'].get('speed_in_lon'))
             active = 'yes' if _ph in ('Burned', 'Under the rays', 'Cazimi') else 'NO -- Saturn is not under the rays'
         rows.append({
             'Topic': d['topic'],
@@ -4911,8 +5328,8 @@ def calculate_topical_lots(planetary_data, asc, cusps, sect):
             'Lord': SIGN_TO_DOMICILE.get(get_zodiac_sign(lon), '-'),
             'Formula': (f"{d['project']} + ({end} - {start})"
                         + ('' if not d['reverse_at_night'] else f'  [{arc} order]')
-                        + (f'  [{LOT_HOUSE_CUSP}]' if 'cusp' in (start, end, d['project'])
-                           or start.startswith('cusp') or end.startswith('cusp') else '')),
+                        + ((f"  [{d['cusp_rule']}, this Lot's own rule]" if d.get('cusp_rule') else f'  [{LOT_HOUSE_CUSP}]')
+                           if 'cusp' in (start, end, d['project']) or start.startswith('cusp') or end.startswith('cusp') else '')),
             'Standing': d['confidence'],
             'Source': d['source'],
             'Editor’s note': d['note'],
@@ -4962,13 +5379,19 @@ NOT_IMPLEMENTED_COVERAGE = [
      "medicine' -- and a twelve-house scheme for war. Horary, and in tension with the fixed "
      "house meanings of Introduction Ch. 2, 4-29, which no text reconciles. Decision D-17 "
      "(2026-09-08): caveat only; this engine's house meanings are one topic's assignment."),
-    ("Gr. Intr. VII.6, 52", "Each planet's OWN nodes (\"their own Dragons\"). Only "
-     "the Moon's are computed."),
+    ("Gr. Intr. VII.6, 52", "Each planet's OWN nodes (\"their own Dragons\") are read since "
+     "2026-09-11 (order GAP-39) from the ephemeris's MEAN nodes within 12 degrees; only the "
+     "reading remains -- 52 does not say mean or true, and the chart's Moon's node is the TRUE "
+     "one (owner, 2026-09-07), so the two node kinds differ."),
     ("Gr. Intr. VII.3, 2 / VI.26, 3", "The ADVANCING AND WITHDRAWING QUADRANTS as a "
      "condition in its own right (ASC to MC and DSC to IC advancing: primary motion "
      "toward the meridian). Read from the margin of the Figure 90 reshoot and Dykes' "
      "note on On Nativities 10.3; distinct from Sahl 83, which is his own Ch.3, 4. "
-     "Recorded as ADVANCING_BY_QUADRANT_FIG90, not yet scored."),
+     "Recorded as ADVANCING_BY_QUADRANT_FIG90, not yet scored. Sahl's own natal timing uses "
+     "the quadrants (On Nativities 7.4, 17, marriage: \"the two eastern quarters, in what is "
+     "between the Ascendant and the Midheaven, and what is opposite that\"; 5.3, 11-12, children) "
+     "and a clockwise scheme for chronic illness (6.5, 1); On Times 1, 14's preference for "
+     "Masha'allah's hemispheres (On Choices 6, 16-17) is On Times 1's alone (order DIS-9)."),
     ("Gr. Intr. VII.5, 32-33", "Mixing of natures BY RAY across a sign boundary "
      "(Fig. 121: Moon 29 59' Aquarius, Saturn's trine ray at 1 Pisces). Only the "
      "body-to-body case of VII.4, 13-14 is reported."),
@@ -5003,7 +5426,8 @@ NOT_IMPLEMENTED_COVERAGE = [
 # int(lon % 30) + 1 against them. Corrected 2026-09-08 against the owner's
 # photographs of V.21 (p. 308), not the OCR capture: Aries gained 29,
 # Gemini's 13 became 12, Pisces gained 28; confirmed a third time the same
-# day against Fig. 62's own page image, all 62 cells. (The earlier text
+# day against Fig. 62's own page image, all 64 cells -- PN IV's Figure
+# 98 has 62, differing in three (CORPUS_MANIFEST). (The earlier text
 # cited Fig. 98, which in Abu Ma'shar's volume is "Speed relative to
 # apogee" -- but Persian Nativities IV's Fig. 98 IS the wells table, so
 # name the volume before "correcting" this.) Pinned cell by cell in
@@ -5028,10 +5452,15 @@ WELLED_DEGREES = {
 # Capricorn" (Introduction Ch. 1, 18; On Nativities 1.38, 8 the same), and
 # "a place called the 'burned place,' and it is the end of Libra and the
 # beginning of Scorpio" (Introduction Ch. 1, 19; On Nativities 1.38, 9).
-# Sahl gives the burned place NO degrees; the 15 Libra-15 Scorpio span
-# this app once flagged is in no source in hand, and the 19
-# Libra-3 Scorpio span is Abu Ma'shar's own (VII.6, 40, HARSH_BURNED_PATH
-# below, used only where the table is his). Decision D-5, 2026-09-08.
+# Sahl gives the burned place NO degrees. The 15 Libra-15 Scorpio span this
+# app once flagged is the definition "often" given (Dykes, Carmen p. 258 fn
+# 104; the Course Glossary) and is not applied to Sahl; the 19 Libra-3
+# Scorpio span is Abu Ma'shar's own harsher band (VII.6, 40,
+# HARSH_BURNED_PATH below), applied where the table is his and BORROWED,
+# labelled as borrowed, for Sahl's condition 110 (Introduction 3, 110: "the
+# end of Libra and the beginning of Scorpio"). Decision D-5, 2026-09-08, as
+# implemented by the owner's sheet row 9 (2026-09-11); comment rewritten
+# after the build check (D5).
 DARK_SIGNS = {'Libra', 'Capricorn'}
 BURNED_PLACE_SIGNS = ('Libra', 'Scorpio')
 
@@ -5546,6 +5975,14 @@ FEMININE_QUADRANT_HOUSES = {1, 2, 3, 7, 8, 9}
 # the 2026-09-07 review (synthesis/05, Tier 3) and the report it reviewed
 # (synthesis/04, A4) differ, it is only on whether Ch. 6, 30 counts as a
 # use of the scheme; this comment follows the review and cites 16-17 alone.
+#
+# And Sahl's OWN natal timing uses the quadrants that On Times 1, 14 sets
+# aside: On Nativities 7.4, 17 (marriage: the Moon "in the two eastern
+# quarters, in what is between the Ascendant and the Midheaven, and what is
+# opposite that"), 5.3, 11-12 (children), and a clockwise scheme for chronic
+# illness at 6.5, 1. So "Sahl prefers Masha'allah's hemispheres" is true of
+# On Times 1 alone; any future build of those three rules uses the scheme its
+# own sentence names (order DIS-9, 2026-09-11). Nothing here is scored.
 ADVANCING_BY_QUADRANT_FIG90 = {4, 5, 6, 10, 11, 12}   # Gr. Intr. VII.3, 2 / VI.26, 3; not Sahl 83
 
 # Approximate geocentric distance range (AU) per planet, used only as a
@@ -6163,8 +6600,17 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
                 if _is_connected(r) and _averse_to_ascendant(planetary_data[other]['longitude'], ascendant_lon):
                     _averse97.append(other)
                 if (r['applicant'] or r['light_name']) == planet and r['motion'] == 'Separating' and _is_connected(r):
-                    other_rulers = get_essential_rulers(planetary_data[other]['longitude'])
-                    if planet in (other_rulers['domicile'], other_rulers['exaltation']):
+                    # "separating from a planet RECEIVING IT": the departed
+                    # planet receives THIS one, so it must own the house or
+                    # exaltation of THIS planet's degree (3, 52: Mars receives
+                    # the Moon in Aries "because [Aries] is his house"). The
+                    # earlier test looked the other way round -- whether this
+                    # planet ruled the departed one's degree (Astra F08). fn 99
+                    # ("I am not sure that these conditions must both exist
+                    # at once") leaves the two clauses' conjunction open; the
+                    # engine applies each clause on its own, a reading.
+                    my_rulers = get_essential_rulers(planetary_data[planet]['longitude'])
+                    if other in (my_rulers['domicile'], my_rulers['exaltation']):
                         _sep97.append(other)
             if _averse97 or _sep97:
                 _parts = []
@@ -6258,12 +6704,18 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
     speed. And 46's "beginning of easternization" is VII.2, 40-41's 12
     degrees for the inferiors, not a flat 15.
 
-    Still not implemented, for want of a source in hand rather than by
-    choice: the masculine and feminine DEGREES that 13 and 36 name
-    alongside the signs (the table is now in the corpus as Fig. 59, V.19,
-    but is not read here), and
-    52's "their own Dragons" -- each planet's own nodes, where only the
-    Moon's are computed here."""
+    Not implemented BY DECISION D-19 (2026-09-08; kept by the owner
+    2026-09-11, decision sheet row 15): the masculine and feminine DEGREES
+    that 13 and 36 name alongside the signs -- the table is in the corpus
+    as Gr. Intr. V.19, Figure 59 (V.19, 7 with fn 108), and D-19's ground is
+    that it disagrees with the sign's gender on half the zodiac and the
+    three schemes agree on a third of it, so reading "or male degrees"
+    into 13 and 36 would widen a vote the author does not commit to. (An
+    earlier line here said "for want of a source in hand rather than by
+    choice", which contradicted NOT_IMPLEMENTED_COVERAGE's D-19 entry.)
+    52's "their own Dragons" -- each planet's own nodes -- IS read below
+    since 2026-09-11 (order GAP-39), from the ephemeris's MEAN nodes: 52
+    does not say mean or true, a reading declared on the label."""
     with doctrine(ABU_MASHAR):
         rows = _pairwise_configurations(planetary_data)
         reception_rows = evaluate_reception(planetary_data, sect, sim)
@@ -6828,6 +7280,25 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
                     negative.append(f'With the {node_name} at its worst, {polarity} (52-55)')
                 else:
                     negative.append(f'With the {node_name}, {polarity} (52-55)')
+            # 52's FIRST clause: "Or they are with the Heads of their OWN Dragons,
+            # or with their Tails ... and between them are 12 degrees or less" --
+            # each planet's own nodes, read from the ephemeris at the moment
+            # (swe.nod_aps_ut). MEAN nodes: 52 does not say mean or true, a
+            # reading said on the label; the Moon's node above is the chart's
+            # TRUE node (owner, 2026-09-07). The luminaries have no nodes of
+            # their own in this sense. Order GAP-39, 2026-09-11.
+            if jd is not None and planet in PLANET_SWE_IDS and planet not in ('Sun', 'Moon'):
+                try:
+                    own = swe.nod_aps_ut(jd, PLANET_SWE_IDS[planet], swe.NODBIT_MEAN)
+                    own_head, own_tail = own[0][0] % 360.0, own[1][0] % 360.0
+                except Exception:
+                    own_head = own_tail = None
+                if own_head is not None:
+                    d_head = abs(((lon - own_head + 180) % 360) - 180)
+                    d_tail = abs(((lon - own_tail + 180) % 360) - 180)
+                    if min(d_head, d_tail) <= 12.0:
+                        negative.append(f"With its own {'Head' if d_head <= d_tail else 'Tail'} within 12 degrees "
+                                        f"(52, \"their own Dragons\"; the mean node, a reading -- 52 does not say mean or true)")
 
             # --- Enclosure by the infortunes (VII.6, 56-62) -------------------
             # Abu Ma'shar's OWN two types, not Sahl's borrowed: see
@@ -6911,13 +7382,18 @@ def _twelfth_part_sign(lon):
     mapped onto the twelve signs in order, 2.5 degrees apiece, beginning
     with the sign itself.
 
-    NOTE ON PROVENANCE: both authors USE twelfth-parts -- Abu Ma'shar makes
-    the Moon's twelfth-part falling to Saturn or Mars her fifth corruption
-    (VII.6, 68) and counts assembly with them among the ways planets meet
-    (VII.4, 2), and Sahl devotes On Nativities Ch.2.6 to them -- but neither
-    passage in hand states the formula. This is the standard Hellenistic and
-    Arabic construction, supplied from convention rather than from the texts
-    available to this project."""
+    PROVENANCE: Gr. Intr. V.18, 1-3 (Figure 57) STATES the construction --
+    each sign "divided ... into twelve divisions, so that each division is
+    2 1/2 degrees" (1), "the first division of it is like the nature of the
+    sign itself" (2), and the short calculation: take the degree and minute
+    from the beginning of the sign, "multiply it by 12, and ... cast out
+    what it amounts to from the beginning of that sign, 30 for every sign"
+    (3). Both authors use it: the Moon's twelfth-part falling to Saturn or
+    Mars is her fifth corruption (VII.6, 68), assembly with them is one of
+    the ways planets meet (VII.4, 2), and Sahl devotes On Nativities 2.6 to
+    them. An earlier note here said no text in hand stated the formula; it
+    was written before Book V of the Great Introduction entered the corpus
+    (Astra audit F14; work order PN4R-4n-2, 2026-09-11)."""
     sign_idx = int(lon // 30)
     step = int((lon % 30.0) // 2.5)
     return get_zodiac_sign(((sign_idx + step) % 12) * 30.0 + 15.0)
@@ -7175,12 +7651,26 @@ def evaluate_corruption_of_the_moon(planetary_data, ascendant_lon, sect):
                 if get_wsh_house(planetary_data[other]['longitude'], ascendant_lon) in CADENT_HOUSES:
                     hit(109, f'Connecting with {other}, itself falling from the stakes')
 
-        # [8] (110) In the burned path -- Sahl's own wording narrows this to
-        # the end of Libra and the beginning of Scorpio specifically (not the
-        # full two signs), matching the alternate 19-Libra-to-3-Scorpio band
-        # footnoted there.
+        # [8] (110) "in the burned path, and that is at the end of Libra and
+        # the beginning of Scorpio". SAHL GIVES NO DEGREES. The span tested,
+        # 19 Libra to 3 Scorpio, is Abu Ma'shar's harsher band (Gr. Intr.
+        # VII.6, 40: "harsher than that is if it was from 19 Libra up to 3
+        # Scorpio"), the one fn 120 reports, BORROWED here as the only
+        # author-stated region of the shape Sahl describes. Firing on the two
+        # whole signs would over-read Sahl (early Libra is not "the end of
+        # Libra"). Owner, 2026-09-11 (decision sheet row 9, DEC-D-5 as
+        # implemented); an earlier comment claimed Sahl's wording "matches"
+        # the band, which it does not state. Readings, not tests: 15 Libra to
+        # 15 Scorpio is the definition "often" given (Dykes, Carmen p. 258 fn
+        # 104; the Course Glossary); Dorotheus's own (Carmen p. 258, 6: the
+        # equinoctial point taken southward) is a different construction.
+        # Both readings are ON THE PAGE, in the clause (review D5).
         if HARSH_BURNED_PATH[0] <= lon < HARSH_BURNED_PATH[1]:
-            hit(110, 'In the burned path, end of Libra/beginning of Scorpio')
+            hit(110, 'In the burned path, "the end of Libra and the beginning of Scorpio" -- Sahl gives no degrees; '
+                     "the 19 Libra-3 Scorpio span is Gr. Intr. VII.6, 40's harsher band (fn 120), borrowed. "
+                     'READINGS, not tests: 15 Libra-15 Scorpio is the definition "often" given (Dykes, Carmen p. 258 fn 104; '
+                     "the Course Glossary), so it is not true that no source in hand states it; Dorotheus's own definition "
+                     "(Carmen p. 258, 6: the equinoctial point taken southward) is a different construction")
 
         # [9] (111) Wild -- empty of course, not connecting with any planet.
         # Sahl's own present-tense definition (not Abu Ma'shar's later,
@@ -7496,27 +7986,21 @@ def reference_planetary_years_rows():
              'Mighty': y['mighty'], 'Fardar (years)': y['fardar']} for p, y in PLANETARY_YEARS.items()]
 
 def evaluate_planetary_years_display(planetary_data, cusps, ascendant_lon, sect, essential):
-    """Figure 146 beside each planet's placement, with what the two
-    placement rules in the corpus would grant it -- shown, not applied.
+    """Figure 146 beside each planet's placement, with the grade On
+    Nativities 1.20, 7-34 would give it AS HOUSE-MASTER (the corpus's one
+    natal grant, FINAL-A1; placed by the DIVISION, the POWER unit of the
+    owner's ruling of 2026-09-11 -- this column had read whole signs and
+    only 10, 11, 16 and 17), and what On Times 4, 7 would give it -- a
+    rule for a QUESTION chart ("in the hour of the question", 4, 2), shown
+    for comparison only. The grant is applied to one planet, the
+    house-master the Timing page names from 1.15; here every planet is
+    shown as if it were.
 
-    On Times Ch. 4, 7 (of the ruler of the releaser): "if the ruler was in
-    a stake, eastern, it grants its greater years; or if it was in what
-    follows the stakes, it grants its middle years; and if it was falling,
-    it grants its lesser years." Stake/succedent/falling by the app's
-    quadrant place with the five-degree carryover, as elsewhere.
-
-    On Nativities 1.20 (of the house-master): 10 "in the Ascendant or in the
-    Midheaven, or in the sign of the west, or the eleventh, enhanced by what
-    I explained [7-9: in its own share, eastern, direct, of the sect] ...
-    the greater years"; 11 "under the earth, eastern, in one of its shares,
-    enhanced ... its greater years"; 16 "in the second or eighth ... its
-    middle years"; 17 "in the house of hope or the fifth, and was not in
-    something of its shares, and was not eastern ... its middle years".
-    Whole signs, as 10 says "sign of the west". Where neither sentence
-    reaches a placement the column says so rather than inventing a value.
-    The two rules disagree on where the greater years are granted (04 §3
-    #2), which is one reason D-3 keeps them on the page and out of the
-    engine."""
+    On Times 4, 7 (of the ruler of the question's victor): "if the ruler
+    was in a stake, eastern, it grants its greater years; or if it was in
+    what follows the stakes, it grants its middle years; and if it was
+    falling, it grants its lesser years." Stake/succedent/falling by the
+    division with the five-degree carry-over, as elsewhere."""
     rows = []
     sun_lon = planetary_data['Sun']['longitude']
     for planet in ('Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon'):
@@ -7529,34 +8013,31 @@ def evaluate_planetary_years_display(planetary_data, cusps, ascendant_lon, sect,
         if planet == 'Sun':
             side = '-'
         else:
-            side = solar_phase(planet, lon, sun_lon)[1] or '-'
+            side = solar_phase(planet, lon, sun_lon, planetary_data[planet].get('speed_in_lon'))[1] or '-'
         eastern = side == 'eastern'
-        # On Times 4, 7
+        # On Times 4, 7 -- the question-chart rule, for comparison
         if q in ANGLE_HOUSES:
             times = 'greater (in a stake, eastern; 4, 7)' if eastern else 'in a stake but not eastern: 4, 7 gives no value'
         elif q in SUCCEDENT_HOUSES:
             times = 'middle (follows the stakes; 4, 7)'
         else:
             times = 'lesser (falling; 4, 7)'
-        # On Nativities 1.20
-        under_earth = q in (1, 2, 3, 4, 5, 6)
-        if ws in (1, 10, 7, 11):
-            nat = 'greater if enhanced (1.20, 10)' + ('' if (in_share and eastern) else ' -- not enhanced here (7-9)')
-            if ws == 11 and not in_share and not eastern:
-                nat = 'middle (11th, not in a share, not eastern; 1.20, 17)'
-        elif under_earth and eastern and in_share:
-            nat = 'greater (under the earth, eastern, in a share; 1.20, 11)'
-        elif ws in (2, 8):
-            nat = 'middle (1.20, 16)'
-        elif ws == 5 and not in_share and not eastern:
-            nat = 'middle (5th, not in a share, not eastern; 1.20, 17)'
+        # On Nativities 1.20, 7-34 in full, by the division
+        g = sahl_house_master_years(planet, planetary_data, cusps, sect, essential)
+        if g['grade'] is None:
+            nat = '1.20 silent'
+        elif g['years'] is not None:
+            nat = f"{g['grade']} ({g['sentence']})"
         else:
-            nat = 'not stated in 1.20'
+            nat = f"{g['grade']} ({g['sentence']}; count not restated)"
+        if g['flags']:
+            nat += ' -- 14-15 printed, not applied'
         rows.append({
             'Planet': planet, 'Lesser': years['lesser'], 'Middle': years['middle'], 'Greater': years['greater'],
             'Mighty': years['mighty'], 'Fardar': years['fardar'],
-            'WS place': ws, 'Quadrant place': q, 'Side of the Sun': side, 'In a share': 'yes' if in_share else 'no',
-            'On Times 4, 7 would grant': times, 'On Nativities 1.20 would grant': nat,
+            'WS place': ws, 'Division (5 deg at the stakes)': q, 'Side of the Sun': side, 'In a share': 'yes' if in_share else 'no',
+            'On Nativities 1.20 grants (as house-master)': nat,
+            'On Times 4, 7 (a question chart, 4, 2): for comparison': times,
         })
     return rows
 
@@ -7596,16 +8077,20 @@ def evaluate_planetary_years_display(planetary_data, cusps, ascendant_lon, sect,
 # an editor's note), it does not list it among the year's indicators
 # (II.2), it works no example of it (the III.1, 19-45 example directs the
 # Ascendant only), and its partner-at-birth rule (III.1, 23-25) is worded
-# for the Ascendant and carried to the meridian by analogy. Planets IN the
-# Midheaven, which III.1, 12 also assigns to right ascension, are not
-# directed.
+# for the Ascendant and carried to the meridian by analogy. A planet ON the
+# degree of the Midheaven or the fourth (or the Ascendant), which III.1, 12
+# also assigns to that ascension, is directed as the degree is since
+# 2026-09-11 (GAP-37, the owner's ruling (e): the degree itself, numerical
+# tolerance, no orb -- PN4_ASCENSION_RULE, pn4_axis_of).
 #
 # The third case of III.1, 12 -- everything that is neither the Ascendant
 # nor the meridian, directed "according to what we stated in our book [on
 # that topic]" -- is absent. PN IV defers the method to a book it
 # does not reproduce; Dykes' fn 16 identifies it as Ptolemy's proportional
-# semi-arcs, but that is an editor's note, not Abu Ma'shar's sentence, and
-# the reconstructions of it differ. Named and refused rather than guessed.
+# semi-arcs (VI.2, 21 fn 33 the same), but that is an editor's note, not
+# Abu Ma'shar's sentence. Named as unavailable, never as a prohibition
+# (III.1, 5 directs all planets and Lots); authorised as a new work order
+# after the 2026-09-11 PR merges, an outside-corpus import.
 
 PN4_SEVEN = ('Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon')
 
@@ -7637,10 +8122,11 @@ PN4_QUADRUPLICITY = {
 # sixtieth of a second of arc -- is the rung that closes it, because 10"
 # is a day and 10"/24 = 25''' exactly.
 #
-# The corpus reads `every 25" one hour`, which would make an hour two and
-# a half days long. The page prints 25''' (photo-verified, p. 288:
-# PN4_READTHROUGH_FINDINGS_2026-09-10.md, D-07). The arithmetic settles it
-# without the photograph, and test_pn4_timing.py asserts both halves.
+# The corpus READ `every 25" one hour` until 2026-09-11, which would make
+# an hour two and a half days long; it now reads 25''' as the page prints
+# (photo-verified, p. 288: PN4_READTHROUGH_FINDINGS_2026-09-10.md, D-07;
+# repaired in PN4_REPAIRS_2026-09-11.md). The arithmetic settles it without
+# the photograph, and the tests assert both halves.
 PN4_IDEALISED_DAYS_PER_YEAR = 360.0
 PN4_IDEALISED_DAYS_PER_MONTH = 30.0
 
@@ -7674,22 +8160,54 @@ def pn4_direction_unit(chart_level):
 # --- III.1, 12: which ascensions measure which point ----------------------
 # III.1, 12, and the STATE of each of its three cases in this engine. The
 # table must not flatten them: the first two cases are built, each for the
-# DEGREE of its point and not for "the things in it"; the third case's
-# method is not in PN IV at all, being deferred to a book he does not
-# reproduce, so it is not buildable from this corpus without importing a
-# reconstruction. The state strings are asserted verbatim by
-# test_pn4_printed_reference_tables_derive_from_the_rules, so directing a
-# planet on an angle, or building the third case, means changing them.
+# DEGREE of its point and for a planet ON that degree itself; the third
+# case's method is not in PN IV at all, being deferred to a book he does
+# not reproduce (fn 16: Ptolemy's proportional semi-arcs; VI.2, 21 fn 33
+# "That is, by normal proportional semi-arcs"), so it is not built from
+# this corpus. The owner's ruling of 2026-09-11 (evening; GAP-37 /
+# PN4R-4b-4, reading (e)): "in the Ascendant / Midheaven / fourth" means
+# ON the axial degree, recognised with a NUMERICAL tolerance
+# (PN4_AXIS_TOLERANCE, floating-point equality -- not an astrological orb:
+# no 3, no 5, no band); get_effective_house and the five-degree carry-over
+# have no role in method selection; every planet not on an axis is listed
+# with the sentence below, a computational gap and never a prohibition
+# (III.1, 5 directs all planets and Lots), with no fall-back to RA or OA.
+# The Descendant stays out (fn 15: omitted by the author). Proportional
+# semi-arcs are authorised as a NEW work order after the PR merges; when
+# built, the sentence is replaced by the arc. The state strings are
+# asserted verbatim by test_pn4_printed_reference_tables_derive_from_the_rules.
+PN4_AXIS_TOLERANCE = 1e-9   # degrees: floating-point equality with the axial degree, documented, not an orb
+PN4_SEMIARCS_UNAVAILABLE = 'Requires proportional semi-arcs; calculation unavailable.'
 PN4_ASCENSION_RULE = {
-    'Ascendant': ('oblique ascensions of the birth latitude', 'applied to the degree of the Ascendant'),
-    'Midheaven': ('right ascensions', 'applied to the degrees of the Midheaven and the fourth'),
-    'Fourth (IC)': ('right ascensions', 'applied to the degrees of the Midheaven and the fourth'),
-    'anything else': ('proportional semi-arcs', 'method not stated in PN IV'),
+    'Ascendant': ('oblique ascensions of the birth latitude',
+                  'applied to the degree of the Ascendant and to a planet on the degree itself (numerical tolerance, no orb)'),
+    'Midheaven': ('right ascensions',
+                  'applied to the degrees of the Midheaven and the fourth and to a planet on the degree itself (numerical tolerance, no orb)'),
+    'Fourth (IC)': ('right ascensions',
+                    'applied to the degrees of the Midheaven and the fourth and to a planet on the degree itself (numerical tolerance, no orb)'),
+    'anything else': ('proportional semi-arcs',
+                      PN4_SEMIARCS_UNAVAILABLE + " Not a prohibition: III.1, 5 directs all planets and Lots; the method is "
+                      "Ptolemy's as Dykes identifies it (III.1, 12 fn 16; VI.2, 21 fn 33), the formula stated in no text in hand"),
 }
 
 def pn4_ascension_measure(point):
     """III.1, 12. Returns (measure, state) -- see PN4_ASCENSION_RULE."""
     return PN4_ASCENSION_RULE.get(point, PN4_ASCENSION_RULE['anything else'])
+
+def pn4_axis_of(lon, ascendant_lon, mc_lon, tolerance=PN4_AXIS_TOLERANCE):
+    """III.1, 12 under the ruling (e): which of the three axial degrees the
+    longitude is ON -- 'Ascendant', 'Midheaven', 'Fourth (IC)' -- or None.
+    The wrapped signed offset from each axis is compared with the numerical
+    tolerance; the Descendant is not an axis of III.1, 12 (fn 15)."""
+    def off(a, b):
+        return abs(((a - b + 180.0) % 360.0) - 180.0)
+    if off(lon, ascendant_lon) <= tolerance:
+        return 'Ascendant'
+    if off(lon, mc_lon) <= tolerance:
+        return 'Midheaven'
+    if off(lon, mc_lon + 180.0) <= tolerance:
+        return 'Fourth (IC)'
+    return None
 
 def _pn4_sentence_case(text):
     """Upper-case the first letter only. str.capitalize() would lower the
@@ -7900,7 +8418,7 @@ def pn4_distribution_from_ascendant(planetary_data, ascendant_lon, obliquity, ge
 PN4_MERIDIAN_POINTS = ('Midheaven', 'Fourth (IC)')
 
 def pn4_distribution_from_meridian(planetary_data, mc_lon, obliquity, point='Midheaven',
-                                   span_years=PN4_DISTRIBUTION_SPAN_YEARS):
+                                   span_years=PN4_DISTRIBUTION_SPAN_YEARS, start_lon=None, label=None):
     """III.1, 12: "what is in the Midheaven or the fourth is directed by
     the ascensions of the right sphere" -- the degree of the Midheaven, or
     of the fourth (fn 14: "or rather, the IC itself", the point opposite
@@ -7920,6 +8438,12 @@ def pn4_distribution_from_meridian(planetary_data, mc_lon, obliquity, point='Mid
     Ascendant; the distribution is given no topic by Abu Ma'shar and is
     not among the year's indicators (II.2); planets IN the Midheaven are
     not directed, only its degree."""
+    if start_lon is not None:
+        # III.1, 12: "what is in the Midheaven or the fourth is directed by the
+        # ascensions of the right sphere" -- a PLANET'S degree, by right
+        # ascension, labelled by its name (orders GAP-37 / PN4R-4b-4).
+        return _pn4_distribute(planetary_data, start_lon % 360.0, lambda lon: _ra_decl(lon, obliquity)[0],
+                               span_years, label or f"{get_degree_string(start_lon)} by right ascension")
     if point not in PN4_MERIDIAN_POINTS:
         raise ValueError(f"point must be one of {PN4_MERIDIAN_POINTS}, not {point!r}")
     start = mc_lon if point == 'Midheaven' else mc_lon + 180.0
@@ -7959,14 +8483,17 @@ def pn4_small_days_arc_to_days(arc_degrees):
     """IX.7, 29: a day for every 59' 08"."""
     return float(arc_degrees) / PN4_SMALL_DAYS_RATE
 
-def pn4_small_days(sr_planetary_data, sr_ascendant_lon):
+def pn4_small_days(sr_planetary_data, sr_ascendant_lon, point_label='Ascendant of the revolution'):
     """The revolution's Ascendant distributed round the revolution chart
     for one year (IX.7, 29-31). Segments in DAYS from the revolution, each
     {from, to, from_lon, distributor, partner, partner_aspect, ...}; the
     last ends at the full circuit, 360 / (59' 08"), about 365.28 days.
     Never refuses: the measure is the zodiac itself."""
+    # IX.7, 31: "you work like that with everything of the planets, Lots, and
+    # houses, of whatever you want the direction of" -- any start point, by
+    # its label (order PN4R-4c-4; the revolution's Ascendant alone until 2026-09-11).
     segments = _pn4_distribute(sr_planetary_data, sr_ascendant_lon, lambda lon: lon % 360.0,
-                               360.0, 'Ascendant of the revolution',
+                               360.0, point_label,
                                opening_window='bound', epoch='the revolution')
     for seg in segments:
         seg['from'] = pn4_small_days_arc_to_days(seg['from'])
@@ -7985,16 +8512,23 @@ def pn4_small_days(sr_planetary_data, sr_ascendant_lon):
 # them "comes to 365 1/4 days, approximately the number of days of the
 # year" (IX.7, 28) -- the profected thirty degrees treated as the year.
 #
-# THE PRINTED RATE, on purpose. Thirty of 12d 4h 10m 30s is 365d 5h 15m
-# (365.22 days), not the 365 1/4 the sentence says "approximately"; fn
-# 177 says both the units and the parenthetical fractions are wrong and
-# gives 12d 4h 12m for a 365.25-day year. The "<4 hours>" is Dykes'
-# insertion. The number printed is the author's and is what is applied;
-# the page prints the correction beside it. Zodiacal by construction --
+# THE AUTHOR'S OWN FRACTION. IX.7, 25 prints "12 days, <4 hours>, 10
+# minutes, and 30 seconds (and that is 1/6 of a day and half a sixth of a
+# tenth of a day)". Three figures stand in that sentence: (1) the
+# manuscript's 12;10,30 days -- "10 minutes and 30 seconds" as sexagesimal
+# fractions OF A DAY, 10/60 + 30/3600 = 0.175 d = 4 h 12 m; (2) the author's
+# parenthetical, 1/6 + 1/120 = 0.175 d, the same number stated in words,
+# thirty of which are 365 1/4 days EXACTLY (IX.7, 28's "approximately");
+# (3) Dykes's hybrid 12 d 4 h 10 m 30 s = 12.17396 d, his pointed-bracket
+# "<4 hours>" supplied and the manuscript's minutes and seconds read as
+# clock time on top of it, thirty of which are 365 d 5 h 15 m -- fn 177
+# then gives 12 d 4 h 12 m for a 365 1/4-day year, which is (1) and (2)
+# again. APPLIED: (2), 12 + 1/6 + 1/120 = 12.175 d a degree. The owner's
+# decision of 2026-09-11 (decision sheet row 13; order PN4R-4d-1),
+# replacing the hybrid applied 2026-09-10 as "the printed rate". The page
+# prints all three and says which is applied. Zodiacal by construction --
 # there is no ascension anywhere in the sentence; fn 175's report that
-# Birchfield would prefer ascensions is an editor's note. Decided by the
-# owner 2026-09-10 between the printed rate, the corrected rate, and
-# stopping at the sign's end.
+# Birchfield would prefer ascensions is an editor's note.
 #
 # The direction does NOT stop at the end of the sign of the year: it
 # starts at the terminal degree and runs thirty degrees, so its last
@@ -8005,21 +8539,24 @@ def pn4_small_days(sr_planetary_data, sr_ascendant_lon):
 # the opening partner behind the degree within its bound. IX.7, 27's
 # extension to the Lots of the parents and every house and Lot is not
 # built. No worked example exists in PN IV.
-PN4_MIGHTY_DAYS_PER_DEGREE = 12.0 + 4.0 / 24.0 + 10.0 / 1440.0 + 30.0 / 86400.0   # IX.7, 25, as printed
+PN4_MIGHTY_DAYS_PER_DEGREE = 12.0 + 1.0 / 6.0 + 1.0 / 120.0   # IX.7, 25's parenthetical: 12.175 d; thirty = 365.25 d
 PN4_MIGHTY_DAYS_SPAN_DEGREES = 30.0                                                # IX.7, 28: thirty degrees, the year
 
 def pn4_mighty_days_arc_to_days(arc_degrees):
-    """IX.7, 25: 12 days, 4 hours, 10 minutes and 30 seconds a degree."""
+    """IX.7, 25's own fraction: 12 + 1/6 + 1/120 days a degree (12.175 d);
+    see PN4_MIGHTY_DAYS_PER_DEGREE for the three figures in that sentence."""
     return float(arc_degrees) * PN4_MIGHTY_DAYS_PER_DEGREE
 
-def pn4_mighty_days(sr_planetary_data, terminal_lon):
+def pn4_mighty_days(sr_planetary_data, terminal_lon, point_label='terminal point of the year'):
     """The terminal degree of the year directed through the revolution
     chart for the year (IX.7, 23-28). Segments in DAYS from the
     revolution, each {from, to, from_lon, distributor, partner, ...}; the
     last ends at thirty degrees, 365.22 days at the printed rate. Never
     refuses: the measure is the zodiac itself."""
+    # IX.7, 27: the same direction from the profected degree of any point
+    # (order PN4R-4c-4; the terminal point alone until 2026-09-11).
     segments = _pn4_distribute(sr_planetary_data, terminal_lon, lambda lon: lon % 360.0,
-                               PN4_MIGHTY_DAYS_SPAN_DEGREES, 'terminal point of the year',
+                               PN4_MIGHTY_DAYS_SPAN_DEGREES, point_label,
                                opening_window='bound', epoch='the revolution')
     for seg in segments:
         seg['from'] = pn4_mighty_days_arc_to_days(seg['from'])
@@ -8045,10 +8582,12 @@ def pn4_distribution_at_age(segments, age_years):
 # on 2026-09-10, on process/TIMING_SOURCES_REPORT_2026-09-10.md, to build
 # it from Sahl instead: the RELEASER per Nawbakht, On Nativities 1.15
 # (with 1.16 and the ranking of 1.20, 1-4), and the HOUSE-MASTER DIRECTED
-# per Masha'allah, On Nativities 1.23, 2. The years the house-master would
-# grant are still granted by nothing: On Times 4, 7 and On Nativities 1.20
-# disagree on where the greater years fall (corpus disagreement #2), the
-# D-3 control stands, and Masha'allah's direction needs no years.
+# per Masha'allah, On Nativities 1.23, 2. The years the house-master
+# grants are, since 2026-09-11 (FINAL-A1, the owner), granted from On
+# Nativities 1.20, 7-34 read in full (sahl_house_master_years): On Times 4
+# is a question-chart chapter and 1.23, 68 points to 1.20, so corpus
+# disagreement #2 was a tie between a horary rule and a natal one. The D-3
+# control admits that one reader by name.
 #
 # 1.15, 6-9 (day): "look ... at the Sun and the meeting: because if you
 # found the Sun in the Ascendant, the Midheaven, the house of hope, or in
@@ -8078,43 +8617,96 @@ def pn4_distribution_at_age(segments, age_years):
 # stronger than the others". 1.20, 5: a house-master under the rays "is
 # deceptive, subtractive, corrupting" (a flag, not a disqualification).
 #
-# READINGS MADE HERE, each said on the page: (1) the places are quadrant
-# houses with the engine's five-degree carry-over (fn 109; Aphorism 44;
-# 1.22, 9), the same reckoning the years display uses; the day list is the
-# five places named, the night list every stake and succedent. (2)
-# "Looking" is the whole-sign aspect, and a lord in the candidate's own
-# sign counts as looking (1.20, 4 treats the bound lord in the Ascendant
-# with the releaser as the strongest of those looking). (3) A candidate is
-# not its own house-master except in 1.16's four signs; a luminary that is
-# its own bound, triplicity or face lord elsewhere is not counted as
-# "looking at" itself. (4) The triplicity lord is the lord of the sect
-# (day lord by day, night lord by night), as the engine reads it
-# everywhere. (5) The meeting is the last New Moon before birth and the
-# fullness the last Full Moon; the fullness's degree is the luminary above
-# the horizon at that moment, the engine's standing convention for a
-# preventional syzygy, since 1.15 does not say which. (6) "In good places"
-# for the Ascendant's lord (1.15, 16) is a stake or succedent, the class
-# every other candidate needs. (7) The day chart consults the Sun, the
-# meeting and the Ascendant only, and the night chart the Moon, the
-# fullness, the Lot and the Ascendant, as 6-14 order them; 1.15, 15's
-# summary names all five before the Ascendant and is quoted, not applied.
-# NOT APPLIED: 1.19, 6 (the Moon within 15 degrees of the Sun "will not
-# be fit"), 1.20, 6 (an eastern lord with a share in the Ascendant may
-# assume the house-mastership without looking), 1.18, 8-10 (the short-life
-# testimonies weaken or void the releaser), Dorotheus's feminized seventh
-# (1.15, 5, which Nawbakht rejects), and 1.32, 11-13's stand-in when no
-# candidate qualifies -- each is named on the page where it would bite.
+# READINGS MADE HERE, each said on the page (rewritten 2026-09-11 after the
+# owner's ruling OWNER_RULING_PLACES_VS_DYNAMICS and the final adjudication):
+# (1) THE PLACES. "A stake or what follows a stake" (1.15, 6-16) is read as a
+# POWER test and counted by the Alcabitius divisions with the five-degree
+# allowance at the four axial degrees only (get_effective_house): a planet
+# 0-5 degrees past the Ascendant, Midheaven, setting degree or fourth into
+# the cadent division keeps the stake's power, measured from the axial
+# DEGREE, in longitude (a proxy). The warrant for the UNIT is the
+# translator's course convention adopted by the owner as canon -- Lesson 3
+# "A Chart Tour" §4-5, the Course Glossary s.v. Advancement, Carmen p. 108
+# fn 187 ("Dorotheus ... is using dynamic divisions to speak of the planets'
+# power, because one can only move from a stake to a decline by primary
+# motion") -- with fn 109 on 1.15, 6 agreeing ("quadrant divisions, not
+# whole signs"). The corpus's own vocabulary counts SIGNS: Introduction 2,
+# 31-35 defines the stakes, "what follows the stakes" and the falling
+# places as counted signs, and 1.20, 10 says "the sign of the west"; so the
+# division reading is the translator's, not Sahl's or Nawbakht's. 1.18, 19
+# ("its STRENGTH will be in the Ascendant ... and likewise in all of the
+# houses") is about strength and is read as the four stakes; Aphorism 44
+# and 1.22, 9 witness the five degrees, not the house system. The Lot of
+# Fortune, a candidate by night (1.15, 14), has no dynamic angularity and
+# is tested by its WHOLE-SIGN place (the canon; a change of 2026-09-11).
+# The meeting's and the fullness's degrees (1.15, 6-8, 12) are neither
+# planet nor Lot: the division is used for them, an OPEN reading the owner
+# has not ruled on. The day list is the five places 1.15, 6 names, the
+# night list every stake and succedent. (2) "Looking" is the whole-sign
+# aspect, and a lord in the candidate's own sign counts as looking (1.20, 4
+# treats the bound lord in the Ascendant with the releaser as the strongest
+# of those looking). (3) A candidate is not its own house-master except in
+# 1.16's four signs; a luminary that is its own bound, triplicity or face
+# lord elsewhere is not counted as "looking at" itself. (4) The triplicity
+# lord is the lord of the sect (day lord by day, night lord by night), as
+# the engine reads it everywhere. (5) The meeting is the last New Moon and
+# the fullness the last Full Moon before birth; the fullness's degree is
+# the luminary above the earth at that moment -- On Nativities 1.7, 2,
+# "take the portion of whichever of the two luminaries was above the
+# earth", stated for the Ascendant's degree and applied here by the shared
+# word "portion" (1.15, 12); when both or neither is up the engine takes
+# the Moon's degree, and no text says (FINAL-A6). (6) "In good places" for
+# the Ascendant's lord (1.15, 16) is Sahl's seven praised places
+# (Introduction 2, 37-44: "praised, powerful"; 1.30, 71 names them; fn 372
+# "good or advantageous"), counted by whole-sign place; no sentence defines
+# 16's phrase, an interpretation (owner, sheet row 12). (7) The day chart
+# consults the Sun, the meeting, then the Ascendant -- 1.15, 9: "if the
+# meeting and the Sun were both falling, then the releaser at that time
+# will be the Ascendant" closes the day list -- and the night chart the
+# Moon, the fullness, the Lot, then the Ascendant (10-14); 1.15, 15 lists
+# all five before the Ascendant and is read as the summary of the two
+# lists; read as a procedure it would consult the other sect's candidates
+# first, which changes the releaser in about one day chart in seven
+# (FINAL-A5, owner, sheet row 6). The meeting's gate (1.15, 8) states a
+# place test only; the looking-lord test applied to it is supplied from
+# 15's general wording, a reading.
+# APPLIED since 2026-09-11 (the BLOCKED orders, unblocked by the owner's
+# ruling on row 3): 1.19, 6 (the Moon within 15 degrees of the Sun "will
+# not be fit" -- the fullness is consulted; REL-5-1), 1.20, 6 (an eastern
+# lord with a share in the Ascendant is house-master without looking;
+# REL-5-2). SHOWN, not applied: 1.18, 8-10 (the short-life testimonies,
+# counted beside the releaser; REL-5-3). NOT APPLIED: Dorotheus's feminized
+# seventh (1.15, 5, which Nawbakht rejects) -- each is named on the page
+# where it would bite. APPLIED since 2026-09-11 (FINAL-A7): 1.32, 11-13's
+# stand-in in the empty case -- al-Andarzaghar's chapter "On the matter of
+# survival for one who does not live" answers the question Nawbakht's "no
+# foundation" leaves, a complement not a contradiction; "the first of them
+# is the Ascendant, then the Moon" is 1.32, 13 as printed across the p.
+# 346/347 break, so the Ascendant's distribution is labelled the stand-in
+# and the Moon is directed after it (1.32, 12: whichever first connects
+# with an infortune kills; 14: if no fortune looks).
 
 SAHL_RELEASER_DAY_PLACES = (1, 10, 11, 7, 8)          # 1.15, 6 and 8, "these five places"
 SAHL_RELEASER_NIGHT_PLACES = (1, 4, 7, 10, 2, 5, 8, 11)  # 1.15, 11-14, "a stake or what follows a stake"
 SAHL_DIGNITY_RANK = ('bound', 'house', 'exaltation', 'triplicity', 'face')   # 1.20, 2
+# 1.15, 16's "in good places" for the Ascendant's lord: Sahl's SEVEN praised
+# places -- Introduction 2, 37-44 ranks the Ascendant, tenth, seventh,
+# fourth, eleventh, ninth and fifth and closes "these seven places are
+# praised, powerful"; 1.30, 71 names "the seven places (which are the stakes
+# and the trines of the Ascendant, and the eleventh)"; fn 372 calls them
+# "good or advantageous". No sentence defines 16's phrase, so the
+# identification is an interpretation (the engine had used the eight-place
+# stake-or-succedent class of 1.15, 11 as reading 6). Counted by WHOLE-SIGN
+# PLACE: topic language, the canon of 2026-09-11. Owner, decision sheet row
+# 12 (REL-2-6), corroborated blind (astra_2026-09-11/1.15_readings_ruling Q2).
+SAHL_GOOD_PLACES = (1, 10, 7, 4, 11, 9, 5)
 SAHL_BOTH_AT_ONCE = {'Sun': ('Aries', 'Leo'), 'Moon': ('Taurus', 'Cancer')}  # 1.16, 1-2
 SAHL_RELEASER_NOT_APPLIED = (
-    ('1.19, 6', 'the Moon within 15 degrees of the Sun "will not be fit to take up the role of the manager"'),
-    ('1.20, 6', 'an eastern lord with a share in the Ascendant may be house-master without looking at the releaser'),
-    ('1.18, 8-10', 'one short-life testimony makes the releaser "weak and not fit, except through reception"; two, with no releaser, "one will not know his lifespan except by revolving his years"'),
+    ('1.16, 4', 'al-Andarzaghar keeps a luminary "powerful in the places of the releaser" as releaser "even if a house-master '
+                'is not looking"; Nawbakht\'s 1.15, 7 gate (no lord looking, not the releaser) is applied instead -- two '
+                'chapters of one book, opposite rules'),
+    ('1.18, 8-10', 'one short-life testimony makes the releaser "weak and not fit, except through reception"; two, with no releaser, "one will not know his lifespan except by revolving his years" -- counted and shown beside the releaser since 2026-09-11 (REL-5-3), not disqualifying it'),
     ('1.15, 5', "Dorotheus's releaser in the seventh in a feminine sign, which Nawbakht tested and rejected"),
-    ('1.32, 11-13', 'when none of the four qualifies, direct "whichever one of them that you find to be stronger" -- the Ascendant first, then the Moon'),
 )
 
 def sahl_prenatal_meeting_and_fullness(jd_natal, lat, lon):
@@ -8123,9 +8715,12 @@ def sahl_prenatal_meeting_and_fullness(jd_natal, lat, lon):
     calculate_prenatal_syzygy, both always -- 1.15 consults the meeting by
     day and the fullness by night, whichever was nearer. The meeting's
     degree is the luminaries' common longitude; the fullness's is the
-    luminary above the horizon at that moment (reading 5 above), else
-    the Moon's. Returns {'meeting': {...}, 'fullness': {...}} with
-    'longitude', 'jd' and 'degree_of'."""
+    luminary above the horizon at that moment -- On Nativities 1.7, 2,
+    "take the portion of whichever of the two luminaries was above the
+    earth", stated for the Ascendant's degree and applied to 1.15, 12 by
+    the shared word "portion" (FINAL-A6) -- else the Moon's, the engine's
+    choice where both or neither is up. Returns {'meeting': {...},
+    'fullness': {...}} with 'longitude', 'jd' and 'degree_of'."""
     AVG_REL_SPEED = 12.19075
     sun0 = swe.calc_ut(jd_natal, swe.SUN)[0][0]
     moon0 = swe.calc_ut(jd_natal, swe.MOON)[0][0]
@@ -8176,10 +8771,14 @@ def _sahl_looks(from_lon, to_lon):
         return None
     return 'in it' if apart == 0 else entry[0].lower()
 
-def _sahl_examine_candidate(label, lon, planetary_data, cusps, sect, places, self_planet=None):
+def _sahl_examine_candidate(label, lon, planetary_data, cusps, sect, places, self_planet=None, unit='division'):
     """One candidate of 1.15 against its two tests: the place, and a
-    dignity lord looking. Returns the facts and the verdict."""
-    place = get_effective_house(lon, cusps)
+    dignity lord looking. Returns the facts and the verdict. `unit` is
+    'division' (the Alcabitius division with the five-degree allowance at
+    the stakes -- the POWER reading of "a stake or what follows a stake",
+    the canon of 2026-09-11) or 'place' (the whole-sign place, for the Lot
+    of Fortune, which has no dynamic angularity)."""
+    place = get_effective_house(lon, cusps) if unit == 'division' else get_wsh_house(lon, cusps[0])
     in_places = place in places
     sign = get_zodiac_sign(lon)
     both = bool(self_planet and sign in SAHL_BOTH_AT_ONCE.get(self_planet, ()))
@@ -8194,17 +8793,66 @@ def _sahl_examine_candidate(label, lon, planetary_data, cusps, sect, places, sel
         if aspect:
             looking.append((rank, planet, aspect))
     fit = in_places and (bool(looking) or both)
+    # 1.20, 6 (order REL-5-2, applied): "if you found the releaser in a good
+    # position, and its lord eastern and having a share in the Ascendant (even
+    # if it was in the second from it, not looking at it), then it will assume
+    # the responsibility of being the house-master with it, unless in that
+    # nativity there was a planet preferable to it" -- read: a candidate in the
+    # places with no lord looking keeps its standing when one of its dignity
+    # lords is eastern of the Sun and holds a share (any of the five) at the
+    # Ascendant's degree; that lord is the house-master "by 1.20, 6"; a looking
+    # lord, being "preferable", takes precedence (the ranking runs as before).
+    sharer_1_20_6 = None
+    if in_places and not looking and not both:
+        asc_rulers = get_essential_rulers(cusps[0])
+        asc_shares = {asc_rulers[k] for k in ('domicile', 'exaltation', 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night', 'term', 'face')}
+        for rank, planet, _aspect in lords:
+            row = planetary_data.get(planet)
+            if not row or planet == self_planet or planet == 'Sun':
+                continue
+            side = solar_phase(planet, row['longitude'], planetary_data['Sun']['longitude'], row.get('speed_in_lon'))[1]
+            if side == 'eastern' and planet in asc_shares:
+                sharer_1_20_6 = (rank, planet)
+                break
+        if sharer_1_20_6:
+            fit = True
     if not in_places:
         why = f"falling: house {place} is not among the places (1.15, {'6' if places is SAHL_RELEASER_DAY_PLACES else '11-14'})"
     elif both:
         why = f"{self_planet} in {sign}: both releaser and house-master (1.16, 1-2)"
     elif looking:
         why = f"house {place}; looked at by " + ', '.join(f"{p} ({r}, {a})" for r, p, a in looking)
+    elif sharer_1_20_6:
+        why = (f"house {place}; no lord looks, but {sharer_1_20_6[1]}, its {sharer_1_20_6[0]} lord, is eastern with a share in "
+               f"the Ascendant -- house-master by 1.20, 6 (\"even if it was in the second from it, not looking at it\"; "
+               f"\"a share\" read as any of the five dignities at the Ascendant's degree)")
     else:
-        why = f"house {place}, but no lord of its bound, house, exaltation, triplicity or face looks at it (1.15, 7)"
+        why = f"house {place}, but no lord of its bound, house, exaltation, triplicity or face looks at it (1.15, 7, Nawbakht)"
+        if self_planet in ('Sun', 'Moon'):
+            # 1.16, 4 (al-Andarzaghar): a luminary "powerful in the places of
+            # the releaser ... (even if a house-master is not looking, and it
+            # [itself] is not the house-master)" is still directed as the
+            # releaser. Two chapters of one book state opposite gates for this
+            # case; Nawbakht's is applied, the other named (order REL-2-3).
+            why += ("; al-Andarzaghar's 1.16, 4 would keep it as releaser \"even if a house-master is not "
+                    "looking\" -- not applied")
+    # 1.19, 6 (order REL-5-1, applied): "if the Moon was under the rays, she
+    # will not be fit to take up [the role of the] manager (and that is if
+    # there was 15 degrees between her and the Sun, in front of him and behind
+    # him)" -- Dorotheus in Sahl; manager = releaser (1.30, 35). Sahl's own 15
+    # for THIS gate, separate from the Chart page's 12/15 solar-phase switch.
+    # Applied: the fullness is consulted next.
+    under_1_19_6 = False
+    if self_planet == 'Moon' and 'Sun' in planetary_data:
+        elong = abs(((lon - planetary_data['Sun']['longitude'] + 180.0) % 360.0) - 180.0)
+        if elong <= 15.0:
+            under_1_19_6 = True
+            fit = False
+            why += (f"; within 15 degrees of the Sun ({elong:.1f}): \"not fit to take up [the role of the] manager\" "
+                    f"(Dorotheus, 1.19, 6; manager = releaser, 1.30, 35) -- applied, the fullness is consulted")
     return {'candidate': label, 'longitude': lon % 360.0, 'place': place, 'in_places': in_places,
             'lords': lords, 'looking': looking, 'both_at_once': both, 'self_planet': self_planet,
-            'fit': fit, 'why': why}
+            'fit': fit, 'why': why, 'sharer_1_20_6': sharer_1_20_6, 'under_1_19_6': under_1_19_6}
 
 def _sahl_ascendant_candidate(planetary_data, ascendant_lon, cusps, sect):
     """1.15, 15-16: the Ascendant "being looked at by the fortunes, and
@@ -8221,14 +8869,15 @@ def _sahl_ascendant_candidate(planetary_data, ascendant_lon, cusps, sect):
     lord_place = None
     if lord_row:
         own = [rank for rank, planet in _sahl_dignity_lords(lord_row['longitude'], sect) if planet == lord]
-        lord_place = get_effective_house(lord_row['longitude'], cusps)
-    good_place = lord_place in SAHL_RELEASER_NIGHT_PLACES
+        lord_place = get_wsh_house(lord_row['longitude'], ascendant_lon)      # a PLACE, whole sign (see SAHL_GOOD_PLACES)
+    good_place = lord_place in SAHL_GOOD_PLACES
     fit = bool(fortunes_looking) and bool(own) and good_place
     cand.update({
         'in_places': True, 'fit': fit,
         'why': (f"looked at by {', '.join(f'{p} ({a})' for p, a in fortunes_looking) or 'no fortune'}; its lord {lord} "
-                f"{'in its own ' + ' and '.join(own) if own else 'in none of its own shares'}, house {lord_place} "
-                f"({'a good place' if good_place else 'not a stake or succedent -- reading 6'}) (1.15, 16)"),
+                f"{'in its own ' + ' and '.join(own) if own else 'in none of its own shares'}, whole-sign place {lord_place} "
+                f"({'one of' if good_place else 'not one of'} Sahl's seven praised places, Introduction 2, 37-44; 1.30, 71 -- "
+                f"an interpretation of 16's 'good places') (1.15, 16)"),
     })
     return cand
 
@@ -8240,6 +8889,14 @@ def _sahl_rank_house_master(cand, planetary_data, cusps):
     if cand['both_at_once']:
         return [{'Planet': cand['self_planet'], 'Shares': 'its own house or exaltation, and triplicity',
                  'Looks by': 'is the releaser', 'Rank': 'both releaser and house-master (1.16, 1-2)', 'Under the rays': '-'}]
+    if not cand['looking'] and cand.get('sharer_1_20_6'):
+        rank, planet = cand['sharer_1_20_6']
+        phase = solar_phase(planet, planetary_data[planet]['longitude'], planetary_data['Sun']['longitude'],
+                            planetary_data[planet].get('speed_in_lon'))[0]
+        return [{'Planet': planet, 'Shares': rank, 'Looks by': 'not looking',
+                 'Rank': 'house-master by 1.20, 6: eastern, with a share in the Ascendant, "not looking at it"',
+                 'Under the rays': (f"{phase}: \"deceptive, subtractive, corrupting\" (1.20, 5)"
+                                    if phase in ('Burned', 'Under the rays') else 'no' if phase != 'Cazimi' else 'Cazimi')}]
     by_planet = {}
     for rank, planet, aspect in cand['looking']:
         d = by_planet.setdefault(planet, {'ranks': [], 'aspect': aspect})
@@ -8249,7 +8906,8 @@ def _sahl_rank_house_master(cand, planetary_data, cusps):
         best = min(SAHL_DIGNITY_RANK.index(r) for r in d['ranks'])
         in_asc_with = (cand['place'] == 1 and 'bound' in d['ranks']
                        and get_effective_house(planetary_data[planet]['longitude'], cusps) == 1)
-        phase = solar_phase(planet, planetary_data[planet]['longitude'], planetary_data['Sun']['longitude'])[0]
+        phase = solar_phase(planet, planetary_data[planet]['longitude'], planetary_data['Sun']['longitude'],
+                            planetary_data[planet].get('speed_in_lon'))[0]
         rows.append({'Planet': planet, 'Shares': ', '.join(d['ranks']), 'Looks by': d['aspect'],
                      '_key': (0 if in_asc_with else 1, -len(d['ranks']), best),
                      'Rank': ('the bound lord in the Ascendant with the releaser: "stronger than the others" (1.20, 4)'
@@ -8261,6 +8919,381 @@ def _sahl_rank_house_master(cand, planetary_data, cusps):
     for r in rows:
         r.pop('_key')
     return rows
+
+# On Nativities 1.20, 7-34: the sentences applied, in the reading FINAL-A1
+# set out and the owner adopted (2026-09-11), each with the clause it turns on.
+SAHL_1_20_SENTENCES = {
+    10: ("greater", "in the Ascendant or in the Midheaven, or in the sign of the west, or the eleventh, enhanced by what I explained ... the <greater> years"),
+    11: ("greater", "under the earth, eastern, in one of its shares, enhanced ... its greater years (and by night in the fourth and fifth, it indicates the greater years)"),
+    16: ("middle", "in the second or eighth ... its middle years"),
+    17: ("middle", "in the house of hope or the fifth, and was not in something of its shares, and was not eastern ... its middle years"),
+    18: ("middle", "under the rays of the Sun in a stake ... its middle years"),
+    19: ("middle as months and days", "alien, westernizing in the places ... its middle years as months and days"),
+    20: ("middle", "in the stakes, easternizing, or not easternizing so long as it is not retrograde and not burned ... its middle years"),
+    21: ("lesser", "under the rays of the Sun, retrograde in a stake ... its lesser years"),
+    22: ("lesser", "alien, westernizing, retrograde ... the lesser ones"),
+    23: ("lesser", "in the eleventh or fifth, retrograde ... its lesser years"),
+    "23b": ("months", "[in the eleventh or fifth, retrograde,] and if it was under the rays of the Sun ... months"),
+    24: ("days and hours", "and if along with that it was in its fall ... days and hours"),
+    25: ("months", "in the second and eighth, retrograde, under the rays of the Sun ... months"),
+    26: ("middle", "in the ninth, in one of its shares, eastern ... its middle years"),
+    27: ("lesser", "[in the ninth,] if it does not have a share nor easternization ... its lesser years"),
+    28: ("lesser", "in the <other> [places] falling from the stakes ... its lesser years"),
+    29: ("months", "[in the ninth,] under the rays of the Sun, retrograde ... months"),
+    30: ("middle", "in the third, [uncertain] in its house or share ... its middle years"),
+    31: ("lesser", "[in the third,] if it does not have a share nor easternization ... its lesser years"),
+    32: ("months", "[in the third,] if it was retrograde ... months"),
+    33: ("days", "[in the third,] if it was retrograde under the rays ... days"),
+    34: ("hours", "[in the third,] and if with that it was in its fall ... hours"),
+}
+SAHL_1_20_READINGS = (
+    "Readings of 1.20 made here (FINAL-A1; the owner's ruling of 2026-09-11 on the unit): the house-master is placed by "
+    "the Alcabitius DIVISION with the five-degree allowance at the four axial degrees -- 1.20's grades are a POWER "
+    "judgment -- and 10's \"the sign of the west\" is the corpus's sign vocabulary, not a house system (the same "
+    "attribution as the releaser's places); \"enhanced\" (7-9) = in a share, eastern, direct, not under the rays, 8's "
+    "sect aspects not tested; \"a share\" = any of its five dignities at its own degree; \"eastern\" and "
+    "\"westernizing\" by the solar phase's side; \"under the rays\" = burned or under the rays; \"alien\" = in no "
+    "share; 10 and 20 as fn 158 reads them (an enhanced stake = the greater years, a bare stake direct and unburned = the "
+    "middle); \"under the earth\" (11) = the fourth division, and the fifth by night (11's parenthesis), 11's \"enhanced\" "
+    "required of both (a retrograde or under-the-rays planet there is not 11's greater; review D2, 2026-09-11); 12 is "
+    "subsumed by 10 (the house of Good Fortune is the eleventh, fn 153) -- 12 does not say direct or unburned, so for a "
+    "diurnal planet in the eleventh, eastern, in a share and retrograde, 12 (greater) and 23 (lesser) conflict as "
+    "printed, and 23 is applied; 13 is illegible in part and not applied; 14-15 are printed "
+    "and not applied (fn 156: the sense is unclear); 19 and 22 (alien, westernizing) are applied only where no placement "
+    "sentence reaches; where a sentence names months, days or hours without a count, none is invented. Placements no "
+    "sentence reaches print \"1.20 silent\". On Times 4, 7 is a rule for a question chart (\"in the hour of the "
+    "question\", 4, 2) and is shown on the Chart page for comparison only. 1.23, 53 and 61: these years are what the "
+    "infortunes may cut off. Measured on the 406-chart harness (FINAL_A1_divisions.py, engine 9b1d0dc): 82.5% (320/388) "
+    "of the named house-masters receive a definite grade by the division, 82.0% (318/388) by whole signs (the build's "
+    "83.3% / 82.3% were 320/384 and 316/384, before 1.20, 6 named four more and before 11's \"enhanced\" was applied)."
+)
+
+def _sahl_1_20_grade(q, share, east, west, retro, rays, fall, night):
+    """1.20, 10-34 as a decision on the facts; q is the DIVISION (1-12).
+    Returns (sentence key, grade) or (None, None) where no sentence reaches."""
+    enhanced = share and east and not retro and not rays
+    if q in (1, 4, 7, 10):
+        if rays and retro:
+            return 21, 'lesser'
+        if q in (1, 10, 7) and enhanced:
+            return 10, 'greater'
+        if q == 4 and enhanced:                 # 11: "under the earth, eastern, in one of its shares, ENHANCED"
+            return 11, 'greater'
+        if rays:
+            return 18, 'middle'
+        if not retro:
+            return 20, 'middle'
+        return None, None
+    if q == 11:
+        if enhanced:
+            return 10, 'greater'
+        if retro:
+            if rays and fall:
+                return 24, 'days and hours'
+            if rays:
+                return '23b', 'months'
+            return 23, 'lesser'
+        if not share and not east:
+            return 17, 'middle'
+        return None, None
+    if q in (2, 8):
+        if retro and rays:
+            return 25, 'months'
+        return 16, 'middle'
+    if q == 5:
+        if night and enhanced:                  # 11's parenthesis carries 11's "enhanced"
+            return 11, 'greater'
+        if retro:
+            if rays and fall:
+                return 24, 'days and hours'
+            if rays:
+                return '23b', 'months'
+            return 23, 'lesser'
+        if not share and not east:
+            return 17, 'middle'
+        return None, None
+    if q == 9:
+        if rays and retro:
+            return 29, 'months'
+        if share and east:
+            return 26, 'middle'
+        if not share and not east:
+            return 27, 'lesser'
+        return None, None
+    if q == 3:
+        if retro and rays and fall:
+            return 34, 'hours'
+        if retro and rays:
+            return 33, 'days'
+        if retro:
+            return 32, 'months'
+        if share:
+            return 30, 'middle'
+        if not east:
+            return 31, 'lesser'
+        return None, None
+    if q in (6, 12):
+        return 28, 'lesser'
+    return None, None
+
+def sahl_house_master_years(planet, planetary_data, cusps, sect, essential):
+    """The years On Nativities 1.20, 7-34 grants a house-master (Nawbakht;
+    the section 1.23, 68 -- Masha'allah -- sends the reader to: "according
+    to what I explained to you in the section on the house-master"). The
+    corpus's ONE natal grant: On Times 4, 7 is stated for a question chart
+    ("in the hour of the question", 4, 2) and is no natal rival (FINAL-A1,
+    owner 2026-09-11, decision sheet row 1). The placement is the DIVISION
+    (the POWER unit of the owner's ruling; re-measured under it with 11's
+    "enhanced" applied, 82.5% (320/388) of the house-masters in the
+    406-chart harness receive a definite grade, against 82.0% (318/388)
+    under whole signs -- the build's 83.3% / 82.3% were 320/384 and
+    316/384, before REL-5-2's 1.20, 6 named four more house-masters and
+    before review D2; engine 9b1d0dc). Returns a dict: 'grade', 'sentence',
+    'years' (the count where the grade names one), 'text' (the grade with
+    its sentence quoted), 'flags' (14-15 printed where it would apply; 13),
+    'division', 'readings'; None if the planet is absent. Not the Sun's
+    grant only in the sense that the Sun has no solar phase."""
+    row = planetary_data.get(planet)
+    if not row:
+        return None
+    lon = row['longitude'] % 360.0
+    q = get_effective_house(lon, cusps)
+    ess = essential.get(planet, {})
+    share = any(ess.get(k) for k in ('Domicile', 'Exalt', 'Triplicity', 'Term', 'Face'))
+    fall, exile = bool(ess.get('Fall')), bool(ess.get('Detriment'))
+    if planet == 'Sun':
+        east = west = rays = False
+    else:
+        phase, side = solar_phase(planet, lon, planetary_data['Sun']['longitude'], row.get('speed_in_lon'))[:2]
+        east, west = side == 'eastern', side == 'western'
+        rays = phase in ('Burned', 'Under the rays')
+    retro = (row.get('speed_in_lon') or 0.0) < 0.0
+    night = sect != 'Diurnal'
+    key, grade = _sahl_1_20_grade(q, share, east, west, retro, rays, fall, night)
+    if key is None and not share and west:
+        key, grade = (22, 'lesser') if retro else (19, 'middle as months and days')
+    years = None
+    if grade in ('greater', 'middle', 'lesser'):
+        years = PLANETARY_YEARS[planet][grade]
+    elif grade == 'middle as months and days':
+        years = PLANETARY_YEARS[planet]['middle']
+    n = str(key).rstrip('b') if key is not None else None
+    if key is None:
+        text = f"1.20 silent: no sentence of 10-34 reaches {planet} in division {q} with these facts"
+    elif years is not None:
+        text = (f"the {grade} years, {years:g} ({planet}) -- 1.20, {n}: \"{SAHL_1_20_SENTENCES[key][1]}\"")
+    else:
+        text = (f"{grade} -- 1.20, {n}: \"{SAHL_1_20_SENTENCES[key][1]}\" (the count is not restated by the "
+                f"sentence; none is invented)")
+    flags = []
+    if planet in ('Saturn', 'Jupiter', 'Mars') and (exile or west or retro or rays):
+        flags.append('1.20, 14-15, printed and not applied (fn 156: "to me the meaning is still unclear"): "Know that exile, '
+                     'setting, retrogradation, and burning do not stick to the superior planets, but they do stick to the '
+                     'inferior planets. And if a superior one was in the condition which sticks to it, it is corrupting, for it '
+                     'indicates its lesser years as months or days."')
+    if q == 5 and planet == 'Venus':
+        flags.append('1.20, 13 (Venus in her own shares in the fifth, eastern, the governor) is illegible in part and not applied.')
+    return {'grade': grade, 'sentence': (f"1.20, {n}" if n else None), 'years': years, 'text': text, 'flags': flags,
+            'division': q, 'facts': {'share': share, 'eastern': east, 'westernizing': west, 'retrograde': retro,
+                                     'under the rays': rays, 'fall': fall}, 'readings': SAHL_1_20_READINGS}
+
+# --- Spear-bearing: two stated definitions, DISPLAY ONLY (owner, 2026-09-11, decision sheet row 11 / DEC-D-18) ---
+# A. Right-sidedness, Sahl, On Nativities 2.5, 2-3 ("what is called the
+#    'spear-bearing' of the planets", the chapter head): 2 "If you found one
+#    of the two planets in square or sextile to its companion, and they were
+#    both in their exaltations or their houses, or one of them was in its
+#    exaltation and the other in its house, or one of its shares, and each one
+#    of the two was casting rays upon its companion, then that is a strong
+#    right-sidedness." 3 "And if they were not in their houses nor exaltations,
+#    but they were both of the sect of the day or the sect of the night, then
+#    that is also called right-sidedness (though it is below [the first
+#    version])." 1: "especially if the diurnal planets were right-siding by
+#    day, and the nocturnal ones by night".
+# B. The honor-guard, Ptolemy in Sahl, On Nativities 10.2.1, 10-15: 10 "the
+#    planets formed an honor-guard for them (and that is if the planets were
+#    eastern from the Sun and western from the Moon)"; 13 "no honor-guard ...
+#    and they do not look at them"; 14 "the luminaries were not in the stakes,
+#    and there was an honor-guard (and it is spear-bearing) in the stakes";
+#    15 neither in the stakes.
+# Neither enters a score; each table names its source. Readings, the engine's:
+# in A, "casting rays upon its companion" = the pair is Connected under the
+# Configurations page's connection rule; "one of its shares" = a share
+# (triplicity, bound or face) held by the partner of a planet in its house or
+# exaltation; "of the sect of the day or ... night" = both planets of one sect
+# (Mercury has none of his own here and is not counted). In B, "eastern from
+# the Sun" = rising before him (the solar phase's side), "western from the
+# Moon" = rising after her (the shorter arc); "in the stakes" = the whole-sign
+# places 1, 4, 7, 10 (a topic of rank, the canon's places); "look at" = the
+# whole-sign aspect. The course material named as a possible arbiter of the
+# definition has not been opened; both stated forms are shown.
+def evaluate_right_sidedness(planetary_data, sect):
+    """On Nativities 2.5, 2-3, per pair in whole-sign sextile or square. Display only."""
+    ess = evaluate_essential_dignities(planetary_data, sect)
+    pairs = {frozenset((r['light_name'], r['heavy_name'])): r for r in _pairwise_configurations(planetary_data)
+             if r['aspect_name'] != 'Aversion'}
+    names = [p for p in PN4_SEVEN if p in planetary_data]
+    rows = []
+    for i, a in enumerate(names):
+        for b in names[i + 1:]:
+            apart = (int(planetary_data[b]['longitude'] % 360 // 30) - int(planetary_data[a]['longitude'] % 360 // 30)) % 12
+            apart = min(apart, 12 - apart)
+            if apart not in (2, 3):
+                continue
+            aspect = 'sextile' if apart == 2 else 'square'
+            r = pairs.get(frozenset((a, b)))
+            rays = bool(r) and _is_connected(r)
+            def dign(p):
+                e = ess.get(p, {})
+                strong = [k for k in ('Domicile', 'Exalt') if e.get(k)]
+                share = [k for k in ('Triplicity', 'Term', 'Face') if e.get(k)]
+                return strong, share
+            sa, sha = dign(a)
+            sb, shb = dign(b)
+            strong = bool(sa) and bool(sb) or (bool(sa) and bool(shb)) or (bool(sb) and bool(sha))
+            same_sect = ((a in DIURNAL_SECT_PLANETS and b in DIURNAL_SECT_PLANETS)
+                         or (a in NOCTURNAL_SECT_PLANETS and b in NOCTURNAL_SECT_PLANETS))
+            in_sect = (sect == 'Diurnal' and a in DIURNAL_SECT_PLANETS and b in DIURNAL_SECT_PLANETS) or                       (sect != 'Diurnal' and a in NOCTURNAL_SECT_PLANETS and b in NOCTURNAL_SECT_PLANETS)
+            if strong and rays:
+                grade = 'strong right-sidedness (2.5, 2)'
+            elif same_sect and not (sa or sb):
+                grade = 'right-sidedness by sect, "below the first" (2.5, 3)'
+            else:
+                grade = '-'
+            rows.append({'Pair': f"{a} and {b}", 'Aspect (whole sign)': aspect,
+                         'Casting rays on each other': "yes (Connected under the page's rule)" if rays else 'no',
+                         'Dignities': f"{a}: {', '.join(sa + sha) or 'none'}; {b}: {', '.join(sb + shb) or 'none'}",
+                         'One sect': 'yes' if same_sect else 'no',
+                         'In the sect of the chart (2.5, 1)': 'yes' if in_sect else 'no',
+                         'Grade': grade, 'Source': 'Sahl, On Nativities 2.5, 1-3'})
+    return rows
+
+def evaluate_honor_guard(planetary_data, ascendant_lon):
+    """On Nativities 10.2.1, 10-15 (Ptolemy in Sahl): per planet, eastern
+    from the Sun and western from the Moon, in the stakes, looking at the
+    luminaries; the luminaries' signs and places. Display only; which of
+    10-15 the configuration matches is stated as facts, not pronounced."""
+    sun, moon = planetary_data['Sun']['longitude'] % 360.0, planetary_data['Moon']['longitude'] % 360.0
+    rows = []
+    for lum in ('Sun', 'Moon'):
+        lon = planetary_data[lum]['longitude'] % 360.0
+        sign = get_zodiac_sign(lon)
+        place = get_wsh_house(lon, ascendant_lon)
+        rows.append({'Planet': lum, 'Role': 'luminary', 'Sign': f"{sign} ({'male' if sign in MASCULINE_SIGNS else 'female'})",
+                     'Whole-sign place': place, 'In a stake': 'yes' if place in (1, 4, 7, 10) else 'no',
+                     'Eastern from the Sun': '-', 'Western from the Moon': '-', 'Looks at the luminaries': '-',
+                     'Source': '10.2.1, 10-15'})
+    for p in ('Saturn', 'Jupiter', 'Mars', 'Venus', 'Mercury'):
+        if p not in planetary_data:
+            continue
+        lon = planetary_data[p]['longitude'] % 360.0
+        east_of_sun = ((lon - sun + 180.0) % 360.0) - 180.0 < 0
+        west_of_moon = ((lon - moon + 180.0) % 360.0) - 180.0 > 0
+        place = get_wsh_house(lon, ascendant_lon)
+        looks = [l for l in ('Sun', 'Moon') if _sahl_looks(lon, planetary_data[l]['longitude'])]
+        rows.append({'Planet': p, 'Role': 'honor-guard' if east_of_sun and west_of_moon else '-',
+                     'Sign': get_zodiac_sign(lon), 'Whole-sign place': place,
+                     'In a stake': 'yes' if place in (1, 4, 7, 10) else 'no',
+                     'Eastern from the Sun': 'yes' if east_of_sun else 'no',
+                     'Western from the Moon': 'yes' if west_of_moon else 'no',
+                     'Looks at the luminaries': ', '.join(looks) or 'neither', 'Source': '10.2.1, 10'})
+    return rows
+
+# --- Sahl, On Nativities 2.13, 48-51: the sect light's first triplicity lord by ascensional band ---
+# 48: "of the more powerful indications of good fortune is if the first lord of
+# the triplicity of the glowing one [fn 190: the sect light] is in a stake or
+# what follows it, and that is the 15 degrees which follows it, by degrees of
+# ascensions: for if it was like that, it indicates praise and good fortune
+# (and what is less [than that] in degrees is preferable). 49 Now if it was in
+# the second 15 degrees, it indicates his good fortune is below the first
+# [type]. 50 And if it was in the third 15 degrees, it indicates [what is in]
+# the middle of assets. 51 And what is after that in degrees, up to the next
+# stake, is of the nativities of the poor." Read in the corpus 2026-09-11 (the
+# owner's addendum required it) before this was built. fn 189: Carmen I.28,
+# 1-6; the printed Carmen (p. 108, the owner's photograph) has the same four
+# parts, its third 15 "middling in assets", then "needy" to the next stake, and
+# says "the lord" where Sahl says "the first lord" -- cite 2.13 for "first".
+# 2.3, 4 with fns 82-83 is the same rule misreported from the sign's start.
+#
+# A DIFFERENT RULE from Aphorism #45 (FINAL-A4, CLOSED; owner, sheet row 5):
+# the aphorism speaks of EVERY planet and of being "in the situation of one
+# who is in the stake" (90-92, with a zodiacal example, 10 to 25 Aries); fn 57
+# calls it "misstated" and measured in ascensions. The aphorism stays as
+# printed and is NOT applied; 2.13 is built under its own name for one planet;
+# the per-planet table is the ENGINE'S GENERALISATION of 2.13 and is labelled
+# so (DIS-12 addendum). The 2026-09-07 policy "implement the editor's
+# ascensional correction of Aphorism #45" is retired by the same ruling.
+#
+# CONVENTIONS, the engine's, none a sentence of any text: the interval is the
+# one between consecutive ACTUAL stakes in zodiacal order (Asc, IC, Dsc, MC),
+# measured from the stake the planet FOLLOWS (zodiacally after it -- 2.13
+# "what follows it"; Intro 2, 33 "rising up to them"; Aph. 45's 10 to 25
+# Aries); oblique ascension at the horizon (the Descendant by the oblique
+# descension, i.e. the OA of the opposite degree) and RIGHT ascension at the
+# meridian (Carmen gives one rising instruction for all four; the split is a
+# declared engine convention); the planet's ECLIPTIC degree, latitude ignored;
+# bands end-inclusive, 0-15, 15-30, 30-45, the remainder to the next stake; a
+# planet on the next stake re-anchors at zero; the five-degree allowance of
+# Aphorism #44 lies on the OTHER side of the stake and is NOT inherited here
+# (51's "up to the next stake" stands). Refused where the ascension has no
+# inverse (D-23), as every ascensional measure here is.
+SAHL_2_13_BANDS = (
+    (15.0, 'first 15 degrees of ascension', 'praise and good fortune (48; "what is less [than that] in degrees is preferable")'),
+    (30.0, 'second 15 degrees', 'good fortune below the first type (49)'),
+    (45.0, 'third 15 degrees', 'the middle of assets (50; Carmen I.28, 5 "middling in assets and good fortune")'),
+    (None, 'the remainder, up to the next stake', 'of the nativities of the poor (51; Carmen I.28, 6 "needy [and] wretches")'),
+)
+
+def evaluate_ascensional_bands(planetary_data, ascendant_lon, mc_lon, obliquity, geo_lat, sect):
+    """Every planet's ascensional distance past the stake it follows, in
+    2.13's three bands and remainder -- the ENGINE'S GENERALISATION, display
+    only, an ordinal preference and no score -- with 2.13, 48-51's own
+    judgment applied to the one planet the text names, the sect light's
+    first triplicity lord; and Aphorism #45 AS PRINTED (15 zodiacal degrees)
+    beside it, not applied. Returns {'rows', 'judged', 'first_lord',
+    'refused'}; 'refused' carries the reason at the poles."""
+    if not _ascensional_method_applies(obliquity, geo_lat):
+        return {'rows': [], 'judged': None, 'first_lord': None,
+                'refused': f"refused at latitude {geo_lat:.1f}: the ascensions have no unique inverse here (decision D-23)"}
+    asc, mc = ascendant_lon % 360.0, mc_lon % 360.0
+    stakes = [('Ascendant', asc), ('fourth (IC)', (mc + 180.0) % 360.0), ('setting degree (Dsc)', (asc + 180.0) % 360.0), ('Midheaven', mc)]
+
+    def measure(stake_name, stake_lon, lon):
+        """The directed distance from the stake to the degree, in the stake's ascension."""
+        if stake_name == 'Ascendant':
+            return (_oblique_ascension(lon, obliquity, geo_lat) - _oblique_ascension(stake_lon, obliquity, geo_lat)) % 360.0
+        if stake_name.startswith('setting'):
+            return (_oblique_ascension((lon + 180.0) % 360.0, obliquity, geo_lat)
+                    - _oblique_ascension((stake_lon + 180.0) % 360.0, obliquity, geo_lat)) % 360.0
+        return (_ra_decl(lon, obliquity)[0] - _ra_decl(stake_lon, obliquity)[0]) % 360.0
+
+    light = 'Sun' if sect == 'Diurnal' else 'Moon'
+    trip = TRIPLICITY[SIGN_ELEMENT[get_zodiac_sign(planetary_data[light]['longitude'])]]
+    first_lord = trip['Day'] if sect == 'Diurnal' else trip['Night']
+    rows, judged = [], None
+    for planet in PN4_SEVEN:
+        if planet not in planetary_data:
+            continue
+        lon = planetary_data[planet]['longitude'] % 360.0
+        # the stake the planet follows: the nearest one zodiacally behind it
+        name, s_lon = min(stakes, key=lambda st: (lon - st[1]) % 360.0)
+        nxt_name, nxt_lon = min(((n, l) for n, l in stakes if n != name), key=lambda st: (st[1] - lon) % 360.0)
+        x = measure(name, s_lon, lon)
+        to_next = measure(name, s_lon, nxt_lon)
+        if x > to_next:                      # numerical guard: the planet cannot be past the next stake
+            x = to_next
+        band = next((label for limit, label, _j in SAHL_2_13_BANDS if limit is not None and x <= limit), SAHL_2_13_BANDS[-1][1])
+        judgment = next((j for limit, label, j in SAHL_2_13_BANDS if label == band))
+        printed = (lon - s_lon) % 360.0 <= 15.0
+        row = {'Planet': planet, 'Follows the stake': f"{name} ({get_degree_string(s_lon)})",
+               'Ascensional distance': f"{x:.2f} deg ({'oblique' if name in ('Ascendant',) or name.startswith('setting') else 'right'} ascension)",
+               'To the next stake': f"{to_next:.2f} deg ({nxt_name})",
+               'Engine grade (generalised from 2.13, 48-51)': band,
+               'Aphorism #45 as printed (15 zodiacal degrees; not applied)': 'within' if printed else 'beyond',
+               '2.13, 48-51 (the sect light\'s first triplicity lord only)': judgment if planet == first_lord else '-'}
+        rows.append(row)
+        if planet == first_lord:
+            judged = {'planet': planet, 'band': band, 'judgment': judgment, 'distance': x, 'stake': name}
+    return {'rows': rows, 'judged': judged, 'first_lord': first_lord, 'refused': None}
 
 def sahl_releaser(planetary_data, ascendant_lon, cusps, sect, lot_of_fortune, meeting_lon, fullness_lon):
     """Nawbakht's selection (On Nativities 1.15, 6-16) with 1.16's
@@ -8279,7 +9312,8 @@ def sahl_releaser(planetary_data, ascendant_lon, cusps, sect, lot_of_fortune, me
                  ('the fullness (the last Full Moon)', fullness_lon, None),
                  ('the Lot of Fortune', lot_of_fortune, None)]
         places = SAHL_RELEASER_NIGHT_PLACES
-    cands = [_sahl_examine_candidate(label, lon, planetary_data, cusps, sect, places, self_planet)
+    cands = [_sahl_examine_candidate(label, lon, planetary_data, cusps, sect, places, self_planet,
+                                     unit='place' if label == 'the Lot of Fortune' else 'division')
              for label, lon, self_planet in order]
     cands.append(_sahl_ascendant_candidate(planetary_data, ascendant_lon, cusps, sect))
     chosen = next((c for c in cands if c['fit']), None)
@@ -8289,14 +9323,17 @@ def sahl_releaser(planetary_data, ascendant_lon, cusps, sect, lot_of_fortune, me
     for i, c in enumerate(cands):
         consulted = chosen is None or i <= cands.index(chosen)
         rows.append({'Candidate': c['candidate'], 'Degree': get_degree_string(c['longitude']),
-                     'House (quadrant, carry-over)': c['place'],
+                     'House (division, 5 deg at the stakes; the Lot by whole-sign place)': c['place'],
                      'Lords of its degree': '; '.join(f"{r} {p}: {a}" for r, p, a in c['lords']),
                      'Verdict': ('THE RELEASER -- ' if c is chosen else '' if consulted else 'not consulted, an earlier candidate qualified -- ')
                                 + c['why'],
                      'Source': ('1.15, 6-9' if day else '1.15, 10-14') if c['candidate'] != 'the Ascendant' else '1.15, 15-16'})
     if chosen is None:
-        verdict = ('No releaser: none of the candidates qualifies and the Ascendant fails 1.15, 16 -- "the native does '
-                   'not have a foundation for his lifespan". 1.32, 11-13\'s stand-in is not applied.')
+        verdict = ('No releaser by Nawbakht\'s rule (1.15, 16: "the native does not have a foundation for his '
+                   'lifespan"). For one who does not live, al-Andarzaghar directs the strongest of the four anyway '
+                   '(1.32, 11), "the first of them is the Ascendant, then the Moon" (13): the Ascendant\'s distribution '
+                   '(the tab "from the Ascendant") is that stand-in, and the Moon is directed after it, below; '
+                   'whichever first connects with an infortune kills (12), if no fortune looks (14).')
     elif house_master is None:
         verdict = f"The releaser is {chosen['candidate']}; no house-master, nothing looks at it."
     else:
@@ -8325,7 +9362,8 @@ def sahl_releaser_distribution(planetary_data, releaser_lon, obliquity, geo_lat,
 SAHL_INFORTUNES = ('Saturn', 'Mars')
 
 def sahl_house_master_direction(planetary_data, house_master, obliquity, geo_lat,
-                                span_years=PN4_DISTRIBUTION_SPAN_YEARS, origin_jd=None):
+                                span_years=PN4_DISTRIBUTION_SPAN_YEARS, origin_jd=None,
+                                start_lon=None, target_planets=None, sun_target=True):
     """Masha'allah, On Nativities 1.23, 2: "look at the position of the
     governor [fn 181: the house-master] ... then direct it to the
     conjunction of the infortunes and the degree of burning, and its
@@ -8338,20 +9376,26 @@ def sahl_house_master_direction(planetary_data, house_master, obliquity, geo_lat
     at the poles (D-23). 1.23, 3-11's check of that year's revolution is
     sahl_house_master_in_revolution; 4.12, 6's converse direction of a
     retrograde planet is not applied."""
-    if house_master not in planetary_data or not _ascensional_method_applies(obliquity, geo_lat):
+    # `start_lon` directs any degree by the same operation (1.23, 13-14: the lord
+    # of the Ascendant, the Ascendant's degree; 4.20, 32: the Lot of the father,
+    # the Sun or Saturn); `target_planets` replaces Saturn and Mars (4.20, 31's
+    # harmers); `sun_target` keeps or drops "the degree of burning".
+    if start_lon is None and (house_master not in planetary_data):
         return None
-    start = planetary_data[house_master]['longitude'] % 360.0
+    if not _ascensional_method_applies(obliquity, geo_lat):
+        return None
+    start = (start_lon if start_lon is not None else planetary_data[house_master]['longitude']) % 360.0
     oa0 = _oblique_ascension(start, obliquity, geo_lat)
     targets = []
-    for p in SAHL_INFORTUNES:
-        if p not in planetary_data:
+    for p in (target_planets if target_planets is not None else SAHL_INFORTUNES):
+        if p not in planetary_data or p == house_master:
             continue
         lon = planetary_data[p]['longitude'] % 360.0
         targets.append((f"{p}'s body", lon, '1.23, 2 "the conjunction of the infortunes"'))
         targets.append((f"{p}'s opposition", (lon + 180.0) % 360.0, '1.23, 2 "its opposition"'))
         targets.append((f"{p}'s square (right)", (lon - 90.0) % 360.0, '1.23, 2 "its square"'))
         targets.append((f"{p}'s square (left)", (lon + 90.0) % 360.0, '1.23, 2 "its square"'))
-    if 'Sun' in planetary_data:
+    if sun_target and 'Sun' in planetary_data and house_master != 'Sun':
         targets.append(("the Sun's degree (burning)", planetary_data['Sun']['longitude'] % 360.0,
                         '1.23, 2 "the degree of burning" (reading: the Sun\'s natal degree)'))
     rows = []
@@ -8384,7 +9428,7 @@ def sahl_house_master_in_revolution(house_master, chart_data, sr):
     if house_master not in rev:
         return []
     lon = rev[house_master]['longitude']
-    phase, side, elong = solar_phase(house_master, lon, rev['Sun']['longitude'])
+    phase, side, elong = solar_phase(house_master, lon, rev['Sun']['longitude'], rev[house_master].get('speed_in_lon'))
     house = get_wsh_house(lon, sr['ascendant'])
     with_infortune = [p for p in SAHL_INFORTUNES if p != house_master and p in rev
                       and get_zodiac_sign(rev[p]['longitude']) == get_zodiac_sign(lon)]
@@ -8395,6 +9439,196 @@ def sahl_house_master_in_revolution(house_master, chart_data, sr):
         {'Fact': "In a stake of the Ascendant of the year", 'Reads': f"house {house} from the revolution's Ascendant" + (' -- a stake' if house in (1, 4, 7, 10) else '') + (' -- the Ascendant itself, "worse"' if house == 1 else ''), 'Source': '1.23, 4'},
         {'Fact': 'With an infortune in its sign', 'Reads': ', '.join(with_infortune) or 'none', 'Source': '1.23, 2-4'},
     ]
+
+def sahl_short_life_testimonies(chart_data, lot_fortune_lon):
+    """Sahl, On Nativities 1.18, 1-10 (Masha'allah, fn 125): the testimonies
+    of a short upbringing, counted, and 8-10's sentence for the count --
+    shown beside the releaser and NOT disqualifying it (order REL-5-3).
+    Counted (1-4): 1 the Moon's connection "with a retrograde planet not
+    receiving her"; 2 "the handing over of her management to the lord of
+    the eighth, or the eighth [from] her house"; 3 "to a planet under the
+    earth while she is above the earth by day"; 4 "the retrogradation of
+    the lord of the Lot of Fortune, and the presence of an infortune in a
+    stake ... if it was inimical to the Ascendant or did not have a
+    testimony in the Ascendant". Not counted, "equivalent" (5-7; fn 126,
+    129): 5 the lord of the Ascendant connecting with the lord of the
+    eighth; 6 the lord of the Ascendant retrograde, "unless it was Mercury"
+    (fn 127: inverts); 7 its connection with a <retrograde> planet "or one
+    in its first slowness ... (unless it receives it)". Readings: the
+    Moon's "connection" and "handing over" = her first perfection before
+    she leaves her sign (the natal chart followed forward); "receiving" per
+    evaluate_reception; "under the earth" by altitude where the horizon is
+    known; "in a stake" the whole-sign places 1, 4, 7, 10; "inimical to the
+    Ascendant" is not read, "no testimony in the Ascendant" = no dignity of
+    its own at the Ascendant's degree; 4's two clauses are read as one
+    testimony (fn 130 makes 8-10 count 1, 2, 3)."""
+    p = chart_data['planetary_data']
+    asc = chart_data['ascendant']
+    sect = chart_data['sect']
+    asc_sign = get_zodiac_sign(asc)
+    eighth = SIGN_ORDER[(SIGN_ORDER.index(asc_sign) + 7) % 12]
+    moon_sign = get_zodiac_sign(p['Moon']['longitude'])
+    eighth_from_moon = SIGN_ORDER[(SIGN_ORDER.index(moon_sign) + 7) % 12]
+    lord_asc = SIGN_TO_DOMICILE.get(asc_sign)
+    lord_8 = SIGN_TO_DOMICILE.get(eighth)
+    rows = []
+    # the Moon's first perfection in her sign
+    try:
+        conns = _pn4_luminary_connections(p, chart_data['julian_day'], 'Moon', 6, 0.25, applying_only=False)['connections']
+    except Exception:
+        conns = []
+    first = conns[0] if conns else None
+    received = set()
+    with doctrine(SAHL):
+        for r in evaluate_reception(p, sect):
+            if r.get('Received') == 'Moon' and r.get('Receiver'):
+                received.add(r['Receiver'])
+    t1 = bool(first) and p.get(first['planet'], {}).get('speed_in_lon', 1.0) < 0 and first['planet'] not in received
+    rows.append({'Testimony': '1. The Moon connects with a retrograde planet not receiving her', 'Met': 'yes' if t1 else 'no',
+                 'Fact': (f"her first perfection in {moon_sign}: {first['planet']} by {first['aspect']} on day {first['day']:.1f}, "
+                          f"{'retrograde' if p.get(first['planet'], {}).get('speed_in_lon', 1.0) < 0 else 'direct'}, "
+                          f"{'receiving her' if first['planet'] in received else 'not receiving her'}") if first else 'no perfection before she leaves her sign',
+                 'Counted': 'yes', 'Source': '1.18, 1'})
+    t2 = bool(first) and first['planet'] in (lord_8, SIGN_TO_DOMICILE.get(eighth_from_moon))
+    rows.append({'Testimony': '2. She hands her management to the lord of the eighth, or of the eighth from her house',
+                 'Met': 'yes' if t2 else 'no',
+                 'Fact': f"lord of the eighth ({eighth}): {lord_8}; of the eighth from the Moon ({eighth_from_moon}): "
+                         f"{SIGN_TO_DOMICILE.get(eighth_from_moon)}; her first perfection: {first['planet'] if first else 'none'}",
+                 'Counted': 'yes', 'Source': '1.18, 2'})
+    def above(planet):
+        row = p[planet]
+        if chart_data.get('armc') is not None and chart_data.get('geo_lat') is not None:
+            return _sin_altitude(row['longitude'], row.get('latitude', 0.0), row.get('distance', 1.0),
+                                 chart_data['obliquity'], chart_data['armc'], chart_data['geo_lat']) > 0
+        return (row['longitude'] - asc) % 360.0 > 180.0
+    t3 = bool(first) and sect == 'Diurnal' and above('Moon') and not above(first['planet'])
+    rows.append({'Testimony': '3. By day, she above the earth hands over to a planet under the earth', 'Met': 'yes' if t3 else 'no',
+                 'Fact': (f"{'day' if sect == 'Diurnal' else 'night'} chart; the Moon {'above' if above('Moon') else 'below'} the earth; "
+                          + (f"{first['planet']} {'above' if above(first['planet']) else 'below'}" if first else 'no perfection')),
+                 'Counted': 'yes', 'Source': '1.18, 3'})
+    lord_lot = SIGN_TO_DOMICILE.get(get_zodiac_sign(lot_fortune_lon))
+    lot_retro = lord_lot in p and p[lord_lot].get('speed_in_lon', 1.0) < 0
+    asc_r = get_essential_rulers(asc)
+    asc_dign = {asc_r['domicile'], asc_r['exaltation'], asc_r['triplicity_day'] if sect == 'Diurnal' else asc_r['triplicity_night'], asc_r['term'], asc_r['face']}
+    bad = [q for q in SAHL_INFORTUNES if q in p and get_wsh_house(p[q]['longitude'], asc) in (1, 4, 7, 10) and q not in asc_dign]
+    t4 = lot_retro and bool(bad)
+    rows.append({'Testimony': "4. The lord of the Lot of Fortune retrograde, and an infortune in a stake with no testimony in the Ascendant",
+                 'Met': 'yes' if t4 else 'no',
+                 'Fact': f"lord of the Lot {lord_lot}: {'retrograde' if lot_retro else 'direct'}; infortunes in a stake without a dignity at the Ascendant's degree: {', '.join(bad) or 'none'} (\"inimical to the Ascendant\" not read)",
+                 'Counted': 'yes', 'Source': '1.18, 4'})
+    # 5-7: equivalent, not counted
+    pairs = {frozenset((r['light_name'], r['heavy_name'])): r for r in _pairwise_configurations(p) if r['aspect_name'] != 'Aversion'}
+    def connected(a, b):
+        r = pairs.get(frozenset((a, b)))
+        with doctrine(SAHL):
+            return bool(r) and _is_connected(r)
+    rows.append({'Testimony': '5. The lord of the Ascendant connects with the lord of the eighth', 'Met': 'yes' if lord_asc and lord_8 and lord_asc != lord_8 and connected(lord_asc, lord_8) else 'no',
+                 'Fact': f"{lord_asc} and {lord_8}" + (' (the same planet)' if lord_asc == lord_8 else ''), 'Counted': 'no -- "equivalent" (fn 126)', 'Source': '1.18, 5'})
+    rows.append({'Testimony': '6. The lord of the Ascendant retrograde (unless Mercury)',
+                 'Met': 'yes' if lord_asc in p and p[lord_asc].get('speed_in_lon', 1.0) < 0 and lord_asc != 'Mercury' else 'no',
+                 'Fact': f"{lord_asc}: {'retrograde' if lord_asc in p and p[lord_asc].get('speed_in_lon', 1.0) < 0 else 'direct'}",
+                 'Counted': 'no -- "inverts it" (fn 127)', 'Source': '1.18, 6'})
+    retro_partners = [q for q in PN4_SEVEN if q in p and q != lord_asc and p[q].get('speed_in_lon', 1.0) < 0 and connected(lord_asc, q)] if lord_asc in p else []
+    rows.append({'Testimony': '7. The lord of the Ascendant connects with a <retrograde> planet, unless it receives it',
+                 'Met': 'yes' if retro_partners else 'no', 'Fact': (', '.join(retro_partners) or 'none') + ' (reception not tested here)',
+                 'Counted': 'no -- "equivalent" (fn 129)', 'Source': '1.18, 7'})
+    count = sum(1 for r in rows[:4] if r['Met'] == 'yes')
+    sentence = {0: 'no testimony of a short upbringing (1.18, 1-4)',
+                1: '"the releaser will be weak and not fit, except through the reception of that releaser, [which indicates] fitness" (1.18, 8)',
+                2: '"if ... there were two testimonies of what I mentioned, and the native did not have a releaser, one will not know his lifespan except by revolving [his] years" (1.18, 9; fn 130)'}.get(
+                    count, '"if ... there were three testimonies of what I mentioned, then he will not be brought up" (1.18, 10)')
+    return {'rows': rows, 'count': count, 'sentence': sentence}
+
+def sahl_father_lot_harmers(sect, planetary_data, lot_lon, sun_lon):
+    """Sahl, On Nativities 4.20, 31: "if the nativity was by day, the
+    infortunes which harm his Lot are Mars and Saturn (and Mercury, if he
+    was unfortunate); and if it was by night, the infortunes which harm
+    them are Mars and Mercury (if he was unfortunate)". One row per harmer
+    with its whole-sign aspect to the Sun and to the Lot; Mercury's "if he
+    was unfortunate" is a judgment and is shown as such, not made; 36's
+    Saturn ("if Saturn looked at the degree of the Lot of the father from
+    hostility, it is more harmful for some of the injuries") is a separate
+    row by night, when he is not a harmer. fn 288 (Dykes: Mars the main
+    malefic in both sects, Saturn barred by night because he indicates the
+    father) is the editor's reading and is quoted, not applied (order
+    DIS-10, 2026-09-11)."""
+    day = sect == 'Diurnal'
+    harmers = [('Mars', 'stated'), ('Saturn', 'stated')] if day else [('Mars', 'stated')]
+    harmers.append(('Mercury', '"if he was unfortunate" -- a judgment, not made here'))
+    rows = []
+    for p, note in harmers:
+        if p not in planetary_data:
+            continue
+        lon = planetary_data[p]['longitude']
+        rows.append({'Harmer': p, 'Named by 31': note,
+                     'Looks at the Sun': _sahl_looks(lon, sun_lon) or 'in aversion',
+                     'Looks at the Lot': _sahl_looks(lon, lot_lon) or 'in aversion', 'Source': '4.20, 31'})
+    if not day and 'Saturn' in planetary_data:
+        a = _sahl_looks(planetary_data['Saturn']['longitude'], lot_lon)
+        rows.append({'Harmer': 'Saturn', 'Named by 31': 'not a harmer by night (he indicates the father, 32); 36 applies',
+                     'Looks at the Sun': _sahl_looks(planetary_data['Saturn']['longitude'], sun_lon) or 'in aversion',
+                     'Looks at the Lot': (f"{a} -- \"from hostility\" (square or opposition) is 36's harm" if a in ('square', 'opposition')
+                                          else (a or 'in aversion')), 'Source': '4.20, 36'})
+    return rows
+
+def sahl_turning_reaches_partner(segments, age, ascendant_lon, planetary_data):
+    """Sahl, On Nativities 1.24, 4-5 with 1.23, 23: "if you came to the year
+    of the turning before the departure of its light, it is preferable; and
+    likewise the infortunes are worse" -- the year of the turning (the
+    profection of the Ascendant, a sign a year) reaching the sign that holds
+    the NATAL BODY of the partner of the Ascendant's current distribution,
+    while that partner still holds the bound. Body only; the ray reading is
+    not applied. Returns None when there is no current segment or partner
+    (order GAP-2, 2026-09-11)."""
+    seg = pn4_distribution_at_age(segments, float(age)) if segments else None
+    partner = (seg or {}).get('partner')
+    if not partner or partner not in planetary_data:
+        return None
+    year = pn4_sign_of_the_year(ascendant_lon, int(age))
+    partner_sign = get_zodiac_sign(planetary_data[partner]['longitude'])
+    holds = year['sign'] == partner_sign
+    nature = pn4_nature(partner)
+    verdict = ('"preferable" (1.23, 23)' if nature == 'fortune' else '"the infortunes are worse" (1.23, 23)'
+               if nature == 'infortune' else 'neither a fortune nor an infortune: 1.23, 23 gives no verdict') if holds else '-'
+    return {'partner': partner, 'partner_sign': partner_sign, 'sign_of_year': year['sign'], 'holds': holds,
+            'distributor': seg['distributor'], 'verdict': verdict,
+            'text': (f"The year of the turning ({year['sign']}) {'reaches' if holds else 'does not reach'} the sign of the "
+                     f"partner's natal body ({partner} in {partner_sign}) while {partner} partners {seg['distributor']}"
+                     + (f": {verdict}" if holds else '') + " -- Sahl, On Nativities 1.24, 4-5; 1.23, 23 (body only; the ray "
+                     "reading is not applied; 1.23, 23's \"in an excellent position relative to the Ascendant\" -- 1.24, 5 the "
+                     "same -- is not judged)")}
+
+def sahl_house_master_turning(house_master, planetary_data, span_years=PN4_DISTRIBUTION_SPAN_YEARS):
+    """PN IV IX.8, 30: "if the turning of the years from any of the five
+    releasers (or from the indicator of the lifespan) reached their bodies,
+    oppositions, or squares, then they also kill" -- the indicator of the
+    lifespan (Sahl's house-master, 1.30, 35) TURNED a year a sign from its
+    natal sign, which IX.8, 32 says is the only operation for it ("the
+    indicator of the lifespan alone is turned in the signs, sign-by-sign,
+    and is not directed degree-by-degree"). One row per year of age in
+    which the turned sign holds a cutter's body or is its opposition or
+    square sign; "their" is the cutters' -- Saturn and Mars, the infortunes
+    the direction table already targets (IX.8, 6-19 name the cutters more
+    widely; the two bodies and their rays are the ones both authors share).
+    Whole-sign turning, as VI.2, 1's. PN IV's own rule, shown beside
+    Sahl's direction (FINAL-A2, decision sheet row 2, 2026-09-11)."""
+    if house_master not in planetary_data:
+        return []
+    start_idx = int(planetary_data[house_master]['longitude'] % 360.0 // 30)
+    cutters = []
+    for p in SAHL_INFORTUNES:
+        if p in planetary_data and p != house_master:
+            idx = int(planetary_data[p]['longitude'] % 360.0 // 30)
+            cutters += [(idx, f"{p}'s body"), ((idx + 6) % 12, f"{p}'s opposition"),
+                        ((idx + 3) % 12, f"{p}'s square (left)"), ((idx - 3) % 12, f"{p}'s square (right)")]
+    rows = []
+    for year in range(int(span_years)):
+        sign_idx = (start_idx + year) % 12
+        hits = [label for idx, label in cutters if idx == sign_idx]
+        if hits:
+            rows.append({'Year of age': year, 'Turned sign': SIGN_ORDER[sign_idx],
+                         'Reaches': ', '.join(hits), 'Source': 'PN IV IX.8, 30'})
+    return rows
 
 def sahl_house_master_flags(house_master, planetary_data, cusps):
     """1.23, 12: "perhaps one will not be able to be guided by the
@@ -8460,9 +9694,10 @@ def sahl_house_master_flags(house_master, planetary_data, cusps):
 # WHICH of the greater, middle and lesser years applies is chosen "in
 # accordance with what its position in the rotation of the circle
 # indicated in the root" (III.7, 35) -- a placement rule PN IV
-# presupposes and never states. That is corpus disagreement #2, which
-# PN IV does not adjudicate (IX.8, 123), so ALL THREE are shown and none
-# is chosen, exactly as the planetary-years table does.
+# presupposes and never states (IX.8, 123). Since 2026-09-11 the
+# house-master's own years come from Sahl, On Nativities 1.20 (FINAL-A1);
+# III.7's ages are a different use of the table, so ALL THREE are still
+# shown here and none is chosen.
 
 PN4_MANIFESTATION_BY_QUADRUPLICITY = {
     'fixed': ('once in the lifespan', 'III.7, 35'),
@@ -8482,13 +9717,27 @@ def pn4_sign_ascensions(sign, obliquity, geo_lat):
             - _oblique_ascension(start, obliquity, geo_lat)) % 360.0
 
 def pn4_activation_ages(planetary_data, obliquity, geo_lat, segments=None,
-                        max_age=PN4_DISTRIBUTION_SPAN_YEARS):
+                        max_age=PN4_DISTRIBUTION_SPAN_YEARS, distributions=None, ascendant_lon=None):
     """III.7, 32-42, one row per planet.
 
-    `segments` is the output of pn4_distribution_from_ascendant; when it is
-    given, each candidate age is checked against it for Abu Ma'shar's
-    confirmation (III.7, 42) -- is this planet the distributor or the
-    manager at that age?"""
+    `distributions` is a mapping {label: segments} -- the Ascendant's, the
+    Midheaven's, the fourth's and the releaser's -- and each candidate age
+    is checked against EVERY one of them for Abu Ma'shar's confirmation
+    (III.7, 42): is this planet the distributor or the manager at that age,
+    and in which distribution (order PN4R-4a-2; it had been checked against
+    the Ascendant's alone). `segments` alone is the Ascendant's, kept for
+    older callers. `ascendant_lon`, when given, lets III.7, 35's own
+    condition be read: the "once" is for a fixed-sign distributor that is
+    "NOT looking at the position of the distribution"; a fixed-sign planet
+    that looks falls under 36, "whenever it distributes" if strong (order
+    PN4R-4a-1). The position of the distribution is read as the
+    Ascendant's sign at birth, "looking" as the whole-sign aspect, a planet
+    in the sign itself counted as looking -- three readings; whether the
+    position is the current bound's sign or its degree is a further
+    silence, said on the page."""
+    if distributions is None and segments is not None:
+        distributions = {"the Ascendant's distribution": segments}
+    distributions = distributions or {}
     rows = []
     for planet in PN4_SEVEN:
         row = planetary_data.get(planet)
@@ -8497,6 +9746,14 @@ def pn4_activation_ages(planetary_data, obliquity, geo_lat, segments=None,
         sign = get_zodiac_sign(row['longitude'])
         kind = PN4_QUADRUPLICITY[sign]
         manifests, cite = PN4_MANIFESTATION_BY_QUADRUPLICITY[kind]
+        if kind == 'fixed' and ascendant_lon is not None:
+            aspect = _sahl_looks(row['longitude'], ascendant_lon)
+            if aspect:
+                manifests, cite = (f"looks at the position of the distribution (whole-sign {aspect} to the Ascendant's sign): "
+                                   f"III.7, 36 applies if strong, which the chapter does not define; III.7, 35's \"once\" is for "
+                                   f"the non-looking case"), 'III.7, 35-36'
+            else:
+                manifests, cite = 'once in the lifespan (not looking at the position of the distribution)', 'III.7, 35'
         ascensions = pn4_sign_ascensions(sign, obliquity, geo_lat)
         years = PLANETARY_YEARS[planet]
 
@@ -8508,10 +9765,11 @@ def pn4_activation_ages(planetary_data, obliquity, geo_lat, segments=None,
         for label, age in candidates.items():
             if age is None or not (0.0 < age <= max_age):
                 continue
-            seg = pn4_distribution_at_age(segments, age) if segments else None
-            if seg and planet in (seg['distributor'], seg['partner']):
-                role = 'distributor' if seg['distributor'] == planet else 'manager'
-                confirmed.append(f"{label} ({age:.2f}, as {role})")
+            for dist_label, segs in distributions.items():
+                seg = pn4_distribution_at_age(segs, age) if segs else None
+                if seg and planet in (seg['distributor'], seg['partner']):
+                    role = 'distributor' if seg['distributor'] == planet else 'manager'
+                    confirmed.append(f"{label} ({age:.2f}, as {role}, {dist_label})")
 
         rows.append({
             'Planet': planet, 'Natal sign': sign, 'Quadruplicity': kind,
@@ -8588,7 +9846,8 @@ def pn4_fardar_subperiods(lord, years):
 # (each house keeping its first hour lord for life, Intro Figure 48) on
 # the thought that the loop is Abu Ma'shar's own error; VI.1, 8 states
 # the loop, and the owner chose it 2026-09-10. The delineations of VI.1,
-# 12-17 and the seven-day grant of IX.7, 7-8 are not built.
+# 12-17 are not built; the seven-day grant of IX.7, 7-9 IS -- method 2 of the
+# days tab, pn4_ix7_weeks_from_orb (an earlier line here said it was not; order GAP-27).
 
 def pn4_hour_lord_from_natal(natal_hour_lord, steps):
     """The lord of the hour `steps` hours after the natal one, down the
@@ -8623,9 +9882,22 @@ def pn4_named_lords_of_the_orb(natal_hour_lord, completed_years):
         ('Tenth from the sign of the year', (k - 1 + 9) % 12 + 1, 'VI.1, 19'),
         ('Eleventh from the sign of the year', (k - 1 + 10) % 12 + 1, 'VI.1, 19'),
     )
-    return [{'Position': label, 'House': house, 'Hour from the natal hour': house,
-             'Lord of the hour': pn4_hour_lord_of_house(natal_hour_lord, house) or '-',
-             'Source': cite} for label, house, cite in positions]
+    age = int(completed_years)
+    rows = []
+    for label, house, cite in positions:
+        # VI.1, 8's assignment: "the lord of the thirteenth hour from it belongs
+        # to the Ascendant of the root and the thirteenth year" -- the hour lord
+        # this house RECEIVED when the profection last reached it, which is a
+        # different planet from VI.1, 10's first-cycle naming from age 12 on
+        # (order PN4R-4e-2). '-' while the loop has not yet reached the house.
+        step = age - ((age - (house - 1)) % 12)
+        rows.append({'Position': label, 'House': house,
+                     "By VI.1, 10's naming (first cycle): hour": house,
+                     "Lord of the hour (VI.1, 10)": pn4_hour_lord_of_house(natal_hour_lord, house) or '-',
+                     "By VI.1, 8's assignment (the hour lord the house received when the profection last reached it)":
+                         (pn4_hour_lord_from_natal(natal_hour_lord, step) or '-') if step >= 0 and natal_hour_lord else '-',
+                     'Source': cite})
+    return rows
 
 # --- VI.2, 1-26: the turning of the houses of the root ---------------------
 # "every one of the seven planets, the twelve houses, and the twelve Lots,
@@ -8654,7 +9926,7 @@ def pn4_named_lords_of_the_orb(natal_hour_lord, completed_years):
 # and the Great Introduction, and the engine's Lots are paired to them
 # below with the two places they differ on the night reversal named.
 # "Whichever had the shift in the root" (VI.2, 6, 8) is the sect planet,
-# per fn 16 and 19. The triplicity-lord examinations of VI.2, 4-5 and all
+# per fn 16 and 19. The triplicity lords of VI.2, 4-5 are pn4_turning_triplicity_lords (2026-09-11); all
 # the delineation are not built. No worked example exists; Figures 90-91
 # are Dykes' diagrams.
 
@@ -8732,6 +10004,48 @@ def _pn4_natal_planets_in_sign(planetary_data, sign):
 def pn4_turned_sign(natal_lon, completed_years):
     """VI.2, 1: "a year for every sign", from the point's own position."""
     return get_zodiac_sign(pn4_profect(natal_lon, int(completed_years)))
+
+def _pn4_condition_string(data, planet):
+    """A planet's condition as the II.3 examination prints it: sign, motion,
+    side of the Sun, solar phase. '-' when the planet is absent."""
+    r = data.get(planet)
+    if not r:
+        return '-'
+    motion = 'retrograde' if r.get('speed_in_lon', 1.0) < 0 else 'direct'
+    phase, side, _el = solar_phase(planet, r['longitude'], data['Sun']['longitude'], r.get('speed_in_lon'))
+    return f"{get_zodiac_sign(r['longitude'])}, {motion}, {side or '-'}{', ' + phase.lower() if phase else ''}"
+
+def pn4_turning_triplicity_lords(chart_data, sr):
+    """VI.2, 4-5: the triplicity lords examined beside the turning. 4, for
+    assets: "every one of the lords of the triplicities of the luminary
+    which had the shift in the root" (fn 13: the sect light), "what its
+    condition was at that time, and what its condition is in the revolution
+    of that year". 5, for siblings: "the triplicity lords of the sign in
+    which Mars was at the root ... (and the first lord of its triplicity
+    indicates the older ones of the siblings, and the second lord ... the
+    middle ones ..., and the third ... the younger ones)". Six rows, the
+    Dorothean lords in the engine's order (day lord, night lord, partner --
+    by night the night lord first), each with its condition in both charts
+    as the II.3 evaluators print it. fn 14's age mapping is the editor's
+    and is not applied (order PN4R-4f-6, 2026-09-11)."""
+    natal, rev = chart_data['planetary_data'], sr['planetary_data']
+    sect = chart_data['sect']
+    light = 'Sun' if sect == 'Diurnal' else 'Moon'
+    rows = []
+    for topic, planet, cite in (('assets', light, 'VI.2, 4; fn 13 (the sect light)'), ('siblings', 'Mars', 'VI.2, 5')):
+        if planet not in natal:
+            continue
+        sign = get_zodiac_sign(natal[planet]['longitude'])
+        trip = TRIPLICITY[SIGN_ELEMENT[sign]]
+        order = [trip['Day'], trip['Night'], trip['Participating']] if sect == 'Diurnal' else [trip['Night'], trip['Day'], trip['Participating']]
+        for rank, lord in zip(('first', 'second', 'third'), order):
+            rows.append({'Topic': topic, 'Triplicity of': f"{sign} ({planet} in the root)", 'Order': rank, 'Lord': lord,
+                         'Root condition': _pn4_condition_string(natal, lord),
+                         'Revolution condition': _pn4_condition_string(rev, lord),
+                         'Siblings (5)': ({'first': 'the older', 'second': 'the middle', 'third': 'the younger'}[rank]
+                                          if topic == 'siblings' else '-'),
+                         'Source': cite})
+    return rows
 
 def pn4_turning_rows(chart_data, completed_years):
     """The turning table of VI.2, 1-26 for one age: every planet, every
@@ -8815,7 +10129,7 @@ def _pn4_house_from(lon, from_lon):
     """Whole-sign house of `lon` counted from the sign of `from_lon`."""
     return get_wsh_house(lon, from_lon)
 
-def pn4_further_indicators(chart_data, sr, year_lon, moon=None):
+def pn4_further_indicators(chart_data, sr, year_lon, moon=None, jd_sr=None):
     """Indicators 6-19 of the year (II.1, 11-24): one row each, the fact
     it reads computed where it is a lookup on the root and the
     revolution, and stated as not computed where it is not."""
@@ -8868,10 +10182,16 @@ def pn4_further_indicators(chart_data, sr, year_lon, moon=None):
     # 9
     ly = lord(year_lon)
     ly_lon = rev.get(ly, {}).get('longitude')
+    # II.6, 1, the first chapter this row cites, names THREE Ascendants --
+    # "one of the stakes of the Ascendant of the root, or of the terminal
+    # point, or of the Ascendant of the revolution" -- so the house is read
+    # from each, in row 14's format (order PN4R-4g-2; it read the
+    # revolution's alone). Whole-sign places, the topic unit.
     rows.append({'#': 9, 'Indicator': 'The lord of the year in one of the twelve houses of the revolution',
-                 'Reads': (f"{ly} in house {_pn4_house_from(ly_lon, r_asc)} of the revolution "
-                           f"({get_zodiac_sign(ly_lon)}, {get_degree_string(ly_lon)})") if ly_lon is not None else '-',
-                 'Source': 'II.1, 14; II.6, II.9, II.12, II.15, II.18, II.21'})
+                 'Reads': (f"{ly} ({get_zodiac_sign(ly_lon)}, {get_degree_string(ly_lon)}) in house "
+                           + ' / '.join(str(_pn4_house_from(ly_lon, from_lon)) for _l, from_lon in places)
+                           + " (from the natal Ascendant / the terminal sign / the revolution Ascendant)") if ly_lon is not None else '-',
+                 'Source': 'II.1, 14; II.6, 1 (the three Ascendants); II.6, II.9, II.12, II.15, II.18, II.21'})
     # 10
     parts = []
     for label, from_lon in places:
@@ -8911,10 +10231,38 @@ def pn4_further_indicators(chart_data, sr, year_lon, moon=None):
                  'Reads': '; '.join(moves) + ' (natal house -> from the natal Ascendant / the terminal sign / the revolution Ascendant)',
                  'Source': 'II.1, 19; VI.5, 1-4'})
     # 15
-    rows.append({'#': 15, 'Indicator': 'The connections of the lords of the houses with each other',
-                 'Reads': "NOT computed: VI.6, 3-7 read the lords' connections in the revolution; the engine's connection "
-                          "test is a static one for the natal chart under the Configurations page's rule",
-                 'Source': 'II.1, 20; VI.6, 3-7'})
+    # II.1, 20 with VI.6, 1-3: the lord of the natal Ascendant, of the terminal
+    # sign and of the revolution's Ascendant, each followed in the revolution
+    # until it leaves its sign, its perfections with the other house lords
+    # listed (order PN4R-4g-5; every planet rules some house, so each
+    # perfection names the houses its partner rules from the revolution's
+    # Ascendant). Horizon by the planet's pace.
+    if jd_sr is None:
+        rows.append({'#': 15, 'Indicator': 'The connections of the lords of the houses with each other',
+                     'Reads': "NOT computed here: needs the revolution's moment (VI.6, 3 reads the lords' connections in the revolution)",
+                     'Source': 'II.1, 20; VI.6, 1-3'})
+    else:
+        horizons = {'Moon': (6, 0.25), 'Sun': (40, 1.0), 'Mercury': (40, 1.0), 'Venus': (60, 1.0), 'Mars': (120, 1.0),
+                    'Jupiter': (400, 2.0), 'Saturn': (900, 3.0)}
+        ruled = {}
+        for h in range(1, 13):
+            owner = SIGN_TO_DOMICILE.get(SIGN_ORDER[(SIGN_ORDER.index(get_zodiac_sign(r_asc)) + h - 1) % 12])
+            ruled.setdefault(owner, []).append(str(h))
+        parts = []
+        for label, from_lon in (('the lord of the natal Ascendant', n_asc), ('the lord of the terminal sign', year_lon),
+                                ("the lord of the revolution's Ascendant", r_asc)):
+            L = lord(from_lon)
+            if L not in rev:
+                parts.append(f"{label} ({L}): absent from the revolution")
+                continue
+            h, step = horizons.get(L, (60, 1.0))
+            found = _pn4_luminary_connections(rev, jd_sr, L, h, step, applying_only=False)
+            hits = [f"{c['planet']} (lord of house{'s' if len(ruled.get(c['planet'], [])) > 1 else ''} "
+                    f"{'/'.join(ruled.get(c['planet'], ['-']))}) by {c['aspect']} on day {c['day']:.1f}" for c in found['connections']]
+            exit_note = f"leaves {found['sign']} on day {found['exit_day']:.1f}" if found['exit_day'] is not None else f"stays in {found['sign']} within {h} days"
+            parts.append(f"{label} ({L}, {exit_note}): " + ('; '.join(hits) if hits else 'no perfection before leaving its sign'))
+        rows.append({'#': 15, 'Indicator': 'The connections of the lords of the houses with each other',
+                     'Reads': ' | '.join(parts), 'Source': 'II.1, 20; VI.6, 1-3'})
     # 16, 17
     rows.append({'#': 16, 'Indicator': "Each planet's shifting through the houses, bounds, bodies, rays, twelfth-parts and Lots during the year",
                  'Reads': 'NOT tracked: the year\'s transits are not followed', 'Source': 'II.1, 21; Books V, VI, VIII'})
@@ -9055,6 +10403,120 @@ def pn4_governor(year_lord, distributor, partner, distribution_note, fardar_lord
     }
     return rows, summary
 
+def pn4_governor_condition(governor, chart_data, sr):
+    """IX.9, 11-13, the governor's condition, as FACTS with the conclusion
+    quoted (order GAP-31). 11, "in its essence": "the three superior ones
+    were easternizing from the Sun, in their halb, not retrograde, and not
+    made unfortunate, and the inferior ones westernizing from him, in the
+    same condition as well, and they are in their halb" -- read in the root
+    and the revolution; "made unfortunate" is a judgment (II.4, 2 says what
+    it consists of) and is shown as not judged, the infortunes looking at
+    it listed as facts. 12, "in terms of its sign": "the sign harmonized
+    with it by nature, or it had testimony in it" -- the first half is not
+    read, the second is a dignity of its own at its degree. 13, "in terms of
+    the rotation of the circle (and that is if it was in a stake or in what
+    follows a stake) as well as in its sign": the place half is JUDGED BY
+    THE DIVISION (get_effective_house, Alcabitius, the five degrees at the
+    four axial degrees) in the revolution -- the owner's ruling of
+    2026-09-11 (evening), an ADOPTED DYNAMIC-FITNESS READING under the
+    canon (OWNER_RULING_PLACES_VS_DYNAMICS), not the text's own unit: the
+    text supplies the requirement (13, with 12's sign condition), the
+    canon its operational interpretation (strength/fitness language -> the
+    divisions), and Alcabitius with the axial allowance come from that
+    convention. Historical confidence in the exclusive division reading is
+    QUALIFIED: IX.5, 4 fn 106 (p. 602) glosses "rotation" as "either to
+    their being in the good or bad places, or to their dynamic angularity
+    (advancing or withdrawing), here and in 7, 11, and 14" -- both spatial
+    readings left open in the closest parallel (IX.5, 9, p. 603: fortunes
+    "in the stakes or what follows them" -> "might, power, rank,
+    reputation, class", the same triad as IX.9, 13). The work order's
+    "whole-sign place" was corrected by the ruling. halb: the diurnal
+    planets above the earth by day and below by night, the nocturnal the
+    reverse, Mercury by his phase -- by altitude where the horizon is
+    known, else by the ecliptic proxy (said in the row)."""
+    if not governor or governor not in PN4_SEVEN:
+        return []
+    superior = governor in ('Saturn', 'Jupiter', 'Mars')
+    rows = []
+
+    def facts(chart, label):
+        data = chart['planetary_data']
+        row = data.get(governor)
+        if not row:
+            return None
+        lon = row['longitude'] % 360.0
+        phase, side, _el = solar_phase(governor, lon, data['Sun']['longitude'], row.get('speed_in_lon'))
+        retro = row.get('speed_in_lon', 1.0) < 0
+        if chart.get('armc') is not None and chart.get('geo_lat') is not None and chart.get('obliquity') is not None:
+            above = _sin_altitude(lon, row.get('latitude', 0.0), row.get('distance', 1.0), chart['obliquity'], chart['armc'], chart['geo_lat']) > 0
+            how = 'by altitude'
+        else:
+            above = (lon - chart['ascendant']) % 360.0 > 180.0
+            how = 'by the ecliptic proxy'
+        day = chart['sect'] == 'Diurnal'
+        if governor == 'Mercury':
+            diurnal = side == 'eastern'
+        else:
+            diurnal = governor in DIURNAL_SECT_PLANETS
+        halb = (above if day else not above) if diurnal else (not above if day else above)
+        infortunes = [f"{p} by {a}" for p, a, _l, _d in _pn4_looks_at_sign(data, get_zodiac_sign(lon)) if p in INFORTUNES and p != governor]
+        return {'label': label, 'side': side or '-', 'retro': retro, 'halb': halb, 'how': how, 'infortunes': infortunes,
+                'sign': get_zodiac_sign(lon), 'lon': lon}
+
+    root, rev = facts(chart_data, 'root'), facts(sr, 'revolution')
+    if root is None or rev is None:
+        return []
+    want_side = 'eastern' if superior else 'western'
+    for f in (root, rev):
+        f['side_ok'] = f['side'] == want_side
+    essence_met = all(f['side_ok'] and f['halb'] and not f['retro'] for f in (root, rev))
+    rows.append({'Test': 'IX.9, 11: suitable in its essence',
+                 'Criteria': '; '.join(f"{f['label']}: {'eastern' if superior else 'western'} of the Sun {'met' if f['side_ok'] else 'not met'} ({f['side']}); "
+                                       f"in its halb {'met' if f['halb'] else 'not met'} ({f['how']}); not retrograde {'not met' if f['retro'] else 'met'}; "
+                                       f"not made unfortunate: NOT JUDGED (infortunes looking: {', '.join(f['infortunes']) or 'none'})" for f in (root, rev)),
+                 'Met': 'yes, on the judged criteria' if essence_met else 'no',
+                 'Conclusion (quoted)': '"it indicates strength in the soul, thought, cleverness, and excellence in judgment, and the goodness of [his] character"',
+                 'Source': 'IX.9, 11'})
+    own = []
+    for f in (root, rev):
+        r_ = get_essential_rulers(f['lon'])
+        dign = [k for k, v in (('house', r_['domicile']), ('exaltation', r_['exaltation']),
+                               ('triplicity', r_['triplicity_day'] if (chart_data['sect'] == 'Diurnal') else r_['triplicity_night']),
+                               ('bound', r_['term']), ('face', r_['face'])) if v == governor]
+        f['testimony'] = dign
+        own.append(bool(dign))
+    rows.append({'Test': 'IX.9, 12: suitable in terms of its sign',
+                 'Criteria': '; '.join(f"{f['label']}: in {f['sign']}, testimony in it {'met' if f['testimony'] else 'not met'} "
+                                       f"({', '.join(f['testimony']) or 'none of its dignities'}); harmonized by nature: NOT READ" for f in (root, rev)),
+                 'Met': 'yes, on the judged criteria' if all(own) else 'no',
+                 'Conclusion (quoted)': '"it indicates the strength of the body, and a suitable condition in it"', 'Source': 'IX.9, 12'})
+    div = get_effective_house(rev['lon'], sr['houses']) if sr.get('houses') else None
+    place_ok = div in PN4_STAKES_AND_SUCCEDENTS if div is not None else None
+    rows.append({'Test': 'IX.9, 13: suitable in terms of the rotation of the circle, and in its sign',
+                 'Criteria': (f"place half: in the revolution, division {div if div is not None else '-'} -- \"in a stake or in what "
+                              f"follows a stake\" {'met' if place_ok else ('not met' if place_ok is not None else 'not computed (no cusps)')}; "
+                              f"sign half: {'met' if own[1] else 'not met'} (12, in the revolution). "
+                              + PN4_IX_9_13_UNIT_STATEMENTS),
+                 'Met': ('yes' if (place_ok and own[1]) else 'no') if place_ok is not None else 'not computed',
+                 'Conclusion (quoted)': '"it indicates a suitability of condition in rank, power, and class"', 'Source': 'IX.9, 13'})
+    return rows
+
+PN4_STAKES_AND_SUCCEDENTS = (1, 4, 7, 10, 2, 5, 8, 11)
+# The three statements the owner's ruling of 2026-09-11 (evening) asks the
+# page to carry, separately, on IX.9, 13's place half.
+PN4_IX_9_13_UNIT_STATEMENTS = (
+    "(i) PN IV IX.9, 13 supplies the requirement itself: \"in a stake or in what follows a stake\", together with the "
+    "additional sign-condition requirement (\"as well as in its sign\", from 12). "
+    "(ii) The project canon (OWNER_RULING_PLACES_VS_DYNAMICS_2026-09-11) supplies its operational interpretation: "
+    "strength/fitness language -> the divisions. "
+    "(iii) Alcabitius and the axial 5-degree allowance come from that adopted convention, not from the text. "
+    "Historical confidence in the exclusive division reading is QUALIFIED: IX.5, 4 fn 106 (p. 602) glosses \"rotation\" as "
+    "\"either to their being in the good or bad places, or to their dynamic angularity (advancing or withdrawing), here and "
+    "in 7, 11, and 14\" -- both spatial readings expressly left open in the closest parallel, IX.5, 9 (p. 603: fortunes \"in "
+    "the stakes or what follows them\" -> \"might, power, rank, reputation, class\", the same triad as IX.9, 13); V.1, 28 fn "
+    "15 (\"the house which that sign occupies\") beside it."
+)
+
 def pn4_first_month_governor(natal_ascendant, natal_fortune, year_lon, sr_ascendant, sr_fortune):
     """IX.2, 4: the five conditions, one by one, and whether all hold."""
     year_sign = get_zodiac_sign(year_lon)
@@ -9076,9 +10538,38 @@ def pn4_first_month_governor(natal_ascendant, natal_fortune, year_lon, sr_ascend
     rows = [{'Condition': c, 'Holds': 'yes' if ok else 'no', 'Reads': reads, 'Source': cite}
             for c, ok, reads, cite in conditions]
     holds = all(ok for _c, ok, _r, _s in conditions)
-    verdict = (f"{year_sign} and its lord {SIGN_TO_DOMICILE.get(year_sign, '-')} govern the first month, and the "
-               f"year with it (fn 37)" if holds else
-               f"no governor: {sum(1 for _c, ok, _r, _s in conditions if not ok)} of the five conditions fail")
+    if holds:
+        verdict = (f"{year_sign} and its lord {SIGN_TO_DOMICILE.get(year_sign, '-')} govern the first month, and the "
+                   f"year with it (fn 37)")
+    else:
+        # IX.2, 5: "while if [only] the generality of the indications belonged
+        # to one of them, it will be primary for obtaining information about
+        # the year, while the remaining [ones] will have a partnership with it"
+        # -- the sign holding most of the five rooted indicators (order
+        # PN4R-4h-4). The Lot's terminal point is the Lot's sign turned the
+        # same number of signs as the Ascendant's.
+        offset = (SIGN_ORDER.index(year_sign) - SIGN_ORDER.index(asc_sign)) % 12
+        five = {'the terminal point from the Ascendant': year_sign,
+                'the terminal point from the Lot': SIGN_ORDER[(SIGN_ORDER.index(lot_sign) + offset) % 12],
+                "the revolution's Ascendant": get_zodiac_sign(sr_ascendant),
+                "the revolution's Lot of Fortune": get_zodiac_sign(sr_fortune),
+                'the first ninth-part of the sign of the year': pn4_first_ninth_part_lord(year_sign)['ninth_part_sign']}
+        tally = {}
+        for label, sign in five.items():
+            tally.setdefault(sign, []).append(label)
+        top = max(len(v) for v in tally.values())
+        leaders = [s for s, v in tally.items() if len(v) == top]
+        failed = sum(1 for _c, ok, _r, _s in conditions if not ok)
+        if len(leaders) == 1 and top >= 2:
+            primary = leaders[0]
+            partners = ', '.join(f"{s} ({', '.join(v)})" for s, v in tally.items() if s != primary)
+            verdict = (f"no governor: {failed} of the five conditions fail. Primary: {primary} ({top} of five: "
+                       f"{', '.join(tally[primary])}), partners: {partners} (IX.2, 5; fn 38: the month)")
+        else:
+            verdict = (f"no governor: {failed} of the five conditions fail. No primary: tied "
+                       f"({'; '.join(f'{s}: {len(v)}' for s, v in tally.items())}) (IX.2, 5)")
+        rows.append({'Condition': 'IX.2, 5: the sign holding most of the five rooted indicators is primary, the rest partners',
+                     'Holds': '-', 'Reads': '; '.join(f"{l}: {s}" for l, s in five.items()), 'Source': 'IX.2, 5; fn 38'})
     return rows, verdict
 
 # --- II.22, 1-4: the Moon's connections in her sign; the portions of the year
@@ -9411,12 +10902,19 @@ def pn4_bound_transit_sentence(type_number, entrant_nature, by_ray):
         return 38, ''
     if type_number == 7 and entrant_nature == 'infortune':
         return 54, ''
+    # 43's premise is 40's: "in that bound in the root is a powerful,
+    # corrupting infortune or its rays" -- which types 4, 5 and 6 have (an
+    # infortune distributing or partnering) and types 2 and 3 do not. An
+    # earlier version keyed 43 to 2, 3 and None (order PN4R-4m-1, 2026-09-11).
+    under_40 = "under III.2, 40-42's conditions -- a corrupting infortune in the bound, a weak fortune -- which are not judged here"
     if type_number == 6:
-        if not by_ray:
-            return None, 'III.2, 46-47 speak of a ray cast into the bound, not a body in it'
-        return (46 if entrant_nature == 'fortune' else 47), ''
-    if entrant_nature == 'fortune' and type_number in (2, 3, 5, None):
-        return 43, "under III.2, 40-42's conditions -- a corrupting infortune in the bound, a weak fortune -- which are not judged here"
+        if by_ray:
+            return (46 if entrant_nature == 'fortune' else 47), ''
+        if entrant_nature == 'fortune':
+            return 43, under_40
+        return None, 'III.2, 46-47 speak of a ray cast into the bound, not a body in it'
+    if entrant_nature == 'fortune' and type_number in (4, 5):
+        return 43, under_40
     return None, 'no sentence of III.2 pairs this entrant with this type'
 
 def pn4_bound_transits(chart_data, sr, current, year_lord):
@@ -9487,7 +10985,7 @@ def pn4_distribution_checklist(chart_data, sr, year_lon, current):
         if not row:
             return '-'
         motion = 'retrograde' if row.get('speed_in_lon', 1.0) < 0 else 'direct'
-        phase, side, _el = solar_phase(planet, row['longitude'], data['Sun']['longitude'])
+        phase, side, _el = solar_phase(planet, row['longitude'], data['Sun']['longitude'], row.get('speed_in_lon'))
         return f"{get_zodiac_sign(row['longitude'])}, {motion}, {side or '-'}{', ' + phase.lower() if phase else ''}"
 
     def in_bound(items):
@@ -9556,9 +11054,36 @@ def pn4_luminary_proxies(year_lord, chart_data, sr, moon=None, sun=None, release
     given, is {'distributor', 'sign', 'lord', 'note'} from the releaser's
     distribution (Sahl, On Nativities 1.15, 22), and fills the first
     proxy of each version; its 'note' explains an absence."""
-    if year_lord not in ('Sun', 'Moon'):
-        return None
     natal, rev = chart_data['planetary_data'], sr['planetary_data']
+    if year_lord not in ('Sun', 'Moon'):
+        # II.22, 23: "in all of the times you should look at the lord of the
+        # year, whether it was the Moon or not, connecting or empty in course,
+        # in whichever planet's house it is, in the revolution"; 25: "the
+        # indication of the lord of the year will be like that when[ever] it
+        # is in a house of one of the planets." One row, the house and its
+        # lord's condition in the revolution (order PN4R-4i-5; the function
+        # had returned None for every lord but the luminaries). The void
+        # stand-in of fn 319 (no perfection before leaving the sign) would
+        # need the revolution's moment and is not read here.
+        row = rev.get(year_lord)
+        if not row:
+            return None
+        sign = get_zodiac_sign(row['longitude'])
+        host = SIGN_TO_DOMICILE.get(sign, '-')
+
+        def condition(data, planet):
+            r = data.get(planet)
+            if not r:
+                return '-'
+            motion = 'retrograde' if r.get('speed_in_lon', 1.0) < 0 else 'direct'
+            phase, side, _el = solar_phase(planet, r['longitude'], data['Sun']['longitude'], r.get('speed_in_lon'))
+            return f"{get_zodiac_sign(r['longitude'])}, {motion}, {side or '-'}{', ' + phase.lower() if phase else ''}"
+
+        return [{'Proxy': '[II.22, 23] The house the lord of the year stands in, in the revolution',
+                 'Reads': (f"{year_lord} in {sign}, the house of {host}; {host}'s condition in the revolution: "
+                           f"{condition(rev, host)} -- 24-25 judge the year by that lord's condition (not pronounced here); "
+                           f"whether {year_lord} is connecting or empty in course is not read"),
+                 'Source': 'II.22, 23-25'}]
     r_dist = (releaser or {}).get('distributor')
     r_sign = (releaser or {}).get('sign')
     r_note = f"unavailable: {releaser['note']}" if releaser and releaser.get('note') else PN4_PROXY_RELEASER
@@ -9637,8 +11162,10 @@ def pn4_luminary_proxies(year_lord, chart_data, sr, moon=None, sun=None, release
 # four sentences are quoted with the cell left to the reader (owner's
 # decision 2026-09-10). The engine's own evaluators supply the facts --
 # essential and accidental dignity, solar phase, reception -- run on the
-# revolution's data as they run on the root's. Not read: twelfth-parts;
-# fn 37-41's classes of sign (helpful, hostile, matching in ascensions)
+# revolution's data as they run on the root's. Read since 2026-09-11 (orders
+# PN4R-4l-7 and GAP-34): the twelfth-parts, and fn 37-41's classes of sign
+# (VI.4's loving/hating/hostile by aspect; IX.2, 33's pairs) and of degree
+# (V.20). Earlier text here: not read; fn 37-41's classes of sign (helpful, hostile, matching in ascensions)
 # and of degree (bright, dark, smoky). The delineations II.4-II.21 are
 # not built. No worked example exists; Figure 55 is Dykes' table.
 
@@ -9691,6 +11218,31 @@ def _pn4_lots_in_sign(chart, sign):
             names.append(d['name'])
     return names
 
+def _pn4_sign_class_facts(from_lon, aspect, target_sign, ray_deg):
+    """II.3, 2's classes of sign and of degree, as facts (order GAP-34):
+    fn 37 -> Gr. Intr. VI.4, 4-6, the aspect's kind (sextile and trine
+    loving, square hating, opposition hostile); fn 38 -> IX.2, 33, the two
+    signs matching in ascensions, in daylight, or in one belt (one domicile
+    lord); fn 39, 41 -> Gr. Intr. V.20, the body's and the ray's degree
+    class (bright, dusky, empty, dark) -- the editor's "probably"."""
+    kind = {'sextile': 'loving', 'trine': 'loving', 'square': 'hating', 'opposition': 'hostile'}.get(aspect, aspect)
+    a_sign = get_zodiac_sign(from_lon)
+    pair = frozenset({a_sign, target_sign})
+    matches = []
+    if pair in EQUAL_ASCENSION_PAIRS:
+        matches.append('matching in ascensions')
+    if pair in EQUAL_DAYLIGHT_PAIRS:
+        matches.append('matching in daylight')
+    if SIGN_TO_DOMICILE.get(a_sign) == SIGN_TO_DOMICILE.get(target_sign):
+        matches.append('one belt')
+    return (f"{kind} (VI.4, 4-6); {', '.join(matches) if matches else 'no match'} (IX.2, 33); body in a "
+            f"{_brightness_category(from_lon)} degree, the ray in a {_brightness_category(ray_deg)} degree (V.20, 'probably')")
+
+def _pn4_twelfth_parts_in_sign(data, sign):
+    """The planets whose twelfth-part (Gr. Intr. V.18, 3, Figure 57) falls in
+    the sign, as the II.3, 2 examination asks."""
+    return ', '.join(p for p in PN4_SEVEN if p in data and get_zodiac_sign(pn4_twelfth_part(data[p]['longitude'])) == sign) or 'none'
+
 def pn4_ii3_examination(chart_data, sr, year, jd_sr):
     """II.3, 2-19 as facts. Returns {root_rows, revolution_rows, lord_rows,
     refinement_rows, figure_55}."""
@@ -9714,13 +11266,14 @@ def pn4_ii3_examination(chart_data, sr, year, jd_sr):
          'Source': 'II.3, 2'},
         {'Question': '[3] Which planets, Lots and twelfth-parts are in it in the root',
          'Reads': f"planets: {_pn4_natal_planets_in_sign(natal, sign)}; Lots: "
-                  f"{', '.join(_pn4_lots_in_sign(chart_data, sign)) or 'none'}; twelfth-parts not computed",
-         'Source': 'II.3, 2; VI.4'},
+                  f"{', '.join(_pn4_lots_in_sign(chart_data, sign)) or 'none'}; twelfth-parts of: {_pn4_twelfth_parts_in_sign(natal, sign)}",
+         'Source': 'II.3, 2; VI.4; Gr. Intr. V.18, 3 (Figure 57)'},
         {'Question': '[4-7] Who looks at it or casts rays at it, from which sign and degree, and to what bound and face',
          'Reads': ('; '.join(f"{_pn4_tag(p)} by {a} from {get_degree_string(lon)}, the ray at {get_degree_string(deg)} "
-                             f"(bound of {pn4_bound_lord(deg)}, face of {get_essential_rulers(deg)['face']})"
+                             f"(bound of {pn4_bound_lord(deg)}, face of {get_essential_rulers(deg)['face']}) -- "
+                             f"{_pn4_sign_class_facts(lon, a, sign, deg)}"
                              for p, a, lon, deg in rays) or 'none'),
-         'Source': 'II.3, 2; fn 37-41 (the classes of sign and degree are not read)'},
+         'Source': 'II.3, 2; fn 37 (Gr. Intr. VI.4, 4-6); fn 38 (IX.2, 33); fn 39, 41 (Gr. Intr. V.20, "probably")'},
         {'Question': '[8] Whether it falls away from the view of the planets and their rays',
          'Reads': 'yes: devoid of them' if not looks else 'no', 'Source': 'II.3, 2'},
     ]
@@ -9730,16 +11283,19 @@ def pn4_ii3_examination(chart_data, sr, year, jd_sr):
     r_in = [p for p, a, _l, _d in r_looks if a == 'in it']
     r_rays = [(p, a, lon, deg) for p, a, lon, deg in r_looks if a != 'in it']
     ess_n, ess_r = evaluate_essential_dignities(natal, chart_data['sect']), evaluate_essential_dignities(rev, sr['sect'])
-    acc_n = evaluate_accidental_dignities(natal, chart_data['houses'], chart_data['sect'], chart_data.get('julian_day'))
-    acc_r = evaluate_accidental_dignities(rev, sr['houses'], sr['sect'], jd_sr)
+    acc_n = evaluate_accidental_dignities(natal, chart_data['houses'], chart_data['sect'], chart_data.get('julian_day'),
+                                          armc=chart_data.get('armc'), obliquity=chart_data.get('obliquity'), geo_lat=chart_data.get('geo_lat'))
+    acc_r = evaluate_accidental_dignities(rev, sr['houses'], sr['sect'], jd_sr,
+                                          armc=sr.get('armc'), obliquity=sr.get('obliquity'), geo_lat=sr.get('geo_lat'))
 
     def labels(planet, ess, acc):
         return ', '.join((ess.get(planet, {}).get('Essential Labels') or []) + (acc.get(planet, {}).get('Accidental Labels') or [])) or 'none'
 
     involved = [p for p, _a, _l, _d in r_looks]
     revolution_rows = [
-        {'Question': '[1] Which revolution planets are in it (twelfth-parts not computed)',
-         'Reads': ', '.join(_pn4_tag(p) for p in r_in) or 'none', 'Source': 'II.3, 3; VI.3'},
+        {'Question': '[1] Which revolution planets are in it, and whose twelfth-parts',
+         'Reads': (', '.join(_pn4_tag(p) for p in r_in) or 'none') + f"; twelfth-parts of: {_pn4_twelfth_parts_in_sign(rev, sign)}",
+         'Source': 'II.3, 3; VI.3; Gr. Intr. V.18, 3 (Figure 57)'},
         {'Question': '[2, 4, 5] Who looks at it, and from what direction',
          'Reads': '; '.join(f"{_pn4_tag(p)} by {a} from {get_degree_string(lon)}" for p, a, lon, _d in r_rays) or 'none',
          'Source': 'II.3, 3'},
@@ -9760,7 +11316,7 @@ def pn4_ii3_examination(chart_data, sr, year, jd_sr):
         if not row:
             return {}
         e, a = ess.get(lord, {}), acc.get(lord, {})
-        phase, side, _el = solar_phase(lord, row['longitude'], data['Sun']['longitude'])
+        phase, side, _el = solar_phase(lord, row['longitude'], data['Sun']['longitude'], row.get('speed_in_lon'))
         claim = [k for k in ('Domicile', 'Exalt', 'Triplicity', 'Term', 'Face') if e.get(k)]
         infortunes = [f"{p} by {asp}" for p, asp, _l, _d in _pn4_looks_at_sign(data, get_zodiac_sign(row['longitude']))
                       if p in INFORTUNES and p != lord]
@@ -9838,32 +11394,177 @@ def pn4_ii3_examination(chart_data, sr, year, jd_sr):
 # the revolution's Ascendant (fn 33: Dykes drew it that way for clarity;
 # I.6, 2's quadrant cusps are listed as points of their own), ordered by
 # degree within the house. The twelfth-part construction -- 2.5 degrees
-# to a sign, beginning with the sign itself -- is not stated in any text
-# in hand and is supplied from convention, as _twelfth_part_sign already
-# says for the Moon's fifth corruption; it is used here on the same
-# terms. The fixed stars of I.6, 7 are not computed. The Lots are the
+# to a sign, beginning with the sign itself -- is Gr. Intr. V.18, 1-3's
+# (Figure 57), as _twelfth_part_sign says. The fixed stars of I.6, 7 are
+# pn4_fixed_stars_in_image (Sahl's list, On Nativities 2.2; the Swiss
+# Ephemeris catalogue; since 2026-09-11, order PN4R-4n-7). The Lots are the
 # engine's, "many or few" (I.6, 8). Decided by the owner 2026-09-10.
 
 def pn4_twelfth_part(lon):
     """The twelfth-part of a degree, as a longitude: each 2.5 degrees of a
     sign maps to one whole sign in order, beginning with the sign itself,
     and the position inside the 2.5 is spread over that sign's 30.
-    The sign agrees with _twelfth_part_sign (the engine's existing
-    construction); the degree is the same convention carried through."""
+    Gr. Intr. V.18, 3's own calculation (the degree and minute from the
+    sign's beginning times 12, cast out from that sign's beginning); the
+    sign agrees with _twelfth_part_sign."""
     lon %= 360.0
     sign_idx, within = int(lon // 30), lon % 30.0
     step = int(within // 2.5)
     return (((sign_idx + step) % 12) * 30.0 + (within - step * 2.5) * 12.0) % 360.0
 
-def pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat):
-    """I.6, 3-8: every point of the image, as rows, and the count."""
+# --- The fixed stars: I.6, 7 and III.8, 9 (order PN4R-4n-7, 2026-09-11) --------
+# I.6, 7: "if ... in the root of the nativity, one of the fixed stars was in
+# the very degree of the Ascendant, or in the very degree of the stake of the
+# Midheaven, or with one of the luminaries, or with one of the seven planets
+# which are in the stakes, then write it down in them." III.8, 9: "if in the
+# revolution of the year one of the fixed stars indicative of good fortune
+# was in the Ascendant of the year, or in the degree of the tenth from it, or
+# in the degree of the terminal point, or in the degree of the distribution,
+# or with their lords, or with one of the luminaries, it indicates good
+# fortune in that year." WHICH stars: PN IV names none; the list is Sahl's,
+# On Nativities 2.2 (al-Andarzaghar's chapter on the greatest good fortune),
+# where Dykes's table at the chapter's end identifies each star Sahl names
+# (his identifications, with Rhetorius Ch. 58's natures); the two stars of
+# that table Sahl does not carry (Deneb Adige, Arcturus) are left out; the two
+# he carries under ANOTHER nature (Alphecca as Jupiter-Mercury, fn 73;
+# Menkalinan with Jupiter-Mars, fn 75 -- not "doubtful", as an earlier label
+# said) are kept with Rhetorius's nature and Sahl's named. Positions: the Swiss Ephemeris star catalogue (sefstars.txt),
+# SHIPPED with the app as ephe/sefstars.txt (AGPL-3.0, see ephe/README.md)
+# and found first there; without any catalogue the table says so and
+# computes nothing. Readings, the engine's: "the very degree" and
+# "with" are both read as within one degree of longitude; "the stakes" for
+# I.6, 7's planets are the whole-sign places 1, 4, 7, 10; latitude is ignored.
+SAHL_FIXED_STARS = (
+    ('Spica', 'Venus-Mercury'), ('Vega', 'Venus-Mercury'), ('Fomalhaut', 'Venus-Mercury'),
+    ('Alphecca', 'Venus-Mercury (Sahl, following al-Andarzaghar, classifies it as Jupiter-Mercury, fn 73)'),
+    ('Regulus', 'Jupiter-Mars'), ('Altair', 'Jupiter-Mars'), ('Antares', 'Jupiter-Mars (fn 74)'), ('Sirius', 'Jupiter-Mars'),
+    ('Rigel', 'Jupiter-Saturn'), ('Alnilam', 'Jupiter-Saturn'), ('Menkalinan', 'Jupiter-Saturn (Sahl, following al-Andarzaghar, classifies it with Jupiter-Mars, fn 75)'),
+    ('Rukbat', 'Jupiter-Saturn'), ('Algol', 'Jupiter-Saturn'), ('Capella', 'Jupiter-Saturn'),
+    ('Pollux', 'Mars'), ('Zuben Eschamali', 'Jupiter-Venus'), ('Castor', 'Jupiter-Venus'),
+    ('Bellatrix', 'Mars-Venus'), ('Procyon', 'Mars-Venus'), ('Betelgeuse', 'Mars-Venus'), ('Alpheratz', 'Mars-Venus'),
+    ('Scheat', 'Mars-Venus'), ('Toliman', 'Venus-Jupiter'), ('Acamar', 'Venus-Jupiter'),
+    ('Denebola', 'Saturn-Venus'), ('Zosma', 'Saturn-Venus'), ('Alphard', 'Saturn-Venus'), ('Aldebaran', 'Mars-Venus'),
+)
+FIXED_STAR_ORB = 1.0
+_FIXED_STAR_STATE = {'checked': False, 'ready': False, 'where': None}
+
+def _fixed_star_catalogue_ready():
+    """Find a Swiss Ephemeris star catalogue and point the ephemeris at a
+    private directory holding only a link to it, so the planets (Moshier,
+    no planetary files) are untouched. Looked for, in this order: the
+    catalogue SHIPPED with the app (`ephe/sefstars.txt` beside app.py, the
+    same directory `atlas.db` is read from; owner's decision 2026-09-11,
+    the app is to be portable), then $SE_EPHE_PATH, the engine's own data
+    directory, and any package in this interpreter's site-packages that
+    ships one. The private link is re-pointed at whichever was found."""
+    if _FIXED_STAR_STATE['checked']:
+        return _FIXED_STAR_STATE['ready']
+    _FIXED_STAR_STATE['checked'] = True
+    import glob, sys
+    candidates = [str(Path(__file__).parent / 'ephe' / 'sefstars.txt')]
+    if os.environ.get('SE_EPHE_PATH'):
+        candidates.append(os.path.join(os.environ['SE_EPHE_PATH'], 'sefstars.txt'))
+    try:
+        candidates.append(str(_user_data_dir() / 'ephe' / 'sefstars.txt'))
+    except Exception:
+        pass
+    for base in sys.path:
+        if base and base.endswith('site-packages'):
+            candidates += glob.glob(os.path.join(base, '*', 'sweph', 'sefstars.txt')) + glob.glob(os.path.join(base, '*', 'sefstars.txt'))
+    source = next((c for c in candidates if c and os.path.isfile(c)), None)
+    if source is None:
+        return False
+    try:
+        private = _user_data_dir() / 'ephe_stars'
+        private.mkdir(parents=True, exist_ok=True)
+        link = private / 'sefstars.txt'
+        if link.exists() or link.is_symlink():      # an older link may point elsewhere
+            link.unlink()
+        try:
+            link.symlink_to(source)
+        except OSError:
+            import shutil
+            shutil.copyfile(source, link)
+        swe.set_ephe_path(str(private))
+        swe.fixstar2_ut('Spica', 2451545.0, swe.FLG_SWIEPH)
+        _FIXED_STAR_STATE.update(ready=True, where=source)
+        return True
+    except Exception:
+        return False
+
+def fixed_star_longitudes(jd):
+    """{name: longitude} for Sahl's stars at jd, or None without a catalogue."""
+    if not _fixed_star_catalogue_ready():
+        return None
+    out = {}
+    for name, _nature in SAHL_FIXED_STARS:
+        try:
+            out[name] = swe.fixstar2_ut(name, jd, swe.FLG_SWIEPH)[0][0] % 360.0
+        except Exception:
+            continue
+    return out
+
+def _star_hits(stars, places, orb=FIXED_STAR_ORB):
+    """Rows of (star, place, distance) for every star within orb of a place."""
+    rows = []
+    for name, nature in SAHL_FIXED_STARS:
+        if name not in stars:
+            continue
+        for label, lon in places:
+            d = abs(((stars[name] - lon + 180.0) % 360.0) - 180.0)
+            if d <= orb:
+                rows.append({'Star': name, 'Longitude': get_degree_string(stars[name]), 'Nature (Rhetorius, per Dykes)': nature,
+                             'Place': label, 'Distance': f"{d:.2f} deg"})
+    return rows
+
+def pn4_fixed_stars_in_image(chart_data, jd):
+    """I.6, 7's four natal places. Returns {'rows', 'refused'}."""
+    stars = fixed_star_longitudes(jd)
+    if stars is None:
+        return {'rows': [], 'refused': 'no Swiss Ephemeris star catalogue (sefstars.txt) is available to this interpreter; nothing is computed'}
+    p = chart_data['planetary_data']
+    asc = chart_data['ascendant']
+    places = [('the very degree of the Ascendant', asc), ('the very degree of the Midheaven', chart_data['mc']),
+              ('with the Sun', p['Sun']['longitude']), ('with the Moon', p['Moon']['longitude'])]
+    for planet in ('Saturn', 'Jupiter', 'Mars', 'Venus', 'Mercury'):
+        if planet in p and get_wsh_house(p[planet]['longitude'], asc) in (1, 4, 7, 10):
+            places.append((f"with {planet}, in a stake (whole-sign place {get_wsh_house(p[planet]['longitude'], asc)})", p[planet]['longitude']))
+    return {'rows': _star_hits(stars, places), 'refused': None, 'source_dir': _FIXED_STAR_STATE['where']}
+
+def pn4_fixed_stars_in_revolution(sr, jd_sr, year_lon, endpoint_lon):
+    """III.8, 9's places in the revolution. Returns {'rows', 'refused'}."""
+    stars = fixed_star_longitudes(jd_sr)
+    if stars is None:
+        return {'rows': [], 'refused': 'no star catalogue available'}
+    rev = sr['planetary_data']
+    places = [('the Ascendant of the year', sr['ascendant']), ('the degree of the tenth from it', sr['mc']),
+              ('the degree of the terminal point', year_lon)]
+    if endpoint_lon is not None:
+        places.append(('the degree of the distribution', endpoint_lon))
+    for label, lon in list(places):
+        lord = SIGN_TO_DOMICILE.get(get_zodiac_sign(lon))
+        if lord in rev:
+            places.append((f"with {lord}, lord of {label.replace('the ', '', 1)}", rev[lord]['longitude']))
+    places += [('with the Sun of the revolution', rev['Sun']['longitude']), ('with the Moon of the revolution', rev['Moon']['longitude'])]
+    return {'rows': _star_hits(stars, places), 'refused': None}
+
+def pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat, elapsed=None):
+    """I.6, 3-8: every point of the image, as rows, and the count. `elapsed`
+    is the elapsed years the distribution's endpoint is read at (I.6, 6);
+    the integer `age` when not given."""
     natal, rev = chart_data['planetary_data'], sr['planetary_data']
     r_asc = sr['ascendant']
     rows = []
 
     def add(chart, kind, point, lon, cite):
         lon %= 360.0
-        rows.append({'lon': lon, 'House': get_wsh_house(lon, r_asc), 'Chart': chart, 'Kind': kind, 'Point': point,
+        # I.6, 2: the image's houses are "calculat[ed] ... by their degrees
+        # and minutes, in the way that you calculate the houses by the
+        # portions of hours and the ascensions of the right circle" -- the
+        # revolution's cusps (the Alcabitius set this engine computes), not
+        # whole signs; fn 33's whole-sign Figure 51 was Dykes's simplification
+        # "for clarity". Filed by whole sign until 2026-09-11 (order PN4R-4n-5).
+        rows.append({'lon': lon, 'House': get_house_number(lon, sr['houses']), 'Chart': chart, 'Kind': kind, 'Point': point,
                      'Position': get_degree_string(lon), 'Bound': pn4_bound_lord(lon), 'Source': cite})
 
     counts = {'planets': 0, 'rays': 0, 'nodes': 0, 'twelfth-parts of houses': 0, 'twelfth-parts of planets': 0, 'Lots': 0}
@@ -9897,7 +11598,7 @@ def pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat):
     add('root', 'point', 'Ascendant of the root', chart_data['ascendant'], 'I.6, 5')
     add('root', 'point', 'Terminal point of the year', year['longitude'], 'I.6, 5')
     if current:
-        endpoint = _pn4_seg_degree({'from': float(age)}, chart_data['ascendant'], chart_data, lat)
+        endpoint = _pn4_seg_degree({'from': float(age if elapsed is None else elapsed)}, chart_data['ascendant'], chart_data, lat)
         add('root', 'time lord', 'Endpoint of the distribution (the degree reached now)', endpoint, 'I.6, 6; fn 34')
         for name, planet in (('the distributor', current['distributor']), ('the partner in the management', current['partner'])):
             if planet and planet in natal:
@@ -9908,7 +11609,9 @@ def pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat):
                 add('root', 'time lord', f"{planet}, {name}", natal[planet]['longitude'], 'I.6, 6')
     if orb and orb in natal:
         add('root', 'time lord', f"{orb}, lord of the orb", natal[orb]['longitude'], 'I.6, 6')
-    rows.sort(key=lambda r: (r['House'], r['lon']))
+    # by degree within the house, counted FROM ITS CUSP: a quadrant house
+    # can straddle 0 Aries, where raw longitude would put its last degrees first.
+    rows.sort(key=lambda r: (r['House'], (r['lon'] - sr['houses'][r['House'] - 1]) % 360.0))
     for r in rows:
         del r['lon']
     counts['total of I.6, 8'] = counts['planets'] + counts['rays'] + counts['nodes'] + counts['twelfth-parts of houses'] + counts['twelfth-parts of planets']
@@ -10026,7 +11729,8 @@ def pn4_i7_planets(chart_data, sr):
     natal = chart_data['planetary_data']
     for label, chart in (('root', chart_data), ('revolution', sr)):
         data, asc, sect = chart['planetary_data'], chart['ascendant'], chart['sect']
-        acc = evaluate_accidental_dignities(data, chart['houses'], sect, chart.get('julian_day'))
+        acc = evaluate_accidental_dignities(data, chart['houses'], sect, chart.get('julian_day'),
+                                            armc=chart.get('armc'), obliquity=chart.get('obliquity'), geo_lat=chart.get('geo_lat'))
         pairs = _pairwise_configurations(data)
         try:
             receptions = evaluate_reception(data, sect)
@@ -10038,7 +11742,7 @@ def pn4_i7_planets(chart_data, sr):
             row = data[planet]
             lon = row['longitude']
             a = acc.get(planet, {})
-            phase, side, _el = solar_phase(planet, lon, data['Sun']['longitude'])
+            phase, side, _el = solar_phase(planet, lon, data['Sun']['longitude'], data.get(planet, {}).get('speed_in_lon'))
             my_idx = int(lon // 30)
             assembled, looks, averse = [], [], []
             for other in PN4_SEVEN:
@@ -10210,7 +11914,10 @@ def pn4_ix7_month_days(days_since_month, starts):
     """Method 8, IX.7, 34-39, for each of the seven starts (name, lon):
     way [1] a day per degree; way [2] a day per twelve degrees, 2 1/2 days
     to a sign, five hours to a sign within that."""
-    d = days_since_month
+    # IX.7, 39: past the thirtieth day "in the management of the days and
+    # hours it will return to the position which it began from" -- both
+    # ways wrap at 30 (order PN4R-4p-8; way [1] had run on into day 31).
+    d = days_since_month % 30.0
     rows = []
     for name, lon in starts:
         way1 = (lon + d) % 360.0
@@ -10221,7 +11928,7 @@ def pn4_ix7_month_days(days_since_month, starts):
         rows.append({'Start': name, 'Position': get_degree_string(lon),
                      'Way 1: a day per degree, now at': f"{get_degree_string(way1)} (bound of {pn4_bound_lord(way1)})",
                      'Way 2: the day\'s sign': way2_sign, 'Way 2: this hour\'s sign': way2_hour,
-                     'Source': 'IX.7, 35-38'})
+                     'Source': 'IX.7, 35-39'})
     return rows
 
 def pn4_ix7_ninth_parts(days_since_revolution, start_sign, start_offset_days=0.0):
@@ -10329,7 +12036,13 @@ def pn4_fardar_at_age(age_years, sect):
             sub_lord, sub_from, sub_to = None, None, None
             if subs:
                 each = years / 7.0
-                k = min(int(offset // each), 6)
+                # The sub-period is found against the SAME boundaries it
+                # reports (start + k*each), not by offset // each: the
+                # floating quotient of a returned sub_to fed back in came
+                # out a hair under the next integer and named the expired
+                # sub-period again (Astra F12). Half-open, like the main
+                # periods: a sub-period does not own its own end.
+                k = next((j for j in range(7) if within < start + (j + 1) * each), 6)
                 sub_lord = subs[k][0]
                 sub_from, sub_to = start + k * each, start + (k + 1) * each
             return {
@@ -10605,18 +12318,42 @@ def pn4_monthly_indicators(month, completed_years, sign_of_year_lon, natal_fortu
 # one in turn is stronger in indication than the one which is after it".
 # The first four are implemented; the rest are delineation material.
 #
-# This ordering resolves corpus disagreement #1 BY SCOPE, not by
-# combination. Within a single year the lord of the year outranks the
-# distributor (II.1, 25; II.23, 1). Across several years the distribution
-# is stronger, because "the indication of the lord of the terminal point
-# is only over the condition of THAT YEAR: but as for the lord of the
-# distribution, sometimes its indication ... is for SEVERAL YEARS", and
-# the year's indicators are then read "as witnesses" to it (III.2, 2-3).
-# The two statements are indexed to different scopes and do not conflict.
+# PN IV's own order is applied on the PN IV page and RANKS BY SCOPE. Within
+# a single year the lord of the year outranks the distributor (II.1, 25;
+# II.23, 1). Across several years the distribution is stronger, because
+# "the indication of the lord of the terminal point is only over the
+# condition of THAT YEAR: but as for the lord of the distribution,
+# sometimes its indication ... is for SEVERAL YEARS", and the year's
+# indicators are then read "as witnesses" to it (III.2, 2-3).
+#
+# This does not RESOLVE corpus disagreement #1 (an earlier comment said it
+# did, "by scope"): Sahl's two consecutive chapters rank the pair in
+# opposite orders AS PRINTED -- 1.23, 33 "the lord of the distribution is
+# like a tender [of sheep], and the lord of the year like a hireling"
+# (the distributor over the lord of the year) against 1.24, 2 "turning is
+# the foundation of the work of the stars ... and it is stronger <than>
+# the distributor of time" (the turning over the distributor); Dykes fn
+# 245 emends the second ("stronger when combined with the distributor"),
+# not adopted. Each of PN IV's two scoped rankings agrees with one Sahl
+# sentence: II.1, 25 with 1.24, 2 within the year, III.2, 2-3 with 1.23,
+# 33 across years. Both Sahl sentences are shown side by side on the page
+# (PN4_YEAR_INDICATOR_SCOPE_NOTE; order GAP-3, 2026-09-11).
 #
 # Dykes' Introduction Sect. 3 (p. 21, point 3) states the opposite --
 # distributions "tend to be more powerful than profections" -- and cites no
 # Abu Ma'shar sentence for it. II.1, 25 governs here, not Intro Sect. 3.
+PN4_YEAR_INDICATOR_SCOPE_NOTE = (
+    "The order above is PN IV's, which ranks the lord of the year and the distributor BY SCOPE: within the year the "
+    "lord of the year is the stronger (II.1, 25; II.23, 1), across several years the distribution (III.2, 2-3). "
+    "Sahl's two consecutive chapters rank them in opposite orders as printed -- On Nativities 1.23, 33: \"the lord "
+    "of the distribution is like a tender [of sheep], and the lord of the year like a hireling; so if the tender "
+    "committed himself to his sheep in a powerful way, the hireling would have not power over harming the sheep\" "
+    "(the distributor over the lord of the year); 1.24, 2: \"turning is the foundation of the work of the stars and "
+    "[their] appointed time, and it is stronger <than> the distributor of time\" (the turning over the distributor). "
+    "Dykes fn 245 emends the second (\"stronger when combined with the distributor\"), not adopted here. PN IV's "
+    "within-the-year ranking agrees with 1.24, 2 and its across-years ranking with 1.23, 33; the disagreement stands "
+    "recorded, not resolved."
+)
 PN4_YEAR_INDICATOR_ORDER = (
     'The sign of the terminal point, and its lord',
     'The distribution and the distributor',
@@ -10628,17 +12365,14 @@ PN4_YEAR_INDICATOR_ORDER = (
 
 # --- Assembling the page -------------------------------------------------
 
-PN4_GREGORIAN_REFORM_JD = 2299160.5
-
 def pn4_datetime_from_jd(jd):
-    """A UTC datetime from a Julian Day, in the calendar this file uses for
-    that epoch, so that feeding it back to calculate_traditional_chart --
-    which picks its own flag from the y/m/d digits -- round-trips."""
-    cal = swe.GREG_CAL if jd >= PN4_GREGORIAN_REFORM_JD else swe.JUL_CAL
-    y, m, d, hour = swe.revjul(jd, cal)
-    total = int(round(hour * 3600.0))
-    total = min(total, 24 * 3600 - 1)
-    return datetime(int(y), int(m), int(d), total // 3600, (total % 3600) // 60, total % 60)
+    """The UT civil moment of a Julian Day, as a CivilMoment (not a datetime,
+    which cannot hold a Julian-only day such as 1300-02-29): the calendar
+    is the one this file uses for that epoch, so feeding it back to
+    calculate_traditional_chart -- which reads the digits by the same
+    policy -- round-trips. The name is kept for its callers; it formats
+    with the same %Y-%m-%d %H:%M:%S directives a datetime does."""
+    return CivilMoment.from_jd(jd)
 
 def pn4_completed_years(birth_date, target_date):
     """Age in COMPLETED CIVIL ANNIVERSARIES -- the count II.3, 1 asks for
@@ -10655,10 +12389,9 @@ def pn4_birthday(birth_date, age):
     falls on 1 March in a common year, which is the first day the count
     of II.3, 1 turns."""
     year = birth_date.year + int(age)
-    try:
-        return birth_date.replace(year=year)
-    except ValueError:
-        return birth_date.replace(year=year, month=3, day=1)
+    if civil_is_valid(year, birth_date.month, birth_date.day):
+        return CivilDate(year, birth_date.month, birth_date.day)
+    return CivilDate(year, 3, 1)
 
 def pn4_ordinal(n):
     """1st, 2nd, 3rd, 4th ... 11th, 12th, 13th, 21st, 42nd."""
@@ -10674,12 +12407,13 @@ TIME_STANDARD_OPTIONS = ("LMT (Local Mean Time)", "Standard time (pytz)", "Manua
 TARGET_MODE_OPTIONS = ("Date", "Age")
 
 def parse_iso_date(text):
-    """A date from 'YYYY-MM-DD', or None. Years 1-9999; the calendar the
-    digits belong to is decided by calculate_traditional_chart."""
-    try:
-        return datetime.strptime(str(text).strip(), "%Y-%m-%d").date()
-    except (ValueError, TypeError):
+    """A CivilDate from 'YYYY-MM-DD', or None. Years 1-9999; the digits are
+    validated in the calendar civil_calendar() assigns them, so 1300-02-29
+    (a Julian leap day) is a date and 1900-02-29 is not."""
+    m = re.fullmatch(r"\s*(\d{1,4})-(\d{1,2})-(\d{1,2})\s*", str(text))
+    if not m or not civil_is_valid(*m.groups()):
         return None
+    return CivilDate(*m.groups())
 
 def parse_lat_lon(text):
     """'45.37, -84.95' typed into the place box, as (lat, lon), or None if
@@ -10749,32 +12483,61 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
     the natal hour lord the lord of the orb (VI.1) starts from."""
     natal_sun = chart_data['planetary_data']['Sun']['longitude']
     ascendant = chart_data['ascendant']
+    jd_target = civil_to_jd(target_date.year, target_date.month, target_date.day, 12.0)
+
+    # THREE COUNTS OF THE YEAR, kept apart (Astra F02/F03):
+    #  age     -- completed CIVIL anniversaries, II.3, 1's count for the
+    #             profection ("for every year the native has completed"),
+    #             the lord of the orb (VI.1, by year) and the age labels;
+    #  cycle   -- completed SOLAR RETURNS, I.2, 1-3's year ("when he came
+    #             back to his position ... a solar year will have been
+    #             concluded"): the revolution, its months and its day
+    #             clocks belong to the return that CONTAINS the target,
+    #             return_n <= target < return_(n+1). Seeded from the civil
+    #             age and then bracketed by the actual returns, so a target
+    #             a few hours before this year's return is in the preceding
+    #             cycle's twelfth month, not in a revolution still to come;
+    #  elapsed -- ELAPSED years on the 365.2425-day mean year, the Fig. 22
+    #             mapping this file already uses for the Date column: the
+    #             fardar's sevenths (IV.1, 5-6; 11: "1 year, 5 months, 4
+    #             days, and approximately 6 hours") and the distributions
+    #             (III.1, 13: 5' a month, 1' six days) change at fractional
+    #             boundaries, and Figure 22 changes a distributor mid-year.
+    #             Feeding them the integer age froze every change until the
+    #             next birthday.
     age = pn4_completed_years(birth_date, target_date)
+    elapsed = (jd_target - chart_data['julian_day']) / PN4_DIRECTION_YEAR_DAYS
 
     # I.2, 1-4: the revolution of the year, cast for the birth location.
-    jd_sr = pn4_solar_revolution_jd(chart_data['julian_day'], natal_sun, age)
-    sr = calculate_traditional_chart(pn4_datetime_from_jd(jd_sr), lat, lon)
+    cycle = age
+    jd_sr = pn4_solar_revolution_jd(chart_data['julian_day'], natal_sun, cycle)
+    while cycle > 0 and jd_sr > jd_target:
+        cycle -= 1
+        jd_sr = pn4_solar_revolution_jd(chart_data['julian_day'], natal_sun, cycle)
+    jd_sr_next = pn4_solar_revolution_jd(chart_data['julian_day'], natal_sun, cycle + 1)
+    while jd_sr_next <= jd_target:
+        cycle += 1
+        jd_sr, jd_sr_next = jd_sr_next, pn4_solar_revolution_jd(chart_data['julian_day'], natal_sun, cycle + 1)
+    sr = calculate_traditional_chart_jd(jd_sr, lat, lon)
 
     # IX.1, 9-10: the sign of the year is also month 1, and the months run
     # from the revolution dates, not the calendar (Intro Sect. 9 p. 90).
     # Which month the target date falls in: the last monthly revolution at
     # or before it.
-    jd_target = swe.julday(target_date.year, target_date.month, target_date.day, 12.0,
-                           swe.GREG_CAL if (target_date.year, target_date.month, target_date.day) >= (1582, 10, 15) else swe.JUL_CAL)
     month, jd_mr = 1, jd_sr
     for m in range(1, 13):
         jd_m = pn4_monthly_revolution_jd(jd_sr, natal_sun, m)
         if jd_m <= jd_target:
             month, jd_mr = m, jd_m
-    mr = calculate_traditional_chart(pn4_datetime_from_jd(jd_mr), lat, lon)
+    mr = calculate_traditional_chart_jd(jd_mr, lat, lon)
 
     year = pn4_sign_of_the_year(ascendant, age)
     ninth = pn4_first_ninth_part_lord(year['sign'])
-    fardar = pn4_fardar_at_age(age, chart_data['sect'])
+    fardar = pn4_fardar_at_age(elapsed, chart_data['sect'])
     ages = pn4_age_of_man(age)
     segments = pn4_distribution_from_ascendant(
         chart_data['planetary_data'], ascendant, chart_data['obliquity'], lat)
-    current = pn4_distribution_at_age(segments, float(age)) if segments else None
+    current = pn4_distribution_at_age(segments, elapsed) if segments else None
 
     # III.1, 12: the meridian, by right ascension -- the Midheaven and the
     # fourth, each from its own degree. Never refuses (see the function).
@@ -10784,10 +12547,16 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         segs = pn4_distribution_from_meridian(
             chart_data['planetary_data'], chart_data['mc'], chart_data['obliquity'], point)
         meridian[point] = {'degree': start_lon, 'segments': segs,
-                           'current': pn4_distribution_at_age(segs, float(age))}
+                           'current': pn4_distribution_at_age(segs, elapsed)}
 
     # --- The revolution of the year (I.2, 1-4; I.7, 2) ---
     revolution_rows = [
+        {'Item': 'Count of the year',
+         'Value': (f"{age} completed civil years (the profection's count); {cycle} solar returns completed "
+                   f"(the revolution's cycle); {elapsed:.3f} years elapsed at 365.2425 days a year (the Figure 22 "
+                   f"mapping, which the fardar and the distributions run on)"
+                   + (" -- the civil birthday and the Sun's return fall either side of this date" if age != cycle else '')),
+         'Source': 'II.3, 1; I.2, 1-3; IV.1, 5-6 and 11; III.1, 13'},
         {'Item': 'Moment of the revolution (UTC)', 'Value': f"{pn4_datetime_from_jd(jd_sr):%Y-%m-%d %H:%M:%S}",
          'Source': 'I.2, 1: the Sun returns to his rooted position'},
         {'Item': 'Ascendant of the year', 'Value': get_degree_string(sr['ascendant']),
@@ -10811,8 +12580,12 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
          'Active point': f"{year['sign']} ({get_degree_string(year['longitude'])})",
          'Ruler': year['lord'], 'Source': 'II.3, 1; I.2, 5'},
         {'#': 2, 'Indicator': PN4_YEAR_INDICATOR_ORDER[1],
+         # I.6, 6 with fn 34: "the very degree which the distribution had
+         # reached" -- the direction's degree AT the target, not the bound's
+         # opening degree (Astra F11); the opening stands in the
+         # distribution table's "Opened by".
          'Active point': ('refused above the polar circle' if segments is None
-                          else (f"{get_degree_string(_pn4_seg_degree(current, ascendant, chart_data, lat))}"
+                          else (f"{get_degree_string(_pn4_seg_degree({'from': elapsed}, ascendant, chart_data, lat))}"
                                 if current else
                                 f"age {age} is past the {PN4_DISTRIBUTION_SPAN_YEARS:g}-year table")),
          'Ruler': (current or {}).get('distributor', '-') if segments is not None else '-',
@@ -10824,8 +12597,8 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
                    if segments is not None and current else '-'),
          'Source': 'III.1, 15-16, 23-25'},
         {'#': 4, 'Indicator': PN4_YEAR_INDICATOR_ORDER[3],
-         'Active point': (f"age {age}: cycle {fardar['cycle']}, year "
-                          f"{age % PN4_FARDAR_CYCLE_YEARS:g} of 75" if fardar else '-'),
+         'Active point': (f"{elapsed:.2f} years elapsed: cycle {fardar['cycle']}, year "
+                          f"{elapsed % PN4_FARDAR_CYCLE_YEARS:.2f} of 75" if fardar else '-'),
          'Ruler': (f"{fardar['lord']}" + (f" / {fardar['sub_lord']}" if fardar['sub_lord'] else " (no sub-period)")) if fardar else '-',
          'Source': 'IV.1, 2-8; II.1, 9'},
     ]
@@ -10854,7 +12627,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
             'Sub-periods': ', '.join(s[0] for s in subs) if subs
                            else 'none -- "they do not have houses" (IV.1, 8)',
             'Active': 'yes' if fardar and fardar['lord'] == lord and fardar['cycle'] >= 1
-                      and start <= (age % PN4_FARDAR_CYCLE_YEARS) < start + years else '',
+                      and start <= (elapsed % PN4_FARDAR_CYCLE_YEARS) < start + years else '',
         })
         start += years
 
@@ -10881,9 +12654,6 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         })
         start += years
 
-    # --- III.7, 32-42: when each natal indication comes out ---
-    activation_rows = pn4_activation_ages(
-        chart_data['planetary_data'], chart_data['obliquity'], lat, segments)
 
     # --- the distributions, as forward tables (III.1, 11-16) ---
     distribution_rows = _pn4_distribution_rows(segments, current, origin_jd=chart_data['julian_day'])
@@ -10898,7 +12668,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
 
     # --- II.22, 1-4: the Moon's connections in her sign, and the portions ---
     moon = pn4_moon_connections(sr['planetary_data'], jd_sr)
-    year_days = pn4_solar_revolution_jd(chart_data['julian_day'], natal_sun, age + 1) - jd_sr
+    year_days = jd_sr_next - jd_sr
     portions = pn4_moon_portions(moon['connections'], year_days)
 
     # --- SAHL: the releaser (On Nativities 1.15-1.16, 1.20), its distribution
@@ -10909,7 +12679,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
                              syzygies['fullness']['longitude'])
     releaser_segments = sahl_releaser_distribution(chart_data['planetary_data'], releaser['longitude'],
                                                    chart_data['obliquity'], lat)
-    releaser_current = pn4_distribution_at_age(releaser_segments, float(age)) if releaser_segments else None
+    releaser_current = pn4_distribution_at_age(releaser_segments, elapsed) if releaser_segments else None
     releaser_rows = _pn4_distribution_rows(releaser_segments, releaser_current, origin_jd=chart_data['julian_day'])
     if releaser['longitude'] is None:
         releaser_note = 'no releaser by On Nativities 1.15 (the releaser section)'
@@ -10925,6 +12695,48 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         releaser_stand = {'distributor': releaser_current['distributor'], 'partner': releaser_current['partner'],
                           'sign': get_zodiac_sign(_deg), 'lord': SIGN_TO_DOMICILE.get(get_zodiac_sign(_deg), '-'),
                           'degree': _deg, 'note': None}
+    # FINAL-A7: in the empty case the Moon is directed after the Ascendant
+    # (1.32, 11-13), by the same operation as the house-master's.
+    standin_moon = (sahl_house_master_direction(chart_data['planetary_data'], 'Moon', chart_data['obliquity'], lat,
+                                                origin_jd=chart_data['julian_day'])
+                    if releaser['releaser'] is None else None)
+    # --- III.1, 12: "the Ascendant and the things in it ... what is in the
+    # Midheaven or the fourth" -- a planet ON an axial degree directed as
+    # that degree is (orders GAP-37 / PN4R-4b-4; the owner's ruling (e) of
+    # 2026-09-11, evening: the degree itself, PN4_AXIS_TOLERANCE, no orb; the
+    # division and the carry-over play no part). Every other planet is
+    # listed with PN4_SEMIARCS_UNAVAILABLE -- a computational gap, not a
+    # prohibition (III.1, 5) -- and is NOT directed by RA or OA instead.
+    angle_planets = []
+    for planet in PN4_SEVEN:
+        if planet not in chart_data['planetary_data']:
+            continue
+        p_lon = chart_data['planetary_data'][planet]['longitude']
+        axis = pn4_axis_of(p_lon, ascendant, chart_data['mc'])
+        if axis == 'Ascendant':
+            segs = pn4_distribution_from_ascendant(chart_data['planetary_data'], p_lon, chart_data['obliquity'], lat)
+            where, how = 'the Ascendant', 'oblique ascension of the birth latitude'
+        elif axis in ('Midheaven', 'Fourth (IC)'):
+            where = 'the Midheaven' if axis == 'Midheaven' else 'the fourth'
+            segs = pn4_distribution_from_meridian(chart_data['planetary_data'], chart_data['mc'], chart_data['obliquity'],
+                                                  start_lon=p_lon, label=f"{planet} in {where}")
+            how = 'right ascension'
+        else:
+            angle_planets.append({'planet': planet, 'axis': None, 'where': 'not on an axial degree',
+                                  'how': PN4_SEMIARCS_UNAVAILABLE, 'segments': None, 'current': None, 'rows': []})
+            continue
+        angle_planets.append({'planet': planet, 'axis': axis, 'where': where, 'how': how, 'segments': segs,
+                              'current': pn4_distribution_at_age(segs, elapsed) if segs else None,
+                              'rows': _pn4_distribution_rows(segs, pn4_distribution_at_age(segs, elapsed) if segs else None,
+                                                             origin_jd=chart_data['julian_day'])})
+
+    # --- III.7, 32-42: when each natal indication comes out -- confirmed (42)
+    # against every distribution on the page (order PN4R-4a-2) ---
+    activation_rows = pn4_activation_ages(
+        chart_data['planetary_data'], chart_data['obliquity'], lat, ascendant_lon=ascendant,
+        distributions={"the Ascendant's distribution": segments,
+                       **{f"the {point}'s distribution": m['segments'] for point, m in meridian.items()},
+                       "the releaser's distribution": releaser_segments})
     house_master = releaser['house_master']
     hm_direction = sahl_house_master_direction(chart_data['planetary_data'], house_master, chart_data['obliquity'],
                                                lat, origin_jd=chart_data['julian_day']) if house_master else None
@@ -10942,6 +12754,15 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
     mighty_days_current = pn4_distribution_at_age(mighty_days, day_of_year)
     mighty_days_rows = _pn4_distribution_rows(mighty_days, mighty_days_current, unit='days', origin_jd=jd_sr)
 
+    # IX.9, 1-10 once; the condition rows (11-13) read its primary.
+    governor = pn4_governor(
+        year['lord'], (current or {}).get('distributor'), (current or {}).get('partner'),
+        ('refused above the polar circle' if segments is None
+         else f"age {age} is past the {PN4_DISTRIBUTION_SPAN_YEARS:g}-year table"),
+        (fardar or {}).get('lord'), orb, sr['ascendant'],
+        pn4_moon_testimony(moon), moon['void'],
+        (releaser_stand or {}).get('distributor'), (releaser_stand or {}).get('partner'), releaser_note)
+
     return {
         'activation_rows': activation_rows,
         'distribution_rows': distribution_rows,
@@ -10953,26 +12774,62 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'orb': orb, 'orb_rows': orb_rows, 'natal_hour_lord': natal_hour_lord,
         'hour_approximate': hour_approximate,
         'turning_rows': pn4_turning_rows(chart_data, age),
-        'further_rows': pn4_further_indicators(chart_data, sr, year['longitude'], moon),
-        'governor': pn4_governor(
-            year['lord'], (current or {}).get('distributor'), (current or {}).get('partner'),
-            ('refused above the polar circle' if segments is None
-             else f"age {age} is past the {PN4_DISTRIBUTION_SPAN_YEARS:g}-year table"),
-            (fardar or {}).get('lord'), orb, sr['ascendant'],
-            pn4_moon_testimony(moon), moon['void'],
-            (releaser_stand or {}).get('distributor'), (releaser_stand or {}).get('partner'), releaser_note),
+        'turning_triplicity_rows': pn4_turning_triplicity_lords(chart_data, sr),
+        'further_rows': pn4_further_indicators(chart_data, sr, year['longitude'], moon, jd_sr=jd_sr),
+        'governor': governor,
         'moon': moon, 'moon_portions': portions, 'year_days': year_days,
         'proxies': proxies, 'sun_handover': sun,
         'syzygies': syzygies, 'releaser': releaser, 'releaser_segments': releaser_segments,
         'releaser_current': releaser_current, 'releaser_rows': releaser_rows, 'releaser_note': releaser_note,
         'releaser_stand': releaser_stand, 'house_master': house_master, 'hm_direction': hm_direction,
         'hm_this_year': hm_this_year, 'hm_revolution': hm_revolution, 'hm_flags': hm_flags,
+        'standin_moon': standin_moon,
+        'angle_planets': angle_planets,
+        'fixed_stars': pn4_fixed_stars_in_image(chart_data, chart_data['julian_day']),
+        'fixed_stars_revolution': pn4_fixed_stars_in_revolution(
+            sr, jd_sr, year['longitude'],
+            (_pn4_seg_degree({'from': elapsed}, ascendant, chart_data, lat) if (segments and current) else None)),
+        'short_life': sahl_short_life_testimonies(chart_data, chart_data['lot_of_fortune']),
+        # DIS-10: the father's Lot (4.20, 31-36): the harmers, and 32's two directions
+        'father_lot': (lambda lot: (None if lot is None else {
+            'lot': lot,
+            'harmers': sahl_father_lot_harmers(chart_data['sect'], chart_data['planetary_data'], lot,
+                                               chart_data['planetary_data']['Sun']['longitude']),
+            'second': 'Sun' if chart_data['sect'] == 'Diurnal' else 'Saturn',
+            'from_lot': sahl_house_master_direction(
+                chart_data['planetary_data'], None, chart_data['obliquity'], lat, origin_jd=chart_data['julian_day'],
+                start_lon=lot, sun_target=False,
+                target_planets=(('Mars', 'Saturn', 'Mercury') if chart_data['sect'] == 'Diurnal' else ('Mars', 'Mercury'))),
+            'from_second': sahl_house_master_direction(
+                chart_data['planetary_data'], 'Sun' if chart_data['sect'] == 'Diurnal' else 'Saturn', chart_data['obliquity'], lat,
+                origin_jd=chart_data['julian_day'], sun_target=False,
+                target_planets=(('Mars', 'Saturn', 'Mercury') if chart_data['sect'] == 'Diurnal' else ('Mars', 'Mercury'))),
+        }))(lot_by_id('father', chart_data['planetary_data'], ascendant, chart_data['houses'], chart_data['sect'])),
+        # REL-5-7: 1.23, 13-14 -- when a 1.23, 12 flag fires, the lord of the Ascendant, then the Ascendant's degree
+        'hm_redirect': (lambda lord: ({
+            'lord': lord,
+            'lord_direction': sahl_house_master_direction(chart_data['planetary_data'], lord, chart_data['obliquity'], lat,
+                                                          origin_jd=chart_data['julian_day']) if lord in chart_data['planetary_data'] else None,
+            'ascendant_direction': sahl_house_master_direction(chart_data['planetary_data'], None, chart_data['obliquity'], lat,
+                                                               origin_jd=chart_data['julian_day'], start_lon=ascendant),
+            'aggravators': [p for p in SAHL_INFORTUNES if p in chart_data['planetary_data'] and (
+                SIGN_TO_DOMICILE.get(get_zodiac_sign(chart_data['planetary_data'][lord]['longitude'])) == p
+                or SIGN_TO_DOMICILE.get(SIGN_ORDER[(SIGN_ORDER.index(get_zodiac_sign(ascendant)) + 7) % 12]) == p)]
+            if lord in chart_data['planetary_data'] else [],
+        }) if any('1.23, 12' in f for f in hm_flags) else None)(SIGN_TO_DOMICILE.get(get_zodiac_sign(ascendant))),
+        'turning_partner': sahl_turning_reaches_partner(segments, age, ascendant, chart_data['planetary_data']),
+        'governor_condition': pn4_governor_condition((governor[1]['primary'] or [None])[0], chart_data, sr),
+        'hm_turning': sahl_house_master_turning(house_master, chart_data['planetary_data']) if house_master else [],
+        # FINAL-A1 / sheet row 1: the house-master's years from 1.20, 7-34, by the division.
+        'hm_years': (sahl_house_master_years(house_master, chart_data['planetary_data'], chart_data['houses'], chart_data['sect'],
+                                             evaluate_essential_dignities(chart_data['planetary_data'], chart_data['sect']))
+                     if house_master else None),
         'ii3': pn4_ii3_examination(chart_data, sr, year, jd_sr),
         'iii2_type': pn4_static_type(current['distributor'], current['partner']) if current else None,
         'iii2_checklist': pn4_distribution_checklist(chart_data, sr, year['longitude'], current),
         'iii2_transitions': pn4_year_transitions(segments, age),
         'bound_transits': pn4_bound_transits(chart_data, sr, current, year['lord']) if current else None,
-        'image': pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat),
+        'image': pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat, elapsed=elapsed),
         'i7_ascendant': pn4_i7_ascendant(chart_data, sr),
         'i7_planets': pn4_i7_planets(chart_data, sr),
         'day_methods': pn4_day_methods(
@@ -10987,7 +12844,8 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
                           'From day': f"{p['from_day']:.1f}", 'To day': f"{p['to_day']:.1f}"} for p in portions],
         'first_month_governor': pn4_first_month_governor(
             ascendant, chart_data['lot_of_fortune'], year['longitude'], sr['ascendant'], sr['lot_of_fortune']),
-        'age': age, 'month': month, 'jd_sr': jd_sr, 'jd_mr': jd_mr,
+        'age': age, 'cycle': cycle, 'elapsed_years': elapsed,
+        'month': month, 'jd_sr': jd_sr, 'jd_sr_next': jd_sr_next, 'jd_mr': jd_mr, 'jd_target': jd_target,
         'sr': sr, 'mr': mr, 'year': year, 'ninth': ninth, 'fardar': fardar,
         'segments': segments, 'current': current, 'ages': ages,
         'revolution_rows': revolution_rows, 'year_rows': year_rows,
@@ -11005,7 +12863,8 @@ def calculate_time_lords(ascendant_lon, birth_date, target_date):
     # year length. Profection turns on the birthday: dividing by 365.2425
     # let the sign advance up to a day early or late around it, and drifts
     # further the older the native is.
-    days_alive = (target_date - birth_date).days
+    days_alive = (civil_to_jd(target_date.year, target_date.month, target_date.day)
+                  - civil_to_jd(birth_date.year, birth_date.month, birth_date.day))
     integer_age = target_date.year - birth_date.year
     if (target_date.month, target_date.day) < (birth_date.month, birth_date.day):
         integer_age -= 1
@@ -11214,7 +13073,7 @@ date_string = st.sidebar.text_input(
          "are typed with their leading zeros (0787-08-10).")
 _parsed = parse_iso_date(date_string)
 if _parsed is None:
-    input_date = st.session_state.get("_date_last_good", datetime(1240, 5, 23).date())
+    input_date = st.session_state.get("_date_last_good", CivilDate(1240, 5, 23))
     st.sidebar.error(f"Date must be YYYY-MM-DD, e.g. 1240-05-23. Showing {input_date:%Y-%m-%d}.")
 else:
     input_date = _parsed
@@ -11322,7 +13181,7 @@ location_box = st.sidebar.empty()
 # bundle below is computed before the page runs. "Age 42" is the 42nd
 # birthday; a date shows its completed years beside it on the page. Saved
 # with the chart.
-_today = datetime.now().date()
+_today = CivilDate.of(datetime.now().date())
 target_mode = _reading("target_mode", "_target_mode", TARGET_MODE_OPTIONS[0])
 _date_target = parse_iso_date(_reading("target_date", "_target_date", _today.isoformat())) or _today
 if target_mode == TARGET_MODE_OPTIONS[1]:
@@ -11361,7 +13220,6 @@ if st.sidebar.button("\U0001F4BE Save this chart"):
         st.sidebar.warning("Enter a name before saving.")
 
 CONNECTION_PROFILE = _reading("connection_rule", "_connection_rule", "Sahl")
-FIVE_DEGREE_ALL_CUSPS = _reading("five_degree_all_cusps", "_five_degree_all_cusps", False)
 EASTERN_RULE = _reading("eastern_rule", "_eastern_rule", EASTERN_RULE_OPTIONS[0])
 MOON_RAYS_ORB = 15.0 if _reading("moon_rays_15", "_moon_rays_15", False) else 12.0
 MARS_WEST_RAYS_18 = bool(_reading("mars_west_18", "_mars_west_18", False))
@@ -11383,7 +13241,6 @@ READING_DEPTH = _reading("reading_depth", "_reading_depth", READING_DEPTH_OPTION
 # and its reset. (label, widget key, store key, default, page it is set on)
 READINGS_REGISTRY = (
     ("Connection test used in the shared tables", "connection_rule", "_connection_rule", "Sahl", "Configurations"),
-    ("Five-degree carryover at all twelve cusps", "five_degree_all_cusps", "_five_degree_all_cusps", False, "Configurations"),
     ("VII.6, 27/45 eastern/western relative to the Sun", "eastern_rule", "_eastern_rule", EASTERN_RULE_OPTIONS[0], "Configurations"),
     ("Fitting infortune (Choices Ch. 1, 12)", "fitting_infortune", "_fitting_infortune", False, "Configurations"),
     ("Moon under the rays to 15 degrees", "moon_rays_15", "_moon_rays_15", False, "Chart"),
@@ -11414,14 +13271,20 @@ def _readings_note():
 
 
 if location_query and lat is not None and lon is not None:
-    local_dt = datetime.combine(input_date, input_time)
+    # The local moment as digits in the policy's calendar (a CivilMoment,
+    # not a datetime: 1300-02-29 is a date here). The UT moment is a Julian
+    # Day, jd_ut, and the offset is subtracted on it -- see the calendar
+    # note above calculate_traditional_chart (Astra F01).
+    local_dt = CivilMoment(input_date.year, input_date.month, input_date.day,
+                           input_time.hour, input_time.minute, input_time.second)
     tz_name = None
     zone_note = ""
 
     if time_standard == TIME_STANDARD_OPTIONS[0]:
         # 15 degrees of longitude = 1 hour of time. East is +, West is -.
         offset_hours = lon / 15.0
-        dt_utc = local_dt - timedelta(hours=offset_hours)
+        jd_ut = civil_local_to_jd_ut(local_dt.year, local_dt.month, local_dt.day, local_dt.hour_decimal(), offset_hours)
+        dt_utc = pn4_datetime_from_jd(jd_ut)
         tz_name = "LMT"
         offset_str = (
             f"{'+' if offset_hours >= 0 else '-'}"
@@ -11432,7 +13295,8 @@ if location_query and lat is not None and lon is not None:
                                f"UT {dt_utc:%Y-%m-%d %H:%M:%S} · {_cal_note}")
     elif time_standard == TIME_STANDARD_OPTIONS[2]:
         utc_offset_hours = float(utc_offset_manual or 0.0)
-        dt_utc = local_dt - timedelta(hours=utc_offset_hours)
+        jd_ut = civil_local_to_jd_ut(local_dt.year, local_dt.month, local_dt.day, local_dt.hour_decimal(), utc_offset_hours)
+        dt_utc = pn4_datetime_from_jd(jd_ut)
         _tot = int(round(abs(utc_offset_hours) * 3600))
         tz_name = f"UTC{'+' if utc_offset_hours >= 0 else '-'}{_tot // 3600:02d}:{(_tot % 3600) // 60:02d}"
         time_standard_box.info(f"**Manual offset** {tz_name}  \n"
@@ -11442,13 +13306,25 @@ if location_query and lat is not None and lon is not None:
         tz_name = tf.timezone_at(lng=lon, lat=lat)
         if tz_name:
             local_tz = pytz.timezone(tz_name)
+            # A named zone needs a datetime, which is proleptic Gregorian: a
+            # Julian-only day (1300-02-29) has no place in it, and no zone
+            # kept standard time then anyway.
+            try:
+                _local_py = datetime(local_dt.year, local_dt.month, local_dt.day,
+                                     local_dt.hour, local_dt.minute, local_dt.second)
+            except ValueError:
+                time_standard_box.error(
+                    f"**{local_dt:%Y-%m-%d}** is a Julian-calendar date that no standard-time zone can "
+                    "place. Choose LMT or a manual offset."
+                )
+                st.stop()
             # is_dst=None makes pytz RAISE on the two clock times a named
             # zone cannot resolve on its own: the hour that occurs twice at
             # a DST fall-back, and the hour that never occurs at spring
             # forward. Without it pytz silently picks one, which moves the
             # chart by an hour with no indication that a choice was made.
             try:
-                localized_dt = local_tz.localize(local_dt, is_dst=None)
+                localized_dt = local_tz.localize(_local_py, is_dst=None)
             except pytz.exceptions.AmbiguousTimeError:
                 time_standard_box.error(
                     f"**{local_dt:%Y-%m-%d %H:%M}** happens twice in {tz_name} "
@@ -11463,11 +13339,12 @@ if location_query and lat is not None and lon is not None:
                     "Check the recorded time."
                 )
                 st.stop()
-            dt_utc = localized_dt.astimezone(pytz.utc)
             # This is the OFFSET, not the UTC clock time -- an earlier
             # version printed dt_utc's own time under the label "UTC offset".
             _off = localized_dt.utcoffset()
             utc_offset_hours = _off.total_seconds() / 3600.0
+            jd_ut = civil_local_to_jd_ut(local_dt.year, local_dt.month, local_dt.day, local_dt.hour_decimal(), utc_offset_hours)
+            dt_utc = pn4_datetime_from_jd(jd_ut)
             _sign = '+' if utc_offset_hours >= 0 else '-'
             _tot = int(abs(_off.total_seconds()))
             time_standard_box.info(
@@ -11478,14 +13355,15 @@ if location_query and lat is not None and lon is not None:
     location_box.success(f"**{escape(str(location_query))}**  \n{lat:.4f}, {lon:.4f}{zone_note}")
 
     if tz_name:
-        chart_data = calculate_traditional_chart(dt_utc, lat, lon)
+        chart_data = calculate_traditional_chart_jd(jd_ut, lat, lon)
         p_data = chart_data['planetary_data']
         sect = chart_data['sect']
         # D-13: named here, before any evaluator runs, since they read it.
         SOFTENED_INFORTUNE = fitting_infortune(chart_data['ascendant']) if FITTING_INFORTUNE else None
 
         essential = evaluate_essential_dignities(p_data, sect)
-        accidental = evaluate_accidental_dignities(p_data, chart_data['houses'], sect, chart_data['julian_day'])
+        accidental = evaluate_accidental_dignities(p_data, chart_data['houses'], sect, chart_data['julian_day'],
+                                                   armc=chart_data['armc'], obliquity=chart_data['obliquity'], geo_lat=lat)
         aspects = evaluate_ptolemaic_aspects(p_data)
         transfers = evaluate_transfers_of_light(p_data)
         collections = evaluate_collections_of_light(p_data)
@@ -11504,6 +13382,9 @@ if location_query and lat is not None and lon is not None:
         non_reception_data = evaluate_non_reception(p_data, sect)
         strength_data = evaluate_strength_of_planets(p_data, essential, accidental, chart_data['ascendant'], sect, chart_data['houses'])
         weakness_data = evaluate_weakness_of_planets(p_data, essential, accidental, chart_data['ascendant'], sect)
+        ascensional_bands = evaluate_ascensional_bands(p_data, chart_data['ascendant'], chart_data['mc'], chart_data['obliquity'], lat, sect)
+        right_sidedness = evaluate_right_sidedness(p_data, sect)
+        honor_guard = evaluate_honor_guard(p_data, chart_data['ascendant'])
         _moon = evaluate_corruption_of_the_moon(p_data, chart_data['ascendant'], sect)
         # Count is "how many of Sahl's ten testimonies", never the number of
         # clauses that matched: 104 and 109 can each be met by several
@@ -11527,7 +13408,10 @@ if location_query and lat is not None and lon is not None:
             + [{'Condition': 'Escape', **row} for row in escape_data]
         )
         syzygy = calculate_prenatal_syzygy(chart_data['julian_day'], lat, lon, chart_data['houses'])
-        chronocrats = calculate_chronocrats(chart_data['julian_day'], lat, lon, local_dt, utc_offset_hours)
+        syzygy_governor = sahl_syzygy_governor(syzygy, p_data, chart_data['houses'], sect)
+        # The cached function takes the local HOUR (an int Streamlit can
+        # hash), not the CivilMoment; it reads nothing else of it.
+        chronocrats = calculate_chronocrats(chart_data['julian_day'], lat, lon, local_dt.hour, utc_offset_hours)
         classical_lots = calculate_classical_lots(chart_data['ascendant'], p_data['Sun']['longitude'], p_data['Moon']['longitude'], sect)
         topical_lots = calculate_topical_lots(p_data, chart_data['ascendant'], chart_data['houses'], sect)
         special_degrees = evaluate_special_degrees(p_data)
@@ -11796,8 +13680,10 @@ if location_query and lat is not None and lon is not None:
                                        "and 72-73 give 12. Affects: the Solar phase column here, and on the Configurations "
                                        "page Weakness (93), Planetary Condition and Corruption of the Moon. Full text on the Sources page.")
                 _reading_checkbox("Mars under the rays to 18° west", "mars_west_18", "_mars_west_18",
-                                  help="Sahl's table (On Nativities 1.22; fn. 175) has Mars westernize at 18 degrees; "
-                                       "Gr. Intr. VII.2, 30-31 puts him under the rays at 15 on the western side. Both "
+                                  help="Dykes's table for Sahl (the chapter head of On Nativities 1.22, with fn 175, which "
+                                       "reads VII.2, 30's westernizing boundary into 18 degrees) has Mars under the rays "
+                                       "at 18 west; Sahl's own sentences are silent on Mars west. Gr. Intr. VII.2, 31 puts "
+                                       "him under the rays at 15 on the western side. Both "
                                        "give 18 east. Affects: the Solar phase column here and every test that reads it "
                                        "(Weakness 93, Planetary Condition 27/34/45). Decision D-15.")
             # True planets only — angles, nodes, and Lot of Fortune
@@ -11816,7 +13702,7 @@ if location_query and lat is not None and lon is not None:
                     continue
                 lon_p = d['longitude']
                 q = get_effective_house(lon_p, chart_data['houses'])
-                phase, side, elong = solar_phase(p, lon_p, p_data['Sun']['longitude'])
+                phase, side, elong = solar_phase(p, lon_p, p_data['Sun']['longitude'], p_data[p].get('speed_in_lon'))
                 acc_p = accidental[p]
                 ws_place = get_wsh_house(lon_p, chart_data['ascendant'])
                 pos_list.append({
@@ -12103,10 +13989,6 @@ if location_query and lat is not None and lon is not None:
             def sahl_strength():
                 with st.container(border=True):
                     st.markdown("**Strength and weakness** — Ch.3, 77-112")
-                    _reading_checkbox("Five-degree carryover at all twelve cusps", "five_degree_all_cusps", "_five_degree_all_cusps",
-                                      help="Sahl states the rule for the stakes twice (Aphorism #44, 88; On Nativities 1.22, 9) "
-                                           "and once for every house (On Nativities 1.18, 19). Off = stakes only. "
-                                           "Affects: Strength of the Planets, testimony 83. Full text on the Sources page.")
                     _tick_grid(_gap, 'Strength of the Planets', 'Sahl, The Introduction Ch.3, 78-88', strength_data,
                                'Strength Testimonies', STRENGTH_COLUMNS,
                                glance="The eleven testimonies of a planet's strength at the time of judgment (Sahl, The Introduction Ch.3, 78-88), one column per testimony; the answer key under the grid spells each one out in words.",
@@ -12115,6 +13997,56 @@ if location_query and lat is not None and lon is not None:
                                'Weakness Testimonies', WEAKNESS_COLUMNS,
                                glance="The ten testimonies of a planet's weakness at the time of judgment (Sahl, The Introduction Ch.3, 91-100), one column per testimony; the answer key under the grid spells each one out in words.",
                                notes="The ten (91-100): falling and averse to the Ascendant (the 6th or 12th), retrograde, under the rays, connecting with an infortune by assembly, square or opposition, enclosed between both infortunes, in its own fall, connecting with a falling planet or separating from a would-be receiver, alien (no house, exaltation or triplicity where it sits), with the Node and no latitude, or inverted (in detriment). Distinct from the Abu Ma'shar-based Planetary Condition table in his view, which scores a broader, later scheme.")
+                    _ab = ascensional_bands
+                    _finding(_gap, "The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the engine's generalisation",
+                             "Sahl, On Nativities 2.13, 48-51 (fn 189: Carmen I.28, 1-6); Fifty Aphorisms #45, 90-92 with fn 57, as printed and not applied",
+                             _ab['rows'] or [{'Refused': _ab['refused']}],
+                             glance=("2.13, 48: \"if the first lord of the triplicity of the glowing one is in a stake or what follows it, "
+                                     "and that is the 15 degrees which follows it, by degrees of ascensions ... it indicates praise and good "
+                                     "fortune (and what is less [than that] in degrees is preferable)\"; 49 the second 15, \"below the "
+                                     "first\"; 50 the third, \"the middle of assets\"; 51 \"what is after that in degrees, up to the next "
+                                     "stake, is of the nativities of the poor\". Stated for ONE planet, the sect light's first triplicity "
+                                     "lord (fn 190), and applied to it in the last column"
+                                     + (f" -- here {_ab['first_lord']}: {_ab['judged']['judgment']}" if _ab['judged'] else '') + "."),
+                             notes=("ENGINE ANGULAR-PROXIMITY GRADE, GENERALISED FROM SAHL, ON NATIVITIES 2.13, 48-51: the per-planet column "
+                                    "applies 2.13's distances to every planet, which no text does -- an ordinal preference, no score; "
+                                    "Aphorism #45 with fn 57 is credited for the universal-band analogy and Carmen I.28 for \"the more that it "
+                                    "is closer to the degree of the stake, the more elevated\". APHORISM 45 AS PRINTED: \"every planet which "
+                                    "is [distant] from the stake in what follows it, by 15 degrees, is in the situation of one who is in the "
+                                    "stake; and if it increases [beyond that], then it does not have strength\" (90-92; the example 10 to 25 "
+                                    "Aries). Dykes, fn 57: \"misstated here\" -- the source (Carmen I.28, 1-7; 2.13, 48-51 \"repeated "
+                                    "correctly\") measures ascensions. Shown as printed in its own column, not applied; a different rule from "
+                                    "2.13 (every planet, angular strength, one band) and not harmonised with it (FINAL-A4, owner 2026-09-11; "
+                                    "the 2026-09-07 policy to implement the editor's correction of the aphorism is retired). CONVENTIONS, "
+                                    "the engine's: the stake a planet FOLLOWS (zodiacally behind it: 2.13 \"what follows it\", Introduction "
+                                    "2, 33 \"rising up to them\"); oblique ascension at the horizon (the setting degree by the oblique "
+                                    "descension) and right ascension at the meridian, a split Carmen's single rising instruction does not "
+                                    "state; the ecliptic degree, latitude ignored; bands end-inclusive at 15, 30 and 45, truncated by the "
+                                    "next actual stake; the five-degree allowance (Aphorism #44) lies on the other side of the stake and is "
+                                    "not inherited. Refused where the ascension has no inverse (D-23). The printed Carmen I.28, 3-6 "
+                                    "(p. 108) has the same four parts band for band; Sahl says \"the first lord\", Carmen \"the lord\"."))
+                    _finding(_gap, 'Right-sidedness, "the spear-bearing of the planets" (Sahl, On Nativities 2.5, 1-3) -- display only',
+                             'Sahl, On Nativities 2.5, 1-3; owner, 2026-09-11 (DEC-D-18): a finding table, no score', right_sidedness,
+                             glance=("2.5, 2: a pair in square or sextile, both in their exaltations or houses (or one in each, or one of "
+                                     "them in one of its shares), each casting rays upon the other -- \"a strong right-sidedness\"; 3: "
+                                     "not in their houses or exaltations but both of one sect -- \"also called right-sidedness (though it "
+                                     "is below [the first version])\"; 1: especially the diurnal planets by day and the nocturnal by night."),
+                             notes=("Readings, the engine's: \"casting rays upon its companion\" = the pair is Connected under the "
+                                    "Configurations page's connection rule; \"one of its shares\" = a triplicity, bound or face held by "
+                                    "the partner of a planet in its house or exaltation; \"of the sect of the day or ... night\" = both "
+                                    "planets of one sect, Mercury not counted. A second stated definition, the honor-guard of 10.2.1, "
+                                    "10-15, is the next table; the course material named as a possible arbiter between them has not "
+                                    "been opened, so both are shown and neither enters a score."))
+                    _finding(_gap, 'The honor-guard, "and it is spear-bearing" (Ptolemy in Sahl, On Nativities 10.2.1, 10-15) -- display only',
+                             'Sahl, On Nativities 10.2.1, 10-15; owner, 2026-09-11 (DEC-D-18): a finding table, no score', honor_guard,
+                             glance=("10: the planets \"formed an honor-guard for [the luminaries] (and that is if the planets were eastern "
+                                     "from the Sun and western from the Moon)\"; 10-15 read the luminaries' signs (male or female), their "
+                                     "stakes, the guards' stakes and whether they look at the luminaries, into ranks from \"an elevated "
+                                     "king\" to \"weak with toil\" -- the delineation is not pronounced here, the facts are shown."),
+                             notes=("Readings, the engine's: \"eastern from the Sun\" = rising before him (the solar phase's side); "
+                                    "\"western from the Moon\" = rising after her, by the shorter arc; \"in the stakes\" = the whole-sign "
+                                    "places 1, 4, 7, 10 (rank is a topic; the canon's places); \"look at\" = the whole-sign aspect. "
+                                    "Examples in 10.2.7 are not reproduced."))
                     _finding(_gap, 'Corruption of the Moon', 'Sahl, The Introduction Ch.3, 103-112', moon_corruption_data,
                               glance="Sahl's own ten defects of the Moon, item [16] of his sixteen -- a different list from Abu Ma'shar's eleven corruptions in the Planetary Condition table.",
                               notes="Sahl's ten (103-112): burned within 12 degrees of the Sun; in her own fall or connecting with a planet in its own fall; approaching the Sun's opposition within 12 degrees; assembled with, square or opposed by an infortune, or enclosed between the two; with the Head or Tail in one sign under 12 degrees; in Gemini or in the sign's last bound; falling from the stakes or connecting with a planet that is; in the burned path, the end of Libra and beginning of Scorpio; wild, empty of course; slow, or waning in light.\n\nAbu Ma'shar's eleven (VII.6, 63-74) are not a variant of this list. He has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear there. His list is scored in the Planetary Condition table, this one is not scored anywhere.")
@@ -12281,7 +14213,7 @@ if location_query and lat is not None and lon is not None:
                          hide_index=True)
 
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-                st.markdown('The STANDING column records his editorial position in his own words where he states one.\n\nFour kinds of case. SAHL HIMSELF RULES: of the two sibling Lots, "both of the Lots are correct, so work with them both together" (3.11, 4) -- neither is subordinate. DYKES NAMES HIS CHOICE: of the three witnesses to the Lot of enemies, "I have used M here"; on the night reversal of the Saturn-Moon work Lot, "Paul instructs us to reverse it by night, but Abu Ma\'shar says not to. We should follow Paul." DYKES MARKS ONE STANDARD: on children, "the usual calculation ... is that of Hermes." DYKES ONLY TABULATES: three Lots for work, after noting that "Sahl quietly switches to Masha\'allah\'s treatise on Lots ... without telling us that the formula is different."\n\nEvery formula is taken from the running prose or a footnote, never from one of the summary tables.\n\nNote the Lot of death is projected from Saturn by Dykes\' emendation (fn. 89, with Masha\'allah\'s manuscripts and Dorotheus); Sahl\'s own manuscripts read the Ascendant.')
+                st.markdown('The STANDING column records his editorial position in his own words where he states one.\n\nFour kinds of case. SAHL HIMSELF RULES: of the two sibling Lots, "both of the Lots are correct, so work with them both together" (3.11, 4) -- neither is subordinate. DYKES NAMES HIS CHOICE: of the three witnesses to the Lot of enemies, "I have used M here"; on the night reversal of the Saturn-Moon work Lot, "Paul instructs us to reverse it by night, but Abu Ma\'shar says not to. We should follow Paul." DYKES MARKS ONE STANDARD: on children, "the usual calculation ... is that of Hermes." DYKES ONLY TABULATES: three Lots for work, after noting that "Sahl quietly switches to Masha\'allah\'s treatise on Lots ... without telling us that the formula is different."\n\nEvery formula is taken from the running prose or a footnote, never from one of the summary tables.\n\nThe Lot of death is projected from Saturn: STATED by Abu Ma\'shar (Gr. Intr. VIII.4, 226; VIII.6, 69), and Sahl 8.6, 1 as printed agrees, his manuscripts reading the Ascendant (fn 89, with Masha\'allah\'s manuscripts and Dorotheus for Saturn). A stated rule with a manuscript variant, not an emendation (FINAL-A12).')
         def page_victors():
             st.header("Lunation and victors")
             st.caption("Lessons 19-20.")
@@ -12300,9 +14232,29 @@ if location_query and lat is not None and lon is not None:
                 {"Metric": "Triplicity Lords", "Value": triplicity_str},
                 {"Metric": "Term Lord", "Value": r['term']},
                 {"Metric": "Face Lord", "Value": r['face']},
-                {"Metric": "Syzygy Lord (Almuten)", "Value": f"{syzygy['almuten']} (Score: {syzygy['almuten_score']})"},
+                {"Metric": "Governor of the syzygy degree (Sahl, On Nativities 1.7, 3-7)",
+                 "Value": f"{syzygy_governor['governor']} -- {syzygy_governor['how']}"},
+                {"Metric": "Almuten by 5/4/3/2/1 points (the course's technique; the weights are stated in no text in hand)",
+                 "Value": f"{syzygy['almuten']} (Score: {syzygy['almuten_score']})"},
             ]
             st.dataframe(pd.DataFrame(syzygy_rows), hide_index=True, width='stretch')
+            with st.expander("Governor of the syzygy degree: the five lords under 1.7, 3-7"):
+                st.dataframe(pd.DataFrame(syzygy_governor['rows']), hide_index=True, width='stretch',
+                             height=_rows_height(len(syzygy_governor['rows'])))
+                st.caption("Sahl, On Nativities 1.7, 3: \"you will know the one in charge of that portion from five things: the "
+                           "lord of the house, triplicity, exaltation, bound, and image, and the eastern one of them\"; 4: \"Then see "
+                           "which of them is stronger in its [own] place, and is direct in course, looking at the sign of the meeting or "
+                           "opposition\"; 7: \"if they were both in power equally, [then] whichever of them was in a stake or in its own "
+                           "house, triplicity, bound, or exaltation ... that is the governor.\" [Sahl I p. 265]. APPLIED: the five lords "
+                           "of the degree (the sect's triplicity lord) are the candidates; a retrograde one, or one not looking at the "
+                           "syzygy's sign (the same sign or a whole-sign aspect), is dropped (4); the eastern one is preferred (3, by the "
+                           "engine's solar-phase side; the Sun has no side); on a tie, the stake or own dignity (7). READINGS: 'in a "
+                           "stake' is strength language and is read by the DIVISION (Alcabitius, the five degrees at the four axial "
+                           "degrees), the canon's dispatch, not the text's unit; the conditions are read at the NATIVITY, the moment "
+                           "the chapter is casting (Dykes's comment), the text not saying the lunation's; 'stronger in its [own] place' "
+                           "(4) and 5-6 (the lord of the best; the one changed more quickly) are NOT modelled -- a tie is left a tie. "
+                           "The almuten row is the course's 5/4/3/2/1 technique, kept beside this and named; where the two differ, "
+                           "the difference is the finding.")
             st.subheader('Victor of the Chart', help="Ibn Ezra's worksheet reproduced cell for cell, so it can be checked against a hand-filled sheet. The seven planets are the columns.")
             st.caption("ibn Ezra's victor #1, 1485/1537")
             # The two same-tradition pairings are the grids a student fills
@@ -12466,7 +14418,7 @@ if location_query and lat is not None and lon is not None:
                 _distribution = None
                 if _cur and pn4['segments']:
                     _distribution = {'start': chart_data['ascendant'],
-                                     'end': _pn4_seg_degree({'from': float(pn4['age'])}, chart_data['ascendant'], chart_data, lat)}
+                                     'end': _pn4_seg_degree({'from': pn4['elapsed_years']}, chart_data['ascendant'], chart_data, lat)}
                 _badges = {}
                 for _planet, _letter in (((_cur or {}).get('distributor'), 'D'), ((_cur or {}).get('partner'), 'P'),
                                          ((pn4['fardar'] or {}).get('lord'), 'F'), ((pn4['fardar'] or {}).get('sub_lord'), 'f'),
@@ -12528,12 +14480,33 @@ if location_query and lat is not None and lon is not None:
                 st.markdown("The count: " + ", ".join(f"{k} {v}" for k, v in image_counts.items())
                             + f" -- I.6, 8 counts 154 without the Lots{' and the count agrees' if image_counts['total of I.6, 8'] == 154 else ', and this chart differs'}.")
                 st.dataframe(pd.DataFrame(image_rows), hide_index=True, width='stretch', height=_rows_height(16))
-                st.caption("A table, not the wheel of I.6, 1: every point by whole-sign house from the revolution's "
-                           "Ascendant (Dykes drew Figure 51 that way, fn 33; Figure 52 is the count table), ordered by degree within the house, with each "
+                st.caption("A table, not the wheel of I.6, 1: every point by the revolution's house cusps -- I.6, 2: "
+                           "\"calculating the houses by their degrees and minutes, in the way that you calculate the houses by "
+                           "the portions of hours and the ascensions of the right circle\" (the Alcabitius cusps this engine "
+                           "computes; Dykes drew Figure 51 by whole signs \"for clarity\", fn 33; Figure 52 is the count table), "
+                           "ordered by degree within the house, with each "
                            "point's bound. The twelfth-part construction -- 2.5 degrees to a sign, beginning with the sign "
-                           "itself -- is stated in no text in hand and is supplied from convention, as the Chart page says "
-                           "of the Moon's fifth corruption. The fixed stars of I.6, 7 are not computed. The Lots are this "
+                           "itself -- is stated at Gr. Intr. V.18, 1-3 (Figure 57). The fixed stars of I.6, 7 are the table below. The Lots are this "
                            "engine's, \"many or few\"; the count line excludes them as I.6, 8 does.")
+                _fs, _fsr = pn4['fixed_stars'], pn4['fixed_stars_revolution']
+                st.markdown("**The fixed stars (I.6, 7 in the root; III.8, 9 in the revolution)** -- Sahl's list, *On Nativities* "
+                            "2.2, in Dykes's identifications (the table at that chapter's end, with Rhetorius Ch. 58's natures); "
+                            "PN IV names no stars of its own. \"The very degree\" and \"with\" are read as within one degree "
+                            "of longitude; the planets \"in the stakes\" by whole-sign place; latitude ignored. Positions from "
+                            "the Swiss Ephemeris star catalogue the app ships (ephe/sefstars.txt).")
+                if _fs['refused']:
+                    st.warning(f"Not computed: {_fs['refused']}.")
+                else:
+                    st.markdown("*In the root (I.6, 7):*")
+                    if _fs['rows']:
+                        st.dataframe(pd.DataFrame(_fs['rows']), hide_index=True, width='stretch', height=_rows_height(min(len(_fs['rows']), 8)))
+                    else:
+                        st.markdown("None of Sahl's stars stands within a degree of the Ascendant, the Midheaven, a luminary or an angular planet.")
+                    st.markdown("*In the revolution (III.8, 9):*")
+                    if _fsr['rows']:
+                        st.dataframe(pd.DataFrame(_fsr['rows']), hide_index=True, width='stretch', height=_rows_height(min(len(_fsr['rows']), 8)))
+                    else:
+                        st.markdown("None within a degree of the year's Ascendant, its tenth, the terminal point, the distribution's degree, their lords or the luminaries.")
 
                 st.subheader("The reading checklist (I.7, 1-26)",
                              help="\"If you made the image of the revolution of the year, then understand:\" (I.7, 1) -- "
@@ -12561,9 +14534,10 @@ if location_query and lat is not None and lon is not None:
                                   "is stronger in indication than the one which is after it\". The first five are computed "
                                   "here; the rest are delineation material. Note the order: WITHIN A YEAR the lord of the "
                                   "year outranks the distributor (II.1, 25; II.23, 1). Across several years the "
-                                  "distribution is the stronger (III.2, 2-3) -- the two are indexed to different scopes, "
-                                  "which is how PN IV resolves the corpus disagreement.")
+                                  "distribution is the stronger (III.2, 2-3) -- PN IV ranks them by scope; Sahl's 1.23, 33 "
+                                  "and 1.24, 2 contradict each other as printed (the caption under the table).")
                 st.dataframe(pd.DataFrame(pn4['year_rows']), hide_index=True, width='stretch')
+                st.caption(PN4_YEAR_INDICATOR_SCOPE_NOTE)
 
                 st.subheader("The sign of the terminal point and its lord, examined (II.3, 2-19)",
                              help="II.3, 2: examine the sign of the terminal point in the root -- which house of the circle, "
@@ -12589,7 +14563,10 @@ if location_query and lat is not None and lon is not None:
                            "evaluators (essential and accidental dignity, solar phase, reception under the Configurations "
                            "page's rule), and Figure 55's cell is not chosen. \"Domain\" is read as sect (fn 46, 48); "
                            "\"westernization from the Sun\" is shown as the solar side (fn 47). Aspects to the sign and to "
-                           "the lord are by whole sign. Not read: twelfth-parts; fn 37-41's classes of sign and of degree. "
+                           "the lord are by whole sign. Read since 2026-09-11: the twelfth-parts (Gr. Intr. V.18, 3) and fn 37-41's "
+                           "classes of sign (VI.4, 4-6: loving, hating, hostile by aspect; IX.2, 33: matching in ascensions, in "
+                           "daylight, or one belt) and of degree (V.20's bright, dusky, empty and dark degrees, the editor's "
+                           "\"probably\"), as facts on rows [3] and [4-7]. "
                            "The delineations of II.4-II.21 are not built. No worked example exists; Figure 55 is Dykes' "
                            "table.")
 
@@ -12618,7 +14595,11 @@ if location_query and lat is not None and lon is not None:
                                   "years. Judged \"just as you judge by means of the lord of the year\" (VI.1, 12). "
                                   "Row 5 above is this year's. The table here is VI.1, 18-19: six positions whose hour "
                                   "lords are named by VI.1, 10 -- \"the lord of the hour of the house of assets\" is the "
-                                  "second hour lord from the natal one -- read as hour k for house k.")
+                                  "second hour lord from the natal one -- read as hour k for house k. VI.1, 10 fixes the "
+                                  "name to the first cycle; VI.1, 8's assignment (\"the lord of the thirteenth hour from it "
+                                  "belongs to the Ascendant of the root and the thirteenth year\") gives a different planet for "
+                                  "the same name from age 12 on; both are shown, neither is stated for 18-19, and the reset "
+                                  "Dykes proposes (Intro Sect. 13, \"my idea\") is a third answer, his own.")
                 st.dataframe(pd.DataFrame(pn4['orb_rows']), hide_index=True, width='stretch',
                              height=_rows_height(len(pn4['orb_rows'])))
                 st.caption("What PN IV presupposes here rather than states: the planetary hours. Their sequence from "
@@ -12628,8 +14609,8 @@ if location_query and lat is not None and lon is not None:
                            "also floats a single-cycle version in which each house keeps its first hour lord for life "
                            "(Intro Figure 48), on the thought that the loop is Abu Ma'shar's own error; VI.1, 8 states "
                            "the loop and the loop is built. His twelve-year \"reset\" of the named lords is, in his "
-                           "words, his idea, and is not built. The delineations of VI.1, 12-17 and the seven days the "
-                           "lord of the orb grants at IX.7, 7-8 are not built.")
+                           "words, his idea, and is not built. The delineations of VI.1, 12-17 are not built; the seven days the "
+                           "lord of the orb grants (IX.7, 7-9) are method 2 of the Days tab (This week / Today / This hour).")
 
                 st.subheader("The governor (IX.9, 1-10; IX.2, 4-7)",
                              help="IX.9, 1-9 name eight testimonies and IX.9, 10 the rule: \"if these eight indicators "
@@ -12642,6 +14623,13 @@ if location_query and lat is not None and lon is not None:
                 gov_rows, gov = pn4['governor']
                 st.markdown(f"**IX.9:** {gov['text']}")
                 st.dataframe(pd.DataFrame(gov_rows), hide_index=True, width='stretch', height=_rows_height(8))
+                if pn4['governor_condition']:
+                    st.markdown(f"**IX.9, 11-13, the condition of the primary planet ({gov['primary'][0]}), as facts** -- the "
+                                "conclusions quoted, not pronounced; 13's place half (\"in a stake or in what follows a stake\") is "
+                                "judged by the Alcabitius DIVISION in the revolution, the five degrees at the four axial degrees -- "
+                                "the unit is the CANON'S (an adopted dynamic-fitness reading, owner 2026-09-11), not the text's; "
+                                "the row states the three parts and the qualified confidence (IX.5, 4 fn 106).")
+                    st.dataframe(pd.DataFrame(pn4['governor_condition']), hide_index=True, width='stretch', height=_rows_height(3))
                 fm_rows, fm_verdict = pn4['first_month_governor']
                 st.markdown(f"**IX.2, 4:** {fm_verdict}")
                 st.dataframe(pd.DataFrame(fm_rows), hide_index=True, width='stretch', height=_rows_height(5))
@@ -12655,7 +14643,8 @@ if location_query and lat is not None and lon is not None:
                            "\"The first lord\" of the revolution's Ascendant is read as its domicile lord (fn 324). The "
                            "IX.2 test is strict and most years fail it, so its five conditions are shown one by one; "
                            "Dykes' fn 39 (age 39, everything in Cancer, the Moon) is the case it is checked against. "
-                           "IX.9, 11-13 and IX.2, 8-11, the judgments of the governor's condition, are not built.")
+                           "IX.9, 11-13 are shown as facts above (12's 'harmonized by nature' not read; 13's place half by the "
+                           "division, the canon's unit, ruled 2026-09-11); IX.2, 8-11, the delineations, are not built.")
 
                 st.subheader("The Moon's connections in her sign, and the portions of the year (II.22)",
                              help="II.22, 1: \"the planet which the Moon connects with, so long as she is in her [current] "
@@ -12704,8 +14693,7 @@ if location_query and lat is not None and lon is not None:
                                   "1-5 give the Moon's list. Dykes' fn 237 reads these as proxies standing in for the "
                                   "luminary.")
                 if pn4['proxies'] is None:
-                    st.markdown(f"This year's lord is **{pn4['year']['lord']}**; the proxies apply only when the Sun or "
-                                f"the Moon is lord of the year.")
+                    st.markdown(f"This year's lord is **{pn4['year']['lord']}**, absent from the revolution.")
                 else:
                     st.markdown(f"This year's lord is **{pn4['year']['lord']}**.")
                     st.dataframe(pd.DataFrame(pn4['proxies']), hide_index=True, width='stretch',
@@ -12734,6 +14722,12 @@ if location_query and lat is not None and lon is not None:
                 st.markdown(f"Turned by **{pn4['age']}** completed years, a sign for each (VI.2, 1).")
                 st.dataframe(pd.DataFrame(pn4['turning_rows']), hide_index=True, width='stretch',
                              height=_rows_height(min(len(pn4['turning_rows']), 16)))
+                st.markdown("**The triplicity lords examined beside the turning (VI.2, 4-5)** -- the sect light's for assets "
+                            "(4; fn 13), the lords of Mars's natal sign for siblings (5: the first the older, the second the "
+                            "middle, the third the younger); each lord's condition in the root and in the revolution, as the "
+                            "II.3 examination prints it. fn 14's age mapping is the editor's and is not applied.")
+                st.dataframe(pd.DataFrame(pn4['turning_triplicity_rows']), hide_index=True, width='stretch',
+                             height=_rows_height(len(pn4['turning_triplicity_rows'])))
                 st.caption("The direction \"a year for every degree\" is not built and each row says so: for planets and "
                            "Lots it is III.1, 12's third case, whose method PN IV does not state; for the cusps VI.2, 21 "
                            "names \"the portions of the hours and the right circle\", semi-arcs, and gives no procedure. "
@@ -12742,7 +14736,7 @@ if location_query and lat is not None and lon is not None:
                            "Sahl and the Great Introduction, and the engine's Lots are paired to them here, with the two "
                            "places they differ on the night reversal named in the row. \"Whichever had the shift in the "
                            "root\" for the parents (VI.2, 6, 8) is read as the sect planet, per fn 16 and 19. The "
-                           "triplicity lords of VI.2, 4-5 and the delineations are not built. No worked example exists; "
+                           "triplicity lords of VI.2, 4-5 are the table above (since 2026-09-11); the delineations are not built. No worked example exists; "
                            "Figures 90-91 are Dykes' diagrams.")
 
             with tab_dist:
@@ -12759,7 +14753,7 @@ if location_query and lat is not None and lon is not None:
                                "ascension has no unique inverse, and an arc of direction from the Ascendant is not "
                                "defined (the domain of decision D-23).")
                 else:
-                    _strip = generate_distribution_strip_svg(pn4['segments'], float(pn4['age']), 'years',
+                    _strip = generate_distribution_strip_svg(pn4['segments'], pn4['elapsed_years'], 'years',
                                                              PN4_DISTRIBUTION_SPAN_YEARS, 'The distribution from the Ascendant')
                     st.image(_strip, width='stretch')
                     st.download_button("Download this strip (SVG)", _strip, key="dl_strip_asc", mime="image/svg+xml",
@@ -12773,6 +14767,8 @@ if location_query and lat is not None and lon is not None:
                             f" &nbsp;|&nbsp; partner met: {cur['partner_from']}")
                     st.dataframe(pd.DataFrame(pn4['distribution_rows']), hide_index=True, width='stretch',
                                  height=_rows_height(min(len(pn4['distribution_rows']), 16)))
+                    if pn4['turning_partner']:
+                        st.markdown(f"**Sahl, the year of the turning and the partner:** {pn4['turning_partner']['text']}")
                     st.caption("III.1, 23-25: at birth the partner is whatever body or ray lies between the beginning of "
                                "the Ascendant's sign and its degree; if there is none, \"the distributor without a planet "
                                "partnering with her\". III.2, 103-104 ranks partners body > opposition > square > trine > "
@@ -12831,7 +14827,7 @@ if location_query and lat is not None and lon is not None:
                 for point in PN4_MERIDIAN_POINTS:
                     m = pn4['meridian'][point]
                     cur = m['current']
-                    _strip = generate_distribution_strip_svg(m['segments'], float(pn4['age']), 'years',
+                    _strip = generate_distribution_strip_svg(m['segments'], pn4['elapsed_years'], 'years',
                                                              PN4_DISTRIBUTION_SPAN_YEARS, f'The distribution from the {point}')
                     st.image(_strip, width='stretch')
                     st.download_button("Download this strip (SVG)", _strip, key=f"dl_strip_{point[:4].lower()}",
@@ -12855,8 +14851,31 @@ if location_query and lat is not None and lon is not None:
                            "a meridian direction exists in PN IV -- III.1, 19-45 directs the Ascendant only -- so the "
                            "engine is checked by arithmetic and against the editor's four-minutes-a-degree animation "
                            "(Appendix A), not against the author's numbers. (4) The partner-at-birth rule of III.1, 23-25 "
-                           "is worded for the Ascendant and is carried here by analogy. (5) Only the two degrees are "
-                           "directed; planets in the Midheaven, which III.1, 12 also assigns to right ascension, are not.")
+                           "is worded for the Ascendant and is carried here by analogy. (5) III.1, 12 assigns \"the Ascendant "
+                           "and the things in it\" to the oblique ascensions and \"what is in the Midheaven or the fourth\" to "
+                           "the right ascensions: \"in\" is read as ON THE AXIAL DEGREE ITSELF (the owner's ruling of "
+                           "2026-09-11), recognised with a numerical tolerance (floating-point equality), not an astrological "
+                           "orb -- no 3 degrees, no 5, no band; the Alcabitius division and the five-degree carry-over play no "
+                           "part in choosing the method. A planet on one of the three degrees is directed as that degree is, "
+                           "below. Every planet not on an axis is listed with \"" + PN4_SEMIARCS_UNAVAILABLE + "\" -- a "
+                           "computational gap, NOT a prohibition: III.1, 5 directs all planets and Lots, and the method for "
+                           "\"what is not in these three positions\" is Ptolemy's proportional semi-arcs as Dykes identifies it "
+                           "(III.1, 12 fn 16; VI.2, 21 fn 33), stated in no text in hand and not built; no right or oblique "
+                           "ascension is substituted for it. The Descendant is not one of the three positions (fn 15).")
+                st.markdown("**The planets, each with its measure under III.1, 12** (on an axial degree, directed as that "
+                            "degree is; otherwise the sentence):")
+                for ap in pn4['angle_planets']:
+                    if ap['axis'] is None:
+                        st.markdown(f"**{ap['planet']}** -- {ap['how']}")
+                        continue
+                    st.markdown(f"**{ap['planet']}** on the degree of {ap['where']}, by the {ap['how']}"
+                                + (f" -- now: distributor **{ap['current']['distributor']}**, partner "
+                                   f"**{ap['current']['partner'] or 'none'}**" if ap['current'] else '') + ":")
+                    if ap['segments'] is None:
+                        st.warning("Refused at this latitude (decision D-23).")
+                    else:
+                        st.dataframe(pd.DataFrame(ap['rows']), hide_index=True, width='stretch',
+                                     height=_rows_height(min(len(ap['rows']), 8)))
 
             with tab_rel:
                 # --- SAHL: the releaser and the house-master (2026-09-10) ---
@@ -12881,6 +14900,35 @@ if location_query and lat is not None and lon is not None:
                     st.markdown("**The lords looking at the releaser, ranked** (1.15, 13; 1.20, 2-5) -- the first is the house-master:")
                     st.dataframe(pd.DataFrame(rel['ranking']), hide_index=True, width='stretch',
                                  height=_rows_height(len(rel['ranking'])))
+                _sl = pn4['short_life']
+                st.markdown(f"**The short-life testimonies (Sahl, *On Nativities* 1.18, 1-10, Masha'allah, fn 125): {_sl['count']} of "
+                            f"the four counted** -- {_sl['sentence']}. Shown beside the releaser; they do not disqualify it here. "
+                            f"5-7 are \"equivalent\" and not counted (fn 126, 129).")
+                st.dataframe(pd.DataFrame(_sl['rows']), hide_index=True, width='stretch', height=_rows_height(7))
+                if pn4['hm_years']:
+                    _y = pn4['hm_years']
+                    st.markdown(f"**The house-master's years** (Sahl, *On Nativities* 1.20, 7-34, Nawbakht -- the section "
+                                f"1.23, 68, Masha'allah, sends the reader to): **{_y['text']}**. Placed by division "
+                                f"{_y['division']} (the POWER unit). These are the years the infortunes may cut off (1.23, 53 and "
+                                f"61) and the input PN IV III.2, 110-111's gate names (\"only if those years matched the years of "
+                                f"the lifespan which his indicator in the root had already pointed out\").")
+                    for _f in _y['flags']:
+                        st.markdown(f"- {_f}")
+                    st.caption(_y['readings'])
+                if rel['releaser'] is None:
+                    st.markdown("**The stand-in (Sahl, *On Nativities* 1.32, 11-14, al-Andarzaghar).** The Ascendant's "
+                                "distribution in the tab \"from the Ascendant\" is \"the first of them\" (13); the Moon, "
+                                "\"then the Moon\", directed from her natal degree to the infortunes and to burning by the "
+                                "operation of 1.23, 2 (1.32, 12: \"if you directed the Sun or Moon in their courses to the "
+                                "infortunes ... it kills, whichever of these four connects first with the infortune\"; 14: "
+                                "\"if the fortunes are not looking at it\" -- the aspect of the fortunes is not judged here):")
+                    if pn4['standin_moon'] is None:
+                        st.warning("Refused at this latitude, as every direction by the oblique ascension is (decision D-23).")
+                    elif pn4['standin_moon']:
+                        st.dataframe(pd.DataFrame(pn4['standin_moon']), hide_index=True, width='stretch',
+                                     height=_rows_height(len(pn4['standin_moon'])))
+                    else:
+                        st.markdown("No target within the span for the Moon.")
                 _syz = pn4['syzygies']
                 st.markdown(f"The meeting (the last New Moon before birth) was at **{get_degree_string(_syz['meeting']['longitude'])}** "
                             f"on {pn4_datetime_from_jd(_syz['meeting']['jd']):%Y-%m-%d} UT; the fullness (the last Full Moon) at "
@@ -12894,7 +14942,7 @@ if location_query and lat is not None and lon is not None:
                     if pn4['releaser_segments'] is None:
                         st.warning("Refused at this latitude, as the Ascendant's distribution is (decision D-23).")
                     else:
-                        _rstrip = generate_distribution_strip_svg(pn4['releaser_segments'], float(pn4['age']), 'years',
+                        _rstrip = generate_distribution_strip_svg(pn4['releaser_segments'], pn4['elapsed_years'], 'years',
                                                                   PN4_DISTRIBUTION_SPAN_YEARS, 'The distribution from the releaser')
                         st.image(_rstrip, width='stretch')
                         st.download_button("Download this strip (SVG)", _rstrip, key="dl_strip_releaser", mime="image/svg+xml",
@@ -12910,23 +14958,48 @@ if location_query and lat is not None and lon is not None:
                             st.markdown(f"Age {pn4['age']} is past the {PN4_DISTRIBUTION_SPAN_YEARS:g}-year table.")
                         st.dataframe(pd.DataFrame(pn4['releaser_rows']), hide_index=True, width='stretch',
                                      height=_rows_height(min(len(pn4['releaser_rows']), 12)))
-                st.caption("Readings made here, each one Sahl leaves open. (1) The places are quadrant houses with the "
-                           "five-degree carry-over (fn 109: \"quadrant divisions, not whole signs\"; Aphorism 44; 1.22, 9), "
-                           "the reckoning the Chart page's planetary-years table uses; the day list is the five places "
-                           "1.15, 6 names, the night list every stake and succedent. (2) \"Looking\" is the whole-sign "
-                           "aspect, and a lord in the candidate's own sign counts as looking (1.20, 4). (3) A candidate is "
-                           "not its own house-master except in 1.16's four signs. (4) The triplicity lord is the lord of "
-                           "the sect. (5) The meeting is the last New Moon and the fullness the last Full Moon before "
-                           "birth; the fullness's degree is the luminary above the horizon at that moment, the engine's "
-                           "convention for a preventional syzygy, since 1.15 does not say. (6) \"In good places\" for the "
-                           "Ascendant's lord (1.15, 16) is a stake or succedent. (7) The day chart consults the Sun, the "
-                           "meeting and the Ascendant only, the night chart the Moon, the fullness, the Lot and the "
-                           "Ascendant, as 6-14 order them; 1.15, 15's summary names all five before the Ascendant and is "
-                           "quoted, not applied. Not applied, and named: "
+                st.caption("Readings made here, each one Sahl leaves open. (1) THE PLACES: \"a stake or what follows a stake\" "
+                           "(1.15, 6-16) is read as a test of the planet's POWER and counted by the Alcabitius divisions with the "
+                           "five-degree allowance at the four axial degrees only -- a planet 0-5 degrees past the Ascendant, "
+                           "Midheaven, setting degree or fourth into the cadent division keeps the stake's power, measured from "
+                           "the axial degree, in longitude (a proxy). The warrant for the unit is the translator's course "
+                           "convention, adopted by the owner as canon on 2026-09-11: Lesson 3, A Chart Tour, §4-5; the Course "
+                           "Glossary s.v. Advancement; Carmen p. 108 fn 187, \"Dorotheus ... is using dynamic divisions to speak "
+                           "of the planets' power, because one can only move from a stake to a decline by primary motion\"; "
+                           "with fn 109 on 1.15, 6 agreeing (\"quadrant divisions, not whole signs\"). The corpus's own "
+                           "vocabulary counts SIGNS -- Introduction 2, 31-35 defines the stakes, \"what follows the stakes\" and "
+                           "the falling places as counted signs, and 1.20, 10 says \"the sign of the west\" -- so the division "
+                           "reading is the translator's, not Sahl's or Nawbakht's; 1.18, 19 (\"its strength will be in the "
+                           "Ascendant ... and likewise in all of the houses\") is about strength and is read as the four "
+                           "stakes; Aphorism #44 and 1.22, 9 witness the five degrees, not the house system. The Lot of Fortune "
+                           "(a candidate by night, 1.15, 14) has no dynamic angularity and is tested by its whole-sign place. "
+                           "The meeting's and the fullness's degrees (1.15, 6-8, 12) are neither planet nor Lot: the division is "
+                           "used for them, an open reading. The day list is the five places 1.15, 6 names, the night list every "
+                           "stake and succedent. (2) \"Looking\" is the whole-sign aspect, and a lord in the candidate's own "
+                           "sign counts as looking (1.20, 4). (3) A candidate is not its own house-master except in 1.16's four "
+                           "signs. (4) The triplicity lord is the lord of the sect. (5) The meeting is the last New Moon and the "
+                           "fullness the last Full Moon before birth; the fullness's degree is the luminary that was above the "
+                           "earth at the Full Moon: On Nativities 1.7, 2 (\"take the portion of whichever of the two luminaries "
+                           "was above the earth\"), stated there for the Ascendant's degree and applied here by the same word, "
+                           "\"portion\" (1.15, 12); when both or neither is above the earth the engine takes the Moon's degree; "
+                           "no text says. (6) \"In good places\" for the Ascendant's lord (1.15, 16): Sahl's seven praised "
+                           "places (Introduction 2, 37-44: \"praised, powerful\"; 1.30, 71 names them; fn 372 calls them "
+                           "\"good or advantageous\"), counted by whole-sign place; no sentence defines 16's phrase, so the "
+                           "identification is an interpretation. (7) The day chart consults the Sun, the meeting, then the "
+                           "Ascendant (1.15, 9: \"if the meeting and the Sun were both falling, then the releaser at that time "
+                           "will be the Ascendant\"); the night chart the Moon, the fullness, the Lot, then the Ascendant "
+                           "(10-14). 1.15, 15 lists all five before the Ascendant and is read as the summary of the two lists; "
+                           "read as a procedure it would consult the other sect's candidates first, which changes the releaser "
+                           "in about one day chart in seven. The meeting's gate (1.15, 8) states a place test only; the "
+                           "looking-lord test the engine applies to it is supplied from 15's general wording (a reading). "
+                           "Not applied, and named: "
                            + '; '.join(f"{c} ({t})" for c, t in SAHL_RELEASER_NOT_APPLIED) + ". "
-                           "The YEARS the house-master grants are granted by nothing: On Times 4, 7 and On Nativities "
-                           "1.20 disagree on where the greater years fall (corpus disagreement #2) and the Chart page "
-                           "shows both columns applied to no one. On Times 4, 2-5's shorter list (victor by testimony, "
+                           "The YEARS the house-master grants are granted from On Nativities 1.20, 7-34 read in full (owner, "
+                           "2026-09-11, FINAL-A1), above: On Times 4 is a question-chart chapter (\"in the hour of the "
+                           "question\", 4, 2) and 1.23, 68 sends the reader to \"the section on the house-master\", so the "
+                           "corpus holds one natal grant and corpus disagreement #2 was a tie between a horary rule and a "
+                           "natal one; the Chart page's Planetary years table shows 1.20's grade for every planet and On "
+                           "Times 4, 7 for comparison. On Times 4, 2-5's shorter list (victor by testimony, "
                            "seven candidates) and Masha'allah's ray in the Ascendant (1.23, 46-50) are the other two "
                            "procedures in the corpus, not built. No worked example exists in Sahl.")
 
@@ -12955,7 +15028,7 @@ if location_query and lat is not None and lon is not None:
                                     f"bodies, squares and oppositions of Saturn and Mars and to the Sun's degree, forward, "
                                     f"a year to a degree of the birth latitude's ascensions, within {PN4_DISTRIBUTION_SPAN_YEARS:g} years:")
                         if pn4['hm_direction']:
-                            _hstrip = generate_hit_strip_svg(pn4['hm_direction'], float(pn4['age']),
+                            _hstrip = generate_hit_strip_svg(pn4['hm_direction'], pn4['elapsed_years'],
                                                              PN4_DISTRIBUTION_SPAN_YEARS, 'The house-master directed')
                             st.image(_hstrip, width='stretch')
                             st.download_button("Download this strip (SVG)", _hstrip, key="dl_strip_hm", mime="image/svg+xml",
@@ -12973,6 +15046,32 @@ if location_query and lat is not None and lon is not None:
                                         f"facts for the house-master, for the record (1.23, 3-4):")
                         st.dataframe(pd.DataFrame(pn4['hm_revolution']), hide_index=True, width='stretch',
                                      height=_rows_height(len(pn4['hm_revolution'])))
+                    st.markdown(
+                        "**The join, and the denial beside it.** The house-master directed here is selected by NAWBAKHT'S "
+                        "rule (1.15, 13: the dignity lord looking at the releaser) and directed by MASHA'ALLAH'S operation "
+                        "(1.23, 2, \"direct it\" -- the governor); 1.23, 40 and 43 call Masha'allah's governor \"the "
+                        "house-master\" in Sahl's own words, but his governor is found by reception (1.23, 1), and the two "
+                        "rules name different planets in about a third of charts. The join is this engine's; no sentence "
+                        "states it. Abu Ma'shar denies the direction: \"the indicator of the lifespan alone is turned in "
+                        "the signs, sign-by-sign, and is not directed degree-by-degree\" (PN IV IX.8, 32; fn 129: \"Some "
+                        "texts say that one can also distribute the house-master itself, but to me that seems like a "
+                        "misunderstanding\"). Shown as Sahl's, with the denial beside it (owner, 2026-09-11, decision "
+                        "sheet row 2). Two limits of the denial, from the second blind reading: IX.8, 32 restricts the "
+                        "ROLE -- the planet may still be directed in another capacity, since \"all of the planets and Lots "
+                        "are [also] directed\" (III.1, 5); and 1.16, 4 (direct the luminary \"even if a house-master is "
+                        "not looking\") is a provision the 1.16 exception built above does not cover. IX.8, 30's turning, "
+                        "the one operation Abu Ma'shar licenses for the indicator, follows as PN IV's:")
+                    if pn4['hm_turning']:
+                        st.dataframe(pd.DataFrame(pn4['hm_turning']), hide_index=True, width='stretch',
+                                     height=_rows_height(min(len(pn4['hm_turning']), 12)))
+                    else:
+                        st.markdown("The turned sign reaches no cutter's body, opposition or square within the span.")
+                    st.caption(f"**{pn4['house_master']}** turned a year a sign from its natal sign (whole signs, as VI.2, 1), "
+                               "the years in which the sign reaches a cutter's body, opposition or square: \"if the turning of "
+                               "the years from any of the five releasers (or from the indicator of the lifespan) reached their "
+                               "bodies, oppositions, or squares, then they also kill\" (PN IV IX.8, 30); \"the rest of the "
+                               "rays' direction ... is a weak testimony\" (31) and is not shown. Read: \"their\" as Saturn's "
+                               "and Mars's, the cutters the direction table targets.")
                 st.caption("Readings: \"the degree of burning\" is the Sun's natal degree; \"a year for every degree of "
                            "ascensions\" is the oblique ascension of the birth latitude applied to the house-master's own "
                            "degree, as 1.15, 17, 1.16, 4 and 1.18, 21 apply \"the ascensions of that city\" to the "
@@ -12982,8 +15081,54 @@ if location_query and lat is not None and lon is not None:
                            "planet's rays directed conversely); 1.23, 5-11's further witnesses (the lord of the "
                            "revolution's Ascendant, the lord of the year, the profection reaching an infortune's sign), "
                            "which are the II.3 examination and the indicators in that chapter; 1.23, 13-14's redirection to the "
-                           "lord of the Ascendant when the house-master is unsuitable; 1.23, 53-60's increase and "
+                           "lord of the Ascendant when the house-master is unsuitable is APPLIED below when a 1.23, 12 flag "
+                           "fires (since 2026-09-11, order REL-5-7); not applied: 1.23, 6; 1.23, 53-60's increase and "
                            "decrease of years; and the 1.21 additions. No worked example exists in Sahl.")
+                if pn4['hm_redirect']:
+                    _rd = pn4['hm_redirect']
+                    st.markdown(f"**1.23, 13-14, the redirection** -- a 1.23, 12 flag stands on the house-master, so \"look at the "
+                                f"coinciding of the lord of the Ascendant with the degree of the infortune (or its square or "
+                                f"opposition), or its entrance into burning\" (13); the lord of the Ascendant here is "
+                                f"**{_rd['lord']}**, directed in the house-master's stead; then the degree of the Ascendant (14). "
+                                f"13's aggravation -- \"if the infortune was the lord of the house of the lord of the Ascendant, or "
+                                f"the infortune was the lord of the house of the eighth\" -- holds for: "
+                                f"{', '.join(_rd['aggravators']) or 'neither infortune'}.")
+                    for _lab, _tab in (("1.23, 13: the lord of the Ascendant, in the house-master's stead", _rd['lord_direction']),
+                                       ("1.23, 14: the degree of the Ascendant", _rd['ascendant_direction'])):
+                        st.markdown(f"*{_lab}*")
+                        if _tab is None:
+                            st.warning("Refused at this latitude (decision D-23).")
+                        elif _tab:
+                            st.dataframe(pd.DataFrame(_tab), hide_index=True, width='stretch', height=_rows_height(min(len(_tab), 8)))
+                        else:
+                            st.markdown("No target within the span.")
+                if pn4['father_lot']:
+                    _fl = pn4['father_lot']
+                    st.subheader("The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)",
+                                 help="31: \"if the nativity was by day, the infortunes which harm his Lot are Mars and Saturn (and "
+                                      "Mercury, if he was unfortunate); and if it was by night, the infortunes which harm them are Mars "
+                                      "and Mercury (if he was unfortunate)\". 32: \"direct the degree of the Lot of the father and the "
+                                      "Sun by day, and by night the Lot and Saturn\". 33: \"if you found an infortune casting its rays "
+                                      "upon the Sun and upon the Lot ... it will kill the father when the direction reaches the "
+                                      "infortune which casts the rays\"; 34-35 rank two infortunes by enmity and power; 36: Saturn "
+                                      "\"from hostility\" is \"more harmful for some of the injuries\".")
+                    st.markdown(f"The Lot of the father stands at **{get_degree_string(_fl['lot'])}** (4.14, 1); the second point "
+                                f"directed is **the {_fl['second']}** (32). fn 288 -- Dykes: Mars the main malefic in both sects, "
+                                f"Saturn barred by night because he indicates the father, Mercury when made unfortunate -- is the "
+                                f"editor's reading and is quoted, not applied; 31 is applied as printed.")
+                    st.dataframe(pd.DataFrame(_fl['harmers']), hide_index=True, width='stretch', height=_rows_height(len(_fl['harmers'])))
+                    for _lab, _tab in (("From the degree of the Lot of the father (32), to the harmers' bodies, squares and oppositions", _fl['from_lot']),
+                                       (f"From the {_fl['second']} (32), to the same", _fl['from_second'])):
+                        st.markdown(f"*{_lab}*")
+                        if _tab is None:
+                            st.warning("Refused at this latitude (decision D-23).")
+                        elif _tab:
+                            st.dataframe(pd.DataFrame(_tab), hide_index=True, width='stretch', height=_rows_height(min(len(_tab), 8)))
+                        else:
+                            st.markdown("No target within the span.")
+                    st.caption("Readings: \"casting its rays\" is met by the direction's targets, the harmers' bodies, squares and "
+                               "oppositions (the same set as the house-master's direction; sextiles and trines are not directed); "
+                               "the Sun is not a target here (4.20, 32 directs him). 33-35's choice between two infortunes is not made.")
 
             with tab_days:
                 st.subheader("The small days: the revolution's Ascendant distributed round the year",
@@ -12994,6 +15139,39 @@ if location_query and lat is not None and lon is not None:
                                   "another meets it; otherwise the bound lords, until a planet or ray is reached. IX.7, 31 "
                                   "names it the small days. A second distribution, running inside the year at its own "
                                   "rate; the Ascendant's distribution above runs across the years.")
+                # IX.7, 31 / 27: the same two directions from any planet, house or Lot (order PN4R-4c-4)
+                _sr_pd, _sr_ch = pn4['sr']['planetary_data'], pn4['sr']
+                _day_points = {'the revolution\'s Ascendant (the table below)': None}
+                _day_points.update({f"the revolution's {p_}": (_sr_pd[p_]['longitude'], f"the revolution's {p_}") for p_ in PN4_SEVEN if p_ in _sr_pd})
+                _day_points.update({f"the revolution's house {i_ + 1} (cusp {get_degree_string(c_)})": (c_, f"the revolution's house {i_ + 1}")
+                                    for i_, c_ in enumerate(list(_sr_ch['houses'])[:12])})
+                for _lr in calculate_topical_lots(_sr_pd, _sr_ch['ascendant'], _sr_ch['houses'], _sr_ch['sect']):
+                    _day_points[f"the revolution's {_lr['Lot']}"] = (lot_by_id(next(d['id'] for d in LOT_DEFINITIONS if d['name'] == _lr['Lot']),
+                                                                              _sr_pd, _sr_ch['ascendant'], _sr_ch['houses'], _sr_ch['sect']),
+                                                                    f"the revolution's {_lr['Lot']}")
+                _day_choice = st.selectbox("Also direct, for the small days (IX.7, 31) and the mighty days (IX.7, 27), from",
+                                           list(_day_points), key="pn4_day_point",
+                                           help="IX.7, 31: \"you work like that with everything of the planets, Lots, and houses\". "
+                                                "A READING: the \"houses\" are offered as the revolution's Alcabitius cusps, "
+                                                "the degree this engine computes for each house -- IX.7, 31 says \"houses\" and "
+                                                "names no degree (order PN4R-4c-4).")
+                _extra = _day_points[_day_choice]
+                if _extra is not None:
+                    _x_lon, _x_label = _extra
+                    _x_small = pn4_small_days(_sr_pd, _x_lon, _x_label)
+                    _x_cur = pn4_distribution_at_age(_x_small, pn4['day_of_year'])
+                    st.markdown(f"**Small days from {_x_label}** at {get_degree_string(_x_lon)} (IX.7, 31)"
+                                + (f" -- now: distributor **{_x_cur['distributor']}**, partner **{_x_cur['partner'] or 'none'}**" if _x_cur else '') + ":")
+                    st.dataframe(pd.DataFrame(_pn4_distribution_rows(_x_small, _x_cur, unit='days', origin_jd=pn4['jd_sr'])),
+                                 hide_index=True, width='stretch', height=_rows_height(8))
+                    _x_prof = pn4_profect(_x_lon, pn4['age'])
+                    _x_mighty = pn4_mighty_days(_sr_pd, _x_prof, f"{_x_label}, profected")
+                    _x_mcur = pn4_distribution_at_age(_x_mighty, pn4['day_of_year'])
+                    st.markdown(f"**Mighty days from {_x_label} profected** to {get_degree_string(_x_prof)} (IX.7, 27: the "
+                                f"point turned {pn4['age']} signs, its degree kept)"
+                                + (f" -- now: distributor **{_x_mcur['distributor']}**, partner **{_x_mcur['partner'] or 'none'}**" if _x_mcur else '') + ":")
+                    st.dataframe(pd.DataFrame(_pn4_distribution_rows(_x_mighty, _x_mcur, unit='days', origin_jd=pn4['jd_sr'])),
+                                 hide_index=True, width='stretch', height=_rows_height(8))
                 sd_cur = pn4['small_days_current']
                 sr_asc = pn4['sr']['ascendant']
                 _strip = generate_distribution_strip_svg(pn4['small_days'], pn4['day_of_year'], 'days', None, 'The small days')
@@ -13029,7 +15207,8 @@ if location_query and lat is not None and lon is not None:
                                   "year terminated at, from the Ascendant of the root\" -- the terminal point -- and a body "
                                   "or ray already in its bound manages until another meets it, else the lord of the bound "
                                   "\"then the lord of the bound which follows it\" (IX.7, 24). IX.7, 25: the arc times "
-                                  "\"12 days, 4 hours, 10 minutes, and 30 seconds\", from the first day of the revolution; "
+                                  "\"12 days, <4 hours>, 10 minutes, and 30 seconds (and that is 1/6 of a day and half a sixth "
+                                  "of a tenth of a day)\" -- the parenthetical's 12.175 d a degree is applied -- from the first day of the revolution; "
                                   "IX.7, 28: thirty of them are the year, \"approximately\", and this is the mighty days. "
                                   "The profected thirty degrees treated as a year, walked degree by degree.")
                 md_cur = pn4['mighty_days_current']
@@ -13049,17 +15228,21 @@ if location_query and lat is not None and lon is not None:
                                 f"{pn4['day_of_year']:.1f} is outside the thirty degrees ({PN4_MIGHTY_DAYS_SPAN_DEGREES * PN4_MIGHTY_DAYS_PER_DEGREE:.2f} days)")
                 st.dataframe(pd.DataFrame(pn4['mighty_days_rows']), hide_index=True, width='stretch',
                              height=_rows_height(min(len(pn4['mighty_days_rows']), 12)))
-                st.caption("The rate is applied as printed. Thirty of 12 d 4 h 10 m 30 s is 365 d 5 h 15 m, not the "
-                           "365 1/4 the sentence calls it \"approximately\"; Dykes' fn 177 says both the units and the "
-                           "parenthetical fractions are wrong and gives 12 d 4 h 12 m for a 365 1/4-day year, and the "
-                           "\"4 hours\" is his insertion. The book's number is the book's. Zodiacal by construction -- "
+                st.caption("The rate. IX.7, 25 prints \"12 days, <4 hours>, 10 minutes, and 30 seconds (and that is 1/6 of "
+                           "a day and half a sixth of a tenth of a day)\". Three figures stand in that sentence: the "
+                           "manuscript's 12;10,30 days (10 minutes and 30 seconds as sexagesimal fractions OF A DAY, "
+                           "12.175 d); the author's parenthetical, 12 + 1/6 + 1/120 = 12.175 d, thirty of which are "
+                           "365 1/4 days exactly (IX.7, 28); and Dykes's hybrid 12 d 4 h 10 m 30 s (12.17396 d; thirty "
+                           "of them 365 d 5 h 15 m), his \"<4 hours>\" supplied and the minutes read as clock time -- "
+                           "fn 177 gives 12 d 4 h 12 m for a 365 1/4-day year, which is the author's fraction again. "
+                           "APPLIED: the author's parenthetical, 12.175 d a degree (owner, 2026-09-11). Zodiacal by construction -- "
                            "no ascension appears in the sentence; fn 175's report that ascensions would make more sense "
                            "is an editor's note. The direction does not stop at the end of the sign of the year: it "
                            "starts at the terminal degree and runs thirty degrees, so its last part lies in the bounds "
                            "of the next sign, which is what \"then to the lord of the bound which follows it\" "
                            "describes. Read into the sentence, as for the small days: the revolution's bodies and rays; "
                            "days from the moment of the revolution; the opening partner behind the degree within its "
-                           "bound. IX.7, 27's extension to the Lots of the parents and every house and Lot is not built. "
+                           "bound. IX.7, 27's extension to every planet, house and Lot is the selector above (since 2026-09-11). "
                            "No worked example of it exists in PN IV.")
 
                 st.subheader("The nine methods for the days and hours (IX.7, 1-72)",
@@ -13132,8 +15315,9 @@ if location_query and lat is not None and lon is not None:
                     st.dataframe(pd.DataFrame(PN4_LADDER_ROWS), hide_index=True, width='stretch')
                     st.caption("An idealised year of twelve 30-day months (fn 17). The bottom rung is **25 thirds**, a "
                                "sixtieth of a second of arc: 10″ is a day, so an hour is 10″/24 = 25‴ exactly. "
-                               "The OCR'd corpus reads 25″, which would make an hour two and a half days long; the "
-                               "printed page has 25‴ (verified against the photograph of p. 288).")
+                               "The OCR'd corpus read 25″ until 2026-09-11, which would make an hour two and a half days "
+                               "long; the printed page has 25‴ (verified against the photograph of p. 288) and the corpus "
+                               "now reads it (PN4_REPAIRS_2026-09-11.md, D-07).")
 
                 st.subheader("The *fardar*",
                              help="IV.1, 2-4: the years are Sun 10, Venus 8, Mercury 13, Moon 9, Saturn 11, Jupiter 12, "
@@ -13167,20 +15351,25 @@ if location_query and lat is not None and lon is not None:
                            "**Two things in Dykes' fn 191 are also absent**: the SUM of the ascensions and the years, and "
                            "a third, a half and two-thirds of it, are introduced with \"if we follow Valens\" and appear "
                            "in no sentence of III.7; and his worked figure of 20.17 ascensional times for Taurus at 45N "
-                           "is not reproduced, the exact computation giving 20.09. III.7, 36 raises a row to \"whenever it "
-                           "distributes\" when the planet looks at the position of the distribution and is \"strong in "
-                           "[its] indication\" -- strength is nowhere defined in the chapter, so no row is promoted here. "
+                           "is not reproduced, the exact computation giving 20.09. III.7, 35's \"once\" is for a fixed-sign "
+                           "planet \"NOT looking at the position of the distribution\"; the looking is computed here as the "
+                           "whole-sign aspect from the natal sign to the Ascendant's sign at birth (a planet in the sign counted "
+                           "as looking) -- whether the position is the current bound's sign or its degree, and whether "
+                           "co-presence counts, are silences -- and a looking fixed planet's row says III.7, 36 applies "
+                           "\"whenever it distributes\" IF strong, which the chapter does not define, so no row is promoted. "
+                           "The confirmation column (III.7, 42) is checked against every distribution on this page: the "
+                           "Ascendant's, the Midheaven's, the fourth's and the releaser's, each named. "
                            "III.7, 37 exempts the manager, which \"will produce its indication\" whenever it manages.")
 
                 st.subheader("The Ages of Man",
-                             help="I.8, 10-26 and Figure 53: Ptolemy's seven ages, ordered by sphere from the lowest "
+                             help="I.8, 10-26 and Figure 53 (PN IV): Ptolemy's seven ages, ordered by sphere from the lowest "
                                   "upward -- not the quadrant scheme of Sahl, On Nativities 3.9. Each span is a planet's "
                                   "lesser years, or a half or a tenth of its lesser or middle years (I.8, 9). The Moon's 4 "
                                   "is a tenth of her middle years, 39 1/2 (I.8, 12) -- an independent witness for the "
                                   "luminary construction of the middle years used elsewhere in this app.")
                 st.dataframe(pd.DataFrame(pn4['age_rows']), hide_index=True, width='stretch',
                              height=_rows_height(len(pn4['age_rows'])))
-                st.caption("The last age is open-ended: Figure 53 tabulates Saturn as 30 years and ages 68-97, but the "
+                st.caption("The last age is open-ended: Figure 53 (PN IV) tabulates Saturn as 30 years and ages 68-97, but the "
                            "prose governs -- the seventh age runs \"until the end of his lifespan\" (I.8, 25). Abu Ma'shar "
                            "refuses to subdivide an age into sevenths the way a *fardar* is subdivided, so there is no "
                            "sub-lord here (I.8, 34-35).")
@@ -13188,10 +15377,11 @@ if location_query and lat is not None and lon is not None:
                 st.subheader('Chronocrator Matrix (Active Time Lords)', help='Two rows: the lord of the year by annual profection, and the Egyptian bound lord of the Ascendant directed symbolically at one degree per year -- which is not a distribution, as its label says. Abu Ma\'shar names the shortcut himself and grades it: "there is an approximation in it, but the correct [approach] is that this way of directing is like the direction of the Sun every day" (IX.7, 32). The ascensional method he prefers is the jar bakhtar table above.')
                 st.dataframe(pd.DataFrame(time_lords_data), hide_index=True, width='stretch')
                 st.subheader("Planetary years (Gr. Intr. VII.8, Figure 146) -- display only",
-                             help="The lesser, middle, greater and mighty years and the fardar of each planet, beside its placement and what "
-                                  "the two placement rules in the corpus would grant it. Nothing here is applied: how many years the "
-                                  "house-master grants is the question PN IV does not answer (IX.8, 123) and Sahl's two books answer "
-                                  "differently; which planet it is, the Timing page now takes from On Nativities 1.15.")
+                             help="The lesser, middle, greater and mighty years and the fardar of each planet, beside its placement, "
+                                  "the grade On Nativities 1.20, 7-34 would give it as house-master (placed by the division, the "
+                                  "POWER unit; owner, 2026-09-11) and what On Times 4, 7 -- a question-chart rule, 4, 2 -- would "
+                                  "give it, for comparison. Applied to one planet only: the house-master the Timing page names "
+                                  "from On Nativities 1.15, whose grant is printed there with its sentence.")
                 st.dataframe(pd.DataFrame(planetary_years_data), hide_index=True, width='stretch', height=_rows_height(len(planetary_years_data)))
 
             with st.expander("What Persian Nativities IV does not settle", icon=":material/help:"):
@@ -13209,9 +15399,12 @@ if location_query and lat is not None and lon is not None:
                     "per 1.23, 2 (Masha'allah), in the chapter named The releaser, with every reading that step needed said "
                     "there; the releaser's distribution feeds the governor's testimony #3 and the luminary proxies. "
                     "The distribution **from the Ascendant** remains the *jar bakhtar* of II.2, 6-7.\n\n"
-                    "**Where the greater years are granted** (*On Times* 4, 7 against *On Nativities* 1.20, 10-17). "
-                    "PN IV is silent and Sahl's two books disagree, so the disagreement stays open, the Planetary years "
-                    "table still chooses no row, and the house-master is directed instead of granting.\n\n"
+                    "**Where the greater years are granted.** Decided 2026-09-11 (FINAL-A1, the owner): *On Nativities* "
+                    "1.20, 7-34 is the corpus's one natal grant -- *On Times* 4 is a question-chart chapter (\"in the hour "
+                    "of the question\", 4, 2) and 1.23, 68 sends the reader to \"the section on the house-master\" -- so "
+                    "the house-master's years are granted from 1.20 in The releaser chapter, placed by the division; the "
+                    "Planetary years table shows 1.20's grade for every planet and *On Times* 4, 7 for comparison; PN IV is "
+                    "silent (IX.8, 123) and III.2, 110-111's gate now has the input it names.\n\n"
                     "**Directing anything that is not the Ascendant or the meridian.** III.1, 12 sends the reader to "
                     "\"what we stated in our book [on that topic]\" for every other point. Dykes' fn 16 identifies the "
                     "method as Ptolemy's proportional semi-arcs, but that is an editor's note rather than Abu Ma'shar's "
@@ -13233,13 +15426,14 @@ if location_query and lat is not None and lon is not None:
                     "*Revolutions* deferral, and was decided \"for implementation, yes; for reading, no\" while "
                     "PN IV was unread. PN IV has now been read, and the deferral it named is lifted for everything "
                     "above.\n\n"
-                    "**Two readings on this page come from the photograph rather than the OCR'd corpus.** "
-                    "(1) The bottom rung of the rate ladder is **25‴**, twenty-five thirds; the corpus reads "
+                    "**Two readings on this page came from the photograph rather than the OCR'd corpus, and the corpus "
+                    "was repaired to match on 2026-09-11 (`PN4_REPAIRS_2026-09-11.md`).** "
+                    "(1) The bottom rung of the rate ladder is **25‴**, twenty-five thirds; the corpus read "
                     "25″, which would make an hour two and a half days long, and the arithmetic settles it "
-                    "independently of the page. (2) The *fardar* order is taken from the prose of **IV.1, 2-4**, "
-                    "which gives it complete; the corpus has dropped fifteen of the eighteen planet glyphs from "
-                    "Figure 43 (p. 116), so the figure itself is not built from. Both are recorded in "
-                    "`PN4_READTHROUGH_FINDINGS_2026-09-10.md` (D-07, D-05).\n\n"
+                    "independently of the page; the corpus now reads 25‴. (2) The *fardar* order is taken from the "
+                    "prose of **IV.1, 2-4**, which gives it complete; the corpus's Figure 43 (p. 116) had dropped fifteen "
+                    "of its eighteen planet glyphs and is complete again, and the prose is still what is built from. "
+                    "Both are recorded in `PN4_READTHROUGH_FINDINGS_2026-09-10.md` (D-07, D-05).\n\n"
                     "**One printed error is deliberately not reproduced.** Intro Sect. 2 (p. 7) puts the monthly "
                     "revolutions at 12° **23′** when the natal Sun is at 12° **22′**. The page "
                     "genuinely prints that, and it is contradicted by the rule in its own sentence, by IX.1, 23, by "
@@ -13323,11 +15517,11 @@ if location_query and lat is not None and lon is not None:
             # text of each, as it stood in the sidebar, is here.
             st.subheader("Configurable readings")
             st.markdown(
-                "**Five-degree carryover at all twelve cusps** (Configurations page, Strength of the Planets) -- "
-                "Sahl states the rule for the stakes twice (Aphorism #44, 88; On Nativities 1.22, 9) "
-                "and once for every house (On Nativities 1.18, 19: 'and likewise in all of the houses'). "
-                "Off = stakes only. Flips the Sahl 83 verdict for about 6% of placements. "
-                "Affects: Strength of the Planets, testimony 83.\n\n"
+                "**Five-degree carryover at all twelve cusps** -- RETIRED 2026-09-11 (owner's ruling, "
+                "OWNER_RULING_PLACES_VS_DYNAMICS): the five-degree rule is a dynamics rule at the four axial "
+                "degrees only and has no all-cusps form under the canon; On Nativities 1.18, 19's 'and likewise "
+                "in all of the houses' is read as the four stakes (the course's reading, Lesson 3 §4-5). The "
+                "switch is gone; a stored preference for it is ignored.\n\n"
                 "**VII.6, 27/45 'eastern/western relative to the Sun'** (Configurations page, Planetary Condition) -- "
                 "'hemisphere': the whole half, excluding the rays (VII.2, 2; VII.6, 34). 'VII.2 band': only "
                 "the easternizing band 15/18 to 90 degrees (VII.2, 14-21) and the westernizing band 90 down to "
@@ -13337,9 +15531,10 @@ if location_query and lat is not None and lon is not None:
                 "Gr. Intr. VII.2, 61 and 72-73 give 12; Sahl gives 15 for the Moon's fitness as releaser. "
                 "Affects: the Solar phase column of Planetary Positions; on the Configurations page, "
                 "Weakness of the Planets (93), Planetary Condition and Corruption of the Moon.\n\n"
-                "**Mars under the rays to 18 degrees west (Sahl, On Nativities 1.22)** (Chart page, Planetary Positions) -- "
-                "Gr. Intr. VII.2, 30-31 has Mars under the rays at 15 on the western side; Sahl's table has him "
-                "westernize at 18 (fn. 175). Both agree on 18 east. Affects: the Solar phase column and every test that "
+                "**Mars under the rays to 18 degrees west (Dykes's table in On Nativities 1.22, fn 175)** (Chart page, Planetary Positions) -- "
+                "Gr. Intr. VII.2, 31 has Mars under the rays at 15 on the western side; Dykes's chapter-head table for "
+                "Sahl, with fn 175 reading VII.2, 30's westernizing boundary into 18, has him at 18; Sahl's own sentences "
+                "are silent on Mars west. Both agree on 18 east. Affects: the Solar phase column and every test that "
                 "reads it; a 3-degree band on one planet.\n\n"
                 "**Fitting infortune (Sahl, Choices Ch. 1, 12)** (Configurations page, beside the Connection test) -- "
                 "\"the infortunes are perhaps more fitting for him, since [one] may be the lord of the original Ascendant\"; "
@@ -13388,12 +15583,13 @@ if location_query and lat is not None and lon is not None:
                 rows.append({'Sign': sign, 'Domicile': SIGN_TO_DOMICILE[sign],
                              'Exaltation': f"{exalted} ({EXALTATION_DEGREES[exalted]}°)" if exalted else '-',
                              'Triplicity, day': trip['Day'], 'Triplicity, night': trip['Night'],
-                             'Participating': trip['Participating'],
+                             'Participating': get_essential_rulers(i * 30 + 15)['triplicity_participating'],
                              'Faces (1st, 2nd, 3rd)': ' · '.join(faces)})
             st.dataframe(pd.DataFrame(rows), hide_index=True, width='stretch', height=_rows_height(12))
             st.caption("Sources: Sahl, The Introduction Ch. 1 and Handy Tables (Tables of Dignities). Exaltation degrees: "
                        "the standard scheme; Hermes' differ by a degree for Saturn, Mars, the Sun, Venus and the Moon. "
-                       "Triplicity lords are Dorothean. Faces are read at 5, 15 and 25 degrees of each sign.")
+                       "Triplicity lords are Dorothean (Gr. Intr. V.14, 6-9; Figure 53 (Gr. Intr.)); Virgo's partner is "
+                       "Mercury 'in preference to' Mars (V.14, 7; fn 100). Faces are read at 5, 15 and 25 degrees of each sign.")
 
             st.subheader("Egyptian bounds",
                          help="Lesson 9, and the bounds every distribution of Part 2 runs through (III.1, 11). The "

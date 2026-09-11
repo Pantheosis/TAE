@@ -26,10 +26,37 @@ def test_d4_control_the_unreversed_expedition_lot_is_untouched(engine):
 
 
 # --- D-11: the Lot of death stays projected from Saturn, labelled ---------
-def test_d11_lot_of_death_is_projected_from_saturn_and_says_it_is_an_emendation(engine):
+def test_d11_lot_of_death_is_stated_by_abu_mashar_and_printed_in_sahl_with_the_cusp_by_equation(engine):
+    """FINAL-A12 / decision sheet row 4 (owner, 2026-09-11): the projection
+    from Saturn is a rule Gr. Intr. VIII.4, 226 and VIII.6, 69 state; Sahl
+    8.6, 1 as printed agrees, his manuscripts reading the Ascendant (fn
+    89) -- "emendation" describes Sahl's transmission and lives in the
+    note, not the confidence field. The eighth's degree is "by equation"
+    (VIII.3, 14-15), this Lot's own rule whatever the shared switch says;
+    the whole-sign carried degree is a labelled variant row."""
     row = _lot(engine, "death")
-    assert row["project"] == "Saturn"
-    assert "emendation" in row["confidence"] and "fn. 89" in row["note"]
+    assert row["project"] == "Saturn" and row["cusp_rule"] == "quadrant cusp"
+    assert "VIII.4, 226" in row["source"] and "VIII.6, 69" in row["source"]
+    assert row["confidence"].startswith("stated (Gr. Intr. VIII.4, 226")
+    assert "emendation" not in row["confidence"] and "fn 89" in row["note"] and "emendation" in row["note"]
+    variant = _lot(engine, "death_ws")
+    assert variant["cusp_rule"] == "whole-sign place" and "not prescribed in any supplied passage" in variant["confidence"]
+    # the Lots page's STANDING paragraph says the same (review D4, 2026-09-11)
+    from conftest import ui_source
+    src = ui_source()
+    assert "The Lot of death is projected from Saturn: STATED by Abu Ma\\'shar (Gr. Intr. VIII.4, 226; VIII.6, 69), and Sahl 8.6, 1 as printed agrees, his manuscripts reading the Ascendant (fn 89" in src
+    assert "is projected from Saturn by Dykes" not in src
+    # the two rows differ only in the eighth's degree: with equal cusps they coincide
+    from datetime import datetime
+    chart = engine["calculate_traditional_chart"](datetime(1240, 5, 23, 13, 45), 43.7792, 11.2463)
+    p, asc, cusps, sect = chart["planetary_data"], chart["ascendant"], chart["houses"], chart["sect"]
+    death = engine["lot_by_id"]("death", p, asc, cusps, sect)
+    ws = engine["lot_by_id"]("death_ws", p, asc, cusps, sect)
+    expected = (p["Saturn"]["longitude"] + cusps[7] - p["Moon"]["longitude"]) % 360.0
+    assert death == pytest.approx(expected)
+    assert ws == pytest.approx((p["Saturn"]["longitude"] + (asc + 210.0) - p["Moon"]["longitude"]) % 360.0)
+    equal = tuple((asc + 30.0 * i) % 360.0 for i in range(12))
+    assert engine["lot_by_id"]("death", p, asc, equal, sect) == pytest.approx(engine["lot_by_id"]("death_ws", p, asc, equal, sect))
 
 
 # --- D-12: 12 degrees for either node, cited to the two sources that say so
@@ -216,11 +243,22 @@ def test_d21_control_no_row_is_a_verdict(engine):
 
 
 # --- D-15: Mars's western orb, 15 by default, 18 by switch ---------------
-def test_d15_mars_west_orb_defaults_to_abu_mashars_15_and_switches_to_sahls_18(engine, monkeypatch):
+def test_d15_mars_west_orb_defaults_to_gr_intr_15_and_switches_to_dykess_18_for_sahl(engine, monkeypatch):
+    """15 is Gr. Intr. VII.2, 31; the 18 of the switch is Dykes's table in
+    On Nativities 1.22 with fn 175 (VII.2, 30's westernizing boundary read
+    into an 18-degree 'under the rays'), Sahl's own sentences being silent
+    on Mars west -- relabelled from "Sahl's table" on 2026-09-11 (decision
+    sheet row 10). The constants do not change."""
     assert engine["MARS_WEST_RAYS_18"] is False
     assert engine["solar_rays_orb"]("Mars") == (18.0, 15.0)
     monkeypatch.setitem(engine, "MARS_WEST_RAYS_18", True)
     assert engine["solar_rays_orb"]("Mars") == (18.0, 18.0)
+    # the switch's label on the page (review round, 2026-09-11: pinned)
+    from conftest import ui_source
+    src = ui_source()
+    assert '"Mars under the rays to 18° west"' in src
+    assert "Dykes's table for Sahl (the chapter head of On Nativities 1.22, with fn 175, which " in src
+    assert "Gr. Intr. VII.2, 31 puts " in src and '"Sahl\'s table"' not in src
 
 
 def test_d15_a_mars_16_degrees_west_changes_phase_only_under_the_switch(engine, monkeypatch):
@@ -327,17 +365,21 @@ def test_d2_control_abu_mashars_profile_keeps_the_same_pair_received_unmarked(en
     assert rec and not any("brought down" in str(v) for r in rec for v in r.values()), rec
 
 
-# --- D-3: the planetary years shown beside the two placement rules, applied to nothing
-def test_d3_years_display_reads_both_rules_and_names_the_silence(engine):
+# --- D-3: the planetary years beside 1.20's grade (the natal grant) and On Times 4, 7 (a question chart)
+def test_d3_years_display_reads_1_20_in_full_by_the_division_and_on_times_for_comparison(engine):
     c = _fixture_chart(engine, "1240-05-23")
     p, sect = c["planetary_data"], c["sect"]
     ess = engine["evaluate_essential_dignities"](p, sect)
     rows = engine["evaluate_planetary_years_display"](p, c["houses"], c["ascendant"], sect, ess)
     assert [r["Planet"] for r in rows] == ["Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]
     for r in rows:
-        assert r["On Times 4, 7 would grant"].startswith(("greater", "middle", "lesser", "in a stake but not eastern"))
-        assert r["On Nativities 1.20 would grant"].startswith(("greater", "middle", "not stated"))
+        assert r["On Times 4, 7 (a question chart, 4, 2): for comparison"].startswith(("greater", "middle", "lesser", "in a stake but not eastern"))
+        assert r["On Nativities 1.20 grants (as house-master)"].startswith(
+            ("greater (1.20", "middle (1.20", "lesser (1.20", "months (1.20", "days (1.20", "hours (1.20",
+             "days and hours (1.20", "middle as months and days (1.20", "1.20 silent"))
         assert (r["Lesser"], r["Greater"]) == (engine["PLANETARY_YEARS"][r["Planet"]]["lesser"], engine["PLANETARY_YEARS"][r["Planet"]]["greater"])
+        g = engine["sahl_house_master_years"](r["Planet"], p, c["houses"], sect, ess)
+        assert g["division"] == r["Division (5 deg at the stakes)"]
 
 
 # Who may read PLANETARY_YEARS, and which of its columns. Extending either
@@ -360,9 +402,19 @@ D3_GRANT_READERS = {
     # (Lesson 5), a table and nothing else: no caller reads a row to grant
     # anything, and the page reads no chart. UI_REVIEW_2026-09-10.md §3.
     "reference_planetary_years_rows",
+    # Added 2026-09-11 with FINAL-A1 (decision sheet row 1, the owner): the
+    # house-master's years ARE granted, from Sahl, On Nativities 1.20, 7-34
+    # read in full -- the corpus's one natal grant, On Times 4 being a
+    # question-chart chapter (4, 2) and 1.23, 68 pointing to 1.20. The
+    # reader applies a grant to ONE planet, the house-master 1.15 names,
+    # prints the sentence it rests on, and places by the division (the
+    # owner's unit). This is the thing the control used to forbid; it is
+    # admitted by the owner's decision, not by a reading.
+    "sahl_house_master_years",
 }
 D3_FARDAR_READERS = {"evaluate_planetary_years_display", "pn4_fardar_sequence",
-                     "pn4_activation_ages", "reference_planetary_years_rows"}
+                     "pn4_activation_ages", "reference_planetary_years_rows",
+                     "sahl_house_master_years"}          # reads the grant keys only (FINAL-A1); listed because it reads the table
 D3_GRANT_KEYS = ("lesser", "middle", "greater", "mighty")
 
 
@@ -384,13 +436,14 @@ def test_d3_control_the_GRANTED_years_are_applied_by_nothing():
     PN IV, so this control is no longer "nothing reads PLANETARY_YEARS" --
     pn4_fardar_sequence now reads it. What it guards is narrower.
 
-    The LESSER, MIDDLE, GREATER and MIGHTY years stay display-only. PN IV
-    turned out not to say which planet is the house-master or how many
-    years it grants -- Abu Ma'shar defers it to a book outside this corpus
-    (IX.8, 123) -- so corpus disagreement #2 stays open on the merits and
-    nothing chooses a row of that table. The FARDAR column is a different
-    kind of number, a period length rather than a grant, and IV.1, 2 gives
-    it outright.
+    The LESSER, MIDDLE, GREATER and MIGHTY years are applied by ONE reader
+    only: sahl_house_master_years (FINAL-A1, owner 2026-09-11), which grants
+    the house-master its years from Sahl, On Nativities 1.20, 7-34. PN IV
+    does not say which planet is the house-master or how many years it
+    grants (IX.8, 123); On Times 4, 7 is a question-chart rule; 1.20 is the
+    corpus's one natal grant. Nothing else may choose a row of that table.
+    The FARDAR column is a different kind of number, a period length rather
+    than a grant, and IV.1, 2 gives it outright.
 
     TWO CHECKS, and they catch different things. The key-level one runs
     first so that a genuine attempt to apply a grant gets the doctrinal
@@ -555,3 +608,42 @@ def test_d22_leaves_non_kind_three_receptions_alone(engine):
     assert ('Venus', 'Jupiter') in _reception_pairs(engine, '1240-01-18')
     assert ('Moon', 'Venus') in _reception_pairs(engine, '1240-10-05')
     assert ('Moon', 'Venus') not in _kind_pairs(engine, '1240-10-05', 'III ')
+
+
+# --- The five-degree switch retired (owner's ruling 2026-09-11, sheet row 3) ------------
+
+def test_five_degree_all_cusps_is_no_longer_a_reading(engine):
+    """The five-degree rule is a dynamics rule at the four stakes only; the
+    all-cusps form has no place under the canon and its switch is gone. A
+    stored preference for it is ignored on read."""
+    assert engine["FIVE_DEGREE_ALL_CUSPS"] is False
+    assert "_five_degree_all_cusps" not in engine["PREFERENCE_KEYS"]
+    from conftest import ui_source
+    assert "five_degree_all_cusps" not in ui_source().replace("'_five_degree_all_cusps' retired", "")
+    cusps = tuple(range(0, 360, 30))
+    assert engine["get_effective_house"](58.0, cusps) == 2            # 2 degrees before the third cusp: no carry-over
+    assert engine["get_effective_house"](88.0, cusps) == 4            # 2 degrees before the fourth's cusp (a stake): carried
+
+
+# --- GAP-39 (sheet row 15): VII.6, 52's own nodes read; D-19 kept and cited -----------
+
+def test_vii_6_52_flags_a_planet_within_twelve_degrees_of_its_own_node(engine):
+    """Gr. Intr. VII.6, 52: "Or they are with the Heads of their own Dragons,
+    or with their Tails ... and between them are 12 degrees or less". Mars's
+    mean ascending node at J2000 is near 7.7 Aries: Mars set at 10 Aries is
+    flagged, with the mean/true reading named; Saturn, far from his own
+    node (near 113 degrees), is not. The Moon's-node clause is untouched."""
+    from datetime import datetime
+    chart = engine["calculate_traditional_chart"](datetime(2000, 1, 1, 12), 0.0, 0.0)
+    p = chart["planetary_data"]
+    p["Mars"]["longitude"] = 10.0
+    p["North Node"]["longitude"] = 200.0            # the Moon's node well away from both
+    ess = engine["evaluate_essential_dignities"](p, chart["sect"])
+    acc = engine["evaluate_accidental_dignities"](p, chart["houses"], chart["sect"], chart["julian_day"])
+    out = engine["evaluate_abu_mashar_condition"](p, chart["houses"], chart["sect"], ess, acc,
+                                                  chart["julian_day"], chart["ascendant"])
+    mars = [l for l in out["Mars"]["Negative Labels"] if "its own" in l]
+    assert mars and "52" in mars[0] and "mean node" in mars[0] and "does not say mean or true" in mars[0], mars
+    assert not [l for l in out["Saturn"]["Negative Labels"] if "its own" in l]
+    doc = engine["evaluate_abu_mashar_condition"].__doc__
+    assert "Not implemented BY DECISION D-19" in doc and "V.19, 7" in doc

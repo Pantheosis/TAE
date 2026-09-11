@@ -473,7 +473,7 @@ give); and the bundle's row 5, with and without a natal hour lord.
 **Verification.** Doctrine fixtures 190 (were 186). `tables.json` **+6 / −0**. Full suite
 **2503 passed**, four of them new; `test_base_tables.py` 121 / 0. Rendered in the browser.
 
-**Left undone, on purpose.** VI.1, 12–17's delineations; the seven days of IX.7, 7–8; Dykes'
+**Left undone, on purpose.** VI.1, 12–17's delineations; ~~the seven days of IX.7, 7–8~~ (built as method 2 of the days tab, `pn4_ix7_weeks_from_orb`; this line and the VI.1 caption said otherwise until 2026-09-11, order GAP-27); Dykes'
 reset. The next prompt, per the brief, is the profected houses (VI.2, 1–20).
 
 ### 4f. VI.2, 1–26: the turning of the houses of the root — built 2026-09-10, second session
@@ -820,8 +820,9 @@ the one sentence that speaks of it, quoted, with III.8, 7's condition on the two
 
 **Stated, and keyed by type.** Each sentence names its type and its entrant, so the pairing is the
 sentence's own. Said in the row: the Sun, Moon and Mercury are addressed by none; 46–47 speak of
-rays, so a body in a type-6 bound is not paired; 43 is shown under 40–42's conditions, which are
-not judged; III.8, 7 is a condition on the lord of the year and the distributor and is shown as
+rays, so an infortune's body in a type-6 bound is not paired; 43 is keyed to types 4, 5 and 6 (40's
+premise, a rooted infortune's body or ray in the bound) and shown under 40–42's conditions, which are
+not judged (re-keyed 2026-09-11, order PN4R-4m-1: it had been keyed to types 2, 3 and none); III.8, 7 is a condition on the lord of the year and the distributor and is shown as
 facts (in its own share or not; a fortune with it or not) with the sentence quoted when both are
 infortunes.
 
@@ -861,12 +862,13 @@ note**, over leaving the twelfth-parts out.
 | **I.6, 7** + fn 35 | a fixed star on the Ascendant, Midheaven, a luminary or an angular planet | yes — not computed |
 | **I.6, 8–11** + Figure 52, fn 36 | the count: 14, 98, 2+2, 24+14 = 154, the Lots apart; by degree within a house | yes — the count is a fixture |
 
-**Stated as a drawing, built as a table.** Every point of I.6, 3–6 is listed by whole-sign house
-from the revolution's Ascendant, ordered by degree within the house, with its bound (I.6, 6's
-"in their signs and bounds"). The twelfth-part construction is stated in no text in hand; the
-engine's `_twelfth_part_sign` already supplies it from convention for the Moon's fifth corruption
-and says so, and `pn4_twelfth_part` carries the same convention through to the degree and is
-pinned to agree with it on the sign. The fixed stars are not computed and the page says so. The
+**Stated as a drawing, built as a table.** Every point of I.6, 3–6 is listed by the revolution's
+house cusps (I.6, 2, "by their degrees and minutes ... the ascensions of the right circle"; it was
+filed by whole sign, fn 33's drawing convention, until 2026-09-11, order PN4R-4n-5), ordered by degree within the house, with its bound (I.6, 6's
+"in their signs and bounds"). The twelfth-part construction is stated at Gr. Intr. V.18, 1-3
+(Figure 57); the engine's `_twelfth_part_sign` and `pn4_twelfth_part` carry it and cite it (this
+line said "stated in no text in hand" until 2026-09-11, having been written before Book V of the
+Great Introduction entered the corpus -- work order PN4R-4n-2). The fixed stars are not computed and the page says so. The
 Lots are the engine's, outside the count as I.6, 8 leaves them.
 
 **What was built.** `pn4_twelfth_part`, `pn4_revolution_image` (rows and counts); the bundle

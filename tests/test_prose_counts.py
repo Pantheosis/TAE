@@ -75,7 +75,7 @@ def test_lot_definitions_are_well_formed(engine):
     defs = engine["LOT_DEFINITIONS"]
     ids = [d["id"] for d in defs]
     assert len(ids) == len(set(ids)), "duplicate Lot ids"
-    assert len(defs) == 35, f"LOT_DEFINITIONS has {len(defs)} rows; update this number deliberately"
+    assert len(defs) == 36, f"LOT_DEFINITIONS has {len(defs)} rows; update this number deliberately"   # 36 since 2026-09-11: the Lot of death's whole-sign variant row (sheet row 4)
     planets = {"Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"}
     seen = set()
     for d in defs:
