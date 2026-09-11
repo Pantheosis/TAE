@@ -9174,7 +9174,8 @@ def sahl_releaser_distribution(planetary_data, releaser_lon, obliquity, geo_lat,
 SAHL_INFORTUNES = ('Saturn', 'Mars')
 
 def sahl_house_master_direction(planetary_data, house_master, obliquity, geo_lat,
-                                span_years=PN4_DISTRIBUTION_SPAN_YEARS, origin_jd=None):
+                                span_years=PN4_DISTRIBUTION_SPAN_YEARS, origin_jd=None,
+                                start_lon=None, target_planets=None, sun_target=True):
     """Masha'allah, On Nativities 1.23, 2: "look at the position of the
     governor [fn 181: the house-master] ... then direct it to the
     conjunction of the infortunes and the degree of burning, and its
@@ -9187,20 +9188,26 @@ def sahl_house_master_direction(planetary_data, house_master, obliquity, geo_lat
     at the poles (D-23). 1.23, 3-11's check of that year's revolution is
     sahl_house_master_in_revolution; 4.12, 6's converse direction of a
     retrograde planet is not applied."""
-    if house_master not in planetary_data or not _ascensional_method_applies(obliquity, geo_lat):
+    # `start_lon` directs any degree by the same operation (1.23, 13-14: the lord
+    # of the Ascendant, the Ascendant's degree; 4.20, 32: the Lot of the father,
+    # the Sun or Saturn); `target_planets` replaces Saturn and Mars (4.20, 31's
+    # harmers); `sun_target` keeps or drops "the degree of burning".
+    if start_lon is None and (house_master not in planetary_data):
         return None
-    start = planetary_data[house_master]['longitude'] % 360.0
+    if not _ascensional_method_applies(obliquity, geo_lat):
+        return None
+    start = (start_lon if start_lon is not None else planetary_data[house_master]['longitude']) % 360.0
     oa0 = _oblique_ascension(start, obliquity, geo_lat)
     targets = []
-    for p in SAHL_INFORTUNES:
-        if p not in planetary_data:
+    for p in (target_planets if target_planets is not None else SAHL_INFORTUNES):
+        if p not in planetary_data or p == house_master:
             continue
         lon = planetary_data[p]['longitude'] % 360.0
         targets.append((f"{p}'s body", lon, '1.23, 2 "the conjunction of the infortunes"'))
         targets.append((f"{p}'s opposition", (lon + 180.0) % 360.0, '1.23, 2 "its opposition"'))
         targets.append((f"{p}'s square (right)", (lon - 90.0) % 360.0, '1.23, 2 "its square"'))
         targets.append((f"{p}'s square (left)", (lon + 90.0) % 360.0, '1.23, 2 "its square"'))
-    if 'Sun' in planetary_data:
+    if sun_target and 'Sun' in planetary_data and house_master != 'Sun':
         targets.append(("the Sun's degree (burning)", planetary_data['Sun']['longitude'] % 360.0,
                         '1.23, 2 "the degree of burning" (reading: the Sun\'s natal degree)'))
     rows = []
@@ -9244,6 +9251,38 @@ def sahl_house_master_in_revolution(house_master, chart_data, sr):
         {'Fact': "In a stake of the Ascendant of the year", 'Reads': f"house {house} from the revolution's Ascendant" + (' -- a stake' if house in (1, 4, 7, 10) else '') + (' -- the Ascendant itself, "worse"' if house == 1 else ''), 'Source': '1.23, 4'},
         {'Fact': 'With an infortune in its sign', 'Reads': ', '.join(with_infortune) or 'none', 'Source': '1.23, 2-4'},
     ]
+
+def sahl_father_lot_harmers(sect, planetary_data, lot_lon, sun_lon):
+    """Sahl, On Nativities 4.20, 31: "if the nativity was by day, the
+    infortunes which harm his Lot are Mars and Saturn (and Mercury, if he
+    was unfortunate); and if it was by night, the infortunes which harm
+    them are Mars and Mercury (if he was unfortunate)". One row per harmer
+    with its whole-sign aspect to the Sun and to the Lot; Mercury's "if he
+    was unfortunate" is a judgment and is shown as such, not made; 36's
+    Saturn ("if Saturn looked at the degree of the Lot of the father from
+    hostility, it is more harmful for some of the injuries") is a separate
+    row by night, when he is not a harmer. fn 288 (Dykes: Mars the main
+    malefic in both sects, Saturn barred by night because he indicates the
+    father) is the editor's reading and is quoted, not applied (order
+    DIS-10, 2026-09-11)."""
+    day = sect == 'Diurnal'
+    harmers = [('Mars', 'stated'), ('Saturn', 'stated')] if day else [('Mars', 'stated')]
+    harmers.append(('Mercury', '"if he was unfortunate" -- a judgment, not made here'))
+    rows = []
+    for p, note in harmers:
+        if p not in planetary_data:
+            continue
+        lon = planetary_data[p]['longitude']
+        rows.append({'Harmer': p, 'Named by 31': note,
+                     'Looks at the Sun': _sahl_looks(lon, sun_lon) or 'in aversion',
+                     'Looks at the Lot': _sahl_looks(lon, lot_lon) or 'in aversion', 'Source': '4.20, 31'})
+    if not day and 'Saturn' in planetary_data:
+        a = _sahl_looks(planetary_data['Saturn']['longitude'], lot_lon)
+        rows.append({'Harmer': 'Saturn', 'Named by 31': 'not a harmer by night (he indicates the father, 32); 36 applies',
+                     'Looks at the Sun': _sahl_looks(planetary_data['Saturn']['longitude'], sun_lon) or 'in aversion',
+                     'Looks at the Lot': (f"{a} -- \"from hostility\" (square or opposition) is 36's harm" if a in ('square', 'opposition')
+                                          else (a or 'in aversion')), 'Source': '4.20, 36'})
+    return rows
 
 def sahl_turning_reaches_partner(segments, age, ascendant_lon, planetary_data):
     """Sahl, On Nativities 1.24, 4-5 with 1.23, 23: "if you came to the year
@@ -12289,6 +12328,33 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'hm_this_year': hm_this_year, 'hm_revolution': hm_revolution, 'hm_flags': hm_flags,
         'standin_moon': standin_moon,
         'angle_planets': angle_planets,
+        # DIS-10: the father's Lot (4.20, 31-36): the harmers, and 32's two directions
+        'father_lot': (lambda lot: (None if lot is None else {
+            'lot': lot,
+            'harmers': sahl_father_lot_harmers(chart_data['sect'], chart_data['planetary_data'], lot,
+                                               chart_data['planetary_data']['Sun']['longitude']),
+            'second': 'Sun' if chart_data['sect'] == 'Diurnal' else 'Saturn',
+            'from_lot': sahl_house_master_direction(
+                chart_data['planetary_data'], None, chart_data['obliquity'], lat, origin_jd=chart_data['julian_day'],
+                start_lon=lot, sun_target=False,
+                target_planets=(('Mars', 'Saturn', 'Mercury') if chart_data['sect'] == 'Diurnal' else ('Mars', 'Mercury'))),
+            'from_second': sahl_house_master_direction(
+                chart_data['planetary_data'], 'Sun' if chart_data['sect'] == 'Diurnal' else 'Saturn', chart_data['obliquity'], lat,
+                origin_jd=chart_data['julian_day'], sun_target=False,
+                target_planets=(('Mars', 'Saturn', 'Mercury') if chart_data['sect'] == 'Diurnal' else ('Mars', 'Mercury'))),
+        }))(lot_by_id('father', chart_data['planetary_data'], ascendant, chart_data['houses'], chart_data['sect'])),
+        # REL-5-7: 1.23, 13-14 -- when a 1.23, 12 flag fires, the lord of the Ascendant, then the Ascendant's degree
+        'hm_redirect': (lambda lord: ({
+            'lord': lord,
+            'lord_direction': sahl_house_master_direction(chart_data['planetary_data'], lord, chart_data['obliquity'], lat,
+                                                          origin_jd=chart_data['julian_day']) if lord in chart_data['planetary_data'] else None,
+            'ascendant_direction': sahl_house_master_direction(chart_data['planetary_data'], None, chart_data['obliquity'], lat,
+                                                               origin_jd=chart_data['julian_day'], start_lon=ascendant),
+            'aggravators': [p for p in SAHL_INFORTUNES if p in chart_data['planetary_data'] and (
+                SIGN_TO_DOMICILE.get(get_zodiac_sign(chart_data['planetary_data'][lord]['longitude'])) == p
+                or SIGN_TO_DOMICILE.get(SIGN_ORDER[(SIGN_ORDER.index(get_zodiac_sign(ascendant)) + 7) % 12]) == p)]
+            if lord in chart_data['planetary_data'] else [],
+        }) if any('1.23, 12' in f for f in hm_flags) else None)(SIGN_TO_DOMICILE.get(get_zodiac_sign(ascendant))),
         'turning_partner': sahl_turning_reaches_partner(segments, age, ascendant, chart_data['planetary_data']),
         'governor_condition': pn4_governor_condition((pn4_governor(
             year['lord'], (current or {}).get('distributor'), (current or {}).get('partner'), '', (fardar or {}).get('lord'), orb,
@@ -14504,8 +14570,54 @@ if location_query and lat is not None and lon is not None:
                            "planet's rays directed conversely); 1.23, 5-11's further witnesses (the lord of the "
                            "revolution's Ascendant, the lord of the year, the profection reaching an infortune's sign), "
                            "which are the II.3 examination and the indicators in that chapter; 1.23, 13-14's redirection to the "
-                           "lord of the Ascendant when the house-master is unsuitable; 1.23, 53-60's increase and "
+                           "lord of the Ascendant when the house-master is unsuitable is APPLIED below when a 1.23, 12 flag "
+                           "fires (since 2026-09-11, order REL-5-7); not applied: 1.23, 6; 1.23, 53-60's increase and "
                            "decrease of years; and the 1.21 additions. No worked example exists in Sahl.")
+                if pn4['hm_redirect']:
+                    _rd = pn4['hm_redirect']
+                    st.markdown(f"**1.23, 13-14, the redirection** -- a 1.23, 12 flag stands on the house-master, so \"look at the "
+                                f"coinciding of the lord of the Ascendant with the degree of the infortune (or its square or "
+                                f"opposition), or its entrance into burning\" (13); the lord of the Ascendant here is "
+                                f"**{_rd['lord']}**, directed in the house-master's stead; then the degree of the Ascendant (14). "
+                                f"13's aggravation -- \"if the infortune was the lord of the house of the lord of the Ascendant, or "
+                                f"the infortune was the lord of the house of the eighth\" -- holds for: "
+                                f"{', '.join(_rd['aggravators']) or 'neither infortune'}.")
+                    for _lab, _tab in (("1.23, 13: the lord of the Ascendant, in the house-master's stead", _rd['lord_direction']),
+                                       ("1.23, 14: the degree of the Ascendant", _rd['ascendant_direction'])):
+                        st.markdown(f"*{_lab}*")
+                        if _tab is None:
+                            st.warning("Refused at this latitude (decision D-23).")
+                        elif _tab:
+                            st.dataframe(pd.DataFrame(_tab), hide_index=True, width='stretch', height=_rows_height(min(len(_tab), 8)))
+                        else:
+                            st.markdown("No target within the span.")
+                if pn4['father_lot']:
+                    _fl = pn4['father_lot']
+                    st.subheader("The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)",
+                                 help="31: \"if the nativity was by day, the infortunes which harm his Lot are Mars and Saturn (and "
+                                      "Mercury, if he was unfortunate); and if it was by night, the infortunes which harm them are Mars "
+                                      "and Mercury (if he was unfortunate)\". 32: \"direct the degree of the Lot of the father and the "
+                                      "Sun by day, and by night the Lot and Saturn\". 33: \"if you found an infortune casting its rays "
+                                      "upon the Sun and upon the Lot ... it will kill the father when the direction reaches the "
+                                      "infortune which casts the rays\"; 34-35 rank two infortunes by enmity and power; 36: Saturn "
+                                      "\"from hostility\" is \"more harmful for some of the injuries\".")
+                    st.markdown(f"The Lot of the father stands at **{get_degree_string(_fl['lot'])}** (4.14, 1); the second point "
+                                f"directed is **the {_fl['second']}** (32). fn 288 -- Dykes: Mars the main malefic in both sects, "
+                                f"Saturn barred by night because he indicates the father, Mercury when made unfortunate -- is the "
+                                f"editor's reading and is quoted, not applied; 31 is applied as printed.")
+                    st.dataframe(pd.DataFrame(_fl['harmers']), hide_index=True, width='stretch', height=_rows_height(len(_fl['harmers'])))
+                    for _lab, _tab in (("From the degree of the Lot of the father (32), to the harmers' bodies, squares and oppositions", _fl['from_lot']),
+                                       (f"From the {_fl['second']} (32), to the same", _fl['from_second'])):
+                        st.markdown(f"*{_lab}*")
+                        if _tab is None:
+                            st.warning("Refused at this latitude (decision D-23).")
+                        elif _tab:
+                            st.dataframe(pd.DataFrame(_tab), hide_index=True, width='stretch', height=_rows_height(min(len(_tab), 8)))
+                        else:
+                            st.markdown("No target within the span.")
+                    st.caption("Readings: \"casting its rays\" is met by the direction's targets, the harmers' bodies, squares and "
+                               "oppositions (the same set as the house-master's direction; sextiles and trines are not directed); "
+                               "the Sun is not a target here (4.20, 32 directs him). 33-35's choice between two infortunes is not made.")
 
             with tab_days:
                 st.subheader("The small days: the revolution's Ascendant distributed round the year",

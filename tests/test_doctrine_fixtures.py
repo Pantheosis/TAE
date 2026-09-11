@@ -3383,3 +3383,44 @@ def test_governor_condition_rows_read_essence_and_sign_and_stop_on_the_place_uni
     assert "testimony in it met (house" in rows[1]["Criteria"]                    # Jupiter in Sagittarius, his house, both charts
     assert rows[2]["Met"].startswith("not judged") and "unit awaits the owner" in rows[2]["Criteria"]
     assert engine["pn4_governor_condition"](None, root, sr) == []
+
+
+# --- DIS-10: the father's Lot, 4.20, 31-36 ---------------------------------------------------
+
+def test_father_lot_harmers_by_sect_and_saturns_hostility_by_night(engine):
+    """By night the harmers are Mars (and Mercury if unfortunate, a judgment
+    not made); Saturn is not a harmer -- he indicates the father (32) -- and
+    appears under 36 with his aspect to the Lot; here he squares it. By
+    day Saturn is a stated harmer."""
+    p = pdata(Sun=100.0, Moon=200.0, Mercury=110.0, Venus=130.0, Mars=300.0, Jupiter=250.0, Saturn=20.0)
+    rows = engine["sahl_father_lot_harmers"]("Nocturnal", p, 110.0, 100.0)          # the Lot at 20 Cancer: Saturn in Aries squares it
+    by = {(r["Harmer"], r["Source"]): r for r in rows}
+    assert ("Mars", "4.20, 31") in by and ("Saturn", "4.20, 31") not in by and ("Saturn", "4.20, 36") in by
+    assert "from hostility" in by[("Saturn", "4.20, 36")]["Looks at the Lot"]
+    assert "judgment" in by[("Mercury", "4.20, 31")]["Named by 31"]
+    day = {r["Harmer"] for r in engine["sahl_father_lot_harmers"]("Diurnal", p, 110.0, 100.0) if r["Source"] == "4.20, 31"}
+    assert day == {"Mars", "Saturn", "Mercury"}
+
+
+def test_direction_from_a_degree_to_a_chosen_target_list(engine):
+    """The operation of 1.23, 2 from any start degree to any planets: from
+    the Lot's degree to Mars and Mercury only, no Sun target."""
+    p = pdata(Sun=100.0, Moon=200.0, Mercury=110.0, Venus=130.0, Mars=300.0, Jupiter=250.0, Saturn=20.0)
+    rows = engine["sahl_house_master_direction"](p, None, 23.44, 43.78, start_lon=95.0, target_planets=("Mars", "Mercury"), sun_target=False)
+    assert rows and all(r["Target"].split("'")[0] in ("Mars", "Mercury") for r in rows)
+    assert not any("Sun" in r["Target"] for r in rows)
+
+
+# --- REL-5-7: 1.23, 13-14, the redirection when a 1.23, 12 flag fires -------------------------
+
+def test_bundle_redirects_to_the_lord_of_the_ascendant_when_the_house_master_is_flagged(engine):
+    cast = engine["calculate_traditional_chart"]
+    birth, lat, lon = datetime(1985, 3, 20, 14, 30), 51.5, -0.12
+    chart = cast(birth, lat, lon)
+    b = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(2027, 6, 1).date(), engine["PN4_MONTHLY_TURN_OPTIONS"][0])
+    flagged = any("1.23, 12" in f for f in b["hm_flags"])
+    assert (b["hm_redirect"] is not None) == flagged
+    if flagged:
+        assert b["hm_redirect"]["lord"] == engine["SIGN_TO_DOMICILE"][engine["get_zodiac_sign"](chart["ascendant"])]
+        assert b["hm_redirect"]["ascendant_direction"] is not None
+    assert b["father_lot"] is not None and b["father_lot"]["second"] == ("Sun" if chart["sect"] == "Diurnal" else "Saturn")
