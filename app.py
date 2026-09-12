@@ -4662,30 +4662,57 @@ def calculate_prenatal_syzygy(jd_natal, lat, lon, natal_houses):
     }
 
 # --- The governor of the syzygy degree, Sahl, On Nativities 1.7, 3-7 --------
-# (CONV-ESSENTIAL_DIGNITY_WEIGHTS, 2026-09-11.) Sahl states his own
+# (CONV-ESSENTIAL_DIGNITY_WEIGHTS, 2026-09-11; rebuilt the same evening on
+# the owner's ruling after Astra's blind reading, GOV-1.7 --
+# process/astra_2026-09-11/1.7_governor_ruling.md.) Sahl states his own
 # procedure for the one in charge of the degree of the meeting or
 # opposition; the 5/4/3/2/1 almuten above is the course's technique and is
 # kept beside it under its own name. 1.7, 3: "you will know the one in
 # charge of that portion from five things: the lord of the house,
-# triplicity, exaltation, bound, and image, and the eastern one of them".
-# 1.7, 4: "Then see which of them is stronger in its [own] place, and is
-# direct in course, looking at the sign of the meeting or opposition".
-# 1.7, 7: "if they were both in power equally, [then] whichever of them was
-# in a stake or in its own house, triplicity, bound, or exaltation, and had
-# superiority over its associate in this respect, that is the governor."
-# "In a stake" is strength language and dispatches to the DIVISION under
-# the canon (OWNER_RULING_PLACES_VS_DYNAMICS), said on the row. 1.7, 5-6
-# (the lord of the best; the one changing more quickly into the superior
-# condition) and 4's "stronger in its [own] place" are not modelled.
+# triplicity, exaltation, bound, and image, and the eastern one of them --
+# if [one] had superior claims over the rest of them". 1.7, 4: "Then see
+# which of them is stronger in its [own] place, and is direct in course,
+# looking at the sign of the meeting or opposition". 1.7, 7: "if they were
+# both in power equally, [then] whichever of them was in a stake or in its
+# own house, triplicity, bound, or exaltation, and had superiority over its
+# associate in this respect, that is the governor."
+#
+# TWO RESULTS, both on the page. (1) THE VERDICT, Astra's conservative
+# procedure: a name only where the text's clear subcases decide, otherwise
+# "unresolved" with the profiles printed and the unmodelled stages named --
+# 4's "stronger in its [own] place", 5-6 (the lord of the best; the one
+# changed more quickly), and 7's ranking among candidates that each hold a
+# listed advantage. The Sun is a claim-holder whose solar side is NOT
+# APPLICABLE: 3's eastern preference neither prefers nor sets him aside.
+# 3's preference is a preference among claim-holders, not a veto: a western
+# candidate is set aside only by an eastern one with at least as many
+# claims on the degree ("if [one] had superior claims over the rest").
+# 7 keeps a PROFILE, not a score: a listed advantage (a stake; own house,
+# exaltation, triplicity, bound -- the image is not in 7's list) beats
+# none; two candidates each holding one are left unresolved; 1.20, 2-4's
+# ranking of the lords is not imported. (2) THE MODEL, this app's
+# approximation as first built: the eastern pool first (the Sun having no
+# side), then one point a listed condition, highest wins -- disclosed on
+# the page as arithmetic of this app's, not a rule Sahl states.
+# "In a stake": strength language, the DIVISION under the canon
+# (OWNER_RULING_PLACES_VS_DYNAMICS), with Astra's notation on the row that
+# the text's own word for the stakes is the counted sign (Introduction 2,
+# 31). The Moon's side by the same rising-before-the-Sun rule as the
+# planets, declared (Gr. Intr. VII.2, 4 names her right and left, not
+# "eastern"). Every condition read in the NATAL chart, declared.
 SAHL_1_7_LOOKING_SIGN_COUNTS = (0, 2, 3, 4, 6)   # the same sign or a whole-sign aspect to it
+SAHL_1_7_UNMODELLED = ("4's \"stronger in its [own] place\", 5-6 (the lord of the best; the one changed more quickly "
+                       "into the superior condition) and 7's ranking among candidates that each hold a listed advantage "
+                       "are not modelled")
+SAHL_1_7_MODEL_DISCLOSURE = ("this app's arithmetic, not a rule Sahl states: the eastern candidates taken first (the Sun "
+                             "having no side), then one point for a stake (by the division) and one each for own house, "
+                             "exaltation, triplicity and bound, the highest total the pick; 4's comparative place strength "
+                             "and 5-6 omitted; equal totals are model ties")
 
 def sahl_syzygy_governor(syzygy, p_data, cusps, sect):
     """The governor of the syzygy degree by On Nativities 1.7, 3-7, from
-    the natal chart (the conditions -- motion, looking, easternness, the
-    stake -- read at the nativity, the moment the chapter is casting; the
-    text does not say the lunation's moment, a reading said on the row).
-    Returns the governor (or '-' / a tie), the candidates with each test,
-    and a one-line account for the page."""
+    the natal chart. Returns {'governor', 'how', 'unresolved', 'rows',
+    'model_pick', 'model_points', 'model_how'} -- see the comment above."""
     r = syzygy['rulers']
     lords = [r['domicile'], r['exaltation'], syzygy['active_triplicity_lord'], r['term'], r['face']]
     claims = {}
@@ -4694,6 +4721,7 @@ def sahl_syzygy_governor(syzygy, p_data, cusps, sect):
             claims.setdefault(lord, []).append(kind)
     sun_lon = p_data['Sun']['longitude']
     syz_sign_idx = int((syzygy['syzygy_longitude'] % 360.0) // 30)
+    which = 'meeting' if syzygy['event_type'] == 'Conjunctional' else 'opposition'
     rows = []
     for planet, kinds in claims.items():
         d = p_data[planet]
@@ -4711,41 +4739,78 @@ def sahl_syzygy_governor(syzygy, p_data, cusps, sect):
         own_dignities = [name for name, holder in (('house', own['domicile']), ('exaltation', own['exaltation']),
                                                     ('triplicity', own_trip), ('bound', own['term'])) if holder == planet]
         in_stake = division in (1, 4, 7, 10)
+        advantages = (['a stake'] if in_stake else []) + [f'own {n}' for n in own_dignities]
         rows.append({
             'Planet': planet,
             'Claim on the degree (1.7, 3)': ', '.join(kinds),
             'Direct (1.7, 4)': 'yes' if direct else 'no (retrograde)',
             'Looking at the sign (1.7, 4)': ('yes (' + ('the same sign' if apart == 0 else ASPECT_BY_SIGN_COUNT[apart][0].lower()) + ')')
                                           if looking else f'no (in aversion, {apart} sign{"s" if apart != 1 else ""} off)',
-            'Eastern (1.7, 3)': ('the Sun has no side' if planet == 'Sun' else ('yes' if eastern else 'no (western)')),
-            'Stake or own dignity (1.7, 7)': (f'division {division}' + (' (a stake)' if in_stake else '')
-                                              + ('; own ' + ', '.join(own_dignities) if own_dignities else '')),
-            '_passes': direct and looking, '_eastern': eastern, '_tie': (1 if in_stake else 0) + len(own_dignities),
+            'Eastern (1.7, 3)': ('not applicable (the Sun)' if planet == 'Sun' else ('yes' if eastern else 'no (western)')),
+            'Stake or own dignity (1.7, 7)': f'division {division}' + ('; ' + ', '.join(advantages) if advantages else '; none listed'),
+            'Model points': (1 if in_stake else 0) + len(own_dignities),
+            '_eligible': direct and looking, '_eastern': eastern, '_sun': planet == 'Sun',
+            '_claims': len(kinds), '_advantages': len(advantages),
         })
-    passing = [row for row in rows if row['_passes']]
-    if not passing:
+    by = {row['Planet']: row for row in rows}
+    stage = {row['Planet']: ('eligible' if row['_eligible'] else 'dropped by 1.7, 4') for row in rows}
+    eligible = [row for row in rows if row['_eligible']]
+    unresolved = False
+    if not eligible:
         governor, how = '-', 'no lord of the degree is both direct and looking at its sign (1.7, 4)'
     else:
-        pool = [row for row in passing if row['_eastern']] or passing
-        note = '1.7, 3: the eastern one preferred' if pool is not passing and len(passing) > 1 else ''
-        best = max(row['_tie'] for row in pool)
-        top = [row for row in pool if row['_tie'] == best]
-        if len(top) == 1:
-            governor = top[0]['Planet']
-            how = f"{governor}: direct, looking at the sign of the {'meeting' if syzygy['event_type'] == 'Conjunctional' else 'opposition'} (1.7, 4)"
-            if note:
-                how += f'; {note}'
-            if len(pool) > 1:
-                how += f"; 1.7, 7's stake or own dignity decides ({top[0]['Stake or own dignity (1.7, 7)']})"
+        # 1.7, 3's preference among claim-holders: a western candidate is set
+        # aside by an eastern one holding at least as many claims; the Sun,
+        # with no side, neither sets aside nor is set aside.
+        remaining = list(eligible)
+        if len(remaining) > 1:
+            easterns = [row for row in remaining if row['_eastern']]
+            for row in list(remaining):
+                if not row['_eastern'] and not row['_sun'] and any(e['_claims'] >= row['_claims'] for e in easterns):
+                    stage[row['Planet']] = "set aside by 1.7, 3's preference (an eastern candidate with claims at least equal)"
+                    remaining.remove(row)
+        # 1.7, 7's clear subcase: a listed advantage beats none.
+        if len(remaining) > 1 and any(row['_advantages'] for row in remaining):
+            for row in list(remaining):
+                if not row['_advantages']:
+                    stage[row['Planet']] = 'set aside by 1.7, 7 (no listed advantage against a candidate holding one)'
+                    remaining.remove(row)
+        if len(remaining) == 1:
+            governor = remaining[0]['Planet']
+            steps = [f'direct, looking at the sign of the {which} (1.7, 4)']
+            if len(eligible) > 1:
+                if any(s.startswith("set aside by 1.7, 3") for s in stage.values()):
+                    steps.append("1.7, 3's eastern preference")
+                if any(s.startswith('set aside by 1.7, 7') for s in stage.values()):
+                    steps.append('1.7, 7: a listed advantage against none')
+            how = f"{governor}: " + '; '.join(steps)
+            if len(eligible) == 1:
+                how += ' (the only eligible lord)'
         else:
-            governor = ' / '.join(row['Planet'] for row in top)
-            how = (f"tie between {governor}: each direct and looking, equal under 1.7, 7; 1.7, 5-6 (the lord of the best; "
-                   f"the one changed more quickly into the superior condition) are not modelled")
+            unresolved = True
+            governor = 'unresolved between ' + ' and '.join(row['Planet'] for row in remaining)
+            how = ('each direct and looking' + (', neither set aside by 1.7, 3' if len(eligible) > 1 else '')
+                   + '; ' + '; '.join(f"{row['Planet']}: {row['Stake or own dignity (1.7, 7)']}" for row in remaining)
+                   + f' -- {SAHL_1_7_UNMODELLED}')
+            for row in remaining:
+                stage[row['Planet']] = 'unresolved'
+    # The model: as first built, disclosed as this app's arithmetic.
+    model_pick, model_points, model_how = '-', 0, 'no eligible lord'
+    if eligible:
+        pool = [row for row in eligible if row['_eastern']] or eligible
+        best = max(row['Model points'] for row in pool)
+        top = [row for row in pool if row['Model points'] == best]
+        model_pick = ' / '.join(row['Planet'] for row in top) if len(top) > 1 else top[0]['Planet']
+        model_points = best
+        model_how = (f"{model_pick} ({best} point{'s' if best != 1 else ''}" + (', a model tie' if len(top) > 1 else '') + ') -- '
+                     + SAHL_1_7_MODEL_DISCLOSURE)
     for row in rows:
-        row['Verdict'] = 'THE GOVERNOR' if row['Planet'] == governor else ('candidate' if row['_passes'] else 'dropped by 1.7, 4')
-        for k in ('_passes', '_eastern', '_tie'):
+        row['Verdict'] = 'THE GOVERNOR' if row['Planet'] == governor else stage[row['Planet']]
+        row['Model'] = 'the pick' if row['Planet'] in ([model_pick] if ' / ' not in model_pick else model_pick.split(' / ')) else ''
+        for k in ('_eligible', '_eastern', '_sun', '_claims', '_advantages'):
             del row[k]
-    return {'governor': governor, 'how': how, 'rows': rows}
+    return {'governor': governor, 'how': how, 'unresolved': unresolved, 'rows': rows,
+            'model_pick': model_pick, 'model_points': model_points, 'model_how': model_how}
 
 
 # --- Planetary Day & Hour (Chronocrats) ----------------------------------
@@ -14266,6 +14331,8 @@ if location_query and lat is not None and lon is not None:
                 {"Metric": "Face Lord", "Value": r['face']},
                 {"Metric": "Governor of the syzygy degree (Sahl, On Nativities 1.7, 3-7)",
                  "Value": f"{syzygy_governor['governor']} -- {syzygy_governor['how']}"},
+                {"Metric": "This app's approximation of 1.7 (one point a listed condition)",
+                 "Value": syzygy_governor['model_how']},
                 {"Metric": "Almuten by 5/4/3/2/1 points (the course's technique; the weights are stated in no text in hand)",
                  "Value": f"{syzygy['almuten']} (Score: {syzygy['almuten_score']})"},
             ]
@@ -14274,19 +14341,31 @@ if location_query and lat is not None and lon is not None:
                 st.dataframe(pd.DataFrame(syzygy_governor['rows']), hide_index=True, width='stretch',
                              height=_rows_height(len(syzygy_governor['rows'])))
                 st.caption("Sahl, On Nativities 1.7, 3: \"you will know the one in charge of that portion from five things: the "
-                           "lord of the house, triplicity, exaltation, bound, and image, and the eastern one of them\"; 4: \"Then see "
-                           "which of them is stronger in its [own] place, and is direct in course, looking at the sign of the meeting or "
-                           "opposition\"; 7: \"if they were both in power equally, [then] whichever of them was in a stake or in its own "
-                           "house, triplicity, bound, or exaltation ... that is the governor.\" [Sahl I p. 265]. APPLIED: the five lords "
-                           "of the degree (the sect's triplicity lord) are the candidates; a retrograde one, or one not looking at the "
-                           "syzygy's sign (the same sign or a whole-sign aspect), is dropped (4); the eastern one is preferred (3, by the "
-                           "engine's solar-phase side; the Sun has no side); on a tie, the stake or own dignity (7). READINGS: 'in a "
-                           "stake' is strength language and is read by the DIVISION (Alcabitius, the five degrees at the four axial "
-                           "degrees), this app's convention for strength language, not the text's unit; the conditions are read at the NATIVITY, the moment "
-                           "the chapter is casting (Dykes's comment), the text not saying the lunation's; 'stronger in its [own] place' "
-                           "(4) and 5-6 (the lord of the best; the one changed more quickly) are NOT modelled -- a tie is left a tie. "
-                           "The almuten row is the course's 5/4/3/2/1 technique, kept beside this and named; where the two differ, "
-                           "the difference is the finding.")
+                           "lord of the house, triplicity, exaltation, bound, and image, and the eastern one of them -- if [one] had "
+                           "superior claims over the rest of them\"; 4: \"Then see which of them is stronger in its [own] place, and "
+                           "is direct in course, looking at the sign of the meeting or opposition\"; 7: \"if they were both in power "
+                           "equally, [then] whichever of them was in a stake or in its own house, triplicity, bound, or exaltation, "
+                           "and had superiority over its associate in this respect, that is the governor.\" [Sahl I p. 265]. "
+                           "THE VERDICT names a planet only where the text's clear subcases decide, and otherwise says "
+                           "\"unresolved\" with each candidate's profile: the five lords of the degree (the sect's triplicity lord) "
+                           "are the candidates; a retrograde one, or one not looking at the syzygy's sign (the same sign or a "
+                           "whole-sign aspect), is not eligible (4, read as eligibility); 3's \"the eastern one\" is a preference "
+                           "among the claim-holders, not a veto -- a western candidate is set aside only by an eastern one with at "
+                           "least as many claims on the degree; the SUN is a claim-holder whose side relative to himself is not "
+                           "applicable, so 3 neither prefers nor sets him aside, and a contest that only easternness would decide "
+                           "against him is left unresolved; 7 is kept as a profile, not a score -- a candidate with a listed "
+                           "advantage (a stake; own house, exaltation, triplicity or bound; the image is not in 7's list) beats one "
+                           "with none, and two that each hold one are left unresolved, the text stating no ranking among them and "
+                           "1.20, 2-4's ranking of the lords being stated for the house-master, not borrowed here. NOT MODELLED: "
+                           + SAHL_1_7_UNMODELLED + ". READINGS: \"in a stake\" is read by the DIVISION (Alcabitius, the five "
+                           "degrees at the four axial degrees), this app's convention for strength language -- the text's own word "
+                           "for the stakes is the counted sign, \"the sign of the Ascendant, the fourth, the seventh, and the "
+                           "tenth\" (The Introduction Ch. 2, 31); the Moon's side is the same rising-before-the-Sun rule as the "
+                           "planets', the texts not defining her easternness for this procedure (Gr. Intr. VII.2, 4 names her right "
+                           "and left, not \"eastern\"); the target degree is the lunation's and every condition is read in the "
+                           "NATAL chart, extending the natal context of Dykes's comment to 3-7, whose moment the text does not "
+                           "state. THE APPROXIMATION row is " + SAHL_1_7_MODEL_DISCLOSURE + "; the almuten row is the course's "
+                           "5/4/3/2/1 technique. Where the three differ, the difference is the finding.")
             st.subheader('Victor of the Chart', help="Ibn Ezra's worksheet reproduced cell for cell, so it can be checked against a hand-filled sheet. The seven planets are the columns.")
             st.caption("ibn Ezra's victor #1, 1485/1537")
             # The two same-tradition pairings are the grids a student fills

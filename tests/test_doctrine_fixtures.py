@@ -3776,49 +3776,103 @@ def _governor(engine, sect="Diurnal", syzygy_lon=15.0, **planets):
 def test_syzygy_governor_drops_a_lord_in_aversion_and_the_almuten_names_another(engine):
     """1.7, 4: a meeting at 15 Aries; by day the Sun holds exaltation,
     triplicity and image (the 5/4/3/2/1 almuten, 8 points) but stands in
-    Taurus, in aversion to Aries, so he is dropped; Mars, the house lord in
-    Leo (trine), direct, is the governor. The two rows name different
-    planets, which is the order's finding."""
+    Taurus, in aversion to Aries, so he is not eligible; Mars, the house
+    lord in Leo (trine), direct, is the only eligible lord and the
+    governor. The two rows name different planets."""
     g = _governor(engine, Sun=40.0, Mars=130.0, Mercury=45.0)
-    assert g["governor"] == "Mars" and "1.7, 4" in g["how"]
+    assert g["governor"] == "Mars" and "1.7, 4" in g["how"] and "the only eligible lord" in g["how"] and not g["unresolved"]
     by = {r["Planet"]: r for r in g["rows"]}
     assert by["Sun"]["Verdict"] == "dropped by 1.7, 4" and by["Sun"]["Looking at the sign (1.7, 4)"].startswith("no (in aversion")
+    assert by["Sun"]["Eastern (1.7, 3)"] == "not applicable (the Sun)"
     assert by["Mars"]["Looking at the sign (1.7, 4)"] == "yes (trine)" and by["Mars"]["Verdict"] == "THE GOVERNOR"
     assert by["Sun"]["Claim on the degree (1.7, 3)"] == "exaltation, triplicity, image"
+    assert g["model_pick"] == "Mars" and by["Mars"]["Model"] == "the pick"
 
 
-def test_syzygy_governor_drops_a_retrograde_lord_and_prefers_the_eastern_one(engine):
-    """The same degree; Mars retrograde in Leo (trine, dropped by 4), the
-    Sun in Cancer (square) and Mercury in Gemini (sextile) both direct and
-    looking; Mercury, eastern of the Sun, is preferred by 1.7, 3 (the Sun
-    has no side)."""
-    g = _governor(engine, Sun=100.0, Mars=(130.0, -0.3), Mercury=75.0)
-    assert g["governor"] == "Mercury" and "1.7, 3: the eastern one preferred" in g["how"]
+def test_syzygy_governor_sun_is_retained_against_an_eastern_rival_and_the_contest_is_unresolved(engine):
+    """The Sun (three claims) in Cancer and Mercury (one claim) in Cancer,
+    eastern, both direct and square to Aries, neither holding a listed
+    advantage of 7; Mars, western with one claim, is set aside by 3's
+    preference (Mercury eastern with claims at least equal). The Sun's
+    side is not applicable, so 3 does not set him aside: the verdict is
+    unresolved between the Sun and Mercury, the unmodelled stages named;
+    the model's pick beside it is Mercury (the eastern pool), disclosed."""
+    g = _governor(engine, Sun=100.0, Mars=130.0, Mercury=90.0)
+    assert g["unresolved"] and g["governor"] == "unresolved between Sun and Mercury"
+    assert "neither set aside by 1.7, 3" in g["how"] and "are not modelled" in g["how"]
     by = {r["Planet"]: r for r in g["rows"]}
-    assert by["Mars"]["Direct (1.7, 4)"] == "no (retrograde)" and by["Mars"]["Verdict"] == "dropped by 1.7, 4"
-    assert by["Sun"]["Eastern (1.7, 3)"] == "the Sun has no side" and by["Sun"]["Verdict"] == "candidate"
+    assert by["Mars"]["Verdict"].startswith("set aside by 1.7, 3's preference")
+    assert by["Sun"]["Verdict"] == "unresolved" and by["Mercury"]["Verdict"] == "unresolved"
+    assert g["model_pick"] == "Mercury" and g["model_how"].startswith("Mercury (0 points) -- this app's arithmetic, not a rule Sahl states")
+    assert "the Sun having no side" in g["model_how"] and "equal totals are model ties" in g["model_how"]
 
 
-def test_syzygy_governor_tie_break_is_the_stake_or_own_dignity_by_the_division(engine):
-    """1.7, 7: Mars at 0 Cancer and Mercury at 5 Cancer, both eastern of a
-    Sun at 10 Cancer, direct, square to Aries, both in the ninth division;
-    Mars holds his own bound there (Cancer 0-7 is Mars's), Mercury nothing
-    -- Mars. Then Mercury at 15 Cancer (13-19 is his bound) and Mars at 3,
-    the Sun at 20 Cancer so both stay eastern: each with one own dignity,
-    neither in a stake -> a tie, named as one, 5-6 not modelled."""
+def test_syzygy_governor_eastern_preference_is_not_a_veto(engine):
+    """3's preference sets a western candidate aside only when an eastern
+    one holds at least as many claims on the degree. A meeting at 5
+    Sagittarius by night: Jupiter holds house, triplicity and bound
+    (three claims), Mercury the image (one). Jupiter at 10 Leo (trine),
+    WESTERN of a Sun at 10 Cancer; Mercury at 15 Gemini (opposition),
+    EASTERN. Mercury's claims are fewer, so Jupiter is not set aside. Each
+    then holds listed advantages of 7 (Jupiter in the tenth division from
+    Scorpio rising, a stake, and in his night triplicity; Mercury in his
+    own house and night triplicity) and the text ranks none -> unresolved
+    between them; the model's pick is Mercury, the eastern pool being taken
+    first. Then the equal-claims case: Mars (house
+    only) at 10 Leo western against the same Mercury: Mars is set aside."""
+    g = _governor(engine, sect="Nocturnal", syzygy_lon=245.0, Sun=100.0, Jupiter=130.0, Mercury=75.0, Mars=300.0)
+    by = {r["Planet"]: r for r in g["rows"]}
+    assert by["Jupiter"]["Claim on the degree (1.7, 3)"] == "house, triplicity, bound" and by["Mercury"]["Claim on the degree (1.7, 3)"] == "image"
+    assert by["Jupiter"]["Eastern (1.7, 3)"] == "no (western)" and by["Mercury"]["Eastern (1.7, 3)"] == "yes"
+    assert g["unresolved"] and g["governor"] == "unresolved between Jupiter and Mercury", g["governor"]
+    assert by["Jupiter"]["Model points"] == 2 and by["Mercury"]["Model points"] == 2 and g["model_pick"] == "Mercury"
+    g = _governor(engine, Sun=100.0, Mars=130.0, Mercury=75.0)                   # 15 Aries by day: Mars house, Mercury bound
+    by = {r["Planet"]: r for r in g["rows"]}
+    assert by["Mars"]["Eastern (1.7, 3)"] == "no (western)" and by["Mars"]["Claim on the degree (1.7, 3)"] == "house"
+    assert by["Mars"]["Verdict"] == "set aside by 1.7, 3's preference (an eastern candidate with claims at least equal)"
+
+
+def test_syzygy_governor_seven_is_a_profile_advantage_beats_none_and_two_advantages_are_unresolved(engine):
+    """7's clear subcase: Mars at 0 Cancer (own bound) and Mercury at 5
+    Cancer (none listed), both eastern of a Sun at 10 Cancer, direct,
+    square to Aries: Mars by 7. Then Mercury at 15 Cancer (his own bound)
+    and Mars at 3 Cancer, the Sun at 20 Cancer: each holds one listed
+    advantage; no ranking is stated, so the verdict is unresolved between
+    them -- the model beside it calls them a model tie at one point each.
+    The image is not restored into 7's list: a candidate whose only own
+    dignity is the image has 'none listed'."""
     g = _governor(engine, Sun=100.0, Mars=90.0, Mercury=95.0)
-    assert g["governor"] == "Mars" and "1.7, 7's stake or own dignity decides" in g["how"]
+    assert g["governor"] == "Mars" and "1.7, 7: a listed advantage against none" in g["how"]
+    by = {r["Planet"]: r for r in g["rows"]}
+    assert by["Mercury"]["Verdict"].startswith("set aside by 1.7, 7 (no listed advantage")
+    assert by["Sun"]["Verdict"].startswith("set aside by 1.7, 7")               # the Sun, eligible, holds none either
     g = _governor(engine, Sun=110.0, Mars=93.0, Mercury=105.0)
-    assert g["governor"] == "Mars / Mercury" and "not modelled" in g["how"]
+    assert g["unresolved"] and g["governor"] == "unresolved between Mars and Mercury"
     by = {r["Planet"]: r for r in g["rows"]}
     assert by["Mars"]["Stake or own dignity (1.7, 7)"] == "division 9; own bound"
     assert by["Mercury"]["Stake or own dignity (1.7, 7)"] == "division 9; own bound"
+    assert g["model_pick"] == "Mars / Mercury" and "a model tie" in g["model_how"]
+    # the image alone: Jupiter at 15 Aries by night holds the face (10-20 Aries is the Sun's -- no); use
+    # Saturn at 25 Aries: the third face of Aries is Venus's -- the image test is on the profile string only
+    assert all("own image" not in r["Stake or own dignity (1.7, 7)"] for r in g["rows"])
 
 
 def test_syzygy_governor_rows_are_on_the_victors_page_with_the_relabelled_almuten():
+    import re
     from conftest import ui_source
-    src = ui_source()
+    src = re.sub(r'"\s*\n\s*"', '', ui_source())          # adjacent string literals joined, as Python joins them
     assert 'Governor of the syzygy degree (Sahl, On Nativities 1.7, 3-7)' in src
+    assert '"This app\'s approximation of 1.7 (one point a listed condition)"' in src
     assert "Almuten by 5/4/3/2/1 points (the course's technique; the weights are stated in no text in hand)" in src
     assert '"Syzygy Lord (Almuten)"' not in src
-    assert "is strength language and is read by the DIVISION (Alcabitius, the five degrees at the four axial" in src
+    for phrase in ("THE VERDICT names a planet only where the text's clear subcases decide",
+                   "is a preference among the claim-holders, not a veto",
+                   "the SUN is a claim-holder whose side relative to himself is not applicable",
+                   "7 is kept as a profile, not a score",
+                   "1.20, 2-4's ranking of the lords being stated for the house-master, not borrowed here",
+                   "the text's own word for the stakes is the counted sign",
+                   "(The Introduction Ch. 2, 31)",
+                   "the Moon's side is the same rising-before-the-Sun rule as the planets'",
+                   "Gr. Intr. VII.2, 4 names her right and left",
+                   "every condition is read in the NATAL chart"):
+        assert phrase in src, phrase

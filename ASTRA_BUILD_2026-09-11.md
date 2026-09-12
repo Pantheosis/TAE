@@ -380,3 +380,22 @@ row). P4 -- a star the attached catalogue cannot read is now named on the Timing
 exception (`fixed_star_missing_note`) instead of vanishing; tested. The checker's §7: the corpus
 spells III.1, 13's thirds `25""` (ASCII), not the ‴ glyph the page prints -- the page's glyph is the
 printed book's and stands.
+
+## GOV-1.7 (2026-09-11, evening; branch `governor-1.7-2026-09-12` from main 2d47c45)
+
+The syzygy-governor row rebuilt on the owner's ruling after Astra's blind reading
+(`process/astra_2026-09-11/1.7_governor_packet.md`, `1.7_governor_independent_ruling.md`,
+`1.7_governor_ruling.md` -- option 3, BOTH). The build checks had flagged two readings the row
+carried by implication (the Sun never in 3's eastern pool; 7 scored as a sum); Astra ruled on
+those and on three more (the syntax and order of 3-7; the Moon's side; the moment) and raised the
+stakes' unit.
+
+| Item | What was done |
+|---|---|
+| The verdict | `sahl_syzygy_governor` now names a planet only where the text's clear subcases decide: (1) eligible = direct and looking (4, as eligibility); (2) 3's preference among claim-holders, not a veto -- a western eligible candidate is set aside only by an eastern one with at least as many claims on the degree ("if [one] had superior claims over the rest"); the Sun's side is NOT APPLICABLE, so 3 neither prefers nor sets him aside; (3) 7's clear subcase -- a listed advantage (a stake by the division; own house, exaltation, triplicity, bound; the image not restored) against none; (4) one left -> the governor with its steps; more -> "unresolved between X and Y", the profiles printed, the unmodelled stages named (`SAHL_1_7_UNMODELLED`: 4's "stronger in its [own] place", 5-6, 7's ranking among advantage-holders). 1.20, 2-4's ranking not imported. |
+| The model | The arithmetic as built at 8c43dc4 kept as `model_pick` / `model_how`, on the page as "This app's approximation of 1.7 (one point a listed condition)" with the disclosure in Astra's words (`SAHL_1_7_MODEL_DISCLOSURE`): the eastern pool first, the Sun having no side; one point a listed condition; 4's place strength and 5-6 omitted; equal totals model ties. The candidates table carries "Model points" and "Model" (the pick) columns. |
+| Stakes | The canon's division kept (owner), with Astra's notation on the row: the text's own word for the stakes is the counted sign (The Introduction Ch. 2, 31). |
+| Declared | The Moon's side by the same rising-before-the-Sun rule (Gr. Intr. VII.2, 4 names her right and left, not "eastern"); every condition in the NATAL chart (the natal context of Dykes's comment extended to 3-7). |
+| Tests | The only eligible lord; the Sun retained against an eastern rival -> unresolved, the model's pick beside it; 3's preference not a veto (a western Jupiter with three claims not set aside by an eastern Mercury with one; a western Mars with one claim set aside); 7's advantage-vs-none, and two advantage-holders unresolved with the model calling a tie; the page strings pinned (adjacent literals joined before matching). |
+| `tables.json` | The governor table on the victors page gains two columns ("Model points", "Model") on all six dates; nothing else moved. |
+| Page text | Under the no-build-process rule: no ids, dates or filenames on the row or in the caption. |
