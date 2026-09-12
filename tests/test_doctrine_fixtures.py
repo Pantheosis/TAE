@@ -3686,10 +3686,44 @@ def test_a_catalogue_found_but_unreadable_is_reported_as_such(engine, monkeypatc
         why = engine["fixed_star_refusal"]()
         assert "found " in why and "ephe/sefstars.txt but Swiss Ephemeris could not read it from" in why.replace("\\", "/")
         assert "simulated" in why
+        # the Windows shape -- the bundled file the ONLY one visible and unreadable: the
+        # fall-through must not deny what the first clause reports (third check, P1)
+        import os
+        from pathlib import Path
+        bundled = str(Path(engine["__file__"]).parent / "ephe" / "sefstars.txt")
+        real_isfile = os.path.isfile
+        monkeypatch.setattr(os.path, "isfile", lambda p: (str(p) == bundled) if str(p).endswith("sefstars.txt") else real_isfile(p))
+        state.update(checked=False, ready=False, where=None, why=None)
+        assert engine["_fixed_star_catalogue_ready"]() is False
+        why = engine["fixed_star_refusal"]()
+        assert "could not read it from" in why and "; then no other sefstars.txt in $SE_EPHE_PATH" in why
+        assert "no sefstars.txt at the bundled path" not in why
     finally:
         state.update(checked=False, ready=False, where=None, why=None)
     monkeypatch.undo()
     assert engine["_fixed_star_catalogue_ready"]() is True
+
+
+def test_a_star_the_catalogue_cannot_read_is_named_not_dropped(engine, monkeypatch):
+    """Third check, P4: after a good attach, a star that fails to read used
+    to vanish from the table silently; it is now named with its exception."""
+    if not engine["_fixed_star_catalogue_ready"]():
+        pytest.skip("no star catalogue in this interpreter")
+    import swisseph as swe
+    real = swe.fixstar2_ut
+    def flaky(name, *a, **k):
+        if name == "Algol":
+            raise OSError("star not found (simulated)")
+        return real(name, *a, **k)
+    monkeypatch.setattr(swe, "fixstar2_ut", flaky)
+    stars = engine["fixed_star_longitudes"](2451545.0)
+    assert "Algol" not in stars and len(stars) == 27
+    note = engine["fixed_star_missing_note"]()
+    assert note.startswith("Not in the catalogue attached, so not placed: Algol (") and "simulated" in note
+    out = engine["pn4_fixed_stars_in_image"]({"planetary_data": pdata(Sun=10.0, Moon=200.0), "ascendant": 0.0, "mc": 270.0}, 2451545.0)
+    assert out["refused"] is None and out["missing"] == note
+    monkeypatch.undo()
+    assert len(engine["fixed_star_longitudes"](2451545.0)) == 28 and engine["fixed_star_missing_note"]() == ""
 
 
 def test_without_any_star_catalogue_the_page_says_not_computed_and_the_unit_test_skips(engine, monkeypatch):

@@ -377,9 +377,10 @@ def test_a_locator_names_its_volume_never_the_author_alone():
 # sentences are doctrine and stay.
 BUILD_PROCESS_MARKERS = re.compile(
     r"2026-0\d-\d\d|\bD-\d+\b|DEC-D-|FINAL-A\d|GAP-\d|PN4R-|REL-\d|DIS-\d+|CONV-|Astra F\d|"
-    r"\.md\b|\bOCR|the owner|owner,|owner's|\bOwner\b|review D\d|the checker|work order|\border [A-Z]{2,}|"
+    r"\.md\b|\bOCR|the owner|owner,|owner's|\bOwner\b|review D\d|the checker|work order|(?-i:\border [A-Z]{2,})|"
     r"OWNER_RULING|decision sheet|sheet row|the corpus|the ruling|by ruling|the canon\b|canon's|since 2026|"
-    r"the builder|builder's|lane \d|\bdecision D|blind reading|the harness|PN4_REPAIRS|READTHROUGH")
+    r"the builder|builder's|lane \d|\bdecision D|blind reading|the harness|PN4_REPAIRS|READTHROUGH|"
+    r"this corpus|corpus disagreement|rephotograph|for weeks", re.IGNORECASE)
 
 
 def test_page_strings_carry_no_build_process():
@@ -400,7 +401,7 @@ def test_page_strings_carry_no_build_process():
     for node in ast.walk(tree):
         if isinstance(node, ast.Constant) and isinstance(node.value, str) and node.lineno not in doc_lines:
             for m in BUILD_PROCESS_MARKERS.finditer(node.value):
-                if m.group(0) == "the owner" and "the owner of the revolution" in node.value:
+                if m.group(0).lower() == "the owner" and "the owner of the revolution" in node.value:
                     continue                                                  # II.3, 5's own words
                 offenders.append((node.lineno, m.group(0), node.value[max(0, m.start() - 40):m.end() + 40]))
     assert not offenders, "\n".join(f"app.py:{ln}: {mark!r} in ...{ctx}..." for ln, mark, ctx in offenders)

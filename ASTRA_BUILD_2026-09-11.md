@@ -361,3 +361,22 @@ across every page string in `app.py` (about a hundred strings) and pinned by
   still listed the releaser and house-master, 1.18's ascensional distribution, 2.13's bands and the
   thirty fixed stars as not implemented; what remains unbuilt of each is named instead), and the
   Reference page's planetary-years caption no longer says nothing in the app grants years.
+
+### Third check (`BUILD_PAGETEXT_CHECK_REPORT_2026-09-11.md`, engine 9970578): READY for PR #2; its residue taken
+
+The checker found no doctrine lost in the page-text pass, the four scope corrections right, the eight
+polar refusals true of their sites; suite 1992 green; `git diff 4c3f516 2332217` empty. Its residue,
+all low, taken in one commit: P1 -- the Windows-shaped refusal ("found ... could not read it; then no
+sefstars.txt at the bundled path ...") no longer denies its own first clause: the fall-through reads
+"no other sefstars.txt in $SE_EPHE_PATH, the user data directory or site-packages" when the bundled
+file was found and failed; tested with the bundled file the only one visible. P2 -- six residual
+process strings the pass missed ("corpus disagreement #3", "The corpus's own vocabulary" -- the guard
+was case-sensitive --, "unattested in this corpus", "not in this corpus", "became legible only when the
+missing pages were rephotographed", "deliberately incomplete for weeks") reworded; the guard now
+case-insensitive with "this corpus", "corpus disagreement", "rephotograph", "for weeks" added
+(the "order XX" marker kept case-sensitive so "order of", "ORDER BY" pass). P3 -- the VII.6, 52
+own-nodes entry left `NOT_IMPLEMENTED_COVERAGE` (it is built; the reading is on the Configurations
+row). P4 -- a star the attached catalogue cannot read is now named on the Timing page with its
+exception (`fixed_star_missing_note`) instead of vanishing; tested. The checker's §7: the corpus
+spells III.1, 13's thirds `25""` (ASCII), not the ‴ glyph the page prints -- the page's glyph is the
+printed book's and stands.

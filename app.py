@@ -4914,7 +4914,7 @@ def calculate_classical_lots(asc, sun, moon, sect):
     for name, lon_val in lots.items():
         result.append({
             'Lot Name': name,
-            'Standing': ('EXTERNAL -- unattested in this corpus' if 'Basis' in name
+            'Standing': ('EXTERNAL -- unattested in these texts' if 'Basis' in name
                           else standing_by_id[classical_ids[name]]),
             'Position': get_degree_string(lon_val),
             'WS place': get_wsh_house(lon_val, asc),
@@ -5378,10 +5378,6 @@ NOT_IMPLEMENTED_COVERAGE = [
      "medicine' -- and a twelve-house scheme for war. Horary, and in tension with the fixed "
      "house meanings of Introduction Ch. 2, 4-29, which no text reconciles. A caveat only: "
      "this app's house meanings are one topic's assignment."),
-    ("Gr. Intr. VII.6, 52", "Each planet's OWN nodes (\"their own Dragons\") are read "
-     "from the ephemeris's MEAN nodes within 12 degrees; only the "
-     "reading remains -- 52 does not say mean or true, and the chart's Moon's node is the TRUE "
-     "one, so the two node kinds differ."),
     ("Gr. Intr. VII.3, 2 / VI.26, 3", "The ADVANCING AND WITHDRAWING QUADRANTS as a "
      "condition in its own right (ASC to MC and DSC to IC advancing: primary motion "
      "toward the meridian). Read from the margin of the Figure 90 reshoot and Dykes' "
@@ -11488,7 +11484,10 @@ def _fixed_star_catalogue_ready():
             candidates += glob.glob(os.path.join(base, '*', 'sweph', 'sefstars.txt')) + glob.glob(os.path.join(base, '*', 'sefstars.txt'))
     source = next((c for c in candidates if c and os.path.isfile(c)), None)
     if source is None:
-        _fixed_star_why(f"no sefstars.txt at the bundled path {bundled}, in $SE_EPHE_PATH, in the user data directory or in site-packages")
+        if _FIXED_STAR_STATE['why']:                  # the bundled file was found and failed to attach
+            _fixed_star_why("no other sefstars.txt in $SE_EPHE_PATH, the user data directory or site-packages")
+        else:
+            _fixed_star_why(f"no sefstars.txt at the bundled path {bundled}, in $SE_EPHE_PATH, in the user data directory or in site-packages")
         return False
     try:
         private = _user_data_dir() / 'ephe_stars'
@@ -11514,16 +11513,27 @@ def fixed_star_refusal():
             + (f" -- {_FIXED_STAR_STATE['why']}" if _FIXED_STAR_STATE['why'] else ''))
 
 def fixed_star_longitudes(jd):
-    """{name: longitude} for Sahl's stars at jd, or None without a catalogue."""
+    """{name: longitude} for Sahl's stars at jd, or None without a catalogue.
+    A star the catalogue cannot read is recorded in
+    _FIXED_STAR_STATE['missing'] (name: exception) and the page names it,
+    rather than the row silently vanishing."""
     if not _fixed_star_catalogue_ready():
         return None
-    out = {}
+    out, missing = {}, {}
     for name, _nature in SAHL_FIXED_STARS:
         try:
             out[name] = swe.fixstar2_ut(name, jd, swe.FLG_SWIEPH)[0][0] % 360.0
-        except Exception:
-            continue
+        except Exception as exc:
+            missing[name] = repr(exc)
+    _FIXED_STAR_STATE['missing'] = missing
     return out
+
+def fixed_star_missing_note():
+    """The sentence naming stars the attached catalogue could not read, or ''."""
+    missing = _FIXED_STAR_STATE.get('missing') or {}
+    if not missing:
+        return ''
+    return ("Not in the catalogue attached, so not placed: " + ', '.join(f"{n} ({e})" for n, e in sorted(missing.items())) + ".")
 
 def _star_hits(stars, places, orb=FIXED_STAR_ORB):
     """Rows of (star, place, distance) for every star within orb of a place."""
@@ -11550,7 +11560,8 @@ def pn4_fixed_stars_in_image(chart_data, jd):
     for planet in ('Saturn', 'Jupiter', 'Mars', 'Venus', 'Mercury'):
         if planet in p and get_wsh_house(p[planet]['longitude'], asc) in (1, 4, 7, 10):
             places.append((f"with {planet}, in a stake (whole-sign place {get_wsh_house(p[planet]['longitude'], asc)})", p[planet]['longitude']))
-    return {'rows': _star_hits(stars, places), 'refused': None, 'source_dir': _FIXED_STAR_STATE['where']}
+    return {'rows': _star_hits(stars, places), 'refused': None, 'source_dir': _FIXED_STAR_STATE['where'],
+            'missing': fixed_star_missing_note()}
 
 def pn4_fixed_stars_in_revolution(sr, jd_sr, year_lon, endpoint_lon):
     """III.8, 9's places in the revolution. Returns {'rows', 'refused'}."""
@@ -14301,7 +14312,7 @@ if location_query and lat is not None and lon is not None:
                        "cited as Book.chapter, sentence -- except the releaser and the house-master, which "
                        "PN IV leaves to another book of Abu Ma'shar's: \"the book which we worked on concerning "
                        "nativities\" (IX.8, 123), his *Book of the Judgments of Nativities* (Bodleian Hunt. 546, "
-                       "fn 315), not in this corpus and not the *Great Introduction*, which has only the Lot of the "
+                       "fn 315), not in hand, and not the *Great Introduction*, which has only the Lot of the "
                        "releaser. They are taken from Sahl, *On Nativities* (the chapter named The Releaser, cited "
                        "by that book's chapter and sentence). What neither book settles is listed at the foot of "
                        "the page rather than filled in.")
@@ -14518,6 +14529,8 @@ if location_query and lat is not None and lon is not None:
                 if _fs['refused']:
                     st.warning(f"Not computed: {_fs['refused']}.")
                 else:
+                    if _fs.get('missing'):
+                        st.warning(_fs['missing'])
                     st.markdown("*In the root (I.6, 7):*")
                     if _fs['rows']:
                         st.dataframe(pd.DataFrame(_fs['rows']), hide_index=True, width='stretch', height=_rows_height(min(len(_fs['rows']), 8)))
@@ -14986,7 +14999,7 @@ if location_query and lat is not None and lon is not None:
                            "convention, adopted here: Lesson 3, A Chart Tour, §4-5; the Course "
                            "Glossary s.v. Advancement; Carmen p. 108 fn 187, \"Dorotheus ... is using dynamic divisions to speak "
                            "of the planets' power, because one can only move from a stake to a decline by primary motion\"; "
-                           "with fn 109 on 1.15, 6 agreeing (\"quadrant divisions, not whole signs\"). The corpus's own "
+                           "with fn 109 on 1.15, 6 agreeing (\"quadrant divisions, not whole signs\"). These texts' own "
                            "vocabulary counts SIGNS -- Introduction 2, 31-35 defines the stakes, \"what follows the stakes\" and "
                            "the falling places as counted signs, and 1.20, 10 says \"the sign of the west\" -- so the division "
                            "reading is the translator's, not Sahl's or Nawbakht's; 1.18, 19 (\"its strength will be in the "
@@ -15034,8 +15047,7 @@ if location_query and lat is not None and lon is not None:
                                   "be destroyed; and if it is not burned at the revolution but it is burned in one of the "
                                   "stakes of the Ascendant of the year, it indicates that as well; and it is worse for that "
                                   "in the Ascendant itself\" (1.23, 2-4). This is the technique that needs no grant of "
-                                  "years -- corpus disagreement #3's \"Masha'allah alternative\", absent from PN IV and "
-                                  "present in Sahl.")
+                                  "years -- Masha'allah's alternative, absent from PN IV and present in Sahl.")
                 if not pn4['house_master']:
                     st.markdown("No house-master to direct (see the section above).")
                 else:
@@ -15404,7 +15416,7 @@ if location_query and lat is not None and lon is not None:
 
             with st.expander("What Persian Nativities IV does not settle", icon=":material/help:"):
                 st.markdown(
-                    "The Timing page has been deliberately incomplete for weeks, and these items keep it so. "
+                    "The Timing page leaves these items open. "
                     "Each is absent because **the book does not answer it**, not because the work was skipped.\n\n"
                     "**The releaser and the house-master.** PN IV names five releasers -- \"the Sun, Moon, Ascendant, "
                     "Lot of Fortune, or the degree of the meeting or degree of the opposition\" (III.3, 1) -- and says "
@@ -15564,8 +15576,7 @@ if location_query and lat is not None and lon is not None:
             with st.expander("Coverage: what these sources contain that this app does not", expanded=False):
                 st.caption(
                     "Named explicitly so the absence is a stated scope limit rather than an "
-                    "implied claim of completeness. Several of these became legible only when "
-                    "the missing pages were rephotographed."
+                    "implied claim of completeness."
                 )
                 st.dataframe(pd.DataFrame(
                     [{'Passage': a, 'Not implemented': b} for a, b in NOT_IMPLEMENTED_COVERAGE]),
