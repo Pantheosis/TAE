@@ -422,3 +422,5 @@ Reference Guide for the Planets and Places (Dykes 2023), and their two [UNCERTAI
 the Guide is course material not in hand. Either the tables stand as the one named exception, or
 they go, or the Masha'allah one is re-sourced to Sahl's own chapters (in hand) and the Rhetorius
 one dropped. Not decided here.
+
+The Reference Guide item above is closed: the owner supplied the Guide (corpus `course/TNAC_Reference_Guide_for_the_Planets_and_Places.pdf`, filed with its own statement of sources), so it is in hand and the two delineation tables now cite it by name with the Guide's sources -- Rhetorius Ch. 57 / Mathesis III (not in hand; the Guide's summary the witness) and PN IV Book II's lord of the year in the places, applied to natal planets, the Guide's reading -- and the Masha'allah table Sahl's lords-of-places chapters. The two [UNCERTAIN] cells (the Moon in the sixth and eighth, where the Guide prints ?) stand as pinned.

@@ -13913,8 +13913,8 @@ if location_query and lat is not None and lon is not None:
                 st.dataframe(pd.DataFrame(sect_rows), hide_index=True, width='stretch', height=_rows_height(len(sect_rows)))
             st.caption("Sect: Sahl, The Introduction Ch. 3, 85. Domain: Gr. Intr. VII.1, 37 and VII.6, 13 "
                        "(or Masha'allah, On Nativities 1.23, 17, per the switch).")
-            st.subheader('Topical Planets in Houses', help="Each planet's whole-sign house placement with BOTH Rhetorius/PN IV readings for that pairing, good and bad.")
-            st.caption('Rhetorius & PN IV')
+            st.subheader('Topical Planets in Houses', help="Each planet's whole-sign house placement with BOTH readings for that pairing, good and bad, as the TNAC Reference Guide for the Planets and Places (Dykes, 2023) summarises them: its Rhetorius column from Rhetorius Ch. 57 and Firmicus, Mathesis III (texts not in hand; the Guide's summary is the witness), its PN IV column from Book II's lord of the year in the places, which the Guide applies to natal planets -- a reading of the Guide's, followed here.")
+            st.caption("Rhetorius & PN IV, as the Reference Guide summarises them; the Guide prints ? for the Moon in the sixth and the eighth, and so does this table.")
             st.dataframe(pd.DataFrame(planets_in_houses_data, columns=['Planet', 'Placed in (WS place)', 'Lean']),
                          hide_index=True, width='content', height=_rows_height(len(planets_in_houses_data)))
             # The readings wrap in st.table; the structural columns stay above.
@@ -13924,7 +13924,7 @@ if location_query and lat is not None and lon is not None:
                          hide_index=True)
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
                 st.markdown("Neither is chosen for you. The only thing available to choose with is the Net from the Planetary Condition table, and that number is this app's own arithmetic -- Abu Ma'shar enumerates the VII.6 conditions, never totals them, gives no weighting and no tie rule. An invented score silently picking one of two classical delineations turns a convenience into a verdict.\n\nThe Net is shown as a LEAN instead, and reads Indeterminate within a margin of one, which is the width of a single testimony: those charts sit one label away from the opposite reading, and should be judged on the condition counts and the labels rather than on the number.")
-            st.subheader("Topical House Lords (Masha'allah)", help='For each of the twelve topical houses, its domicile lord\'s own whole-sign placement, and Masha\'allah\'s delineation for that [placed-in, rules] pairing -- the classical way of reading what a house\'s ruler is "doing" elsewhere in the chart.')
+            st.subheader("Topical House Lords (Masha'allah)", help='For each of the twelve topical houses, its domicile lord\'s own whole-sign placement, and Masha\'allah\'s delineation for that [placed-in, rules] pairing, as the TNAC Reference Guide for the Planets and Places (Dykes, 2023) summarises Sahl, On Nativities\' lords-of-places chapters (1.36, 78-97; 2.14; 3.10; 4.11; 5.1; 6.3.4, 12-24; 7.1; 8.5; 9.4; 10.2.4; 11.1; 12.1) -- the classical way of reading what a house\'s ruler is "doing" elsewhere in the chart.')
             # Averse: the lord sits in the 2nd, 6th, 8th or 12th sign from the
             # house it rules, so it does not see its own place.
             lords_rows = [{**{k: v for k, v in r.items() if k != "Masha'allah Signification"},
