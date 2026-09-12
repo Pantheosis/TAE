@@ -2916,7 +2916,7 @@ def test_moon_corruption_110_keeps_the_borrowed_19_libra_3_scorpio_span_and_says
         assert any("VII.6, 40" in str(c) and "no degrees" in str(c) for c in t["clauses"]), t["clauses"]
         # the two readings are on the page, not only in a comment (review D5, 2026-09-11)
         clause = next(str(c) for c in t["clauses"] if "VII.6, 40" in str(c))
-        assert "Carmen p. 258 fn 104" in clause and "Course Glossary" in clause and "different construction" in clause
+        assert "Carmen p. 258 fn 104" in clause and "different construction" in clause and "Course Glossary" not in clause
 
 
 # --- REL-2-6 (sheet row 12): 1.15, 16's "good places" are Sahl's seven praised places, by whole-sign place ---
@@ -3310,7 +3310,7 @@ def test_activation_confirmation_names_the_distribution_that_confirms(engine):
 # --- DIS-9: the caveat row names Sahl's own quadrant timing beside On Times 1's hemispheres ----
 
 def test_quick_and_slow_places_caveat_names_sahls_own_natal_timing(engine):
-    row = next(t for c, t in engine["NOT_IMPLEMENTED_COVERAGE"] if "ADVANCING_BY_QUADRANT_FIG90" in t)
+    row = next(t for c, t in engine["NOT_IMPLEMENTED_COVERAGE"] if c.startswith("Gr. Intr. VII.3, 2"))
     assert "7.4, 17" in row and "5.3, 11-12" in row and "6.5, 1" in row and "On Choices 6, 16-17" in row
 
 
@@ -3865,7 +3865,7 @@ def test_syzygy_governor_rows_are_on_the_victors_page_with_the_relabelled_almute
     src = re.sub(r'"\s*\n\s*"', '', ui_source())          # adjacent string literals joined, as Python joins them
     assert 'Governor of the syzygy degree (Sahl, On Nativities 1.7, 3-7)' in src
     assert '"This app\'s approximation of 1.7 (one point a listed condition)"' in src
-    assert "Almuten by 5/4/3/2/1 points (the course's technique; the weights are stated in no text in hand)" in src
+    assert "Almuten by 5/4/3/2/1 points (a technique from outside these texts; the weights are stated in no text in hand)" in src
     assert '"Syzygy Lord (Almuten)"' not in src
     for phrase in ("THE VERDICT names a planet only where the text's clear subcases decide",
                    "is a preference among the claim-holders, not a veto",

@@ -374,7 +374,8 @@ def test_a_locator_names_its_volume_never_the_author_alone():
 
 # Markers of the build process that belong in comments, docstrings and the
 # build log, never in a string the user reads: dates, decision and order
-# ids, process filenames, the reviewers, the owner. Citations (Sahl I p.
+# ids, process filenames, the reviewers, the owner -- and, since 2026-09-12,
+# citations of the course's lessons and tables, which are not in hand. Citations (Sahl I p.
 # 265; PN IV IX.5, 4 fn 106), "a reading", "not built" and quoted
 # sentences are doctrine and stay.
 BUILD_PROCESS_MARKERS = re.compile(
@@ -382,7 +383,9 @@ BUILD_PROCESS_MARKERS = re.compile(
     r"\.md\b|\bOCR|the owner|owner,|owner's|\bOwner\b|review D\d|the checker|work order|(?-i:\border [A-Z]{2,})|"
     r"OWNER_RULING|decision sheet|sheet row|the corpus|the ruling|by ruling|the canon\b|canon's|since 2026|"
     r"the builder|builder's|lane \d|\bdecision D|blind reading|the harness|PN4_REPAIRS|READTHROUGH|"
-    r"this corpus|corpus disagreement|rephotograph|for weeks", re.IGNORECASE)
+    r"this corpus|corpus disagreement|rephotograph|for weeks|"
+    # the course's lessons and tables are not in hand: no citation of them on a page (owner, 2026-09-12)
+    r"\bLessons? \d|Handy Tables|Course Glossary|course materials?|course default|A Chart Tour", re.IGNORECASE)
 
 
 def test_page_strings_carry_no_build_process():

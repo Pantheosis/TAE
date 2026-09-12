@@ -5400,12 +5400,10 @@ def calculate_topical_lots(planetary_data, asc, cusps, sect):
 NOT_IMPLEMENTED_COVERAGE = [
     ("Gr. Intr. VII.5, 29-31", "Priority among several planets connecting from a "
      "single degree and minute, decided by claims in the handing-over sign, with the "
-     "bound lord breaking ties. Sentences 29-31 are on pp. 450-451; 32-39 came with the "
-     "p. 452 recovery. Computable, not yet built."),
+     "bound lord breaking ties (pp. 450-452). Computable, not yet built."),
     ("Gr. Intr. VII.5, 38-52", "Connection by LATITUDE, in three kinds -- assembly "
-     "at equal latitude with one eclipsing the other, and two further kinds. Recovered "
-     "with pp. 452-453. Latitude is available in the chart data but unused for "
-     "connection."),
+     "at equal latitude with one eclipsing the other, and two further kinds (pp. 452-453). "
+     "Latitude is available in the chart data but unused for connection."),
     ("Gr. Intr. VII.5, 67-77, the pairs the notes say he omits", "The natural "
      "connections are built from the sign pairs 56 and 67-75 enumerate. Three pairs "
      "the complete schemes contain are NOT in his lists and are not added: "
@@ -5437,9 +5435,9 @@ NOT_IMPLEMENTED_COVERAGE = [
      "this app's house meanings are one topic's assignment."),
     ("Gr. Intr. VII.3, 2 / VI.26, 3", "The ADVANCING AND WITHDRAWING QUADRANTS as a "
      "condition in its own right (ASC to MC and DSC to IC advancing: primary motion "
-     "toward the meridian). Read from the margin of the Figure 90 reshoot and Dykes' "
-     "note on On Nativities 10.3; distinct from Sahl 83, which is his own Ch.3, 4. "
-     "Recorded as ADVANCING_BY_QUADRANT_FIG90, not yet scored. Sahl's own natal timing uses "
+     "toward the meridian). Figure 90 (Gr. Intr.) with Dykes's note on On Nativities 10.3; "
+     "distinct from Sahl 83, which is his own Ch.3, 4. Computed for the chart, not scored. "
+     "Sahl's own natal timing uses "
      "the quadrants (On Nativities 7.4, 17, marriage: \"the two eastern quarters, in what is "
      "between the Ascendant and the Midheaven, and what is opposite that\"; 5.3, 11-12, children) "
      "and a clockwise scheme for chronic illness (6.5, 1); On Times 1, 14's preference for "
@@ -5454,7 +5452,7 @@ NOT_IMPLEMENTED_COVERAGE = [
      "delineation is not built."),
     ("Sahl, On Nativities Ch. 2.6 and 4.9", "Uses of the TWELFTH-PARTS beyond the "
      "Moon's (luminaries, Ascendant, infortunes)."),
-    ("Sahl, On Nativities: further Lots", "Constitution (1.34, 13, recovered p. 358, "
+    ("Sahl, On Nativities: further Lots", "Constitution (1.34, 13, p. 358, "
      "'foundation' uncertain); male/female (3.13, 20); Venus to the 7th place "
      "(7.1, 10 and 145); Sun to Moon projected from Venus (7.4, 8); religion "
      "(9.5, 3, identity disputed); riding animals (12.2 fn. 18)."),
@@ -7711,8 +7709,8 @@ def evaluate_corruption_of_the_moon(planetary_data, ascendant_lon, sect):
         if HARSH_BURNED_PATH[0] <= lon < HARSH_BURNED_PATH[1]:
             hit(110, 'In the burned path, "the end of Libra and the beginning of Scorpio" -- Sahl gives no degrees; '
                      "the 19 Libra-3 Scorpio span is Gr. Intr. VII.6, 40's harsher band (fn 120), borrowed. "
-                     'READINGS, not tests: 15 Libra-15 Scorpio is the definition "often" given (Dykes, Carmen p. 258 fn 104; '
-                     "the Course Glossary), so it is not true that no source in hand states it; Dorotheus's own definition "
+                     'READINGS, not tests: 15 Libra-15 Scorpio is the definition "often" given (Dykes, Carmen p. 258 fn 104), '
+                     "so it is not true that no source in hand states it; Dorotheus's own definition "
                      "(Carmen p. 258, 6: the equinoctial point taken southward) is a different construction")
 
         # [9] (111) Wild -- empty of course, not connecting with any planet.
@@ -13355,7 +13353,7 @@ def _readings_note():
     that a reader might not remember setting (UI_REVIEW §2's caution)."""
     off = [(l, v) for l, v in _readings_off_default() if l != "Reading depth"]
     if off:
-        st.caption("Readings in force that differ from the course defaults: "
+        st.caption("Readings in force that differ from the defaults: "
                    + "; ".join(f"{l} = {v}" for l, v in off)
                    + ". They are remembered between runs; see Sources and readings to reset them.")
 
@@ -13757,23 +13755,22 @@ if location_query and lat is not None and lon is not None:
             # birth; LST adds the longitude in hours; RAMC is the right
             # ascension of the meridian from the same swe.houses call that
             # produced the cusps.
-            st.subheader('Calculation', help="The Lesson 5 worksheet's intermediate quantities, in the worksheet's order, so each line of a hand calculation can be checked against the app.")
+            st.subheader('Calculation', help="The intermediate quantities of the chart calculation -- universal time, the Julian day, sidereal time, the RAMC, the obliquity -- so a hand calculation can be checked against the app line by line.")
             gst_hours = swe.sidtime(chart_data['julian_day'])
             lst_hours = (gst_hours + lon / 15.0) % 24.0
             calc_rows = [
                 {"Quantity": "Local time", "Value": f"{local_dt:%Y-%m-%d %H:%M:%S}"},
                 {"Quantity": "Time standard", "Value": tz_name},
-                {"Quantity": "Universal time (line 8)", "Value": f"{dt_utc:%Y-%m-%d %H:%M:%S} UT"},
+                {"Quantity": "Universal time", "Value": f"{dt_utc:%Y-%m-%d %H:%M:%S} UT"},
                 {"Quantity": "Julian Day", "Value": f"{chart_data['julian_day']:.4f}"},
-                {"Quantity": "Greenwich sidereal time at birth (line 11)", "Value": _hms(gst_hours)},
-                {"Quantity": "Local sidereal time (line 13)", "Value": _hms(lst_hours)},
-                {"Quantity": "RAMC (line 14)", "Value": _dms(chart_data['armc'])},
-                {"Quantity": "Obliquity of the ecliptic (line 15)", "Value": _dms(chart_data['obliquity'])},
+                {"Quantity": "Greenwich sidereal time at birth", "Value": _hms(gst_hours)},
+                {"Quantity": "Local sidereal time", "Value": _hms(lst_hours)},
+                {"Quantity": "RAMC", "Value": _dms(chart_data['armc'])},
+                {"Quantity": "Obliquity of the ecliptic", "Value": _dms(chart_data['obliquity'])},
                 {"Quantity": "MC", "Value": get_degree_string(chart_data['mc'])},
                 {"Quantity": "Ascendant", "Value": get_degree_string(chart_data['ascendant'])},
             ]
             st.dataframe(pd.DataFrame(calc_rows), hide_index=True, width='content')
-            st.caption("Matches the Lesson 5 worksheet: lines 8, 11, 13, 14, 15 and Step 2–3 results.")
             pos_col, moon_col = st.columns([2, 1], vertical_alignment="center")
             pos_col.subheader('Planetary Positions', help="The seven classical planets' ecliptic (tropical) longitude at the moment of birth, in sign and degree.")
             with moon_col:
@@ -14076,10 +14073,10 @@ if location_query and lat is not None and lon is not None:
                 # conditions. This is a deliberate divergence from the
                 # course's single table, and the only one in this grouping.
                 with st.container(border=True):
-                    st.markdown("**Prevented connections** — Ch.3, 31-48, the Handy Tables' own grouping for Lesson 17")
+                    st.markdown("**Prevented connections** — Ch.3, 31-48, with Abu Ma'shar's two further cuttings")
                     _finding(_gap, 'Prevented connections', "Sahl, The Introduction Ch.3, 31-48; Gr. Intr. VII.5, 90-94 and 120-125", prevented,
 
-                             glance="Ways of stopping a connection before it completes, in one table as the Handy Tables give them: Sahl's intervention, nullification and cutting, plus Abu Ma'shar's two further cuttings (VII.5, 121-124), which Sahl does not have. His revoking, resistance and escape are in his own section.")
+                             glance="Ways of stopping a connection before it completes, in one table: Sahl's intervention, nullification and cutting, plus Abu Ma'shar's two further cuttings (VII.5, 121-124), which Sahl does not have. His revoking, resistance and escape are in his own section.")
                     _finding(_gap, 'Banished', 'Sahl, The Introduction Ch.3, 64', banishment_data,
                               glance='"The banished planet is the planet which none of the planets connects to" (64) -- a planet outside every live connection, whatever the signs are doing. Each row shows the nearest configured planet and why that is not a connection.',
                               notes='Sahl\'s definition is about CONNECTIONS (6-21), not signs: a planet can be in trine by sign with everyone and still be banished if no planet is inside a live connection with it, and it can hold an out-of-sign body connection (20-21) and not be banished at all. Abu Ma\'shar\'s later "wildness" (VII.5, 79-82) is a different, whole-sign test -- aversion to every planet -- and has its own table in his view. Dykes\' note on 64 calls Sahl\'s the earlier, less precise form; the two are kept apart rather than one served under both names.')
@@ -14134,8 +14131,8 @@ if location_query and lat is not None and lon is not None:
                                     "Configurations page's connection rule; \"one of its shares\" = a triplicity, bound or face held by "
                                     "the partner of a planet in its house or exaltation; \"of the sect of the day or ... night\" = both "
                                     "planets of one sect, Mercury not counted. A second stated definition, the honor-guard of 10.2.1, "
-                                    "10-15, is the next table; the course material named as a possible arbiter between them has not "
-                                    "been opened, so both are shown and neither enters a score."))
+                                    "10-15, is the next table; no text in hand arbitrates between the two definitions, so both are "
+                                    "shown and neither enters a score."))
                     _finding(_gap, 'The honor-guard, "and it is spear-bearing" (Ptolemy in Sahl, On Nativities 10.2.1, 10-15) -- display only',
                              'Sahl, On Nativities 10.2.1, 10-15: a finding table, no score', honor_guard,
                              glance=("10: the planets \"formed an honor-guard for [the luminaries] (and that is if the planets were eastern "
@@ -14332,7 +14329,7 @@ if location_query and lat is not None and lon is not None:
                  "Value": f"{syzygy_governor['governor']} -- {syzygy_governor['how']}"},
                 {"Metric": "This app's approximation of 1.7 (one point a listed condition)",
                  "Value": syzygy_governor['model_how']},
-                {"Metric": "Almuten by 5/4/3/2/1 points (the course's technique; the weights are stated in no text in hand)",
+                {"Metric": "Almuten by 5/4/3/2/1 points (a technique from outside these texts; the weights are stated in no text in hand)",
                  "Value": f"{syzygy['almuten']} (Score: {syzygy['almuten_score']})"},
             ]
             st.dataframe(pd.DataFrame(syzygy_rows), hide_index=True, width='stretch')
@@ -14363,9 +14360,9 @@ if location_query and lat is not None and lon is not None:
                            "planets', the texts not defining her easternness for this procedure (Gr. Intr. VII.2, 4 names her right "
                            "and left, not \"eastern\"); the target degree is the lunation's and every condition is read in the "
                            "NATAL chart, extending the natal context of Dykes's comment to 3-7, whose moment the text does not "
-                           "state. THE APPROXIMATION row is " + SAHL_1_7_MODEL_DISCLOSURE + "; the almuten row is the course's "
-                           "5/4/3/2/1 technique. Where the three differ, the difference is the finding.")
-            st.subheader('Victor of the Chart', help="Ibn Ezra's worksheet reproduced cell for cell, so it can be checked against a hand-filled sheet. The seven planets are the columns.")
+                           "state. THE APPROXIMATION row is " + SAHL_1_7_MODEL_DISCLOSURE + "; the almuten row is the 5/4/3/2/1 "
+                           "technique from outside these texts. Where the three differ, the difference is the finding.")
+            st.subheader('Victor of the Chart', help="Ibn Ezra's victor worksheet, a technique from outside these texts (his book is not in hand), reproduced cell for cell so it can be checked against a hand-filled sheet. The seven planets are the columns.")
             st.caption("ibn Ezra's victor #1, 1485/1537")
             # The two same-tradition pairings are the grids a student fills
             # in; the two off-diagonal pairings are the cross-check.
@@ -14382,7 +14379,7 @@ if location_query and lat is not None and lon is not None:
                         _victor_grid(scheme_name, res)
 
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-                st.markdown('The first five rows score each planet\'s essential-dignity claim AT THAT POINT\'S degree -- Sun, Moon, Ascendant, Lot of Fortune, and the prenatal New/Full Moon. Then Lord of the Day (+7), Lord of the Hour (+6) and Places are added ONCE each, not per point; Places is keyed the other way round, by the candidate planet\'s own Whole-Sign house. Every column is summed into Totals, and the single highest total is the chart\'s victor.\n\nTWO INDEPENDENT AXES, and all four combinations are shown. The dignity weights are Older (al-Tabari/Masha\'allah, Bound 3 > Triplicity 2) or Newer (al-Qabisi/Abu Ma\'shar, Triplicity 3 > Bound 2); the Places wheel is ibn Ezra\'s own or Masha\'allah\'s. Nothing in the source says which wheel goes with which weighting, so pairing each with the wheel of its own named tradition is a reading, not a fact -- those two are labelled "matched preset" and the two off-diagonal combinations, previously not computed at all, are shown beside them. Where all four agree the victor is robust; where they part, the disagreement is the finding. Ibn Ezra\'s later victor #2 (1507) replaces the two chronocrator rows with a Superiors row scored only for Saturn, Jupiter and Mars; its weight is not given in the course materials, so it is not implemented rather than guessed.')
+                st.markdown('The first five rows score each planet\'s essential-dignity claim AT THAT POINT\'S degree -- Sun, Moon, Ascendant, Lot of Fortune, and the prenatal New/Full Moon. Then Lord of the Day (+7), Lord of the Hour (+6) and Places are added ONCE each, not per point; Places is keyed the other way round, by the candidate planet\'s own Whole-Sign house. Every column is summed into Totals, and the single highest total is the chart\'s victor.\n\nTWO INDEPENDENT AXES, and all four combinations are shown. The dignity weights are Older (al-Tabari/Masha\'allah, Bound 3 > Triplicity 2) or Newer (al-Qabisi/Abu Ma\'shar, Triplicity 3 > Bound 2); the Places wheel is ibn Ezra\'s own or Masha\'allah\'s. Nothing in the source says which wheel goes with which weighting, so pairing each with the wheel of its own named tradition is a reading, not a fact -- those two are labelled "matched preset" and the two off-diagonal combinations, previously not computed at all, are shown beside them. Where all four agree the victor is robust; where they part, the disagreement is the finding. Ibn Ezra\'s later victor #2 (1507) replaces the two chronocrator rows with a Superiors row scored only for Saturn, Jupiter and Mars; its weight is stated in no text in hand, so it is not implemented rather than guessed.')
         def page_timing():
             st.header("Timing")
             st.caption("Part 2: prediction. Every rule on this page comes from Abu Ma'shar, "
@@ -15073,9 +15070,8 @@ if location_query and lat is not None and lon is not None:
                            "(1.15, 6-16) is read as a test of the planet's POWER and counted by the Alcabitius divisions with the "
                            "five-degree allowance at the four axial degrees only -- a planet 0-5 degrees past the Ascendant, "
                            "Midheaven, setting degree or fourth into the cadent division keeps the stake's power, measured from "
-                           "the axial degree, in longitude (a proxy). The warrant for the unit is the translator's course "
-                           "convention, adopted here: Lesson 3, A Chart Tour, §4-5; the Course "
-                           "Glossary s.v. Advancement; Carmen p. 108 fn 187, \"Dorotheus ... is using dynamic divisions to speak "
+                           "the axial degree, in longitude (a proxy). The warrant for the unit is the translator's "
+                           "convention, adopted here: Carmen p. 108 fn 187, \"Dorotheus ... is using dynamic divisions to speak "
                            "of the planets' power, because one can only move from a stake to a decline by primary motion\"; "
                            "with fn 109 on 1.15, 6 agreeing (\"quadrant divisions, not whole signs\"). These texts' own "
                            "vocabulary counts SIGNS -- Introduction 2, 31-35 defines the stakes, \"what follows the stakes\" and "
@@ -15566,18 +15562,18 @@ if location_query and lat is not None and lon is not None:
                        "volumes have a Book VII, which is why his name alone no longer locates anything.")
             # --- The readings in force (2026-09-10) ----------------------------
             st.subheader("Readings in force",
-                         help="Every doctrinal switch, where it is set, what it says now and what the course default "
+                         help="Every doctrinal switch, where it is set, what it says now and what the default "
                               "is. They are remembered between runs. Reset returns all of them to the defaults.")
             _reading_radio("Reading depth", READING_DEPTH_OPTIONS, "reading_depth", "_reading_depth",
                            help="Course text: Sahl's Introduction and On Nativities, the course's own texts, with Abu "
                                 "Ma'shar's Great Introduction VII kept apart in its own tab on the Configurations page "
                                 "and behind closed expanders elsewhere. Course text and supplement: his tables laid "
                                 "beside Sahl's on the same topic, and the supplementary expanders open.")
-            _rows = [{'Reading': label, 'In force': str(_reading(wk, sk, default)), 'Course default': str(default),
+            _rows = [{'Reading': label, 'In force': str(_reading(wk, sk, default)), 'Default': str(default),
                       'Set on': page, 'Differs': 'yes' if _reading(wk, sk, default) != default else ''}
                      for label, wk, sk, default, page in READINGS_REGISTRY]
             st.dataframe(pd.DataFrame(_rows), hide_index=True, width='stretch', height=_rows_height(len(_rows)))
-            if st.button("Reset every reading to the course defaults", icon=":material/restart_alt:"):
+            if st.button("Reset every reading to the defaults", icon=":material/restart_alt:"):
                 for _label, wk, sk, _default, _page in READINGS_REGISTRY:
                     st.session_state.pop(wk, None)
                     st.session_state.pop(sk, None)
@@ -15620,7 +15616,7 @@ if location_query and lat is not None and lon is not None:
             st.markdown(
                 "**Five-degree carryover at all twelve cusps** -- RETIRED: the five-degree rule is a dynamics rule at the four axial "
                 "degrees only and has no all-cusps form under this app's convention; On Nativities 1.18, 19's 'and likewise "
-                "in all of the houses' is read as the four stakes (the course's reading, Lesson 3 §4-5). The "
+                "in all of the houses' is read as the four stakes (the translator's reading, adopted here). The "
                 "switch is gone; a stored preference for it is ignored.\n\n"
                 "**VII.6, 27/45 'eastern/western relative to the Sun'** (Configurations page, Planetary Condition) -- "
                 "'hemisphere': the whole half, excluding the rays (VII.2, 2; VII.6, 34). 'VII.2 band': only "
@@ -15667,13 +15663,13 @@ if location_query and lat is not None and lon is not None:
         # page, lesson-tagged, that reads no chart.
         def page_reference():
             st.header("Reference tables")
-            st.caption("The course's Handy Tables, printed from the data this app computes with. Nothing on this "
+            st.caption("The reference tables, printed from the data this app computes with. Nothing on this "
                        "page reads the chart in the sidebar.")
 
             st.subheader("Dignities by sign",
-                         help="Lesson 9. Domicile, exaltation, the three triplicity lords (day, night, participating) "
-                              "and the three faces of each sign, as the engine holds them. The exaltation degrees are "
-                              "the standard scheme of the Handy Tables and are printed only here.")
+                         help="Domicile, exaltation, the three triplicity lords (day, night, participating) "
+                              "and the three faces of each sign, as the app holds them. The exaltation degrees are "
+                              "the standard scheme (Gr. Intr. V.5, Figure 38) and are printed only here.")
             rows = []
             for i, sign in enumerate(SIGN_ORDER):
                 exalted = next((p for p, signs in EXALTATIONS.items() if sign in signs), None)
@@ -15685,14 +15681,14 @@ if location_query and lat is not None and lon is not None:
                              'Participating': get_essential_rulers(i * 30 + 15)['triplicity_participating'],
                              'Faces (1st, 2nd, 3rd)': ' · '.join(faces)})
             st.dataframe(pd.DataFrame(rows), hide_index=True, width='stretch', height=_rows_height(12))
-            st.caption("Sources: Sahl, The Introduction Ch. 1 and Handy Tables (Tables of Dignities). Exaltation degrees: "
-                       "the standard scheme; Hermes' differ by a degree for Saturn, Mars, the Sun, Venus and the Moon. "
+            st.caption("Sources: Sahl, The Introduction Ch. 1; the exaltation degrees Gr. Intr. V.5 (Figure 38), the standard "
+                       "scheme -- Hermes's (V.7, Figure 39) differ by a degree for Saturn, Mars, the Sun, Venus and the Moon. "
                        "Triplicity lords are Dorothean (Gr. Intr. V.14, 6-9; Figure 53 (Gr. Intr.)); Virgo's partner is "
                        "Mercury 'in preference to' Mars (V.14, 7; fn 100). Faces are read at 5, 15 and 25 degrees of each sign.")
 
             st.subheader("Egyptian bounds",
-                         help="Lesson 9, and the bounds every distribution of Part 2 runs through (III.1, 11). The "
-                              "same table the engine directs by; pinned against four independent witnesses.")
+                         help="The bounds every distribution of Part 2 runs through (III.1, 11). The "
+                              "same table the app directs by; pinned against four independent witnesses.")
             bound_rows = []
             for sign in SIGN_ORDER:
                 row, start = {'Sign': sign}, 0
@@ -15703,9 +15699,8 @@ if location_query and lat is not None and lon is not None:
             st.dataframe(pd.DataFrame(bound_rows), hide_index=True, width='stretch', height=_rows_height(12))
 
             st.subheader("Orders of the dignities, and the good places",
-                         help="Lessons 9 and 11-12. How Sahl ranks the dignities in three of his works, and which "
-                              "places each of his schemes calls good -- the tables that used to sit in an expander "
-                              "on the Chart page.")
+                         help="How Sahl ranks the dignities in three of his works, and which "
+                              "places each of his schemes calls good.")
             st.dataframe(pd.DataFrame([{'Context': k, 'Order, strongest first': ' > '.join(v)} for k, v in DIGNITY_ORDER.items()]),
                          hide_index=True, width='stretch')
             st.dataframe(pd.DataFrame([{'Scheme': k, 'Places': (', '.join(f"{g}: {p}" for g, p in v.items()) if isinstance(v, dict) else str(v))}
@@ -15713,7 +15708,7 @@ if location_query and lat is not None and lon is not None:
             st.caption(SEVEN_PLACE_RANKING_NOTE)
 
             st.subheader("Planetary years",
-                         help="Lesson 5's table: the lesser, middle, greater and mighty years of each planet, with the "
+                         help="The lesser, middle, greater and mighty years of each planet, with the "
                               "fardar period (PN IV IV.1, 2). A reference table: the one grant of years this app makes, "
                               "the house-master's from On Nativities 1.20, is on the Timing page's Releaser tab.")
             years = reference_planetary_years_rows()

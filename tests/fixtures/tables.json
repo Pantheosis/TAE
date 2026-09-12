@@ -53,7 +53,7 @@
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
-   ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
+   ["Readings in force", ["Reading", "In force", "Default", "Set on", "Differs"]],
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
   ],
   "timing": [
@@ -162,7 +162,7 @@
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
-   ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
+   ["Readings in force", ["Reading", "In force", "Default", "Set on", "Differs"]],
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
   ],
   "timing": [
@@ -279,7 +279,7 @@
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
-   ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
+   ["Readings in force", ["Reading", "In force", "Default", "Set on", "Differs"]],
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
   ],
   "timing": [
@@ -392,7 +392,7 @@
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
-   ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
+   ["Readings in force", ["Reading", "In force", "Default", "Set on", "Differs"]],
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
   ],
   "timing": [
@@ -508,7 +508,7 @@
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
-   ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
+   ["Readings in force", ["Reading", "In force", "Default", "Set on", "Differs"]],
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
   ],
   "timing": [
@@ -626,7 +626,7 @@
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
-   ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
+   ["Readings in force", ["Reading", "In force", "Default", "Set on", "Differs"]],
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
   ],
   "timing": [

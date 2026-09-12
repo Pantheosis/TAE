@@ -7,7 +7,7 @@ the store keys. Under the harness the file is switched off
 against a tmp_path and prove: a reading set on its page is on disk and in
 force in a fresh session; the last chart loaded is the chart a fresh
 session opens on; the Sources page lists the readings in force and its
-reset returns them to the course defaults; and, with the guard set,
+reset returns them to the defaults; and, with the guard set,
 nothing is ever written.
 """
 import json
@@ -53,7 +53,7 @@ def test_a_reading_set_on_its_page_is_on_disk_and_in_force_next_session(prefs_on
     assert find_page_widget(fresh, "radio", "Connection test").value == "Abu Ma'shar"
     assert any("Abu Ma'shar rule in force" in c.value for c in fresh.main.caption)
     # And the page says so under its header.
-    assert any("differ from the course defaults" in c.value for c in fresh.main.caption)
+    assert any("differ from the defaults" in c.value for c in fresh.main.caption)
 
 
 def test_a_seeded_store_wins_over_the_file(prefs_on):
