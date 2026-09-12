@@ -399,3 +399,26 @@ stakes' unit.
 | Tests | The only eligible lord; the Sun retained against an eastern rival -> unresolved, the model's pick beside it; 3's preference not a veto (a western Jupiter with three claims not set aside by an eastern Mercury with one; a western Mars with one claim set aside); 7's advantage-vs-none, and two advantage-holders unresolved with the model calling a tie; the page strings pinned (adjacent literals joined before matching). |
 | `tables.json` | The governor table on the victors page gains two columns ("Model points", "Model") on all six dates; nothing else moved. |
 | Page text | Under the no-build-process rule: no ids, dates or filenames on the row or in the caption. |
+
+## 2026-09-12: the page-text review and the owner's decisions (branch `governor-1.7-2026-09-12`, PR #3)
+
+The review of every string the pages print is `process/astra_2026-09-11/PAGE_TEXT_REVIEW_2026-09-11.md`
+(corpus d1b8835). Taken:
+
+| Commit | What |
+|---|---|
+| 60979d8 | LOT-BASIS (`process/astra_2026-09-11/LOT-BASIS_order.md`): the Lot of Basis is stated at Gr. Intr. VIII.4, 22-24 ("the Lot of firmness and survival, the Lot of the Ascendant's support", fn 67 the Greek Basis): Fortune to the Invisible from the Ascendant, reversed at night, coincident with the Lot of Venus and Sahl's Lot of passion (VIII.4, 24; VIII.7, 5). Built as a `LOT_DEFINITIONS` row; the app's unsigned-shorter-arc construction retired; the Lot of Spirit's provenance corrected to Gr. Intr. VIII.3, 28-29 (it had said "the course tables"). Fixture: a night chart where the constructions differ. NOT YET CHECKED BLIND. |
+| 6907f8f | A3-A9: three sentences overtaken by the canon and GAP-37 (the quadrant-divisions help, the special-degrees help, the Sources page's III.1, 12 summary); the turning tables' three refusal wordings replaced by the one sentence ruled for the semi-arc gap; the syzygy help leads with the governor; the layout help; a typo. |
+| d683f4e | B, on the owner's ruling that course material not in hand is not cited: every "Lesson N", worksheet line number, "Handy Tables", "Course Glossary", "course materials" and "course default" off the pages; the exaltation degrees cited to Gr. Intr. V.5 (Figure 38) and V.7 (Figure 39) instead; ibn Ezra's victor and the almuten labelled techniques from outside these texts; the coverage list's photography narrative and a code constant's name dropped. The reading-depth radio and its labels stay (owner). The guard test now flags course citations. `tables.json`: "Course default" -> "Default". |
+| 80625db | C and D: Alchabitius (Dykes's spelling; the Latin form he prints), PN IV (the title), whole-sign as the adjective (Dykes's usage), Dykes's, fn N, Ch. N; the app as the actor; "Chronocrator Matrix" without its gloss; Lots, not Arabic Parts (Dykes's usage). `tables.json`: three headings / one column renamed. |
+
+Suite at 80625db: 1995 passed, 0 failed (8:50). Also on this branch: ff64ae8 / 950297f / e5124d3 (the
+Chart intro rewritten and the Square layout's paragraphs), 4e84e44 (the lesson captions under the
+page headers excised).
+
+Left open, for the owner: the two delineation tables ("Rhetorius / PN IV readings for these
+placements" and "Masha'allah readings for lord placements") are paraphrases of the course's
+Reference Guide for the Planets and Places (Dykes 2023), and their two [UNCERTAIN] cells name it;
+the Guide is course material not in hand. Either the tables stand as the one named exception, or
+they go, or the Masha'allah one is re-sourced to Sahl's own chapters (in hand) and the Rhetorius
+one dropped. Not decided here.
