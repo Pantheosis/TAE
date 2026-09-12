@@ -58,8 +58,8 @@ the texts' own worked figures, with a near-miss beside each.
 
 ## Building the desktop app
 
-See [`docs/BUILD_NOTES.md`](docs/BUILD_NOTES.md). The GitHub workflow builds the Windows and
-macOS zips when a `v*` tag is pushed and attaches them to the release for that tag.
+To build the portable app yourself, see [`docs/BUILD_NOTES.md`](docs/BUILD_NOTES.md)
+(PyInstaller, one folder per platform).
 
 ## Repository
 
@@ -70,7 +70,7 @@ macOS zips when a `v*` tag is pushed and attaches them to the release for that t
 | `ephe/` | the Swiss Ephemeris fixed-star catalogue the app ships (AGPL-3.0; see its README) |
 | `atlas.db` | the offline place lookup |
 | `desktop_launcher.py`, `build.spec` | the desktop wrapper and the PyInstaller build |
-| `docs/` | build notes, the build logs and audits, and `synthesis/`, the working notes the rules were adjudicated from |
+| `docs/` | build and release notes, the build logs and audits, and `synthesis/`, the working notes the rules were adjudicated from |
 
 The texts themselves are not in this repository: they are copyrighted translations and are
 worked from privately. The pages cite them by volume, chapter and sentence so that anyone
