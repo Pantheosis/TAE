@@ -1225,9 +1225,10 @@ def generate_hit_strip_svg(rows, now, span=None, title=''):
 # degree, not just at a planet's own position) can use the same data.
 DOMICILES = {'Sun': ['Leo'], 'Moon': ['Cancer'], 'Mercury': ['Gemini', 'Virgo'], 'Venus': ['Taurus', 'Libra'], 'Mars': ['Aries', 'Scorpio'], 'Jupiter': ['Sagittarius', 'Pisces'], 'Saturn': ['Capricorn', 'Aquarius']}
 EXALTATIONS = {'Sun': ['Aries'], 'Moon': ['Taurus'], 'Mercury': ['Virgo'], 'Venus': ['Pisces'], 'Mars': ['Capricorn'], 'Jupiter': ['Cancer'], 'Saturn': ['Libra']}
-# The degrees of exaltation in the standard scheme, as the course's Handy
-# Tables print them (Hermes' column differs by a degree for five of the
-# seven). DISPLAY ONLY, for the Reference tables page (2026-09-10): nothing
+# The degrees of exaltation in the standard scheme, Gr. Intr. V.5, Figure
+# 38 (Hermes's, V.7, Figure 39, differ only for Jupiter and Mercury: the
+# 16th degree of Cancer and of Virgo -- checked against the corpus
+# 2026-09-12 after the fourth check). DISPLAY ONLY, for the Reference tables page (2026-09-10): nothing
 # in this engine reads a degree of exaltation, and nothing may start to
 # without a source in hand.
 EXALTATION_DEGREES = {'Saturn': 21, 'Jupiter': 15, 'Mars': 28, 'Sun': 19, 'Venus': 27, 'Mercury': 15, 'Moon': 3}
@@ -4779,10 +4780,13 @@ def sahl_syzygy_governor(syzygy, p_data, cusps, sect):
             governor = remaining[0]['Planet']
             steps = [f'direct, looking at the sign of the {which} (1.7, 4)']
             if len(eligible) > 1:
-                if any(s.startswith("set aside by 1.7, 3") for s in stage.values()):
-                    steps.append("1.7, 3's eastern preference")
-                if any(s.startswith('set aside by 1.7, 7') for s in stage.values()):
-                    steps.append('1.7, 7: a listed advantage against none')
+                by3 = [p for p, s in stage.items() if s.startswith("set aside by 1.7, 3")]
+                if by3:
+                    easterns_named = ', '.join(e['Planet'] for e in eligible if e['_eastern'])
+                    steps.append(f"1.7, 3's preference for the eastern {easterns_named} set aside {', '.join(by3)}")
+                by7 = [p for p, s in stage.items() if s.startswith('set aside by 1.7, 7')]
+                if by7:
+                    steps.append(f"1.7, 7: a listed advantage against none ({', '.join(by7)} set aside)")
             how = f"{governor}: " + '; '.join(steps)
             if len(eligible) == 1:
                 how += ' (the only eligible lord)'
@@ -5436,7 +5440,7 @@ NOT_IMPLEMENTED_COVERAGE = [
     ("Gr. Intr. VII.3, 2 / VI.26, 3", "The ADVANCING AND WITHDRAWING QUADRANTS as a "
      "condition in its own right (ASC to MC and DSC to IC advancing: primary motion "
      "toward the meridian). Figure 90 (Gr. Intr.) with Dykes's note on On Nativities 10.3; "
-     "distinct from Sahl 83, which is his own Ch. 3, 4. Computed for the chart, not scored. "
+     "distinct from Sahl 83, which is his own Ch. 3, 4. Recorded; neither computed for the chart nor scored. "
      "Sahl's own natal timing uses "
      "the quadrants (On Nativities 7.4, 17, marriage: \"the two eastern quarters, in what is "
      "between the Ascendant and the Midheaven, and what is opposite that\"; 5.3, 11-12, children) "
@@ -15682,7 +15686,8 @@ if location_query and lat is not None and lon is not None:
                              'Faces (1st, 2nd, 3rd)': ' · '.join(faces)})
             st.dataframe(pd.DataFrame(rows), hide_index=True, width='stretch', height=_rows_height(12))
             st.caption("Sources: Sahl, The Introduction Ch. 1; the exaltation degrees Gr. Intr. V.5 (Figure 38), the standard "
-                       "scheme -- Hermes's (V.7, Figure 39) differ by a degree for Saturn, Mars, the Sun, Venus and the Moon. "
+                       "scheme -- Hermes's (V.7, Figure 39) differ only for Jupiter and Mercury, the 16th degree of Cancer and "
+                       "of Virgo against the 15th. "
                        "Triplicity lords are Dorothean (Gr. Intr. V.14, 6-9; Figure 53 (Gr. Intr.)); Virgo's partner is "
                        "Mercury 'in preference to' Mars (V.14, 7; fn 100). Faces are read at 5, 15 and 25 degrees of each sign.")
 

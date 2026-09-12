@@ -3844,7 +3844,8 @@ def test_syzygy_governor_seven_is_a_profile_advantage_beats_none_and_two_advanta
     The image is not restored into 7's list: a candidate whose only own
     dignity is the image has 'none listed'."""
     g = _governor(engine, Sun=100.0, Mars=90.0, Mercury=95.0)
-    assert g["governor"] == "Mars" and "1.7, 7: a listed advantage against none" in g["how"]
+    assert g["governor"] == "Mars" and "1.7, 7: a listed advantage against none (Sun, Mercury set aside)" in g["how"]
+    assert "1.7, 3" not in g["how"]                                              # nobody was set aside by 3: the step is not claimed
     by = {r["Planet"]: r for r in g["rows"]}
     assert by["Mercury"]["Verdict"].startswith("set aside by 1.7, 7 (no listed advantage")
     assert by["Sun"]["Verdict"].startswith("set aside by 1.7, 7")               # the Sun, eligible, holds none either
@@ -3906,3 +3907,22 @@ def test_lot_of_basis_is_fortune_to_spirit_from_the_ascendant_reversed_at_night(
     assert "unattested" not in rows["Lot of Basis"]["Standing"]
     from conftest import ui_source
     assert "BASIS IS NOT" not in ui_source() and "the course tables" not in ui_source()
+
+
+def test_syzygy_governor_verdict_names_who_was_set_aside_by_whom(engine):
+    """Fourth check, D3: the verdict must not credit "1.7, 3's eastern
+    preference" to a governor who is not eastern. 15 Taurus by night: the
+    Moon (house lord, in her own house Cancer, western), Jupiter (bound
+    lord, eastern, no advantage), Venus (house lord? no -- Venus at 10 Leo
+    holds Taurus's house; Taurus's lords by night: Venus house, Moon
+    exaltation, Moon triplicity, and the bound at 15 Taurus is Jupiter's).
+    Venus, western with one claim, is set aside by the eastern Jupiter
+    under 3; Jupiter, with no listed advantage, by the Moon under 7. The
+    Moon is the governor and the sentence says Venus was set aside by 3's
+    preference for Jupiter, not that the Moon was preferred as eastern."""
+    g = _governor(engine, sect="Nocturnal", syzygy_lon=45.0, Sun=340.0, Moon=100.0, Jupiter=290.0, Venus=130.0)
+    by = {r["Planet"]: r for r in g["rows"]}
+    assert g["governor"] == "Moon" and by["Moon"]["Eastern (1.7, 3)"] == "no (western)"
+    assert "1.7, 3's preference for the eastern Jupiter set aside Venus" in g["how"]
+    assert "1.7, 7: a listed advantage against none (Jupiter set aside)" in g["how"]
+    assert "Moon" not in g["how"].split(":", 1)[1].replace("Moon:", "")   # the Moon is not named as preferred by 3

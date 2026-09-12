@@ -424,3 +424,24 @@ they go, or the Masha'allah one is re-sourced to Sahl's own chapters (in hand) a
 one dropped. Not decided here.
 
 The Reference Guide item above is closed: the owner supplied the Guide (corpus `course/TNAC_Reference_Guide_for_the_Planets_and_Places.pdf`, filed with its own statement of sources), so it is in hand and the two delineation tables now cite it by name with the Guide's sources -- Rhetorius Ch. 57 / Mathesis III (not in hand; the Guide's summary the witness) and PN IV Book II's lord of the year in the places, applied to natal planets, the Guide's reading -- and the Masha'allah table Sahl's lords-of-places chapters. The two [UNCERTAIN] cells (the Moon in the sixth and eighth, where the Guide prints ?) stand as pinned.
+
+### Fourth check (`BUILD_PR3_CHECK_REPORT_2026-09-12.md`, engine ea43229): three wording defects, taken
+
+The checker walked Astra's nine policy cases through `sahl_syzygy_governor` by probe -- all nine AS
+RULED -- and found the LOT-BASIS arithmetic, the coincidence with the passion Lot, the quotations
+and the Reference Guide citations as they should be. Three defects, all wording, fixed in one
+commit: D1 -- the Reference page had said Hermes's exaltation degrees "differ by a degree for
+Saturn, Mars, the Sun, Venus and the Moon", the old Handy Tables claim re-attached to Gr. Intr. V.7
+Figure 39, which contradicts it (Figure 39 differs only for Jupiter and Mercury, the 16th degree of
+Cancer and of Virgo); corrected, and the constant's comment with it. D2 -- the coverage list's
+Figure 90 entry said "computed for the chart, not scored"; nothing computes it (the set is read by
+no function); now "recorded; neither computed for the chart nor scored". D3 -- the governor row's
+verdict credited "1.7, 3's eastern preference" as a step of any governor when anyone had been set
+aside by 3, including a western Moon and the Sun; the verdict now names who was set aside by whose
+preference ("1.7, 3's preference for the eastern Jupiter set aside Venus") and who by 7; the
+checker's probe is a test. Two of the checker's notes for the owner: the unweighted count of claims
+in 3's "at least as many claims" lets an eastern image-lord set aside a western house-lord (the
+builder's operationalisation, written into the ruling's work order, not a choice the owner made in
+words); and the Releaser tab's warrant, after the course citations came out, rests on Carmen fn 187
+and fn 109 for the dispatch but no longer says where Alchabitius specifically and the axial-only
+five degrees come from.
