@@ -13665,7 +13665,6 @@ if location_query and lat is not None and lon is not None:
 
         def page_chart():
             st.header("Chart")
-            st.caption("Lessons 3-5: chart identification, measurement, astronomy.")
             _readings_note()
             _gap = []
             # Looking at the chart is the primary act, so the wheel comes first.
@@ -13873,7 +13872,6 @@ if location_query and lat is not None and lon is not None:
 
         def page_dignities():
             st.header("Dignities and places")
-            st.caption("Lessons 9-13: dignities and management, sect, places, lords of places.")
             _readings_note()
             st.subheader('Lordship Mapping', help="The domicile, exaltation, triplicity, term (bound), and face ruler of each planet's OWN degree -- the five essential dignities, read at the planet's own position rather than another point.")
             triplicity_key = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
@@ -13990,8 +13988,6 @@ if location_query and lat is not None and lon is not None:
 
         def page_configurations():
             st.header("Configurations")
-            st.caption("Lessons 14-17. Sahl's Introduction Ch.2-3 is the course text; "
-                       "Abu Ma'shar's Great Introduction VII is supplementary.")
             _readings_note()
             _gap = []
             # The connection rule and the fitting infortune govern tables on every
@@ -14290,7 +14286,6 @@ if location_query and lat is not None and lon is not None:
 
         def page_lots():
             st.header("Lots")
-            st.caption("Lesson 18.")
             _readings_note()
             st.subheader('Classical Lots', help='Arabic Parts: sect-dependent formulas combining two planets or points with the Ascendant to derive a new sensitive degree tied to a specific topic (e.g. Fortune = body/livelihood, Spirit = mind/action).')
             # Formula from the same LOT_DEFINITIONS text the Topical Lots
@@ -14326,7 +14321,6 @@ if location_query and lat is not None and lon is not None:
                 st.markdown('The STANDING column records his editorial position in his own words where he states one.\n\nFour kinds of case. SAHL HIMSELF RULES: of the two sibling Lots, "both of the Lots are correct, so work with them both together" (3.11, 4) -- neither is subordinate. DYKES NAMES HIS CHOICE: of the three witnesses to the Lot of enemies, "I have used M here"; on the night reversal of the Saturn-Moon work Lot, "Paul instructs us to reverse it by night, but Abu Ma\'shar says not to. We should follow Paul." DYKES MARKS ONE STANDARD: on children, "the usual calculation ... is that of Hermes." DYKES ONLY TABULATES: three Lots for work, after noting that "Sahl quietly switches to Masha\'allah\'s treatise on Lots ... without telling us that the formula is different."\n\nEvery formula is taken from the running prose or a footnote, never from one of the summary tables.\n\nThe Lot of death is projected from Saturn: STATED by Abu Ma\'shar (Gr. Intr. VIII.4, 226; VIII.6, 69), and Sahl 8.6, 1 as printed agrees, his manuscripts reading the Ascendant (fn 89, with Masha\'allah\'s manuscripts and Dorotheus for Saturn). A stated rule with a manuscript variant, not an emendation.')
         def page_victors():
             st.header("Lunation and victors")
-            st.caption("Lessons 19-20.")
             st.subheader('Prenatal Lunation (Syzygy)', help='The New or Full Moon exact before birth, its degree, natal house, and Almuten (victor) -- a key predictive point in Persian/Abbasid technique, thought to set the tone for the life or the period leading up to birth.')
             r = syzygy['rulers']
             triplicity_str = (
