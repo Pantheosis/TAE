@@ -445,3 +445,13 @@ builder's operationalisation, written into the ruling's work order, not a choice
 words); and the Releaser tab's warrant, after the course citations came out, rests on Carmen fn 187
 and fn 109 for the dispatch but no longer says where Alchabitius specifically and the axial-only
 five degrees come from.
+
+The owner's decision after the fourth check (2026-09-12): note 1 (the unweighted count of claims in 3's
+preference) stands as built and declared; note 2 -- the two course citations are RESTORED (a9c8314):
+a citation reproduces nothing, and the Releaser tab now says Alchabitius and the axial-only five
+degrees are the course's (Lesson 3, A Chart Tour, §4-5; the Course Glossary s.v. Advancement) and the
+retired-switch note that 1.18, 19's four stakes are the course's reading (Lesson 3 §4-5); the guard
+allows exactly these two strings. The exposure for a public release is the two delineation tables,
+paraphrases of the Reference Guide's cells: work order `process/astra_2026-09-11/DELIN-TABLES_order.md`
+(re-derive the Masha'allah table from Sahl's chapters and the PN IV column from Book II, each cell
+citing its sentence; the Rhetorius column by permission, by acquisition, or dropped). Not started.
