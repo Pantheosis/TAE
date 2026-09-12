@@ -1,4 +1,4 @@
-"""The chart wheel (redesigned 2026-09-07, brief WHEEL_REDESIGN_2026-09-07.md).
+"""The chart wheel (redesigned 2026-09-07, brief docs/WHEEL_REDESIGN_2026-09-07.md).
 
 The renderer is a pure function in the engine half, so it is exercised
 directly on every harness chart plus the owner's reference nativity, in

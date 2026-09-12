@@ -4,7 +4,7 @@ app.py must name a chapter that exists and a paragraph the chapter has.
 Book VII's OCR carries the paragraph pin that On Nativities' could not: its
 sentence numbers are clean, run 1..max per chapter, and its footnotes are
 numbered continuously across the book, so a bare "44" is never a footnote.
-The 2026-09-08 audit (synthesis/11_abu_mashar_citation_audit.md) found
+The 2026-09-08 audit (docs/synthesis/11_abu_mashar_citation_audit.md) found
 "VII.3, 19-20" (VII.3 ends at 11) -- this pin would have caught it -- and
 "VII.5, 120" for the Resistance sentence at 118, which no range pin can.
 

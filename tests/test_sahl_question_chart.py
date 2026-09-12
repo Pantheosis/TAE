@@ -132,7 +132,7 @@ def test_63_control_the_engine_does_not_also_report_mars_receiving_mercury(engin
     # engine also listed 'Mars receives Mercury via triplicity, bound'
     # (Masha'allah's form, Introduction Ch. 3, 54-55), because Mars is the
     # night triplicity lord of Cancer and holds its first bound. Decision
-    # D-2 (synthesis/13_open_decisions.md): refusal wins under Sahl's
+    # D-2 (docs/synthesis/13_open_decisions.md): refusal wins under Sahl's
     # profile -- his verdict on his own chart is "he does not accept
     # [Mercury]" (Questions Ch. 1, 63), and Ch. 1, 40-41 makes connection
     # from the receiver's fall a refusal. The xfail was un-marked

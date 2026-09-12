@@ -10,7 +10,7 @@ DEV MODE (no packaging, just testing the desktop shell):
 PACKAGED MODE:
     Build with `pyinstaller build.spec`. Must be run separately ON Windows
     (produces a .exe) and ON macOS (produces a .app) -- PyInstaller does not
-    cross-compile between platforms. See BUILD_NOTES.md.
+    cross-compile between platforms. See docs/BUILD_NOTES.md.
 
 HOW THIS WORKS INSIDE A FROZEN (PyInstaller) BUILD:
 A frozen build has no separate `python`/`streamlit` binary to shell out to --

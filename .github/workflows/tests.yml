@@ -19,8 +19,10 @@ concurrency:
 jobs:
   pytest:
     runs-on: ubuntu-latest
-    # The suite is ~2 minutes locally; this is a stuck-job guard, not a target.
-    timeout-minutes: 20
+    # The suite is ~9 minutes on a fast local machine and about 25 on the
+    # 2-core runner (it reached 82% at 20 minutes on 2026-09-12); this is a
+    # stuck-job guard, not a target.
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v6

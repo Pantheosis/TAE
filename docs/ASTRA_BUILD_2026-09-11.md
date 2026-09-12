@@ -455,3 +455,10 @@ allows exactly these two strings. The exposure for a public release is the two d
 paraphrases of the Reference Guide's cells: work order `process/astra_2026-09-11/DELIN-TABLES_order.md`
 (re-derive the Masha'allah table from Sahl's chapters and the PN IV column from Book II, each cell
 citing its sentence; the Rhetorius column by permission, by acquisition, or dropped). Not started.
+
+## 2026-09-12: the repository tidied for release
+
+The build logs, audits, briefs and `synthesis/` moved under `docs/` (this file included); references
+in comments and docstrings updated; nothing reads them at run time. `README.md` rewritten; the
+desktop build workflow now runs on a `v*` tag (or by hand) and attaches the zips to a GitHub release
+on this repository instead of keeping artifacts; `TAE-Releases` retired to a pointer.

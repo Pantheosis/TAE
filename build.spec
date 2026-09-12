@@ -76,7 +76,7 @@ hiddenimports += ["swisseph"]
 # itself, exactly as it reads atlas.db, and points the ephemeris at that
 # directory directly. No .se1 planetary file is bundled and none may be
 # put in ephe/: the planets stay on the built-in Moshier ephemeris
-# (BUILD_NOTES.md).
+# (docs/BUILD_NOTES.md).
 datas += [("app.py", "."), ("atlas.db", "."), ("app_icon.ico", "."), ("ephe/sefstars.txt", "ephe")]
 
 a = Analysis(

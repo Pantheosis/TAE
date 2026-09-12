@@ -1,11 +1,23 @@
 name: Build Desktop App
 
-# Manual only. Start a build from the Actions tab -> "Build Desktop App" ->
-# "Run workflow". Pushes to main deliberately do NOT trigger it: the desktop
-# binaries are cut for releases, not for every commit, and building both
-# platforms on each push burns Actions minutes on work nobody downloads.
+# Runs when a release tag (v*) is pushed, and can be started by hand from the
+# Actions tab. A push to main builds nothing: binaries are cut for releases,
+# not for every commit -- building both platforms on each push burned Actions
+# minutes and filled the account's storage with artifacts nobody downloaded.
+#
+# On a tag: the two zips are attached to a GitHub release for that tag on
+# THIS repository, so the binary and the source it was built from are always
+# the same page (the licence requires the corresponding source to be
+# available with each binary). No artifacts are kept.
+# On a manual run: the zips are kept as workflow artifacts for three days
+# for testing, and no release is made.
 on:
+  push:
+    tags: ['v*']
   workflow_dispatch:
+
+permissions:
+  contents: write     # gh release create / upload
 
 jobs:
   build:
@@ -20,9 +32,8 @@ jobs:
 
       - uses: actions/setup-python@v6
         with:
-          # 3.14 to match the venv the pins were resolved on and the
-          # test suite runs on. Building on 3.12 meant the shipped
-          # binary used an interpreter nothing had ever tested against.
+          # 3.14 to match the venv the pins were resolved on and the test
+          # suite runs on. Keep the two workflows on the same version.
           python-version: '3.14'
 
       - name: Install dependencies
@@ -35,36 +46,39 @@ jobs:
       - name: Build with PyInstaller
         run: pyinstaller build.spec
 
-      # Windows: no manual zip here. actions/upload-artifact already wraps
-      # whatever it's given in its own zip on download -- pre-zipping too
-      # (as this workflow previously did) produced a zip-inside-a-zip.
-      # Pointing it directly at the build folder means downloading gives
-      # you exactly one zip to extract, with the .exe at the top level.
+      # One zip per platform, the executable at the top level of the
+      # folder it unpacks to. (Windows: the onedir folder zipped as a
+      # whole; macOS: the .app bundle, zipped so its executable bits and
+      # internal symlinks survive.)
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path dist/TraditionalAstrologyEngine -DestinationPath TraditionalAstrologyEngine-windows.zip
 
       - name: Package (macOS)
         if: runner.os == 'macOS'
         shell: bash
         run: |
           cd dist
-          zip -r ../TraditionalAstrologyEngine-macos.zip TraditionalAstrologyEngine.app
+          zip -qr ../TraditionalAstrologyEngine-macos.zip TraditionalAstrologyEngine.app
 
-      - name: Upload build artifact (Windows)
-        if: runner.os == 'Windows'
+      - name: Attach to the release (tag builds)
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The first platform to finish creates the release; the second
+          # finds it and only uploads. --clobber makes a re-run replace its
+          # own asset rather than fail on it.
+          tag="${GITHUB_REF_NAME}"
+          gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --title "Traditional Astrology Engine $tag" --generate-notes
+          gh release upload "$tag" TraditionalAstrologyEngine-*.zip --clobber
+
+      - name: Keep the zip for testing (manual runs)
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v7
         with:
           name: TraditionalAstrologyEngine-${{ runner.os }}
-          path: dist/TraditionalAstrologyEngine/
-          retention-days: 7
-
-      - name: Upload build artifact (macOS)
-        if: runner.os == 'macOS'
-        uses: actions/upload-artifact@v7
-        with:
-          name: TraditionalAstrologyEngine-${{ runner.os }}
-          # Uploaded as an already-zipped file rather than the raw .app --
-          # GitHub's own artifact zipping doesn't reliably preserve the
-          # executable bit and internal symlinks inside a macOS .app bundle,
-          # so this still ends up double-zipped after download, but that's
-          # the standard/accepted tradeoff for Mac specifically.
-          path: TraditionalAstrologyEngine-macos.zip
-          retention-days: 30
+          path: TraditionalAstrologyEngine-*.zip
+          retention-days: 3
