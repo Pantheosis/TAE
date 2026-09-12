@@ -366,3 +366,42 @@ def test_a_locator_names_its_volume_never_the_author_alone():
             if leftover.search(l) and not ("PN IV" in l or "Gr. Intr." in l)]
     assert not hits, hits
     assert "Gr. Intr. VII.6" in app_source() and "PN IV IX.1, 26-34" in app_source()
+
+
+# --- The page carries no build process (owner, 2026-09-11) ---------------
+
+# Markers of the build process that belong in comments, docstrings and the
+# build log, never in a string the user reads: dates, decision and order
+# ids, process filenames, the reviewers, the owner. Citations (Sahl I p.
+# 265; PN IV IX.5, 4 fn 106), "a reading", "not built" and quoted
+# sentences are doctrine and stay.
+BUILD_PROCESS_MARKERS = re.compile(
+    r"2026-0\d-\d\d|\bD-\d+\b|DEC-D-|FINAL-A\d|GAP-\d|PN4R-|REL-\d|DIS-\d+|CONV-|Astra F\d|"
+    r"\.md\b|\bOCR|the owner|owner,|owner's|\bOwner\b|review D\d|the checker|work order|(?-i:\border [A-Z]{2,})|"
+    r"OWNER_RULING|decision sheet|sheet row|the corpus|the ruling|by ruling|the canon\b|canon's|since 2026|"
+    r"the builder|builder's|lane \d|\bdecision D|blind reading|the harness|PN4_REPAIRS|READTHROUGH|"
+    r"this corpus|corpus disagreement|rephotograph|for weeks", re.IGNORECASE)
+
+
+def test_page_strings_carry_no_build_process():
+    """Every string literal in app.py that is not a docstring is a string
+    the page may print; none may name the build process. A new page string
+    that says "decision D-9" or "owner, 2026-09-11" fails here by design:
+    say the reading, cite the sentence, and put the history in a comment."""
+    import ast
+    src = app_source()
+    tree = ast.parse(src)
+    doc_lines = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            body = node.body
+            if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant) and isinstance(body[0].value.value, str):
+                doc_lines.update(range(body[0].lineno, body[0].end_lineno + 1))
+    offenders = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str) and node.lineno not in doc_lines:
+            for m in BUILD_PROCESS_MARKERS.finditer(node.value):
+                if m.group(0).lower() == "the owner" and "the owner of the revolution" in node.value:
+                    continue                                                  # II.3, 5's own words
+                offenders.append((node.lineno, m.group(0), node.value[max(0, m.start() - 40):m.end() + 40]))
+    assert not offenders, "\n".join(f"app.py:{ln}: {mark!r} in ...{ctx}..." for ln, mark, ctx in offenders)

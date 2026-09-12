@@ -320,3 +320,63 @@ culmination, the Descendant's descension, the tolerance. The engine's `_semiarcs
 - Corpus `astra-session-2026-09-11`: 7c1f1cd (the two measures, the D2 addendum, the caveats correction, the
   rulings addendum; the check prompt, the check report, the fix prompt and the GAP-37 reading filed).
 - Not certified by the builder: the owner will have the checker re-run its §2 and §5 against 3b5fce2.
+
+### Review round, follow-up (2026-09-11, later): the Windows build
+
+The owner's Windows build of the branch printed "Not computed: no Swiss Ephemeris star catalogue
+(sefstars.txt) is available to this interpreter" while the Linux run shows the tables. Read from the
+code, not reproduced (no Windows box here): the file is in the bundle (`_internal/ephe/sefstars.txt`),
+so the failure was in the attach -- a symlink (refused on Windows without Developer Mode), the copy
+into `%APPDATA%\TraditionalAstrologyEngine\ephe_stars`, or Swiss Ephemeris's narrow `fopen` on that
+path -- and `except Exception: return False` turned it into the wrong sentence. Fixed (this commit):
+the bundled directory is attached DIRECTLY (`swe.set_ephe_path(ephe/)`; it holds only the catalogue and
+a README, so the Moshier invariant stands, the flag test pins it), with no link, copy or user directory;
+the link-or-copy path remains for a catalogue found elsewhere; and the refusal now says WHY, in the
+order tried ("no sefstars.txt at the bundled path ..." / "found ... but Swiss Ephemeris could not read
+it from ...: <exception>"), so the next Windows screenshot is diagnostic. Tests: the bundled directory
+attached directly; a found-but-unreadable catalogue reported with the exception; the absent case's
+refusal names the path. Whether this is the Windows cause is for the owner's next build to show.
+
+### Page text carries no build process (owner, 2026-09-11, evening)
+
+The owner, reading the Windows build: "strip metacommentary from the build process from the final
+product. Referencing D3 & OCR artifacts isn't helpful to the end user." Policy, applied in one commit
+across every page string in `app.py` (about a hundred strings) and pinned by
+`test_page_strings_carry_no_build_process` (every non-docstring string literal is scanned):
+
+- KEPT: volume locators and footnotes; "a reading"; "not built"; "stated in no text in hand"; quoted
+  sentences; the units and the dispatch stated as a rule ("strength language -> the division").
+- DROPPED: dates; decision / order / finding ids (D-4, DEC-D-18, FINAL-A1, order GAP-39, PN4R-4c-4,
+  REL-5-7); process filenames (`PN4_REPAIRS_...`, `synthesis/13_open_decisions.md`,
+  `process/TIMING_SOURCES_REPORT...`, `OWNER_RULING_PLACES_VS_DYNAMICS`); "the owner", "ruled",
+  "decision sheet row", "the second blind reading"; "since <date>", "the earlier default", "retired
+  2026-09-11"; the OCR / corpus-repair narrative (the Timing notes' D-3 and 25″ paragraphs, ad81dd6).
+- REPHRASED: "the owner's ruling of 2026-09-11 (FINAL-A1)" -> nothing or "this app's convention";
+  "the canon's dispatch" -> "this app's convention for strength language"; "(decision D-23)" in every
+  polar refusal -> "the ascension has no unique inverse there"; "the corpus" (meaning the texts) ->
+  "these texts" / "the texts' own vocabulary"; "the project canon (OWNER_RULING_...)" in IX.9, 13's
+  statement (ii) -> "This app's convention on places and strength".
+- Comments and docstrings keep every id, date and filename: they are the audit trail.
+- While there, four stale scope claims on the Sources page were corrected (`NOT_IMPLEMENTED_COVERAGE`
+  still listed the releaser and house-master, 1.18's ascensional distribution, 2.13's bands and the
+  thirty fixed stars as not implemented; what remains unbuilt of each is named instead), and the
+  Reference page's planetary-years caption no longer says nothing in the app grants years.
+
+### Third check (`BUILD_PAGETEXT_CHECK_REPORT_2026-09-11.md`, engine 9970578): READY for PR #2; its residue taken
+
+The checker found no doctrine lost in the page-text pass, the four scope corrections right, the eight
+polar refusals true of their sites; suite 1992 green; `git diff 4c3f516 2332217` empty. Its residue,
+all low, taken in one commit: P1 -- the Windows-shaped refusal ("found ... could not read it; then no
+sefstars.txt at the bundled path ...") no longer denies its own first clause: the fall-through reads
+"no other sefstars.txt in $SE_EPHE_PATH, the user data directory or site-packages" when the bundled
+file was found and failed; tested with the bundled file the only one visible. P2 -- six residual
+process strings the pass missed ("corpus disagreement #3", "The corpus's own vocabulary" -- the guard
+was case-sensitive --, "unattested in this corpus", "not in this corpus", "became legible only when the
+missing pages were rephotographed", "deliberately incomplete for weeks") reworded; the guard now
+case-insensitive with "this corpus", "corpus disagreement", "rephotograph", "for weeks" added
+(the "order XX" marker kept case-sensitive so "order of", "ORDER BY" pass). P3 -- the VII.6, 52
+own-nodes entry left `NOT_IMPLEMENTED_COVERAGE` (it is built; the reading is on the Configurations
+row). P4 -- a star the attached catalogue cannot read is now named on the Timing page with its
+exception (`fixed_star_missing_note`) instead of vanishing; tested. The checker's §7: the corpus
+spells III.1, 13's thirds `25""` (ASCII), not the ‴ glyph the page prints -- the page's glyph is the
+printed book's and stands.

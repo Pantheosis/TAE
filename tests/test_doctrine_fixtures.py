@@ -3194,7 +3194,7 @@ def test_2_13_bands_are_end_inclusive_and_truncated_by_the_next_stake(engine):
 
 def test_2_13_refuses_at_the_poles(engine):
     out = _bands(engine, lat=70.0)
-    assert out["rows"] == [] and "D-23" in out["refused"]
+    assert out["rows"] == [] and "no unique inverse" in out["refused"]
 
 
 # --- DEC-D-18 (sheet row 11): spear-bearing, two display-only definitions ---------------------
@@ -3494,7 +3494,7 @@ def test_governor_condition_rows_read_essence_and_sign_and_judge_the_place_by_th
     row13 = engine["pn4_governor_condition"]("Jupiter", root, sr)[2]
     assert row13["Met"] == "yes" and "division 10" in row13["Criteria"] and "follows a stake\" met; sign half: met" in row13["Criteria"]
     for statement in ("(i) PN IV IX.9, 13 supplies the requirement itself",
-                      "(ii) The project canon (OWNER_RULING_PLACES_VS_DYNAMICS_2026-09-11) supplies its operational interpretation",
+                      "(ii) This app's convention on places and strength supplies its operational interpretation",
                       "(iii) Alcabitius and the axial 5-degree allowance come from that adopted convention, not from the text",
                       "IX.5, 4 fn 106 (p. 602)", "dynamic angularity (advancing or withdrawing), here and in 7, 11, and 14",
                       "IX.5, 9 (p. 603", "V.1, 28 fn 15"):
@@ -3657,17 +3657,73 @@ def test_fixed_star_catalogue_found_is_the_one_the_app_ships(engine):
     bundled = Path(engine["__file__"]).parent / "ephe" / "sefstars.txt"
     assert bundled.is_file() and bundled.stat().st_size > 100_000
     assert (Path(engine["__file__"]).parent / "ephe" / "README.md").is_file()
-    engine["_FIXED_STAR_STATE"].update(checked=False, ready=False, where=None)
-    assert engine["_fixed_star_catalogue_ready"]() is True
+    engine["_FIXED_STAR_STATE"].update(checked=False, ready=False, where=None, why=None)
+    assert engine["_fixed_star_catalogue_ready"]() is True and engine["_FIXED_STAR_STATE"]["why"] is None
     assert Path(engine["_FIXED_STAR_STATE"]["where"]).resolve() == bundled.resolve()
-    link = engine["_user_data_dir"]() / "ephe_stars" / "sefstars.txt"
-    assert link.exists() and (not link.is_symlink() or link.resolve() == bundled.resolve())
-    assert [p for p in link.parent.iterdir()] == [link]              # nothing else in the private directory: no .se1
+    # the bundled directory is attached DIRECTLY: no link, no copy, no user
+    # data directory involved (the Windows build's failure point, 2026-09-11);
+    # it holds nothing Swiss Ephemeris would read for a planet
+    assert sorted(p.name for p in bundled.parent.iterdir()) == ["README.md", "sefstars.txt"]
     import swisseph as swe
     assert swe.calc_ut(2451545.0, swe.MARS)[1] == 260                 # Moshier + speed: the planets untouched
     from conftest import app_source
     assert '("ephe/sefstars.txt", "ephe")' in (Path(engine["__file__"]).parent / "build.spec").read_text()
     assert "the Swiss Ephemeris star catalogue the app ships (ephe/sefstars.txt)" in app_source()
+
+
+def test_a_catalogue_found_but_unreadable_is_reported_as_such(engine, monkeypatch):
+    """The Windows build of 2026-09-11 printed "no catalogue is available"
+    when the file was there and the attach had failed. The refusal now
+    names the file found and the exception."""
+    import swisseph as swe
+    def boom(*a, **k):
+        raise OSError("SwissEph file 'sefstars.txt' not found (simulated)")
+    monkeypatch.setattr(swe, "fixstar2_ut", boom)
+    state = engine["_FIXED_STAR_STATE"]
+    state.update(checked=False, ready=False, where=None, why=None)
+    try:
+        assert engine["_fixed_star_catalogue_ready"]() is False
+        why = engine["fixed_star_refusal"]()
+        assert "found " in why and "ephe/sefstars.txt but Swiss Ephemeris could not read it from" in why.replace("\\", "/")
+        assert "simulated" in why
+        # the Windows shape -- the bundled file the ONLY one visible and unreadable: the
+        # fall-through must not deny what the first clause reports (third check, P1)
+        import os
+        from pathlib import Path
+        bundled = str(Path(engine["__file__"]).parent / "ephe" / "sefstars.txt")
+        real_isfile = os.path.isfile
+        monkeypatch.setattr(os.path, "isfile", lambda p: (str(p) == bundled) if str(p).endswith("sefstars.txt") else real_isfile(p))
+        state.update(checked=False, ready=False, where=None, why=None)
+        assert engine["_fixed_star_catalogue_ready"]() is False
+        why = engine["fixed_star_refusal"]()
+        assert "could not read it from" in why and "; then no other sefstars.txt in $SE_EPHE_PATH" in why
+        assert "no sefstars.txt at the bundled path" not in why
+    finally:
+        state.update(checked=False, ready=False, where=None, why=None)
+    monkeypatch.undo()
+    assert engine["_fixed_star_catalogue_ready"]() is True
+
+
+def test_a_star_the_catalogue_cannot_read_is_named_not_dropped(engine, monkeypatch):
+    """Third check, P4: after a good attach, a star that fails to read used
+    to vanish from the table silently; it is now named with its exception."""
+    if not engine["_fixed_star_catalogue_ready"]():
+        pytest.skip("no star catalogue in this interpreter")
+    import swisseph as swe
+    real = swe.fixstar2_ut
+    def flaky(name, *a, **k):
+        if name == "Algol":
+            raise OSError("star not found (simulated)")
+        return real(name, *a, **k)
+    monkeypatch.setattr(swe, "fixstar2_ut", flaky)
+    stars = engine["fixed_star_longitudes"](2451545.0)
+    assert "Algol" not in stars and len(stars) == 27
+    note = engine["fixed_star_missing_note"]()
+    assert note.startswith("Not in the catalogue attached, so not placed: Algol (") and "simulated" in note
+    out = engine["pn4_fixed_stars_in_image"]({"planetary_data": pdata(Sun=10.0, Moon=200.0), "ascendant": 0.0, "mc": 270.0}, 2451545.0)
+    assert out["refused"] is None and out["missing"] == note
+    monkeypatch.undo()
+    assert len(engine["fixed_star_longitudes"](2451545.0)) == 28 and engine["fixed_star_missing_note"]() == ""
 
 
 def test_without_any_star_catalogue_the_page_says_not_computed_and_the_unit_test_skips(engine, monkeypatch):
@@ -3680,12 +3736,13 @@ def test_without_any_star_catalogue_the_page_says_not_computed_and_the_unit_test
     real_isfile = os.path.isfile
     monkeypatch.setattr(os.path, "isfile", lambda p: False if str(p).endswith("sefstars.txt") else real_isfile(p))
     state = engine["_FIXED_STAR_STATE"]
-    state.update(checked=False, ready=False, where=None)
+    state.update(checked=False, ready=False, where=None, why=None)
     try:
         assert engine["_fixed_star_catalogue_ready"]() is False
         out = engine["pn4_fixed_stars_in_image"]({"planetary_data": pdata(Sun=0.0, Moon=0.0), "ascendant": 0.0, "mc": 270.0}, 2451545.0)
         assert out["rows"] == [] and "catalogue" in out["refused"]
-        state.update(checked=False, ready=False, where=None)
+        assert "no sefstars.txt at the bundled path" in out["refused"]                # the refusal says WHY
+        state.update(checked=False, ready=False, where=None, why=None)
         with pytest.raises(pytest.skip.Exception):
             test_fixed_stars_resolve_and_regulus_on_the_ascendant_is_written_down(engine)
         from conftest import make_app, assert_no_exception
@@ -3695,7 +3752,7 @@ def test_without_any_star_catalogue_the_page_says_not_computed_and_the_unit_test
         assert not any(h == "The image of the revolution of the year: its points (I.6, 3-8)" and "Star" in c
                        for h, c in __import__("conftest").table_inventory(at))
     finally:
-        state.update(checked=False, ready=False, where=None)
+        state.update(checked=False, ready=False, where=None, why=None)
     monkeypatch.undo()
     assert engine["_fixed_star_catalogue_ready"]() is True            # found again once the file is visible
 

@@ -76,21 +76,30 @@ you're distributing beyond yourself/trusted users.
   files unless you have a specific reason to want JPL-grade precision.
   The invariant that matters is that NO `.se1` FILE IS BUNDLED OR NEEDED
   and the planets stay on Moshier; `app.py` does call
-  `swe.set_ephe_path()`, once, in `_fixed_star_catalogue_ready`, but it
-  points it at a private directory (`<user data dir>/ephe_stars/`) holding
-  nothing but a link to the star catalogue, so `FLG_SWIEPH` planet calls
-  find no planetary file there and fall back to Moshier exactly as before
-  (pinned by the flag test: `swe.calc_ut(2451545.0, swe.MARS)[1] == 260`,
-  Moshier + speed). Since 2026-09-11 the app SHIPS that catalogue:
-  `ephe/sefstars.txt` (137 KB, the Swiss Ephemeris fixed-star file, copied
-  unmodified from the `kerykeion` package, which redistributes it under
-  AGPL-3.0 — the app's own licence; see `ephe/README.md`). `app.py` looks
-  for it there first, beside itself (`Path(__file__).parent / "ephe"`,
-  the same way it reads `atlas.db`), before `$SE_EPHE_PATH`, the user data
-  directory and the site-packages scan; `build.spec` lists it in `datas`
-  so the frozen app carries it. The fixed-star tables (PN IV I.6, 7 and
-  III.8, 9) therefore render identically on every checkout and in the
-  frozen app; only with the file removed does the page say "not computed".
+  `swe.set_ephe_path()`, once, in `_fixed_star_catalogue_ready`, but only
+  at a directory holding nothing Swiss Ephemeris would read for a planet,
+  so `FLG_SWIEPH` planet calls find no planetary file there and fall back
+  to Moshier exactly as before (pinned by the flag test:
+  `swe.calc_ut(2451545.0, swe.MARS)[1] == 260`, Moshier + speed). Since
+  2026-09-11 the app SHIPS the star catalogue: `ephe/sefstars.txt` (137 KB,
+  the Swiss Ephemeris fixed-star file, copied unmodified from the
+  `kerykeion` package, which redistributes it under AGPL-3.0 — the app's
+  own licence; see `ephe/README.md`). `app.py` looks for it there first,
+  beside itself (`Path(__file__).parent / "ephe"`, the same way it reads
+  `atlas.db`) and points the ephemeris at that directory DIRECTLY — no
+  symlink, no copy, no writable user directory (the first Windows build
+  of the branch failed exactly there: the symlink-or-copy into
+  `%APPDATA%` and the swallowed exception printed "no catalogue is
+  available" while the file was in the bundle). Only a catalogue found
+  elsewhere (`$SE_EPHE_PATH`, the user data directory, a site-packages
+  scan) is linked, or copied where links are not allowed, into a private
+  `<user data dir>/ephe_stars/`. `build.spec` lists the file in `datas`
+  so the frozen app carries it at `_internal/ephe/sefstars.txt`. The
+  fixed-star tables (PN IV I.6, 7 and III.8, 9) therefore render
+  identically on every checkout and in the frozen app; when the page
+  says "Not computed" it now also says WHY (the path looked at, or the
+  file found and the exception Swiss Ephemeris raised), so a failing
+  build can be diagnosed from the screenshot.
 - **timezonefinder:** ships a sizeable internal dataset (tens of MB) that
   `collect_all("timezonefinder")` in `build.spec` should pull in
   automatically. This is the single biggest contributor to final build
