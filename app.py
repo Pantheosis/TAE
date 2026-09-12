@@ -13711,14 +13711,23 @@ if location_query and lat is not None and lon is not None:
                     st.image(svg_code, width=400)
                 with side_col:
                     _layout_control()
+            # Three sentences. Wide: one per line, the full page width (a hard
+            # break after each). Square: the half-width column beside the
+            # wheel wrapped each sentence at the column edge AND broke it
+            # again at the hard break, so the lines fell at two rhythms;
+            # there each sentence is its own short paragraph and wraps only
+            # where the column makes it (owner, 2026-09-11).
+            _intro = ("A TNAC study companion: work the homework by hand, then check it here and "
+                      "see the doctrine applied to a real chart.",
+                      "Enter a chart in the sidebar; saved charts load from the top of it.",
+                      "Pages follow the course's lesson order. Sahl's *Introduction* is the course "
+                      "text; Abu Ma'shar's *Great Introduction* VII is the supplement.")
             with side_col:
-                st.caption(
-                    "A TNAC study companion: work the homework by hand, then check it here and "
-                    "see the doctrine applied to a real chart.  \n"
-                    "Enter a chart in the sidebar; saved charts load from the top of it.  \n"
-                    "Pages follow the course's lesson order. Sahl's *Introduction* is the course "
-                    "text; Abu Ma'shar's *Great Introduction* VII is the supplement."
-                )
+                if wheel_layout == WHEEL_LAYOUT_OPTIONS[1]:
+                    st.caption("  \n".join(_intro))
+                else:
+                    for _sentence in _intro:
+                        st.caption(_sentence)
             # The four header metrics run in one row under the wheel, the full
             # page width (owner, 2026-09-07: stacked beside the wheel they left
             # the right-hand column mostly empty). The lunation column is
