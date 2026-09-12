@@ -10013,8 +10013,8 @@ PN4_TURNING_LOTS = (
     ('enemies_hermes', 'enemies', 'VI.2, 17; fn 31', 'one of fn 31\'s three'),
 )
 
-PN4_TURNING_DIRECTION_REFUSED = ("refused: a year for every degree needs III.1, 12's third case, "
-                                 "whose method is not stated in PN IV")
+PN4_TURNING_DIRECTION_REFUSED = (PN4_SEMIARCS_UNAVAILABLE + " III.1, 12's third case, Ptolemy's method as Dykes "
+                                 "identifies it (fn 16), the formula stated in no text in hand")
 
 def pn4_turning_planet_topics(sect):
     """VI.2, 2, 6 and 8: what each planet is turned for. The parents'
@@ -10121,8 +10121,9 @@ def pn4_turning_rows(chart_data, completed_years):
                    4: 'the distribution from the fourth, above (III.1, 12)'}
     for house, topic, cite in PN4_TURNING_HOUSES:
         ws_start = ((asc // 30.0) * 30.0 + 30.0 * (house - 1)) % 360.0
-        directed = directed_at.get(house, "refused: VI.2, 21's \"portions of the hours and the right circle\" "
-                                          "names semi-arcs and gives no procedure")
+        directed = directed_at.get(house, PN4_SEMIARCS_UNAVAILABLE + " VI.2, 21's \"portions of the hours and the "
+                                          "right circle\" (fn 33: \"by normal proportional semi-arcs\"), the formula "
+                                          "stated in no text in hand")
         rows.append(row(f'House {house} (by counting)', ws_start, topic, cite, directed))
         cusp = cusps[house - 1] if cusps and len(cusps) >= house else None
         if cusp is not None and get_zodiac_sign(cusp) != get_zodiac_sign(ws_start):
@@ -13679,7 +13680,7 @@ if location_query and lat is not None and lon is not None:
                 st.session_state.setdefault("_chart_bounds", True)
                 layout = _reading_radio(
                     "Wheel layout", WHEEL_LAYOUT_OPTIONS, "wheel_layout", "_wheel_layout",
-                    help="Square: the wheel beside the header metrics. Wide: the wheel with a "
+                    help="Square: the wheel beside the controls and the introduction, the header metrics under it. Wide: the wheel with a "
                          "positions panel across the page. Hover either and use the expand "
                          "arrows for a full-window view.")
                 _reading_checkbox("Bounds ring", "chart_bounds", "_chart_bounds",
@@ -13840,11 +13841,11 @@ if location_query and lat is not None and lon is not None:
                 calc_list = [{"Point": name, "Position": get_degree_string(lon_val)} for name, lon_val in calculated_points.items()]
                 st.dataframe(pd.DataFrame(calc_list), hide_index=True, width='content')
             with cusps_col:
-                st.subheader('Quadrant divisions (Alchabitius)', help='The twelve quadrant house cusps computed by the Alchabitius (semi-arc) system -- shown alongside the Whole-Sign houses used everywhere else in this app, since some techniques call for quadrant division specifically.')
+                st.subheader('Quadrant divisions (Alchabitius)', help='The twelve quadrant house cusps computed by the Alchabitius (semi-arc) system -- the app\'s other unit beside the whole-sign places: whole signs where the texts speak of a topic, these divisions where they speak of a planet\'s strength (the five-degree allowance at the four axial degrees).')
                 house_list = [{"House": i+1, "Cusp": get_degree_string(chart_data['houses'][i])} for i in range(12)]
                 st.dataframe(pd.DataFrame(house_list), hide_index=True, width='content', height=_rows_height(12))
             _finding(_gap, 'Special Degrees & Conditions', None, special_degrees,
-                      glance='Flags planets in Sahl\'s dark signs (Libra, Capricorn), in the two signs of his burned place ("the end of Libra and the beginning of Scorpio" -- he gives no degrees; Abu Ma\'shar\'s 19 Libra-3 Scorpio is applied only in his own Planetary Condition table), in a welled degree of their sign (Abu Ma\'shar, Gr. Intr. V.21, Fig. 62), or in one of Sahl\'s two sign-boundary conditions.',
+                      glance='Flags planets in Sahl\'s dark signs (Libra, Capricorn), in the two signs of his burned place ("the end of Libra and the beginning of Scorpio" -- he gives no degrees; Abu Ma\'shar\'s 19 Libra-3 Scorpio is applied in his own Planetary Condition table and, borrowed and labelled, in Sahl\'s condition 110), in a welled degree of their sign (Abu Ma\'shar, Gr. Intr. V.21, Fig. 62), or in one of Sahl\'s two sign-boundary conditions.',
                       notes='ENTERING: "every planet which is at the beginning of a sign is weak until it is firmly established in it and comes to be 5 degrees within it" (Fifty Aphorisms #44, 87), repeated in On Nativities Ch.1.22, 9. This is the other half of the five-degree rule that also governs advancement.\n\nLEAVING: "if a planet came to be in the last degree of the sign, then its strength has already gone away from that sign, and its strength is in the next sign ... like a man putting his foot on the threshold of his door. And if a planet was in the twenty-ninth degree, then indeed the strength of the planet IS in that sign" (Fifty Aphorisms #15, 31-33) -- so the 29th degree still counts and only the 30th has left.')
             _absent(_gap)
             # The orders of the dignities and the good places -- static tables --
@@ -14312,7 +14313,7 @@ if location_query and lat is not None and lon is not None:
                 st.markdown('The STANDING column records his editorial position in his own words where he states one.\n\nFour kinds of case. SAHL HIMSELF RULES: of the two sibling Lots, "both of the Lots are correct, so work with them both together" (3.11, 4) -- neither is subordinate. DYKES NAMES HIS CHOICE: of the three witnesses to the Lot of enemies, "I have used M here"; on the night reversal of the Saturn-Moon work Lot, "Paul instructs us to reverse it by night, but Abu Ma\'shar says not to. We should follow Paul." DYKES MARKS ONE STANDARD: on children, "the usual calculation ... is that of Hermes." DYKES ONLY TABULATES: three Lots for work, after noting that "Sahl quietly switches to Masha\'allah\'s treatise on Lots ... without telling us that the formula is different."\n\nEvery formula is taken from the running prose or a footnote, never from one of the summary tables.\n\nThe Lot of death is projected from Saturn: STATED by Abu Ma\'shar (Gr. Intr. VIII.4, 226; VIII.6, 69), and Sahl 8.6, 1 as printed agrees, his manuscripts reading the Ascendant (fn 89, with Masha\'allah\'s manuscripts and Dorotheus for Saturn). A stated rule with a manuscript variant, not an emendation.')
         def page_victors():
             st.header("Lunation and victors")
-            st.subheader('Prenatal Lunation (Syzygy)', help='The New or Full Moon exact before birth, its degree, natal house, and Almuten (victor) -- a key predictive point in Persian/Abbasid technique, thought to set the tone for the life or the period leading up to birth.')
+            st.subheader('Prenatal Lunation (Syzygy)', help='The New or Full Moon before birth: its degree, its natal place, the five lords of the degree and the governor among them (Sahl, On Nativities 1.7, 3-7), with this app\'s approximation and the almuten beside it.')
             r = syzygy['rulers']
             triplicity_str = (
                 f"{syzygy['active_triplicity_lord']}\u2605 ({syzygy['active_triplicity_label']}) \u00b7 "
@@ -14562,8 +14563,8 @@ if location_query and lat is not None and lon is not None:
                                              f"{re.sub(r'[^A-Za-z0-9]+', '_', wheel_view).strip('_').lower()}_age{pn4['age']}.svg",
                                    mime="image/svg+xml")
                 st.caption("PN IV's own conventions, read from its figures: the nativity in the centre and the "
-                           "revolution outside in every bi-wheel but Figure 51, where Dykes follows Abu Ma'shar's order of PN IV I.6 "
-                           "order and says so (p. 12); the outer charts in whole signs; \"the profected natal Ascendant "
+                           "revolution outside in every bi-wheel but Figure 51, where Dykes follows Abu Ma'shar's order of I.6 "
+                           "and says so (p. 12); the outer charts in whole signs; \"the profected natal Ascendant "
                            "... which I have shaded in grey\" (fn 33) -- the sign of the terminal point of the year -- "
                            "with the profection drawn as a dashed arc from the natal Ascendant (Figures 3, 33); the month "
                            "as a tri-wheel, root, year, month (fn 58); a ring of the Egyptian bounds on every wheel. "
@@ -15184,8 +15185,8 @@ if location_query and lat is not None and lon is not None:
                 st.caption("Readings: \"the degree of burning\" is the Sun's natal degree; \"a year for every degree of "
                            "ascensions\" is the oblique ascension of the birth latitude applied to the house-master's own "
                            "degree, as 1.15, 17, 1.16, 4 and 1.18, 21 apply \"the ascensions of that city\" to the "
-                           "luminaries and the Ascendant alike (PN IV III.1, 12's third case, the semi-arcs, stays "
-                           "refused); \"in the year of age\" is the completed year the arc falls in. Facts, not judgment: "
+                           "luminaries and the Ascendant alike (PN IV III.1, 12's third case, the proportional semi-arcs, "
+                           "is not built); \"in the year of age\" is the completed year the arc falls in. Facts, not judgment: "
                            "1.23, 4's verdict is quoted in the help and not pronounced. Not applied: 4.12, 6 (a retrograde "
                            "planet's rays directed conversely); 1.23, 5-11's further witnesses (the lord of the "
                            "revolution's Ascendant, the lord of the year, the profection reaching an infortune's sign), "
@@ -15412,11 +15413,12 @@ if location_query and lat is not None and lon is not None:
                     st.markdown("**III.1, 12 -- the measure, by position**")
                     st.dataframe(pd.DataFrame(PN4_ASCENSION_ROWS), hide_index=True, width='stretch')
                     st.caption("The three cases do not stand alike. The **Ascendant** and the **meridian** are the "
-                               "distributions above, each applied to the degree of its point and not to the planets in "
-                               "it. The **third case** "
-                               "has no method in PN IV at all -- III.1, 12 sends the reader to \"what we stated in our "
-                               "book [on that topic]\", and Dykes' fn 16 identifies it as Ptolemy's proportional "
-                               "semi-arcs, which is an editor's note rather than a stated rule.")
+                               "distributions above, each applied to the degree of its point and to a planet standing on "
+                               "that degree itself (a numerical tolerance, no orb). The **third case** -- everything not on "
+                               "one of the three degrees -- has no method in PN IV: III.1, 12 sends the reader to \"what we "
+                               "stated in our book [on that topic]\", and Dykes's fn 16 (with VI.2, 21 fn 33) identifies it as "
+                               "Ptolemy's proportional semi-arcs, the formula stated in no text in hand and not built; the "
+                               "planets are listed with that sentence, and no other ascension is substituted.")
                     st.markdown("**III.1, 6 -- the unit, by level of chart**")
                     st.dataframe(pd.DataFrame(PN4_UNIT_ROWS), hide_index=True, width='stretch')
                 with c2:

@@ -1500,18 +1500,20 @@ def test_pn4_turning_displaced_cusp_is_turned_both_ways(engine):
 
 def test_pn4_turning_direction_column_refuses_and_points_to_the_distributions(engine):
     """Only the turning is built. Planets and Lots say the direction is
-    III.1, 12's third case; ordinary houses cite VI.2, 21's semi-arcs
-    with no procedure; houses 1, 10 and 4 point to the distributions the
-    page already applies."""
+    III.1, 12's third case and ordinary houses VI.2, 21's semi-arcs, in the
+    one sentence the owner ruled for the gap ("Requires proportional
+    semi-arcs; calculation unavailable."); houses 1, 10 and 4 point to the
+    distributions the page already applies."""
     rows = {r["Point"]: r for r in engine["pn4_turning_rows"](_turning_chart(engine), 2)}
-    assert rows["Mars"]["Directed a year per degree"].startswith("refused")
-    assert "III.1, 12" in rows["Mars"]["Directed a year per degree"]
-    assert "VI.2, 21" in rows["House 7 (by counting)"]["Directed a year per degree"]
+    assert rows["Mars"]["Directed a year per degree"].startswith("Requires proportional semi-arcs; calculation unavailable.")
+    assert "III.1, 12" in rows["Mars"]["Directed a year per degree"] and "fn 16" in rows["Mars"]["Directed a year per degree"]
+    assert "VI.2, 21" in rows["House 7 (by counting)"]["Directed a year per degree"] and "fn 33" in rows["House 7 (by counting)"]["Directed a year per degree"]
+    assert rows["House 7 (by counting)"]["Directed a year per degree"].startswith("Requires proportional semi-arcs")
     assert "Ascendant" in rows["House 1 (by counting)"]["Directed a year per degree"]
     assert "Midheaven" in rows["House 10 (by counting)"]["Directed a year per degree"]
     assert "fourth" in rows["House 4 (by counting)"]["Directed a year per degree"]
     lot = next(r for k, r in rows.items() if k.startswith("Lot of travel"))
-    assert lot["Directed a year per degree"].startswith("refused")
+    assert lot["Directed a year per degree"].startswith("Requires proportional semi-arcs")
 
 
 def test_pn4_turning_parents_indicators_follow_the_sect(engine):
