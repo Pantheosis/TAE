@@ -2552,25 +2552,36 @@ def evaluate_transfers_of_light(planetary_data):
 
 def evaluate_collections_of_light(planetary_data):
     """Collection of light (Sahl Ch.3, 28-30; Gr. Intr. VII.5, 86, Fig.
-    127): two planets not connected to each other both connect with a
-    single heavier planet, which collects their light. Reported per PAIR,
+    127): the two light planets must be in Aversion to each other while
+    both connect with a single heavier planet, which collects their light.
+    29-30's own worked example (Venus 10 Aries, Moon 12 Taurus collected by
+    Jupiter in Cancer) puts the two lights a full sign apart -- Aversion,
+    not merely outside Sahl's tight Connected window (¶9) -- so a pair that
+    is still in a valid, if wide, aspect to each other does not qualify no
+    matter how far it has separated (cross-checked against a real chart's
+    Collection of Light in Janus's medieval module, 2026-09-12: every
+    accepted collector pair was a true Aversion). Reported per PAIR,
     matching Sahl's own pairwise framing (and how reference software such
     as Janus reports it) rather than bundled into one lumped group -- with
     more than two planets eligible under the same collector, each mutually-
-    unconnected pair among them is its own valid collection fact. (An
-    earlier version dropped a planet from the *entire* group the moment it
-    was connected to any *other* member, which silently ate otherwise-valid
+    averse pair among them is its own valid collection fact. (An earlier
+    version dropped a planet from the *entire* group the moment it was
+    connected to any *other* member, which silently ate otherwise-valid
     pairs -- e.g. Sun and Venus both connecting to Jupiter alongside Mars
     would wrongly suppress "Jupiter collects Sun & Mars" just because Sun
     and Venus happened to also be connected to each other.)"""
     with doctrine(SAHL):
         rows = _pairwise_configurations(planetary_data)
-        connected_lookup = {}
+        averse_lookup = {}
         applying_to = {}
         for row in rows:
             pair = frozenset({row['p1'], row['p2']})
             is_conn = (row['aspect_name'] != 'Aversion' or _sahl_body_row(row)) and _is_connected(row)
-            connected_lookup[pair] = is_conn
+            # Not "not Connected" (which a still-configured, merely wide
+            # aspect would also satisfy) -- true Aversion, the out-of-sign
+            # body connection of ¶20-21 excepted since that is still a real
+            # connection under Sahl's own rule.
+            averse_lookup[pair] = row['aspect_name'] == 'Aversion' and not _sahl_body_row(row)
             # Collection needs the light planets to be the ones APPLYING to the
             # collector, so the pair is keyed applicant -> receiver. 28's own
             # "heavier than they" is still enforced by natural rank below, so
@@ -2589,7 +2600,7 @@ def evaluate_collections_of_light(planetary_data):
         for z, lights in collectors.items():
             eligible = sorted(x for x in lights if WEIGHT_ORDER.index(z) < WEIGHT_ORDER.index(x))
             for x, y in combinations(eligible, 2):
-                if not connected_lookup.get(frozenset({x, y}), False):
+                if averse_lookup.get(frozenset({x, y}), False):
                     collections.append({'Collector': z, 'Collects': f'{x} & {y}'})
         return collections
 
@@ -5316,7 +5327,10 @@ def _lot_point(name, planetary_data, asc, cusps, sect, resolved, cusp_rule=None)
             quadrant = cusp_rule == LOT_HOUSE_CUSP_OPTIONS[1]
         if quadrant:
             return cusps[n - 1]
-        return (asc + 30.0 * (n - 1)) % 360.0
+        # Whole-sign cusps sit at 0 degrees of the house's own sign (the
+        # Ascendant's sign is house 1 in its entirety, per get_wsh_house),
+        # not offset by the Ascendant's precise degree within its sign.
+        return (math.floor(asc / 30.0) * 30.0 + 30.0 * (n - 1)) % 360.0
     if name.startswith('lord'):
         house = int(name[4:])
         sign = get_zodiac_sign(((int(asc // 30) + house - 1) % 12) * 30.0 + 15.0)
