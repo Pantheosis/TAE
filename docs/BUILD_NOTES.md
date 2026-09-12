@@ -3,7 +3,7 @@
 ## Files
 - `desktop_launcher.py` — spawns Streamlit headlessly, opens it in a pywebview window.
 - `build.spec` — PyInstaller build configuration.
-- `app.py` — your existing Streamlit script, bundled as a data file (not imported).
+- `app.py` — the Streamlit script, bundled as a data file (not imported).
 
 ## 1. Test in dev mode first
 Before packaging anything:
@@ -11,7 +11,7 @@ Before packaging anything:
 pip install pywebview
 python desktop_launcher.py
 ```
-This should open a native window showing your app. Fix any issues here —
+This should open a native window showing the app. Fix any issues here —
 they'll be much harder to debug once frozen.
 
 ## 2. Why onedir instead of onefile
@@ -20,15 +20,15 @@ launch*, adding a real startup delay, and its unsigned self-extracting
 `.exe`s are flagged by antivirus heuristics far more often than a plain
 folder of files. `build.spec` uses `--onedir` (via `COLLECT`) instead:
 
-- **Windows:** you get a folder (`dist/TraditionalAstrologyEngine/`) containing
+- **Windows:** the build is a folder (`dist/TraditionalAstrologyEngine/`) containing
   `TraditionalAstrologyEngine.exe` plus its dependencies. Zip the folder — that *is* the
   portable, no-install form. Users unzip and double-click the `.exe`.
 - **macOS:** the spec's `BUNDLE` step wraps that same folder into a proper
   `TraditionalAstrologyEngine.app`, which behaves as a single double-clickable icon even
   though it's technically a directory. Zip or `.dmg` it for distribution.
 
-If startup-folder-of-files bothers you aesthetically, `--onefile` still
-works fine for personal use — just change `EXE(..., exclude_binaries=True)`
+If a folder of files is unwanted, `--onefile` still
+works for personal use — change `EXE(..., exclude_binaries=True)`
 to a single onefile `EXE(...)` per PyInstaller's docs and drop `COLLECT`.
 
 ## 3. Platform-specific requirements
@@ -50,9 +50,8 @@ genuine advantage for portability here.
 
 Unsigned `.app` bundles trigger Gatekeeper's "unidentified developer"
 block. First run: **right-click the app → Open → Open** (this only needs
-doing once). For wider distribution without this friction you'd need an
-Apple Developer ID ($99/yr) and to notarize the build — out of scope unless
-you're distributing beyond yourself/trusted users.
+doing once). Removing that friction needs an Apple Developer ID ($99/yr)
+and a notarized build; the releases are not notarized.
 
 ## 4. Gotchas specific to this app's dependencies
 
@@ -73,7 +72,7 @@ you're distributing beyond yourself/trusted users.
   Moshier ephemeris (no external `.se1` files needed). This is
   arc-second-level precision, which is far finer than anything the app
   displays (minutes of arc) — no need to bundle Swiss Ephemeris planetary
-  files unless you have a specific reason to want JPL-grade precision.
+  files unless there is a specific reason to want JPL-grade precision.
   The invariant that matters is that NO `.se1` FILE IS BUNDLED OR NEEDED
   and the planets stay on Moshier; `app.py` does call
   `swe.set_ephe_path()`, once, in `_fixed_star_catalogue_ready`, but only
@@ -103,28 +102,28 @@ you're distributing beyond yourself/trusted users.
 - **timezonefinder:** ships a sizeable internal dataset (tens of MB) that
   `collect_all("timezonefinder")` in `build.spec` should pull in
   automatically. This is the single biggest contributor to final build
-  size. If you want a much smaller build and can tolerate coarser timezone
-  boundaries, `TimezoneFinderL` is a lighter drop-in alternative — not
-  something I'd swap in without you asking, since it trades accuracy for size.
+  size. For a much smaller build at the cost of coarser timezone
+  boundaries, `TimezoneFinderL` is a lighter drop-in alternative; it
+  trades accuracy for size and is not used.
 - **Geocoding is offline.** Place lookup reads the bundled `atlas.db`
   (SQLite, ~24 MB, listed in `build.spec`'s `datas`), so the packaged app
   needs no internet access and no geopy/Nominatim or certifi -- neither is
   a dependency any more, and neither is in `requirements*.txt` or the spec.
-  If you ever swap the atlas for a live geocoder, both of those come back:
+  Swapping the atlas for a live geocoder would bring both back:
   a network requirement at runtime, and certifi's CA bundle for frozen
   HTTPS calls.
 
 ## 5. Building for both platforms without owning both machines
 PyInstaller does not cross-compile — a build run on Linux/Mac cannot
-produce a Windows `.exe`, and vice versa. If you don't have physical access
-to both a Windows and a Mac machine, the standard solution is a CI matrix,
-e.g. GitHub Actions with `runs-on: [windows-latest, macos-latest]`, each
-job running `pip install -r requirements.txt pyinstaller
-pyinstaller-hooks-contrib` then `pyinstaller build.spec`, uploading
-`dist/` as a build artifact.
+produce a Windows `.exe`, and vice versa. Without both machines the
+standard solution is a CI matrix, which this repository has:
+`.github/workflows/build.yml` runs on `windows-latest` and `macos-latest`,
+installs `requirements-desktop.txt` plus PyInstaller, runs `pyinstaller
+build.spec`, and zips `dist/`. How it is triggered and where the zips go
+is in `docs/RELEASING.md`.
 
 ## 6. Debugging a frozen build that fails silently
-Set `console=True` in `build.spec` temporarily — this gives you a terminal
+Set `console=True` in `build.spec` temporarily — this gives a terminal
 window showing Streamlit's actual startup errors/tracebacks, which are
 otherwise invisible with `console=False`. Switch back to `False` for the
 release build once it's working.
