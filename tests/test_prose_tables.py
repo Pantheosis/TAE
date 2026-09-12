@@ -123,8 +123,8 @@ PLANETS_IN_HOUSES_GUIDE = {
                  'Bad': 'See above; leisure time and illness.'},
         'Mercury': {'Good': 'Advancement through speech/business.',
                    'Bad': 'Idle, evil; illness, arrested, confinement.'},
-        'Moon': {'Good': '[UNCERTAIN -- the TNAC Reference Guide (p. 28) prints ? for both the Rhetorius and PN4 cells of the Moon in the 6th; no sourced delineation exists; do not rely on this cell]',
-                'Bad': '[UNCERTAIN -- the TNAC Reference Guide (p. 28) prints ? for both the Rhetorius and PN4 cells of the Moon in the 6th; no sourced delineation exists; do not rely on this cell]'},
+        'Moon': {'Good': '[UNCERTAIN -- the TNAC Reference Guide (p. 28) prints ? for both the Rhetorius and PN IV cells of the Moon in the 6th; no sourced delineation exists; do not rely on this cell]',
+                'Bad': '[UNCERTAIN -- the TNAC Reference Guide (p. 28) prints ? for both the Rhetorius and PN IV cells of the Moon in the 6th; no sourced delineation exists; do not rely on this cell]'},
     },
     7: {
         'Saturn': {'Good': 'Success after delay, long-lived; owning property.',
@@ -155,8 +155,8 @@ PLANETS_IN_HOUSES_GUIDE = {
                  'Bad': 'Marry late, lower-quality women, STDs, seizures; negligence in assets, idleness, little benefit, fighting over assets.'},
         'Mercury': {'Good': 'Money, management, inheritance; praised.',
                    'Bad': 'Ineffective, lazy; blamed, quarreling due to assets.'},
-        'Moon': {'Good': '[UNCERTAIN -- the TNAC Reference Guide (p. 32) prints ? for both the Rhetorius and PN4 cells of the Moon in the 8th; no sourced delineation exists; do not rely on this cell]',
-                'Bad': '[UNCERTAIN -- the TNAC Reference Guide (p. 32) prints ? for both the Rhetorius and PN4 cells of the Moon in the 8th; no sourced delineation exists; do not rely on this cell]'},
+        'Moon': {'Good': '[UNCERTAIN -- the TNAC Reference Guide (p. 32) prints ? for both the Rhetorius and PN IV cells of the Moon in the 8th; no sourced delineation exists; do not rely on this cell]',
+                'Bad': '[UNCERTAIN -- the TNAC Reference Guide (p. 32) prints ? for both the Rhetorius and PN IV cells of the Moon in the 8th; no sourced delineation exists; do not rely on this cell]'},
     },
     9: {
         'Saturn': {'Good': 'Initiates, chief priests; travel for benefit.',

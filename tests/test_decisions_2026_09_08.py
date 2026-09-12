@@ -64,7 +64,7 @@ def test_d12_node_orb_label_cites_ch3_107_and_vii6_52_not_nativities_1_21(engine
     import re
     from conftest import engine_source
     m = re.search(r"With the Head or Tail, without latitude \(99;[^)]*\)", engine_source())
-    assert m and "Ch.3, 107" in m.group(0) and "VII.6, 52" in m.group(0), m
+    assert m and "Ch. 3, 107" in m.group(0) and "VII.6, 52" in m.group(0), m
     assert "1.21, 12" not in m.group(0)
 
 

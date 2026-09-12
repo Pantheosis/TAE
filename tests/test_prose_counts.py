@@ -43,7 +43,7 @@ def test_sahl_moon_defects_ten():
     src = function_source("evaluate_corruption_of_the_moon")
     labels = {int(n) for n in re.findall(r"\bhit\((\d{3}),", src)} | cited_paragraphs(src, 103, 112)
     assert labels == set(range(103, 113)), f"Sahl Moon labels cite {sorted(labels)}"
-    assert prose_number(r"Sahl's (\w+) \(The Introduction Ch\.3, 103-112\)") == len(labels)
+    assert prose_number(r"Sahl's (\w+) \(The Introduction Ch\. 3, 103-112\)") == len(labels)
 
 
 def test_non_reception_five_kinds():
@@ -281,7 +281,7 @@ def test_configurations_chapters_match_the_code():
 
 def test_sahl_moon_table_prose_matches_its_list():
     assert prose_number(r"glance=\"Sahl's own (\w+) defects of the Moon") == 10
-    assert "'Corruption of the Moon', 'Sahl, The Introduction Ch.3, 103-112'" in ui_source()
+    assert "'Corruption of the Moon', 'Sahl, The Introduction Ch. 3, 103-112'" in ui_source()
     # Every mention of the two lists points at a table that exists.
     assert "stay in Sahl's own tables" not in app_source()
     assert "102-113" not in app_source()

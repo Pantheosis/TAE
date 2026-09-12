@@ -2479,7 +2479,7 @@ def test_pn4_printed_reference_tables_derive_from_the_rules(engine):
     assert engine["PN4_LADDER_ROWS"][-1] == {"Arc": "25‴", "Is": "1 hour"}
     assert [r["A degree is"] for r in engine["PN4_UNIT_ROWS"]] == [
         "years", "months and days", "days and hours"]
-    state = {r["Point directed"]: r["In this engine"] for r in engine["PN4_ASCENSION_ROWS"]}
+    state = {r["Point directed"]: r["In this app"] for r in engine["PN4_ASCENSION_ROWS"]}
     # III.1, 12's three cases do not stand alike and the table must not say
     # they do: two are built (since 2026-09-10), each for the DEGREE of its
     # point and not for the planets in it; the third has no stated method
@@ -3174,7 +3174,7 @@ def test_2_13_grades_the_sect_lights_first_triplicity_lord_only_and_the_display_
     assert out["first_lord"] == "Sun" and out["judged"]["band"] == "second 15 degrees"
     assert "below the first" in rows["Sun"]["2.13, 48-51 (the sect light's first triplicity lord only)"]
     assert rows["Mercury"]["2.13, 48-51 (the sect light's first triplicity lord only)"] == "-"
-    assert rows["Mercury"]["Engine grade (generalised from 2.13, 48-51)"] == "first 15 degrees of ascension"
+    assert rows["Mercury"]["App grade (generalised from 2.13, 48-51)"] == "first 15 degrees of ascension"
     assert rows["Mercury"]["Aphorism #45 as printed (15 zodiacal degrees; not applied)"] == "within"
     assert rows["Sun"]["Aphorism #45 as printed (15 zodiacal degrees; not applied)"] == "beyond"
     assert rows["Sun"]["Follows the stake"].startswith("Ascendant")
@@ -3186,12 +3186,12 @@ def test_2_13_bands_are_end_inclusive_and_truncated_by_the_next_stake(engine):
     a planet at 40 Aries follow the MIDHEAVEN by right ascension, not the
     Ascendant, and the remainder is bounded by the next actual stake."""
     out = _bands(engine, Sun=16.0, mc=30.0)                     # RA(16 Aries) = 14.7: band one, inclusive of 15
-    assert {r["Planet"]: r for r in out["rows"]}["Sun"]["Engine grade (generalised from 2.13, 48-51)"] == "first 15 degrees of ascension"
+    assert {r["Planet"]: r for r in out["rows"]}["Sun"]["App grade (generalised from 2.13, 48-51)"] == "first 15 degrees of ascension"
     out = _bands(engine, Sun=40.0, mc=30.0)
     sun = {r["Planet"]: r for r in out["rows"]}["Sun"]
     assert sun["Follows the stake"].startswith("Midheaven") and "right ascension" in sun["Ascensional distance"]
     out = _bands(engine, Sun=60.0, mc=270.0)                    # 60 Aries-Taurus: RA 57.8 past the Ascendant, the remainder
-    assert {r["Planet"]: r for r in out["rows"]}["Sun"]["Engine grade (generalised from 2.13, 48-51)"] == "the remainder, up to the next stake"
+    assert {r["Planet"]: r for r in out["rows"]}["Sun"]["App grade (generalised from 2.13, 48-51)"] == "the remainder, up to the next stake"
 
 
 def test_2_13_refuses_at_the_poles(engine):
@@ -3497,7 +3497,7 @@ def test_governor_condition_rows_read_essence_and_sign_and_judge_the_place_by_th
     assert row13["Met"] == "yes" and "division 10" in row13["Criteria"] and "follows a stake\" met; sign half: met" in row13["Criteria"]
     for statement in ("(i) PN IV IX.9, 13 supplies the requirement itself",
                       "(ii) This app's convention on places and strength supplies its operational interpretation",
-                      "(iii) Alcabitius and the axial 5-degree allowance come from that adopted convention, not from the text",
+                      "(iii) Alchabitius and the axial 5-degree allowance come from that adopted convention, not from the text",
                       "IX.5, 4 fn 106 (p. 602)", "dynamic angularity (advancing or withdrawing), here and in 7, 11, and 14",
                       "IX.5, 9 (p. 603", "V.1, 28 fn 15"):
         assert statement in row13["Criteria"], statement
