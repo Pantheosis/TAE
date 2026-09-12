@@ -3876,3 +3876,31 @@ def test_syzygy_governor_rows_are_on_the_victors_page_with_the_relabelled_almute
                    "Gr. Intr. VII.2, 4 names her right and left",
                    "every condition is read in the NATAL chart"):
         assert phrase in src, phrase
+
+
+# --- LOT-BASIS: the Lot of Basis stated at Gr. Intr. VIII.4, 22-24 ----------------------------
+
+def test_lot_of_basis_is_fortune_to_spirit_from_the_ascendant_reversed_at_night(engine):
+    """VIII.4, 23: "taken by day from the Lot of Fortune to the Lot of the
+    Invisible, and by night the contrary ... cast out from the beginning of
+    the sign of the Ascendant"; 24: "this Lot matches [6] the Lot of Venus"
+    -- Sahl's Lot of passion (7.1, 141) is the same construction, so the two
+    coincide (VIII.7, 5). Night chart, Ascendant 0 Aries, Sun 10 Sagittarius,
+    Moon 10 Leo: Fortune (night: Asc + Sun - Moon) = 120, Spirit = 240; by
+    night the contrary of Fortune -> Spirit is Spirit -> Fortune: Asc +
+    (120 - 240) = 240. The old unsigned shorter arc gave Asc + 120 = 120."""
+    p = pdata(Sun=250.0, Moon=130.0)
+    basis = engine["lot_by_id"]("basis", p, 0.0, None, "Nocturnal")
+    fortune = engine["lot_by_id"]("fortune", p, 0.0, None, "Nocturnal")
+    spirit = engine["lot_by_id"]("spirit", p, 0.0, None, "Nocturnal")
+    assert (fortune, spirit) == (120.0, 240.0)
+    assert basis == pytest.approx(240.0) and basis != pytest.approx(120.0)
+    assert basis == pytest.approx(engine["lot_by_id"]("passion", p, 0.0, None, "Nocturnal"))
+    # by day the arc runs Fortune -> Spirit
+    assert engine["lot_by_id"]("basis", p, 0.0, None, "Diurnal") == pytest.approx(
+        (0.0 + engine["lot_by_id"]("spirit", p, 0.0, None, "Diurnal") - engine["lot_by_id"]("fortune", p, 0.0, None, "Diurnal")) % 360.0)
+    rows = {r["Lot Name"]: r for r in engine["calculate_classical_lots"](0.0, 250.0, 130.0, "Nocturnal")}
+    assert rows["Lot of Basis"]["Position"] == engine["get_degree_string"](240.0)
+    assert "unattested" not in rows["Lot of Basis"]["Standing"]
+    from conftest import ui_source
+    assert "BASIS IS NOT" not in ui_source() and "the course tables" not in ui_source()

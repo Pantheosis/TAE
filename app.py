@@ -4938,49 +4938,24 @@ def calculate_chronocrats(jd_utc, lat, lon, local_hour, utc_offset_hours=0.0):
 # --- Classical Lots (Arabic Parts) ---------------------------------------
 
 def calculate_classical_lots(asc, sun, moon, sect):
-    """The four Lots this app has always shown. Fortune and Exaltation are
-    attested in Sahl; Spirit is named by Sahl but its formula is the course
-    tables'. All three are computed from their own LOT_DEFINITIONS rows,
-    which carry the provenance, so this table cannot disagree with the
-    Topical Lots table below it.
-
-    BASIS IS NOT. No Lot of Basis appears anywhere in the material this
-    project has -- not in On Nativities, not in the Introduction, not in
-    Abu Ma'shar Book VII -- and the construction below is a Hellenistic one
-    from outside those texts. It also takes the UNSIGNED shorter arc
-    between Fortune and Spirit, which discards the direction the pair
-    actually stands in, so the same figure is produced whether Spirit
-    leads Fortune or trails it. It is left computed and shown, because it
-    has been in this table from the start, but it is marked as
-    unattested here rather than presented as settled."""
+    """The four Lots this app has always shown, each computed from its own
+    LOT_DEFINITIONS row, which carries the provenance, so this table cannot
+    disagree with the Topical Lots table below it. Fortune and Exaltation
+    are stated in Sahl; Spirit is stated at Gr. Intr. VIII.3, 28-29 and
+    named by Sahl; Basis is stated at Gr. Intr. VIII.4, 22-24 (order
+    LOT-BASIS, 2026-09-12: until then it was the unsigned shorter arc
+    between Fortune and Spirit, a construction of this app's own, and was
+    labelled unattested)."""
     luminaries = {'Sun': {'longitude': sun}, 'Moon': {'longitude': moon}}
-    fortune = lot_by_id('fortune', luminaries, asc, None, sect)
-    spirit = lot_by_id('spirit', luminaries, asc, None, sect)
-    exaltation = lot_by_id('exaltation', luminaries, asc, None, sect)
-
-    raw_dist = abs(fortune - spirit)
-    dist = raw_dist if raw_dist <= 180.0 else 360.0 - raw_dist
-    basis = (asc + dist) % 360.0
-
-    lots = {
-        'Lot of Fortune': fortune,
-        'Lot of Spirit': spirit,
-        'Lot of Exaltation': exaltation,
-        'Lot of Basis': basis,
-    }
-    # Standing is read from LOT_DEFINITIONS, the one place each Lot's
-    # provenance is stated, so this table cannot disagree with the Topical
-    # Lots table below it (it did: Spirit's formula is the course tables',
-    # not Sahl's, and this string still said "attested in Sahl").
-    standing_by_id = {d['id']: d['confidence'] for d in LOT_DEFINITIONS}
     classical_ids = {'Lot of Fortune': 'fortune', 'Lot of Spirit': 'spirit',
-                     'Lot of Exaltation': 'exaltation'}
+                     'Lot of Exaltation': 'exaltation', 'Lot of Basis': 'basis'}
+    lots = {name: lot_by_id(lot_id, luminaries, asc, None, sect) for name, lot_id in classical_ids.items()}
+    standing_by_id = {d['id']: d['confidence'] for d in LOT_DEFINITIONS}
     result = []
     for name, lon_val in lots.items():
         result.append({
             'Lot Name': name,
-            'Standing': ('EXTERNAL -- unattested in these texts' if 'Basis' in name
-                          else standing_by_id[classical_ids[name]]),
+            'Standing': standing_by_id[classical_ids[name]],
             'Position': get_degree_string(lon_val),
             'WS place': get_wsh_house(lon_val, asc),
             'Sign Dispositor': SIGN_TO_DOMICILE.get(get_zodiac_sign(lon_val), '-'),
@@ -5054,11 +5029,28 @@ LOT_DEFINITIONS = [
               'hour-based construction instead.'),
     dict(id='spirit', topic='Spirit', name='Lot of Spirit',
          start='Moon', end='Sun', project='Ascendant', reverse_at_night=True,
-         source='TNAC Handy Tables Lesson 18 (Moon to Sun, Asc, reversed by night); named in Sahl, On Nativities Ch. 11.2, 4-6',
-         confidence='attested by name in Sahl; formula from the course tables',
-         note='Sahl names it the Lot of the Invisible, later Spirituality (notes on Ch. 9.5, '
-              '73 and Ch. 11, 5 -- the chapter preamble -- confirm the identity) but nowhere states '
-              'the formula; the Moon-to-Sun construction is the Handy Tables\'.'),
+         source='Gr. Intr. VIII.3, 28-29 (the Lot of the Invisible); named in Sahl, On Nativities Ch. 11.2, 4-6',
+         confidence='stated (Gr. Intr. VIII.3, 28-29); named in Sahl',
+         note='"They began [2] the Lot of the Invisible by day from her up to the Sun in degrees of equality, '
+              'and by night from the Sun to the Moon ... cast out from the beginning of the sign of the Ascendant" '
+              '(Gr. Intr. VIII.3, 28-29). Sahl names it the Lot of the Invisible, later Spirituality (notes on '
+              'Ch. 9.5, 73 and Ch. 11, 5 -- the chapter preamble -- confirm the identity) but nowhere states the formula.'),
+    # [9] of the Great Introduction, the Greek Basis (fn 67): Fortune to the
+    # Invisible from the Ascendant, reversed at night -- the same construction
+    # as Sahl's Lot of passion (7.1, 141) and Abu Ma'shar's Lot of Venus [6],
+    # with which VIII.4, 24 and VIII.7, 5 say it coincides. Order LOT-BASIS,
+    # 2026-09-12: until then this app computed Basis as the UNSIGNED shorter
+    # arc between Fortune and Spirit from the Ascendant, a construction stated
+    # in no text, and called the Lot unattested.
+    dict(id='basis', topic='Basis', name='Lot of Basis',
+         start='fortune', end='spirit', project='Ascendant', reverse_at_night=True,
+         source="Gr. Intr. VIII.4, 22-24 ([9] the Lot of firmness and survival, \"the Lot of the Ascendant's support\"; fn 67: "
+                "the Greek Lot of Basis); VIII.7, 5",
+         confidence='stated (Gr. Intr. VIII.4, 22-24; VIII.7, 5); not in Sahl under this name',
+         note='"Is taken by day from the Lot of Fortune to the Lot of the Invisible, and by night the contrary, and it is '
+              'added to what the degrees of the Ascendant come to, and it is cast out from the beginning of the sign of the '
+              'Ascendant. 24 And this Lot matches [6] the Lot of Venus" (VIII.4, 23-24; VIII.7, 5 the same). The same '
+              'construction as the Lot of passion (Eros) below, Sahl 7.1, 141, with which it coincides.'),
     # The night formula is not the day formula reversed: it changes BOTH
     # ends. "By day from the degree of the Sun to the degree of HIS
     # exaltation ... and by night from the degree of the MOON to the degree
@@ -14295,13 +14287,12 @@ if location_query and lat is not None and lon is not None:
             classical_rows = []
             for r in classical_lots:
                 row = {k: v for k, v in r.items() if k != 'Standing'}
-                row['Formula'] = formula_by_lot.get(r['Lot Name'],
-                                                    'Ascendant + (shorter arc between Fortune and Spirit)  [not in the sources]')
+                row['Formula'] = formula_by_lot[r['Lot Name']]
                 row['Standing'] = r['Standing']
                 classical_rows.append(row)
             st.dataframe(pd.DataFrame(classical_rows), hide_index=True, width='stretch', height=_rows_height(len(classical_rows)))
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-                st.markdown('Fortune and Exaltation are attested in Sahl; Spirit is named by Sahl (the Lot of the Invisible) but its Moon-to-Sun formula comes from the course tables, as its Standing says. All three carry their provenance in the Topical Lots table below. BASIS IS NOT: no Lot of Basis appears anywhere in the material this project has, and the construction used takes the unsigned shorter arc between Fortune and Spirit, discarding the direction the pair actually stands in. It is kept because it has always been here, and marked rather than presented as settled.')
+                st.markdown('Fortune and Exaltation are stated in Sahl. Spirit -- the Lot of the Invisible, which Sahl names -- is stated at Gr. Intr. VIII.3, 28-29: by day from the Moon to the Sun, by night the reverse, from the Ascendant. Basis is stated at Gr. Intr. VIII.4, 22-24 as "the Lot of firmness and survival, the Lot of the Ascendant\'s support" (fn 67: the Greek Basis): by day from Fortune to the Invisible, by night the contrary, from the Ascendant -- the same construction as Sahl\'s Lot of passion (7.1, 141) and Abu Ma\'shar\'s Lot of Venus, with which VIII.4, 24 says it coincides. All four carry their provenance in the Topical Lots table below.')
             st.subheader('Topical Lots (Sahl, On Nativities)', help="Sahl's topical Lots, each with its own provenance. He gives several of them MORE THAN ONCE, with formulas that genuinely conflict, and Dykes' apparatus does not silently reconcile them -- so neither does this table.")
             _reading_radio("House-based Lots measure to the", LOT_HOUSE_CUSP_OPTIONS, "lot_house_cusp", "_lot_house_cusp",
                            help="'The second place', 'the degree of the eighth place', 'the ninth' (On Nativities 2.15, 1; "
@@ -14310,7 +14301,7 @@ if location_query and lat is not None and lon is not None:
             # Fortune, Spirit and Exaltation are in the Classical Lots table
             # above, with the same Formula; the provenance columns are in the
             # expander so the table itself is the worksheet.
-            topical_rows = [r for r in topical_lots if r['Lot'] not in ('Lot of Fortune', 'Lot of Spirit', 'Lot of Exaltation')]
+            topical_rows = [r for r in topical_lots if r['Lot'] not in ('Lot of Fortune', 'Lot of Spirit', 'Lot of Exaltation', 'Lot of Basis')]
             st.dataframe(pd.DataFrame(topical_rows, columns=['Topic', 'Lot', 'Position', 'WS place', 'Lord', 'Formula', 'Active']),
                          hide_index=True, width='stretch', height=_rows_height(len(topical_rows)))
             with st.expander("Provenance and standing per Lot"):

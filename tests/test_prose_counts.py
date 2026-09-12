@@ -62,20 +62,22 @@ def test_classical_lots_are_four(engine):
     rows = engine["calculate_classical_lots"](100.0, 50.0, 200.0, "Diurnal")
     assert len(rows) == 4
     assert re.search(r"The four Lots this app has always shown", function_source("calculate_classical_lots"))
-    # Every Standing string comes from LOT_DEFINITIONS except Basis, which
-    # the definitions table does not carry.
+    # Every Standing string comes from LOT_DEFINITIONS, Basis included
+    # since LOT-BASIS (Gr. Intr. VIII.4, 22-24).
     standing = {d["id"]: d["confidence"] for d in engine["LOT_DEFINITIONS"]}
     by_name = {r["Lot Name"]: r["Standing"] for r in rows}
     assert by_name["Lot of Fortune"] == standing["fortune"]
     assert by_name["Lot of Spirit"] == standing["spirit"]
     assert by_name["Lot of Exaltation"] == standing["exaltation"]
+    assert by_name["Lot of Basis"] == standing["basis"] and standing["basis"].startswith("stated (Gr. Intr. VIII.4, 22-24")
+    assert standing["spirit"].startswith("stated (Gr. Intr. VIII.3, 28-29")
 
 
 def test_lot_definitions_are_well_formed(engine):
     defs = engine["LOT_DEFINITIONS"]
     ids = [d["id"] for d in defs]
     assert len(ids) == len(set(ids)), "duplicate Lot ids"
-    assert len(defs) == 36, f"LOT_DEFINITIONS has {len(defs)} rows; update this number deliberately"   # 36 since 2026-09-11: the Lot of death's whole-sign variant row (sheet row 4)
+    assert len(defs) == 37, f"LOT_DEFINITIONS has {len(defs)} rows; update this number deliberately"   # 37 since 2026-09-12: the Lot of Basis (LOT-BASIS); 36 since 2026-09-11: the Lot of death's whole-sign variant row
     planets = {"Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"}
     seen = set()
     for d in defs:
