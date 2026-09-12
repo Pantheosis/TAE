@@ -385,7 +385,14 @@ BUILD_PROCESS_MARKERS = re.compile(
     r"the builder|builder's|lane \d|\bdecision D|blind reading|the harness|PN4_REPAIRS|READTHROUGH|"
     r"this corpus|corpus disagreement|rephotograph|for weeks|"
     # the course's lessons and tables are not in hand: no citation of them on a page (owner, 2026-09-12)
-    r"\bLessons? \d|Handy Tables|Course Glossary|course materials?|course default|A Chart Tour", re.IGNORECASE)
+    r"Handy Tables|course materials?|course default", re.IGNORECASE)
+# The two course citations the owner restored (2026-09-12) -- the warrant for
+# Alchabitius and the axial-only five degrees, and for 1.18, 19's "four
+# stakes" -- are the only "Lesson" / "Glossary" mentions a page may carry:
+# citations reproduce nothing, and the owner vouches for the references.
+COURSE_CITATIONS_ALLOWED = ("Lesson 3, A Chart Tour, §4-5; the Course Glossary s.v. Advancement",
+                            "the course's reading, Lesson 3 §4-5, adopted here")
+COURSE_MARKERS = re.compile(r"\bLessons? \d|Course Glossary|A Chart Tour")
 
 
 def test_page_strings_carry_no_build_process():
@@ -408,5 +415,9 @@ def test_page_strings_carry_no_build_process():
             for m in BUILD_PROCESS_MARKERS.finditer(node.value):
                 if m.group(0).lower() == "the owner" and "the owner of the revolution" in node.value:
                     continue                                                  # II.3, 5's own words
+                offenders.append((node.lineno, m.group(0), node.value[max(0, m.start() - 40):m.end() + 40]))
+            for m in COURSE_MARKERS.finditer(node.value):
+                if any(allowed in node.value for allowed in COURSE_CITATIONS_ALLOWED):
+                    continue
                 offenders.append((node.lineno, m.group(0), node.value[max(0, m.start() - 40):m.end() + 40]))
     assert not offenders, "\n".join(f"app.py:{ln}: {mark!r} in ...{ctx}..." for ln, mark, ctx in offenders)
