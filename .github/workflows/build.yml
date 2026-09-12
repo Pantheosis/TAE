@@ -75,10 +75,23 @@ jobs:
           gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --title "Traditional Astrology Engine $tag" --generate-notes
           gh release upload "$tag" TraditionalAstrologyEngine-*.zip --clobber
 
-      - name: Keep the zip for testing (manual runs)
-        if: github.event_name == 'workflow_dispatch'
+      # Manual runs keep the build as a short-lived artifact for testing.
+      # GitHub zips an artifact on download, so the Windows one is uploaded
+      # as the FOLDER (one zip to extract, the .exe at the top level); the
+      # macOS one has to stay a zip so the .app's executable bits and
+      # internal symlinks survive, which means one zip inside another there.
+      - name: Keep the build for testing (manual runs, Windows)
+        if: github.event_name == 'workflow_dispatch' && runner.os == 'Windows'
         uses: actions/upload-artifact@v7
         with:
-          name: TraditionalAstrologyEngine-${{ runner.os }}
-          path: TraditionalAstrologyEngine-*.zip
+          name: TraditionalAstrologyEngine-Windows
+          path: dist/TraditionalAstrologyEngine/
+          retention-days: 3
+
+      - name: Keep the build for testing (manual runs, macOS)
+        if: github.event_name == 'workflow_dispatch' && runner.os == 'macOS'
+        uses: actions/upload-artifact@v7
+        with:
+          name: TraditionalAstrologyEngine-macOS
+          path: TraditionalAstrologyEngine-macos.zip
           retention-days: 3

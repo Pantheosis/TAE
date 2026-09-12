@@ -55,6 +55,30 @@ for pkg in collect_pkgs:
     binaries += b
     hiddenimports += h
 
+# collect_all("PySide6") is a blunt instrument: it also sweeps in the QML
+# tree, the C++ headers, CMake files, import libraries and the
+# objects-Release/*.cpp.obj static-link leftovers under PySide6/qml -- none
+# of which the app touches (pywebview's Qt backend uses QtWebEngineWidgets,
+# not QML). Those object files sit ten folders deep, and on 2026-09-12 the
+# first Windows build from this repository failed to EXTRACT on the owner's
+# machine with "Error 0x80010135: Path too long" on every one of them.
+# Drop them here; what stays is Qt's bin/, plugins/, resources/ and
+# translations/, which QtWebEngine does need (QtWebEngineProcess.exe, the
+# .pak resources, the locales).
+_PYSIDE_DROP = ("/qml/", "/objects-release/", "/include/", "/lib/cmake/", "/typesystems/",
+                "/glue/", "/examples/", ".cpp.obj", ".obj", ".lib", ".prl", ".cmake", ".pdb")
+
+def _keep(entry):
+    """False for a collected (src, dest[, typecode]) tuple the bundle does not need."""
+    path = ("/" + "/".join(str(p).replace("\\", "/") for p in entry[:2])).lower()
+    if "pyside6" not in path and "shiboken6" not in path:
+        return True
+    return not any(marker in path for marker in _PYSIDE_DROP)
+
+if sys.platform == "win32":
+    datas = [e for e in datas if _keep(e)]
+    binaries = [e for e in binaries if _keep(e)]
+
 # Belt-and-suspenders on top of collect_all("webview") above: explicitly
 # force in every submodule of webview by name, matching the exact fix
 # used by other pywebview+PyInstaller projects that hit this same issue.
