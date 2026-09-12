@@ -1,5 +1,5 @@
 """Every base lookup table in the engine half, pinned cell by cell against a
-literal copy of its canonical authority (2026-09-08 audit, synthesis/08).
+literal copy of its canonical authority (2026-09-08 audit, docs/synthesis/08).
 
 The Egyptian bounds carried two transposed rows from the initial commit
 through three audits and 748 tests, because no test compared the table to
@@ -11,7 +11,7 @@ a transposition anywhere in a table fails on the cell it is in.
 Authorities, in the order the audit prefers: the corpus (Sahl and Abu
 Ma'shar in consolidated_texts/), then the TNAC Handy Tables from Part 1
 (Dykes 2023), then a stated convention. Tables with NO authority in either
-are not pinned here; they are listed in synthesis/08_base_table_audit.md.
+are not pinned here; they are listed in docs/synthesis/08_base_table_audit.md.
 """
 from __future__ import annotations
 
@@ -430,7 +430,7 @@ def test_natural_connection_pairs_match_vii_5(engine):
 
 
 # --- Structural guards on the two prose tables (their text is audited by
-# hand against the TNAC Reference Guide; see synthesis/08) ---
+# hand against the TNAC Reference Guide; see docs/synthesis/08) ---
 def test_prose_tables_have_full_shape(engine):
     ml, ph = engine["MASHAALLAH_LORDS"], engine["PLANETS_IN_HOUSES"]
     assert set(ml) == set(range(1, 13)) and all(set(ml[h]) == set(range(1, 13)) for h in ml)

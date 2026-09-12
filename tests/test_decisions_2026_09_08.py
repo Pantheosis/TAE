@@ -1,4 +1,4 @@
-"""The decisions of synthesis/13_open_decisions.md, pinned one by one as
+"""The decisions of docs/synthesis/13_open_decisions.md, pinned one by one as
 they were implemented on 2026-09-08. Each test names its item; the
 document carries the passages and the reasoning, this file only holds the
 engine to the answer.

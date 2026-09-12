@@ -442,7 +442,7 @@ def get_degree_string(longitude):
     return f"{deg_total % 30:02d}° {SIGN_ORDER[deg_total // 30][:3]} {minute:02d}'"
 
 # ---- The chart wheel ---------------------------------------------------
-# Redesigned 2026-09-07 (brief: WHEEL_REDESIGN_2026-09-07.md, decisions
+# Redesigned 2026-09-07 (brief: docs/WHEEL_REDESIGN_2026-09-07.md, decisions
 # D1-D10). generate_hybrid_svg() is a pure function -- no Streamlit calls --
 # returning an SVG string that the Chart page shows through st.image(), which
 # wraps it in Streamlit's own fullscreen control, the same expand arrows the
@@ -1445,7 +1445,7 @@ HOUSE_ORDINAL = {1: '1st', 2: '2nd', 3: '3rd', 4: '4th', 5: '5th', 6: '6th', 7: 
 # idiosyncrasy. Sahl gives no "burned" boundary at all (his 6 is the
 # nine-day "considered eastern" floor of 1.22, 1), and his table has Mars
 # WESTERNIZING AT 18, not 15; the burn figures and Mars's 15 west are Abu
-# Ma'shar's alone (synthesis/10_on_nativities_citation_audit.md):
+# Ma'shar's alone (docs/synthesis/10_on_nativities_citation_audit.md):
 #
 #   Saturn, Jupiter  burned to 6 deg,  under the rays to 15 deg
 #                    (VII.2, 11-13; the 15 also On Nativities 1.22, 1 and 6)
@@ -3860,7 +3860,7 @@ def evaluate_reception(planetary_data, sect, sim=None):
     Under Sahl's profile a non-reception of Kind II for the same pair
     suppresses the reception row (refusal wins), and one of Kind IV marks
     it brought down (62's own word); see the note at the end of the
-    function and synthesis/13_open_decisions.md D-2.
+    function and docs/synthesis/13_open_decisions.md D-2.
 
     Sahl gives two further forms after that, both previously unimplemented
     and both now here (they are his own, so they run under his profile
@@ -5511,7 +5511,7 @@ BURNED_PLACE_SIGNS = ('Libra', 'Scorpio')
 
 # --- Sahl's sign categories where his two works disagree (C-11 / D-7) ----
 # One reading per work, never a union: the union is in neither witness
-# (synthesis/03_changes.md #2; decision D-7, 2026-09-08). Introduction =
+# (docs/synthesis/03_changes.md #2; decision D-7, 2026-09-08). Introduction =
 # The Introduction Ch. 1; Nativities = On Nativities Ch. 1.38.
 #   Four-footed. Intro 1, 13: "Aries, Taurus, and the beginning of
 #   Capricorn, and the end of Sagittarius." Nat. 1.38, 1: "Aries, Leo,
@@ -6017,8 +6017,8 @@ FEMININE_QUADRANT_HOUSES = {1, 2, 3, 7, 8, 9}
 # QUICKNESS OF TIMING and On Choices Ch. 6 about a bodily correspondence;
 # neither says the hemisphere division governs advancing-as-strength, so
 # it is recorded here as a third scheme in the sources, not scored. Where
-# the 2026-09-07 review (synthesis/05, Tier 3) and the report it reviewed
-# (synthesis/04, A4) differ, it is only on whether Ch. 6, 30 counts as a
+# the 2026-09-07 review (docs/synthesis/05, Tier 3) and the report it reviewed
+# (docs/synthesis/04, A4) differ, it is only on whether Ch. 6, 30 counts as a
 # use of the scheme; this comment follows the review and cites 16-17 alone.
 #
 # And Sahl's OWN natal timing uses the quadrants that On Times 1, 14 sets
@@ -8092,10 +8092,10 @@ def evaluate_planetary_years_display(planetary_data, cusps, ascendant_lon, sect,
 #
 # Abu Ma'shar, On the Revolutions of the Years of Nativities (Persian
 # Nativities IV, tr. Dykes), read 2026-09-10 and answered in
-# synthesis/04_timing_answers_2026-09-10.md. Citations are Book.chapter,
+# docs/synthesis/04_timing_answers_2026-09-10.md. Citations are Book.chapter,
 # sentence -- "III.1, 13" is Book III, chapter 1, sentence 13 -- and were
 # re-checked against the corpus at blob 295eb22 before this code was
-# written (see synthesis/15_pn4_implementation_2026-09-10.md).
+# written (see docs/synthesis/15_pn4_implementation_2026-09-10.md).
 #
 # WHAT IS DELIBERATELY ABSENT, and why.
 #

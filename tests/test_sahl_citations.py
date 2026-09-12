@@ -9,7 +9,7 @@ one sequence with each aphorism opening inside a numbered sentence, so
 merely against 107. Both maps are vendored; with the corpus on disk they
 are re-derived from the files.
 
-Written 2026-09-08 with synthesis/12_sahl_ch3_and_aphorisms_citation_audit.md,
+Written 2026-09-08 with docs/synthesis/12_sahl_ch3_and_aphorisms_citation_audit.md,
 which found every citation of both texts supported.
 """
 import os

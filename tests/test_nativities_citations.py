@@ -1,7 +1,7 @@
 """Every 'On Nativities Ch. X.Y' citation in app.py must name a chapter that
 exists in Sahl's On Nativities.
 
-The 2026-09-08 audit (synthesis/10_on_nativities_citation_audit.md) found
+The 2026-09-08 audit (docs/synthesis/10_on_nativities_citation_audit.md) found
 four citations of chapters that do not exist -- "Ch. 11.5", "Ch. 10.2.9",
 "Ch. 3.1.2" -- and several more that name a real chapter but the wrong
 one (5.2 for 5.3, 7.4 for 7.2, 11.4 for 11.2, 3.12 for 3.13). Paragraph
