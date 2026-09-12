@@ -13719,13 +13719,13 @@ if location_query and lat is not None and lon is not None:
             # where the column makes it (owner, 2026-09-11).
             _intro = ("A TNAC study companion: work a chart by hand, then check it here and see the "
                       "doctrine applied to it.",
-                      "The texts are Sahl b. Bishr -- *The Astrology of Sahl b. Bishr*, vol. I: Principles, "
-                      "Elections, Questions, Nativities -- and Abu Ma'shar's *On the Revolutions of the Years "
-                      "of Nativities* (*Persian Nativities* IV), in Benjamin Dykes's translations; his *Great "
-                      "Introduction* supplements them. Every rule applied on a page names its sentence.",
-                      "Enter a chart in the sidebar, or load a saved one from the top of it. Part 1 reads "
-                      "the nativity, Part 2 predicts from it; the reference tables and the sources are at "
-                      "the foot of the sidebar.")
+                      "The texts are *The Astrology of Sahl b. Bishr*, vol. I, and Abu Ma'shar's *On the "
+                      "Revolutions of the Years of Nativities* (*Persian Nativities* IV), in Benjamin Dykes's "
+                      "translations; his *Great Introduction* supplements them. Every rule applied on a page "
+                      "names its sentence.",
+                      "Enter a chart in the sidebar, or load a saved one from the top of it. Part 1 calculates "
+                      "the nativity's factors, Part 2 its predictive techniques; the judgment is the "
+                      "astrologer's. The reference tables and the sources are at the foot of the sidebar.")
             with side_col:
                 if wheel_layout == WHEEL_LAYOUT_OPTIONS[1]:
                     st.caption("  \n".join(_intro))
