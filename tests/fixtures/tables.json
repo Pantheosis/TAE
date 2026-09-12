@@ -22,7 +22,7 @@
    ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
    ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
    ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
-   ["The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the engine's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "Engine grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
+   ["The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the app's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "App grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
    ["Right-sidedness, \"the spear-bearing of the planets\" (Sahl, On Nativities 2.5, 1-3) -- display only", ["Pair", "Aspect (whole sign)", "Casting rays on each other", "Dignities", "One sect", "In the sect of the chart (2.5, 1)", "Grade", "Source"]],
    ["The honor-guard, \"and it is spear-bearing\" (Ptolemy in Sahl, On Nativities 10.2.1, 10-15) -- display only", ["Planet", "Role", "Sign", "Whole-sign place", "In a stake", "Eastern from the Sun", "Western from the Moon", "Looks at the luminaries", "Source"]],
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
@@ -53,7 +53,7 @@
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
-   ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
+   ["Readings in force", ["Reading", "In force", "Default", "Set on", "Differs"]],
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
   ],
   "timing": [
@@ -96,18 +96,18 @@
    ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Position", "Way 1: a day per degree, now at", "Way 2: the day's sign", "Way 2: this hour's sign", "Source"]],
    ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Month", "Ninth-part (3 d 9 h 10 m)", "Third (27 h 3 m)", "Ninth of the third (3 h 0.4 m)", "Third of that (1 h 0.1 m)", "Source"]],
    ["The seven indicators of the month", ["#", "Indicator", "Rooted", "Sign", "Lord", "Turned", "In the root"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this engine"]],
+   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this app"]],
    ["Directing: which ascensions, and what a degree is worth", ["Directed in the", "A degree is"]],
    ["Directing: which ascensions, and what a degree is worth", ["Arc", "Is"]],
    ["The *fardar*", ["Lord", "Years", "From age", "To age", "Sub-periods", "Active"]],
    ["When a natal indication comes out (III.7, 32-42)", ["Planet", "Natal sign", "Quadruplicity", "Manifests", "Ascensions of the sign", "Lesser", "Middle", "Greater", "Confirmed by the distribution"]],
    ["The Ages of Man", ["Planet", "Years", "Ages", "Period of life", "Active"]],
-   ["Chronocrator Matrix (Active Time Lords)", ["Technique", "Active Point", "Active Ruler", "Details"]],
+   ["Chronocrator Matrix", ["Technique", "Active Point", "Active Ruler", "Details"]],
    ["Planetary years (Gr. Intr. VII.8, Figure 146) -- display only", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar", "WS place", "Division (5 deg at the stakes)", "Side of the Sun", "In a share", "On Nativities 1.20 grants (as house-master)", "On Times 4, 7 (a question chart, 4, 2): for comparison"]]
   ],
   "victors": [
    ["Prenatal Lunation (Syzygy)", ["Metric", "Value"]],
-   ["Governor of the syzygy degree: the five lords under 1.7, 3-7", ["Planet", "Claim on the degree (1.7, 3)", "Direct (1.7, 4)", "Looking at the sign (1.7, 4)", "Eastern (1.7, 3)", "Stake or own dignity (1.7, 7)", "Verdict"]],
+   ["Governor of the syzygy degree: the five lords under 1.7, 3-7", ["Planet", "Claim on the degree (1.7, 3)", "Direct (1.7, 4)", "Looking at the sign (1.7, 4)", "Eastern (1.7, 3)", "Stake or own dignity (1.7, 7)", "Model points", "Verdict", "Model"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
    ["Cross-check: the two unmatched weight/place pairings", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
@@ -133,7 +133,7 @@
    ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
    ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
    ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
-   ["The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the engine's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "Engine grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
+   ["The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the app's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "App grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
    ["Right-sidedness, \"the spear-bearing of the planets\" (Sahl, On Nativities 2.5, 1-3) -- display only", ["Pair", "Aspect (whole sign)", "Casting rays on each other", "Dignities", "One sect", "In the sect of the chart (2.5, 1)", "Grade", "Source"]],
    ["The honor-guard, \"and it is spear-bearing\" (Ptolemy in Sahl, On Nativities 10.2.1, 10-15) -- display only", ["Planet", "Role", "Sign", "Whole-sign place", "In a stake", "Eastern from the Sun", "Western from the Moon", "Looks at the luminaries", "Source"]],
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
@@ -162,7 +162,7 @@
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
-   ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
+   ["Readings in force", ["Reading", "In force", "Default", "Set on", "Differs"]],
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
   ],
   "timing": [
@@ -207,18 +207,18 @@
    ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Position", "Way 1: a day per degree, now at", "Way 2: the day's sign", "Way 2: this hour's sign", "Source"]],
    ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Month", "Ninth-part (3 d 9 h 10 m)", "Third (27 h 3 m)", "Ninth of the third (3 h 0.4 m)", "Third of that (1 h 0.1 m)", "Source"]],
    ["The seven indicators of the month", ["#", "Indicator", "Rooted", "Sign", "Lord", "Turned", "In the root"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this engine"]],
+   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this app"]],
    ["Directing: which ascensions, and what a degree is worth", ["Directed in the", "A degree is"]],
    ["Directing: which ascensions, and what a degree is worth", ["Arc", "Is"]],
    ["The *fardar*", ["Lord", "Years", "From age", "To age", "Sub-periods", "Active"]],
    ["When a natal indication comes out (III.7, 32-42)", ["Planet", "Natal sign", "Quadruplicity", "Manifests", "Ascensions of the sign", "Lesser", "Middle", "Greater", "Confirmed by the distribution"]],
    ["The Ages of Man", ["Planet", "Years", "Ages", "Period of life", "Active"]],
-   ["Chronocrator Matrix (Active Time Lords)", ["Technique", "Active Point", "Active Ruler", "Details"]],
+   ["Chronocrator Matrix", ["Technique", "Active Point", "Active Ruler", "Details"]],
    ["Planetary years (Gr. Intr. VII.8, Figure 146) -- display only", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar", "WS place", "Division (5 deg at the stakes)", "Side of the Sun", "In a share", "On Nativities 1.20 grants (as house-master)", "On Times 4, 7 (a question chart, 4, 2): for comparison"]]
   ],
   "victors": [
    ["Prenatal Lunation (Syzygy)", ["Metric", "Value"]],
-   ["Governor of the syzygy degree: the five lords under 1.7, 3-7", ["Planet", "Claim on the degree (1.7, 3)", "Direct (1.7, 4)", "Looking at the sign (1.7, 4)", "Eastern (1.7, 3)", "Stake or own dignity (1.7, 7)", "Verdict"]],
+   ["Governor of the syzygy degree: the five lords under 1.7, 3-7", ["Planet", "Claim on the degree (1.7, 3)", "Direct (1.7, 4)", "Looking at the sign (1.7, 4)", "Eastern (1.7, 3)", "Stake or own dignity (1.7, 7)", "Model points", "Verdict", "Model"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
    ["Cross-check: the two unmatched weight/place pairings", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
@@ -248,7 +248,7 @@
    ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
    ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
    ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
-   ["The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the engine's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "Engine grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
+   ["The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the app's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "App grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
    ["Right-sidedness, \"the spear-bearing of the planets\" (Sahl, On Nativities 2.5, 1-3) -- display only", ["Pair", "Aspect (whole sign)", "Casting rays on each other", "Dignities", "One sect", "In the sect of the chart (2.5, 1)", "Grade", "Source"]],
    ["The honor-guard, \"and it is spear-bearing\" (Ptolemy in Sahl, On Nativities 10.2.1, 10-15) -- display only", ["Planet", "Role", "Sign", "Whole-sign place", "In a stake", "Eastern from the Sun", "Western from the Moon", "Looks at the luminaries", "Source"]],
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
@@ -279,7 +279,7 @@
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
-   ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
+   ["Readings in force", ["Reading", "In force", "Default", "Set on", "Differs"]],
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
   ],
   "timing": [
@@ -322,18 +322,18 @@
    ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Position", "Way 1: a day per degree, now at", "Way 2: the day's sign", "Way 2: this hour's sign", "Source"]],
    ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Month", "Ninth-part (3 d 9 h 10 m)", "Third (27 h 3 m)", "Ninth of the third (3 h 0.4 m)", "Third of that (1 h 0.1 m)", "Source"]],
    ["The seven indicators of the month", ["#", "Indicator", "Rooted", "Sign", "Lord", "Turned", "In the root"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this engine"]],
+   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this app"]],
    ["Directing: which ascensions, and what a degree is worth", ["Directed in the", "A degree is"]],
    ["Directing: which ascensions, and what a degree is worth", ["Arc", "Is"]],
    ["The *fardar*", ["Lord", "Years", "From age", "To age", "Sub-periods", "Active"]],
    ["When a natal indication comes out (III.7, 32-42)", ["Planet", "Natal sign", "Quadruplicity", "Manifests", "Ascensions of the sign", "Lesser", "Middle", "Greater", "Confirmed by the distribution"]],
    ["The Ages of Man", ["Planet", "Years", "Ages", "Period of life", "Active"]],
-   ["Chronocrator Matrix (Active Time Lords)", ["Technique", "Active Point", "Active Ruler", "Details"]],
+   ["Chronocrator Matrix", ["Technique", "Active Point", "Active Ruler", "Details"]],
    ["Planetary years (Gr. Intr. VII.8, Figure 146) -- display only", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar", "WS place", "Division (5 deg at the stakes)", "Side of the Sun", "In a share", "On Nativities 1.20 grants (as house-master)", "On Times 4, 7 (a question chart, 4, 2): for comparison"]]
   ],
   "victors": [
    ["Prenatal Lunation (Syzygy)", ["Metric", "Value"]],
-   ["Governor of the syzygy degree: the five lords under 1.7, 3-7", ["Planet", "Claim on the degree (1.7, 3)", "Direct (1.7, 4)", "Looking at the sign (1.7, 4)", "Eastern (1.7, 3)", "Stake or own dignity (1.7, 7)", "Verdict"]],
+   ["Governor of the syzygy degree: the five lords under 1.7, 3-7", ["Planet", "Claim on the degree (1.7, 3)", "Direct (1.7, 4)", "Looking at the sign (1.7, 4)", "Eastern (1.7, 3)", "Stake or own dignity (1.7, 7)", "Model points", "Verdict", "Model"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
    ["Cross-check: the two unmatched weight/place pairings", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
@@ -362,7 +362,7 @@
    ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
    ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
    ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
-   ["The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the engine's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "Engine grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
+   ["The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the app's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "App grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
    ["Right-sidedness, \"the spear-bearing of the planets\" (Sahl, On Nativities 2.5, 1-3) -- display only", ["Pair", "Aspect (whole sign)", "Casting rays on each other", "Dignities", "One sect", "In the sect of the chart (2.5, 1)", "Grade", "Source"]],
    ["The honor-guard, \"and it is spear-bearing\" (Ptolemy in Sahl, On Nativities 10.2.1, 10-15) -- display only", ["Planet", "Role", "Sign", "Whole-sign place", "In a stake", "Eastern from the Sun", "Western from the Moon", "Looks at the luminaries", "Source"]],
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
@@ -392,7 +392,7 @@
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
-   ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
+   ["Readings in force", ["Reading", "In force", "Default", "Set on", "Differs"]],
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
   ],
   "timing": [
@@ -439,18 +439,18 @@
    ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Position", "Way 1: a day per degree, now at", "Way 2: the day's sign", "Way 2: this hour's sign", "Source"]],
    ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Month", "Ninth-part (3 d 9 h 10 m)", "Third (27 h 3 m)", "Ninth of the third (3 h 0.4 m)", "Third of that (1 h 0.1 m)", "Source"]],
    ["The seven indicators of the month", ["#", "Indicator", "Rooted", "Sign", "Lord", "Turned", "In the root"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this engine"]],
+   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this app"]],
    ["Directing: which ascensions, and what a degree is worth", ["Directed in the", "A degree is"]],
    ["Directing: which ascensions, and what a degree is worth", ["Arc", "Is"]],
    ["The *fardar*", ["Lord", "Years", "From age", "To age", "Sub-periods", "Active"]],
    ["When a natal indication comes out (III.7, 32-42)", ["Planet", "Natal sign", "Quadruplicity", "Manifests", "Ascensions of the sign", "Lesser", "Middle", "Greater", "Confirmed by the distribution"]],
    ["The Ages of Man", ["Planet", "Years", "Ages", "Period of life", "Active"]],
-   ["Chronocrator Matrix (Active Time Lords)", ["Technique", "Active Point", "Active Ruler", "Details"]],
+   ["Chronocrator Matrix", ["Technique", "Active Point", "Active Ruler", "Details"]],
    ["Planetary years (Gr. Intr. VII.8, Figure 146) -- display only", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar", "WS place", "Division (5 deg at the stakes)", "Side of the Sun", "In a share", "On Nativities 1.20 grants (as house-master)", "On Times 4, 7 (a question chart, 4, 2): for comparison"]]
   ],
   "victors": [
    ["Prenatal Lunation (Syzygy)", ["Metric", "Value"]],
-   ["Governor of the syzygy degree: the five lords under 1.7, 3-7", ["Planet", "Claim on the degree (1.7, 3)", "Direct (1.7, 4)", "Looking at the sign (1.7, 4)", "Eastern (1.7, 3)", "Stake or own dignity (1.7, 7)", "Verdict"]],
+   ["Governor of the syzygy degree: the five lords under 1.7, 3-7", ["Planet", "Claim on the degree (1.7, 3)", "Direct (1.7, 4)", "Looking at the sign (1.7, 4)", "Eastern (1.7, 3)", "Stake or own dignity (1.7, 7)", "Model points", "Verdict", "Model"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
    ["Cross-check: the two unmatched weight/place pairings", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
@@ -479,7 +479,7 @@
    ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
    ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
    ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
-   ["The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the engine's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "Engine grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
+   ["The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the app's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "App grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
    ["Right-sidedness, \"the spear-bearing of the planets\" (Sahl, On Nativities 2.5, 1-3) -- display only", ["Pair", "Aspect (whole sign)", "Casting rays on each other", "Dignities", "One sect", "In the sect of the chart (2.5, 1)", "Grade", "Source"]],
    ["The honor-guard, \"and it is spear-bearing\" (Ptolemy in Sahl, On Nativities 10.2.1, 10-15) -- display only", ["Planet", "Role", "Sign", "Whole-sign place", "In a stake", "Eastern from the Sun", "Western from the Moon", "Looks at the luminaries", "Source"]],
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
@@ -508,7 +508,7 @@
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
-   ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
+   ["Readings in force", ["Reading", "In force", "Default", "Set on", "Differs"]],
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
   ],
   "timing": [
@@ -554,18 +554,18 @@
    ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Position", "Way 1: a day per degree, now at", "Way 2: the day's sign", "Way 2: this hour's sign", "Source"]],
    ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Month", "Ninth-part (3 d 9 h 10 m)", "Third (27 h 3 m)", "Ninth of the third (3 h 0.4 m)", "Third of that (1 h 0.1 m)", "Source"]],
    ["The seven indicators of the month", ["#", "Indicator", "Rooted", "Sign", "Lord", "Turned", "In the root"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this engine"]],
+   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this app"]],
    ["Directing: which ascensions, and what a degree is worth", ["Directed in the", "A degree is"]],
    ["Directing: which ascensions, and what a degree is worth", ["Arc", "Is"]],
    ["The *fardar*", ["Lord", "Years", "From age", "To age", "Sub-periods", "Active"]],
    ["When a natal indication comes out (III.7, 32-42)", ["Planet", "Natal sign", "Quadruplicity", "Manifests", "Ascensions of the sign", "Lesser", "Middle", "Greater", "Confirmed by the distribution"]],
    ["The Ages of Man", ["Planet", "Years", "Ages", "Period of life", "Active"]],
-   ["Chronocrator Matrix (Active Time Lords)", ["Technique", "Active Point", "Active Ruler", "Details"]],
+   ["Chronocrator Matrix", ["Technique", "Active Point", "Active Ruler", "Details"]],
    ["Planetary years (Gr. Intr. VII.8, Figure 146) -- display only", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar", "WS place", "Division (5 deg at the stakes)", "Side of the Sun", "In a share", "On Nativities 1.20 grants (as house-master)", "On Times 4, 7 (a question chart, 4, 2): for comparison"]]
   ],
   "victors": [
    ["Prenatal Lunation (Syzygy)", ["Metric", "Value"]],
-   ["Governor of the syzygy degree: the five lords under 1.7, 3-7", ["Planet", "Claim on the degree (1.7, 3)", "Direct (1.7, 4)", "Looking at the sign (1.7, 4)", "Eastern (1.7, 3)", "Stake or own dignity (1.7, 7)", "Verdict"]],
+   ["Governor of the syzygy degree: the five lords under 1.7, 3-7", ["Planet", "Claim on the degree (1.7, 3)", "Direct (1.7, 4)", "Looking at the sign (1.7, 4)", "Eastern (1.7, 3)", "Stake or own dignity (1.7, 7)", "Model points", "Verdict", "Model"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
    ["Cross-check: the two unmatched weight/place pairings", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
@@ -596,7 +596,7 @@
    ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
    ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
    ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
-   ["The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the engine's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "Engine grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
+   ["The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the app's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "App grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
    ["Right-sidedness, \"the spear-bearing of the planets\" (Sahl, On Nativities 2.5, 1-3) -- display only", ["Pair", "Aspect (whole sign)", "Casting rays on each other", "Dignities", "One sect", "In the sect of the chart (2.5, 1)", "Grade", "Source"]],
    ["The honor-guard, \"and it is spear-bearing\" (Ptolemy in Sahl, On Nativities 10.2.1, 10-15) -- display only", ["Planet", "Role", "Sign", "Whole-sign place", "In a stake", "Eastern from the Sun", "Western from the Moon", "Looks at the luminaries", "Source"]],
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
@@ -626,7 +626,7 @@
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
-   ["Readings in force", ["Reading", "In force", "Course default", "Set on", "Differs"]],
+   ["Readings in force", ["Reading", "In force", "Default", "Set on", "Differs"]],
    ["Coverage: what these sources contain that this app does not", ["Passage", "Not implemented"]]
   ],
   "timing": [
@@ -671,18 +671,18 @@
    ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Position", "Way 1: a day per degree, now at", "Way 2: the day's sign", "Way 2: this hour's sign", "Source"]],
    ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Month", "Ninth-part (3 d 9 h 10 m)", "Third (27 h 3 m)", "Ninth of the third (3 h 0.4 m)", "Third of that (1 h 0.1 m)", "Source"]],
    ["The seven indicators of the month", ["#", "Indicator", "Rooted", "Sign", "Lord", "Turned", "In the root"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this engine"]],
+   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this app"]],
    ["Directing: which ascensions, and what a degree is worth", ["Directed in the", "A degree is"]],
    ["Directing: which ascensions, and what a degree is worth", ["Arc", "Is"]],
    ["The *fardar*", ["Lord", "Years", "From age", "To age", "Sub-periods", "Active"]],
    ["When a natal indication comes out (III.7, 32-42)", ["Planet", "Natal sign", "Quadruplicity", "Manifests", "Ascensions of the sign", "Lesser", "Middle", "Greater", "Confirmed by the distribution"]],
    ["The Ages of Man", ["Planet", "Years", "Ages", "Period of life", "Active"]],
-   ["Chronocrator Matrix (Active Time Lords)", ["Technique", "Active Point", "Active Ruler", "Details"]],
+   ["Chronocrator Matrix", ["Technique", "Active Point", "Active Ruler", "Details"]],
    ["Planetary years (Gr. Intr. VII.8, Figure 146) -- display only", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar", "WS place", "Division (5 deg at the stakes)", "Side of the Sun", "In a share", "On Nativities 1.20 grants (as house-master)", "On Times 4, 7 (a question chart, 4, 2): for comparison"]]
   ],
   "victors": [
    ["Prenatal Lunation (Syzygy)", ["Metric", "Value"]],
-   ["Governor of the syzygy degree: the five lords under 1.7, 3-7", ["Planet", "Claim on the degree (1.7, 3)", "Direct (1.7, 4)", "Looking at the sign (1.7, 4)", "Eastern (1.7, 3)", "Stake or own dignity (1.7, 7)", "Verdict"]],
+   ["Governor of the syzygy degree: the five lords under 1.7, 3-7", ["Planet", "Claim on the degree (1.7, 3)", "Direct (1.7, 4)", "Looking at the sign (1.7, 4)", "Eastern (1.7, 3)", "Stake or own dignity (1.7, 7)", "Model points", "Verdict", "Model"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
    ["Victor of the Chart", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],
    ["Cross-check: the two unmatched weight/place pairings", ["Row", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]],

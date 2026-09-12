@@ -1500,18 +1500,20 @@ def test_pn4_turning_displaced_cusp_is_turned_both_ways(engine):
 
 def test_pn4_turning_direction_column_refuses_and_points_to_the_distributions(engine):
     """Only the turning is built. Planets and Lots say the direction is
-    III.1, 12's third case; ordinary houses cite VI.2, 21's semi-arcs
-    with no procedure; houses 1, 10 and 4 point to the distributions the
-    page already applies."""
+    III.1, 12's third case and ordinary houses VI.2, 21's semi-arcs, in the
+    one sentence the owner ruled for the gap ("Requires proportional
+    semi-arcs; calculation unavailable."); houses 1, 10 and 4 point to the
+    distributions the page already applies."""
     rows = {r["Point"]: r for r in engine["pn4_turning_rows"](_turning_chart(engine), 2)}
-    assert rows["Mars"]["Directed a year per degree"].startswith("refused")
-    assert "III.1, 12" in rows["Mars"]["Directed a year per degree"]
-    assert "VI.2, 21" in rows["House 7 (by counting)"]["Directed a year per degree"]
+    assert rows["Mars"]["Directed a year per degree"].startswith("Requires proportional semi-arcs; calculation unavailable.")
+    assert "III.1, 12" in rows["Mars"]["Directed a year per degree"] and "fn 16" in rows["Mars"]["Directed a year per degree"]
+    assert "VI.2, 21" in rows["House 7 (by counting)"]["Directed a year per degree"] and "fn 33" in rows["House 7 (by counting)"]["Directed a year per degree"]
+    assert rows["House 7 (by counting)"]["Directed a year per degree"].startswith("Requires proportional semi-arcs")
     assert "Ascendant" in rows["House 1 (by counting)"]["Directed a year per degree"]
     assert "Midheaven" in rows["House 10 (by counting)"]["Directed a year per degree"]
     assert "fourth" in rows["House 4 (by counting)"]["Directed a year per degree"]
     lot = next(r for k, r in rows.items() if k.startswith("Lot of travel"))
-    assert lot["Directed a year per degree"].startswith("refused")
+    assert lot["Directed a year per degree"].startswith("Requires proportional semi-arcs")
 
 
 def test_pn4_turning_parents_indicators_follow_the_sect(engine):
@@ -2477,7 +2479,7 @@ def test_pn4_printed_reference_tables_derive_from_the_rules(engine):
     assert engine["PN4_LADDER_ROWS"][-1] == {"Arc": "25‴", "Is": "1 hour"}
     assert [r["A degree is"] for r in engine["PN4_UNIT_ROWS"]] == [
         "years", "months and days", "days and hours"]
-    state = {r["Point directed"]: r["In this engine"] for r in engine["PN4_ASCENSION_ROWS"]}
+    state = {r["Point directed"]: r["In this app"] for r in engine["PN4_ASCENSION_ROWS"]}
     # III.1, 12's three cases do not stand alike and the table must not say
     # they do: two are built (since 2026-09-10), each for the DEGREE of its
     # point and not for the planets in it; the third has no stated method
@@ -2914,7 +2916,7 @@ def test_moon_corruption_110_keeps_the_borrowed_19_libra_3_scorpio_span_and_says
         assert any("VII.6, 40" in str(c) and "no degrees" in str(c) for c in t["clauses"]), t["clauses"]
         # the two readings are on the page, not only in a comment (review D5, 2026-09-11)
         clause = next(str(c) for c in t["clauses"] if "VII.6, 40" in str(c))
-        assert "Carmen p. 258 fn 104" in clause and "Course Glossary" in clause and "different construction" in clause
+        assert "Carmen p. 258 fn 104" in clause and "different construction" in clause and "Course Glossary" not in clause
 
 
 # --- REL-2-6 (sheet row 12): 1.15, 16's "good places" are Sahl's seven praised places, by whole-sign place ---
@@ -3172,7 +3174,7 @@ def test_2_13_grades_the_sect_lights_first_triplicity_lord_only_and_the_display_
     assert out["first_lord"] == "Sun" and out["judged"]["band"] == "second 15 degrees"
     assert "below the first" in rows["Sun"]["2.13, 48-51 (the sect light's first triplicity lord only)"]
     assert rows["Mercury"]["2.13, 48-51 (the sect light's first triplicity lord only)"] == "-"
-    assert rows["Mercury"]["Engine grade (generalised from 2.13, 48-51)"] == "first 15 degrees of ascension"
+    assert rows["Mercury"]["App grade (generalised from 2.13, 48-51)"] == "first 15 degrees of ascension"
     assert rows["Mercury"]["Aphorism #45 as printed (15 zodiacal degrees; not applied)"] == "within"
     assert rows["Sun"]["Aphorism #45 as printed (15 zodiacal degrees; not applied)"] == "beyond"
     assert rows["Sun"]["Follows the stake"].startswith("Ascendant")
@@ -3184,12 +3186,12 @@ def test_2_13_bands_are_end_inclusive_and_truncated_by_the_next_stake(engine):
     a planet at 40 Aries follow the MIDHEAVEN by right ascension, not the
     Ascendant, and the remainder is bounded by the next actual stake."""
     out = _bands(engine, Sun=16.0, mc=30.0)                     # RA(16 Aries) = 14.7: band one, inclusive of 15
-    assert {r["Planet"]: r for r in out["rows"]}["Sun"]["Engine grade (generalised from 2.13, 48-51)"] == "first 15 degrees of ascension"
+    assert {r["Planet"]: r for r in out["rows"]}["Sun"]["App grade (generalised from 2.13, 48-51)"] == "first 15 degrees of ascension"
     out = _bands(engine, Sun=40.0, mc=30.0)
     sun = {r["Planet"]: r for r in out["rows"]}["Sun"]
     assert sun["Follows the stake"].startswith("Midheaven") and "right ascension" in sun["Ascensional distance"]
     out = _bands(engine, Sun=60.0, mc=270.0)                    # 60 Aries-Taurus: RA 57.8 past the Ascendant, the remainder
-    assert {r["Planet"]: r for r in out["rows"]}["Sun"]["Engine grade (generalised from 2.13, 48-51)"] == "the remainder, up to the next stake"
+    assert {r["Planet"]: r for r in out["rows"]}["Sun"]["App grade (generalised from 2.13, 48-51)"] == "the remainder, up to the next stake"
 
 
 def test_2_13_refuses_at_the_poles(engine):
@@ -3308,7 +3310,7 @@ def test_activation_confirmation_names_the_distribution_that_confirms(engine):
 # --- DIS-9: the caveat row names Sahl's own quadrant timing beside On Times 1's hemispheres ----
 
 def test_quick_and_slow_places_caveat_names_sahls_own_natal_timing(engine):
-    row = next(t for c, t in engine["NOT_IMPLEMENTED_COVERAGE"] if "ADVANCING_BY_QUADRANT_FIG90" in t)
+    row = next(t for c, t in engine["NOT_IMPLEMENTED_COVERAGE"] if c.startswith("Gr. Intr. VII.3, 2"))
     assert "7.4, 17" in row and "5.3, 11-12" in row and "6.5, 1" in row and "On Choices 6, 16-17" in row
 
 
@@ -3495,7 +3497,7 @@ def test_governor_condition_rows_read_essence_and_sign_and_judge_the_place_by_th
     assert row13["Met"] == "yes" and "division 10" in row13["Criteria"] and "follows a stake\" met; sign half: met" in row13["Criteria"]
     for statement in ("(i) PN IV IX.9, 13 supplies the requirement itself",
                       "(ii) This app's convention on places and strength supplies its operational interpretation",
-                      "(iii) Alcabitius and the axial 5-degree allowance come from that adopted convention, not from the text",
+                      "(iii) Alchabitius and the axial 5-degree allowance come from that adopted convention, not from the text",
                       "IX.5, 4 fn 106 (p. 602)", "dynamic angularity (advancing or withdrawing), here and in 7, 11, and 14",
                       "IX.5, 9 (p. 603", "V.1, 28 fn 15"):
         assert statement in row13["Criteria"], statement
@@ -3776,49 +3778,151 @@ def _governor(engine, sect="Diurnal", syzygy_lon=15.0, **planets):
 def test_syzygy_governor_drops_a_lord_in_aversion_and_the_almuten_names_another(engine):
     """1.7, 4: a meeting at 15 Aries; by day the Sun holds exaltation,
     triplicity and image (the 5/4/3/2/1 almuten, 8 points) but stands in
-    Taurus, in aversion to Aries, so he is dropped; Mars, the house lord in
-    Leo (trine), direct, is the governor. The two rows name different
-    planets, which is the order's finding."""
+    Taurus, in aversion to Aries, so he is not eligible; Mars, the house
+    lord in Leo (trine), direct, is the only eligible lord and the
+    governor. The two rows name different planets."""
     g = _governor(engine, Sun=40.0, Mars=130.0, Mercury=45.0)
-    assert g["governor"] == "Mars" and "1.7, 4" in g["how"]
+    assert g["governor"] == "Mars" and "1.7, 4" in g["how"] and "the only eligible lord" in g["how"] and not g["unresolved"]
     by = {r["Planet"]: r for r in g["rows"]}
     assert by["Sun"]["Verdict"] == "dropped by 1.7, 4" and by["Sun"]["Looking at the sign (1.7, 4)"].startswith("no (in aversion")
+    assert by["Sun"]["Eastern (1.7, 3)"] == "not applicable (the Sun)"
     assert by["Mars"]["Looking at the sign (1.7, 4)"] == "yes (trine)" and by["Mars"]["Verdict"] == "THE GOVERNOR"
     assert by["Sun"]["Claim on the degree (1.7, 3)"] == "exaltation, triplicity, image"
+    assert g["model_pick"] == "Mars" and by["Mars"]["Model"] == "the pick"
 
 
-def test_syzygy_governor_drops_a_retrograde_lord_and_prefers_the_eastern_one(engine):
-    """The same degree; Mars retrograde in Leo (trine, dropped by 4), the
-    Sun in Cancer (square) and Mercury in Gemini (sextile) both direct and
-    looking; Mercury, eastern of the Sun, is preferred by 1.7, 3 (the Sun
-    has no side)."""
-    g = _governor(engine, Sun=100.0, Mars=(130.0, -0.3), Mercury=75.0)
-    assert g["governor"] == "Mercury" and "1.7, 3: the eastern one preferred" in g["how"]
+def test_syzygy_governor_sun_is_retained_against_an_eastern_rival_and_the_contest_is_unresolved(engine):
+    """The Sun (three claims) in Cancer and Mercury (one claim) in Cancer,
+    eastern, both direct and square to Aries, neither holding a listed
+    advantage of 7; Mars, western with one claim, is set aside by 3's
+    preference (Mercury eastern with claims at least equal). The Sun's
+    side is not applicable, so 3 does not set him aside: the verdict is
+    unresolved between the Sun and Mercury, the unmodelled stages named;
+    the model's pick beside it is Mercury (the eastern pool), disclosed."""
+    g = _governor(engine, Sun=100.0, Mars=130.0, Mercury=90.0)
+    assert g["unresolved"] and g["governor"] == "unresolved between Sun and Mercury"
+    assert "neither set aside by 1.7, 3" in g["how"] and "are not modelled" in g["how"]
     by = {r["Planet"]: r for r in g["rows"]}
-    assert by["Mars"]["Direct (1.7, 4)"] == "no (retrograde)" and by["Mars"]["Verdict"] == "dropped by 1.7, 4"
-    assert by["Sun"]["Eastern (1.7, 3)"] == "the Sun has no side" and by["Sun"]["Verdict"] == "candidate"
+    assert by["Mars"]["Verdict"].startswith("set aside by 1.7, 3's preference")
+    assert by["Sun"]["Verdict"] == "unresolved" and by["Mercury"]["Verdict"] == "unresolved"
+    assert g["model_pick"] == "Mercury" and g["model_how"].startswith("Mercury (0 points) -- this app's arithmetic, not a rule Sahl states")
+    assert "the Sun having no side" in g["model_how"] and "equal totals are model ties" in g["model_how"]
 
 
-def test_syzygy_governor_tie_break_is_the_stake_or_own_dignity_by_the_division(engine):
-    """1.7, 7: Mars at 0 Cancer and Mercury at 5 Cancer, both eastern of a
-    Sun at 10 Cancer, direct, square to Aries, both in the ninth division;
-    Mars holds his own bound there (Cancer 0-7 is Mars's), Mercury nothing
-    -- Mars. Then Mercury at 15 Cancer (13-19 is his bound) and Mars at 3,
-    the Sun at 20 Cancer so both stay eastern: each with one own dignity,
-    neither in a stake -> a tie, named as one, 5-6 not modelled."""
+def test_syzygy_governor_eastern_preference_is_not_a_veto(engine):
+    """3's preference sets a western candidate aside only when an eastern
+    one holds at least as many claims on the degree. A meeting at 5
+    Sagittarius by night: Jupiter holds house, triplicity and bound
+    (three claims), Mercury the image (one). Jupiter at 10 Leo (trine),
+    WESTERN of a Sun at 10 Cancer; Mercury at 15 Gemini (opposition),
+    EASTERN. Mercury's claims are fewer, so Jupiter is not set aside. Each
+    then holds listed advantages of 7 (Jupiter in the tenth division from
+    Scorpio rising, a stake, and in his night triplicity; Mercury in his
+    own house and night triplicity) and the text ranks none -> unresolved
+    between them; the model's pick is Mercury, the eastern pool being taken
+    first. Then the equal-claims case: Mars (house
+    only) at 10 Leo western against the same Mercury: Mars is set aside."""
+    g = _governor(engine, sect="Nocturnal", syzygy_lon=245.0, Sun=100.0, Jupiter=130.0, Mercury=75.0, Mars=300.0)
+    by = {r["Planet"]: r for r in g["rows"]}
+    assert by["Jupiter"]["Claim on the degree (1.7, 3)"] == "house, triplicity, bound" and by["Mercury"]["Claim on the degree (1.7, 3)"] == "image"
+    assert by["Jupiter"]["Eastern (1.7, 3)"] == "no (western)" and by["Mercury"]["Eastern (1.7, 3)"] == "yes"
+    assert g["unresolved"] and g["governor"] == "unresolved between Jupiter and Mercury", g["governor"]
+    assert by["Jupiter"]["Model points"] == 2 and by["Mercury"]["Model points"] == 2 and g["model_pick"] == "Mercury"
+    g = _governor(engine, Sun=100.0, Mars=130.0, Mercury=75.0)                   # 15 Aries by day: Mars house, Mercury bound
+    by = {r["Planet"]: r for r in g["rows"]}
+    assert by["Mars"]["Eastern (1.7, 3)"] == "no (western)" and by["Mars"]["Claim on the degree (1.7, 3)"] == "house"
+    assert by["Mars"]["Verdict"] == "set aside by 1.7, 3's preference (an eastern candidate with claims at least equal)"
+
+
+def test_syzygy_governor_seven_is_a_profile_advantage_beats_none_and_two_advantages_are_unresolved(engine):
+    """7's clear subcase: Mars at 0 Cancer (own bound) and Mercury at 5
+    Cancer (none listed), both eastern of a Sun at 10 Cancer, direct,
+    square to Aries: Mars by 7. Then Mercury at 15 Cancer (his own bound)
+    and Mars at 3 Cancer, the Sun at 20 Cancer: each holds one listed
+    advantage; no ranking is stated, so the verdict is unresolved between
+    them -- the model beside it calls them a model tie at one point each.
+    The image is not restored into 7's list: a candidate whose only own
+    dignity is the image has 'none listed'."""
     g = _governor(engine, Sun=100.0, Mars=90.0, Mercury=95.0)
-    assert g["governor"] == "Mars" and "1.7, 7's stake or own dignity decides" in g["how"]
+    assert g["governor"] == "Mars" and "1.7, 7: a listed advantage against none (Sun, Mercury set aside)" in g["how"]
+    assert "1.7, 3" not in g["how"]                                              # nobody was set aside by 3: the step is not claimed
+    by = {r["Planet"]: r for r in g["rows"]}
+    assert by["Mercury"]["Verdict"].startswith("set aside by 1.7, 7 (no listed advantage")
+    assert by["Sun"]["Verdict"].startswith("set aside by 1.7, 7")               # the Sun, eligible, holds none either
     g = _governor(engine, Sun=110.0, Mars=93.0, Mercury=105.0)
-    assert g["governor"] == "Mars / Mercury" and "not modelled" in g["how"]
+    assert g["unresolved"] and g["governor"] == "unresolved between Mars and Mercury"
     by = {r["Planet"]: r for r in g["rows"]}
     assert by["Mars"]["Stake or own dignity (1.7, 7)"] == "division 9; own bound"
     assert by["Mercury"]["Stake or own dignity (1.7, 7)"] == "division 9; own bound"
+    assert g["model_pick"] == "Mars / Mercury" and "a model tie" in g["model_how"]
+    # the image alone: Jupiter at 15 Aries by night holds the face (10-20 Aries is the Sun's -- no); use
+    # Saturn at 25 Aries: the third face of Aries is Venus's -- the image test is on the profile string only
+    assert all("own image" not in r["Stake or own dignity (1.7, 7)"] for r in g["rows"])
 
 
 def test_syzygy_governor_rows_are_on_the_victors_page_with_the_relabelled_almuten():
+    import re
     from conftest import ui_source
-    src = ui_source()
+    src = re.sub(r'"\s*\n\s*"', '', ui_source())          # adjacent string literals joined, as Python joins them
     assert 'Governor of the syzygy degree (Sahl, On Nativities 1.7, 3-7)' in src
-    assert "Almuten by 5/4/3/2/1 points (the course's technique; the weights are stated in no text in hand)" in src
+    assert '"This app\'s approximation of 1.7 (one point a listed condition)"' in src
+    assert "Almuten by 5/4/3/2/1 points (a technique from outside these texts; the weights are stated in no text in hand)" in src
     assert '"Syzygy Lord (Almuten)"' not in src
-    assert "is strength language and is read by the DIVISION (Alcabitius, the five degrees at the four axial" in src
+    for phrase in ("THE VERDICT names a planet only where the text's clear subcases decide",
+                   "is a preference among the claim-holders, not a veto",
+                   "the SUN is a claim-holder whose side relative to himself is not applicable",
+                   "7 is kept as a profile, not a score",
+                   "1.20, 2-4's ranking of the lords being stated for the house-master, not borrowed here",
+                   "the text's own word for the stakes is the counted sign",
+                   "(The Introduction Ch. 2, 31)",
+                   "the Moon's side is the same rising-before-the-Sun rule as the planets'",
+                   "Gr. Intr. VII.2, 4 names her right and left",
+                   "every condition is read in the NATAL chart"):
+        assert phrase in src, phrase
+
+
+# --- LOT-BASIS: the Lot of Basis stated at Gr. Intr. VIII.4, 22-24 ----------------------------
+
+def test_lot_of_basis_is_fortune_to_spirit_from_the_ascendant_reversed_at_night(engine):
+    """VIII.4, 23: "taken by day from the Lot of Fortune to the Lot of the
+    Invisible, and by night the contrary ... cast out from the beginning of
+    the sign of the Ascendant"; 24: "this Lot matches [6] the Lot of Venus"
+    -- Sahl's Lot of passion (7.1, 141) is the same construction, so the two
+    coincide (VIII.7, 5). Night chart, Ascendant 0 Aries, Sun 10 Sagittarius,
+    Moon 10 Leo: Fortune (night: Asc + Sun - Moon) = 120, Spirit = 240; by
+    night the contrary of Fortune -> Spirit is Spirit -> Fortune: Asc +
+    (120 - 240) = 240. The old unsigned shorter arc gave Asc + 120 = 120."""
+    p = pdata(Sun=250.0, Moon=130.0)
+    basis = engine["lot_by_id"]("basis", p, 0.0, None, "Nocturnal")
+    fortune = engine["lot_by_id"]("fortune", p, 0.0, None, "Nocturnal")
+    spirit = engine["lot_by_id"]("spirit", p, 0.0, None, "Nocturnal")
+    assert (fortune, spirit) == (120.0, 240.0)
+    assert basis == pytest.approx(240.0) and basis != pytest.approx(120.0)
+    assert basis == pytest.approx(engine["lot_by_id"]("passion", p, 0.0, None, "Nocturnal"))
+    # by day the arc runs Fortune -> Spirit
+    assert engine["lot_by_id"]("basis", p, 0.0, None, "Diurnal") == pytest.approx(
+        (0.0 + engine["lot_by_id"]("spirit", p, 0.0, None, "Diurnal") - engine["lot_by_id"]("fortune", p, 0.0, None, "Diurnal")) % 360.0)
+    rows = {r["Lot Name"]: r for r in engine["calculate_classical_lots"](0.0, 250.0, 130.0, "Nocturnal")}
+    assert rows["Lot of Basis"]["Position"] == engine["get_degree_string"](240.0)
+    assert "unattested" not in rows["Lot of Basis"]["Standing"]
+    from conftest import ui_source
+    assert "BASIS IS NOT" not in ui_source() and "the course tables" not in ui_source()
+
+
+def test_syzygy_governor_verdict_names_who_was_set_aside_by_whom(engine):
+    """Fourth check, D3: the verdict must not credit "1.7, 3's eastern
+    preference" to a governor who is not eastern. 15 Taurus by night: the
+    Moon (house lord, in her own house Cancer, western), Jupiter (bound
+    lord, eastern, no advantage), Venus (house lord? no -- Venus at 10 Leo
+    holds Taurus's house; Taurus's lords by night: Venus house, Moon
+    exaltation, Moon triplicity, and the bound at 15 Taurus is Jupiter's).
+    Venus, western with one claim, is set aside by the eastern Jupiter
+    under 3; Jupiter, with no listed advantage, by the Moon under 7. The
+    Moon is the governor and the sentence says Venus was set aside by 3's
+    preference for Jupiter, not that the Moon was preferred as eastern."""
+    g = _governor(engine, sect="Nocturnal", syzygy_lon=45.0, Sun=340.0, Moon=100.0, Jupiter=290.0, Venus=130.0)
+    by = {r["Planet"]: r for r in g["rows"]}
+    assert g["governor"] == "Moon" and by["Moon"]["Eastern (1.7, 3)"] == "no (western)"
+    assert "1.7, 3's preference for the eastern Jupiter set aside Venus" in g["how"]
+    assert "1.7, 7: a listed advantage against none (Jupiter set aside)" in g["how"]
+    assert "Moon" not in g["how"].split(":", 1)[1].replace("Moon:", "")   # the Moon is not named as preferred by 3

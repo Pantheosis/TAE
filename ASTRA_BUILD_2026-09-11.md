@@ -380,3 +380,78 @@ row). P4 -- a star the attached catalogue cannot read is now named on the Timing
 exception (`fixed_star_missing_note`) instead of vanishing; tested. The checker's §7: the corpus
 spells III.1, 13's thirds `25""` (ASCII), not the ‴ glyph the page prints -- the page's glyph is the
 printed book's and stands.
+
+## GOV-1.7 (2026-09-11, evening; branch `governor-1.7-2026-09-12` from main 2d47c45)
+
+The syzygy-governor row rebuilt on the owner's ruling after Astra's blind reading
+(`process/astra_2026-09-11/1.7_governor_packet.md`, `1.7_governor_independent_ruling.md`,
+`1.7_governor_ruling.md` -- option 3, BOTH). The build checks had flagged two readings the row
+carried by implication (the Sun never in 3's eastern pool; 7 scored as a sum); Astra ruled on
+those and on three more (the syntax and order of 3-7; the Moon's side; the moment) and raised the
+stakes' unit.
+
+| Item | What was done |
+|---|---|
+| The verdict | `sahl_syzygy_governor` now names a planet only where the text's clear subcases decide: (1) eligible = direct and looking (4, as eligibility); (2) 3's preference among claim-holders, not a veto -- a western eligible candidate is set aside only by an eastern one with at least as many claims on the degree ("if [one] had superior claims over the rest"); the Sun's side is NOT APPLICABLE, so 3 neither prefers nor sets him aside; (3) 7's clear subcase -- a listed advantage (a stake by the division; own house, exaltation, triplicity, bound; the image not restored) against none; (4) one left -> the governor with its steps; more -> "unresolved between X and Y", the profiles printed, the unmodelled stages named (`SAHL_1_7_UNMODELLED`: 4's "stronger in its [own] place", 5-6, 7's ranking among advantage-holders). 1.20, 2-4's ranking not imported. |
+| The model | The arithmetic as built at 8c43dc4 kept as `model_pick` / `model_how`, on the page as "This app's approximation of 1.7 (one point a listed condition)" with the disclosure in Astra's words (`SAHL_1_7_MODEL_DISCLOSURE`): the eastern pool first, the Sun having no side; one point a listed condition; 4's place strength and 5-6 omitted; equal totals model ties. The candidates table carries "Model points" and "Model" (the pick) columns. |
+| Stakes | The canon's division kept (owner), with Astra's notation on the row: the text's own word for the stakes is the counted sign (The Introduction Ch. 2, 31). |
+| Declared | The Moon's side by the same rising-before-the-Sun rule (Gr. Intr. VII.2, 4 names her right and left, not "eastern"); every condition in the NATAL chart (the natal context of Dykes's comment extended to 3-7). |
+| Tests | The only eligible lord; the Sun retained against an eastern rival -> unresolved, the model's pick beside it; 3's preference not a veto (a western Jupiter with three claims not set aside by an eastern Mercury with one; a western Mars with one claim set aside); 7's advantage-vs-none, and two advantage-holders unresolved with the model calling a tie; the page strings pinned (adjacent literals joined before matching). |
+| `tables.json` | The governor table on the victors page gains two columns ("Model points", "Model") on all six dates; nothing else moved. |
+| Page text | Under the no-build-process rule: no ids, dates or filenames on the row or in the caption. |
+
+## 2026-09-12: the page-text review and the owner's decisions (branch `governor-1.7-2026-09-12`, PR #3)
+
+The review of every string the pages print is `process/astra_2026-09-11/PAGE_TEXT_REVIEW_2026-09-11.md`
+(corpus d1b8835). Taken:
+
+| Commit | What |
+|---|---|
+| 60979d8 | LOT-BASIS (`process/astra_2026-09-11/LOT-BASIS_order.md`): the Lot of Basis is stated at Gr. Intr. VIII.4, 22-24 ("the Lot of firmness and survival, the Lot of the Ascendant's support", fn 67 the Greek Basis): Fortune to the Invisible from the Ascendant, reversed at night, coincident with the Lot of Venus and Sahl's Lot of passion (VIII.4, 24; VIII.7, 5). Built as a `LOT_DEFINITIONS` row; the app's unsigned-shorter-arc construction retired; the Lot of Spirit's provenance corrected to Gr. Intr. VIII.3, 28-29 (it had said "the course tables"). Fixture: a night chart where the constructions differ. NOT YET CHECKED BLIND. |
+| 6907f8f | A3-A9: three sentences overtaken by the canon and GAP-37 (the quadrant-divisions help, the special-degrees help, the Sources page's III.1, 12 summary); the turning tables' three refusal wordings replaced by the one sentence ruled for the semi-arc gap; the syzygy help leads with the governor; the layout help; a typo. |
+| d683f4e | B, on the owner's ruling that course material not in hand is not cited: every "Lesson N", worksheet line number, "Handy Tables", "Course Glossary", "course materials" and "course default" off the pages; the exaltation degrees cited to Gr. Intr. V.5 (Figure 38) and V.7 (Figure 39) instead; ibn Ezra's victor and the almuten labelled techniques from outside these texts; the coverage list's photography narrative and a code constant's name dropped. The reading-depth radio and its labels stay (owner). The guard test now flags course citations. `tables.json`: "Course default" -> "Default". |
+| 80625db | C and D: Alchabitius (Dykes's spelling; the Latin form he prints), PN IV (the title), whole-sign as the adjective (Dykes's usage), Dykes's, fn N, Ch. N; the app as the actor; "Chronocrator Matrix" without its gloss; Lots, not Arabic Parts (Dykes's usage). `tables.json`: three headings / one column renamed. |
+
+Suite at 80625db: 1995 passed, 0 failed (8:50). Also on this branch: ff64ae8 / 950297f / e5124d3 (the
+Chart intro rewritten and the Square layout's paragraphs), 4e84e44 (the lesson captions under the
+page headers excised).
+
+Left open, for the owner: the two delineation tables ("Rhetorius / PN IV readings for these
+placements" and "Masha'allah readings for lord placements") are paraphrases of the course's
+Reference Guide for the Planets and Places (Dykes 2023), and their two [UNCERTAIN] cells name it;
+the Guide is course material not in hand. Either the tables stand as the one named exception, or
+they go, or the Masha'allah one is re-sourced to Sahl's own chapters (in hand) and the Rhetorius
+one dropped. Not decided here.
+
+The Reference Guide item above is closed: the owner supplied the Guide (corpus `course/TNAC_Reference_Guide_for_the_Planets_and_Places.pdf`, filed with its own statement of sources), so it is in hand and the two delineation tables now cite it by name with the Guide's sources -- Rhetorius Ch. 57 / Mathesis III (not in hand; the Guide's summary the witness) and PN IV Book II's lord of the year in the places, applied to natal planets, the Guide's reading -- and the Masha'allah table Sahl's lords-of-places chapters. The two [UNCERTAIN] cells (the Moon in the sixth and eighth, where the Guide prints ?) stand as pinned.
+
+### Fourth check (`BUILD_PR3_CHECK_REPORT_2026-09-12.md`, engine ea43229): three wording defects, taken
+
+The checker walked Astra's nine policy cases through `sahl_syzygy_governor` by probe -- all nine AS
+RULED -- and found the LOT-BASIS arithmetic, the coincidence with the passion Lot, the quotations
+and the Reference Guide citations as they should be. Three defects, all wording, fixed in one
+commit: D1 -- the Reference page had said Hermes's exaltation degrees "differ by a degree for
+Saturn, Mars, the Sun, Venus and the Moon", the old Handy Tables claim re-attached to Gr. Intr. V.7
+Figure 39, which contradicts it (Figure 39 differs only for Jupiter and Mercury, the 16th degree of
+Cancer and of Virgo); corrected, and the constant's comment with it. D2 -- the coverage list's
+Figure 90 entry said "computed for the chart, not scored"; nothing computes it (the set is read by
+no function); now "recorded; neither computed for the chart nor scored". D3 -- the governor row's
+verdict credited "1.7, 3's eastern preference" as a step of any governor when anyone had been set
+aside by 3, including a western Moon and the Sun; the verdict now names who was set aside by whose
+preference ("1.7, 3's preference for the eastern Jupiter set aside Venus") and who by 7; the
+checker's probe is a test. Two of the checker's notes for the owner: the unweighted count of claims
+in 3's "at least as many claims" lets an eastern image-lord set aside a western house-lord (the
+builder's operationalisation, written into the ruling's work order, not a choice the owner made in
+words); and the Releaser tab's warrant, after the course citations came out, rests on Carmen fn 187
+and fn 109 for the dispatch but no longer says where Alchabitius specifically and the axial-only
+five degrees come from.
+
+The owner's decision after the fourth check (2026-09-12): note 1 (the unweighted count of claims in 3's
+preference) stands as built and declared; note 2 -- the two course citations are RESTORED (a9c8314):
+a citation reproduces nothing, and the Releaser tab now says Alchabitius and the axial-only five
+degrees are the course's (Lesson 3, A Chart Tour, §4-5; the Course Glossary s.v. Advancement) and the
+retired-switch note that 1.18, 19's four stakes are the course's reading (Lesson 3 §4-5); the guard
+allows exactly these two strings. The exposure for a public release is the two delineation tables,
+paraphrases of the Reference Guide's cells: work order `process/astra_2026-09-11/DELIN-TABLES_order.md`
+(re-derive the Masha'allah table from Sahl's chapters and the PN IV column from Book II, each cell
+citing its sentence; the Rhetorius column by permission, by acquisition, or dropped). Not started.

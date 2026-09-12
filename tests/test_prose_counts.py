@@ -43,7 +43,7 @@ def test_sahl_moon_defects_ten():
     src = function_source("evaluate_corruption_of_the_moon")
     labels = {int(n) for n in re.findall(r"\bhit\((\d{3}),", src)} | cited_paragraphs(src, 103, 112)
     assert labels == set(range(103, 113)), f"Sahl Moon labels cite {sorted(labels)}"
-    assert prose_number(r"Sahl's (\w+) \(The Introduction Ch\.3, 103-112\)") == len(labels)
+    assert prose_number(r"Sahl's (\w+) \(The Introduction Ch\. 3, 103-112\)") == len(labels)
 
 
 def test_non_reception_five_kinds():
@@ -62,20 +62,22 @@ def test_classical_lots_are_four(engine):
     rows = engine["calculate_classical_lots"](100.0, 50.0, 200.0, "Diurnal")
     assert len(rows) == 4
     assert re.search(r"The four Lots this app has always shown", function_source("calculate_classical_lots"))
-    # Every Standing string comes from LOT_DEFINITIONS except Basis, which
-    # the definitions table does not carry.
+    # Every Standing string comes from LOT_DEFINITIONS, Basis included
+    # since LOT-BASIS (Gr. Intr. VIII.4, 22-24).
     standing = {d["id"]: d["confidence"] for d in engine["LOT_DEFINITIONS"]}
     by_name = {r["Lot Name"]: r["Standing"] for r in rows}
     assert by_name["Lot of Fortune"] == standing["fortune"]
     assert by_name["Lot of Spirit"] == standing["spirit"]
     assert by_name["Lot of Exaltation"] == standing["exaltation"]
+    assert by_name["Lot of Basis"] == standing["basis"] and standing["basis"].startswith("stated (Gr. Intr. VIII.4, 22-24")
+    assert standing["spirit"].startswith("stated (Gr. Intr. VIII.3, 28-29")
 
 
 def test_lot_definitions_are_well_formed(engine):
     defs = engine["LOT_DEFINITIONS"]
     ids = [d["id"] for d in defs]
     assert len(ids) == len(set(ids)), "duplicate Lot ids"
-    assert len(defs) == 36, f"LOT_DEFINITIONS has {len(defs)} rows; update this number deliberately"   # 36 since 2026-09-11: the Lot of death's whole-sign variant row (sheet row 4)
+    assert len(defs) == 37, f"LOT_DEFINITIONS has {len(defs)} rows; update this number deliberately"   # 37 since 2026-09-12: the Lot of Basis (LOT-BASIS); 36 since 2026-09-11: the Lot of death's whole-sign variant row
     planets = {"Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"}
     seen = set()
     for d in defs:
@@ -279,7 +281,7 @@ def test_configurations_chapters_match_the_code():
 
 def test_sahl_moon_table_prose_matches_its_list():
     assert prose_number(r"glance=\"Sahl's own (\w+) defects of the Moon") == 10
-    assert "'Corruption of the Moon', 'Sahl, The Introduction Ch.3, 103-112'" in ui_source()
+    assert "'Corruption of the Moon', 'Sahl, The Introduction Ch. 3, 103-112'" in ui_source()
     # Every mention of the two lists points at a table that exists.
     assert "stay in Sahl's own tables" not in app_source()
     assert "102-113" not in app_source()
@@ -372,7 +374,8 @@ def test_a_locator_names_its_volume_never_the_author_alone():
 
 # Markers of the build process that belong in comments, docstrings and the
 # build log, never in a string the user reads: dates, decision and order
-# ids, process filenames, the reviewers, the owner. Citations (Sahl I p.
+# ids, process filenames, the reviewers, the owner -- and, since 2026-09-12,
+# citations of the course's lessons and tables, which are not in hand. Citations (Sahl I p.
 # 265; PN IV IX.5, 4 fn 106), "a reading", "not built" and quoted
 # sentences are doctrine and stay.
 BUILD_PROCESS_MARKERS = re.compile(
@@ -380,7 +383,16 @@ BUILD_PROCESS_MARKERS = re.compile(
     r"\.md\b|\bOCR|the owner|owner,|owner's|\bOwner\b|review D\d|the checker|work order|(?-i:\border [A-Z]{2,})|"
     r"OWNER_RULING|decision sheet|sheet row|the corpus|the ruling|by ruling|the canon\b|canon's|since 2026|"
     r"the builder|builder's|lane \d|\bdecision D|blind reading|the harness|PN4_REPAIRS|READTHROUGH|"
-    r"this corpus|corpus disagreement|rephotograph|for weeks", re.IGNORECASE)
+    r"this corpus|corpus disagreement|rephotograph|for weeks|"
+    # the course's lessons and tables are not in hand: no citation of them on a page (owner, 2026-09-12)
+    r"Handy Tables|course materials?|course default", re.IGNORECASE)
+# The two course citations the owner restored (2026-09-12) -- the warrant for
+# Alchabitius and the axial-only five degrees, and for 1.18, 19's "four
+# stakes" -- are the only "Lesson" / "Glossary" mentions a page may carry:
+# citations reproduce nothing, and the owner vouches for the references.
+COURSE_CITATIONS_ALLOWED = ("Lesson 3, A Chart Tour, §4-5; the Course Glossary s.v. Advancement",
+                            "the course's reading, Lesson 3 §4-5, adopted here")
+COURSE_MARKERS = re.compile(r"\bLessons? \d|Course Glossary|A Chart Tour")
 
 
 def test_page_strings_carry_no_build_process():
@@ -403,5 +415,9 @@ def test_page_strings_carry_no_build_process():
             for m in BUILD_PROCESS_MARKERS.finditer(node.value):
                 if m.group(0).lower() == "the owner" and "the owner of the revolution" in node.value:
                     continue                                                  # II.3, 5's own words
+                offenders.append((node.lineno, m.group(0), node.value[max(0, m.start() - 40):m.end() + 40]))
+            for m in COURSE_MARKERS.finditer(node.value):
+                if any(allowed in node.value for allowed in COURSE_CITATIONS_ALLOWED):
+                    continue
                 offenders.append((node.lineno, m.group(0), node.value[max(0, m.start() - 40):m.end() + 40]))
     assert not offenders, "\n".join(f"app.py:{ln}: {mark!r} in ...{ctx}..." for ln, mark, ctx in offenders)
