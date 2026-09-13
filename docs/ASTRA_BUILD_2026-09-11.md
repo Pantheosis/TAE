@@ -462,3 +462,17 @@ The build logs, audits, briefs and `synthesis/` moved under `docs/` (this file i
 in comments and docstrings updated; nothing reads them at run time. `README.md` rewritten; the
 desktop build workflow now runs on a `v*` tag (or by hand) and attaches the zips to a GitHub release
 on this repository instead of keeping artifacts; `TAE-Releases` retired to a pointer.
+
+## 2026-09-13: the lords of the triplicity over the life (F-4)
+
+The brief `docs/TRIPLICITY_LORDS_OF_LIFE_BRIEF_2026-09-13.md` asked which passage grounds a
+whole-life table of three triplicity lords in succession, and whether the Ascendant (which fits
+Janus's one data point) or the sect light (VI.2, 4's point) is the right key. Corpus search:
+the division is Sahl's, *On Nativities* 2.11, 1-4 (Theophilus; fn 148: *Carmen* I.24), with
+2.13, 39 and 2.17, 5, always for the luminary's triplicity; no text keys it to the Ascendant,
+whose triplicity lords are the upbringing lords (1.29). No text gives years. Owner's rulings:
+no years shown; the Ascendant rows built as a labelled comparison, off by default. Built
+`triplicity_lords_of_life()` beside `pn4_turning_triplicity_lords()`, sharing a factored-out
+`_triplicity_lords_in_sect_order()`; the VI.2, 4-5 rows and their test unchanged. Timing page,
+last tab, before the *fardar*. Three tests, one on the Pontiac 1990 chart. Details in
+`docs/synthesis/16_open_features.md` F-4.
