@@ -8636,8 +8636,9 @@ def pn4_distribution_at_age(segments, age_years):
 # The releaser and the house-master, from SAHL (built 2026-09-10)
 # =========================================================================
 # NOT PN IV. Abu Ma'shar lists the candidates (III.3, 1) and defers the
-# choice to "the book on the releaser" (IX.8, 123), which this corpus does
-# not hold; the engine refused the step on that ground. The owner decided
+# matter to "the book which we worked on concerning nativities" (IX.8,
+# 123 -- said there of deriving the lifespan indicator's years), a book
+# this corpus does not hold; the engine refused the step on that ground. The owner decided
 # on 2026-09-10, on process/TIMING_SOURCES_REPORT_2026-09-10.md, to build
 # it from Sahl instead: the RELEASER per Nawbakht, On Nativities 1.15
 # (with 1.16 and the ranking of 1.20, 1-4), and the HOUSE-MASTER DIRECTED
