@@ -5,6 +5,8 @@ engine to the answer.
 """
 from __future__ import annotations
 
+import math
+
 import pytest
 
 
@@ -54,8 +56,12 @@ def test_d11_lot_of_death_is_stated_by_abu_mashar_and_printed_in_sahl_with_the_c
     ws = engine["lot_by_id"]("death_ws", p, asc, cusps, sect)
     expected = (p["Saturn"]["longitude"] + cusps[7] - p["Moon"]["longitude"]) % 360.0
     assert death == pytest.approx(expected)
-    assert ws == pytest.approx((p["Saturn"]["longitude"] + (asc + 210.0) - p["Moon"]["longitude"]) % 360.0)
-    equal = tuple((asc + 30.0 * i) % 360.0 for i in range(12))
+    # Whole-sign cusps sit at 0 degrees of the house's own sign (the
+    # Ascendant's sign is house 1 in its entirety), not offset by the
+    # Ascendant's precise degree within its sign.
+    asc_sign_floor = math.floor(asc / 30.0) * 30.0
+    assert ws == pytest.approx((p["Saturn"]["longitude"] + (asc_sign_floor + 210.0) - p["Moon"]["longitude"]) % 360.0)
+    equal = tuple((asc_sign_floor + 30.0 * i) % 360.0 for i in range(12))
     assert engine["lot_by_id"]("death", p, asc, equal, sect) == pytest.approx(engine["lot_by_id"]("death_ws", p, asc, equal, sect))
 
 
