@@ -50,6 +50,7 @@
    ["Orders of the dignities, and the good places", ["Context", "Order, strongest first"]],
    ["Orders of the dignities, and the good places", ["Scheme", "Places"]],
    ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar (years)"]],
+   ["Degrees of nobility and rank", ["Sign", "Sahl (On Nativities 1.38, 41)"]],
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
@@ -160,6 +161,7 @@
    ["Orders of the dignities, and the good places", ["Context", "Order, strongest first"]],
    ["Orders of the dignities, and the good places", ["Scheme", "Places"]],
    ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar (years)"]],
+   ["Degrees of nobility and rank", ["Sign", "Sahl (On Nativities 1.38, 41)"]],
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
@@ -234,7 +236,8 @@
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
-   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
+   ["Degrees of nobility and rank", ["Point", "Position", "Degree", "Note"]],
+   ["Degrees of nobility and rank", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations": [
    ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
@@ -278,6 +281,7 @@
    ["Orders of the dignities, and the good places", ["Context", "Order, strongest first"]],
    ["Orders of the dignities, and the good places", ["Scheme", "Places"]],
    ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar (years)"]],
+   ["Degrees of nobility and rank", ["Sign", "Sahl (On Nativities 1.38, 41)"]],
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
@@ -350,7 +354,8 @@
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
-   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
+   ["Degrees of nobility and rank", ["Point", "Position", "Degree", "Note"]],
+   ["Degrees of nobility and rank", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations": [
    ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
@@ -392,6 +397,7 @@
    ["Orders of the dignities, and the good places", ["Context", "Order, strongest first"]],
    ["Orders of the dignities, and the good places", ["Scheme", "Places"]],
    ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar (years)"]],
+   ["Degrees of nobility and rank", ["Sign", "Sahl (On Nativities 1.38, 41)"]],
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
@@ -489,8 +495,7 @@
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
    ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]],
-   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, Gr. Intr. VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
-   ["Book V degrees (supplement, display only)", ["Point", "Position", "Table", "Caveat"]]
+   ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, Gr. Intr. VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]]
   ],
   "dignities": [
    ["Lordship Mapping", ["Planet", "Position", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord", "Own dignity here"]],
@@ -509,6 +514,7 @@
    ["Orders of the dignities, and the good places", ["Context", "Order, strongest first"]],
    ["Orders of the dignities, and the good places", ["Scheme", "Places"]],
    ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar (years)"]],
+   ["Degrees of nobility and rank", ["Sign", "Sahl (On Nativities 1.38, 41)"]],
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [
@@ -628,6 +634,7 @@
    ["Orders of the dignities, and the good places", ["Context", "Order, strongest first"]],
    ["Orders of the dignities, and the good places", ["Scheme", "Places"]],
    ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar (years)"]],
+   ["Degrees of nobility and rank", ["Sign", "Sahl (On Nativities 1.38, 41)"]],
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
   ],
   "sources": [

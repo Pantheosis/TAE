@@ -21,7 +21,7 @@ def test_reference_page_prints_the_handy_tables_from_the_engines_data(engine):
     assert_no_exception(at, "reference")
     heads = [h.value for h in at.main.subheader]
     assert heads == ["Dignities by sign", "Egyptian bounds", "Orders of the dignities, and the good places",
-                     "Planetary years", "The Ages of Man"]
+                     "Planetary years", "Degrees of nobility and rank", "The Ages of Man"]
     tables = {}
     for df in at.main.dataframe:
         tables.setdefault(tuple(df.value.columns), df.value)
@@ -37,6 +37,12 @@ def test_reference_page_prints_the_handy_tables_from_the_engines_data(engine):
         y = engine["PLANETARY_YEARS"][r["Planet"]]
         assert (r["Lesser"], r["Middle"], r["Greater"], r["Mighty"], r["Fardar (years)"]) == \
             (y["lesser"], y["middle"], y["greater"], y["mighty"], y["fardar"])
+    # Sahl's Figure 57 as a twelve-row table, the empty signs a dash; under
+    # Course text (the harness default) Abu Ma'shar's Figure 64 is not beside it.
+    nob = next(v for k, v in tables.items() if "Sahl (On Nativities 1.38, 41)" in k)
+    assert list(nob["Sign"]) == engine["SIGN_ORDER"] and len(nob.columns) == 2
+    assert nob[nob["Sign"] == "Gemini"].iloc[0]["Sahl (On Nativities 1.38, 41)"] == "13"
+    assert nob[nob["Sign"] == "Libra"].iloc[0]["Sahl (On Nativities 1.38, 41)"] == "-"
     ages = next(v for k, v in tables.items() if "Ruler" in k)
     assert list(ages["Ruler"]) == [p for p, _y, _d in engine["PN4_AGES_OF_MAN"]]
     assert ages.iloc[-1]["To"] == sum(y for _p, y, _d in engine["PN4_AGES_OF_MAN"])
