@@ -10059,6 +10059,64 @@ def _pn4_condition_string(data, planet):
     phase, side, _el = solar_phase(planet, r['longitude'], data['Sun']['longitude'], r.get('speed_in_lon'))
     return f"{get_zodiac_sign(r['longitude'])}, {motion}, {side or '-'}{', ' + phase.lower() if phase else ''}"
 
+def _triplicity_lords_in_sect_order(sign, sect):
+    """The Dorothean lords of SIGN's triplicity in the engine's order: day
+    lord, night lord, partner -- by night the night lord first. Shared by the
+    VI.2, 4-5 rows beside the turning and the lords over the life."""
+    trip = TRIPLICITY[SIGN_ELEMENT[sign]]
+    if sect == 'Diurnal':
+        return [trip['Day'], trip['Night'], trip['Participating']]
+    return [trip['Night'], trip['Day'], trip['Participating']]
+
+
+LIFE_LORDS_SOURCE = ("Sahl, On Nativities 2.11, 1-4 (Theophilus; fn 148: Carmen I.24, 1-8); 2.13, 39; 2.17, 5; "
+                     "PN IV VI.2, 4 with fn 13")
+LIFE_LORDS_ASCENDANT_SOURCE = ("not prescribed in any text in hand -- the Ascendant's triplicity lords are the lords of "
+                               "upbringing (Sahl, On Nativities 1.29, 2-5); shown only for comparison")
+LIFE_LORDS_TIMES = {
+    'first': "the beginning of his life (2.13, 39); his benefit in its time, if it is the strong one (2.11, 2)",
+    'second': "the time of the second lord (2.11, 2); fn 14 to VI.2, 4: \"if the native was older\"",
+    'third': "the partner: \"supports them both\" (2.11, 4); good fortune at the end of his lifespan if in the seventh "
+             "(2.17, 5); fn 14 to VI.2, 4: the third lord for the older native \"for many Persian- and Arabic-language "
+             "astrologers\"",
+}
+
+
+def triplicity_lords_of_life(chart_data, point='sect light'):
+    """The three lords of the sect light's triplicity in succession over the
+    life, natal only. Sahl 2.11, 1-2 (Theophilus; fn 148: Carmen I.24): "If
+    you found both of the two lords of the triplicity of the luminary to be
+    strong, they indicate high rank from the beginning of his life to its
+    end. And if one of the two was strong and the other weak, his benefit
+    will be in the time of the strong one of them"; 4: "the partnering lord
+    of the triplicity supports them both". 2.13, 39: "the first lord of the
+    triplicity indicates ... the beginning of the native's life". 2.17, 5:
+    "if the third lord of the triplicity was in the house of marriage, he
+    will gain good fortune at the end of his lifespan". PN IV VI.2, 4 names
+    the same lords "at that time of his lifespan". No text in hand assigns
+    years to the three stretches and none are shown (owner's ruling,
+    2026-09-13, on F-4; fn 14's age mapping stays the editor's, PN4R-4f-6).
+    point='Ascendant' keys the same rows to the Ascendant's sign -- the point
+    some software divides the life by; no text in hand does (the Ascendant's
+    lords are the upbringing lords, 1.29, 2-5), and the rows say so (owner's
+    ruling, 2026-09-13: built as a labelled comparison, off by default)."""
+    natal, sect = chart_data['planetary_data'], chart_data['sect']
+    if point == 'Ascendant':
+        lon, label, source = chart_data['ascendant'], 'the Ascendant', LIFE_LORDS_ASCENDANT_SOURCE
+    else:
+        light = 'Sun' if sect == 'Diurnal' else 'Moon'
+        if light not in natal:
+            return []
+        lon, label, source = natal[light]['longitude'], f'{light}, the sect light', LIFE_LORDS_SOURCE
+    sign = get_zodiac_sign(lon)
+    rows = []
+    for rank, lord in zip(('first', 'second', 'third'), _triplicity_lords_in_sect_order(sign, sect)):
+        rows.append({'Triplicity of': f'{sign} ({label})', 'Order': rank, 'Lord': lord,
+                     'Time of life': LIFE_LORDS_TIMES[rank] if point != 'Ascendant' else '-',
+                     'Root condition': _pn4_condition_string(natal, lord), 'Source': source})
+    return rows
+
+
 def pn4_turning_triplicity_lords(chart_data, sr):
     """VI.2, 4-5: the triplicity lords examined beside the turning. 4, for
     assets: "every one of the lords of the triplicities of the luminary
@@ -10080,8 +10138,7 @@ def pn4_turning_triplicity_lords(chart_data, sr):
         if planet not in natal:
             continue
         sign = get_zodiac_sign(natal[planet]['longitude'])
-        trip = TRIPLICITY[SIGN_ELEMENT[sign]]
-        order = [trip['Day'], trip['Night'], trip['Participating']] if sect == 'Diurnal' else [trip['Night'], trip['Day'], trip['Participating']]
+        order = _triplicity_lords_in_sect_order(sign, sect)
         for rank, lord in zip(('first', 'second', 'third'), order):
             rows.append({'Topic': topic, 'Triplicity of': f"{sign} ({planet} in the root)", 'Order': rank, 'Lord': lord,
                          'Root condition': _pn4_condition_string(natal, lord),
@@ -12867,6 +12924,8 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'hour_approximate': hour_approximate,
         'turning_rows': pn4_turning_rows(chart_data, age),
         'turning_triplicity_rows': pn4_turning_triplicity_lords(chart_data, sr),
+        'life_lords_rows': triplicity_lords_of_life(chart_data),
+        'life_lords_ascendant_rows': triplicity_lords_of_life(chart_data, 'Ascendant'),
         'further_rows': pn4_further_indicators(chart_data, sr, year['longitude'], moon, jd_sr=jd_sr),
         'governor': governor,
         'moon': moon, 'moon_portions': portions, 'year_days': year_days,
@@ -15429,6 +15488,37 @@ if location_query and lat is not None and lon is not None:
                     st.caption("An idealised year of twelve 30-day months (fn 17). The bottom rung is **25 thirds**, a "
                                "sixtieth of a second of arc: 10″ is a day, so an hour is 10″/24 = 25‴ exactly. "
                                "(25″ would make an hour two and a half days long; the printed page, p. 288, has 25‴.)")
+
+                st.subheader("The lords of the triplicity of the sect light, over the life",
+                             help="Sahl, On Nativities 2.11, 1-2 (Theophilus; fn 148: Carmen I.24): \"If you found both of "
+                                  "the two lords of the triplicity of the luminary to be strong, they indicate high rank "
+                                  "from the beginning of his life to its end. And if one of the two was strong and the "
+                                  "other weak, his benefit will be in the time of the strong one of them, and his baseness "
+                                  "in the time of the one of them [that is falling]\"; 4: \"the partnering lord of the "
+                                  "triplicity supports them both in their elevation, through its strength (if it was "
+                                  "strong), and brings [them] down (if it was a falling [place])\". 2.13, 39: the first "
+                                  "lord \"indicates the end of the father's life, and the beginning of the native's "
+                                  "life\". 2.17, 5: \"if the third lord of the triplicity was in the house of marriage, he "
+                                  "will gain good fortune at the end of his lifespan\". PN IV VI.2, 4 names the same "
+                                  "lords \"at that time of his lifespan\".")
+                st.dataframe(pd.DataFrame(pn4['life_lords_rows']), hide_index=True, width='stretch',
+                             height=_rows_height(len(pn4['life_lords_rows'])))
+                st.caption("The three lords of the sect light's triplicity (the Sun's by day, the Moon's by night) in the "
+                           "day-night-partner order for a day birth and night-day-partner for a night birth, each with its "
+                           "natal condition. No text in hand assigns a number of years to any lord's stretch of the life, "
+                           "so none is shown: fn 14 to VI.2, 4 (\"if the native was older, one would use the second "
+                           "triplicity lord (or for many Persian- and Arabic-language astrologers, the third one)\") is "
+                           "Dykes's gloss and gives no ages either. A split into three thirty-year stretches, as some "
+                           "software prints, is stated nowhere.")
+                if _reading_checkbox("Also show the Ascendant's triplicity lords, for comparison",
+                                     "life_lords_ascendant", "_life_lords_ascendant",
+                                     help="Some software divides the life by the lords of the ASCENDANT's triplicity. No "
+                                          "text in hand does: the Ascendant's triplicity lords are the lords of upbringing "
+                                          "(Sahl, On Nativities 1.29, 2-5; Appendix A, 9 fn 7), and every passage that "
+                                          "gives a lord a time of the life keys it to the luminary. The rows are shown "
+                                          "only so the difference can be seen."):
+                    st.dataframe(pd.DataFrame(pn4['life_lords_ascendant_rows']), hide_index=True, width='stretch',
+                                 height=_rows_height(len(pn4['life_lords_ascendant_rows'])))
 
                 st.subheader("The *fardar*",
                              help="IV.1, 2-4: the years are Sun 10, Venus 8, Mercury 13, Moon 9, Saturn 11, Jupiter 12, "

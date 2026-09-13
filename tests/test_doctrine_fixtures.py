@@ -15,6 +15,8 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
+import re
+
 import pytest
 
 
@@ -3423,6 +3425,56 @@ def test_turning_triplicity_lords_for_assets_and_siblings(engine):
     assert [r["Lord"] for r in assets] == ["Venus", "Mars", "Moon"] and assets[0]["Source"].startswith("VI.2, 4")
     assert [r["Lord"] for r in sibs] == ["Saturn", "Mercury", "Jupiter"] and sibs[0]["Siblings (5)"] == "the older"
     assert assets[0]["Revolution condition"].startswith("Libra") and sibs[0]["Revolution condition"].startswith("Aries")
+
+
+# --- F-4: the three lords of the sect light's triplicity over the life (Sahl 2.11; 2.13, 39; 2.17, 5) ---
+
+def test_triplicity_lords_of_life_follow_the_sect_light_in_sect_order(engine):
+    """Day chart, Sun in Cancer: water's day, night, partner -- Venus, Mars,
+    Moon. Night chart, Moon in Capricorn: earth's night lord first -- Moon,
+    Venus, Mars. Each row names its time of life in the texts' words and no
+    row carries a number of years. The VI.2, 4-5 rows share the ordering."""
+    root, _, _ = _two_charts(engine, natal=dict(Sun=100.0))
+    rows = engine["triplicity_lords_of_life"](root)
+    assert [r["Lord"] for r in rows] == ["Venus", "Mars", "Moon"]
+    assert [r["Order"] for r in rows] == ["first", "second", "third"]
+    assert rows[0]["Triplicity of"] == "Cancer (Sun, the sect light)"
+    assert rows[0]["Source"].startswith("Sahl, On Nativities 2.11, 1-4") and "VI.2, 4" in rows[0]["Source"]
+    assert "beginning of his life" in rows[0]["Time of life"] and "end of his lifespan" in rows[2]["Time of life"]
+    assert not any(re.search(r"\d+ years|\b(30|60|90)\b", r["Time of life"]) for r in rows)
+    assert rows[0]["Root condition"].startswith("Leo")   # Venus at 130 in the fixture
+    night = dict(root, sect="Nocturnal", planetary_data=dict(root["planetary_data"], **pdata(Moon=280.0)))
+    rows = engine["triplicity_lords_of_life"](night)
+    assert [r["Lord"] for r in rows] == ["Moon", "Venus", "Mars"]
+    assert rows[0]["Triplicity of"] == "Capricorn (Moon, the sect light)"
+    assert engine["_triplicity_lords_in_sect_order"]("Cancer", "Nocturnal") == ["Mars", "Venus", "Moon"]
+
+
+def test_triplicity_lords_of_life_ascendant_variant_is_labelled_unprescribed(engine):
+    """The Ascendant rows are a comparison only: the same order rule keyed to
+    the Ascendant's sign, no time of life, a source saying no text
+    prescribes them."""
+    root, _, _ = _two_charts(engine, natal=dict(Sun=100.0), n_asc=290.0)
+    rows = engine["triplicity_lords_of_life"](root, "Ascendant")
+    assert [r["Lord"] for r in rows] == ["Venus", "Moon", "Mars"]
+    assert rows[0]["Triplicity of"] == "Capricorn (the Ascendant)" and rows[0]["Time of life"] == "-"
+    assert rows[0]["Source"].startswith("not prescribed") and "1.29, 2-5" in rows[0]["Source"]
+
+
+def test_triplicity_lords_of_life_pontiac_chart_shows_why_the_ascendant_rule_differs(engine):
+    """29 Oct 1990 13:02 EST, Pontiac: diurnal, Sun in Scorpio, Ascendant in
+    Capricorn. By the sect light Venus, Mars, Moon; by the Ascendant Venus,
+    Moon, Mars -- the sequence software that divides the life by the
+    Ascendant's triplicity prints. The bundle carries both, natal only."""
+    birth, lat, lon = datetime(1990, 10, 29, 18, 2), 42.0 + 38 / 60 + 20 / 3600, -(83 + 17 / 60 + 28 / 3600)
+    chart = engine["calculate_traditional_chart"](birth, lat, lon)
+    assert chart["sect"] == "Diurnal"
+    assert [r["Lord"] for r in engine["triplicity_lords_of_life"](chart)] == ["Venus", "Mars", "Moon"]
+    assert [r["Lord"] for r in engine["triplicity_lords_of_life"](chart, "Ascendant")] == ["Venus", "Moon", "Mars"]
+    b = engine["pn4_timing_bundle"](chart, lat, lon, birth.date(), datetime(2026, 9, 13).date(),
+                                    engine["PN4_MONTHLY_TURN_OPTIONS"][0])
+    assert [r["Lord"] for r in b["life_lords_rows"]] == ["Venus", "Mars", "Moon"]
+    assert [r["Lord"] for r in b["life_lords_ascendant_rows"]] == ["Venus", "Moon", "Mars"]
 
 
 # --- PN4R-4g-5: indicator #15, the lords' connections in the revolution ---------------------
