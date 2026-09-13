@@ -46,14 +46,17 @@ jobs:
       - name: Build with PyInstaller
         run: pyinstaller build.spec
 
-      # One zip per platform, the executable at the top level of the
-      # folder it unpacks to. (Windows: the onedir folder zipped as a
-      # whole; macOS: the .app bundle, zipped so its executable bits and
-      # internal symlinks survive.)
+      # One zip per platform. Windows: the CONTENTS of the onedir folder,
+      # not the folder -- Explorer's "Extract All" already makes a folder
+      # named after the zip, so zipping the folder too put the .exe two
+      # folders deep (v1.2.0); now that one folder is the app folder, with
+      # TraditionalAstrologyEngine.exe at its top and _internal/ beside it.
+      # macOS: the .app bundle, zipped so its executable bits and internal
+      # symlinks survive.
       - name: Package (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Compress-Archive -Path dist/TraditionalAstrologyEngine -DestinationPath TraditionalAstrologyEngine-windows.zip
+        run: Compress-Archive -Path dist/TraditionalAstrologyEngine/* -DestinationPath TraditionalAstrologyEngine-windows.zip
 
       - name: Package (macOS)
         if: runner.os == 'macOS'
