@@ -61,8 +61,10 @@ LOCAL_TIME = time(14, 30)
 
 # url_path of every st.Page, in navigation order. (The Configurations page's
 # three-way view control went on 2026-09-10; the reading depth, a store key
-# like the switches, decides where Abu Ma'shar's tables sit, and the page
-# renders the same multiset of tables under either depth.)
+# like the switches, decides where Abu Ma'shar's tables sit. Since
+# 2026-09-13 the depth also decides whether some render at all -- the Book V
+# degrees, the father Lot's second form, Figure 64's column on the
+# Reference page -- so the multiset differs between depths.)
 PAGES = ["chart", "dignities", "configurations", "lots", "victors", "timing", "reference", "sources"]
 READING_DEPTHS = ["Course text", "Course text and supplement"]
 

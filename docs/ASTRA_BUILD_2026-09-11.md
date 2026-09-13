@@ -485,8 +485,10 @@ are Carmen via footnotes, three untranscribed Gr. Intr. chapters, one heading-as
 false match), then judged sentence by sentence by Claude Haiku 4.5 and triaged by hand. One
 defect survived: the misquotation of IX.8, 123 at the head of the releaser section (PR #12). A
 long-context pass by Gemini over the three author-blocks with the figures attached reported eight
-findings; five held against the text and the photographs, three did not (its reading of Figure
-142 was of the wrong image; the further 1.38 sign categories are a coverage note, not a defect).
+findings; four held against the text and the photographs, four did not (its reading of Figure
+142 was of the wrong image; its reading of Figure 121 was wrong too, and the builder confirmed it
+wrongly -- caught by the check below; the further 1.38 sign categories are a coverage note, not a
+defect).
 
 Owner's rulings on the five, built on `gemini-findings-2026-09-13` (PR #13):
 
@@ -507,10 +509,19 @@ Owner's rulings on the five, built on `gemini-findings-2026-09-13` (PR #13):
   and I.6, 5 for the terminal point profected from the Lot of Fortune and the rest of the
   indicators; the wheel keeps Dykes's whole signs (fn 33) and the Ascendant's arc, and the caption
   now says so. No change to the drawing (owner).
-- Wording: Figure 121 described as the photograph has it (the Moon 29°59' Pisces, Saturn 1° Cancer,
-  the square ray to 1° Aries); Figure 26 named as the revolution example; the "nothing in Sahl"
-  claim on the V.22 tables withdrawn.
+- Wording: Figure 121's note gains Saturn's sign (the Moon 29°59' Aquarius, Saturn 1° Cancer, his
+  trine ray to 1° Pisces -- the photograph and fn 149); Figure 26 named as the revolution example,
+  and the bounds ring's comment says Figure 51 has none; the "nothing in Sahl" claim on the V.22
+  tables withdrawn.
 
 Tests: Figure 57 pinned cell by cell; the evaluator on a constructed chart; the Reference page's
 subheaders and the new table; the lot count; `tables.json` regenerated (the new Chart finding on
 two of the six charts, the Reference table, the Book V table gone from the Course-text view).
+
+The blind check (`process/astra_2026-09-11/BUILD_PR13_CHECK_REPORT_2026-09-13.md`) held (a)-(g)
+with seven findings, all applied before merge: Figure 121 restored (above); the father Lot's
+second form quotes VIII.4, 75 whole and carries Dykes's fn 93 objection in its standing; the
+"every wheel" claim narrowed (Figure 51 has no bounds ring); the sect-light note quotes 1.38, 40
+as written for both sects; Figure 57 prints bare degrees and the pages now say the ordinal
+reading is the app's (Figure 64's manner); the out-of-sect gloss softened; the Lots table's
+heading names Abū Ma'shar's row when the supplement shows it; a stale harness comment.

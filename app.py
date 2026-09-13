@@ -557,9 +557,9 @@ def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_loc
     # wheels of the Timing page (2026-09-10).
     ang, xy, sector, _arc = _wheel_geometry(asc_sign, cx, cy)
     line, text = _svg_line, _svg_text
-    # An Egyptian-bounds ring inside the degree scale (2026-09-10): every
-    # wheel in PN IV carries one (the nativities of Figures 1, 22 and 25, the
-    # revolution of Figure 26). It sits in
+    # An Egyptian-bounds ring inside the degree scale (2026-09-10): PN IV's
+    # nativities carry one (Figures 1, 22 and 25), and the revolution of
+    # Figure 26 does; Figure 51, the simplified I.6 wheel, does not. It sits in
     # the leader zone, so the planet stack is not moved.
     r_planet_edge = _R_SIGN_IN - _R_BOUNDS_BAND if bounds else _R_SIGN_IN
 
@@ -5125,12 +5125,15 @@ LOT_DEFINITIONS = [
     dict(id='father_burnt_abu', topic='Father', name="Lot of the father (Saturn under the rays), Abu Ma'shar's form",
          start='Sun', end='Jupiter', project='Ascendant', reverse_at_night=True, supplement=True,
          source="Abu Ma'shar, Gr. Intr. VIII.4, 75",
-         confidence='conditional -- see the Active column; the supplement, beside Sahl\'s row',
-         note='"What Hermes said is more correct, because Jupiter is more indicative for fathers than '
+         confidence='conditional -- see the Active column; the supplement, beside Sahl\'s row; Dykes\'s fn 93 '
+                    'objects: "The obvious flaw in this logic is that being under the rays should nullify '
+                    'Jupiter\'s indication as well."',
+         note='"But what Hermes said is more correct, because Jupiter is more indicative for fathers than '
               'Mars is; moreover, if Saturn\'s indication was nullified by his being under the Sun\'s rays, '
               'the indication of the Sun would still stand, so if Saturn was under the rays it would be '
-              'necessary for it to be taken by day from the Sun to Jupiter (and by night the contrary)." '
-              'Active on the same condition as Sahl\'s row.'),
+              'necessary for it to be taken by day from the Sun to Jupiter (and by night the contrary), and '
+              'that be cast out from the Ascendant, just as Hermes said." Active on the same condition as '
+              'Sahl\'s row.'),
     dict(id='mother', topic='Mother', name='Lot of the mother',
          start='Venus', end='Moon', project='Ascendant', reverse_at_night=True,
          source="Sahl, On Nativities Ch. 4.14 (Dykes's note 198)",
@@ -5477,7 +5480,7 @@ NOT_IMPLEMENTED_COVERAGE = [
      "and a clockwise scheme for chronic illness (6.5, 1); On Times 1, 14's preference for "
      "Masha'allah's hemispheres (On Choices 6, 16-17) is On Times 1's alone."),
     ("Gr. Intr. VII.5, 32-33", "Mixing of natures BY RAY across a sign boundary "
-     "(Fig. 121: the Moon at 29 59' Pisces, Saturn at 1 Cancer casting his square ray to 1 Aries). Only the "
+     "(Fig. 121: the Moon at 29 59' Aquarius, Saturn at 1 Cancer casting his trine ray to 1 Pisces). Only the "
      "body-to-body case of VII.4, 13-14 is reported."),
     ("Sahl, On Nativities Ch. 1.20, 13-15", "Two sentences of the house-master's years: 13 is illegible "
      "in part, 14-15 unclear in sense (fn 156); both are printed on the Releaser tab and not applied."),
@@ -5877,9 +5880,12 @@ def evaluate_book_v_degrees(planetary_data, ascendant_lon, fortune_lon, sect):
 # of its own: eight signs, no degree in Libra, Sagittarius, Capricorn or
 # Pisces, and Gemini 13 for his 11, Cancer 13 for his 2-3, Virgo and
 # Scorpio 13 where he has 12 and none. Both luminaries qualify; the sect
-# light is "superior". Ordinal degrees as the figure prints them. Taken
+# light is "superior". The figure prints bare degrees ("19°", "3°"); they
+# are READ as ordinals, which is how Figure 64 prints the same rule's
+# degrees and makes the shared cells coincide -- the app's reading. Taken
 # from the transcription of the figure, not yet read off the page
-# photograph (2026-09-13); pinned in tests/test_base_tables.py.
+# photograph (2026-09-13; no photograph of p. 378 is in the corpus);
+# pinned in tests/test_base_tables.py.
 # Course text: always shown, unlike the V.22 tables it stands beside.
 NOBILITY_DEGREES = {
     'Aries': [19], 'Taurus': [3], 'Gemini': [13], 'Cancer': [1, 13, 14, 15],
@@ -5900,11 +5906,11 @@ def evaluate_nobility_degrees(planetary_data, ascendant_lon, sect):
         degree_1_based = int(lon % 30) + 1
         if degree_1_based in NOBILITY_DEGREES.get(sign, []):
             if point == luminary:
-                note = f'the luminary of the sect -- "superior if it was the {"Sun by day" if luminary == "Sun" else "Moon by night"}"'
+                note = 'the luminary of the sect -- "superior if it was the Sun by day and by night the Moon"'
             elif point == 'Ascendant':
                 note = 'the Ascendant itself'
             else:
-                note = 'the luminary out of sect; the sentence prefers the other'
+                note = 'the luminary out of sect (the sentence calls the sect light "superior")'
             results.append({'Point': point, 'Position': get_degree_string(lon),
                             'Degree': f'{get_zodiac_sign(lon)} {degree_1_based}', 'Note': note})
     return results
@@ -13989,7 +13995,7 @@ if location_query and lat is not None and lon is not None:
                       notes='ENTERING: "every planet which is at the beginning of a sign is weak until it is firmly established in it and comes to be 5 degrees within it" (Fifty Aphorisms #44, 87), repeated in On Nativities Ch. 1.22, 9. This is the other half of the five-degree rule that also governs advancement.\n\nLEAVING: "if a planet came to be in the last degree of the sign, then its strength has already gone away from that sign, and its strength is in the next sign ... like a man putting his foot on the threshold of his door. And if a planet was in the twenty-ninth degree, then indeed the strength of the planet IS in that sign" (Fifty Aphorisms #15, 31-33) -- so the 29th degree still counts and only the 30th has left.')
             _finding(_gap, 'Degrees of nobility and rank', 'Sahl, On Nativities 1.38, 39-41 (Figure 57)', nobility_degrees_data,
                       glance='Sahl\'s own table of the degrees in which "the native will reach nobility and rank": a row when the Ascendant, the Sun or the Moon stands in one. Display only; nothing scores it.',
-                      notes='On Nativities 1.38, 40-41: "If it happened that a native was born and his Ascendant was one of these degrees, or the Moon and Sun were in the equivalent of these degrees (and that is superior if it was the Sun by day and by night the Moon), then he will reach exaltation and power, or he will rule many lands, by the permission of God." Figure 57 of his volume prints the degrees: Aries 19; Taurus 3; Gemini 13; Cancer 1, 13, 14, 15; Leo 5, 7; Virgo 2, 13, 20; Scorpio 12, 13, 20; Aquarius 12, 20 -- none in Libra, Sagittarius, Capricorn or Pisces. Ordinal degrees, as in the wells. The whole table is on the Reference tables page. Abu Ma\'shar states the same rule with a table of his own (Gr. Intr. V.22, 4, Figure 64), twelve signs to its eight, six of those eight disagreeing; it is shown under Course text and supplement, on the Configurations page beside Strength and weakness and on the Reference tables page beside this table.')
+                      notes='On Nativities 1.38, 40-41: "If it happened that a native was born and his Ascendant was one of these degrees, or the Moon and Sun were in the equivalent of these degrees (and that is superior if it was the Sun by day and by night the Moon), then he will reach exaltation and power, or he will rule many lands, by the permission of God." Figure 57 of his volume prints the degrees: Aries 19; Taurus 3; Gemini 13; Cancer 1, 13, 14, 15; Leo 5, 7; Virgo 2, 13, 20; Scorpio 12, 13, 20; Aquarius 12, 20 -- none in Libra, Sagittarius, Capricorn or Pisces. The figure prints bare degrees; this app reads them as ordinals, as Figure 64 prints the same rule\'s degrees. The whole table is on the Reference tables page. Abu Ma\'shar states the same rule with a table of his own (Gr. Intr. V.22, 4, Figure 64), twelve signs to its eight, six of those eight disagreeing; it is shown under Course text and supplement, on the Configurations page beside Strength and weakness and on the Reference tables page beside this table.')
             _absent(_gap)
             # The orders of the dignities and the good places -- static tables --
             # moved to the Reference tables page on 2026-09-10; what stays is
@@ -14440,7 +14446,7 @@ if location_query and lat is not None and lon is not None:
             st.dataframe(pd.DataFrame(classical_rows), hide_index=True, width='stretch', height=_rows_height(len(classical_rows)))
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
                 st.markdown('Fortune and Exaltation are stated in Sahl. Spirit -- the Lot of the Invisible, which Sahl names -- is stated at Gr. Intr. VIII.3, 28-29: by day from the Moon to the Sun, by night the reverse, from the Ascendant. Basis is stated at Gr. Intr. VIII.4, 22-24 as "the Lot of firmness and survival, the Lot of the Ascendant\'s support" (fn 67: the Greek Basis): by day from Fortune to the Invisible, by night the contrary, from the Ascendant -- the same construction as Sahl\'s Lot of passion (7.1, 141) and Abu Ma\'shar\'s Lot of Venus, with which VIII.4, 24 says it coincides. All four carry their provenance in the Topical Lots table below.')
-            st.subheader('Topical Lots (Sahl, On Nativities)', help="Sahl's topical Lots, each with its own provenance. He gives several of them MORE THAN ONCE, with formulas that genuinely conflict, and Dykes's apparatus does not silently reconcile them -- so neither does this table.")
+            st.subheader('Topical Lots (Sahl, On Nativities)' + ("; one row of Abu Ma'shar's" if READING_DEPTH == READING_DEPTH_OPTIONS[1] else ''), help="Sahl's topical Lots, each with its own provenance. He gives several of them MORE THAN ONCE, with formulas that genuinely conflict, and Dykes's apparatus does not silently reconcile them -- so neither does this table.")
             _reading_radio("House-based Lots measure to the", LOT_HOUSE_CUSP_OPTIONS, "lot_house_cusp", "_lot_house_cusp",
                            help="'The second place', 'the degree of the eighth place', 'the ninth' (On Nativities 2.15, 1; "
                                 "8.6, 1; Ch. 9, 9): the Ascendant's degree carried into that sign, or the Alchabitius cusp. "
@@ -14717,7 +14723,8 @@ if location_query and lat is not None and lon is not None:
                            "and says so (p. 12); the outer charts in whole signs; \"the profected natal Ascendant "
                            "... which I have shaded in grey\" (fn 33) -- the sign of the terminal point of the year -- "
                            "with the profection drawn as a dashed arc from the natal Ascendant (Figures 3, 33); the month "
-                           "as a tri-wheel, root, year, month (fn 58); a ring of the Egyptian bounds on every wheel. "
+                           "as a tri-wheel, root, year, month (fn 58); a ring of the Egyptian bounds on its wheels "
+                           "(Figures 1, 22, 25, 26; not the simplified Figure 51). "
                            "Default points are Dykes's (p. 12): the seven planets, the nodes, Fortune, the angles; "
                            "I.6, 3-4's Lots, rays and twelfth-parts are the toggles, and the inventory table below is "
                            "the authority the picture is held to. TP marks the terminal point of the year (I.6, 5); the "
@@ -15918,7 +15925,7 @@ if location_query and lat is not None and lon is not None:
                 for row in _nob_rows:
                     row["Abu Ma'shar (Gr. Intr. V.22, 4)"] = ', '.join(str(d) for d in ELEVATION_DEGREES.get(row['Sign'], [])) or '-'
             st.dataframe(pd.DataFrame(_nob_rows), hide_index=True, width='content', height=_rows_height(12))
-            st.caption("Ordinal degrees, as the figures print them. "
+            st.caption("Sahl\'s figure prints bare degrees, read here as ordinals -- how Abu Ma\'shar\'s Figure 64 prints the same rule\'s degrees. "
                        + ("Abu Ma'shar's column is the supplement's: the same rule, stated at V.22, 4 with Figure 64's table, "
                           "twelve signs to Sahl's eight, six of the eight disagreeing; the text reconciles none of it."
                           if READING_DEPTH == READING_DEPTH_OPTIONS[1] else
