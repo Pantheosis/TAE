@@ -15,7 +15,7 @@ Numbered `F-N`, appended as they come up, not renumbered.
 | **F-1** | Calendar dates on the Fardar (Firdaria) table | Not built | Structure (lords, years, sub-period order) cross-checked exact against Janus's medieval module across three nativities; the calendar-date conversion itself is unbuilt and its rounding convention unresolved |
 | **F-2** | Small days (IX.7, 29-31): direct against houses, Lots, and the Nodes, not just the seven planets | Not built | Janus's own "Solar Return Distribution" hits house cusps, Part of Fortune, the Nodes and the Midheaven as well as the planets; IX.7, 31 licenses the extension ("everything of the planets, Lots, and houses") but only the planets' bodies and rays are wired in |
 | **F-3** | Small days: fixed 59'08"/day rate vs. the Sun's real (varying) daily motion | Already decided 2026-09-10 (fixed rate) — flagged here as newly re-tested | A second Janus cross-check (Pontiac 1990) shows the same aspect sequence as ours but a day-offset that grows through the year (3 days by mid-November, 5+ by month's end) — consistent with Janus using the Sun's true motion rather than the flat average. Not a bug: the owner already chose the fixed rate over IX.7, 32's "exact" alternative. Recorded here so the choice is visible next to the evidence, not to reopen it |
-| **F-4** | "Directing by Triplicities" — a standalone whole-life table of the three triplicity lords in succession | Not built; brief written | VI.2, 4-5 (Abū Ma'shar) states the three lords and that one "indicated his condition at that time of his lifespan," but gives no age numbers (fn 14's numbers are Dykes' editorial gloss, already ruled not to be applied — PN4R-4f-6). `pn4_turning_triplicity_lords()` already identifies the three lords but only beside the yearly turning, keyed to the sect light (assets) or Mars (siblings) — Janus's data matches neither: it lines up with the **Ascendant's** triplicity instead, a point VI.2,4 doesn't name. Full brief with the citation research, the Ascendant discrepancy, and what's still open: `docs/TRIPLICITY_LORDS_OF_LIFE_BRIEF_2026-09-13.md` |
+| **F-4** | "Directing by Triplicities" — a standalone whole-life table of the three triplicity lords in succession | **Built 2026-09-13** (branch `triplicity-life-lords-2026-09-13`) | Keyed to the **sect light**, not the Ascendant: the life-division is stated by Sahl, *On Nativities* 2.11, 1-4 (Theophilus; fn 148: *Carmen* I.24), 2.13, 39 and 2.17, 5, all for the luminary's triplicity; nothing in hand divides the life by the Ascendant's (those are the upbringing lords, 1.29). No years shown (owner's ruling); the Ascendant rows built as a labelled off-by-default comparison (owner's ruling). `triplicity_lords_of_life()`, Timing page, before the *fardar* |
 
 ## F-1 — Calendar dates on the Fardar table
 
@@ -110,3 +110,36 @@ from it.
 
 Full research brief, with the citations, the Ascendant discrepancy, and what still needs
 resolving before this can be built without mis-citing it: `docs/TRIPLICITY_LORDS_OF_LIFE_BRIEF_2026-09-13.md`.
+
+**Resolved 2026-09-13.** The corpus was searched for a life-division keyed to the Ascendant's
+triplicity and none exists: the Ascendant's triplicity lords are the *upbringing* lords
+throughout (Sahl, *On Nativities* 1.29, 2-8; Appendix A §8-9 with fn 7; *Great Introduction*
+"upbringing and survival"). The life-division itself IS stated, four times, always for the
+**luminary's** triplicity:
+
+- Sahl 2.11, 1-4 (Theophilus; fn 148: *cf. Carmen* I.24, 1-8): "If you found both of the two
+  lords of the triplicity of the luminary to be strong, they indicate high rank from the
+  beginning of his life to its end. And if one of the two was strong and the other weak, his
+  benefit will be in the time of the strong one of them ... and the partnering lord of the
+  triplicity supports them both."
+- Sahl 2.13, 39 (Māshā'allāh): "the first lord of the triplicity indicates the end of the
+  father's life, and the beginning of the native's life."
+- Sahl 2.17, 5: "if the third lord of the triplicity was in the house of marriage, he will gain
+  good fortune at the end of his lifespan."
+- PN IV VI.2, 4 (already built beside the turning): "the lord of the triplicity which indicated
+  his condition at that time of his lifespan."
+
+None gives a number of years. (Sahl 2.7, 3's "thirty years" for Saturn as sect-light triplicity
+overlord is Saturn's greater years, not a life-third — a false friend.) So Janus's
+Venus-Moon-Mars for Pontiac 1990 is an unsourced substitution of the Ascendant for the luminary,
+and its 0-30/30-60/60-90 is stated nowhere.
+
+Owner's rulings (2026-09-13): (1) no years on the table, no 30-year option; (2) the Ascendant
+rows built as a labelled comparison, off by default. Built: `_triplicity_lords_in_sect_order()`
+factored out of `pn4_turning_triplicity_lords()` (whose VI.2, 4-5 behaviour and test are
+unchanged); `triplicity_lords_of_life(chart_data, point)` with `LIFE_LORDS_SOURCE`,
+`LIFE_LORDS_ASCENDANT_SOURCE`, `LIFE_LORDS_TIMES`; carried in `pn4_timing_bundle` as
+`life_lords_rows` / `life_lords_ascendant_rows`; rendered on the Timing page's last tab before
+the *fardar*, with a checkbox for the Ascendant rows. Tests: three `test_triplicity_lords_of_life_*`
+in `tests/test_doctrine_fixtures.py`, the last on the Pontiac 1990 chart (sect light
+Venus-Mars-Moon; Ascendant Venus-Moon-Mars).
