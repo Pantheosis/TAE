@@ -385,7 +385,14 @@ BUILD_PROCESS_MARKERS = re.compile(
     r"the builder|builder's|lane \d|\bdecision D|blind reading|the harness|PN4_REPAIRS|READTHROUGH|"
     r"this corpus|corpus disagreement|rephotograph|for weeks|"
     # the course's lessons and tables are not in hand: no citation of them on a page (owner, 2026-09-12)
-    r"Handy Tables|course materials?|course default", re.IGNORECASE)
+    r"Handy Tables|course materials?|course default|"
+    # a switch's retirement is history, not a reading -- a page told the user a
+    # control still existed beside a table when it had been removed the day
+    # before (caught 2026-09-13, not by this test): announce the current
+    # reading only, and put "this used to be configurable" in a comment
+    r"\bRETIRED\b|\bdeprecated\b|switch is gone|stored preference|\bis gone\b|"
+    r"no longer (?:a |an |offered|available|configurable|supported|the switch)",
+    re.IGNORECASE)
 # The two course citations the owner restored (2026-09-12) -- the warrant for
 # Alchabitius and the axial-only five degrees, and for 1.18, 19's "four
 # stakes" -- are the only "Lesson" / "Glossary" mentions a page may carry:
@@ -421,3 +428,26 @@ def test_page_strings_carry_no_build_process():
                     continue
                 offenders.append((node.lineno, m.group(0), node.value[max(0, m.start() - 40):m.end() + 40]))
     assert not offenders, "\n".join(f"app.py:{ln}: {mark!r} in ...{ctx}..." for ln, mark, ctx in offenders)
+
+
+def test_build_process_markers_catch_a_retirement_note_but_not_doctrine():
+    """The 2026-09-13 leak: a page string said a switch was "RETIRED", "gone"
+    and that a "stored preference" for it "is ignored" -- none of that
+    matched BUILD_PROCESS_MARKERS at the time, so the guard above passed
+    with the leak still in app.py. Pins the phrases added to catch it, and a
+    real doctrinal sentence ("his name alone no longer locates anything",
+    the citation-format note) that must keep passing -- a marker broad
+    enough to also catch legitimate "no longer" prose would be the wrong
+    fix."""
+    caught = ("This switch was RETIRED last year.",
+              "The old checkbox is deprecated now.",
+              "the switch is gone from this page",
+              "a stored preference for it is ignored",
+              "that reading is gone",
+              "no longer a configurable option",
+              "no longer offered on this page",
+              "no longer the switch it was")
+    for s in caught:
+        assert BUILD_PROCESS_MARKERS.search(s), s
+    assert not BUILD_PROCESS_MARKERS.search(
+        "Both of Abu Ma'shar's volumes have a Book VII, which is why his name alone no longer locates anything.")
