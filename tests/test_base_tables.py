@@ -214,6 +214,42 @@ ELEVATION_FIG64 = {
 }
 
 
+# --- Sahl, On Nativities 1.38, 39-41, Figure 57 (Sahl I, p. 378): his own
+# table of the degrees of nobility and rank, the rule Abu Ma'shar's Figure
+# 64 also states. Eight signs; from the corpus transcription of the figure
+# (on_nativities.md), captured 2026-09-13, not yet read off the page
+# photograph. Course text, always shown.
+NOBILITY_FIG57 = {
+    'Aries': [19], 'Taurus': [3], 'Gemini': [13], 'Cancer': [1, 13, 14, 15],
+    'Leo': [5, 7], 'Virgo': [2, 13, 20], 'Scorpio': [12, 13, 20], 'Aquarius': [12, 20],
+}
+
+
+def test_nobility_degrees_match_sahl_figure_57(engine):
+    assert engine["NOBILITY_DEGREES"] == NOBILITY_FIG57
+    assert sum(len(v) for v in NOBILITY_FIG57.values()) == 17
+    # The two witnesses to one rule differ: Gemini 13 for 11, Cancer 13 for
+    # 2-3, Virgo and Scorpio 13 where Figure 64 has none, four signs empty.
+    assert set(NOBILITY_FIG57) == set(ELEVATION_FIG64) - {'Libra', 'Sagittarius', 'Capricorn', 'Pisces'}
+    differing = {s for s in NOBILITY_FIG57 if NOBILITY_FIG57[s] != ELEVATION_FIG64[s]}
+    assert differing == {'Gemini', 'Cancer', 'Leo', 'Virgo', 'Scorpio', 'Aquarius'}
+
+
+def test_nobility_degrees_read_the_ascendant_and_both_luminaries(engine):
+    # Ascendant at Gemini 13 (ordinal: 12.5 degrees in), Sun at Aries 19th
+    # degree by day, Moon in a degree neither table names.
+    pdata = {'Sun': {'longitude': 18.5}, 'Moon': {'longitude': 100.0}}
+    rows = engine["evaluate_nobility_degrees"](pdata, 60.0 + 12.5, 'Diurnal')
+    assert [(r['Point'], r['Degree']) for r in rows] == [('Ascendant', 'Gemini 13'), ('Sun', 'Aries 19')]
+    assert 'superior' in rows[1]['Note'] and 'Sun by day' in rows[1]['Note']
+    # Gemini 13 is Sahl's, not Abu Ma'shar's (Figure 64 has Gemini 11); Aries 19 is both's
+    abu = engine["evaluate_book_v_degrees"](pdata, 60.0 + 12.5, 100.0, 'Diurnal')
+    assert [r['Point'] for r in abu] == ['Sun (luminary of the sect)']
+    # By night the Sun is the out-of-sect luminary and the row says so
+    night = engine["evaluate_nobility_degrees"](pdata, 0.0, 'Nocturnal')
+    assert [r['Point'] for r in night] == ['Sun'] and 'out of sect' in night[0]['Note']
+
+
 def test_good_fortune_degrees_match_figure_63(engine):
     assert engine["GOOD_FORTUNE_DEGREES"] == GOOD_FORTUNE_FIG63
     assert sum(len(v) for v in GOOD_FORTUNE_FIG63.values()) == 7

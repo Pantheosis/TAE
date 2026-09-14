@@ -476,3 +476,52 @@ no years shown; the Ascendant rows built as a labelled comparison, off by defaul
 `_triplicity_lords_in_sect_order()`; the VI.2, 4-5 rows and their test unchanged. Timing page,
 last tab, before the *fardar*. Three tests, one on the Pontiac 1990 chart. Details in
 `docs/synthesis/16_open_features.md` F-4.
+
+## 2026-09-13: the citation check and the second-model pass (PRs #12 and #13)
+
+Every citation in `app.py` (1,421) was resolved against the corpus's numbered sentences by
+`process/citation_check_2026-09-13/` in the corpus repository (1,404 resolve; the 17 that do not
+are Carmen via footnotes, three untranscribed Gr. Intr. chapters, one heading-as-sentence, one
+false match), then judged sentence by sentence by Claude Haiku 4.5 and triaged by hand. One
+defect survived: the misquotation of IX.8, 123 at the head of the releaser section (PR #12). A
+long-context pass by Gemini over the three author-blocks with the figures attached reported eight
+findings; four held against the text and the photographs, four did not (its reading of Figure
+142 was of the wrong image; its reading of Figure 121 was wrong too, and the builder confirmed it
+wrongly -- caught by the check below; the further 1.38 sign categories are a coverage note, not a
+defect).
+
+Owner's rulings on the five, built on `gemini-findings-2026-09-13` (PR #13):
+
+- **Sahl's degrees of nobility and rank** (*On Nativities* 1.38, 39-41, Figure 57): his own
+  table of the rule Gr. Intr. V.22, 4 also states, eight signs to Figure 64's twelve, six of the
+  eight disagreeing. `NOBILITY_DEGREES` and `evaluate_nobility_degrees` (the Ascendant, the Sun,
+  the Moon; the sect light "superior"); a Chart-page finding beside Special Degrees; the table on
+  the Reference page. Abū Ma'shar's V.22 tables are now behind *Course text and supplement* only
+  (off the Course-text tab on Configurations; a second column on the Reference page at that
+  depth). The Figure 57 cells are from the transcription, not yet read off the page (Sahl I
+  p. 378).
+- **The Lot of the father, Saturn under the rays**: Gr. Intr. VIII.4, 75 prefers Hermes' form
+  (Sun → Jupiter by day, reversed by night) to the Mars → Jupiter form Sahl gives at 4.14, 2 (VIII.4,
+  74: "some of the people"; fn 92: Dorotheus). A `father_burnt_abu` row, `supplement=True`,
+  shown only at that depth on the Lots page and among the revolution's day-points; the same
+  Active test as Sahl's row. `LOT_DEFINITIONS` 37 → 38.
+- **The revolution wheel's label**: I.6, 2 asks for the houses by degree (the Alchabitius cusps),
+  and I.6, 5 for the terminal point profected from the Lot of Fortune and the rest of the
+  indicators; the wheel keeps Dykes's whole signs (fn 33) and the Ascendant's arc, and the caption
+  now says so. No change to the drawing (owner).
+- Wording: Figure 121's note gains Saturn's sign (the Moon 29°59' Aquarius, Saturn 1° Cancer, his
+  trine ray to 1° Pisces -- the photograph and fn 149); Figure 26 named as the revolution example,
+  and the bounds ring's comment says Figure 51 has none; the "nothing in Sahl" claim on the V.22
+  tables withdrawn.
+
+Tests: Figure 57 pinned cell by cell; the evaluator on a constructed chart; the Reference page's
+subheaders and the new table; the lot count; `tables.json` regenerated (the new Chart finding on
+two of the six charts, the Reference table, the Book V table gone from the Course-text view).
+
+The blind check (`process/astra_2026-09-11/BUILD_PR13_CHECK_REPORT_2026-09-13.md`) held (a)-(g)
+with seven findings, all applied before merge: Figure 121 restored (above); the father Lot's
+second form quotes VIII.4, 75 whole and carries Dykes's fn 93 objection in its standing; the
+"every wheel" claim narrowed (Figure 51 has no bounds ring); the sect-light note quotes 1.38, 40
+as written for both sects; Figure 57 prints bare degrees and the pages now say the ordinal
+reading is the app's (Figure 64's manner); the out-of-sect gloss softened; the Lots table's
+heading names Abū Ma'shar's row when the supplement shows it; a stale harness comment.

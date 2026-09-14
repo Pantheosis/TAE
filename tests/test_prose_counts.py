@@ -77,7 +77,7 @@ def test_lot_definitions_are_well_formed(engine):
     defs = engine["LOT_DEFINITIONS"]
     ids = [d["id"] for d in defs]
     assert len(ids) == len(set(ids)), "duplicate Lot ids"
-    assert len(defs) == 37, f"LOT_DEFINITIONS has {len(defs)} rows; update this number deliberately"   # 37 since 2026-09-12: the Lot of Basis (LOT-BASIS); 36 since 2026-09-11: the Lot of death's whole-sign variant row
+    assert len(defs) == 38, f"LOT_DEFINITIONS has {len(defs)} rows; update this number deliberately"   # 38 since 2026-09-13: Abu Ma'shar's form of the father Lot under the rays (VIII.4, 75, supplement only); 37 since 2026-09-12: the Lot of Basis (LOT-BASIS); 36 since 2026-09-11: the Lot of death's whole-sign variant row
     planets = {"Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"}
     seen = set()
     for d in defs:
