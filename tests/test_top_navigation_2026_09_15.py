@@ -48,7 +48,10 @@ def test_every_page_opens_with_its_header_and_then_the_chart_strip(page):
     assert name == "Unsaved chart"                       # the harness saves none
     assert when == "1240-05-23 14:30:00"
     assert standard.startswith("LMT ")                   # the harness casts in LMT
-    assert place.endswith("43.78, 11.25")                # two decimals, not four
+    # Coordinates entered directly: the place label IS the coordinates
+    # ("Manual [43.7792, 11.2463]"), so the strip prints them once, to two
+    # decimals rather than the sidebar's four.
+    assert place == "43.78, 11.25"
     assert sect == "Diurnal"
     assert day.startswith("Day lord ") and hour.startswith("Hour lord ")
 
