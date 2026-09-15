@@ -91,7 +91,11 @@ hiddenimports += ["swisseph"]
 
 # app.py is loaded at runtime via _resource_path("app.py") in the launcher,
 # not imported as a module -- bundle it as a plain data file alongside the
-# executable rather than analyzing it as code. atlas.db is the offline
+# executable rather than analyzing it as code. engine.py goes beside it, as
+# data for the same reason: nothing imports it at build time either, and
+# Streamlit puts the script's own directory on sys.path before running it,
+# which is how app.py's "from engine import *" finds it in the frozen build
+# exactly as it does from a source checkout. atlas.db is the offline
 # GeoNames lookup database queried in place of a network geocoding API.
 # app_icon.ico is loaded at runtime via _resource_path("app_icon.ico") for
 # the pywebview window icon, and doubles as the .exe icon below.
@@ -101,7 +105,7 @@ hiddenimports += ["swisseph"]
 # directory directly. No .se1 planetary file is bundled and none may be
 # put in ephe/: the planets stay on the built-in Moshier ephemeris
 # (docs/BUILD_NOTES.md).
-datas += [("app.py", "."), ("atlas.db", "."), ("app_icon.ico", "."), ("ephe/sefstars.txt", "ephe")]
+datas += [("app.py", "."), ("engine.py", "."), ("atlas.db", "."), ("app_icon.ico", "."), ("ephe/sefstars.txt", "ephe")]
 
 a = Analysis(
     ["desktop_launcher.py"],

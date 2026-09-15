@@ -12,7 +12,7 @@ import ast
 
 import tomllib
 
-from conftest import APP_PATH, EXECUTABLE_DIR, ui_source
+from conftest import APP_PATH, ENGINE_PATH, EXECUTABLE_DIR, ui_source
 
 CONFIG_PATH = EXECUTABLE_DIR / ".streamlit" / "config.toml"
 
@@ -41,15 +41,17 @@ def _is_bare_expression(node):
 
 def test_no_bare_expression_statements_anywhere_in_the_app():
     """Magic rewrites a bare expression statement into st.write(...); the
-    app has none, at either half, so magicEnabled=false changes nothing a
+    app has none, in either file, so magicEnabled=false changes nothing a
     page shows. The count is reported so a future one is caught at review,
     not by a page silently gaining a new line."""
-    tree = ast.parse(APP_PATH.read_text())
-    bare = [node for node in ast.walk(tree)
-            if isinstance(node, ast.Expr) and _is_bare_expression(node)]
+    bare = []
+    for path in (ENGINE_PATH, APP_PATH):
+        tree = ast.parse(path.read_text())
+        bare += [(path.name, node) for node in ast.walk(tree)
+                 if isinstance(node, ast.Expr) and _is_bare_expression(node)]
     assert len(bare) == 0, (
         f"{len(bare)} bare expression statement(s) found (expected 0), at lines "
-        f"{[n.lineno for n in bare]} -- magicEnabled=false would then change what a page shows")
+        f"{[(name, n.lineno) for name, n in bare]} -- magicEnabled=false would then change what a page shows")
 
 
 def test_ui_source_still_has_no_bare_expressions_either():

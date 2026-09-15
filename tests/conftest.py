@@ -1,15 +1,18 @@
-"""Regression harness for Executable/app.py.
+"""Regression harness for Executable/engine.py and Executable/app.py.
 
-The app is one 6,500-line file: engine first, Streamlit UI from the marker
-``# 4. STREAMLIT UI INTEGRATION`` onward. Two ways in:
+The app is two files: ``engine.py``, the calculation engine, and ``app.py``,
+which takes it whole through ``from engine import *`` and carries the
+Streamlit pages from the marker ``# 4. STREAMLIT UI INTEGRATION`` onward.
+Two ways in:
 
-* ``engine`` -- the engine half executed as a plain module, so constants and
-  evaluators can be inspected without a Streamlit run.
+* ``engine`` -- ``engine.py`` imported as a module and handed to the test as
+  its namespace, so constants and evaluators can be inspected without a
+  Streamlit run.
 * ``make_app()`` -- ``streamlit.testing.v1.AppTest`` driving the whole script
   headless: no browser, no port. One call renders ONE page (Streamlit runs
   the script once per page), so tests parametrise over pages.
 
-The app is located relative to this file, so the suite runs from any
+Both files are located relative to this file, so the suite runs from any
 checkout or CI runner. (It used to hard-code the developer's absolute path
 to dodge a stale ``app.py`` one directory up; that file is gone.)
 """
@@ -34,7 +37,15 @@ _st_config.set_option("runner.magicEnabled", False)
 
 EXECUTABLE_DIR = Path(__file__).resolve().parents[1]
 APP_PATH = EXECUTABLE_DIR / "app.py"
+ENGINE_PATH = EXECUTABLE_DIR / "engine.py"
 UI_MARKER = "# 4. STREAMLIT UI INTEGRATION"
+
+# app.py finds engine.py beside it because Streamlit puts the running
+# script's own directory on sys.path (so does the frozen launcher). The
+# suite is not run from there, so it puts the same directory on the path
+# itself, once, for the `engine` fixture and for the app's own import.
+if str(EXECUTABLE_DIR) not in sys.path:
+    sys.path.insert(0, str(EXECUTABLE_DIR))
 FIXTURE_DIR = Path(__file__).parent / "fixtures"
 TABLES_FIXTURE = FIXTURE_DIR / "tables.json"
 
@@ -122,6 +133,30 @@ def slot_name(page, view):
 
 # --- The app under AppTest ----------------------------------------------
 
+# engine.py resolves SAVED_CHARTS_PATH and PREFERENCES_PATH once, where
+# _user_data_dir() reads the environment. While the engine was the top half
+# of app.py every AppTest run re-executed those two lines, so a test that
+# re-pointed XDG_DATA_HOME at a tmp_path got a fresh path for free; an
+# imported module is cached in sys.modules and would hand the next test the
+# first test's directory. So the harness re-imports the engine whenever the
+# environment those paths are read from has moved -- which is something
+# tests do and a served app never does, its environment being fixed for the
+# life of the process either way.
+_ENGINE_ENVIRONMENT = ("XDG_DATA_HOME", "APPDATA", "ALMUTEN_NO_PREFERENCES")
+
+
+def sync_engine_to_environment():
+    import importlib
+
+    module = sys.modules.get("engine")
+    if module is None:
+        return
+    environment = tuple(os.environ.get(name) for name in _ENGINE_ENVIRONMENT)
+    if getattr(module, "_harness_environment", None) == environment:
+        return
+    importlib.reload(module)._harness_environment = environment
+
+
 def make_app(date="1240-05-23", page=None, view=None, switches=None, timeout=60):
     """Build an AppTest for one chart and one page, unrun.
 
@@ -134,6 +169,7 @@ def make_app(date="1240-05-23", page=None, view=None, switches=None, timeout=60)
     from streamlit.testing.v1 import AppTest
     from streamlit.util import calc_hash
 
+    sync_engine_to_environment()
     at = AppTest.from_file(str(APP_PATH), default_timeout=timeout)
     at.session_state["manual_coords_key"] = True
     at.session_state["manual_lat_key"] = FLORENCE[0]
@@ -247,35 +283,45 @@ def load_table_fixture():
     return json.loads(TABLES_FIXTURE.read_text())
 
 
-# --- The engine half as a module ----------------------------------------
-
-def app_source():
-    return APP_PATH.read_text()
-
+# --- The engine as a module ---------------------------------------------
 
 def engine_source():
-    src = app_source()
-    idx = src.index(UI_MARKER)
-    return src[:idx]
+    """engine.py, whole."""
+    return ENGINE_PATH.read_text()
 
 
 def ui_source():
-    src = app_source()
+    """The pages: app.py from the marker on. Its few lines above the marker
+    are the docstring, the imports and the star import, which no page
+    prints and no source scan has ever read."""
+    src = APP_PATH.read_text()
     return src[src.index(UI_MARKER):]
+
+
+def app_source():
+    """The whole app as one text, which before the split of this file into
+    two was one file's ``read_text()``. Every scan written against that --
+    the citation scans, the prose guards, the dead-function check -- reads
+    both files here rather than one, so nothing it guarded went unguarded
+    when the engine moved out."""
+    return engine_source() + ui_source()
 
 
 @pytest.fixture(scope="session")
 def engine():
-    """The pre-UI half of app.py executed as a module namespace."""
-    src = engine_source()
-    ns = {"__file__": str(APP_PATH), "__name__": "almuten_engine_under_test"}
-    exec(compile(src, str(APP_PATH), "exec"), ns)
-    return ns
+    """engine.py imported as a module, handed over as its namespace (the
+    same mapping shape the exec'd half used to return, so the tests that
+    index it by name are untouched)."""
+    import importlib
+
+    module = importlib.import_module("engine")
+    sync_engine_to_environment()
+    return vars(module)
 
 
 def function_source(name):
-    """Source text of one top-level function in the engine half, by AST --
-    inspect.getsource cannot see exec'd code."""
+    """Source text of one top-level function in the engine, by AST -- the
+    scans around it read source text, not the imported module."""
     src = engine_source()
     tree = ast.parse(src)
     for node in tree.body:
