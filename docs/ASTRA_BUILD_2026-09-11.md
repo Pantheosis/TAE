@@ -569,3 +569,12 @@ Open to the owner: the course teaches these two under Lesson 18 ("the Hermetic p
 as Victory and Nemesis), so whether they belong at the course-text depth rather than the
 supplement is a ruling, not a build question; the supplement is the conservative default. Filed
 from the corpus text only; Valens (Riley) was filed the same day and is not cited here.
+
+## 2026-09-14: the natures of the planets, Gr. Intr. IV.1 (coverage list, gap 5)
+
+Source: Abu Ma'shar, *Great Introduction* IV.1, 6-12, his report of what Ptolemy said of each
+planet's nature (his own objections, 15-43, are not tabled). `PLANET_NATURES_IV1` holds one row
+per planet in the app's order: the hot/cold and wet/dry read off the sentence, the sentence's
+words verbatim, and the sentence number. The Reference page shows it under Course text and
+supplement only, after the degrees of nobility; nothing in the engine reads it. Pinned in
+`tests/test_planet_natures_iv1_2026_09_14.py` (seven rows, the order, every quotation in the corpus).

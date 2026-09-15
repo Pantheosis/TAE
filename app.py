@@ -1233,6 +1233,44 @@ EXALTATIONS = {'Sun': ['Aries'], 'Moon': ['Taurus'], 'Mercury': ['Virgo'], 'Venu
 # in this engine reads a degree of exaltation, and nothing may start to
 # without a source in hand.
 EXALTATION_DEGREES = {'Saturn': 21, 'Jupiter': 15, 'Mars': 28, 'Sun': 19, 'Venus': 27, 'Mercury': 15, 'Moon': 3}
+# The natures of the seven planets as Abu Ma'shar reports Ptolemy stating
+# them, Gr. Intr. IV.1, 6-12 (his own objections follow at 15-43 and are not
+# tabled). 'As stated' is the sentence's words, verbatim from the corpus;
+# 'Active' and 'Passive' are the hot/cold and wet/dry read off it, a dash
+# where the sentence names neither. DISPLAY ONLY, for the Reference tables
+# page at the supplement depth: nothing in this engine reads a planet's
+# nature, and nothing may start to without a source in hand.
+PLANET_NATURES_IV1 = [
+    {'Planet': 'Saturn', 'Active (hot/cold)': 'Cold', 'Passive (wet/dry)': 'Dry',
+     'As stated': "the nature of Saturn is the cold and the dry, due to the distance of his sphere from the hotness "
+                  "of the Sun, and its distance from the wetness of the earth's vapor",
+     'Source': 'IV.1, 8'},
+    {'Planet': 'Jupiter', 'Active (hot/cold)': 'Hot (temperate)', 'Passive (wet/dry)': 'Wet (temperate)',
+     'As stated': "Jupiter is temperate in mixture, because his sphere is between the spheres of Saturn and Mars, "
+                  "and indeed for this reason his nature comes to be temperate hotness and wetness",
+     'Source': 'IV.1, 10'},
+    {'Planet': 'Mars', 'Active (hot/cold)': 'Hot', 'Passive (wet/dry)': 'Dry',
+     'As stated': "the nature of Mars is hotness and the dry, due to his color resembling fire, and his nearness to "
+                  "the Sun, and because [the Sun] is under him, so that [the Sun's] heat rises up towards him and warms him",
+     'Source': 'IV.1, 9'},
+    {'Planet': 'Sun', 'Active (hot/cold)': 'Hot', 'Passive (wet/dry)': 'Dry',
+     'As stated': "the Sun warms and dries in a maturing, unhurried way, and [the Sun] is more apparent in that and "
+                  "more evident in activity than the rest of the planets due to his might",
+     'Source': 'IV.1, 6'},
+    {'Planet': 'Venus', 'Active (hot/cold)': 'Hot (temperate)', 'Passive (wet/dry)': 'Wet (temperate)',
+     'As stated': "the nature of Venus is temperate heating and moistening: as for her heating, it is due to the "
+                  "nearness of her sphere to the Sun",
+     'Source': 'IV.1, 11'},
+    {'Planet': 'Mercury', 'Active (hot/cold)': '-', 'Passive (wet/dry)': 'Dry or wet by turns',
+     'As stated': "the nature of Mercury is sometimes dryness, sometimes wetness: as for his dryness, it is due to "
+                  "his nearness to the Sun, and that he is not distant from [the] Sun by a great interval; as for his "
+                  "wetness, it is due to the nearness of his sphere to the circle of the Moon",
+     'Source': 'IV.1, 12'},
+    {'Planet': 'Moon', 'Active (hot/cold)': '-', 'Passive (wet/dry)': 'Wet',
+     'As stated': "the nature of the Moon is wetness due to her sphere's nearness to the earth, and her "
+                  "receptiveness to the vapors which rise up from it",
+     'Source': 'IV.1, 7'},
+]
 DETRIMENTS = {'Sun': ['Aquarius'], 'Moon': ['Capricorn'], 'Mercury': ['Sagittarius', 'Pisces'], 'Venus': ['Scorpio', 'Aries'], 'Mars': ['Libra', 'Taurus'], 'Jupiter': ['Gemini', 'Virgo'], 'Saturn': ['Cancer', 'Leo']}
 FALLS = {'Sun': ['Libra'], 'Moon': ['Scorpio'], 'Mercury': ['Pisces'], 'Venus': ['Virgo'], 'Mars': ['Cancer'], 'Jupiter': ['Capricorn'], 'Saturn': ['Aries']}
 # Egyptian bounds (terms), as the course tables give them: TNAC Handy Tables
@@ -15994,6 +16032,17 @@ if location_query and lat is not None and lon is not None:
                           "twelve signs to Sahl's eight, six of the eight disagreeing; the text reconciles none of it."
                           if READING_DEPTH == READING_DEPTH_OPTIONS[1] else
                           "Abu Ma'shar states the same rule with a table of his own; Course text and supplement lays it beside this one."))
+
+            if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
+                st.subheader("The natures of the planets (Gr. Intr. IV.1)",
+                             help="Abu Ma'shar's report of what Ptolemy said of each planet's nature, hot or cold and "
+                                  "wet or dry (Gr. Intr. IV.1, 6-12), each sentence's words beside the reading. A "
+                                  "supplement table: this app computes with no planet's nature.")
+                st.dataframe(pd.DataFrame(PLANET_NATURES_IV1), hide_index=True, width='content',
+                             height=_rows_height(len(PLANET_NATURES_IV1)))
+                st.caption("Display only: Abu Ma'shar's report of Ptolemy, \"this is what Ptolemy claimed about the "
+                           "natures of the planets\" (Gr. Intr. IV.1, 13); his own objections follow at IV.1, 15-43 and "
+                           "are not tabled. Nothing in this app reads a planet's nature.")
 
             st.subheader("The Ages of Man",
                          help="PN IV I.8, 10-26: the seven ages, each ruled by a planet for its lesser years in the "
