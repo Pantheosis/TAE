@@ -6090,6 +6090,80 @@ def evaluate_moon_phase_valens(planetary_data):
              'Phase': phase,
              'Indicates': indicates,
              'Ruler (to day)': f"{ruler} (to day {day})" if ruler else '--'}]
+# --- Morin's rules for aspects into good and bad houses --------------------
+# Astrologia Gallica 21.II.X (Holden, pp. 105-106). Display only, like the
+# nobility degrees above: no verdict reads it. The chapter names trine and
+# sextile as the favorable rays and opposition and square as the adverse
+# ones (the semi-sextile and quincunx it calls weak, and p. 110 sets them
+# aside unless partile; this app's aspect table has neither). "Unfortunate
+# houses" it never lists; the 6th, 8th and 12th are this app's reading.
+
+MORIN_FORTUNATE_HOUSES = (1, 2, 3, 4, 5, 7, 9, 10, 11)
+MORIN_UNFORTUNATE_HOUSES = (6, 8, 12)
+MORIN_FAVORABLE_ASPECTS = ('Trine', 'Sextile')
+MORIN_ADVERSE_ASPECTS = ('Square', 'Opposition')
+MORIN_BENEFICS = ('Jupiter', 'Venus')
+MORIN_MALEFICS = ('Saturn', 'Mars')
+
+# (planet kind, ray kind, house kind) -> Morin's phrase, always his words:
+# its own clause where the text gives the case one, and the same clause
+# marked "one clause for both kinds of house" where it does not.
+MORIN_ASPECT_RULES = {
+    ('Fortune', 'favorable', 'fortunate'):
+        '"produce good with ease and in abundance, and cause good in the fortunate houses"',
+    ('Fortune', 'favorable', 'unfortunate'):
+        '"prevent or mitigate evil in the unfortunate ones"',
+    ('Fortune', 'adverse', 'fortunate'):
+        '"bring difficulties, hindrances, or misfortunes to be surmounted" (one clause for both kinds of house)',
+    ('Fortune', 'adverse', 'unfortunate'):
+        '"bring difficulties, hindrances, or misfortunes to be surmounted" (one clause for both kinds of house)',
+    ('Infortune', 'adverse', 'fortunate'):
+        '"extremely harmful ... preventing or spoiling the good in the fortunate ones, unless it rules over the location where the adverse aspect falls"',
+    ('Infortune', 'adverse', 'unfortunate'):
+        '"extremely harmful, causing evil in the unfortunate houses"',
+    ('Infortune', 'favorable', 'fortunate'):
+        '"indicate something good gained by difficult means" (one clause for both kinds of house)',
+    ('Infortune', 'favorable', 'unfortunate'):
+        '"indicate something good gained by difficult means" (one clause for both kinds of house)',
+}
+
+def evaluate_morin_aspects(planetary_data, houses, asc):
+    """A row for every trine, sextile, square or opposition the app's own
+    aspect table already holds between a Fortune (Jupiter, Venus) or an
+    Infortune (Saturn, Mars) and any other planet, with Morin's phrase for
+    the ray's kind and the house it falls into -- the whole-sign house of
+    the aspected planet. A pair of Fortune and Infortune gives two rows,
+    one from each. `houses` (the quadrant cusps) is accepted for the
+    evaluators' common signature and not read: the chapter speaks of
+    houses as places, and the app's unit for places is the whole sign."""
+    rows = []
+    for row in _pairwise_configurations(planetary_data):
+        aspect = row['aspect_name']
+        if aspect in MORIN_FAVORABLE_ASPECTS:
+            ray = 'favorable'
+        elif aspect in MORIN_ADVERSE_ASPECTS:
+            ray = 'adverse'
+        else:
+            continue
+        for caster, other in ((row['p1'], row['p2']), (row['p2'], row['p1'])):
+            if caster in MORIN_BENEFICS:
+                kind = 'Fortune'
+            elif caster in MORIN_MALEFICS:
+                kind = 'Infortune'
+            else:
+                continue
+            house = get_wsh_house(planetary_data[other]['longitude'], asc)
+            house_kind = 'unfortunate' if house in MORIN_UNFORTUNATE_HOUSES else 'fortunate'
+            rows.append({
+                'Planet': f'{caster} ({kind})',
+                'Aspect': f'{aspect} ({ray})',
+                'To': other,
+                'House': f'{house} ({house_kind})',
+                'Rule': MORIN_ASPECT_RULES[(kind, ray, house_kind)],
+            })
+    order = {'Saturn': 0, 'Jupiter': 1, 'Mars': 2, 'Venus': 3}
+    rows.sort(key=lambda r: (order[r['Planet'].split(' ')[0]], r['To']))
+    return rows
 
 def evaluate_special_degrees(planetary_data):
     """Flags planets in Sahl's dark signs, in the two signs of his burned
@@ -13831,6 +13905,7 @@ if location_query and lat is not None and lon is not None:
         nobility_degrees_data = evaluate_nobility_degrees(p_data, chart_data['ascendant'], sect)
         mercury_phase_sect_data = evaluate_mercury_phase_sect(p_data, sect)
         moon_phase_valens_data = evaluate_moon_phase_valens(p_data)
+        morin_aspects_data = evaluate_morin_aspects(p_data, chart_data['houses'], chart_data['ascendant'])
         rays_by_ascension_data = evaluate_rays_by_ascension(p_data, chart_data['armc'], chart_data['obliquity'], lat)
         house_lords_data = evaluate_house_lords(p_data, chart_data['ascendant'])
         victors_data = evaluate_victors(p_data, chart_data['ascendant'], chart_data['lot_of_fortune'],
@@ -14197,6 +14272,10 @@ if location_query and lat is not None and lon is not None:
                                 'Finally, the last visibility is indicative of chains, imprisonment, secrets, condemnation, and infamy. '
                                 'The preceding was the arrangement of the moon’s phases, their relationships with the five gods and the sun in the … angles."\n\n'
                                 'The Ruler column carries the planet and day only where the sentence names one; the new moon, the full moon, the last crescent and the last visibility have none. "The rulers of the new moon, of the latitude, and of the motion" are not computed.')
+                _finding(_gap, "Morin's rules for aspects into good and bad houses (supplement, display only)",
+                          'Morin, Astrologia Gallica 21.II.X (Holden, pp. 105-106)', morin_aspects_data,
+                          glance='Each trine, sextile, square or opposition that a Fortune (Jupiter, Venus) or an Infortune (Saturn, Mars) casts to another planet, read by the kind of ray and the kind of house it falls into -- the whole-sign house of the aspected planet -- with Morin\'s sentence for that case. Display only; nothing scores it.',
+                          notes='Morin, Astrologia Gallica 21.II.X (Holden, pp. 105-106). The chapter\'s opening names the trine, sextile and semi-sextile as the rays "by nature benefic" and the opposition, square and quincunx as those "by nature malefic"; this app\'s aspect table has the four the ancients used (p. 110), so the two weak rays are not read. The four governing sentences, whole:\n\n"The distinction should be observed, however, that the favorable rays of benefic planets are more prone to good, and the unfavorable rays are less prone to evil, than is true for the malefic planets."\n\n"Moreover, a benefic planet\'s favorable rays produce good with ease and in abundance, and cause good in the fortunate houses as well as prevent or mitigate evil in the unfortunate ones, but its unfavorable rays bring difficulties, hindrances, or misfortunes to be surmounted."\n\n"On the other hand, a malefic planet\'s malefic rays are extremely harmful, causing evil in the unfortunate houses and preventing or spoiling the good in the fortunate ones, unless it rules over the location where the adverse aspect falls, for in that case the aspect produces good in fortunate houses, but this good will be accompanied by violence, evil, or misfortune."\n\n"And again, the favorable rays indicate something good gained by difficult means; for example, in the horoscope of the king of Sweden, Saturn ruled the second, and its trine to the Sun in the first house indicated great wealth, which he would acquire through war because Mercury, ruler of the seventh, is placed in the second; and in obtaining these things he had good fortune since Jupiter, Mercury, Venus, and the part of fortune were in the second house—and all ruled in turn by Saturn."\n\nMorin says "the unfortunate houses" without listing them; this app takes the 6th, 8th and 12th as the unfortunate ones and the other nine as fortunate, its own reading. Where one clause covers both kinds of house (a Fortune\'s adverse rays, an Infortune\'s favorable rays) the Rule column repeats the clause and says so. The "unless it rules over the location" exception is quoted, not tested: the table does not look up the ruler of the house. The chapter goes on to make the aspecting planet\'s own house, its celestial state and its rulership part of the judgment; none of that is read here.')
             _absent(_gap)
             # The orders of the dignities and the good places -- static tables --
             # moved to the Reference tables page on 2026-09-10; what stays is

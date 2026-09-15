@@ -592,3 +592,16 @@ second gibbous and second quarter; the app's boundaries are the new moon to 12°
 conjunction and the final visibility from 12° before it, first visibility 12-45, full moon 180-192,
 and the waning phase 192-225 (placed between full and second gibbous, where the "Indicates" list
 puts it). The page says so, and quotes the whole "Indicates" passage as Riley has it.
+
+## 2026-09-14: Morin's rules for aspects into good and bad houses (coverage list, gap 7)
+
+Source: Morin, *Astrologia Gallica* 21.II.X (Holden, pp. 105-110), OCR'd to the corpus today.
+Built as a supplement, display-only finding on the Chart page after the nobility degrees:
+`MORIN_ASPECT_RULES` (eight rows, Fortune/Infortune x favorable/adverse ray x fortunate/unfortunate
+house, Morin's own clause, or the same clause marked "one clause for both kinds of house" where
+the text gives one clause to both) and `evaluate_morin_aspects()`, which reads the app's existing
+whole-sign aspect pairs and takes the aspected planet's whole-sign house as the house the ray falls
+into. The chapter never lists the unfortunate houses; 6, 8 and 12 are the app's reading and the
+page says so. The "unless it rules over the location" exception is quoted, not tested. The notes
+quote the four governing sentences whole; the fixture is unchanged because the default depth hides
+the finding. Test: `tests/test_morin_aspects_2026_09_14.py`.
