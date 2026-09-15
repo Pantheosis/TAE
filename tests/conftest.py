@@ -234,6 +234,30 @@ def table_inventory(at):
     return inventory
 
 
+# --- Components ---------------------------------------------------------
+# The Chart page's wheel is an st.components.v2 mount rather than an
+# st.image. AppTest renders one as an element of type "bidi_component"
+# whose proto carries the component's name and the JSON envelope it was
+# mounted with, which is where the SVG is read from now.
+
+def component_mounts(node, name, found=None):
+    """Every mount of the component `name` under a rendered node."""
+    found = [] if found is None else found
+    for child in getattr(node, "children", {}).values():
+        if getattr(child, "type", None) == "bidi_component" and child.proto.component_name == name:
+            found.append(child)
+        else:
+            component_mounts(child, name, found)
+    return found
+
+
+def natal_wheel_envelope(node):
+    """The one natal_wheel mount's data envelope: {'svg', 'width', 'signs'}."""
+    mounts = component_mounts(node, "natal_wheel")
+    assert len(mounts) == 1, f"expected one natal_wheel mount under {node}, found {len(mounts)}"
+    return json.loads(mounts[0].proto.json)
+
+
 def _key(entry):
     heading, columns = entry
     return (heading, tuple(columns))

@@ -31,7 +31,8 @@ import base64
 
 import pytest
 
-from conftest import READING_DEPTHS, assert_no_exception, make_app, ui_source
+from conftest import (READING_DEPTHS, assert_no_exception, component_mounts, make_app,
+                      natal_wheel_envelope, ui_source)
 
 LAYOUTS = ["Square", "Wide"]
 
@@ -145,10 +146,13 @@ def test_the_timing_fragment_regenerates_its_svg_from_the_top_levels_data():
 @pytest.mark.parametrize("layout", LAYOUTS)
 @pytest.mark.parametrize("view", READING_DEPTHS)
 def test_the_chart_page_still_draws_its_wheel(layout, view):
+    """The Chart page's picture is the natal_wheel component now (item 11),
+    so the SVG is read out of the envelope it was mounted with rather than
+    out of an st.image data URL. The Timing page's is still an image."""
     at = _at("chart", layout=layout, view=view)
-    images = _images(_node(at, CHART_FRAGMENT))
-    assert len(images) == 1
-    assert _svg(images[0]).startswith("<svg "), "an SVG, not a placeholder"
+    envelope = natal_wheel_envelope(_node(at, CHART_FRAGMENT))
+    assert envelope["svg"].startswith("<svg "), "an SVG, not a placeholder"
+    assert envelope["width"] == (560 if layout == "Square" else "stretch")
 
 
 @pytest.mark.parametrize("view", READING_DEPTHS)
@@ -164,10 +168,10 @@ def test_both_wheels_answer_their_own_controls():
     control changes the picture -- which is the whole point of generating the
     SVG inside the fragment rather than reading a top-level string."""
     at = _at("chart")
-    before = _svg(_images(_node(at, CHART_FRAGMENT))[0])
+    before = natal_wheel_envelope(_node(at, CHART_FRAGMENT))["svg"]
     at.checkbox(key="chart_bounds").uncheck().run()
     assert_no_exception(at, "chart, bounds off")
-    assert _svg(_images(_node(at, CHART_FRAGMENT))[0]) != before
+    assert natal_wheel_envelope(_node(at, CHART_FRAGMENT))["svg"] != before
 
     at = _at("timing")
     before = _svg(_images(_node(at, TIMING_FRAGMENT))[0])
@@ -282,19 +286,22 @@ def test_the_chart_fragment_holds_its_picture_and_its_controls_and_no_more(layou
     # Square centres its picture in a flex row of its own; Wide is the bare
     # image at the page's full width. Either way the picture comes first and
     # the controls' row second, and the fragment holds those two and no more.
-    assert _kinds(fragment) == [("Block" if layout == "Square" else "Image"), "Block"]
+    assert _kinds(fragment) == [("Block" if layout == "Square" else "UnknownElement"), "Block"]
     controls = list(fragment.children.values())[1]
     assert _kinds(controls) == ["Radio", "Checkbox", "Checkbox", "DownloadButton"]
-    assert len(_images(fragment)) == 1
+    assert len(component_mounts(fragment, "natal_wheel")) == 1
+    assert _images(fragment) == [], "the picture is a component, not an image"
 
 
 @pytest.mark.parametrize("layout", LAYOUTS)
 def test_the_chart_pages_wheel_controls_are_all_inside_the_fragment(layout):
-    """No image, checkbox, radio or download button of the wheel's is left
+    """No picture, checkbox, radio or download button of the wheel's is left
     on the page beside the fragment."""
     at = _at("chart", layout=layout)
     fragment = _node(at, CHART_FRAGMENT)
-    assert len(_images(at.main)) == len(_images(fragment)) == 1
+    assert len(component_mounts(at.main, "natal_wheel")) == 1
+    assert len(component_mounts(fragment, "natal_wheel")) == 1
+    assert _images(at.main) == [], "the Chart page draws no st.image at all now"
     controls = list(fragment.children.values())[1]
     assert [c.key for c in controls.checkbox] == ["chart_bounds", "wheel_dark"]
     assert [r.key for r in controls.radio] == ["wheel_layout"]

@@ -11,7 +11,8 @@ then the three captions.
 """
 import pytest
 
-from conftest import PAGES, READING_DEPTHS, assert_no_exception, make_app, ui_source
+from conftest import (PAGES, READING_DEPTHS, assert_no_exception, make_app,
+                      natal_wheel_envelope, ui_source)
 
 # The three sentences, verbatim, as the page prints them.
 INTRO = (
@@ -131,14 +132,16 @@ def test_the_strip_breaks_between_the_nativity_and_the_reading():
 
 def test_the_square_wheel_is_centred_by_a_horizontal_container():
     """A three-column split centres the wheel but also caps it: a column is a
-    fraction of the page, and st.image shrinks a picture to the width it is
-    given, so the middle of [1, 2, 1] drew the wheel at 454 px at a 1400 px
-    window and 394 px at 1280 -- narrower than the 400 px it replaced. A
-    horizontal container is a flex row: it stretches the full width, its one
-    child keeps its own 560 px, and the row centres it."""
+    fraction of the page, and a picture shrinks to the width it is given, so
+    the middle of [1, 2, 1] drew the wheel at 454 px at a 1400 px window and
+    394 px at 1280 -- narrower than the 400 px it replaced. A horizontal
+    container is a flex row: it stretches the full width, its one child keeps
+    its own 560 px, and the row centres it. The picture is the natal_wheel
+    component now (item 11), and 560 px is carried in its envelope."""
     at = _chart(layout="Square")
     wheel_block = _frag_kids(at)[0]
-    assert _kinds(wheel_block) == ["Image"]
+    assert _kinds(wheel_block) == ["UnknownElement"]
+    assert natal_wheel_envelope(wheel_block)["width"] == 560
     flex = wheel_block.proto.flex_container
     assert flex.direction == flex.Direction.HORIZONTAL, flex.direction
     assert flex.justify == flex.Justify.JUSTIFY_CENTER, flex.justify
@@ -147,15 +150,15 @@ def test_the_square_wheel_is_centred_by_a_horizontal_container():
     assert wheel_block.proto.width_config.use_stretch is True
     src = ui_source()
     assert 'st.container(horizontal=True, horizontal_alignment="center")' in src
-    assert "st.image(svg_code, width=560)" in src
+    assert '"width": "stretch" if _picked_wide else 560,' in src
     # The split that capped it must not come back.
     assert "st.columns([1, 2, 1])" not in src
 
 
 def test_the_wide_wheel_still_runs_the_full_width():
     at = _chart(layout="Wide")
-    assert type(_frag_kids(at)[0]).__name__ == "Image"
-    assert "st.image(svg_wide, width='stretch')" in ui_source()
+    assert type(_frag_kids(at)[0]).__name__ == "UnknownElement"
+    assert natal_wheel_envelope(_fragment(at))["width"] == "stretch"
 
 
 # --- The controls, in one row --------------------------------------------
@@ -219,7 +222,7 @@ def test_the_layout_is_read_before_the_control_is_drawn():
     """The wheel is drawn above its own controls now, so the page must know
     which wheel to draw before the radio renders."""
     src = ui_source()
-    wheel = src.index("st.image(svg_code, width=560)")
+    wheel = src.index('"svg": svg_wide if _picked_wide else svg_code,')
     control = src.index("                _layout_control()\n")
     read = src.index('wheel_layout = st.session_state.get(')
     assert read < wheel < control

@@ -52,6 +52,173 @@ st.set_page_config(
 _context_theme = getattr(st.context, "theme", None)
 VIEWER_THEME = getattr(_context_theme, "type", None) if _context_theme is not None else None
 
+# --- The natal wheel, clickable -------------------------------------------
+# The Chart page's wheel is mounted as an st.components.v2 component rather
+# than shown with st.image, so that a click on a planet or a sign can reach
+# Python. The component is registered ONCE, here at the module level: a
+# registration wrapped up with its own mounting would re-register the name
+# on every instance, which the API warns against. It is mounted inside the
+# Chart page's fragment, so a click reruns that fragment and not the page.
+#
+# What the component is handed is the SVG the app's own renderer produced,
+# with every value already escaped at the point it was written (_esc_attr,
+# _esc_text). No string from the sidebar, from a saved chart's name or from
+# a place label is ever put into the html, css or js below -- those are
+# component code, which Streamlit does not sanitise, and they are constants
+# written here. User strings reach the component only inside `data`, which
+# is data.
+#
+# The CSS styles the wrapper, the expand control and the hover tooltip and
+# NOTHING inside the picture: the wheel carries its own palette, light or
+# dark, and a component that recoloured it would be overruling the reader's
+# own Dark wheel preference. Styles are isolated in a shadow root
+# (isolate_styles defaults to True), so none of this reaches the app.
+NATAL_WHEEL_CSS = """
+.nw-wrap {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+}
+.nw-wrap.nw-full {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    width: 100% !important;
+    height: 100%;
+    padding: 0.5rem;
+    background: var(--st-background-color, #ffffff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.nw-svg { line-height: 0; }
+.nw-full .nw-svg {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.nw-full .nw-svg svg {
+    width: auto !important;
+    height: 100% !important;
+    max-width: 100%;
+}
+.nw-svg [data-point], .nw-svg [data-sign] { cursor: pointer; }
+.nw-expand {
+    position: absolute;
+    top: 0.35rem;
+    right: 0.35rem;
+    z-index: 1;
+    border: 1px solid var(--st-border-color, rgba(49, 51, 63, 0.2));
+    border-radius: 0.35rem;
+    background: var(--st-secondary-background-color, rgba(240, 242, 246, 0.9));
+    color: var(--st-text-color, inherit);
+    font: inherit;
+    font-size: 0.9rem;
+    line-height: 1;
+    padding: 0.25rem 0.4rem;
+    cursor: pointer;
+    opacity: 0.55;
+}
+.nw-expand:hover { opacity: 1; }
+.nw-tip {
+    position: absolute;
+    z-index: 2;
+    max-width: 22rem;
+    white-space: pre-line;
+    pointer-events: none;
+    padding: 0.3rem 0.45rem;
+    border: 1px solid var(--st-border-color, rgba(49, 51, 63, 0.2));
+    border-radius: 0.35rem;
+    background: var(--st-secondary-background-color, rgba(240, 242, 246, 0.97));
+    color: var(--st-text-color, inherit);
+    font: inherit;
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+"""
+
+# The frontend: one child div under the component's own root (the API's own
+# warning -- writing innerHTML on the root itself would overwrite the CSS
+# and HTML the component was registered with), the SVG dropped into it, a
+# click listener on every [data-point] and every [data-sign], a tooltip fed
+# from the envelope's own text, and an expand control the Escape key also
+# closes. The listener set is rebuilt from scratch on every rerun because
+# the SVG is replaced whole; the keydown listener is not, so the cleanup
+# function returned at the end takes it off again when Streamlit unmounts.
+NATAL_WHEEL_JS = """
+export default function (component) {
+    const { data, parentElement, setTriggerValue } = component;
+    let wrap = parentElement.querySelector(".nw-wrap");
+    if (!wrap) {
+        wrap = document.createElement("div");
+        wrap.className = "nw-wrap";
+        const holder = document.createElement("div");
+        holder.className = "nw-svg";
+        const tip = document.createElement("div");
+        tip.className = "nw-tip";
+        tip.hidden = true;
+        const expand = document.createElement("button");
+        expand.type = "button";
+        expand.className = "nw-expand";
+        expand.title = "Expand the wheel (Escape closes it)";
+        expand.textContent = "\\u2921";
+        expand.onclick = () => { wrap.classList.toggle("nw-full"); };
+        wrap.appendChild(holder);
+        wrap.appendChild(tip);
+        wrap.appendChild(expand);
+        parentElement.appendChild(wrap);
+    }
+    const holder = wrap.querySelector(".nw-svg");
+    const tip = wrap.querySelector(".nw-tip");
+    const signs = (data && data.signs) || [];
+    holder.innerHTML = (data && data.svg) || "";
+    const svg = holder.querySelector("svg");
+    if (svg) {
+        svg.removeAttribute("width");
+        svg.removeAttribute("height");
+        svg.style.height = "auto";
+        if (data.width === "stretch") {
+            svg.style.width = "100%";
+            wrap.style.width = "100%";
+        } else {
+            svg.style.width = data.width + "px";
+            wrap.style.width = data.width + "px";
+            wrap.style.maxWidth = "100%";
+        }
+    }
+    holder.querySelectorAll("[data-point]").forEach((element) => {
+        element.addEventListener("click", () => {
+            setTriggerValue("picked", "planet:" + element.getAttribute("data-point"));
+        });
+    });
+    holder.querySelectorAll("[data-sign]").forEach((element) => {
+        const index = element.getAttribute("data-sign");
+        element.addEventListener("click", () => {
+            setTriggerValue("picked", "sign:" + index);
+        });
+        element.addEventListener("mousemove", (event) => {
+            const text = signs[Number(index)];
+            if (!text) { return; }
+            const box = wrap.getBoundingClientRect();
+            tip.textContent = text;
+            tip.hidden = false;
+            tip.style.left = Math.max(0, event.clientX - box.left + 14) + "px";
+            tip.style.top = Math.max(0, event.clientY - box.top + 14) + "px";
+        });
+        element.addEventListener("mouseleave", () => { tip.hidden = true; });
+    });
+    const onKey = (event) => {
+        if (event.key === "Escape") { wrap.classList.remove("nw-full"); }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("keydown", onKey); };
+}
+"""
+
+NATAL_WHEEL = st.components.v2.component("natal_wheel", css=NATAL_WHEEL_CSS, js=NATAL_WHEEL_JS)
+
 st.sidebar.header("Nativity")
 
 if "saved_charts" not in st.session_state:
@@ -863,12 +1030,63 @@ if location_query and lat is not None and lon is not None:
             _chart_strip()
             _readings_note()
             _gap = []
+            # The twelve signs' hover text, and the panel a click opens. Both
+            # are display only: every row either restates a position the page
+            # already prints or is lifted whole out of a table another page
+            # draws, and each table's caption says which page that is. The
+            # hover text is worked out once per run, in Python, and handed to
+            # the component inside its envelope, so that moving the pointer
+            # across the zodiac asks the server nothing.
+            def _sign_hover(index):
+                summary = sign_summary(index, sect)
+                bounds = ", ".join(f"{row['Lord']} to {row['Bound'].split('-')[1]}" for row in summary['bounds'])
+                return (f"{summary['sign']} · {summary['element']}\n"
+                        f"Bounds: {bounds}\n"
+                        f"Triplicity ({sect}): {summary['lords'][2]['Lord']}, "
+                        f"with {summary['lords'][3]['Lord']} partnering")
+
+            def _panel_table(rows, caption):
+                if not rows:
+                    return
+                st.dataframe(pd.DataFrame(rows), hide_index=True, width='content')
+                st.caption(caption)
+
+            def _pick_panel(picked):
+                """The panel under the controls row: nothing until a planet,
+                an angle or a sign is clicked in the wheel."""
+                kind, _sep, value = str(picked or "").partition(":")
+                if kind == "sign" and value.isdigit():
+                    summary = sign_summary(int(value), sect)
+                    st.subheader(summary['sign'])
+                    _panel_table(summary['lords'], "The lords of the sign. The Reference page carries every sign.")
+                    _panel_table(summary['bounds'], "The Egyptian bounds, which the Reference page carries in full.")
+                    _panel_table(summary['faces'], "The three faces, which the Reference page carries beside the other dignities.")
+                elif kind == "planet":
+                    summary = point_summary(value, chart_data, essential, accidental, aspects,
+                                            reception_data, classical_lots, topical_lots)
+                    if summary is None:
+                        return
+                    st.subheader(summary['point'])
+                    _panel_table(summary['position'],
+                                 "Where it stands. The Calculated Points and Quadrant divisions tables below carry every point.")
+                    _panel_table(summary['essential'],
+                                 "Its dignity at its own degree. The Dignities page carries the full lordship table.")
+                    _panel_table(summary['accidental'],
+                                 "Its accidental conditions. The Dignities page carries them for every planet.")
+                    _panel_table(summary['connections'],
+                                 "The connections it stands in. The Configurations page carries the whole aspects table.")
+                    _panel_table(summary['receptions'],
+                                 f"Reception under the {CONNECTION_PROFILE} rule. The Configurations page carries the full table.")
+                    _panel_table(summary['lots'],
+                                 "The Lots it is lord of. The Lots page carries the classical and the topical Lots in full.")
+
             # Looking at the chart is the primary act, so the wheel takes the
             # centre of the page: the square wheel centred at 560 px, its
             # controls in one row beneath it, the introduction beneath those.
-            # st.image shows the SVG through Streamlit's own fullscreen wrapper,
-            # the same expand arrows the tables carry; the iframe it replaced
-            # had none. The wide variant runs the full page width and scrolls,
+            # The picture is a component (item 11) rather than an st.image,
+            # which cost it Streamlit's own fullscreen wrapper -- the expand
+            # arrows the tables carry -- so the component carries an expand
+            # control of its own instead. The wide variant runs the full page width and scrolls,
             # with its positions panel drawn into the picture, and is there for
             # the full-window view, which a square can only fill to the
             # window's height. Both layouts then read alike: the same controls
@@ -961,8 +1179,27 @@ if location_query and lat is not None and lon is not None:
                                                chronocrats=chronocrats, bounds=_bounds, theme=_theme)
                 svg_wide = generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, local_dt, tz_name,
                                                wide=True, chronocrats=chronocrats, bounds=_bounds, theme=_theme)
-                if wheel_layout == WHEEL_LAYOUT_OPTIONS[1]:
-                    st.image(svg_wide, width='stretch')
+                # The picture is mounted as the natal_wheel component rather
+                # than shown with st.image, so that a click on a planet, an
+                # angle or a sign can reach Python (item 11, 2026-09-15).
+                # The mount stands INSIDE this fragment, so the rerun a
+                # click causes is a fragment rerun: the tables on the rest
+                # of the page are not redrawn to show a panel under a wheel.
+                #
+                # The envelope carries three things and no more: the SVG the
+                # renderer just produced, the width this layout asks for,
+                # and the twelve signs' hover text, worked out here from the
+                # engine's own tables so that a hover is answered in the
+                # browser and never round-trips to Python.
+                _picked_wide = wheel_layout == WHEEL_LAYOUT_OPTIONS[1]
+                _envelope = {
+                    "svg": svg_wide if _picked_wide else svg_code,
+                    "width": "stretch" if _picked_wide else 560,
+                    "signs": [_sign_hover(i) for i in range(12)],
+                }
+                if _picked_wide:
+                    picked = NATAL_WHEEL(data=_envelope, key="natal_wheel",
+                                         on_picked_change=lambda: None).picked
                 else:
                     # st.image draws at the left edge of whatever holds it, so the
                     # wheel needs a container that centres its contents. A three
@@ -974,8 +1211,12 @@ if location_query and lat is not None and lon is not None:
                     # keep their own width and the row centres them, so the wheel
                     # is 560 px at every window width.
                     with st.container(horizontal=True, horizontal_alignment="center"):
-                        st.image(svg_code, width=560)
+                        picked = NATAL_WHEEL(data=_envelope, key="natal_wheel",
+                                             on_picked_change=lambda: None).picked
                 _layout_control()
+                # Nothing at all until something is clicked, which is why the
+                # page's inventory of tables is what it always was.
+                _pick_panel(picked)
             _wheel_block()
             if chronocrats.get('Approximate'):
                 st.caption(

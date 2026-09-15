@@ -620,8 +620,16 @@ def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_loc
 
     # 1. Sign band shaded by triplicity, sign glyphs, whole-sign place
     #    numbers on the rim, boundary spokes through both bands.
+    #
+    #    Each sign's own elements stand in a <g class="sign" data-sign="0-11">
+    #    and each point's in a <g class="pt" data-point data-lon>, the
+    #    convention the revolution wheels have carried since 2026-09-10
+    #    (_draw_ring_points). The groups add a handle and nothing else: strip
+    #    the wrappers and the picture is the picture it always was, which is
+    #    what tests/test_clickable_wheel_2026_09_15.py asserts against main.
     for i in range(12):
         a0, a1 = ang(i * 30), ang(i * 30 + 30)
+        svg.append(f'<g class="sign" data-sign="{_esc_attr(i)}">')
         svg.append(f'<path d="{sector(_R_SIGN_IN, _R_WS_IN, a0, a1)}" fill="{pal["tints"][i % 4]}"/>')
         svg.append(f'<path d="{sector(_R_WS_IN, _R_RIM, a0, a1)}" fill="{pal["panel"]}"/>')
         # An angle box (step 4) sits wherever the Ascendant or MC falls in its
@@ -637,6 +645,7 @@ def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_loc
         svg.append(text(hx, hy, str((i - asc_sign) % 12 + 1), 17, 'bold', pal['ink']))
         x0, y0 = xy(_R_SIGN_IN, a0); x1, y1 = xy(_R_RIM, a0)
         svg.append(line(x0, y0, x1, y1, pal['rule'], 1.2))
+        svg.append('</g>')
 
     # 2. Degree scale on the inner edge of the sign band: 1, 5 and 10 degrees.
     for d in range(360):
@@ -662,13 +671,19 @@ def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_loc
         svg.append(text(mx, my, str(i + 1), 14, 'bold', pal['cusp']))
 
     # 4. Angle boxes on the sign band: degree over minute, in the axis colour.
-    for angle_lon, colour in zip(angles, (pal['horizon'], pal['meridian'], pal['horizon'], pal['meridian'])):
+    #    The four angles carry data-point under the names the Calculated
+    #    Points table prints, so a click on a box reaches the same panel a
+    #    click on a planet does.
+    for angle_lon, colour, angle_name in zip(angles, (pal['horizon'], pal['meridian'], pal['horizon'], pal['meridian']),
+                                             ('Ascendant', 'Midheaven', 'Descendant', 'Imum Coeli')):
         d, m = _wheel_dm(angle_lon)
+        svg.append(f'<g class="pt" data-point="{_esc_attr(angle_name)}" data-lon="{angle_lon % 360.0:.6f}">')
         bx, by = xy((_R_SIGN_IN + _R_WS_IN) / 2, ang(angle_lon))
         svg.append(f'<rect x="{bx - 19:.1f}" y="{by - 17:.1f}" width="38" height="34" rx="3" '
                    f'fill="{pal["panel"]}" stroke="{colour}" stroke-width="1.2"/>')
         svg.append(text(bx, by - 8, f'{d:02d}°', 13, 'bold', colour))
         svg.append(text(bx, by + 8, f"{m:02d}'", 13, 'bold', colour))
+        svg.append('</g>')
 
     # 5. Points. The seven planets and the north node from the ephemeris, the
     #    south node opposite it with the same motion (D2), the Lot of Fortune
@@ -686,6 +701,7 @@ def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_loc
     offsets = _stagger_offsets(true_bearings, shown)
     for (name, lon_val, speed), a_true, a_shown, off in zip(points, true_bearings, shown, offsets):
         # A tick on the ring at the true degree, a hairline from it to the glyph.
+        svg.append(f'<g class="pt" data-point="{_esc_attr(name)}" data-lon="{lon_val % 360.0:.6f}">')
         x0, y0 = xy(r_planet_edge, a_true); x1, y1 = xy(r_planet_edge - 10, a_true)
         svg.append(line(x0, y0, x1, y1, pal['rule'], 1.6))
         x2, y2 = xy(_R_GLYPH - off + 22, a_shown)
@@ -697,6 +713,7 @@ def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_loc
         mx, my = xy(_R_MIN - off, a_shown); svg.append(text(mx, my, f"{m:02d}'", 15, fill=pal['ink']))
         if speed is not None and speed < 0:
             rx, ry = xy(_R_RX - off, a_shown); svg.append(text(rx, ry, '℞' + _VS, 15, fill=pal['ink']))   # the ink, never red (D6)
+        svg.append('</g>')
 
     # 6. Hub: the chart's name first (D5 supplies "Transits" when none was
     #    given), then when, where, and the systems in force. User strings
@@ -15902,6 +15919,103 @@ def calculate_time_lords(ascendant_lon, birth_date, target_date):
     ]
 
 # ==========================================
+
+
+# ---- The panel behind a click on the wheel -------------------------------
+# Two pure functions, display only. Every row either restates a position the
+# Chart page already prints or is lifted whole out of a table another page
+# already draws -- the essential and accidental dignities, the aspects, the
+# receptions, the two Lot tables, the lords of a sign. Nothing is scored
+# here and nothing is judged: a row's citation is the one its own source
+# table carries, and where that table carries none this carries none either.
+
+def point_summary(name, chart_data, essential, accidental, aspects, reception_data, classical_lots, topical_lots):
+    """What the app already says about one point, gathered into small row
+    lists: where it stands, its essential dignities at its own degree, its
+    accidental conditions, the connections it is in, the receptions naming
+    it, and the Lots it rules. Returns None for a name the wheel does not
+    draw. Every list may be empty -- an angle holds no dignity and rules no
+    Lot, and the default chart has no reception at all."""
+    # The points the natal wheel draws: the seven planets and the north node
+    # from the ephemeris, the south node opposite it with the same motion,
+    # the Lot of Fortune, and the four angles, which have no motion at all.
+    p_data = chart_data['planetary_data']
+    angles = {'Ascendant': 'ascendant', 'Midheaven': 'mc', 'Descendant': 'descendant', 'Imum Coeli': 'ic'}
+    if name in p_data:
+        lon, speed = p_data[name]['longitude'], p_data[name].get('speed_in_lon')
+    elif name == 'South Node':
+        node = p_data['North Node']
+        lon, speed = (node['longitude'] + 180.0) % 360.0, node.get('speed_in_lon')
+    elif name == 'Lot of Fortune':
+        lon, speed = chart_data['lot_of_fortune'], None
+    elif name in angles:
+        lon, speed = chart_data[angles[name]], None
+    else:
+        return None
+    if speed is None:
+        motion = '-'
+    else:
+        motion = 'retrograde' if speed < 0 else 'direct'
+    position = [
+        {'Reading': 'Position', 'Value': get_degree_string(lon)},
+        {'Reading': 'Sign', 'Value': get_zodiac_sign(lon)},
+        {'Reading': 'Whole-sign place', 'Value': str(get_wsh_house(lon, chart_data['ascendant']))},
+        {'Reading': 'Quadrant division (Alchabitius)', 'Value': str(get_effective_house(lon, chart_data['houses']))},
+        {'Reading': 'Motion', 'Value': motion},
+    ]
+    # The True ones, by their own key: the flags are booleans and the scores
+    # and label lists beside them are not, so `is True` takes the conditions
+    # and leaves the arithmetic alone.
+    dignities = [{'Dignity': key} for key, value in (essential.get(name) or {}).items() if value is True]
+    conditions = [{'Condition': key} for key, value in (accidental.get(name) or {}).items() if value is True]
+    connections = [{column: row.get(column) for column in
+                    ('Light Planet', 'Aspect', 'Heavy Planet', 'Applying Planet', 'Motion', 'Exact Orb Dist', 'Connected')}
+                   for row in (aspects or []) if name in (row.get('Light Planet'), row.get('Heavy Planet'))]
+    receptions = [dict(row) for row in (reception_data or [])
+                  if name in (row.get('Receiver'), row.get('Received'))]
+    lots = []
+    for row in (classical_lots or []):
+        if row.get('Sign Dispositor') == name:
+            lots.append({'Lot': row.get('Lot Name'), 'Position': row.get('Position'), 'WS place': row.get('WS place'),
+                         'Table': 'Classical Lots', 'Source': ''})
+    for row in (topical_lots or []):
+        if row.get('Lord') == name:
+            lots.append({'Lot': row.get('Lot'), 'Position': row.get('Position'), 'WS place': row.get('WS place'),
+                         'Table': 'Topical Lots', 'Source': row.get('Source') or ''})
+    return {
+        'point': name,
+        'position': position,
+        'essential': dignities,
+        'accidental': conditions,
+        'connections': connections,
+        'receptions': receptions,
+        'lots': lots,
+    }
+
+
+def sign_summary(index, sect='Diurnal'):
+    """The lords of one sign, 0-11: its domicile and exaltation lords, the
+    triplicity lord of the chart's own sect with the partner beside it, the
+    five Egyptian bounds with their lords in order, and the three faces.
+    Read straight off the tables the Reference page prints."""
+    i = int(index) % 12
+    sign = SIGN_ORDER[i]
+    triplicity = TRIPLICITY[SIGN_ELEMENT[sign]]
+    lords = [
+        {'Dignity': 'Domicile', 'Lord': SIGN_TO_DOMICILE.get(sign, '-')},
+        {'Dignity': 'Exaltation', 'Lord': SIGN_TO_EXALTATION.get(sign, '-')},
+        {'Dignity': f'Triplicity ({sect})', 'Lord': triplicity['Night' if sect == 'Nocturnal' else 'Day']},
+        # Virgo's partner is Mercury, as get_essential_rulers reads V.14, 7.
+        {'Dignity': 'Triplicity, participating', 'Lord': 'Mercury' if sign == 'Virgo' else triplicity['Participating']},
+    ]
+    bounds, start = [], 0
+    for limit, lord in EGYPTIAN_TERMS[sign]:
+        bounds.append({'Bound': f'{start}°-{limit}°', 'Lord': lord})
+        start = limit
+    faces = [{'Face': f'{d}°-{d + 10}°', 'Lord': CHALDEAN_ORDER[(i * 3 + d // 10) % 7]}
+             for d in (0, 10, 20)]
+    return {'sign': sign, 'index': i, 'element': SIGN_ELEMENT[sign],
+            'lords': lords, 'bounds': bounds, 'faces': faces}
 
 
 # The pages reach for these by name through ``from engine import *``, and a
