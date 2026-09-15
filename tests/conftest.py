@@ -25,6 +25,12 @@ from datetime import time
 from pathlib import Path
 
 import pytest
+from streamlit import config as _st_config
+
+# Same option as Executable/.streamlit/config.toml (2026-09-15), set directly
+# so the suite renders with magic off regardless of the working directory
+# AppTest is invoked from.
+_st_config.set_option("runner.magicEnabled", False)
 
 EXECUTABLE_DIR = Path(__file__).resolve().parents[1]
 APP_PATH = EXECUTABLE_DIR / "app.py"

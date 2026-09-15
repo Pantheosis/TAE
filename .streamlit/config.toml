@@ -1,0 +1,8 @@
+[runner]
+# The app has no bare expressions, so magic does nothing but cost: parsing and
+# rewriting the script is over half of every AppTest render (measured 2026-09-15).
+magicEnabled = false
+
+[client]
+# The Deploy button and the toolbar are not for a study companion.
+toolbarMode = "minimal"
