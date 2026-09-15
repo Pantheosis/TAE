@@ -421,6 +421,10 @@ D3_GRANT_READERS = {
 D3_FARDAR_READERS = {"evaluate_planetary_years_display", "pn4_fardar_sequence",
                      "pn4_activation_ages", "reference_planetary_years_rows",
                      "sahl_house_master_years"}          # reads the grant keys only (FINAL-A1); listed because it reads the table
+# jn_years_fallback (reconciliation decision 9, owner 2026-09-15) grants Abu
+# 'Ali's years where 1.20 is silent, at the supplement depth only. It reads
+# JN_YEARS_TABLE (Ch. 4's own counts), not PLANETARY_YEARS, and so is in
+# neither set; it is named here so the exemption is deliberate.
 D3_GRANT_KEYS = ("lesser", "middle", "greater", "mighty")
 
 

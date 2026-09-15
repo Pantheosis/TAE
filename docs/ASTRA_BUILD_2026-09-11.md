@@ -837,3 +837,58 @@ sign-categories table (11 columns, inside its own expander, which the inventory 
 heading) is now listed under "The fetus's stay (Sahl)" as the last preceding subheader instead of
 "Special Degrees & Conditions" / "Degrees of nobility and rank" / "Quadrant divisions (Alchabitius)"
 -- the same table, re-attributed; nothing else moved.
+
+## 2026-09-15: the years ladder as a supplement fallback (decision 9)
+
+Owner's ruling (reconciliation decision 9): the house-master's years ladder of Abu 'Ali (*Judgments of
+Nativities* Ch. 3-4, PN I pp. 233-235, photographed 2026-09-15) and 'Umar (*Book of Nativities* I.4.3, PN II
+pp. 13-14), applied ONLY where Sahl's grading prints "1.20 silent". Sahl 1.20 stays the canon and is never
+overridden. Engine: `JN_YEARS_LADDER` (the three place sentences, the preface, the four demotion sentences,
+the ranks greater / middle / lesser / months / days), `JN_YEARS_TABLE` (Ch. 4's table; the luminaries' middle
+years are 69 1/2 and 66 1/2 there against this app's 39 1/2, recorded in `JN_YEARS_TABLE_DIFFERS` and printed on
+the row), `TBN_YEARS_RULE` (I.4.3's first paragraph whole), `TBN_YEARS_DIFFERENCES` (where 'Umar differs, by
+place), `JN_CH4_ADDITIONS` and `SAHL_1_21_8` (the disagreement), `JN_YEARS_NOTE`, `JN_YEARS_CITATION`, and
+`jn_years_fallback(planet, planetary_data, cusps, sect, essential)`, which calls `sahl_house_master_years` and
+returns None wherever it grades. Page: the Releaser tab's house-master block, under Course text and supplement
+only, when the grade is None -- the class, the count, the steps with their sentences, 'Umar's sentences, the
+note; and a last column on the planetary-years table (Fardar, Ages & Reference Tables tab) beside each
+"1.20 silent" cell, at that depth only, so `tests/fixtures/tables.json` (course-text depth) is untouched.
+
+The reading of Ch. 3 (said in the note): the place by the division, as 1.20 is placed; ONE STEP for each
+impediment the chapter names -- not oriental, peregrine, retrograde, burned up -- since its own three
+sentences step angle-not-oriental to middle, occidental-and-peregrine to lesser, and all four to days ("from
+the quality of the lesser years and months ... to days"), and "you will observe it likewise for the rest of the
+planets' impediments, because it is one rule"; no step below days; "peregrine" = none of the five shares (the
+chapter's ladder head names domicile, exaltation, triplicity -- a planet in bound or face alone is not
+stepped); "burned up" = the app's under-the-rays fact, as 1.20's grading reads it; the Sun takes no orientality
+step; "free from the bad ones" is not tested, since Ch. 4's additions and subtractions are not built.
+
+Which "silent" cases the ladder covers (from `_sahl_1_20_grade` and the 19/22 fallback): (a) a stake,
+retrograde and NOT under the rays, unless alien and westernizing (22 takes that) -- JN: greater, stepped by
+retrograde and by not-oriental / peregrine as they hold; (b) the eleventh or fifth, direct, not enhanced, in a
+share or eastern (a share and westernizing; a share and burned; alien and eastern; the Sun in a share; by day
+the fifth even when enhanced, 11's parenthesis being nocturnal) -- JN: middle, stepped; (c) the ninth, a share
+without easternization, or alien and eastern, not both retrograde and burned -- JN: lesser, stepped to months
+or days; (d) the third, direct, alien and eastern -- JN: lesser, stepped to months (days if burned). The
+second, eighth, sixth and twelfth are never silent. On the six fixture charts no house-master is silent
+(Mercury on 1240-01-04 is, in the table: lesser, 20 -- peregrine, retrograde); 1240-02-02 (Florence, 14:30)
+has the Moon silent as house-master and pins the Releaser-tab render.
+
+Where JN and Sahl disagree: JN Ch. 4, "the square or opposite rays of the fortunes add or subtract nothing
+from the kadukhudhāh"; Sahl 1.21, 8 as Dykes emends it, the fortunes from a square or opposition "will <not>
+withhold years, but will even add the equivalent of its lesser years" (fn 160: 8-14 "do match TBN I.4.4").
+Both are quoted in the note; neither is applied, the app's 1.21 declaration standing. Where 'Umar differs
+from JN (quoted on the row): his greater years ask the Ascendant or Midheaven and the planet's own hayyiz;
+the eleventh by day and the fifth by night are greater-years places for him; a peregrine planet in an angle
+or follower keeps "its own years whether it were peregrine or whatever its condition was -- unless it were
+burned up"; a cadent planet under fall, retrogradation, peregrination or descension drops to hours, not by
+steps. His reading of the superiors (I.4.3, "not so much ... a serious impediment") is decision 10's note on
+1.20, 14-15 and is not repeated. Test: `tests/test_years_ladder_2026_09_15.py` (every sentence verbatim in
+the photographed spans and in `on_nativities.md`; Ch. 4's table row by row; Sahl graded -> None; the silent
+cases' classes; the supplement column; the Releaser tab at both depths). No fixture moved.
+
+After the check (`BUILD_LADDER_CHECK_REPORT_2026-09-15.md`): the note says the single steps between
+Abu 'Ali's stated cases (one, two, four impediments) are the app's reading of "one rule", and that the
+count of months or days is 'Umar's and Sahl's, not the chapter's; 'Umar's "greater years" for the
+succedent flagged as Dykes's emendation (fn 82); his I.4.4 sentence -- greater years in an angle
+"oriental or not oriental" -- quoted against the ladder's orientality step.

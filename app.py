@@ -8908,7 +8908,7 @@ def reference_planetary_years_rows():
     return [{'Planet': p, 'Lesser': y['lesser'], 'Middle': y['middle'], 'Greater': y['greater'],
              'Mighty': y['mighty'], 'Fardar (years)': y['fardar']} for p, y in PLANETARY_YEARS.items()]
 
-def evaluate_planetary_years_display(planetary_data, cusps, ascendant_lon, sect, essential):
+def evaluate_planetary_years_display(planetary_data, cusps, ascendant_lon, sect, essential, supplement=False):
     """Figure 146 beside each planet's placement, with the grade On
     Nativities 1.20, 7-34 would give it AS HOUSE-MASTER (the corpus's one
     natal grant, FINAL-A1; placed by the DIVISION, the POWER unit of the
@@ -8923,7 +8923,11 @@ def evaluate_planetary_years_display(planetary_data, cusps, ascendant_lon, sect,
     was in a stake, eastern, it grants its greater years; or if it was in
     what follows the stakes, it grants its middle years; and if it was
     falling, it grants its lesser years." Stake/succedent/falling by the
-    division with the five-degree carry-over, as elsewhere."""
+    division with the five-degree carry-over, as elsewhere.
+
+    `supplement`: add the column of Abu 'Ali's ladder (JN Ch. 3, with 'Umar
+    TBN I.4.3), filled only beside a "1.20 silent" cell -- reconciliation
+    decision 9, the supplement depth only."""
     rows = []
     sun_lon = planetary_data['Sun']['longitude']
     for planet in ('Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon'):
@@ -8955,13 +8959,19 @@ def evaluate_planetary_years_display(planetary_data, cusps, ascendant_lon, sect,
             nat = f"{g['grade']} ({g['sentence']}; count not restated)"
         if g['flags']:
             nat += ' -- 14-15 printed, not applied'
-        rows.append({
+        row = {
             'Planet': planet, 'Lesser': years['lesser'], 'Middle': years['middle'], 'Greater': years['greater'],
             'Mighty': years['mighty'], 'Fardar': years['fardar'],
             'WS place': ws, 'Division (5 deg at the stakes)': q, 'Side of the Sun': side, 'In a share': 'yes' if in_share else 'no',
             'On Nativities 1.20 grants (as house-master)': nat,
             'On Times 4, 7 (a question chart, 4, 2): for comparison': times,
-        })
+        }
+        if supplement:
+            j = jn_years_fallback(planet, planetary_data, cusps, sect, essential) if g['grade'] is None else None
+            row[f"Where 1.20 is silent: {JN_YEARS_CITATION}; the supplement"] = (
+                (f"{j['class']}" + (f", {j['count']:g}" if j['unit'] == 'years' else f" ({j['count']:g})")
+                 + (" -- " + ", ".join(st_ for st_, _ in j['steps']) if j['steps'] else "")) if j else '-')
+        rows.append(row)
     return rows
 
 # =========================================================================
@@ -10406,6 +10416,160 @@ def evaluate_gestation(chart_data, lat=None, lon=None):
     rows.extend(gestation_1_9_rows(moons['natal']['longitude'], moons['past']['longitude'],
                                    moons['renewed']['longitude'], chart_data['ascendant']))
     return rows
+# --- Abu 'Ali's years ladder (JN Ch. 3-4), with 'Umar (TBN I.4.3): a SUPPLEMENT fallback where 1.20 is silent ---
+# Reconciliation decision 9 (owner, 2026-09-15). Sahl 1.20 is the canon and
+# stays as graded above; this ladder is shown at the supplement depth only,
+# and only for a house-master no sentence of 1.20, 10-34 reaches. The
+# sentences are quoted from Persian Nativities I, pp. 233-235 (photographed
+# 2026-09-15) and Persian Nativities II, pp. 13-14; the test
+# tests/test_years_ladder_2026_09_15.py holds them to the page. Ch. 4's
+# additions and subtractions are NOT built (the app declares Sahl's 1.21
+# additions not applied); the one place JN and Sahl contradict each other
+# -- the fortunes' squares and oppositions -- is quoted on the page, both
+# sides. 'Umar's reading of the superiors (I.4.3, "not so much ... a
+# serious impediment") rides in 1.20, 14-15's note (decision 10) and is not
+# repeated here.
+JN_YEARS_LADDER = {
+    # place -> the class of years, JN Ch. 3 (each sentence verbatim)
+    'places': (
+        ('angle', 'greater',
+         "But when you knew the kadukhudhāh, look to see if it were in the angles, in its own domicile or exaltation or "
+         "triplicity, and oriental, free from the bad ones and retrogradation and burning up: it signifies its own "
+         "greater years for the native."),
+        ('succedent', 'middle',
+         "And if it were in a follower of the angles, in the aforesaid likeness [as was said] in the angles, it decrees "
+         "its own middle years to the native."),
+        ('cadent', 'lesser',
+         "If however it were in the cadents from the angles, with these conditions which we wrote before in the angles, "
+         "it grants its own lesser years."),
+    ),
+    'preface': ("And know that if the kadukhudhāh were diminished by some one of these ways which I have recited, it will "
+                "subtract from its own years according to the place of the circle, in this way which I will have stated:"),
+    # the demotions, in the order the chapter states them (each sentence verbatim)
+    'demotions': (
+        ('not oriental',
+         "For if it were in the angles (but what I said, with the exception that it is not oriental), it will be "
+         "transformed from the greater years to the middle ones."),
+        ('occidental and peregrine',
+         "And if it were occidental and peregrine, it will go down from the middle years to the lesser years."),
+        ('occidental, peregrine, retrograde and burned up',
+         "And if it were occidental, peregrine, retrograde and burned up, it will be transformed from the quality of the "
+         "lesser years and months, to a likeness of the same quality of them to days."),
+        ('one rule',
+         "And you will observe it likewise for the rest of the planets' impediments, because it is one rule."),
+    ),
+    'ranks': ('greater', 'middle', 'lesser', 'months', 'days'),
+}
+# JN Ch. 4's table, "The years which the individual planets decree when they
+# are the kadukhudhāh": (an angle: greater, a succeedent: middle, a cadent: lesser).
+JN_YEARS_TABLE = {
+    'Saturn': (57, 43.5, 30), 'Jupiter': (79, 45.5, 12), 'Mars': (66, 40.5, 15), 'Sun': (120, 69.5, 19),
+    'Venus': (82, 45, 8), 'Mercury': (76, 48, 20), 'Moon': (108, 66.5, 25),
+}
+# Where Ch. 4's count differs from this app's table (the luminaries' middle years).
+JN_YEARS_TABLE_DIFFERS = {p: (JN_YEARS_TABLE[p][1], PLANETARY_YEARS[p]['middle'])
+                          for p in JN_YEARS_TABLE if JN_YEARS_TABLE[p][1] != PLANETARY_YEARS[p]['middle']}
+JN_CH4_ADDITIONS = ("Nevertheless it must be known [that] the square or opposite rays of the fortunes add or subtract nothing "
+                    "from the kadukhudhāh, just as even the sextiles and trigons of the infortunes make no addition nor diminution.")
+SAHL_1_21_8 = ("And if the fortunes looked from a square or opposition, or they were with the house-master, then they will "
+               "<not> withhold years, but will even add the equivalent of its lesser years—if they were not retrograde nor "
+               "burned: for if [the fortune] was retrograde or burned, it adds the equivalent of its lesser years, in months.")
+# 'Umar al-Tabari, Book of Nativities I.4.3: the ladder as he states it (verbatim).
+TBN_YEARS_RULE = (
+    "After these things, we will look to the place of this planetary mubtazz for knowing the years [of the native]: which "
+    "if it were oriental and in an angle, and in addition it were in its own ḥayyiz (that is, a masculine planet in the day "
+    "in a masculine sign above the earth, and so on), and it were in its own dignity (like in the domicile and exaltation, "
+    "in the triplicity and the bound), and it came about that it is in [its own] ḥayyiz and in the angles which are the "
+    "Ascendant and the Midheaven, it will give its own greater years. But if it were oriental in its own dignity and in "
+    "the followers of the angles, and especially in [its own] ḥayyiz, if it were not in the degrees of the angle, free, it "
+    "will signify its own middle years. And if it were free in the same way which we have said, but it were cadent from "
+    "an angle, it signifies its own lesser years. But if [this] happened to it with fall, retrogradation, and "
+    "peregrination, or descension, it will signify hours according to the number of its own lesser years.")
+# I.4.3's further sentences, where 'Umar differs from Abu 'Ali (verbatim).
+TBN_YEARS_DIFFERENCES = {
+    'angle': ("'Umar's greater years ask the Ascendant or the Midheaven and the planet's own ḥayyiz: \"and it came about "
+              "that it is in [its own] ḥayyiz and in the angles which are the Ascendant and the Midheaven, it will give "
+              "its own greater years\"; Abu 'Ali's ladder names the angles without distinction."),
+    'succedent': ("'Umar counts the eleventh by day and the fifth by night among the greater-years places: \"Which if it "
+                  "were in its own domicile or exaltation or its own triplicity, in the Midheaven or in the Ascendant or in "
+                  "the 11th (if it were diurnal, that is, in the figure of the day), and in such a strength in the fourth "
+                  "and in the fifth (in the night), it signifies its own greater years\" -- \"greater\" is Dykes's emendation "
+                  "(fn 82: reading maiores for minores). Abu 'Ali's follower of the angles is the middle years. And 'Umar's "
+                  "next sentence (I.4.4) has an angular planet give its greater years \"oriental or not oriental (if, however, "
+                  "not retrograde nor burned up)\" -- no step for orientality, where Abu 'Ali's ladder takes one."),
+    'cadent': ("'Umar drops a cadent planet under impediment to hours, not by steps: \"But if [this] happened to it with "
+               "fall, retrogradation, and peregrination, or descension, it will signify hours according to the number of "
+               "its own lesser years.\""),
+    'peregrine': ("'Umar takes no step for peregrination in an angle or a follower: \"But if the kadukhudhāh were outside "
+                  "(that is, [outside] the domicile and the rest of these places), in the angles or the succeedents of the "
+                  "angles, it signifies its own years whether it were peregrine or whatever its condition was—unless it "
+                  "were burned up, because burning up signifies a scarcity of life.\""),
+}
+JN_YEARS_CITATION = "Abu 'Ali, Judgments of Nativities Ch. 3 (with 'Umar, TBN I.4.3)"
+JN_YEARS_NOTE = (
+    "This ladder is Abu 'Ali's, not Sahl's. This app shows it only where no sentence of On Nativities 1.20, 10-34 reaches "
+    "the planet; Sahl's grade, where he gives one, is never overridden by it. Read: the place by the division, as 1.20 is "
+    "placed; one step of the ladder for each impediment the chapter names -- not oriental, peregrine, retrograde, burned "
+    "up -- in the ranks greater, middle, lesser, months, days, because \"you will observe it likewise for the rest of the "
+    "planets' impediments, because it is one rule\" (the chapter states the angular cases with one, two and four impediments; the single steps between are this app's reading of \"one rule\"), and no step below days (the count of months or days is not the chapter's -- \"the number of the lesser years\" is 'Umar's and Sahl 1.20, 15's); \"peregrine\" is a planet in none of its five "
+    "shares (the chapter's own condition names the domicile, exaltation and triplicity); \"burned up\" is this app's "
+    "under-the-rays fact; the Sun takes no step for orientality; \"free from the bad ones\" is not tested, since Ch. 4's "
+    "additions and subtractions are not built. Where Ch. 4's count differs from this app's table it is printed as Ch. 4 "
+    "has it. On the additions Abu 'Ali and Sahl disagree: Ch. 4, \"" + JN_CH4_ADDITIONS + "\"; On Nativities 1.21, 8 as "
+    "printed, \"" + SAHL_1_21_8 + "\" (fn 160: 8-14 \"do match TBN I.4.4\"). Neither is applied.")
+
+
+def jn_years_fallback(planet, planetary_data, cusps, sect, essential):
+    """Abu 'Ali's ladder (JN Ch. 3) for a planet On Nativities 1.20 leaves
+    silent -- the SUPPLEMENT fallback of reconciliation decision 9. Returns
+    None wherever sahl_house_master_years gives a grade (Sahl is never
+    overridden), and otherwise a dict: 'class' (one of JN_YEARS_LADDER's
+    ranks), 'count' (JN Ch. 4's number; for months and days the lesser
+    years' number in that unit), 'unit', 'place', 'division', 'facts',
+    'steps' ((impediment, sentence) pairs applied), 'jn' (the place
+    sentence), 'umar' (I.4.3's sentences where he differs), 'text',
+    'citation', 'table_note'. Reads JN_YEARS_TABLE, not this app's table:
+    the count is the chapter's own (the luminaries' middle years differ)."""
+    g = sahl_house_master_years(planet, planetary_data, cusps, sect, essential)
+    if g is None or g['grade'] is not None or planet not in JN_YEARS_TABLE:
+        return None
+    q, facts = g['division'], g['facts']
+    place = 'angle' if q in ANGLE_HOUSES else ('succedent' if q in SUCCEDENT_HOUSES else 'cadent')
+    place_row = next(r for r in JN_YEARS_LADDER['places'] if r[0] == place)
+    ranks = JN_YEARS_LADDER['ranks']
+    demotions = dict(JN_YEARS_LADDER['demotions'])
+    steps = []
+    if planet != 'Sun' and not facts['eastern']:
+        steps.append(('not oriental', demotions['not oriental']))
+    if not facts['share']:
+        steps.append(('peregrine', demotions['occidental and peregrine']))
+    if facts['retrograde']:
+        steps.append(('retrograde', demotions['occidental, peregrine, retrograde and burned up']))
+    if facts['under the rays']:
+        steps.append(('burned up', demotions['occidental, peregrine, retrograde and burned up']))
+    rank = min(ranks.index(place_row[1]) + len(steps), len(ranks) - 1)
+    cls = ranks[rank]
+    years = JN_YEARS_TABLE[planet]
+    if rank <= 2:
+        count, unit = years[rank], 'years'
+    else:
+        count, unit = years[2], cls
+    umar = [TBN_YEARS_DIFFERENCES[place]]
+    if place != 'cadent' and not facts['share']:
+        umar.append(TBN_YEARS_DIFFERENCES['peregrine'])
+    if place == 'cadent' and not steps:
+        umar = []                                     # both give a free cadent planet its lesser years
+    table_note = None
+    if rank <= 2 and planet in JN_YEARS_TABLE_DIFFERS and rank == 1:
+        jn_v, app_v = JN_YEARS_TABLE_DIFFERS[planet]
+        table_note = f"Ch. 4's table gives {planet}'s middle years as {jn_v:g}; this app's table reads {app_v:g}."
+    stepped = (" -- " + ", ".join(s for s, _ in steps) + f" ({len(steps)} step{'s' if len(steps) > 1 else ''} down)") if steps else ""
+    if unit == 'years':
+        text = f"the {cls} years, {count:g} ({planet}), {place} by the division ({q}){stepped}"
+    else:
+        text = f"{cls}, the number of the lesser years ({count:g}, {planet}), {place} by the division ({q}){stepped}"
+    return {'class': cls, 'count': count, 'unit': unit, 'place': place, 'division': q, 'facts': facts, 'steps': steps,
+            'jn': place_row[2], 'umar': umar, 'text': text, 'citation': JN_YEARS_CITATION, 'table_note': table_note}
 
 # --- Spear-bearing: two stated definitions, DISPLAY ONLY (owner, 2026-09-11, decision sheet row 11 / DEC-D-18) ---
 # A. Right-sidedness, Sahl, On Nativities 2.5, 2-3 ("what is called the
@@ -14342,6 +14506,10 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'hm_years': (sahl_house_master_years(house_master, chart_data['planetary_data'], chart_data['houses'], chart_data['sect'],
                                              evaluate_essential_dignities(chart_data['planetary_data'], chart_data['sect']))
                      if house_master else None),
+        # Reconciliation decision 9: Abu 'Ali's ladder where 1.20 is silent (None where Sahl grades); supplement only.
+        'hm_years_jn': (jn_years_fallback(house_master, chart_data['planetary_data'], chart_data['houses'], chart_data['sect'],
+                                          evaluate_essential_dignities(chart_data['planetary_data'], chart_data['sect']))
+                        if house_master else None),
         'ii3': pn4_ii3_examination(chart_data, sr, year, jd_sr),
         'iii2_type': pn4_static_type(current['distributor'], current['partner']) if current else None,
         'iii2_checklist': pn4_distribution_checklist(chart_data, sr, year['longitude'], current),
@@ -14948,7 +15116,8 @@ if location_query and lat is not None and lon is not None:
                                          syzygy['syzygy_longitude'], sect, chronocrats)
         planets_in_houses_data = evaluate_planets_in_houses(p_data, abu_mashar_condition, chart_data['ascendant'])
         time_lords_data = calculate_time_lords(chart_data['ascendant'], input_date, target_date)
-        planetary_years_data = evaluate_planetary_years_display(p_data, chart_data['houses'], chart_data['ascendant'], sect, essential)
+        planetary_years_data = evaluate_planetary_years_display(p_data, chart_data['houses'], chart_data['ascendant'], sect, essential,
+                                                                supplement=READING_DEPTH == READING_DEPTH_OPTIONS[1])
         pn4 = pn4_timing_bundle(chart_data, lat, lon, input_date, target_date, PN4_MONTHLY_TURN, chronocrats)
 
         # The hub names the chart: the saved chart picked in the sidebar, else
@@ -16553,6 +16722,17 @@ if location_query and lat is not None and lon is not None:
                     for _f in _y['flags']:
                         st.markdown(f"- {_f}")
                     st.caption(_y['readings'])
+                    if _y['grade'] is None and pn4['hm_years_jn'] and READING_DEPTH == READING_DEPTH_OPTIONS[1]:
+                        _j = pn4['hm_years_jn']
+                        st.markdown(f"**Where 1.20 is silent, the supplement's ladder** ({_j['citation']}): **{_j['text']}**. "
+                                    f"The place: \"{_j['jn']}\"")
+                        for _step, _sent in _j['steps']:
+                            st.markdown(f"- {_step}: \"{_sent}\"")
+                        if _j['table_note']:
+                            st.markdown(f"- {_j['table_note']}")
+                        for _u in _j['umar']:
+                            st.markdown(f"- {_u.replace('<', chr(92) + '<')}")
+                        st.caption(JN_YEARS_NOTE.replace('<', chr(92) + '<'))
                 if rel['releaser'] is None:
                     st.markdown("**The stand-in (Sahl, *On Nativities* 1.32, 11-14, al-Andarzaghar).** The Ascendant's "
                                 "distribution in the tab \"from the Ascendant\" is \"the first of them\" (13); the Moon, "
@@ -17101,6 +17281,10 @@ if location_query and lat is not None and lon is not None:
                                   "give it, for comparison. Applied to one planet only: the house-master the Timing page names "
                                   "from On Nativities 1.15, whose grant is printed there with its sentence.")
                 st.dataframe(pd.DataFrame(planetary_years_data), hide_index=True, width='stretch', height=_rows_height(len(planetary_years_data)))
+                if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
+                    st.caption("The last column, beside each \"1.20 silent\" cell only: the class Abu 'Ali's ladder gives the "
+                               "planet (JN Ch. 3), its count from Ch. 4's table, and the steps taken. "
+                               + JN_YEARS_NOTE.replace('<', chr(92) + '<'))
 
             with st.expander("What Persian Nativities IV does not settle", icon=":material/help:"):
                 st.markdown(
