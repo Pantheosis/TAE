@@ -32,7 +32,7 @@ def test_eight_rule_rows_quote_the_text(engine):
         # An ellipsis joins two stretches of the same sentence.
         for piece in quoted.split(" ... "):
             assert piece in TEXT, (key, piece)
-        if "paraphrase" in phrase:
+        if "one clause for both kinds of house" in phrase:
             assert key[0:2] in (("Fortune", "adverse"), ("Infortune", "favorable"))
     assert engine["MORIN_UNFORTUNATE_HOUSES"] == (6, 8, 12)
     assert set(engine["MORIN_FORTUNATE_HOUSES"]) | {6, 8, 12} == set(range(1, 13))

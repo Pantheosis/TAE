@@ -598,8 +598,8 @@ puts it). The page says so, and quotes the whole "Indicates" passage as Riley ha
 Source: Morin, *Astrologia Gallica* 21.II.X (Holden, pp. 105-110), OCR'd to the corpus today.
 Built as a supplement, display-only finding on the Chart page after the nobility degrees:
 `MORIN_ASPECT_RULES` (eight rows, Fortune/Infortune x favorable/adverse ray x fortunate/unfortunate
-house, Morin's own clause, or the same clause marked as a paraphrase where the text gives one
-clause to both kinds of house) and `evaluate_morin_aspects()`, which reads the app's existing
+house, Morin's own clause, or the same clause marked "one clause for both kinds of house" where
+the text gives one clause to both) and `evaluate_morin_aspects()`, which reads the app's existing
 whole-sign aspect pairs and takes the aspected planet's whole-sign house as the house the ray falls
 into. The chapter never lists the unfortunate houses; 6, 8 and 12 are the app's reading and the
 page says so. The "unless it rules over the location" exception is quoted, not tested. The notes

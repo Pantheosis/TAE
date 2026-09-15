@@ -6105,26 +6105,26 @@ MORIN_ADVERSE_ASPECTS = ('Square', 'Opposition')
 MORIN_BENEFICS = ('Jupiter', 'Venus')
 MORIN_MALEFICS = ('Saturn', 'Mars')
 
-# (planet kind, ray kind, house kind) -> Morin's phrase. Quoted where the
-# text gives the case its own clause; the same quotation marked as a
-# paraphrase where one clause covers both kinds of house at once.
+# (planet kind, ray kind, house kind) -> Morin's phrase, always his words:
+# its own clause where the text gives the case one, and the same clause
+# marked "one clause for both kinds of house" where it does not.
 MORIN_ASPECT_RULES = {
     ('Fortune', 'favorable', 'fortunate'):
         '"produce good with ease and in abundance, and cause good in the fortunate houses"',
     ('Fortune', 'favorable', 'unfortunate'):
         '"prevent or mitigate evil in the unfortunate ones"',
     ('Fortune', 'adverse', 'fortunate'):
-        '"bring difficulties, hindrances, or misfortunes to be surmounted" (paraphrase: the clause names no house)',
+        '"bring difficulties, hindrances, or misfortunes to be surmounted" (one clause for both kinds of house)',
     ('Fortune', 'adverse', 'unfortunate'):
-        '"bring difficulties, hindrances, or misfortunes to be surmounted" (paraphrase: the clause names no house)',
+        '"bring difficulties, hindrances, or misfortunes to be surmounted" (one clause for both kinds of house)',
     ('Infortune', 'adverse', 'fortunate'):
         '"extremely harmful ... preventing or spoiling the good in the fortunate ones, unless it rules over the location where the adverse aspect falls"',
     ('Infortune', 'adverse', 'unfortunate'):
         '"extremely harmful, causing evil in the unfortunate houses"',
     ('Infortune', 'favorable', 'fortunate'):
-        '"indicate something good gained by difficult means" (paraphrase: the clause names no house)',
+        '"indicate something good gained by difficult means" (one clause for both kinds of house)',
     ('Infortune', 'favorable', 'unfortunate'):
-        '"indicate something good gained by difficult means" (paraphrase: the clause names no house)',
+        '"indicate something good gained by difficult means" (one clause for both kinds of house)',
 }
 
 def evaluate_morin_aspects(planetary_data, houses, asc):
