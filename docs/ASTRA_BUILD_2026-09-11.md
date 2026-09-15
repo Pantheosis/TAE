@@ -1067,3 +1067,40 @@ Owner's rulings on the check's four open points (all as recommended): the Lot's 
 both-cadent, with Sahl's wider "made unfortunate" (2.3, 6) named as not applied; 2.17, 8 listed, not
 classing; 2.3, 19-21 as listed Decline rows; 2.19, 6 as a listed Rising row on 2.17, 7's footing, BA's
 difference in the places named.
+
+## 2026-09-15: Abu Bakr's eye-degrees (On Nativities II.7.3) beside Sahl's
+
+Decision 14 of the PN reconciliation (E4). `EYESIGHT_PLACES` gains a third source, `_EYE_ABUBAKR`
+("Abu Bakr, On Nativities II.7.3"), fifteen rows after Abu Ma'shar's seven, each quoting its clause of
+the paragraph on PN II p. 238 ("And it must be known that in some signs are some degrees which destroy
+vision:", the rule sentence on every row) verbatim from the owner's photographs, the place from Dykes's
+footnotes 1025-1034 (Thurayya the Pleiades; the nebula in Cancer; Dafira, Adhafera, and the stars near
+the Lion's tail; the face and sting of the Scorpion; the point of the arrow; the spine of Capricorn; the
+Pitcher). The `sentence` field is `'p. 238'`, the chapter having no sentence numbers. Sahl's 32 rows and
+Abu Ma'shar's 7 are untouched, and the Source column keeps the three lists apart: fn 1024 says the list
+is Masha'allah's (Book of Aristotle III.6.2), Dykes calls Sahl's somewhat different, and nothing is
+reconciled between them. The finding's citation names the third source; its notes carry the paragraph
+whole and say the four points tested are unchanged.
+
+**Ordinal readings taken** (as the existing rows read Figure 57: "the sixth" is 5°00'-6°00', half-open;
+neighbouring ordinals one span, as Rhetorius's "seventh, eighth" already is): Taurus "the sixth, ninth,
+and tenth degrees" as 5-6 and 8-10 (two rows); Cancer "from the ninth degree up to the fifteenth" as
+8-15; Leo "the eighteenth degree, the twenty-seventh, and twenty-eighth" as 17-18 and 26-28 (fn 1028 on
+the first, fn 1029 on the pair); Scorpio "the nineteenth and twenty-eighth" as 18-19 and 27-28, no place
+named; Dorotheus's Scorpio "the eighth degree, the ninth, tenth, and twenty-second" as 7-10 and 21-22,
+two rows whose Place and printed span say "according to Dorotheus"; Sagittarius "the first, seventh,
+eighth, and ninth degree" as 0-1 and 6-9; Capricorn "from the twenty-sixth up to the twenty-ninth" as
+25-29; Aquarius "the sixth degree, tenth, and nineteenth" as 5-6, 9-10, 18-19.
+
+**Not built**: Hugo's own variants of the list (BA III.6.2, fns 36-43), known only from unverified OCR
+of PN I, so neither quoted nor rowed (named in the code comment only); Abu Bakr's rule sentences on
+pp. 237-238 (the Sun and Moon besieged, the Moon decreased in light in the sixth, the Tail in the
+Ascendant degree, Mars the lord of the sixth, and the rest), which the evaluator does not compute -- the
+page says so in one sentence.
+
+Tests: `tests/test_eye_degrees_abubakr_2026_09_15.py` (row counts per source 32/7/15 pinned; the fifteen
+spans; every quotation a substring of the photographed page, footnote markers stripped, skipped where the
+corpus is absent; the Moon at 9°30' Cancer and 27°30' Leo; the Dorotheus rows; half-open ends; the page
+strings). `test_eyesight_places_2026_09_14.py` filters its pin to the two older sources and adds Abu
+Bakr's row where 8° Cancer and 0°30' Sagittarius now hit it. `tables.json` unchanged: no fixture chart
+has a point in one of the new spans.

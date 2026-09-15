@@ -12,6 +12,7 @@ from test_doctrine_fixtures import pdata
 
 SAHL = 'Sahl, On Nativities 6.2'
 ABU = 'Gr. Intr. VI.20'
+ABUBAKR = 'Abu Bakr, On Nativities II.7.3'   # its rows are pinned in test_eye_degrees_abubakr_2026_09_15.py
 
 # (source, sign, lo, hi, closed, sentence) -- lo/hi are degrees within the
 # sign; half-open unless closed. Ordinal degrees are read as the app reads
@@ -61,11 +62,14 @@ EXPECTED = [
 
 def test_every_span_is_pinned(engine):
     rows = engine["EYESIGHT_PLACES"]
-    got = [(r['source'], r['sign'], r['lo'], r['hi'], r['closed'], r['sentence']) for r in rows]
-    assert got == EXPECTED
     for r in rows:
         assert r['printed'] and r['place'] and r['quote'].startswith('"') and r['reading']
-        assert r['source'] in (SAHL, ABU)
+        assert r['source'] in (SAHL, ABU, ABUBAKR)
+    # Sahl's and Abu Ma'shar's rows, whole and first; Abu Bakr's follow them
+    rows = [r for r in rows if r['source'] in (SAHL, ABU)]
+    got = [(r['source'], r['sign'], r['lo'], r['hi'], r['closed'], r['sentence']) for r in rows]
+    assert got == EXPECTED
+    assert [r['source'] for r in engine["EYESIGHT_PLACES"]][:len(EXPECTED)] == [e[0] for e in EXPECTED]
 
 
 def test_moon_in_the_pleiades_span_returns_the_rows(engine):
@@ -84,7 +88,7 @@ def test_moon_outside_every_span_returns_nothing(engine):
 
 def test_ordinal_spans_are_half_open_and_measured_spans_closed(engine):
     f = engine["evaluate_eyesight_places"]
-    assert [r['Source'] for r in f(pdata(Sun=0.0, Moon=90.0 + 8.0), 130.0)] == [f'{SAHL}, 55', f'{SAHL}, 65', f'{SAHL}, 74']
+    assert [r['Source'] for r in f(pdata(Sun=0.0, Moon=90.0 + 8.0), 130.0)] == [f'{SAHL}, 55', f'{SAHL}, 65', f'{SAHL}, 74', f'{ABUBAKR}, p. 238']
     assert f(pdata(Sun=0.0, Moon=90.0 + 15.0), 130.0)[0]['Source'] == f'{SAHL}, 72'   # 15.0 is out of "ninth to fifteenth", in "15° to 19°"
     assert [r['Source'] for r in f(pdata(Sun=0.0, Moon=180.0 + 28.0), 130.0)] == [f'{SAHL}, 70']   # closed at 28°00'
     assert f(pdata(Sun=0.0, Moon=180.0 + 28.01), 130.0) == []
@@ -94,8 +98,8 @@ def test_ordinal_spans_are_half_open_and_measured_spans_closed(engine):
 def test_ascendant_and_sun_are_read_too(engine):
     rows = engine["evaluate_eyesight_places"](pdata(Sun=240.5, Moon=0.0), 240.5)
     assert [(r['Point'], r['Source']) for r in rows] == [
-        ('Sun', f'{SAHL}, 63'), ('Sun', f'{SAHL}, 71'), ('Sun', f'{SAHL}, 74'),
-        ('Ascendant', f'{SAHL}, 63'), ('Ascendant', f'{SAHL}, 71'), ('Ascendant', f'{SAHL}, 74')]
+        ('Sun', f'{SAHL}, 63'), ('Sun', f'{SAHL}, 71'), ('Sun', f'{SAHL}, 74'), ('Sun', f'{ABUBAKR}, p. 238'),
+        ('Ascendant', f'{SAHL}, 63'), ('Ascendant', f'{SAHL}, 71'), ('Ascendant', f'{SAHL}, 74'), ('Ascendant', f'{ABUBAKR}, p. 238')]
 
 
 def test_calculated_chart_runs(engine):
