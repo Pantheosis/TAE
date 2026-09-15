@@ -34,6 +34,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
+import glyph_font
 from conftest import (APP_PATH, EXECUTABLE_DIR, FLORENCE, LOCAL_TIME, assert_no_exception,
                       component_mounts, make_app, natal_wheel_envelope)
 
@@ -45,6 +46,17 @@ POINTS = ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn",
 ANGLES = ["Ascendant", "Midheaven", "Descendant", "Imum Coeli"]
 # The added markup, and nothing else: strip it and main's SVG is left.
 GROUP = re.compile(r"</?g\b[^>]*>")
+# The embedded symbol font (2026-09-15, item 13): a <style> element right
+# after the opening <svg> tag and the family prepended to font-family.
+# main predates both, so this branch's own normalisation must undo them
+# too, on top of GROUP, before the comparison below means anything.
+_STYLE_BLOCK = re.compile(r"<style>.*?</style>")
+
+
+def _normalise(svg):
+    svg = GROUP.sub("", svg)
+    svg = _STYLE_BLOCK.sub("", svg)
+    return svg.replace(f"'{glyph_font.FAMILY}', ", "")
 
 
 def _chart(engine, date_text=DEFAULT_CHART):
@@ -110,7 +122,20 @@ def _main_engine_namespace():
 def test_the_normalised_svg_is_mains_svg(engine, flags):
     """The proof that the renderer only gained handles: strip the <g ...>
     wrappers from this branch's SVG and from main's and what is left is the
-    same picture, string for string, for the default chart at every flag."""
+    same picture, string for string, for the default chart at every flag.
+
+    Both sides are normalised, not just this branch's: `main` at this
+    repository's current HEAD already carries the `<g>` wrappers this proof
+    was first written against, since item 11 (the branch this test file
+    belongs to) has itself been merged, so stripping them from `here` alone
+    no longer proves anything against `there`, which still carries them
+    unstripped -- PR #48 made the comparison symmetric for exactly this
+    reason. The symbol-font branch (item 13) adds a second, unrelated
+    difference on top: a `<style>` element and an embedded family name
+    prepended to `font-family`, present in `here` and not in `there`, so
+    `_normalise` also strips those, on both sides, before comparing --
+    `GROUP.search(here)` and the embedded-font checks below stand in for
+    the equality this stripping would otherwise erase."""
     old = _main_engine_namespace()
     if old is None:
         pytest.skip("main's engine.py is not in this checkout (a shallow clone); "
@@ -118,11 +143,13 @@ def test_the_normalised_svg_is_mains_svg(engine, flags):
     _chart_data, arguments = _wheel_arguments(engine)
     here = engine["generate_hybrid_svg"](**arguments, **flags)
     there = old["generate_hybrid_svg"](**arguments, **flags)
-    # Both sides normalised: main carries the handles too once this branch
-    # has merged, and the guard is that the wheel minus its handles is the
-    # same picture on both, and that the handles are there.
-    assert GROUP.sub("", here) == GROUP.sub("", there)
+    # Both sides normalised, past both known additions: main carries the
+    # handles (item 11, merged) and never the embedded font's <style> and
+    # family name (item 13, this branch, not on main); what is left after
+    # stripping all of it is the same picture on both.
+    assert _normalise(here) == _normalise(there)
     assert GROUP.search(here), "the handles are in the branch's SVG"
+    assert "<style>" in here and glyph_font.FAMILY in here, "the embedded font is in the branch's SVG"
 
 
 def test_the_only_added_markup_is_the_groups_and_their_data_attributes(engine):
