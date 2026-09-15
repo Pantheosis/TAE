@@ -43,8 +43,8 @@ def test_every_page_opens_with_its_header_and_then_the_chart_strip(page):
     # before _readings_note() and before the page's own opening sentence.
     strip = captions[0]
     parts = strip.split(" · ")
-    assert len(parts) == 7, f"{page}: the strip has {len(parts)} parts: {strip!r}"
-    name, when, standard, place, sect, day, hour = parts
+    assert len(parts) == 8, f"{page}: the strip has {len(parts)} parts: {strip!r}"
+    name, when, standard, place, sect, lunation, day, hour = parts
     assert name == "Unsaved chart"                       # the harness saves none
     assert when == "1240-05-23 14:30:00"
     assert standard.startswith("LMT ")                   # the harness casts in LMT
@@ -53,6 +53,9 @@ def test_every_page_opens_with_its_header_and_then_the_chart_strip(page):
     # decimals rather than the sidebar's four.
     assert place == "43.78, 11.25"
     assert sect == "Diurnal"
+    # The prenatal lunation joined the strip when the Chart page's metrics
+    # row went: one word from event_label, after the sect.
+    assert lunation in ("Conjunctional lunation", "Preventional lunation"), lunation
     assert day.startswith("Day lord ") and hour.startswith("Hour lord ")
 
 
@@ -81,9 +84,12 @@ def test_the_chart_pages_intro_no_longer_sends_the_reader_down_the_sidebar():
     foot; the sentence that said so is the only page text the move touched."""
     src = ui_source()
     assert "at the foot of the sidebar" not in src
-    assert "The reference tables and the sources are at the end of the page list above." in src
-    # The nativity form still is the sidebar, and still opens with the picker.
-    assert "Enter a chart in the sidebar, or load a saved one from the top of it." in src
+    # Reworded when the wheel took the centre of the page; the reference
+    # pages are still said to close the list, not to sit down the sidebar.
+    assert "the reference tables and the sources close the page" in src
+    # The nativity form still is the sidebar, and still takes both a typed
+    # nativity and a saved one.
+    assert "Enter or load a nativity in the sidebar." in src
 
 
 def test_the_default_page_is_served_at_the_root_but_keeps_its_url_path():
