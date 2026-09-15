@@ -66,10 +66,24 @@ container is a flex row at every width: `direction: HORIZONTAL`, `align: ALIGN_E
 genuinely cannot fit, which is the behaviour the ruling describes and `st.columns` does not
 give.
 
-The radio's help text said "the wheel beside the controls and the introduction, the header
-metrics under it", which describes a page that no longer exists; it now says "the wheel
-centred, with the controls and the introduction beneath it". That is the only page string
-changed that the owner did not dictate, and it is changed because it had become false.
+**And the radio's label collapsed, so the row is one tier.** With the four side by side the row
+still read as two, because a radio prints its label *above* its options and a checkbox prints
+its *beside* the box: the radio's options sat a line lower than everything next to them. On the
+owner's ruling the Chart page's radio takes `label_visibility="collapsed"` and its tooltip is
+dropped — under a wheel, "Square" and "Wide" say what the control does without being told. The
+label string itself stays, because Streamlit requires a non-empty one and it remains the
+widget's accessible name and the name a test looks it up by. `_reading_radio` gained a
+`label_visibility` keyword defaulting to `"visible"` to carry it, so the other eight radios in
+the app are untouched — **including the Timing page's copy of this very radio**, which sits in
+its own row with a selectbox beside it, where the label is what tells the two apart. That is
+the one place the two wheels' shared control now differs, and it differs in its label only:
+the widget key is still the same, so the setting still follows the reader between the pages.
+
+The radio's help text is therefore gone from the Chart page altogether. It had said "the wheel
+beside the controls and the introduction, the header metrics under it" — a description of a
+page that no longer exists — and was reworded to match the new arrangement before the ruling
+dropped the tooltip; so no page string on this branch was changed that the owner did not
+dictate, the reworded one having been removed rather than kept.
 
 `_layout_control()` is called once, after the wheel, for both layouts — it used to be called
 above the wide wheel and beside the square one. **The read-before-draw stays**: the layout is
@@ -117,10 +131,27 @@ the whole of the answer; the degree the syzygy falls in and the house it falls i
 old caption printed under the metric — stay on the Lunation and victors page, whose syzygy
 table gives them in full with the rest of that doctrine.
 
-The strip, on every page, for the harness's chart:
+### And then the strip broke in two
 
-    Unsaved chart · 1240-05-23 14:30:00 · LMT +00:44:59 · 43.78, 11.25 · Diurnal ·
-    Conjunctional lunation · Day lord Mercury · Hour lord Mars
+Eight parts on one line is a long line: it ran past the window and wrapped wherever the width
+happened to fall, so the break landed in a different place on every page and at every window
+size. On the owner's ruling the strip is two lines, and the break is where the sense already
+divides — the first line is **the nativity as it was entered**, the name, the moment, the
+standard it is counted in, the place; the second is **what the app reads from it**, the sect,
+the lunation, and the two chronocrats. The join is a caption hard break, two spaces and a
+newline, which is how the sidebar's own boxes break a caption; nothing else about the parts or
+their order changed.
+
+**The second line is bold.** The first line the reader typed and already knows; the second is
+four measurements the app made, and above the fold nothing else on any page states them. One
+pair of `**` markers wraps the joined line — not each part, which would bold four fragments and
+leave the separators between them plain — and a caption renders markdown, as the sidebar's own
+boxes rely on.
+
+The strip, on every page, for the harness's chart (line two bold):
+
+    Unsaved chart · 1240-05-23 14:30:00 · LMT +00:44:59 · 43.78, 11.25
+    **Diurnal · Conjunctional lunation · Day lord Mercury · Hour lord Moon**
 
 ## What the browser showed
 
@@ -179,22 +210,29 @@ added, removed or renamed, and no heading moved.
 
 | test | before | after |
 |---|---|---|
-| `test_top_navigation_2026_09_15.py::test_every_page_opens_with_its_header_and_then_the_chart_strip` | `len(parts) == 7`; `name, when, standard, place, sect, day, hour = parts` | `len(parts) == 8`; `name, when, standard, place, sect, lunation, day, hour = parts`, with `lunation in ("Conjunctional lunation", "Preventional lunation")` asserted after the sect |
+| `test_top_navigation_2026_09_15.py::test_every_page_opens_with_its_header_and_then_the_chart_strip` | `len(parts) == 7`; `name, when, standard, place, sect, day, hour = parts` | the strip split on the hard break first and then on the dots: two lines, four parts each — `name, when, standard, place = entered` and `sect, lunation, day, hour = read` — with `lunation in ("Conjunctional lunation", "Preventional lunation")` asserted after the sect |
 | `test_top_navigation_2026_09_15.py::test_the_chart_pages_intro_no_longer_sends_the_reader_down_the_sidebar` | `"The reference tables and the sources are at the end of the page list above." in src` and `"Enter a chart in the sidebar, or load a saved one from the top of it." in src` | `"the reference tables and the sources close the page" in src` and `"Enter or load a nativity in the sidebar." in src` — the same two facts (the reference pages close the list; the sidebar takes the nativity) asserted against the owner's new wording |
 | `test_wheel.py::test_chart_page_names_the_wheel_and_offers_both_layouts` | `"st.image(svg_code, width=400)" in src` | `"st.image(svg_code, width=560)" in src` |
 
 Nothing was weakened: the strip test gained a part rather than losing one, and the two prose
 assertions pin the new sentences as tightly as they pinned the old.
 
-**One new file, twenty-six tests.** `tests/test_chart_layout_2026_09_15.py`, which reads the
+**One new file, thirty tests.** `tests/test_chart_layout_2026_09_15.py`, which reads the
 rendered page's element order rather than only its source, so the arrangement itself is pinned
 and not merely the calls that produce it:
 
 - the Chart page renders **no** `st.metric`, at both layouts and both reading depths (four
   cases), and the four old metric labels and the `hdr1, hdr2, hdr3, hdr4` split are gone from
   the UI half;
-- the strip has eight parts on every one of the nine pages, with `Conjunctional lunation` sixth
-  and after the sect (nine cases), and the strip takes the first word of `event_label`;
+- the strip is two lines of four parts on every one of the nine pages, with
+  `Conjunctional lunation` second on the second line and after the sect (nine cases), and the
+  strip takes the first word of `event_label`;
+- the strip's two lines are exactly right for the harness's chart, the second bold with one
+  pair of markers round the whole line (`read.count("*") == 4`) and the first with none;
+- the Chart page's layout radio reports `label_visibility` COLLAPSED and no help, and still
+  answers to the label "Wheel layout" so a lookup by name finds it; the Timing page's copy of
+  the same radio is asserted **not** collapsed; and `_reading_radio` is asserted to take the
+  keyword and to default it to `"visible"`;
 - the square wheel is the one child of a full-width flex row whose proto reads
   `direction: HORIZONTAL` and `justify: JUSTIFY_CENTER`, at 560 px, and `st.columns([1, 2, 1])`
   is asserted **absent** so the cap cannot come back; the wide wheel is still an image at the
@@ -210,8 +248,8 @@ and not merely the calls that produce it:
 - the circumpolar caption is absent on the default chart and, for a circumpolar chart, is the
   first thing under the controls row and above the three sentences.
 
-Full suite: **2239 passed, 6 xfailed in 96.69s**, with `-n auto` on the owner's venv. 2213 to
-2239 is those twenty-six and nothing else.
+Full suite: **2243 passed, 6 xfailed in 96.56s**, with `-n auto` on the owner's venv. 2213 to
+2243 is those thirty and nothing else.
 
 The engine half of `app.py` — everything above `# 4. STREAMLIT UI INTEGRATION` — is
 byte-identical to `main` at `a7b5ce3`, compared directly rather than by reading the diff.

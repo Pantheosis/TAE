@@ -42,9 +42,20 @@ def test_every_page_opens_with_its_header_and_then_the_chart_strip(page):
     # The strip is the FIRST caption: on the pages that carry one it comes
     # before _readings_note() and before the page's own opening sentence.
     strip = captions[0]
-    parts = strip.split(" · ")
-    assert len(parts) == 8, f"{page}: the strip has {len(parts)} parts: {strip!r}"
-    name, when, standard, place, sect, lunation, day, hour = parts
+    # Two lines: the nativity as entered, then what the app reads from it.
+    # The break is a caption hard break -- two spaces and a newline.
+    lines = strip.split("  \n")
+    assert len(lines) == 2, f"{page}: the strip has {len(lines)} lines: {strip!r}"
+    # Line two is bold, the markers wrapping the whole line once.
+    assert lines[1].startswith("**") and lines[1].endswith("**"), lines[1]
+    assert "**" not in lines[0], lines[0]
+    entered = lines[0].split(" · ")
+    read = lines[1][2:-2].split(" · ")
+    assert not any("*" in part for part in read), read
+    assert len(entered) == 4, f"{page}: line one has {len(entered)} parts: {lines[0]!r}"
+    assert len(read) == 4, f"{page}: line two has {len(read)} parts: {lines[1]!r}"
+    name, when, standard, place = entered
+    sect, lunation, day, hour = read
     assert name == "Unsaved chart"                       # the harness saves none
     assert when == "1240-05-23 14:30:00"
     assert standard.startswith("LMT ")                   # the harness casts in LMT

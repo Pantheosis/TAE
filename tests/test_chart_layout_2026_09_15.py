@@ -73,13 +73,18 @@ def test_no_page_carries_the_old_header_metrics():
 def test_the_strip_names_the_lunation_after_the_sect(page):
     at = make_app(page=page).run()
     assert_no_exception(at, page)
-    parts = at.main.caption[0].value.split(" · ")
-    assert len(parts) == 8, parts
+    # Line one is the nativity as entered, line two what the app reads from
+    # it, and the lunation is on the second, after the sect.
+    entered, read = at.main.caption[0].value.split("  \n")
+    assert len(entered.split(" · ")) == 4, entered
+    parts = read[2:-2].split(" · ")          # line two is bold; strip the markers
+    assert len(parts) == 4, parts
     # The harness's chart: 1240-05-23, Florence. Its prenatal syzygy is a
     # conjunction, and the strip says so in one word.
-    assert parts[4] == "Diurnal"
-    assert parts[5] == "Conjunctional lunation", parts[5]
-    assert parts[6].startswith("Day lord ")
+    assert parts[0] == "Diurnal"
+    assert parts[1] == "Conjunctional lunation", parts[1]
+    assert parts[2].startswith("Day lord ")
+    assert parts[3].startswith("Hour lord ")
 
 
 def test_the_strip_takes_the_first_word_of_the_event_label():
@@ -89,6 +94,22 @@ def test_the_strip_takes_the_first_word_of_the_event_label():
     src = ui_source()
     assert "syzygy['event_label'].partition(' ')[0]" in src
     assert 'f"{lunation} lunation"' in src
+
+
+def test_the_strip_breaks_between_the_nativity_and_the_reading():
+    """Eight parts on one line wrapped wherever the window width fell, which
+    put the break in a different place on every page. The two groups are
+    joined with a caption hard break instead -- two spaces and a newline, as
+    the sidebar's own boxes break a caption."""
+    at = _chart()
+    entered, read = at.main.caption[0].value.split("  \n")
+    assert entered == "Unsaved chart · 1240-05-23 14:30:00 · LMT +00:44:59 · 43.78, 11.25"
+    # Line two is bold: the four are measurements the app made, and nothing
+    # else above the fold states them. One pair of markers round the joined
+    # line, not one pair per part.
+    assert read == "**Diurnal · Conjunctional lunation · Day lord Mercury · Hour lord Moon**"
+    assert read.count("*") == 4
+    assert '"  \\n".join((entered, f"**{read}**"))' in ui_source()
 
 
 # --- The wheel, centred --------------------------------------------------
@@ -142,9 +163,41 @@ def test_the_four_controls_stand_in_one_row_under_the_wheel(layout):
     assert at.main.radio[0].label == "Wheel layout"
     assert [c.label for c in at.main.checkbox][:2] == ["Bounds ring", "Dark wheel"]
     src = ui_source()
+    assert 'label_visibility="collapsed")' in src
     assert 'st.container(horizontal=True, vertical_alignment="bottom", gap="medium")' in src
     # The split that collapsed into a column must not come back.
     assert "st.columns(\n                    [2, 1, 1, 1.4]" not in src
+
+
+def test_the_chart_pages_layout_radio_hides_its_label_and_carries_no_tooltip():
+    """A radio puts its label above its options and a checkbox puts its
+    beside the box, so a labelled radio stood a tier above the three controls
+    next to it and the row read as two. The label string stays -- Streamlit
+    requires a non-empty one -- as the widget's accessible name, which is
+    what a lookup by label finds it by."""
+    at = _chart(layout="Square")
+    radio = at.main.radio[0]
+    assert radio.label == "Wheel layout"          # still findable by its name
+    assert radio.proto.label_visibility.value == radio.proto.label_visibility.COLLAPSED
+    assert not radio.help, repr(radio.help)
+    assert radio.options == ["Square", "Wide"]
+
+
+def test_the_timing_pages_copy_of_the_radio_keeps_its_label():
+    """The ruling is the Chart page's row only: on Timing the same radio sits
+    with a selectbox beside it, where a label is what tells the two apart."""
+    at = make_app(page="timing").run()
+    assert_no_exception(at, "timing")
+    wheel = [r for r in at.main.radio if r.label == "Wheel layout"]
+    assert len(wheel) == 1
+    assert wheel[0].proto.label_visibility.value != wheel[0].proto.label_visibility.COLLAPSED
+
+
+def test_reading_radio_passes_label_visibility_through_and_defaults_to_visible():
+    src = ui_source()
+    assert 'def _reading_radio(label, options, widget_key, store_key, help=None,\n' in src
+    assert 'label_visibility="visible")' in src
+    assert "label_visibility=label_visibility" in src
 
 
 def test_the_layout_is_read_before_the_control_is_drawn():

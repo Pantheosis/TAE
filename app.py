@@ -16497,16 +16497,32 @@ if location_query and lat is not None and lon is not None:
             # on the lunation and victors page, whose syzygy table carries
             # them in full.
             lunation = syzygy['event_label'].partition(' ')[0]
-            st.caption(" · ".join((
+            # Two lines, not one: the first is the nativity as it was entered
+            # -- the name, the moment, the standard it is counted in, the
+            # place -- and the second is what the app makes of it. Eight parts
+            # on one line ran past the window and wrapped where the width
+            # happened to fall, which put the break in a different place on
+            # every page. The hard break is two spaces and a newline, which is
+            # how the sidebar's own boxes break a caption.
+            entered = " · ".join((
                 str(name),
                 f"{date_string} {input_time:%H:%M:%S}",
                 standard,
                 place,
+            ))
+            read = " · ".join((
                 sect,
                 f"{lunation} lunation",
                 f"Day lord {chronocrats['Day Lord']}",
                 f"Hour lord {chronocrats['Hour Lord']}",
-            )))
+            ))
+            # The second line in bold: the first line is the nativity as the
+            # reader typed it and they know it already, while these four are
+            # measurements the app made, and nothing else above the fold
+            # states them. The markers wrap the joined line once, not each
+            # part -- a caption renders markdown, as the sidebar's own boxes
+            # do.
+            st.caption("  \n".join((entered, f"**{read}**")))
 
         # Streamlit drops a widget's state when the widget is not rendered
         # on a run, which is why a page-level control resets after
@@ -16534,13 +16550,20 @@ if location_query and lat is not None and lon is not None:
                          key=widget_key, help=help)
             return _persist(widget_key, store_key, options[0])
 
-        def _reading_radio(label, options, widget_key, store_key, help=None):
+        def _reading_radio(label, options, widget_key, store_key, help=None,
+                           label_visibility="visible"):
+            # label_visibility is passed through for the one control that
+            # stands in a row of checkboxes, where a label above the options
+            # puts the radio on a tier of its own. The label string is still
+            # given -- Streamlit requires a non-empty one, and it stays the
+            # widget's accessible name and the name a test looks it up by.
             options = list(options)
             stored = st.session_state.get(store_key, options[0])
             # Seeded, not defaulted by index: the target keys are also written
             # by _restore_chart, and a default beside a seeded key warns.
             st.session_state.setdefault(widget_key, stored if stored in options else options[0])
-            st.radio(label, options, key=widget_key, horizontal=True, help=help)
+            st.radio(label, options, key=widget_key, horizontal=True, help=help,
+                     label_visibility=label_visibility)
             return _persist(widget_key, store_key, options[0])
 
         # Strength and Weakness as tick grids: one row per planet, one column
@@ -16635,11 +16658,16 @@ if location_query and lat is not None and lon is not None:
                 # cannot fit. Left-aligned and the page's full width, as the
                 # row of controls was asked for.
                 with st.container(horizontal=True, vertical_alignment="bottom", gap="medium"):
+                    # The label is collapsed and the tooltip dropped here, and
+                    # here only: a radio carries its label above its options
+                    # and a checkbox carries its beside the box, so labelled
+                    # this radio stood a tier above the three controls next to
+                    # it and the row read as two. The two words "Square" and
+                    # "Wide" beneath a wheel say what the control does. The
+                    # label string stays as the widget's accessible name.
                     layout = _reading_radio(
                         "Wheel layout", WHEEL_LAYOUT_OPTIONS, "wheel_layout", "_wheel_layout",
-                        help="Square: the wheel centred, with the controls and the introduction beneath it. Wide: the wheel with a "
-                             "positions panel across the page. Hover either and use the expand "
-                             "arrows for a full-window view.")
+                        label_visibility="collapsed")
                     _reading_checkbox("Bounds ring", "chart_bounds", "_chart_bounds",
                                       help="The Egyptian bounds, with their lords, as a ring inside the degree scale -- "
                                            "as every natal wheel in Persian Nativities IV carries them (Figures 1, 22, "
