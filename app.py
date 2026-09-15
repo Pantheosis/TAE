@@ -6164,6 +6164,189 @@ def evaluate_morin_aspects(planetary_data, houses, asc):
     order = {'Saturn': 0, 'Jupiter': 1, 'Mars': 2, 'Venus': 3}
     rows.sort(key=lambda r: (order[r['Planet'].split(' ')[0]], r['To']))
     return rows
+# --- Places harming the eyesight: Sahl 6.2, 48-75 and Gr. Intr. VI.20 ---------
+# Sahl's chapter on chronic illness of the eyesight ends with the "degrees
+# of chronic illness in the signs" (item 5 of al-Andarzaghar's five, 6.2,
+# 6): places named for the nebulous stars in them -- the Pleiades, the
+# cloud of Cancer, the forehead and sting of the Scorpion, the arrow, the
+# spines, the rope -- in four lists that overlap but do not agree (his
+# own, 49-55; Rhetorius's, 60-68; the Bizidaj's, 69-72; Nawbakht's, 74).
+# Abu Ma'shar states the same places with his own measured longitudes
+# (VI.20, 4-9), a degree or more away from Sahl's, and says they move
+# (VI.20, 10). Every row is carried as its text prints it; nothing is
+# reconciled between the lists or the two authors. READINGS, the app's:
+# a bare degree or a degree written as an ordinal ("the ninth degree",
+# "from 6 to 9") is the ordinal degree, as Figures 57 and 64 are read, so
+# "the ninth to the fifteenth" is 8°00'-15°00' and the lo/hi pair below is
+# half-open; a longitude measured in minutes (Abu Ma'shar's, the Bizidaj's
+# 27°36'-28°) is taken at its face and the pair is closed, a single
+# measured longitude being read as the whole degree it falls in. Two spans
+# are the app's reading of a phrase: Sahl 49's "having already passed half
+# [of it] until she completes 18°" as 15°00'-18°00', and Nawbakht's
+# "the middle of Taurus" (74) as the 15th and 16th degrees. 73 (the first
+# degrees of Aries, the last of Capricorn) is left out: it says the child
+# will be sickly, not that the eyes are harmed. Display only: nothing
+# scores it, and the conditions each rule attaches (the infortunes'
+# aspect, the Moon's light, by day the Sun) are carried in the row's
+# text, not tested. Shown at the supplement depth only, Sahl's rows with
+# Abu Ma'shar's. Pinned in tests/test_eyesight_places_2026_09_14.py.
+_EYE_SAHL = 'Sahl, On Nativities 6.2'
+_EYE_ABU = 'Gr. Intr. VI.20'
+_EYE_RULE_48 = ('48: "if you found the Moon in the degrees of chronic illness in the signs, and the infortunes '
+                'looked at her and their bound, <it indicates> a defect of the eyesight generally, or in the rest of '
+                'the body: because in the signs are positions which if the Moon is made unfortunate in them, or the '
+                'lord of the Ascendant, it indicates the corruption of the eye"')
+_EYE_RULE_60 = '60: "The [degrees] indicative of chronic illness are:"'
+_EYE_RULE_69 = ('69: "Now as for the degrees which indicate the corruption of vision especially, if the Moon was with '
+                'them by night and the Sun by day, made unfortunate, that is in the conjunction of:"')
+_EYE_RULE_74 = ('74: "for the native will have darkness in his eyes"')
+_EYE_RULE_ABU = ('1: "The positions in the signs which indicate an ailment of the eyes"')
+
+def _eye(source, sign, lo, hi, printed, place, sentence, quote, rule, closed=False, reading=''):
+    return {'source': source, 'sign': sign, 'lo': lo, 'hi': hi, 'closed': closed, 'printed': printed,
+            'place': place, 'sentence': sentence, 'quote': quote, 'rule': rule, 'reading': reading}
+
+EYESIGHT_PLACES = (
+    # al-Andarzaghar's list (48-55), under the rule of 48
+    _eye(_EYE_SAHL, 'Leo', 15.0, 18.0, 'Leo, past half until she completes 18°', 'the mane of the Lion', 49,
+         '"If the Moon was in Leo, having already passed half [of it] until she completes 18°, and that is around the mane of the Lion, which is called al-Dafārah."',
+         _EYE_RULE_48, reading='read as 15°00\'-18°00\''),
+    _eye(_EYE_SAHL, 'Scorpio', 7.0, 10.0, 'Scorpio, the eighth, ninth and tenth degree', 'the forehead of the Scorpion', 50,
+         '"And in Scorpio, in the eighth, ninth, and tenth degree (and in 23), and it is the forehead of the Scorpion."',
+         _EYE_RULE_48, reading='ordinal degrees, 7°00\'-10°00\''),
+    _eye(_EYE_SAHL, 'Scorpio', 22.0, 23.0, 'Scorpio, in 23', 'the sting of the Scorpion (23, "the sting of Scorpio, as opposed to the others which form the forehead", fn 75)', 50,
+         '"And in Scorpio, in the eighth, ninth, and tenth degree (and in 23), and it is the forehead of the Scorpion."',
+         _EYE_RULE_48, reading='read as the 23rd degree, 22°00\'-23°00\''),
+    _eye(_EYE_SAHL, 'Sagittarius', 5.0, 9.0, 'Sagittarius from 6° to 9°', 'the place of the arrow', 51,
+         '"And in Sagittarius from 6° to 9°, and that is the place of the arrow."',
+         _EYE_RULE_48, reading='ordinal degrees, 5°00\'-9°00\''),
+    _eye(_EYE_SAHL, 'Aquarius', 9.0, 10.0, 'Aquarius, the tenth', 'the place of the rope ("Or rather, the Pitcher", fn 76)', 52,
+         '"And in Aquarius, the tenth, eighteenth, and nineteenth, and that is due to the place of the rope which is in it."',
+         _EYE_RULE_48, reading='ordinal degree, 9°00\'-10°00\''),
+    _eye(_EYE_SAHL, 'Aquarius', 17.0, 19.0, 'Aquarius, the eighteenth and nineteenth', 'the place of the rope ("Or rather, the Pitcher", fn 76)', 52,
+         '"And in Aquarius, the tenth, eighteenth, and nineteenth, and that is due to the place of the rope which is in it."',
+         _EYE_RULE_48, reading='ordinal degrees, 17°00\'-19°00\''),
+    _eye(_EYE_SAHL, 'Capricorn', 25.0, 29.0, 'Capricorn from 26° to 29°', 'the spines', 53,
+         '"And in Capricorn from 26° to 29°, and that is because of the spines."',
+         _EYE_RULE_48, reading='ordinal degrees, 25°00\'-29°00\''),
+    _eye(_EYE_SAHL, 'Taurus', 5.0, 10.0, 'Taurus from 6° to 10°', 'the position of the Pleiades', 54,
+         '"And in Taurus from 6° to 10°, because of the position of the Pleiades."',
+         _EYE_RULE_48, reading='ordinal degrees, 5°00\'-10°00\''),
+    _eye(_EYE_SAHL, 'Cancer', 8.0, 15.0, 'Cancer, the ninth degree to the fifteenth', 'the place of the cloud', 55,
+         '"And in Cancer the ninth degree to the fifteenth, and that is due to the place of the cloud."',
+         _EYE_RULE_48, reading='ordinal degrees, 8°00\'-15°00\''),
+    # Rhetorius's list (60-68): "these overlap with, but are not identical
+    # to, the degrees harming the eyes" (fn 80)
+    _eye(_EYE_SAHL, 'Leo', 17.0, 19.0, 'Leo, 18° and 19°', 'Rhetorius\'s degrees of chronic illness', 61,
+         '"<In Leo>, 18° and 19° and 28°."', _EYE_RULE_60, reading='ordinal degrees, 17°00\'-19°00\''),
+    _eye(_EYE_SAHL, 'Leo', 27.0, 28.0, 'Leo, 28°', 'Rhetorius\'s degrees of chronic illness', 61,
+         '"<In Leo>, 18° and 19° and 28°."', _EYE_RULE_60, reading='ordinal degree, 27°00\'-28°00\''),
+    _eye(_EYE_SAHL, 'Scorpio', 18.0, 19.0, 'Scorpio, 19°', 'Rhetorius\'s degrees of chronic illness', 62,
+         '"In Scorpio, in 19° and 29°."', _EYE_RULE_60, reading='ordinal degree, 18°00\'-19°00\''),
+    _eye(_EYE_SAHL, 'Scorpio', 28.0, 29.0, 'Scorpio, 29°', 'Rhetorius\'s degrees of chronic illness', 62,
+         '"In Scorpio, in 19° and 29°."', _EYE_RULE_60, reading='ordinal degree, 28°00\'-29°00\''),
+    _eye(_EYE_SAHL, 'Sagittarius', 0.0, 1.0, 'Sagittarius, the first degree', 'Rhetorius\'s degrees of chronic illness', 63,
+         '"And in Sagittarius the first degree, the seventh, eighth, 18, and 19."', _EYE_RULE_60, reading='ordinal degree, 0°00\'-1°00\''),
+    _eye(_EYE_SAHL, 'Sagittarius', 6.0, 8.0, 'Sagittarius, the seventh and eighth', 'Rhetorius\'s degrees of chronic illness', 63,
+         '"And in Sagittarius the first degree, the seventh, eighth, 18, and 19."', _EYE_RULE_60, reading='ordinal degrees, 6°00\'-8°00\''),
+    _eye(_EYE_SAHL, 'Sagittarius', 17.0, 19.0, 'Sagittarius, 18 and 19', 'Rhetorius\'s degrees of chronic illness', 63,
+         '"And in Sagittarius the first degree, the seventh, eighth, 18, and 19."', _EYE_RULE_60, reading='ordinal degrees, 17°00\'-19°00\''),
+    _eye(_EYE_SAHL, 'Taurus', 5.0, 8.0, 'Taurus, the sixth, seventh and eighth', 'Rhetorius\'s degrees of chronic illness', 64,
+         '"And in Taurus the sixth, seventh, eighth, and tenth."', _EYE_RULE_60, reading='ordinal degrees, 5°00\'-8°00\''),
+    _eye(_EYE_SAHL, 'Taurus', 9.0, 10.0, 'Taurus, the tenth', 'Rhetorius\'s degrees of chronic illness', 64,
+         '"And in Taurus the sixth, seventh, eighth, and tenth."', _EYE_RULE_60, reading='ordinal degree, 9°00\'-10°00\''),
+    _eye(_EYE_SAHL, 'Cancer', 8.0, 15.0, 'Cancer, the ninth to the fifteenth degree', 'Rhetorius\'s degrees of chronic illness', 65,
+         '"And in Cancer the ninth to the fifteenth degree."', _EYE_RULE_60, reading='ordinal degrees, 8°00\'-15°00\''),
+    _eye(_EYE_SAHL, 'Capricorn', 25.0, 29.0, 'Capricorn, the twenty-sixth to the twenty-ninth', 'Rhetorius\'s degrees of chronic illness', 66,
+         '"And in Capricorn the twenty-sixth to the twenty-ninth."', _EYE_RULE_60, reading='ordinal degrees, 25°00\'-29°00\''),
+    _eye(_EYE_SAHL, 'Aquarius', 9.0, 10.0, 'Aquarius, the tenth', 'Rhetorius\'s degrees of chronic illness', 67,
+         '"Aquarius: the tenth, twelfth, and in the nineteenth."', _EYE_RULE_60, reading='ordinal degree, 9°00\'-10°00\''),
+    _eye(_EYE_SAHL, 'Aquarius', 11.0, 12.0, 'Aquarius, the twelfth', 'Rhetorius\'s degrees of chronic illness', 67,
+         '"Aquarius: the tenth, twelfth, and in the nineteenth."', _EYE_RULE_60, reading='ordinal degree, 11°00\'-12°00\''),
+    _eye(_EYE_SAHL, 'Aquarius', 18.0, 19.0, 'Aquarius, the nineteenth', 'Rhetorius\'s degrees of chronic illness', 67,
+         '"Aquarius: the tenth, twelfth, and in the nineteenth."', _EYE_RULE_60, reading='ordinal degree, 18°00\'-19°00\''),
+    _eye(_EYE_SAHL, 'Libra', 5.0, 8.0, 'Libra, the sixth, seventh and eighth', 'Rhetorius\'s degrees of chronic illness ("This may be an error", fn 89)', 68,
+         '"And in Libra the sixth, seventh, eighth, and tenth."', _EYE_RULE_60, reading='ordinal degrees, 5°00\'-8°00\''),
+    _eye(_EYE_SAHL, 'Libra', 9.0, 10.0, 'Libra, the tenth', 'Rhetorius\'s degrees of chronic illness ("This may be an error", fn 89)', 68,
+         '"And in Libra the sixth, seventh, eighth, and tenth."', _EYE_RULE_60, reading='ordinal degree, 9°00\'-10°00\''),
+    # the Bizidaj (69-72)
+    _eye(_EYE_SAHL, 'Libra', 27.6, 28.0, 'Libra, from 27° 36\' to 28°', 'the Bizidaj\'s degrees of the corruption of vision', 70,
+         '"Libra, from 27° 36\' to 28°."', _EYE_RULE_69, closed=True, reading='measured, 27°36\'-28°00\''),
+    _eye(_EYE_SAHL, 'Sagittarius', 0.0, 1.0, 'Sagittarius, the first degree', 'the Bizidaj\'s degrees of the corruption of vision', 71,
+         '"And likewise the first degree of Sagittarius, and the ninth and tenth <of Scorpio>."', _EYE_RULE_69, reading='ordinal degree, 0°00\'-1°00\''),
+    _eye(_EYE_SAHL, 'Scorpio', 8.0, 10.0, 'Scorpio, the ninth and tenth', 'the Bizidaj\'s degrees of the corruption of vision', 71,
+         '"And likewise the first degree of Sagittarius, and the ninth and tenth <of Scorpio>."', _EYE_RULE_69, reading='ordinal degrees, 8°00\'-10°00\''),
+    _eye(_EYE_SAHL, 'Cancer', 14.0, 19.0, 'Cancer, from 15° to 19°', 'the blemish in Cancer', 72,
+         '"And likewise the blemish in Cancer, and it is from 15° to 19°."', _EYE_RULE_69, reading='ordinal degrees, 14°00\'-19°00\''),
+    # Nawbakht (74)
+    _eye(_EYE_SAHL, 'Taurus', 14.0, 16.0, 'the middle of Taurus', 'Nawbakht\'s degrees of darkness in the eyes', 74,
+         '"And likewise if the Moon was in the middle of Taurus, or in the ninth degree of Cancer, or in the first degree of Sagittarius, for the native will have darkness in his eyes."',
+         _EYE_RULE_74, reading='read as the 15th and 16th degrees, 14°00\'-16°00\''),
+    _eye(_EYE_SAHL, 'Cancer', 8.0, 9.0, 'the ninth degree of Cancer', 'Nawbakht\'s degrees of darkness in the eyes', 74,
+         '"And likewise if the Moon was in the middle of Taurus, or in the ninth degree of Cancer, or in the first degree of Sagittarius, for the native will have darkness in his eyes."',
+         _EYE_RULE_74, reading='ordinal degree, 8°00\'-9°00\''),
+    _eye(_EYE_SAHL, 'Sagittarius', 0.0, 1.0, 'the first degree of Sagittarius', 'Nawbakht\'s degrees of darkness in the eyes', 74,
+         '"And likewise if the Moon was in the middle of Taurus, or in the ninth degree of Cancer, or in the first degree of Sagittarius, for the native will have darkness in his eyes."',
+         _EYE_RULE_74, reading='ordinal degree, 0°00\'-1°00\''),
+    # Abu Ma'shar, Gr. Intr. VI.20, 4-9: measured longitudes "in our time period" (10)
+    _eye(_EYE_ABU, 'Taurus', 13.6, 14.5, 'from 13° 36\' Taurus to 14° 30\'', 'the Pleiades', 4,
+         '"Now as for [1] the Pleiades, they are from 13° 36\' Taurus to 14° 30\'; their latitude in the north is from 3° to 5°."',
+         _EYE_RULE_ABU, closed=True, reading='measured, 13°36\'-14°30\''),
+    _eye(_EYE_ABU, 'Cancer', 21.0, 22.0, 'Cancer 21° 08\'', 'the nebula which is in Cancer', 5,
+         '"As for [2] the nebula which is in Cancer, it is in it at 21° 08\'; its latitude in the north is 40\'."',
+         _EYE_RULE_ABU, reading='one measured longitude, read as its whole degree, 21°00\'-22°00\''),
+    _eye(_EYE_ABU, 'Scorpio', 20.0, 21.0, 'Scorpio 20°', 'the leg of the Scorpion (the first of two)', 6,
+         '"As for [3-4] the leg of the Scorpion, there are two (and both of them are in Scorpio): one of them is in it at 20°, and the other in it at 21° 10\'; their latitude in the south is 6°."',
+         _EYE_RULE_ABU, reading='one measured longitude, read as its whole degree, 20°00\'-21°00\''),
+    _eye(_EYE_ABU, 'Scorpio', 21.0, 22.0, 'Scorpio 21° 10\'', 'the leg of the Scorpion (the second of two)', 6,
+         '"As for [3-4] the leg of the Scorpion, there are two (and both of them are in Scorpio): one of them is in it at 20°, and the other in it at 21° 10\'; their latitude in the south is 6°."',
+         _EYE_RULE_ABU, reading='one measured longitude, read as its whole degree, 21°00\'-22°00\''),
+    _eye(_EYE_ABU, 'Sagittarius', 15.0, 16.0, 'Sagittarius 15° 20\'', 'the arrows', 7,
+         '"The place of [5] the arrows in Sagittarius is 15° 20\', its latitude in the south 6° 20\'."',
+         _EYE_RULE_ABU, reading='one measured longitude, read as its whole degree, 15°00\'-16°00\''),
+    _eye(_EYE_ABU, 'Capricorn', 22.0, 23.0, 'Capricorn 22°', 'the spines of Capricorn', 8,
+         '"The [6] spines of Capricorn are 22°, its latitude in the north 39° 15\'."',
+         _EYE_RULE_ABU, reading='one measured longitude, read as its whole degree, 22°00\'-23°00\''),
+    _eye(_EYE_ABU, 'Aquarius', 20.0 + 10.0 / 60.0, 24.0 + 20.0 / 60.0, 'from 20° 10\' Aquarius to 24° 20\'', 'the pour of water of Aquarius', 9,
+         '"The [7] pour of water of Aquarius is four stars, and they are from 20° 10\' Aquarius to 24° 20\' of it; its latitude in the north is from 8° 10\' to 10° 20\'."',
+         _EYE_RULE_ABU, closed=True, reading='measured, 20°10\'-24°20\''),
+)
+
+def eyesight_place_in_span(row, longitude):
+    """True when longitude stands in the row's sign and inside its span:
+    half-open for ordinal degrees, closed for a measured span."""
+    if get_zodiac_sign(longitude) != row['sign']:
+        return False
+    d = longitude % 30.0
+    if row['closed']:
+        return row['lo'] - 1e-9 <= d <= row['hi'] + 1e-9
+    return row['lo'] <= d < row['hi']
+
+def evaluate_eyesight_places(planetary_data, ascendant_lon):
+    """The Moon and the lord of the Ascendant (6.2, 48), the Sun (69), and
+    the Ascendant degree itself (this app's addition) against
+    EYESIGHT_PLACES: a row per point per span it stands in, each text's
+    span under its own source. The lord of the Ascendant is the domicile
+    lord of the rising sign. Display only; nothing scores it, and the
+    rule's further conditions ride in the 'Text' column."""
+    asc_sign = get_zodiac_sign(ascendant_lon)
+    asc_lord = next(pl for pl, signs in DOMICILES.items() if asc_sign in signs)
+    checks = [('Sun', planetary_data['Sun']['longitude']), ('Moon', planetary_data['Moon']['longitude']),
+              ('Ascendant', ascendant_lon)]
+    if asc_lord in ('Sun', 'Moon'):
+        # one row, both roles named
+        checks = [(f'{pt} (the lord of the Ascendant)' if pt == asc_lord else pt, lon) for pt, lon in checks]
+    elif asc_lord in planetary_data:
+        checks.append((f'Lord of the Ascendant ({asc_lord})', planetary_data[asc_lord]['longitude']))
+    results = []
+    for point, lon in checks:
+        for row in EYESIGHT_PLACES:
+            if eyesight_place_in_span(row, lon):
+                results.append({'Point': point, 'Position': get_degree_string(lon),
+                                'Place': f"{row['place']} -- {row['printed']} ({row['reading']})",
+                                'Source': f"{row['source']}, {row['sentence']}",
+                                'Text': f"{row['sentence']}: {row['quote']} Rule -- {row['rule']}"})
+    return results
 
 def evaluate_special_degrees(planetary_data):
     """Flags planets in Sahl's dark signs, in the two signs of his burned
@@ -13906,6 +14089,7 @@ if location_query and lat is not None and lon is not None:
         mercury_phase_sect_data = evaluate_mercury_phase_sect(p_data, sect)
         moon_phase_valens_data = evaluate_moon_phase_valens(p_data)
         morin_aspects_data = evaluate_morin_aspects(p_data, chart_data['houses'], chart_data['ascendant'])
+        eyesight_places_data = evaluate_eyesight_places(p_data, chart_data['ascendant'])
         rays_by_ascension_data = evaluate_rays_by_ascension(p_data, chart_data['armc'], chart_data['obliquity'], lat)
         house_lords_data = evaluate_house_lords(p_data, chart_data['ascendant'])
         victors_data = evaluate_victors(p_data, chart_data['ascendant'], chart_data['lot_of_fortune'],
@@ -14276,6 +14460,11 @@ if location_query and lat is not None and lon is not None:
                           'Morin, Astrologia Gallica 21.II.X (Holden, pp. 105-106)', morin_aspects_data,
                           glance='Each trine, sextile, square or opposition that a Fortune (Jupiter, Venus) or an Infortune (Saturn, Mars) casts to another planet, read by the kind of ray and the kind of house it falls into -- the whole-sign house of the aspected planet -- with Morin\'s sentence for that case. Display only; nothing scores it.',
                           notes='Morin, Astrologia Gallica 21.II.X (Holden, pp. 105-106). The chapter\'s opening names the trine, sextile and semi-sextile as the rays "by nature benefic" and the opposition, square and quincunx as those "by nature malefic"; this app\'s aspect table has the four the ancients used (p. 110), so the two weak rays are not read. The four governing sentences, whole:\n\n"The distinction should be observed, however, that the favorable rays of benefic planets are more prone to good, and the unfavorable rays are less prone to evil, than is true for the malefic planets."\n\n"Moreover, a benefic planet\'s favorable rays produce good with ease and in abundance, and cause good in the fortunate houses as well as prevent or mitigate evil in the unfortunate ones, but its unfavorable rays bring difficulties, hindrances, or misfortunes to be surmounted."\n\n"On the other hand, a malefic planet\'s malefic rays are extremely harmful, causing evil in the unfortunate houses and preventing or spoiling the good in the fortunate ones, unless it rules over the location where the adverse aspect falls, for in that case the aspect produces good in fortunate houses, but this good will be accompanied by violence, evil, or misfortune."\n\n"And again, the favorable rays indicate something good gained by difficult means; for example, in the horoscope of the king of Sweden, Saturn ruled the second, and its trine to the Sun in the first house indicated great wealth, which he would acquire through war because Mercury, ruler of the seventh, is placed in the second; and in obtaining these things he had good fortune since Jupiter, Mercury, Venus, and the part of fortune were in the second house—and all ruled in turn by Saturn."\n\nMorin says "the unfortunate houses" without listing them; this app takes the 6th, 8th and 12th as the unfortunate ones and the other nine as fortunate, its own reading. Where one clause covers both kinds of house (a Fortune\'s adverse rays, an Infortune\'s favorable rays) the Rule column repeats the clause and says so. The "unless it rules over the location" exception is quoted, not tested: the table does not look up the ruler of the house. The chapter goes on to make the aspecting planet\'s own house, its celestial state and its rulership part of the judgment; none of that is read here.')
+                _finding(_gap, 'Places harming the eyesight (display only)', 'Sahl, On Nativities 6.2, 48-75; Gr. Intr. VI.20',
+                        eyesight_places_data,
+                        columns=['Point', 'Position', 'Place', 'Source', 'Text'],
+                        glance='The "degrees of chronic illness in the signs" -- the nebulous places named for the Pleiades, the cloud of Cancer, the forehead and sting of the Scorpion, the arrow, the spines and the rope: a row when the Moon, the lord of the Ascendant, the Sun or the Ascendant degree stands in one, each text\'s span under its own source, none reconciled. Sahl\'s rule names the Moon and the lord of the Ascendant (48), the Moon by night and the Sun by day (69); the Ascendant degree itself is shown beside them as this app\'s addition, and the further conditions each rule attaches -- the infortunes looking, the Moon\'s light, made unfortunate -- are printed in the Text column and are not tested. Display only; nothing scores it; shown under Course text and supplement.',
+                        notes='Sahl, On Nativities 6.2, 48: "And if you found the Moon in the degrees of chronic illness in the signs, and the infortunes looked at her and their bound, <it indicates> a defect of the eyesight generally, or in the rest of the body: because in the signs are positions which if the Moon is made unfortunate in them, or the lord of the Ascendant, it indicates the corruption of the eye; and that is:" -- then 49-55, the places. 56-57: "If you found the Moon in something of these signs, decreasing in glow, made unfortunate from hostility, then the eyesight will be chronically afflicted. And if she was increasing in glow, full, there will be water in his eyesight, and [uncertain] and [what] resembles that like [uncertain], and his eyesight will not be obscured." Rhetorius\'s list follows (60: "The [degrees] indicative of chronic illness are:", 61-68), which Dykes says "overlap with, but are not identical to, the degrees harming the eyes"; then the Bizidaj (69: "Now as for the degrees which indicate the corruption of vision especially, if the Moon was with them by night and the Sun by day, made unfortunate, that is in the conjunction of:", 70-72); then Nawbakht (74: "And likewise if the Moon was in the middle of Taurus, or in the ninth degree of Cancer, or in the first degree of Sagittarius, for the native will have darkness in his eyes."). Nawbakht\'s 73 (the first degrees of Aries, the last of Capricorn) says the child will be sickly, not that the eyes are harmed, and is not a row.\n\nAbu Ma\'shar, Gr. Intr. VI.20, 1-3: "The positions in the signs which indicate an ailment of the eyes, are [1] the position of the Pleiades in Taurus, [2] the position of the nebula in Cancer, Scorpio (the position of [3] its leg and the position of [4] its stinger), Sagittarius (the position of [5] the arrows), and Capricorn (the position of [6] the spines). And the position of [7] the pour of water from Aquarius also indicates an eruption in the eyes. But as for Libra and Leo, they both sometimes corrupt the vision as well." His longitudes (4-9) differ from Sahl\'s by a few degrees to fourteen, not in one direction (his spines of Capricorn stand before Sahl\'s, the rest after), and 10: "these positions which we have stated are their degrees in longitude and latitude in our time period; but their positions must be searched out and measured for every time period, because they move and withdraw from these degrees which we have stated." Neither table is precessed here: each is applied as printed. Dykes notes (fn 278) that Abu Ma\'shar names the leg where the sting is customary. Libra and Leo (3) carry no degrees and are not rows.\n\nReadings, this app\'s: a degree named as an ordinal or printed bare ("the ninth degree", "from 6° to 9°") is the ordinal degree, as Figure 57 is read, so "the ninth to the fifteenth" is 8°00\'-15°00\'; a longitude measured in minutes is taken as printed, a single one as the whole degree it falls in, and Abu Ma\'shar\'s bare "20°" and "22°" (VI.20, 6 and 8) as measured whole degrees, 20°00\'-21°00\' and 22°00\'-23°00\'. Two spans are this app\'s reading of a phrase: 49\'s "having already passed half [of it] until she completes 18°" as 15°00\'-18°00\', and Nawbakht\'s "the middle of Taurus" as the 15th and 16th degrees. 50\'s bare "(and in 23)" is read as the 23rd degree, the sting (fn 75).')
             _absent(_gap)
             # The orders of the dignities and the good places -- static tables --
             # moved to the Reference tables page on 2026-09-10; what stays is
