@@ -11849,6 +11849,624 @@ def evaluate_andarzaghar_triplicity_lords(asc_lon, sect):
     return rows
 
 
+# --- Fortune and livelihood: Sahl's seven classes (On Nativities Ch. 2) ---
+# The classifier's spine is Theophilus's paragraph as Sahl carries it
+# (2.11, 1-5; fn 148: Carmen I.24, 1-8, the source of Abu 'Ali's twelve
+# worked charts in JN Ch. 7): the two lords of the sect light's triplicity
+# read by PLACE -- strong (in a stake or what follows one) or falling --
+# with "under the rays" as the one further weakness Sahl names (2.11, 5).
+# Both strong: the first class; both falling: the sixth; one and one:
+# the benefit "in the time of the strong one" (2.11, 2), the first lord's
+# time being the beginning of life (2.13, 39), so first strong / second
+# falling is the fall (class 2) and the reverse the rise (class 5). That
+# is how Abu 'Ali reads all twelve charts, and 2.13, 40 says the reliance
+# is on the lords' places. When both lords fall, 2.3, 6 sends the reading
+# to the Lot of Fortune: 2.20, 1-2 confirm misery; 2.3, 7 and 9 raise;
+# 2.16, 2 and 4 give the middle. Sahl's other indications (2.3, 12; 2.11,
+# 4; 2.16, 5; 2.17; 2.19; 2.21) are read and listed under the class, each
+# with its sentence, and do not move it: Sahl gives no order for
+# combining them and Abu 'Ali applies none. "Cleansed of the infortunes"
+# for the lords themselves is a judgment (2.11, 4 makes their aspect an
+# increase or subtraction, not a class), listed as facts and not judged,
+# as the PN IV governor rows do; for the Lot and its lord, and the lords
+# of places, Sahl's own gloss at 2.20, 1 is applied -- an infortune with
+# it, or looking at it from a square or opposition -- by whole sign.
+# Everything here is by whole sign; the 15 degrees by ascensions (2.13,
+# 48-51; 2.3, 4-5; 2.16, 3) is a grade beside the class, read when the
+# chart carries its meridian and latitude. Display only; nothing scores it.
+
+PROSPERITY_CLASSES = {
+    # Sahl 2.1, 3-9, his own list; 4 duplicates 2 (Dykes's comment at the head of the chapter), so 4 is not a key.
+    'high': 'The first: good fortune (2.1, 3)',
+    'high to low': 'The second: falls from that good fortune (2.1, 4)',
+    'middling': 'The third: livelihood middling (2.1, 5)',
+    'low to high': 'The fifth: rises up after wretchedness (2.1, 7)',
+    'low': 'The sixth: wretched, not ceasing to be (2.1, 8)',
+    'own hands': 'The seventh: profit from his own hands (2.1, 9)',
+    'injustice': 'The seventh: from force and injustice (2.1, 9 with fn 1; 2.21, 3)',
+}
+
+PROSPERITY_SAHL = {
+    '2.3, 1': "look at the lords of the triplicities of the Moon by night, and the lords of the triplicities of the "
+              "Sun by day, and the positions of them both from the Ascendant",
+    '2.3, 2': "For if you found the two lords of the triplicity cleansed of the infortunes and of defects, and you "
+              "found them both in the stakes, then judge that the native will be happy for all the days of his life.",
+    '2.3, 6': "if you found the lord of the triplicity of the Sun made unfortunate, then you must work with the Lot "
+              "of Fortune.",
+    '2.3, 7': "For if you found it in the stakes or what follows them, and the lord of the Lot is eastern or cleansed "
+              "of the infortunes and the rays, and it looks at the Lot from a strong position, and a fortune is "
+              "looking at them from a powerful position, and a fortune is looking at it as well, and the infortunes "
+              "are not looking at it, then the native will be a king, or prominent, and a powerful noble, mighty, "
+              "elevated, and especially if the Lot and its lord was with it.",
+    '2.3, 9': "Now if you found the lord of the Lot not looking at the Lot, and it occurred in the fifth or eleventh "
+              "from the Ascendant, he will be happy; and more excellent than that is if it is looking at the Lot.",
+    '2.3, 12': "look at the eleventh from the Ascendant: for if you found a fortune in it, it increases his good "
+               "fortune; and if you found an infortune in it, it takes away from his good and increases in evil.",
+    '2.3, 18': "And if you found the planet in what follows the stake, or it is falling in the sign, and is in the "
+               "stake [by] degrees, it indicates assets and a fine condition, with difficulty in [his] reputation and "
+               "no fame, and especially if the planet was western [and] under the earth.",
+    '2.3, 19': "Now if you found the lord of the triplicity in the second and eighth, it indicates a decline of [his] "
+               "condition in the matter which the planet likewise produces.",
+    '2.3, 20': "Now if that planet was a fortune, then his affairs will be set aright after their corruption.",
+    '2.3, 21': "And whenever you find Jupiter in one of these two places, (if he was not the governor of the "
+               "triplicity) then it indicates a decline of [his] condition even though he will not provide injustice.",
+    '2.11, 1': "If you found both of the two lords of the triplicity of the luminary to be strong, they indicate "
+               "high rank from the beginning of his life to its end.",
+    '2.11, 2': "And if one of the two was strong and the other weak, his benefit will be in the time of the strong "
+               "one of them, and his baseness in the time of the one of them [that is falling].",
+    '2.11, 3': "And if they were both falling, they indicate baseness from the beginning of his life to its end.",
+    '2.11, 4': "And the aspect of the fortunes and infortunes increases in that and subtracts from that, and the "
+               "partnering lord of the triplicity supports them both in their elevation, through its strength (if it "
+               "was strong), and brings [them] down (if it was a falling [place]).",
+    '2.11, 5': "And if the lord of the triplicity was under the rays, then it has no strength.",
+    '2.13, 39': "the first lord of the triplicity indicates the end of the father's life, and the beginning of the "
+                "native's life",
+    '2.13, 40': "But for good fortune, let your reliance be on the Sun by day and the Moon by night, and their "
+                "positions, and the positions of the lords of the triplicities of the luminaries in the excellent "
+                "and bad places.",
+    '2.13, 48': "of the more powerful indications of good fortune is if the first lord of the triplicity of the "
+                "glowing one is in a stake or what follows it, and that is the 15° which follows it, by degrees of "
+                "ascensions: for if it was like that, it indicates praise and good fortune (and what is less [than "
+                "that] in degrees is preferable).",
+    '2.13, 49': "Now if it was in the second 15°, it indicates his good fortune is below the first [type].",
+    '2.13, 50': "And if it was in the third 15°, it indicates [what is in] the middle of assets.",
+    '2.13, 51': "And what is after that in degrees, up to the next stake, is of the nativities of the poor.",
+    '2.16, 2': "For if you found it made unfortunate, and you found a fortune looking at it from an excellent place, "
+               "and it is eastern, then the good fortune of that native (as well as his good and wealth) will be in "
+               "the middle, according to the distribution of that fortune.",
+    '2.16, 3': "if you found the lord of the triplicity of the Sun in the fifteenth from the end of the "
+               "[ascensional] sign of the stake, then his good fortune will be in the middle.",
+    '2.16, 4': "if the fortunes and infortunes were all looking together at the Lot of Fortune, then his livelihood "
+               "will be in the middle.",
+    '2.16, 5': "look too at the lord of the Ascendant, the lord of the Midheaven, and the lord of the house of hope: "
+               "for if you found a motley mixture, [some] of them cleansed of the infortunes and [some] of them made "
+               "unfortunate, then the good fortune of that native will be in the middle, sometimes with good, and "
+               "sometimes with hardship.",
+    '2.16, 6': "If the triplicity lord of the sect light is in a bad place, but that of the other luminary in a good "
+               "place, it indicates someone in the middle.",
+    '2.17, 2': "Look for one who is born by day at the lords of the triplicities of the Sun, and for one born by "
+               "night at the lords of the triplicities of the Moon: for if they were in excellent places, [but] then "
+               "the infortunes made them unfortunate, then he will fall from his good fortune.",
+    '2.17, 3': "And if you found the Lot of Fortune or its lord in an excellent place, and the infortunes made them "
+               "unfortunate, he will also fall from good fortune.",
+    '2.17, 4': "if you found the fortunes in the Ascendant or Midheaven, and the infortunes were in the house of "
+               "marriage, then it indicates falling from good fortune.",
+    '2.17, 5': "if you found Mars or Saturn in the house of assets, and they were not powerful, then it indicates "
+               "falling from good fortune.",
+    '2.17, 7': "if you found Mars or Saturn in the eleventh from the Ascendant or in the eleventh from the Lot of "
+               "Fortune, then it indicates a fall from good fortune.",
+    '2.17, 8': "if you found Saturn with the Moon in one of the stakes, even if he was a king, he will fall from good "
+               "fortune; and that is worse if Mars looked at it.",
+    '2.17, 10': "look also at the Moon: if you saw her separating from the fortunes and connecting with the "
+                "infortunes, then it indicates a fall.",
+    '2.17, 11': "likewise if the Sun was in the sixth or in the twelfth, and the infortunes looked at him, it "
+                "indicates falling.",
+    '2.19, 1': "if the infortunes were in the stakes and the fortunes in what follows them, it indicates falling "
+               "down, then they will rise.",
+    '2.19, 2': "if you found the Moon separating from the infortunes and connecting with the fortunes, then he will "
+               "rise after wretchedness.",
+    '2.19, 5': "And if the third lord of the triplicity was in the house of marriage, he will gain good fortune at "
+               "the end of his lifespan.",
+    '2.19, 6': "And a native whose planets you find in the bad places from the Ascendant, and they are looking at "
+               "the Lot of Fortune, and its lord in an excellent place, then at the end of his life he will have a "
+               "good livelihood.",
+    '2.20, 1': "look: if you found the lord of the triplicities of the Sun made unfortunate, or the Lot of Fortune "
+               "unfortunate, and you found it in the sixth and twelfth, if the infortunes were with it or they looked "
+               "at it from a square or opposition, and you found the lord of the Lot in the house of its fall, or "
+               "made unfortunate, powerful in misfortune (and you do not look at the Sun for one born by night, nor "
+               "at the Moon for one born by day), and Mars for one born by day is with the Lot, or opposing or in "
+               "square to it, then that [native] will not cease to be miserable from the day he is born up to the "
+               "day he dies.",
+    '2.20, 2': "look likewise at the lord of the Lot: if you found it in the sixth and twelfth, and you saw Jupiter "
+               "and Venus made unfortunate in the sixth and twelfth, and they are both not looking at the Moon (and "
+               "<worse is if> you found the two infortunes in the stakes or what follows the stakes), <he will be "
+               "miserable>.",
+    '2.21, 1': "if you found the first lord of the triplicity of the Lot of Fortune in the bound of the fortunes, "
+               "and it is in an excellent position in the nativity, and it looked at the Lot of Fortune, his earning "
+               "and livelihood will be from his own assets.",
+    '2.21, 2': "if you found <the two lords of the triplicity of> the Lot of Fortune not looking at the Lot of "
+               "Fortune, and the other fortune is not looking at the Lot of Fortune, his livelihood will increase in "
+               "the good due to a foreign man, and good will be said about him.",
+    '2.21, 3': "if you found Saturn and Mars in the eleventh from the Lot of Fortune, and you found them both in "
+               "their own houses, triplicity, or exaltation, his livelihood will be from force and injustice.",
+    '2.21, 4': "And if you found the first lord of the triplicity of the Lot of Fortune not looking at the Lot, "
+               "while the second lord of the triplicity does look at the Lot, then judge for him that he will earn "
+               "assets at one time and [then] destroy them at another, and will be of those who squander and are "
+               "ruined.",
+}
+
+# The Book of Aristotle's seven headings (III.2.0) and Abu 'Ali's rule paragraphs (JN Ch. 7), the parallels.
+PROSPERITY_ALSO = {
+    'frame': "PN I, BA III.2.0: the seven-fold examination, [1] the amount of prosperity ... [7] by violence and "
+             "looting; JN Ch. 7, the twelve examples, Figures 10-21",
+    'angles': "PN I, JN Ch. 7 [Middling fortune]: \"look at the Lords of the triplicity of the Sun (in diurnal "
+              "nativities) and the Lords of the triplicity of the Moon (in the night): which if they were in the "
+              "angles, they signify greatness and excellent fortune. If however they were in the succeedents, they "
+              "signify a middling amount of fortune. Which if they were cadent, they signify labor and a bad "
+              "condition.\" BA III.2.1 [1.2]: cleansed of the infortunes and in a pivot, \"he will rejoice in "
+              "perpetual luckiness for all the days of his life\"",
+    'succedent': "PN I, JN Ch. 7: Abu 'Ali's rule grades the succeedents middling, but his second example (Figure "
+                 "11), both lords \"in succeedents of the angles\", he calls \"prosperity and riches, and a multitude "
+                 "of substance\"; this app follows Sahl 2.3, 18 and the example",
+    'cadent': "PN I, JN Ch. 7 [Middling fortune]: \"Which if they were cadent, they signify labor and a bad "
+              "condition\"; Figures 10 and 17 (both lords cadent: a pauper; poverty and the bad condition)",
+    'mixed': "PN I, JN Ch. 7, Figure 19 (Example 10): the first lord under the rays, \"labor and anxiety in the first "
+             "third of his life\", the second in an angle, \"prosperity and the native's good condition after "
+             "labor\"",
+    'lot': "PN I, BA III.2.1 [1.4]: the sect light's lord corrupted, \"one will have to attend more diligently to "
+           "what place the Lot of Fortune holds onto\"; JN Ch. 7, Figure 20: \"whenever the Lords of the triplicity "
+           "of the luminary (whose rulership it was) were cadent, look at the Lot of Fortune\"",
+    'middling': "PN I, BA III.2.3 [3.1]-[3.5]; JN Ch. 7 [Middling fortune]: the Lot in the angles \"and the fortunes "
+                "and bad ones aspected it equally\"",
+    'falling': "PN I, BA III.2.2 [2.1]-[2.12]; JN Ch. 7 [The falling of fortune]",
+    'rising': "PN I, BA III.2.4 [4.1]-[4.8]; JN Ch. 7 [Advancement after labor]",
+    'misery': "PN I, BA III.2.5 [5.1]-[5.5]",
+    'hands': "PN I, BA III.2.6 [6-7.1]-[6-7.3]",
+    'eleventh from the lot': "PN I, BA III.2.0 [1.7], III.2.1 [1.7]: the eleventh from the Lot \"appears strong like "
+                             "the eleventh from the east\" (fn 89: Valens II.21); III.2.2 [2.6]",
+    'ascensions': "Sahl 2.3, 4-5 with fnn 82-83 (the degrees \"taken in ascensions as measured from the axial "
+                  "degree\"); 2.16, 3 with fn 222 (Carmen I.28, 7: 45° in ascensions out from the degree of an axis, "
+                  "the first 15° high, the second next best, the third middling); BA III.2.1 [1.3]",
+    'third': "PN I, JN Ch. 7, Figures 13, 14, 20, 21: the third lord \"not impeding\", \"tempered and restrained\", "
+             "\"the last Lady of the triplicity\", \"prosperity for the native at the end of his life\"",
+}
+
+PROSPERITY_STAKES = (1, 4, 7, 10)
+PROSPERITY_FOLLOWING = (2, 5, 8, 11)
+PROSPERITY_FALLING = (3, 6, 9, 12)
+
+
+def _prosperity_signs_apart(lon_a, lon_b):
+    return (int((lon_b % 360.0) // 30) - int((lon_a % 360.0) // 30)) % 12
+
+
+def _prosperity_looks(lon_a, lon_b):
+    """Whole-sign aspect from a to b: 'with' (one sign), sextile, square,
+    trine, opposition, or None (aversion)."""
+    apart = _prosperity_signs_apart(lon_a, lon_b)
+    return {0: 'with', 2: 'sextile', 10: 'sextile', 3: 'square', 9: 'square', 4: 'trine', 8: 'trine',
+            6: 'opposition'}.get(apart)
+
+
+def _prosperity_infortunes_on(lon, natal, exclude=()):
+    """The infortunes with the degree's sign, or looking at it from a
+    square or opposition -- 2.20, 1's own gloss of 'made unfortunate',
+    by whole sign. Returns 'Saturn by square'-style strings."""
+    out = []
+    for p in ('Saturn', 'Mars'):
+        if p in exclude or p not in natal:
+            continue
+        look = _prosperity_looks(natal[p]['longitude'], lon)
+        if look in ('with', 'square', 'opposition'):
+            out.append(f'{p} {look}' if look == 'with' else f'{p} by {look}')
+    return out
+
+
+def _prosperity_looking(lon, natal, group):
+    """Members of GROUP present in the chart that look at the sign of lon
+    (with it, or by sextile, square, trine or opposition)."""
+    return [p for p in group if p in natal and _prosperity_looks(natal[p]['longitude'], lon) is not None]
+
+
+def _prosperity_nth(house):
+    return {1: '1st', 2: '2nd', 3: '3rd'}.get(house, f'{house}th')
+
+
+def _prosperity_place_word(house):
+    if house in PROSPERITY_STAKES:
+        return 'a stake'
+    if house in PROSPERITY_FOLLOWING:
+        return 'what follows a stake'
+    return 'falling from the stakes'
+
+
+def _prosperity_ascension_from_stake(lon, asc, armc, obliquity, geo_lat):
+    """The degrees of ascension from the stake the degree follows: oblique
+    ascension from the Ascendant, oblique descension from the seventh,
+    right ascension from the Midheaven and the fourth -- the arc measured
+    forward in the order of the signs, the nearest stake behind the
+    degree taken. Returns (stake, arc) or None outside the method's
+    domain (a latitude where some degrees never rise)."""
+    if not _ascensional_method_applies(obliquity, geo_lat):
+        return None
+    ra, _d = _ra_decl(lon, obliquity)
+    oa = _oblique_ascension(lon, obliquity, geo_lat)
+    od = (_oblique_ascension((lon + 180.0) % 360.0, obliquity, geo_lat) + 180.0) % 360.0
+    oa_asc = _oblique_ascension(asc, obliquity, geo_lat)
+    od_desc = (oa_asc + 180.0) % 360.0
+    arcs = {'the Ascendant': (oa - oa_asc) % 360.0, 'the seventh': (od - od_desc) % 360.0,
+            'the Midheaven': (ra - armc) % 360.0, 'the fourth': (ra - (armc + 180.0)) % 360.0}
+    stake = min(arcs, key=arcs.get)
+    return stake, arcs[stake]
+
+
+def _prosperity_moon_motion(natal):
+    """The Moon's last separation and next connection by degree, among the
+    planets she looks at by whole sign: (separated-from, connecting-with),
+    names or None. Needs speeds; None, None without them."""
+    moon = natal.get('Moon')
+    if not moon or moon.get('speed_in_lon') is None:
+        return None, None
+    v = moon['speed_in_lon']
+    behind, ahead = [], []
+    for p in ('Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury'):
+        r = natal.get(p)
+        if not r or r.get('speed_in_lon') is None:
+            continue
+        apart = _prosperity_signs_apart(moon['longitude'], r['longitude'])
+        if apart not in (0, 2, 3, 4, 6, 8, 9, 10):
+            continue
+        target = 30.0 * min(apart, 12 - apart)
+        rel = (moon['longitude'] - r['longitude']) % 360.0
+        exact = target if rel <= 180.0 else 360.0 - target
+        delta = rel - exact
+        if delta == 0.0 or abs(v) <= abs(r['speed_in_lon']):
+            continue
+        if delta * (v - r['speed_in_lon']) < 0.0:
+            ahead.append((abs(delta), p))
+        else:
+            behind.append((abs(delta), p))
+    orb = PLANETARY_ORBS['Moon']
+    sep = min(behind)[1] if behind and min(behind)[0] <= orb else None
+    con = min(ahead)[1] if ahead and min(ahead)[0] <= orb else None
+    return sep, con
+
+
+def evaluate_prosperity(chart_data):
+    """Sahl, On Nativities Ch. 2, the seven classes of good fortune and
+    misery (2.1, 2-9), read by whole sign. The first row is the class;
+    the rows under it are every rule read, each with Sahl's sentence and
+    the parallel in the Book of Aristotle or Abu 'Ali. Keys: 'Class',
+    'Ground', 'Sahl', 'Also', plus 'key' (the class word the tests read)
+    and 'Supplement' (True for a step only Abu 'Ali or BA state). Display
+    only; nothing scores it. Abu 'Ali's twelve charts (JN Ch. 7, Figures
+    10-21) are the fixtures in the tests."""
+    natal, sect, asc = chart_data['planetary_data'], chart_data['sect'], chart_data['ascendant']
+    cusps = chart_data.get('houses')
+    lot = chart_data.get('lot_of_fortune')
+    light = 'Sun' if sect == 'Diurnal' else 'Moon'
+    if light not in natal or 'Sun' not in natal:
+        return []
+    sun_lon = natal['Sun']['longitude']
+    light_sign = get_zodiac_sign(natal[light]['longitude'])
+    lords = _triplicity_lords_in_sect_order(light_sign, sect)
+    rows = []
+
+    def row(key, cls, ground, sahl, also, supplement=False):
+        rows.append({'Class': cls, 'Ground': ground, 'Sahl': sahl, 'Also': also, 'key': key,
+                     'Supplement': supplement})
+
+    def sahl(*refs):
+        return ' '.join(f'{r}: "{PROSPERITY_SAHL[r]}"' for r in refs)
+
+    # --- the lords of the sect light's triplicity, by place (2.11, 1-5) ---
+    facts = {}
+    for rank, lord in zip(('first', 'second', 'third'), lords):
+        r = natal.get(lord)
+        if r is None:
+            facts[rank] = None
+            continue
+        lon = r['longitude']
+        house = get_wsh_house(lon, asc)
+        phase, _side, _el = solar_phase(lord, lon, sun_lon, r.get('speed_in_lon'))
+        under = phase in ('Burned', 'Under the rays')
+        strong = house not in PROSPERITY_FALLING and not under
+        infortunes = _prosperity_infortunes_on(lon, natal, exclude=(lord,))
+        # 2.3, 18 is a sign-against-degree rule: the planet "in what follows the
+        # stake, or falling in the sign, and in the stake [by] degrees" -- its
+        # whole sign not a stake while the quadrant cusps put its degree in one.
+        in_stake_by_degree = False
+        if cusps and len(cusps) >= 12 and house not in PROSPERITY_STAKES:
+            in_stake_by_degree = get_house_number(lon, cusps) in (1, 4, 7, 10)
+        facts[rank] = {'lord': lord, 'house': house, 'strong': strong, 'under': under, 'infortunes': infortunes,
+                       'word': _prosperity_place_word(house), 'sign': get_zodiac_sign(lon),
+                       'stake_by_degree': in_stake_by_degree}
+    first, second, third = facts['first'], facts['second'], facts['third']
+    if first is None or second is None:
+        return []
+
+    def describe(f):
+        s = f"{f['lord']} in {f['sign']}, the {_prosperity_nth(f['house'])}, {f['word']}"
+        if f['under']:
+            s += ', under the rays (no strength, 2.11, 5)'
+        s += ('; infortunes on it, not judged: ' + ', '.join(f['infortunes'])) if f['infortunes'] else '; no infortune with it or in its square or opposition'
+        return s
+
+    lords_text = (f"The {light}, the sect light, in {light_sign}; its lords {lords[0]}, {lords[1]}, {lords[2]}. "
+                  f"First: {describe(first)}. Second: {describe(second)}.")
+    both_stakes = first['house'] in PROSPERITY_STAKES and second['house'] in PROSPERITY_STAKES
+    by_degree = [f['lord'] for f in (first, second) if f['stake_by_degree']]
+    if first['strong'] and second['strong']:
+        key = 'high'
+        if both_stakes:
+            grade_ref, grade_text = '2.3, 2', "both in the stakes -- the greatest good fortune"
+        elif by_degree:
+            grade_ref = '2.3, 18'
+            grade_text = ("in what follows a stake by sign but in the stake by degrees (" + ', '.join(by_degree)
+                          + ") -- assets and a fine condition, without fame")
+        else:
+            grade_ref = '2.11, 2'
+            grade_text = "in a stake and what follows one, or both in what follows -- strong, by 2.11, 1-2; 2.3, 18's degree condition not met"
+        ground = "both lords strong: " + grade_text + "; " + lords_text
+        deciding, also = sahl('2.11, 1', grade_ref), PROSPERITY_ALSO['angles' if both_stakes else 'succedent']
+    elif not first['strong'] and not second['strong']:
+        key = 'low'
+        ground = "both lords falling: baseness from the beginning of his life to its end; " + lords_text
+        deciding, also = sahl('2.11, 3'), PROSPERITY_ALSO['cadent']
+    elif first['strong']:
+        key = 'high to low'
+        ground = ("the first lord strong, the second weak: his benefit in the time of the strong one, the first "
+                  "lord's time being the beginning of life; " + lords_text)
+        deciding, also = sahl('2.11, 2', '2.13, 39'), PROSPERITY_ALSO['mixed']
+    else:
+        key = 'low to high'
+        ground = ("the first lord weak, the second strong: his baseness in the time of the falling one, the first "
+                  "lord's time being the beginning of life, his benefit after it; " + lords_text)
+        deciding, also = sahl('2.11, 2', '2.13, 39'), PROSPERITY_ALSO['mixed']
+
+    # --- both lords falling: the Lot of Fortune (2.3, 6-9; 2.16; 2.20) ---
+    lot_rows = []
+    lot_house = lot_lord = lot_lord_house = None
+    if lot is not None:
+        lot_house = get_wsh_house(lot, asc)
+        lot_sign = get_zodiac_sign(lot)
+        lot_lord = SIGN_TO_DOMICILE[lot_sign]
+        ll = natal.get(lot_lord)
+        lot_infortunes = _prosperity_infortunes_on(lot, natal)
+        fortunes_on_lot = _prosperity_looking(lot, natal, sorted(FORTUNES))
+        infortunes_on_lot = _prosperity_looking(lot, natal, sorted(INFORTUNES))
+        lot_text = (f"the Lot of Fortune in {lot_sign}, the {_prosperity_nth(lot_house)}, {_prosperity_place_word(lot_house)}; "
+                    f"its lord {lot_lord}")
+        if ll is not None:
+            lot_lord_house = get_wsh_house(ll['longitude'], asc)
+            _p, side, _e = solar_phase(lot_lord, ll['longitude'], sun_lon, ll.get('speed_in_lon'))
+            lord_looks = _prosperity_looks(ll['longitude'], lot)
+            lord_infortunes = _prosperity_infortunes_on(ll['longitude'], natal, exclude=(lot_lord,))
+            lord_in_fall = get_zodiac_sign(ll['longitude']) in FALLS.get(lot_lord, [])
+            lot_text += (f" in {get_zodiac_sign(ll['longitude'])}, the {_prosperity_nth(lot_lord_house)}, {side or 'the Sun'}, "
+                         f"{'looking at the Lot by ' + lord_looks if lord_looks and lord_looks != 'with' else ('with the Lot' if lord_looks else 'not looking at the Lot')}"
+                         + ('; infortunes on it: ' + ', '.join(lord_infortunes) if lord_infortunes else '; cleansed by whole sign')
+                         + ('; in its fall' if lord_in_fall else ''))
+            # 2.20, 1-2: misery confirmed
+            lot_bad_place = lot_house in (6, 12) and bool(lot_infortunes)
+            lord_bad = lord_in_fall or bool(lord_infortunes)
+            mars_day = (sect != 'Diurnal') or ('Mars' in natal and _prosperity_looks(natal['Mars']['longitude'], lot) in ('with', 'square', 'opposition'))
+            if lot_bad_place and lord_bad and mars_day:
+                lot_rows.append(('low', 'miserable', f"the Lot in the sixth or twelfth with {', '.join(lot_infortunes)}; its lord "
+                                 f"{'in its fall' if lord_in_fall else 'made unfortunate (' + ', '.join(lord_infortunes) + ')'}"
+                                 + ("; Mars on the Lot by day" if sect == 'Diurnal' else '') + '; ' + lot_text,
+                                 sahl('2.20, 1'), PROSPERITY_ALSO['misery']))
+            jv_bad = all(p in natal and get_wsh_house(natal[p]['longitude'], asc) in (6, 12)
+                         and _prosperity_infortunes_on(natal[p]['longitude'], natal) for p in ('Jupiter', 'Venus'))
+            jv_moon = 'Moon' in natal and all(_prosperity_looks(natal[p]['longitude'], natal['Moon']['longitude']) is None for p in ('Jupiter', 'Venus') if p in natal)
+            if lot_lord_house in (6, 12) and jv_bad and jv_moon:
+                lot_rows.append(('low', 'miserable', "the lord of the Lot in the sixth or twelfth; Jupiter and Venus made unfortunate there, "
+                                 "not looking at the Moon; " + lot_text, sahl('2.20, 2'), PROSPERITY_ALSO['misery']))
+            # 2.3, 7 and 9: the Lot raises
+            if (lot_house not in PROSPERITY_FALLING and side == 'eastern' and lord_looks and not lord_infortunes
+                    and fortunes_on_lot and not infortunes_on_lot):
+                lot_rows.append(('high', 'good fortune', f"the Lot in {_prosperity_place_word(lot_house)}, its lord eastern or cleansed of the infortunes "
+                                 f"and their rays (whole-sign looking, the app's measure) and looking at it -- 'from a strong position' not tested; "
+                                 f"{', '.join(fortunes_on_lot)} looking at the Lot, no infortune looking; "
+                                 + lot_text, sahl('2.3, 6', '2.3, 7'), PROSPERITY_ALSO['lot']))
+            if lord_looks is None and lot_lord_house in (5, 11):
+                lot_rows.append(('high', 'good fortune', f"the lord of the Lot not looking at the Lot, in the {_prosperity_nth(lot_lord_house)}; " + lot_text,
+                                 sahl('2.3, 6', '2.3, 9'), PROSPERITY_ALSO['lot']))
+            # 2.16, 2 and 4: the middle
+            if lord_infortunes:
+                helpers = [p for p in sorted(FORTUNES) if p in natal and p != lot_lord
+                           and _prosperity_looks(natal[p]['longitude'], ll['longitude']) is not None
+                           and get_wsh_house(natal[p]['longitude'], asc) in EXCELLENT_PLACES
+                           and solar_phase(p, natal[p]['longitude'], sun_lon, natal[p].get('speed_in_lon'))[1] == 'eastern']
+                if helpers:
+                    lot_rows.append(('middling', 'middling', f"the lord of the Lot made unfortunate ({', '.join(lord_infortunes)}), "
+                                     f"{', '.join(helpers)} eastern looking at it from an excellent place; " + lot_text,
+                                     sahl('2.16, 2'), PROSPERITY_ALSO['middling']))
+        if len(fortunes_on_lot) == len([p for p in FORTUNES if p in natal]) == 2 and len(infortunes_on_lot) == 2:
+            lot_rows.append(('middling', 'middling', "both fortunes and both infortunes looking at the Lot; " + lot_text,
+                             sahl('2.16, 4'), PROSPERITY_ALSO['middling']))
+
+    if key == 'low' and lot_rows:
+        # 2.20 confirms; else 2.3, 7 and 9 raise; else 2.16 gives the middle.
+        order = {'low': 0, 'high': 1, 'middling': 2}
+        chosen = min(lot_rows, key=lambda t: order[t[0]])
+        ck, _w, cg, cs, ca = chosen
+        if ck == 'low':
+            ground = ground + " Confirmed by the Lot: " + cg
+            deciding = deciding + ' ' + cs
+        else:
+            key = ck
+            ground = ("both lords falling, the reading goes to the Lot of Fortune (2.3, 6): " + cg
+                      + "; the lords: " + lords_text)
+            deciding = sahl('2.3, 6') + ' ' + cs
+            also = ca
+
+    row(key, PROSPERITY_CLASSES[key], ground, deciding, also)
+    row('lords', 'The lords, by place', lords_text
+        + " Strong is a stake or what follows one (fn 149); the infortunes on a lord are listed and not judged "
+          "(2.11, 4 makes their aspect an increase or a subtraction).",
+        sahl('2.3, 1', '2.13, 40', '2.11, 5'), PROSPERITY_ALSO['frame'])
+    for ck, cw, cg, cs, ca in lot_rows:
+        row('lot ' + ck, f'The Lot: {cw}', cg, cs, ca)
+
+    # --- the third lord (2.11, 4) ---
+    if third is not None:
+        row('third', 'The partnering lord', f"Third: {describe(third)} -- "
+            + ("supports them both, through its strength" if third['strong'] else "brings them down, a falling place")
+            + (f"; in the house of marriage: good fortune at the end of his lifespan" if third['house'] == 7 else ''),
+            sahl('2.11, 4') + (' ' + sahl('2.19, 5') if third['house'] == 7 else ''), PROSPERITY_ALSO['third'])
+
+    # --- the fifteen degrees by ascensions (2.13, 48-51) ---
+    armc, obl, glat = chart_data.get('armc'), chart_data.get('obliquity'), chart_data.get('geo_lat')
+    if armc is not None and obl is not None and glat is not None:
+        for rank, f in (('first', first), ('second', second)):
+            if f['house'] in PROSPERITY_FALLING:
+                continue
+            got = _prosperity_ascension_from_stake(natal[f['lord']]['longitude'], asc, armc, obl, glat)
+            if got is None:
+                continue
+            stake, arc = got
+            band = int(arc // 15.0)
+            verdict, ref = [("the first 15°: praise and good fortune", '2.13, 48'), ("the second 15°: below the first", '2.13, 49'),
+                            ("the third 15°: the middle of assets", '2.13, 50')][band] if band < 3 else ("beyond 45°, up to the next stake: of the nativities of the poor", '2.13, 51')
+            row('ascensions', 'Grade by ascensions', f"The {rank} lord {f['lord']}: {arc:.1f}° of ascension after {stake} -- {verdict}. "
+                "A grade beside the class, which is by whole sign.",
+                sahl(ref) + (' ' + sahl('2.16, 3') if band == 2 else ''), PROSPERITY_ALSO['ascensions'])
+
+    # --- the eleventh from the Ascendant (2.3, 12) ---
+    eleventh = [p for p in ('Saturn', 'Jupiter', 'Mars', 'Venus') if p in natal and get_wsh_house(natal[p]['longitude'], asc) == 11]
+    for p in eleventh:
+        row('eleventh', 'The eleventh from the Ascendant', f"{p} in the eleventh: "
+            + ("increases his good fortune" if p in FORTUNES else "takes away from his good and increases in evil"),
+            sahl('2.3, 12'), "PN I, BA III.2.1 [1.7]: the benevolents in the eleventh increase, the infortunes diminish")
+
+    # --- the middle: 2.16, 5, listed (fnn 225-226 dispute the third place) and 2.16, 6 (BA's, the supplement) ---
+    mc_lon = chart_data.get('mc', (asc + 270.0) % 360.0)
+    place_lords = []
+    for label, lon in (('the Ascendant', asc), ('the Midheaven', mc_lon), ('the house of hope', asc + 300.0)):
+        lord = SIGN_TO_DOMICILE[get_zodiac_sign(lon)]
+        if lord in natal:
+            bad = _prosperity_infortunes_on(natal[lord]['longitude'], natal, exclude=(lord,))
+            place_lords.append((label, lord, bad))
+    if place_lords and any(b for _l, _p, b in place_lords) and any(not b for _l, _p, b in place_lords):
+        row('motley', 'The middle: a motley mixture', "; ".join(
+            f"the lord of {l}, {p}: " + (', '.join(b) if b else 'cleansed by whole sign') for l, p, b in place_lords)
+            + ". Listed, not classed: the third place is disputed (fnn 225-226: the second house).",
+            sahl('2.16, 5'), "PN I, BA III.2.3 [3.4]")
+    other = 'Moon' if light == 'Sun' else 'Sun'
+    if other in natal:
+        o_lord = _triplicity_lords_in_sect_order(get_zodiac_sign(natal[other]['longitude']), sect)[0]
+        if o_lord in natal:
+            o_house = get_wsh_house(natal[o_lord]['longitude'], asc)
+            if first['house'] in PROSPERITY_FALLING and o_house not in PROSPERITY_FALLING:
+                row('middling supplement', 'The middle (supplement)',
+                    f"the sect light's first lord {first['lord']} falling, the {other}'s first lord {o_lord} in the {_prosperity_nth(o_house)}, "
+                    f"{_prosperity_place_word(o_house)}: someone in the middle. Bracketed in Sahl from BA; listed, not classed.",
+                    sahl('2.16, 6') + ' (added by Dykes with BA III.2.3, 6)', "PN I, BA III.2.3 [3.5]", supplement=True)
+
+    # --- falling (2.17) ---
+    houses = {p: get_wsh_house(natal[p]['longitude'], asc) for p in natal}
+    if any(houses.get(p) in (1, 10) for p in FORTUNES) and any(houses.get(p) == 7 for p in INFORTUNES):
+        row('falling', 'Falling', "a fortune in the Ascendant or Midheaven ("
+            + ', '.join(p for p in sorted(FORTUNES) if houses.get(p) in (1, 10)) + ") and an infortune in the house of marriage ("
+            + ', '.join(p for p in sorted(INFORTUNES) if houses.get(p) == 7) + ")", sahl('2.17, 4'), PROSPERITY_ALSO['falling'] + "; BA III.2.2 [2.3]")
+    # 2.17, 2-3: Sahl's own fall -- the lords in excellent places made
+    # unfortunate; the Lot of Fortune or its lord likewise. Listed, not classing.
+    for f in (first, second):
+        if f['strong'] and f['infortunes']:
+            row('falling', 'Falling', f"{f['lord']}, a lord of the sect light's triplicity, in the {_prosperity_nth(f['house'])} "
+                f"with {', '.join(f['infortunes'])} on it", sahl('2.17, 2'), PROSPERITY_ALSO['falling'] + "; BA III.2.2 [2.1]")
+    if lot is not None:
+        lot_h = get_wsh_house(lot, asc)
+        lot_inf = _prosperity_infortunes_on(lot, natal, exclude=())
+        if lot_h not in PROSPERITY_FALLING and lot_inf:
+            row('falling', 'Falling', f"the Lot of Fortune in the {_prosperity_nth(lot_h)} with {', '.join(lot_inf)} on it",
+                sahl('2.17, 3'), PROSPERITY_ALSO['falling'])
+    for p in ('Saturn', 'Mars'):
+        if houses.get(p) == 2:
+            of_sect = (p == 'Saturn') == (sect == 'Diurnal')
+            if not of_sect:
+                row('falling', 'Falling', f"{p} in the house of assets, not of the sect (fn 232: not powerful is not of the sect)",
+                    sahl('2.17, 5'), PROSPERITY_ALSO['falling'] + "; BA III.2.2 [2.4]")
+        if houses.get(p) == 11:
+            row('falling', 'Falling', f"{p} in the eleventh from the Ascendant", sahl('2.17, 7'),
+                PROSPERITY_ALSO['falling'] + "; BA III.2.2 [2.5]")
+        if lot is not None and p in natal and _prosperity_signs_apart(lot, natal[p]['longitude']) == 10:
+            row('falling', 'Falling', f"{p} in the eleventh from the Lot of Fortune", sahl('2.17, 7'),
+                PROSPERITY_ALSO['eleventh from the lot'])
+    if 'Moon' in natal and 'Saturn' in natal and houses['Moon'] in PROSPERITY_STAKES and houses['Saturn'] == houses['Moon']:
+        mars = 'Mars' in natal and _prosperity_looks(natal['Mars']['longitude'], natal['Moon']['longitude']) is not None
+        row('falling', 'Falling', f"Saturn with the Moon in the {_prosperity_nth(houses['Moon'])}, a stake"
+            + ("; Mars looking at it, worse" if mars else ''), sahl('2.17, 8'), PROSPERITY_ALSO['falling'] + "; BA III.2.2 [2.7]")
+    if houses.get('Sun') in (6, 12):
+        looking = _prosperity_looking(sun_lon, natal, ['Saturn', 'Mars'])
+        if looking:
+            row('falling', 'Falling', f"the Sun in the {_prosperity_nth(houses['Sun'])}, {', '.join(looking)} looking at him",
+                sahl('2.17, 11'), PROSPERITY_ALSO['falling'] + "; BA III.2.2 [2.9]")
+    sep, con = _prosperity_moon_motion(natal)
+    if sep in FORTUNES and con in INFORTUNES:
+        row('falling', 'Falling', f"the Moon separating from {sep} and connecting with {con}, by degree within her orb",
+            sahl('2.17, 10'), PROSPERITY_ALSO['falling'] + "; BA III.2.2 [2.10]")
+
+    # --- 2.3, 19-21: a lord of the triplicity in the second or eighth (owner: listed rows) ---
+    for f in (first, second, third):
+        if f is not None and f['house'] in (2, 8):
+            row('falling', 'Decline', f"{f['lord']}, a lord of the sect light's triplicity, in the {_prosperity_nth(f['house'])}"
+                + (" -- a fortune: his affairs set aright after their corruption" if f['lord'] in FORTUNES else ''),
+                sahl('2.3, 19', '2.3, 20') if f['lord'] in FORTUNES else sahl('2.3, 19'), PROSPERITY_ALSO['falling'])
+    if 'Jupiter' in natal and houses.get('Jupiter') in (2, 8) and 'Jupiter' not in lords:
+        row('falling', 'Decline', f"Jupiter in the {_prosperity_nth(houses['Jupiter'])}, not a governor of the triplicity",
+            sahl('2.3, 21'), PROSPERITY_ALSO['falling'])
+
+    # --- rising (2.19) ---
+    present_inf = [p for p in INFORTUNES if p in natal]
+    present_for = [p for p in FORTUNES if p in natal]
+    if present_inf and present_for and all(houses[p] in PROSPERITY_STAKES for p in present_inf) and all(houses[p] in PROSPERITY_FOLLOWING for p in present_for):
+        row('rising', 'Rising', "the infortunes in the stakes and the fortunes in what follows them (every one of each)",
+            sahl('2.19, 1'), PROSPERITY_ALSO['rising'] + "; BA III.2.4 [4.1]")
+    if sep in INFORTUNES and con in FORTUNES:
+        row('rising', 'Rising', f"the Moon separating from {sep} and connecting with {con}, by degree within her orb",
+            sahl('2.19, 2'), PROSPERITY_ALSO['rising'] + "; BA III.2.4 [4.2]")
+    if lot is not None and lot_lord_house is not None and lot_lord_house not in PROSPERITY_FALLING and lot_lord_house not in (2, 8):
+        # 2.19, 6 (owner: a listed row, as 2.17, 7 is): planets in the bad places from the
+        # Ascendant looking at the Lot, its lord in an excellent place. BA III.2.4 [4.5]
+        # differs in the places ("from the east toward the Midheaven"), not the planets.
+        bad_looking = [p for p in PN4_SEVEN if p in natal and houses.get(p) in PROSPERITY_FALLING
+                       and _prosperity_looks(natal[p]['longitude'], lot) is not None]
+        if bad_looking:
+            row('rising', 'Rising', f"{', '.join(bad_looking)} in the bad places from the Ascendant, looking at the Lot of Fortune; "
+                f"its lord {lot_lord} in the {_prosperity_nth(lot_lord_house)}, an excellent place -- a good livelihood at the end of life",
+                sahl('2.19, 6'), PROSPERITY_ALSO['rising'] + "; BA III.2.4 [4.5], which has the stars \"from the east toward the Midheaven\"")
+
+    # --- own hands, force and injustice (2.21) ---
+    if lot is not None:
+        lot_sign = get_zodiac_sign(lot)
+        lot_lords = _triplicity_lords_in_sect_order(lot_sign, sect)
+        l1, l2 = lot_lords[0], lot_lords[1]
+        looks = {p: (_prosperity_looks(natal[p]['longitude'], lot) if p in natal else None) for p in (l1, l2)}
+        if l1 in natal:
+            lon1 = natal[l1]['longitude']
+            bound = next((lord for limit, lord in EGYPTIAN_TERMS[get_zodiac_sign(lon1)] if lon1 % 30 < limit), None)
+            if bound in FORTUNES and get_wsh_house(lon1, asc) in EXCELLENT_PLACES and looks[l1] is not None:
+                row('own hands', PROSPERITY_CLASSES['own hands'], f"{l1}, the first lord of the Lot's triplicity, in the bound of {bound}, "
+                    f"in the {_prosperity_nth(get_wsh_house(lon1, asc))}, looking at the Lot", sahl('2.21, 1'), PROSPERITY_ALSO['hands'])
+        if l1 in natal and l2 in natal and looks[l1] is None and looks[l2] is not None:
+            row('squanders', 'Earns and destroys', f"{l1}, the first lord of the Lot's triplicity, not looking at the Lot; {l2}, the second, looking",
+                sahl('2.21, 4'), PROSPERITY_ALSO['hands'] + " [6-7.2]")
+        if l1 in natal and l2 in natal and looks[l1] is None and looks[l2] is None and not _prosperity_looking(lot, natal, sorted(FORTUNES)):
+            row('foreign', 'From a foreign man', f"neither {l1} nor {l2}, the lords of the Lot's triplicity, looking at the Lot, nor a fortune",
+                sahl('2.21, 2'), PROSPERITY_ALSO['hands'] + " [6-7.1] (fn 268: BA has him dependent on others)")
+        if all(p in natal and _prosperity_signs_apart(lot, natal[p]['longitude']) == 10 for p in ('Saturn', 'Mars')):
+            def own(p):
+                s = get_zodiac_sign(natal[p]['longitude'])
+                trip = TRIPLICITY[SIGN_ELEMENT[s]]
+                return SIGN_TO_DOMICILE[s] == p or SIGN_TO_EXALTATION.get(s) == p or p in trip.values()
+            if own('Saturn') and own('Mars'):
+                row('injustice', PROSPERITY_CLASSES['injustice'], "Saturn and Mars in the eleventh from the Lot of Fortune, each in its own house, "
+                    "triplicity or exaltation", sahl('2.21, 3'), PROSPERITY_ALSO['hands'] + " [6-7.3]; " + PROSPERITY_ALSO['eleventh from the lot'])
+    return rows
+
+
 def pn4_turning_triplicity_lords(chart_data, sr):
     """VI.2, 4-5: the triplicity lords examined beside the turning. 4, for
     assets: "every one of the lords of the triplicities of the luminary
@@ -15332,6 +15950,7 @@ if location_query and lat is not None and lon is not None:
         morin_aspects_data = evaluate_morin_aspects(p_data, chart_data['houses'], chart_data['ascendant'])
         eyesight_places_data = evaluate_eyesight_places(p_data, chart_data['ascendant'])
         rhetorius_affliction_data = evaluate_rhetorius_affliction(p_data, chart_data['ascendant'], sect)
+        prosperity_data = evaluate_prosperity(chart_data)
         rays_by_ascension_data = evaluate_rays_by_ascension(p_data, chart_data['armc'], chart_data['obliquity'], lat)
         house_lords_data = evaluate_house_lords(p_data, chart_data['ascendant'])
         victors_data = evaluate_victors(p_data, chart_data['ascendant'], chart_data['lot_of_fortune'],
@@ -15698,6 +16317,20 @@ if location_query and lat is not None and lon is not None:
                             '1.9, 2-10: "' + ' '.join(t for _, t in SAHL_1_9_RULES) + '" (fn 47: "' + SAHL_1_9_FN47 + '"; fn 49: "' + SAHL_1_9_FN49 + '"; fn 51: "' + SAHL_1_9_FN51 + '")\n\n'
                             '1.9, 11: "' + SAHL_1_9_11 + '" (fn 53: "' + SAHL_1_9_FN53 + '") -- not computed: the meeting of the conception is not in hand.\n\n'
                             '1.9, 12-14: "' + SAHL_1_9_12 + ' ' + SAHL_1_9_13 + ' ' + SAHL_1_9_14 + '" (fn 54: "' + SAHL_1_9_FN54 + '"; fn 55: "' + SAHL_1_9_FN55 + '") -- the stay by the day and hour is 1.10\'s matter and is not computed here.')
+            # The class is the lords' (2.11, 1-3), as Abu 'Ali's twelve charts read
+            # it; the Lot decides only when both lords fall (2.3, 6). Rows a text
+            # other than Sahl states (2.16, 6, bracketed from BA) show under
+            # Course text and supplement only.
+            _finding(_gap, "Fortune and livelihood: the seven classes (Sahl)", "Sahl, On Nativities 2.1-2.21",
+                      [r for r in prosperity_data if READING_DEPTH == READING_DEPTH_OPTIONS[1] or not r['Supplement']],
+                      columns=['Class', 'Ground', 'Sahl', 'Also'],
+                      glance="Which of Sahl's seven classes of good fortune and misery the chart falls in, from the two lords of the sect light's triplicity by whole-sign place, the Lot of Fortune when both fall; under it, every further rule of the chapter that the chart meets, each with Sahl's sentence and the parallel in the Book of Aristotle or Abu 'Ali. Display only; nothing scores it.",
+                      notes="Sahl, On Nativities 2.1, 2-9: \"And good fortune is based on seven approaches: The first of them, on good fortune and how much that good fortune will come to. Second, <on one who> falls from that good fortune. Third, those whose livelihood is middling. Fourth, the rabble [and] those who come down from an ascent to a downfall. Fifth, those who rise up after wretchedness. Sixth, the wretched who do not cease to be in wretchedness. Seventh, those whose profit comes from their own hands.\" Dykes's comment at the head of the chapter: the fourth repeats the second, and the seventh joins profit from one's own hands with violence and injustice (fn 1; 2.21, 3); his table sets them against the Book of Aristotle's III.2.1-III.2.6.\n\n"
+                            "The class is read as Theophilus states it in 2.11, 1-3 -- \"" + PROSPERITY_SAHL['2.11, 1'] + " " + PROSPERITY_SAHL['2.11, 2'] + " " + PROSPERITY_SAHL['2.11, 3'] + "\" -- with 2.11, 5, \"" + PROSPERITY_SAHL['2.11, 5'] + "\", and 2.13, 40, \"" + PROSPERITY_SAHL['2.13, 40'] + "\" Strong is a stake or what follows one, falling the third, sixth, ninth and twelfth (fn 149 on \"strong\"), by whole sign. The first lord's time is the beginning of life (2.13, 39), so the first strong and the second falling is the fall, and the reverse the rise. Both in the stakes is 2.3, 2's greatest good fortune; a lord in what follows a stake is 2.3, 18's \"assets and a fine condition, with difficulty in [his] reputation and no fame\". The infortunes with a lord or in its square or opposition are listed and not judged: 2.11, 4 makes their aspect an increase or a subtraction, and Abu 'Ali's charts read the lords' places alone.\n\n"
+                            "When both lords fall the reading goes to the Lot of Fortune, 2.3, 6: \"" + PROSPERITY_SAHL['2.3, 6'] + "\" There 2.20, 1-2 confirm the sixth class, 2.3, 7 and 9 raise it to the first, and 2.16, 2 and 4 give the third; for the Lot, its lord and the lords of places, \"made unfortunate\" is 2.20, 1's own gloss, an infortune with it or looking at it from a square or opposition, by whole sign; 2.3, 7's \"eastern or cleansed\" is read as \"and\" (fn 87). Sahl's further indications -- the partnering lord (2.11, 4), the eleventh from the Ascendant (2.3, 12), the motley mixture (2.16, 5; its third place disputed, fnn 225-226), the falling of 2.17 (4, 5, 7, 8, 10, 11), the rising of 2.19 (1, 2, 5), the earnings of 2.21 (1-4) -- are listed under the class with their sentences and do not move it: the chapter gives no order for combining them and the twelve charts apply none. 2.17, 7's and 2.21, 3's eleventh from the Lot of Fortune is Sahl's own; the Book of Aristotle (III.2.1 [1.7]) has it as strong as the eleventh from the Ascendant. The Moon's separation and connection (2.17, 10; 2.19, 2) are read by degree within her orb when the chart carries motions.\n\n"
+                            "The fifteen degrees: \"" + PROSPERITY_SAHL['2.13, 48'] + " " + PROSPERITY_SAHL['2.13, 49'] + " " + PROSPERITY_SAHL['2.13, 50'] + " " + PROSPERITY_SAHL['2.13, 51'] + "\" Measured from the axial degree by ascensions (fnn 82-83, 222): oblique ascension from the Ascendant, oblique descension from the seventh, right ascension from the Midheaven and the fourth, the nearest stake behind the lord. Shown as a grade beside the class when the chart carries its meridian and latitude; the class itself stays by whole sign.\n\n"
+                            "The Lot's gate is Abu 'Ali's: the reading turns to the Lot when both lords fall, as his twelve charts do; Sahl's 2.3, 6 says \"made unfortunate\", a wider condition this app does not apply. 2.17, 8 states its own precedence (\"even if he was a king\") and is listed, not applied to the class, like every rule of 2.17 and 2.19; 2.3, 19-21 and 2.19, 6 are listed rows on the same footing (BA III.2.4 [4.5] has the stars \"from the east toward the Midheaven\" where Sahl has the bad places). Not read: 2.19, 3-4 and 7-9; 2.17, 6, 12-14 and 2.18; 2.16, 3 except as the grade above; 2.20, 3-6; 2.2's fixed stars; 2.4-2.10 and 2.12-2.15, which are the chapter's other topics.\n\n"
+                            "The fixtures are Abu 'Ali's twelve worked charts (PN I, JN Ch. 7, Figures 10-21), each read by whole sign from the positions he prints and held to the verdict he states; the ones he or Dykes reads otherwise are marked in the tests with Dykes's footnote.")
             if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
                 _finding(_gap, "Mercury's phase against the sect (supplement, display only)",
                           "Firmicus, Mathesis III.7, 7-9 and 26-30 (Dykes's fnn 186, 194)", mercury_phase_sect_data,
