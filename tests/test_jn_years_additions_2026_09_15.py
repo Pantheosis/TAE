@@ -83,14 +83,14 @@ def test_a_fortunes_trine_adds_at_three_undecided_grades(engine):
     by = {r['planet']: r for r in rows}
     assert set(by) == {'Jupiter', 'Saturn', 'Mars'}
     j = by['Jupiter']
-    assert (j['aspect'], j['effect'], j['lesser']) == ('trine', 'adds', 12)
+    assert (j['aspect'], j['effect'], j['lesser_years']) == ('trine', 'adds', 12)
     assert [(text, n, unit) for text, n, unit in j['grades']] == [
         ("its own lesser years", 12, "years"),
         ("if [the fortune] were middling in strength, [it will give] so many months", 12, "months"),
         ("if it were more unsound, days or hours", 12, "days or hours")]
     assert j['sentence'] == engine["JN_CH4_SENTENCES"]['fortune'] and j['reading'] is None
     s = by['Saturn']
-    assert (s['aspect'], s['effect'], s['lesser'], s['grades']) == ('square', 'subtracts', 30, None)
+    assert (s['aspect'], s['effect'], s['lesser_years'], s['grades']) == ('square', 'subtracts', 30, None)
     assert s['sentence'] == engine["JN_CH4_SENTENCES"]['infortune']
     assert (by['Mars']['effect'], by['Mars']['sentence']) == ('nothing', engine["JN_CH4_ADDITIONS"])
     # in words: the count at each grade, and the grade said to be undecided
@@ -107,7 +107,7 @@ def test_a_fortunes_trine_adds_at_three_undecided_grades(engine):
 
 def test_a_fortune_joined_adds_and_its_square_adds_nothing(engine):
     rows = {r['planet']: r for r in _rows(engine, "Sun", Sun=135.0, Venus=140.0, Jupiter=45.0, Saturn=290.0, Mars=290.0, Mercury=290.0)}
-    assert (rows['Venus']['aspect'], rows['Venus']['effect'], rows['Venus']['lesser']) == ('joined', 'adds', 8)
+    assert (rows['Venus']['aspect'], rows['Venus']['effect'], rows['Venus']['lesser_years']) == ('joined', 'adds', 8)
     assert (rows['Jupiter']['aspect'], rows['Jupiter']['effect']) == ('square', 'nothing')
     assert 'Saturn' not in rows and 'Mars' not in rows and 'Mercury' not in rows
 
@@ -120,7 +120,7 @@ def test_mercury_by_fn_28_is_dykess_reading(engine):
     joined to the house-master: not decided."""
     rows = {r['planet']: r for r in _rows(engine, "Sun", Sun=135.0, Mercury=190.0, Venus=200.0, Jupiter=345.0, Saturn=345.0, Mars=345.0)}
     m = rows['Mercury']
-    assert (m['aspect'], m['effect'], m['lesser'], m['grades']) == ('sextile', 'adds', 20, None)
+    assert (m['aspect'], m['effect'], m['lesser_years'], m['grades']) == ('sextile', 'adds', 20, None)
     assert m['reading'].startswith("Dykes's reading (fn 28)") and 'Venus' in m['reading']
     assert m['sentence'] == engine["JN_CH4_SENTENCES"]['mercury']
     rows = {r['planet']: r for r in _rows(engine, "Sun", Sun=135.0, Mercury=225.0, Saturn=230.0, Venus=15.0, Jupiter=15.0, Mars=15.0)}

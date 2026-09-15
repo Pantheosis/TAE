@@ -11018,7 +11018,7 @@ def evaluate_jn_years_additions(house_master, planetary_data):
         if look is None:
             continue
         aspect = 'joined' if look == 'with' else look
-        lesser = PLANETARY_YEARS[planet]['lesser']
+        lesser = JN_YEARS_TABLE[planet][2]   # Ch. 4's own lesser column, as jn_years_fallback reads it
         reading = None
         if planet in ('Jupiter', 'Venus'):
             if look in ('with', 'trine', 'sextile'):
@@ -11052,7 +11052,7 @@ def evaluate_jn_years_additions(house_master, planetary_data):
         grades = None
         if effect == 'adds' and planet != 'Mercury':
             grades = tuple((text, lesser, unit) for text, unit in JN_CH4_GRADES)
-        rows.append({'planet': planet, 'aspect': aspect, 'effect': effect, 'lesser': lesser, 'grades': grades,
+        rows.append({'planet': planet, 'aspect': aspect, 'effect': effect, 'lesser_years': lesser, 'grades': grades,
                      'sentence': sentence, 'reading': reading})
     return rows
 
@@ -11061,7 +11061,7 @@ def jn_years_additions_rows(house_master, planetary_data):
     """The Ch. 4 rows as the Releaser tab prints them (evaluate_jn_years_additions in words)."""
     out = []
     for r in evaluate_jn_years_additions(house_master, planetary_data):
-        n = r['lesser']
+        n = r['lesser_years']
         effect = {'adds': f"adds its lesser years ({n:g})", 'subtracts': f"subtracts its lesser years ({n:g})",
                   'nothing': "adds or subtracts nothing", 'not decided': "not decided"}[r['effect']]
         if r['grades']:
