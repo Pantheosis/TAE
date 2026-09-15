@@ -5,6 +5,7 @@ from datetime import datetime, timezone, time, timedelta
 from itertools import combinations, product
 from contextlib import contextmanager
 from xml.sax.saxutils import escape
+import html
 from timezonefinder import TimezoneFinder
 import pytz
 from pathlib import Path
@@ -109,7 +110,7 @@ PREFERENCE_KEYS = (
     '_fitting_infortune', '_domain_rule', '_lot_house_cusp', '_pn4_monthly_turn', '_reading_depth',
     # display
     '_wheel_layout', '_chart_bounds', '_timing_bounds', '_wheel_order', '_timing_lots', '_timing_rays',
-    '_timing_twelfths', '_timing_wheel_view', '_target_mode',
+    '_timing_twelfths', '_timing_wheel_view', '_target_mode', '_wheel_dark',
 )
 
 PREFERENCE_RENAMES = (
@@ -543,7 +544,8 @@ def _wheel_dm(longitude):
 
 
 def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_local, tz_name,
-                        wide=False, chronocrats=None, bounds=False):
+                        wide=False, chronocrats=None, bounds=False, theme=None):
+    pal = _wheel_palette(theme)
     size = WHEEL_SIZE
     cx = cy = size / 2.0
     asc = chart_data['ascendant']
@@ -569,14 +571,14 @@ def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_loc
     width = WHEEL_WIDE_WIDTH if wide else size
     svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {size}" width="{width}" height="{size}" '
            f'style="font-family:{_WHEEL_FONT}">',
-           f'<rect width="{width}" height="{size}" fill="#ffffff"/>']
+           f'<rect width="{width}" height="{size}" fill="{pal["bg"]}"/>']
 
     # 1. Sign band shaded by triplicity, sign glyphs, whole-sign place
     #    numbers on the rim, boundary spokes through both bands.
     for i in range(12):
         a0, a1 = ang(i * 30), ang(i * 30 + 30)
-        svg.append(f'<path d="{sector(_R_SIGN_IN, _R_WS_IN, a0, a1)}" fill="{TRIPLICITY_TINT[i % 4]}"/>')
-        svg.append(f'<path d="{sector(_R_WS_IN, _R_RIM, a0, a1)}" fill="#ffffff"/>')
+        svg.append(f'<path d="{sector(_R_SIGN_IN, _R_WS_IN, a0, a1)}" fill="{pal["tints"][i % 4]}"/>')
+        svg.append(f'<path d="{sector(_R_WS_IN, _R_RIM, a0, a1)}" fill="{pal["panel"]}"/>')
         # An angle box (step 4) sits wherever the Ascendant or MC falls in its
         # sign; a glyph within 7 degrees of one steps 8 degrees aside.
         glyph_lon = i * 30 + 15
@@ -585,41 +587,41 @@ def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_loc
             if abs(gap) < 7.0:
                 glyph_lon = i * 30 + 15 - (8 if gap > 0 else -8)
         gx, gy = xy((_R_SIGN_IN + _R_WS_IN) / 2, ang(glyph_lon))
-        svg.append(text(gx, gy, SIGN_GLYPHS[i] + _VS, 30))
+        svg.append(text(gx, gy, SIGN_GLYPHS[i] + _VS, 30, fill=pal['ink']))
         hx, hy = xy((_R_WS_IN + _R_RIM) / 2, ang(i * 30 + 15))
-        svg.append(text(hx, hy, str((i - asc_sign) % 12 + 1), 17, 'bold'))
+        svg.append(text(hx, hy, str((i - asc_sign) % 12 + 1), 17, 'bold', pal['ink']))
         x0, y0 = xy(_R_SIGN_IN, a0); x1, y1 = xy(_R_RIM, a0)
-        svg.append(line(x0, y0, x1, y1, '#000000', 1.2))
+        svg.append(line(x0, y0, x1, y1, pal['rule'], 1.2))
 
     # 2. Degree scale on the inner edge of the sign band: 1, 5 and 10 degrees.
     for d in range(360):
         ln = 14 if d % 10 == 0 else 10 if d % 5 == 0 else 5
         x0, y0 = xy(_R_SIGN_IN, ang(d)); x1, y1 = xy(_R_SIGN_IN + ln, ang(d))
-        svg.append(line(x0, y0, x1, y1, '#000000', 0.9 if ln > 5 else 0.5))
+        svg.append(line(x0, y0, x1, y1, pal['rule'], 0.9 if ln > 5 else 0.5))
     if bounds:
-        svg.extend(_bounds_ring_svg(ang, xy, sector, r_planet_edge, _R_SIGN_IN, glyph_px=12))
+        svg.extend(_bounds_ring_svg(ang, xy, sector, r_planet_edge, _R_SIGN_IN, glyph_px=12, pal=pal))
     for r, w in ((_R_RIM, 2.5), (_R_WS_IN, 1.2), (_R_SIGN_IN, 1.6), (_R_Q_OUT, 1.2), (_R_Q_IN, 1.6)):
-        svg.append(f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="#000000" stroke-width="{w}"/>')
+        svg.append(f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="{pal["rule"]}" stroke-width="{w}"/>')
 
     # 3. Alchabitius cusps, dashed as before but reaching the degree scale;
     #    the four stakes solid and coloured. House numbers at mid-house on
     #    the quadrant ring.
     for i, cusp_lon in enumerate(cusps):
         x0, y0 = xy(_R_Q_IN, ang(cusp_lon)); x1, y1 = xy(r_planet_edge, ang(cusp_lon))
-        if i in _AXIS_COLOUR:
-            svg.append(line(x0, y0, x1, y1, _AXIS_COLOUR[i], 2.6))
+        if i in pal['axis']:
+            svg.append(line(x0, y0, x1, y1, pal['axis'][i], 2.6))
         else:
-            svg.append(line(x0, y0, x1, y1, _CUSP_COLOUR, 1.4, '6 4'))
+            svg.append(line(x0, y0, x1, y1, pal['cusp'], 1.4, '6 4'))
         mid = cusp_lon + ((cusps[(i + 1) % 12] - cusp_lon) % 360.0) / 2.0
         mx, my = xy((_R_Q_OUT + _R_Q_IN) / 2, ang(mid))
-        svg.append(text(mx, my, str(i + 1), 14, 'bold', _CUSP_COLOUR))
+        svg.append(text(mx, my, str(i + 1), 14, 'bold', pal['cusp']))
 
     # 4. Angle boxes on the sign band: degree over minute, in the axis colour.
-    for angle_lon, colour in zip(angles, ('#0000cc', '#1e7b1e', '#0000cc', '#1e7b1e')):
+    for angle_lon, colour in zip(angles, (pal['horizon'], pal['meridian'], pal['horizon'], pal['meridian'])):
         d, m = _wheel_dm(angle_lon)
         bx, by = xy((_R_SIGN_IN + _R_WS_IN) / 2, ang(angle_lon))
         svg.append(f'<rect x="{bx - 19:.1f}" y="{by - 17:.1f}" width="38" height="34" rx="3" '
-                   f'fill="#ffffff" stroke="{colour}" stroke-width="1.2"/>')
+                   f'fill="{pal["panel"]}" stroke="{colour}" stroke-width="1.2"/>')
         svg.append(text(bx, by - 8, f'{d:02d}°', 13, 'bold', colour))
         svg.append(text(bx, by + 8, f"{m:02d}'", 13, 'bold', colour))
 
@@ -640,22 +642,22 @@ def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_loc
     for (name, lon_val, speed), a_true, a_shown, off in zip(points, true_bearings, shown, offsets):
         # A tick on the ring at the true degree, a hairline from it to the glyph.
         x0, y0 = xy(r_planet_edge, a_true); x1, y1 = xy(r_planet_edge - 10, a_true)
-        svg.append(line(x0, y0, x1, y1, '#000000', 1.6))
+        svg.append(line(x0, y0, x1, y1, pal['rule'], 1.6))
         x2, y2 = xy(_R_GLYPH - off + 22, a_shown)
-        svg.append(line(x1, y1, x2, y2, '#666666', 0.8))
+        svg.append(line(x1, y1, x2, y2, pal['leader'], 0.8))
         d, m = _wheel_dm(lon_val)
-        gx, gy = xy(_R_GLYPH - off, a_shown); svg.append(text(gx, gy, POINT_GLYPHS.get(name, name[:2]) + _VS, 34))
-        dx_, dy_ = xy(_R_DEG - off, a_shown); svg.append(text(dx_, dy_, f'{d:02d}°', 18, 'bold'))
-        sx, sy = xy(_R_SIGN - off, a_shown); svg.append(text(sx, sy, sign_glyph(lon_val), 19))
-        mx, my = xy(_R_MIN - off, a_shown); svg.append(text(mx, my, f"{m:02d}'", 15))
+        gx, gy = xy(_R_GLYPH - off, a_shown); svg.append(text(gx, gy, POINT_GLYPHS.get(name, name[:2]) + _VS, 34, fill=pal['ink']))
+        dx_, dy_ = xy(_R_DEG - off, a_shown); svg.append(text(dx_, dy_, f'{d:02d}°', 18, 'bold', pal['ink']))
+        sx, sy = xy(_R_SIGN - off, a_shown); svg.append(text(sx, sy, sign_glyph(lon_val), 19, fill=pal['ink']))
+        mx, my = xy(_R_MIN - off, a_shown); svg.append(text(mx, my, f"{m:02d}'", 15, fill=pal['ink']))
         if speed is not None and speed < 0:
-            rx, ry = xy(_R_RX - off, a_shown); svg.append(text(rx, ry, '℞' + _VS, 15))   # black (D6)
+            rx, ry = xy(_R_RX - off, a_shown); svg.append(text(rx, ry, '℞' + _VS, 15, fill=pal['ink']))   # the ink, never red (D6)
 
     # 6. Hub: the chart's name first (D5 supplies "Transits" when none was
     #    given), then when, where, and the systems in force. User strings
     #    are escaped: a name or place with & or < would otherwise break the
     #    whole wheel.
-    svg.append(f'<circle cx="{cx}" cy="{cy}" r="{_R_Q_IN - 1}" fill="#ffffff"/>')
+    svg.append(f'<circle cx="{cx}" cy="{cy}" r="{_R_Q_IN - 1}" fill="{pal["panel"]}"/>')
     name = str(chart_name)
     if len(name) > 30:
         name = name[:29] + '…'
@@ -663,28 +665,28 @@ def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_loc
     lat_s = f"{int(abs(lat))}°{int((abs(lat) % 1) * 60):02d}′{'N' if lat >= 0 else 'S'}"
     lon_s = f"{int(abs(lon))}°{int((abs(lon) % 1) * 60):02d}′{'E' if lon >= 0 else 'W'}"
     hub_lines = [
-        (escape(name), name_px, 'bold'),
+        (_esc_text(name), name_px, 'bold'),
         (f'{dt_local.day} {dt_local:%b} {dt_local.year}  {dt_local:%H:%M}', 12, 'normal'),
-        (escape(str(tz_name)), 11, 'normal'),
-        (escape(str(location_query)), 12, 'normal'),
+        (_esc_text(tz_name), 11, 'normal'),
+        (_esc_text(location_query), 12, 'normal'),
         (f'{lat_s}  {lon_s}', 11, 'normal'),
-        (chart_data['sect'], 12, 'bold'),
+        (_esc_text(chart_data['sect']), 12, 'bold'),
         ('Whole sign · Alchabitius', 10, 'normal'),
         ('Tropical · True node', 10, 'normal'),
     ]
     y = cy - 7 * len(hub_lines)
     for s, px, w in hub_lines:
-        svg.append(text(cx, y, s, px, w))
+        svg.append(text(cx, y, s, px, w, pal['ink']))
         y += 14
 
     # 7. The wide variant: a positions panel beside the wheel, so a full-
     #    window view uses the window's width as well as its height (D10).
     if wide:
         x0 = size + 40
-        svg.append(text(x0, 60, 'Positions', 22, 'bold', anchor='start'))
+        svg.append(text(x0, 60, 'Positions', 22, 'bold', pal['ink'], anchor='start'))
         for dx, h in ((0, 'Point'), (150, 'Position'), (330, 'WS place'), (460, 'Quadrant'), (590, 'Motion')):
-            svg.append(text(x0 + dx, 100, h, 15, 'bold', '#444444', anchor='start'))
-        svg.append(line(x0, 112, x0 + 680, 112, '#000000', 1))
+            svg.append(text(x0 + dx, 100, h, 15, 'bold', pal['label'], anchor='start'))
+        svg.append(line(x0, 112, x0 + 680, 112, pal['rule'], 1))
         y = 140
         for name_, lon_val, speed in sorted(points, key=lambda p: list(POINT_GLYPHS).index(p[0]) if p[0] in POINT_GLYPHS else 99):
             d, m = _wheel_dm(lon_val)
@@ -692,31 +694,31 @@ def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_loc
                 motion = '–'
             else:
                 motion = '℞' + _VS + ' retrograde' if speed < 0 else 'direct'
-            svg.append(text(x0, y, POINT_GLYPHS.get(name_, '') + _VS, 22, anchor='start'))
-            svg.append(text(x0 + 34, y, name_, 16, anchor='start'))
-            svg.append(text(x0 + 150, y, f'{d:02d}° {sign_glyph(lon_val)} {m:02d}′', 16, anchor='start'))
-            svg.append(text(x0 + 330, y, str(get_wsh_house(lon_val, asc)), 16, anchor='start'))
-            svg.append(text(x0 + 460, y, str(get_effective_house(lon_val, cusps)), 16, anchor='start'))
-            svg.append(text(x0 + 590, y, motion, 15, anchor='start'))
+            svg.append(text(x0, y, POINT_GLYPHS.get(name_, '') + _VS, 22, fill=pal['ink'], anchor='start'))
+            svg.append(text(x0 + 34, y, _esc_text(name_), 16, fill=pal['ink'], anchor='start'))
+            svg.append(text(x0 + 150, y, f'{d:02d}° {sign_glyph(lon_val)} {m:02d}′', 16, fill=pal['ink'], anchor='start'))
+            svg.append(text(x0 + 330, y, str(get_wsh_house(lon_val, asc)), 16, fill=pal['ink'], anchor='start'))
+            svg.append(text(x0 + 460, y, str(get_effective_house(lon_val, cusps)), 16, fill=pal['ink'], anchor='start'))
+            svg.append(text(x0 + 590, y, motion, 15, fill=pal['ink'], anchor='start'))
             y += 36
         y += 20
-        svg.append(text(x0, y, 'Angles and cusps (Alchabitius)', 18, 'bold', anchor='start'))
+        svg.append(text(x0, y, 'Angles and cusps (Alchabitius)', 18, 'bold', pal['ink'], anchor='start'))
         y += 34
         for i, cusp_lon in enumerate(cusps):
             d, m = _wheel_dm(cusp_lon)
             label = {0: 'Asc', 3: 'IC', 6: 'Des', 9: 'MC'}.get(i, '')
             col = x0 + (0 if i < 6 else 340)
             yy = y + (i % 6) * 32
-            svg.append(text(col, yy, f'{i + 1:2d}', 15, 'bold', _CUSP_COLOUR, anchor='start'))
-            svg.append(text(col + 40, yy, f'{d:02d}° {sign_glyph(cusp_lon)} {m:02d}′', 15, anchor='start'))
+            svg.append(text(col, yy, f'{i + 1:2d}', 15, 'bold', pal['cusp'], anchor='start'))
+            svg.append(text(col + 40, yy, f'{d:02d}° {sign_glyph(cusp_lon)} {m:02d}′', 15, fill=pal['ink'], anchor='start'))
             if label:
-                svg.append(text(col + 190, yy, label, 15, 'bold', _AXIS_COLOUR[i], anchor='start'))
+                svg.append(text(col + 190, yy, label, 15, 'bold', pal['axis'][i], anchor='start'))
         y += 6 * 32 + 20
-        sect_line = f"Sect: {chart_data['sect']}"
+        sect_line = f"Sect: {_esc_text(chart_data['sect'])}"
         if chronocrats:
-            sect_line += (f" · Lord of the day: {escape(str(chronocrats.get('Day Lord', '')))}"
-                          f" · Lord of the hour: {escape(str(chronocrats.get('Hour Lord', '')))}")
-        svg.append(text(x0, y, sect_line, 15, anchor='start'))
+            sect_line += (f" · Lord of the day: {_esc_text(chronocrats.get('Day Lord', ''))}"
+                          f" · Lord of the hour: {_esc_text(chronocrats.get('Hour Lord', ''))}")
+        svg.append(text(x0, y, sect_line, 15, fill=pal['ink'], anchor='start'))
 
     svg.append('</svg>')
     return ''.join(svg)
@@ -794,23 +796,24 @@ def _svg_arrowhead(xy, r, a, colour, size=9, forward=True):
     return f'<polygon points="{tx:.1f},{ty:.1f} {bx1:.1f},{by1:.1f} {bx2:.1f},{by2:.1f}" fill="{colour}"/>'
 
 
-def _bounds_ring_svg(ang, xy, sector, r_in, r_out, highlight=None, glyph_px=12):
+def _bounds_ring_svg(ang, xy, sector, r_in, r_out, highlight=None, glyph_px=12, pal=None):
     """The Egyptian bounds as a ring, a cell per bound with its lord's
     glyph, as every PN IV wheel carries (Figures 1, 22, 25, 26, 109).
     `highlight` is a longitude whose bound is tinted -- the bound the
     distribution stands in. Every cell is class="bound"."""
+    pal = pal or _PALETTE_LIGHT
     out = []
     for i, sign in enumerate(SIGN_ORDER):
         start = 0
         for limit, lord in EGYPTIAN_TERMS[sign]:
             a0, a1 = ang(i * 30 + start), ang(i * 30 + limit)
-            tint = '#ffffff'
+            tint = pal['panel']
             if highlight is not None and int((highlight % 360.0) // 30) == i and start <= (highlight % 30.0) < limit:
-                tint = WHEEL_BOUND_TINT
+                tint = pal['bound_tint']
             out.append(f'<path class="bound" d="{sector(r_in, r_out, a0, a1)}" fill="{tint}" '
-                       f'stroke="#000000" stroke-width="0.6"/>')
+                       f'stroke="{pal["rule"]}" stroke-width="0.6"/>')
             mx, my = xy((r_in + r_out) / 2.0, ang(i * 30 + (start + limit) / 2.0))
-            out.append(_svg_text(mx, my, POINT_GLYPHS[lord] + _VS, glyph_px, fill='#333333', cls='bound-lord'))
+            out.append(_svg_text(mx, my, POINT_GLYPHS[lord] + _VS, glyph_px, fill=pal['note'], cls='bound-lord'))
             start = limit
     return out
 
@@ -841,7 +844,7 @@ def _ring_layout(n, bounds):
     return [(bottom, a), (a, b), (b, top)]
 
 
-def _draw_ring_points(svg, ang, xy, ring_idx, label, chart_data, r_in, r_out, colour, badges=None):
+def _draw_ring_points(svg, ang, xy, ring_idx, label, chart_data, r_in, r_out, colour, badges=None, pal=None):
     """One chart's default points in its annulus: a tick at the true
     degree on the ring's outer edge, a hairline to a radial stack (glyph,
     degree, sign, minute, retrograde mark, badge letters), spread apart
@@ -851,6 +854,7 @@ def _draw_ring_points(svg, ang, xy, ring_idx, label, chart_data, r_in, r_out, co
     # annulus: sizes scale with its width (capped at the natal wheel's),
     # the lines are laid out between the ring's edges, and the stagger
     # for crowded runs is used only where the ring is wide enough for it.
+    pal = pal or _PALETTE_LIGHT
     width = r_out - r_in
     scale = max(0.42, min(1.0, width / 150.0))
     px_glyph, px_deg, px_sign, px_min, px_rx = (round(34 * scale), round(18 * scale), round(19 * scale),
@@ -868,12 +872,12 @@ def _draw_ring_points(svg, ang, xy, ring_idx, label, chart_data, r_in, r_out, co
     offsets = _stagger_offsets(true_b, shown, step=stagger) if stagger >= 8 else [0] * len(points)
     for (name, lon_val, speed), a_true, a_shown, off in zip(points, true_b, shown, offsets):
         d, m = _wheel_dm(lon_val)
-        svg.append(f'<g class="pt" data-ring="{ring_idx}" data-chart="{escape(label)}" data-point="{escape(name)}" '
+        svg.append(f'<g class="pt" data-ring="{ring_idx}" data-chart="{_esc_attr(label)}" data-point="{_esc_attr(name)}" '
                    f'data-lon="{lon_val % 360.0:.6f}">')
         x0, y0 = xy(r_out, a_true); x1, y1 = xy(r_out - 8, a_true)
         svg.append(_svg_line(x0, y0, x1, y1, colour, 1.4))
         x2, y2 = xy(r_glyph - off + px_glyph * 0.6, a_shown)
-        svg.append(_svg_line(x1, y1, x2, y2, '#777777', 0.7))
+        svg.append(_svg_line(x1, y1, x2, y2, pal['leader_ring'], 0.7))
         gx, gy = xy(r_glyph - off, a_shown); svg.append(_svg_text(gx, gy, POINT_GLYPHS.get(name, name[:2]) + _VS, px_glyph, fill=colour))
         dx_, dy_ = xy(r_deg - off, a_shown); svg.append(_svg_text(dx_, dy_, f'{d:02d}°', px_deg, 'bold', colour))
         sx, sy = xy(r_sign - off, a_shown); svg.append(_svg_text(sx, sy, SIGN_GLYPHS[int((lon_val % 360.0) // 30)] + _VS, px_sign, fill=colour))
@@ -882,13 +886,14 @@ def _draw_ring_points(svg, ang, xy, ring_idx, label, chart_data, r_in, r_out, co
             rx, ry = xy(r_rx - off, a_shown); svg.append(_svg_text(rx, ry, '℞' + _VS, px_rx, fill=colour))
         if badges and badges.get(name):
             bx, by = xy(r_badge - off, a_shown)
-            svg.append(_svg_text(bx, by, escape(badges[name]), px_rx, 'bold', '#b8860b', cls='badge'))
+            svg.append(_svg_text(bx, by, _esc_text(badges[name]), px_rx, 'bold', pal['badge'], cls='badge'))
         svg.append('</g>')
 
 
-def _draw_ring_extras(svg, ang, xy, ring_idx, label, extras, r_out, colour):
+def _draw_ring_extras(svg, ang, xy, ring_idx, label, extras, r_out, colour, pal=None):
     """Optional points (Lots, rays, twelfth-parts): a short tick at the
     ring's outer edge and a tiny label, spread thinly. <g class="extra">."""
+    pal = pal or _PALETTE_LIGHT
     if not extras:
         return
     items = sorted(extras, key=lambda e: ang(e[1]))
@@ -897,18 +902,18 @@ def _draw_ring_extras(svg, ang, xy, ring_idx, label, extras, r_out, colour):
     for item, a_true, a_shown in zip(items, true_b, shown):
         name, lon_val = item[0], item[1]
         short = item[2] if len(item) > 2 else (name if len(name) <= 6 else name[:6])
-        svg.append(f'<g class="extra" data-ring="{ring_idx}" data-chart="{escape(label)}" '
-                   f'data-point="{escape(name)}" data-lon="{lon_val % 360.0:.6f}">')
+        svg.append(f'<g class="extra" data-ring="{ring_idx}" data-chart="{_esc_attr(label)}" '
+                   f'data-point="{_esc_attr(name)}" data-lon="{lon_val % 360.0:.6f}">')
         x0, y0 = xy(r_out, a_true); x1, y1 = xy(r_out - 5, a_true)
         svg.append(_svg_line(x0, y0, x1, y1, colour, 0.8))
         tx, ty = xy(r_out - 12, a_shown)
-        svg.append(_svg_text(tx, ty, escape(short) + _VS, 7, fill=colour, rotate=-(a_shown - 90.0) % 360.0 - 90.0))
+        svg.append(_svg_text(tx, ty, _esc_text(short) + _VS, 7, fill=colour, rotate=-(a_shown - 90.0) % 360.0 - 90.0))
         svg.append('</g>')
 
 
 def generate_multiwheel_svg(rings, chart_name, wide=False, bounds=True, shade_sign=None, shade_label='Sign of year',
                             outline_sign=None, outline_label='Sign of month', profection_from=None,
-                            distribution=None, marks=(), badges=None, extras=None, hub_lines=()):
+                            distribution=None, marks=(), badges=None, extras=None, hub_lines=(), theme=None):
     """One to three charts on one zodiac. `rings` are dicts inner to outer:
     {'label', 'chart' (a chart_data), 'when' (a short line for the hub)}.
     shade_sign / outline_sign: sign indices 0-11 (the sign of the year,
@@ -918,6 +923,7 @@ def generate_multiwheel_svg(rings, chart_name, wide=False, bounds=True, shade_si
     Ascendant's arc and tints the bound of `end` (Figures 2, 65). marks:
     (label, lon, ring_idx) degrees ticked on a ring's outer edge. badges:
     {ring_idx: {planet: letters}}. extras: {ring_idx: [(name, lon)]}."""
+    pal = _wheel_palette(theme)
     rings = list(rings)
     assert 1 <= len(rings) <= 3
     size = WHEEL_SIZE
@@ -928,45 +934,45 @@ def generate_multiwheel_svg(rings, chart_name, wide=False, bounds=True, shade_si
     width = WHEEL_WIDE_WIDTH if wide else size
     svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {size}" width="{width}" height="{size}" '
            f'style="font-family:{_WHEEL_FONT}">',
-           f'<rect width="{width}" height="{size}" fill="#ffffff"/>']
+           f'<rect width="{width}" height="{size}" fill="{pal["bg"]}"/>']
     layout = _ring_layout(len(rings), bounds)
     r_top = layout[-1][1]
 
     # 0. The shaded sign of the year, under everything (fn 33).
     if shade_sign is not None:
         a0, a1 = ang(shade_sign * 30), ang(shade_sign * 30 + 30)
-        svg.append(f'<path class="shade" data-sign="{shade_sign}" d="{sector(_M_HUB, _M_RIM, a0, a1)}" fill="{WHEEL_SHADE}"/>')
+        svg.append(f'<path class="shade" data-sign="{shade_sign}" d="{sector(_M_HUB, _M_RIM, a0, a1)}" fill="{pal["shade"]}"/>')
     # 1. Sign band, degree scale, spokes through every ring (whole signs are
     #    every chart's houses here, as Dykes draws them).
     for i in range(12):
         a0, a1 = ang(i * 30), ang(i * 30 + 30)
-        fill = TRIPLICITY_TINT[i % 4] if shade_sign != i else WHEEL_SHADE
+        fill = pal['tints'][i % 4] if shade_sign != i else pal['shade']
         svg.append(f'<path d="{sector(_M_SIGN_IN, _M_RIM, a0, a1)}" fill="{fill}"/>')
         gx, gy = xy((_M_SIGN_IN + _M_RIM) / 2.0 + 6, ang(i * 30 + 15))
-        svg.append(_svg_text(gx, gy, SIGN_GLYPHS[i] + _VS, 26))
+        svg.append(_svg_text(gx, gy, SIGN_GLYPHS[i] + _VS, 26, fill=pal['ink']))
         x0, y0 = xy(_M_HUB, a0); x1, y1 = xy(_M_RIM, a0)
-        svg.append(_svg_line(x0, y0, x1, y1, '#000000', 1.0))
+        svg.append(_svg_line(x0, y0, x1, y1, pal['rule'], 1.0))
     for d in range(360):
         ln = 12 if d % 10 == 0 else 8 if d % 5 == 0 else 4
         x0, y0 = xy(_M_SIGN_IN, ang(d)); x1, y1 = xy(_M_SIGN_IN + ln, ang(d))
-        svg.append(_svg_line(x0, y0, x1, y1, '#000000', 0.8 if ln > 4 else 0.45))
+        svg.append(_svg_line(x0, y0, x1, y1, pal['rule'], 0.8 if ln > 4 else 0.45))
     if bounds:
         svg.extend(_bounds_ring_svg(ang, xy, sector, _M_BOUNDS_IN, _M_SIGN_IN,
-                                    highlight=(distribution or {}).get('end')))
+                                    highlight=(distribution or {}).get('end'), pal=pal))
     for r, w in ((_M_RIM, 2.2), (_M_SIGN_IN, 1.4), (_M_HUB_RING, 1.0), (_M_HUB, 1.4)):
-        svg.append(f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="#000000" stroke-width="{w}"/>')
+        svg.append(f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="{pal["rule"]}" stroke-width="{w}"/>')
     if outline_sign is not None:
         a0, a1 = ang(outline_sign * 30), ang(outline_sign * 30 + 30)
         svg.append(f'<path class="outline" data-sign="{outline_sign}" d="{sector(_M_HUB, _M_RIM, a0, a1)}" '
-                   f'fill="none" stroke="#000000" stroke-width="2.2" stroke-dasharray="7 5"/>')
+                   f'fill="none" stroke="{pal["rule"]}" stroke-width="2.2" stroke-dasharray="7 5"/>')
 
     # 2. The rings, inner to outer: separator, whole-sign numbers of that
     #    chart, its angles across its own annulus, its points.
     for idx, (ring, (r_in, r_out)) in enumerate(zip(rings, layout)):
         chart = ring['chart']
-        colour = WHEEL_RING_COLOURS[idx if len(rings) > 1 else 0]
+        colour = pal['rings'][idx if len(rings) > 1 else 0]
         if idx > 0:
-            svg.append(f'<circle cx="{cx}" cy="{cy}" r="{r_in}" fill="none" stroke="#000000" stroke-width="1.0"/>')
+            svg.append(f'<circle cx="{cx}" cy="{cy}" r="{r_in}" fill="none" stroke="{pal["rule"]}" stroke-width="1.0"/>')
         c_asc_sign = int((chart['ascendant'] % 360.0) // 30)
         num_r = (_M_HUB + _M_HUB_RING) / 2.0 if idx == 0 else r_out - 9
         for i in range(12):
@@ -974,26 +980,26 @@ def generate_multiwheel_svg(rings, chart_name, wide=False, bounds=True, shade_si
             svg.append(_svg_text(nx, ny, str((i - c_asc_sign) % 12 + 1), 15 if idx == 0 else 10,
                                  'bold', colour, cls='house'))
         a_lo = _M_HUB if idx == 0 else r_in
-        for lon_val, col, lab in ((chart['ascendant'], '#0000cc', 'As'), (chart['mc'], '#1e7b1e', 'Mc'),
-                                  ((chart['ascendant'] + 180.0) % 360.0, '#0000cc', 'Ds'),
-                                  ((chart['mc'] + 180.0) % 360.0, '#1e7b1e', 'Ic')):
+        for lon_val, col, lab in ((chart['ascendant'], pal['horizon'], 'As'), (chart['mc'], pal['meridian'], 'Mc'),
+                                  ((chart['ascendant'] + 180.0) % 360.0, pal['horizon'], 'Ds'),
+                                  ((chart['mc'] + 180.0) % 360.0, pal['meridian'], 'Ic')):
             x0, y0 = xy(a_lo, ang(lon_val)); x1, y1 = xy(r_out, ang(lon_val))
             svg.append(_svg_line(x0, y0, x1, y1, col, 2.0 if idx == 0 else 1.5))
             lx, ly = xy(r_out - 9, ang(lon_val) + 2.5 * 57.2958 / r_out * 3)
             svg.append(_svg_text(lx, ly, lab, 9, 'bold', col, cls='angle'))
         _draw_ring_points(svg, ang, xy, idx, ring['label'], chart, r_in, r_out, colour,
-                          badges=(badges or {}).get(idx))
-        _draw_ring_extras(svg, ang, xy, idx, ring['label'], (extras or {}).get(idx), r_out, colour)
+                          badges=(badges or {}).get(idx), pal=pal)
+        _draw_ring_extras(svg, ang, xy, idx, ring['label'], (extras or {}).get(idx), r_out, colour, pal=pal)
 
     # 3. Marks: named degrees on a ring's outer edge (the terminal point ...).
     for lab, lon_val, ring_idx in marks:
         r_in, r_out = layout[min(ring_idx, len(layout) - 1)]
         a = ang(lon_val)
         x0, y0 = xy(r_out, a); x1, y1 = xy(r_out - 14, a)
-        svg.append(f'<g class="mark" data-point="{escape(lab)}" data-lon="{lon_val % 360.0:.6f}">')
-        svg.append(_svg_line(x0, y0, x1, y1, '#b8860b', 2.2))
+        svg.append(f'<g class="mark" data-point="{_esc_attr(lab)}" data-lon="{lon_val % 360.0:.6f}">')
+        svg.append(_svg_line(x0, y0, x1, y1, pal['badge'], 2.2))
         tx, ty = xy(r_out - 22, a)
-        svg.append(_svg_text(tx, ty, escape(lab), 9, 'bold', '#b8860b'))
+        svg.append(_svg_text(tx, ty, _esc_text(lab), 9, 'bold', pal['badge']))
         svg.append('</g>')
 
     # 4. The profection: a dashed arc outside the rim from the natal
@@ -1002,9 +1008,9 @@ def generate_multiwheel_svg(rings, chart_name, wide=False, bounds=True, shade_si
         s0 = int((profection_from % 360.0) // 30)
         if s0 != shade_sign:
             a0, a1 = ang(s0 * 30 + 15), ang(shade_sign * 30 + 15)
-            svg.append(f'<path class="profection" d="{arc(_M_RIM + 11, a0, a1)}" fill="none" stroke="#000000" '
+            svg.append(f'<path class="profection" d="{arc(_M_RIM + 11, a0, a1)}" fill="none" stroke="{pal["rule"]}" '
                        f'stroke-width="2.4" stroke-dasharray="9 6"/>')
-            svg.append(_svg_arrowhead(xy, _M_RIM + 11, a1, '#000000'))
+            svg.append(_svg_arrowhead(xy, _M_RIM + 11, a1, pal['rule']))
     # Sign labels run along the arc in the sign band's inner margin,
     # upright on either half of the wheel, as Dykes letters "Sign of year".
     def _tangential(r, lon_val, s, cls):
@@ -1013,7 +1019,7 @@ def generate_multiwheel_svg(rings, chart_name, wide=False, bounds=True, shade_si
         if 180.0 < a % 360.0 < 360.0:
             rot += 180.0
         x, y = xy(r, a)
-        return _svg_text(x, y, s, 10, 'bold', '#444444', rotate=rot, cls=cls)
+        return _svg_text(x, y, _esc_text(s), 10, 'bold', pal['label'], rotate=rot, cls=cls)
     if shade_sign is not None:
         svg.append(_tangential(_M_SIGN_IN + 15, shade_sign * 30 + 15, shade_label, 'shade-label'))
     if outline_sign is not None:
@@ -1027,24 +1033,24 @@ def generate_multiwheel_svg(rings, chart_name, wide=False, bounds=True, shade_si
         a0, a1 = ang(distribution['start']), ang(distribution['end'])
         svg.append(f'<path class="distribution" data-start="{distribution["start"] % 360.0:.6f}" '
                    f'data-end="{distribution["end"] % 360.0:.6f}" d="{arc(r_arc, a0, a1)}" fill="none" '
-                   f'stroke="#0000cc" stroke-width="2.6"/>')
-        svg.append(_svg_arrowhead(xy, r_arc, a1, '#0000cc', size=11))
+                   f'stroke="{pal["horizon"]}" stroke-width="2.6"/>')
+        svg.append(_svg_arrowhead(xy, r_arc, a1, pal['horizon'], size=11))
 
     # 6. Hub: the name, then one line per ring, inner first.
-    svg.append(f'<circle cx="{cx}" cy="{cy}" r="{_M_HUB - 1}" fill="#ffffff"/>')
+    svg.append(f'<circle cx="{cx}" cy="{cy}" r="{_M_HUB - 1}" fill="{pal["panel"]}"/>')
     name = str(chart_name)
     if len(name) > 30:
         name = name[:29] + '…'
-    lines = [(escape(name), 15 if len(name) <= 18 else 12, 'bold', '#000000')]
+    lines = [(_esc_text(name), 15 if len(name) <= 18 else 12, 'bold', pal['rings'][0])]
     for idx, ring in enumerate(rings):
-        colour = WHEEL_RING_COLOURS[idx if len(rings) > 1 else 0]
+        colour = pal['rings'][idx if len(rings) > 1 else 0]
         place = ('Inner', 'Middle', 'Outer')[idx] if len(rings) == 3 else ('Inner', 'Outer')[idx] if len(rings) == 2 else ''
         head = f"{place}: {ring['label']}" if place else ring['label']
-        lines.append((escape(head), 11, 'bold', colour))
+        lines.append((_esc_text(head), 11, 'bold', colour))
         if ring.get('when'):
-            lines.append((escape(str(ring['when'])), 9, 'normal', colour))
+            lines.append((_esc_text(ring['when']), 9, 'normal', colour))
     for s in hub_lines:
-        lines.append((escape(str(s)), 9, 'normal', '#333333'))
+        lines.append((_esc_text(s), 9, 'normal', pal['note']))
     y = cy - 6.5 * (len(lines) - 1)
     for s, px, w, col in lines:
         svg.append(_svg_text(cx, y, s, px, w, col))
@@ -1054,12 +1060,12 @@ def generate_multiwheel_svg(rings, chart_name, wide=False, bounds=True, shade_si
     if wide:
         col_w = (width - size - 60) / len(rings)
         for idx, ring in enumerate(rings):
-            colour = WHEEL_RING_COLOURS[idx if len(rings) > 1 else 0]
+            colour = pal['rings'][idx if len(rings) > 1 else 0]
             x0 = size + 40 + idx * col_w
-            svg.append(_svg_text(x0, 60, escape(ring['label']), 18, 'bold', colour, anchor='start'))
+            svg.append(_svg_text(x0, 60, _esc_text(ring['label']), 18, 'bold', colour, anchor='start'))
             if ring.get('when'):
-                svg.append(_svg_text(x0, 84, escape(str(ring['when'])), 11, fill=colour, anchor='start'))
-            svg.append(_svg_line(x0, 98, x0 + col_w - 30, 98, '#000000', 1))
+                svg.append(_svg_text(x0, 84, _esc_text(ring['when']), 11, fill=colour, anchor='start'))
+            svg.append(_svg_line(x0, 98, x0 + col_w - 30, 98, pal['rule'], 1))
             chart = ring['chart']
             y = 122
             pts = sorted(_wheel_points(chart), key=lambda p: list(POINT_GLYPHS).index(p[0]) if p[0] in POINT_GLYPHS else 99)
@@ -1078,7 +1084,7 @@ def generate_multiwheel_svg(rings, chart_name, wide=False, bounds=True, shade_si
                 svg.append(_svg_text(x0 + 30, y, f'{d:02d}° {SIGN_GLYPHS[int((lon_val % 360.0) // 30)]}{_VS} {m:02d}′',
                                      14, fill=colour, anchor='start'))
                 y += 26
-            svg.append(_svg_text(x0, y, f"Sect: {chart['sect']}", 12, fill=colour, anchor='start'))
+            svg.append(_svg_text(x0, y, f"Sect: {_esc_text(chart['sect'])}", 12, fill=colour, anchor='start'))
 
     svg.append('</svg>')
     return ''.join(svg)
@@ -1096,12 +1102,94 @@ STRIP_TINT = {'Saturn': '#d9d9d9', 'Jupiter': '#cfe0f5', 'Mars': '#f5cdc7', 'Sun
               'Venus': '#d4efd0', 'Mercury': '#f8ddb8', 'Moon': '#e2d9f3'}
 
 
-def generate_distribution_strip_svg(segments, now, unit='years', span=None, title=''):
+# ---- The two palettes ---------------------------------------------------
+# Every picture used to be drawn on an opaque white rectangle with black
+# ink, so a reader in the dark theme got a white square on a dark page.
+# The renderers take theme=: None is the palette above, exactly as it has
+# always been drawn, and 'dark' is the same picture on Streamlit's own
+# dark ground. One dict per theme, read once at the top of a renderer; the
+# geometry does not know which it is drawing in.
+_PALETTE_LIGHT = {
+    'bg': '#ffffff',            # the picture's ground
+    'panel': '#ffffff',         # opaque fills over it: the rim band, the angle boxes, the hub, a bound's cell
+    'ink': '#000',              # text, where _svg_text's own default was taken
+    'rule': '#000000',          # circles, spokes, the degree scale, a strip's axis
+    'leader': '#666666',        # the hairline from a point's tick to its glyph (the natal wheel)
+    'leader_ring': '#777777',   # the same on a revolution ring
+    'label': '#444444',         # the wide panel's column heads, the sign-of-year lettering
+    'note': '#333333',          # a bound's lord, the hub's added lines, a strip's partner
+    'axis_note': '#555555',     # the strip's axis caption
+    'tints': TRIPLICITY_TINT,   # the sign band by triplicity
+    'shade': WHEEL_SHADE,
+    'bound_tint': WHEEL_BOUND_TINT,
+    'axis': _AXIS_COLOUR,       # by cusp index
+    'horizon': '#0000cc',       # Ascendant and Descendant, and the distribution's arc
+    'meridian': '#1e7b1e',      # MC and IC
+    'cusp': _CUSP_COLOUR,
+    'badge': '#b8860b',
+    'rings': WHEEL_RING_COLOURS,
+    'now': '#c00000',
+    'strip_tint': STRIP_TINT,
+    'strip_other': '#eeeeee',
+}
+# The dark ground is Streamlit's own default (#0e1117): st.context.theme
+# reports the theme's type and not its colours, so the value is taken from
+# the framework's default rather than guessed. The semantic colours move
+# only as far as a dark ground requires -- the horizon stays blue, the
+# meridian green, the cusps red, the badge gold, the sign band still four
+# steps apart, each at the distance from the ground its light counterpart
+# keeps from white.
+_PALETTE_DARK = {
+    'bg': '#0e1117',
+    'panel': '#0e1117',
+    'ink': '#fafafa',
+    'rule': '#d2d6de',
+    'leader': '#8b919b',
+    'leader_ring': '#9aa1ac',
+    'label': '#b4b9c2',
+    'note': '#c2c7d0',
+    'axis_note': '#a8adb6',
+    'tints': ('#161a22', '#2f3440', '#202530', '#40485a'),
+    'shade': '#2b313d',
+    'bound_tint': '#584717',
+    'axis': {0: '#7aa7ff', 6: '#7aa7ff', 9: '#5fcf5f', 3: '#5fcf5f'},
+    'horizon': '#7aa7ff',
+    'meridian': '#5fcf5f',
+    'cusp': '#e0736f',
+    'badge': '#e3b341',
+    'rings': ('#fafafa', '#8ab4ff', '#f08a80'),
+    'now': '#ff5f56',
+    'strip_tint': {'Saturn': '#3a3a3a', 'Jupiter': '#25384f', 'Mars': '#4d2e2a', 'Sun': '#4d431c',
+                   'Venus': '#26402a', 'Mercury': '#4a3a23', 'Moon': '#37304a'},
+    'strip_other': '#2a2a2a',
+}
+
+
+def _wheel_palette(theme=None):
+    """The colours a picture is drawn in. None -- and anything the viewer's
+    browser does not report as dark -- is the palette the app has always
+    used."""
+    return _PALETTE_DARK if str(theme).lower() == 'dark' else _PALETTE_LIGHT
+
+
+def _esc_attr(s):
+    """A value on its way into an SVG attribute. Double quotes included: a
+    Lot name carrying one closed the attribute and broke a whole wheel."""
+    return html.escape(str(s), quote=True)
+
+
+def _esc_text(s):
+    """A value on its way into SVG text content."""
+    return html.escape(str(s))
+
+
+def generate_distribution_strip_svg(segments, now, unit='years', span=None, title='', theme=None):
     """segments as _pn4_distribute returns them (from/to/distributor/partner/
     partner_aspect); `now` in the strip's unit (completed years, or the day
     of the year) or None; span the bar's full length (120 years, 365 days
     ...). Each bar is <rect class="seg"> with data-from/to/distributor/
     partner; the present is <line class="now">."""
+    pal = _wheel_palette(theme)
     if unit not in ('years', 'days'):
         raise ValueError(f"unit must be 'years' or 'days', not {unit!r}")
     segments = list(segments or [])
@@ -1116,48 +1204,49 @@ def generate_distribution_strip_svg(segments, now, unit='years', span=None, titl
 
     svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {STRIP_WIDTH} {STRIP_HEIGHT}" width="{STRIP_WIDTH}" '
            f'height="{STRIP_HEIGHT}" style="font-family:{_WHEEL_FONT}">',
-           f'<rect width="{STRIP_WIDTH}" height="{STRIP_HEIGHT}" fill="#ffffff"/>']
+           f'<rect width="{STRIP_WIDTH}" height="{STRIP_HEIGHT}" fill="{pal["bg"]}"/>']
     if title:
-        svg.append(_svg_text(x_left, 26, escape(str(title)), 18, 'bold', anchor='start'))
+        svg.append(_svg_text(x_left, 26, _esc_text(title), 18, 'bold', pal['ink'], anchor='start'))
     prev = None
     for seg in segments:
         x0, x1 = x_of(seg['from']), x_of(seg['to'])
         w = max(0.0, x1 - x0)
-        tint = STRIP_TINT.get(seg['distributor'], '#eeeeee')
+        tint = pal['strip_tint'].get(seg['distributor'], pal['strip_other'])
         svg.append(f'<rect class="seg" x="{x0:.1f}" y="{y_top}" width="{w:.1f}" height="{y_bot - y_top}" fill="{tint}" '
-                   f'stroke="#000000" stroke-width="0.4" data-from="{seg["from"]:.4f}" data-to="{seg["to"]:.4f}" '
-                   f'data-distributor="{escape(str(seg["distributor"]))}" data-partner="{escape(str(seg["partner"]))}" '
-                   f'data-aspect="{escape(str(seg["partner_aspect"]))}"/>')
+                   f'stroke="{pal["rule"]}" stroke-width="0.4" data-from="{seg["from"]:.4f}" data-to="{seg["to"]:.4f}" '
+                   f'data-distributor="{_esc_attr(seg["distributor"])}" data-partner="{_esc_attr(seg["partner"])}" '
+                   f'data-aspect="{_esc_attr(seg["partner_aspect"])}"/>')
         bound_change = prev is None or prev['distributor'] != seg['distributor']
         svg.append(_svg_line(x0, y_top if bound_change else y_top, x0, y_bot if bound_change else y_top + 16,
-                             '#000000', 1.4 if bound_change else 1.0))
+                             pal['rule'], 1.4 if bound_change else 1.0))
         if w >= 16:
-            svg.append(_svg_text((x0 + x1) / 2.0, y_top + 22, POINT_GLYPHS.get(seg['distributor'], '') + _VS, 20))
+            svg.append(_svg_text((x0 + x1) / 2.0, y_top + 22, POINT_GLYPHS.get(seg['distributor'], '') + _VS, 20,
+                                 fill=pal['ink']))
         if w >= 26 and seg['partner']:
             svg.append(_svg_text((x0 + x1) / 2.0, y_bot - 14,
                                  _ASPECT_GLYPH.get(seg['partner_aspect'], '') + POINT_GLYPHS.get(seg['partner'], '') + _VS,
-                                 13, fill='#333333'))
+                                 13, fill=pal['note']))
         prev = seg
-    svg.append(_svg_line(x_left, y_bot, x_right, y_bot, '#000000', 1.2))
+    svg.append(_svg_line(x_left, y_bot, x_right, y_bot, pal['rule'], 1.2))
     tick = 10.0 if unit == 'years' else 30.0
     v = 0.0
     while v <= span + 1e-9:
         x = x_of(v)
-        svg.append(_svg_line(x, y_bot, x, y_bot + 7, '#000000', 1.0))
-        svg.append(_svg_text(x, y_bot + 20, f'{v:g}', 12))
+        svg.append(_svg_line(x, y_bot, x, y_bot + 7, pal['rule'], 1.0))
+        svg.append(_svg_text(x, y_bot + 20, f'{v:g}', 12, fill=pal['ink']))
         v += tick
     svg.append(_svg_text(x_right, y_bot + 40, 'age in completed years' if unit == 'years' else 'day of the year',
-                         11, fill='#555555', anchor='end'))
+                         11, fill=pal['axis_note'], anchor='end'))
     if now is not None and 0.0 <= now <= span:
         x = x_of(now)
-        svg.append(f'<line class="now" x1="{x:.1f}" y1="{y_top - 14}" x2="{x:.1f}" y2="{y_bot + 8}" stroke="#c00000" '
+        svg.append(f'<line class="now" x1="{x:.1f}" y1="{y_top - 14}" x2="{x:.1f}" y2="{y_bot + 8}" stroke="{pal["now"]}" '
                    f'stroke-width="2.4" data-now="{now:.4f}"/>')
-        svg.append(_svg_text(x, y_top - 22, ('now: age ' if unit == 'years' else 'now: day ') + f'{now:g}', 12, 'bold', '#c00000'))
+        svg.append(_svg_text(x, y_top - 22, ('now: age ' if unit == 'years' else 'now: day ') + f'{now:g}', 12, 'bold', pal['now']))
     svg.append('</svg>')
     return ''.join(svg)
 
 
-def generate_hit_strip_svg(rows, now, span=None, title=''):
+def generate_hit_strip_svg(rows, now, span=None, title='', theme=None):
     """The house-master's direction (Sahl, On Nativities 1.23, 2) as a
     strip in the family of generate_distribution_strip_svg: the same
     0-to-span axis in completed years, one tick per target reached
@@ -1165,6 +1254,7 @@ def generate_hit_strip_svg(rows, now, span=None, title=''):
     infortune's glyph and the aspect's, alternating above and below the
     axis so neighbours do not collide; the present as <line class="now">.
     `rows` are sahl_house_master_direction's rows (Target, Arc (years))."""
+    pal = _wheel_palette(theme)
     rows = list(rows or [])
     if span is None:
         span = max((float(r['Arc (years)']) for r in rows), default=1.0)
@@ -1178,24 +1268,24 @@ def generate_hit_strip_svg(rows, now, span=None, title=''):
     def label_of(target):
         m = re.match(r"(?:the )?(\w+)'s (body|opposition|square|degree)", target)
         if not m:
-            return escape(target)
+            return _esc_text(target)
         planet, what = m.group(1), m.group(2)
         glyph = POINT_GLYPHS.get(planet, planet)
         return (glyph + _VS) if what == 'degree' else (_ASPECT_GLYPH.get(what, '') + glyph + _VS)
 
     svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {STRIP_WIDTH} {STRIP_HEIGHT}" width="{STRIP_WIDTH}" '
            f'height="{STRIP_HEIGHT}" style="font-family:{_WHEEL_FONT}">',
-           f'<rect width="{STRIP_WIDTH}" height="{STRIP_HEIGHT}" fill="#ffffff"/>']
+           f'<rect width="{STRIP_WIDTH}" height="{STRIP_HEIGHT}" fill="{pal["bg"]}"/>']
     if title:
-        svg.append(_svg_text(x_left, 26, escape(str(title)), 18, 'bold', anchor='start'))
-    svg.append(_svg_line(x_left, y_axis, x_right, y_axis, '#000000', 1.2))
+        svg.append(_svg_text(x_left, 26, _esc_text(title), 18, 'bold', pal['ink'], anchor='start'))
+    svg.append(_svg_line(x_left, y_axis, x_right, y_axis, pal['rule'], 1.2))
     v = 0.0
     while v <= span + 1e-9:
         x = x_of(v)
-        svg.append(_svg_line(x, y_axis, x, y_axis + 7, '#000000', 1.0))
-        svg.append(_svg_text(x, y_axis + 20, f'{v:g}', 12))
+        svg.append(_svg_line(x, y_axis, x, y_axis + 7, pal['rule'], 1.0))
+        svg.append(_svg_text(x, y_axis + 20, f'{v:g}', 12, fill=pal['ink']))
         v += 10.0
-    svg.append(_svg_text(x_right, y_axis + 40, 'age in completed years', 11, fill='#555555', anchor='end'))
+    svg.append(_svg_text(x_right, y_axis + 40, 'age in completed years', 11, fill=pal['axis_note'], anchor='end'))
     for i, r in enumerate(sorted(rows, key=lambda r: float(r['Arc (years)']))):
         arc = float(r['Arc (years)'])
         if arc > span:
@@ -1203,15 +1293,15 @@ def generate_hit_strip_svg(rows, now, span=None, title=''):
         x = x_of(arc)
         above = i % 2 == 0
         y0, y1 = (y_axis - 30, y_axis) if above else (y_axis, y_axis + 30)
-        svg.append(f'<line class="hit" x1="{x:.1f}" y1="{y0}" x2="{x:.1f}" y2="{y1}" stroke="#000000" '
-                   f'stroke-width="1.6" data-arc="{arc:.4f}" data-target="{escape(str(r["Target"]))}"/>')
-        svg.append(_svg_text(x, y_axis - 38 if above else y_axis + 46, label_of(str(r['Target'])), 18))
-        svg.append(_svg_text(x, y_axis - 56 if above else y_axis + 62, f'{arc:.1f}', 11, fill='#333333'))
+        svg.append(f'<line class="hit" x1="{x:.1f}" y1="{y0}" x2="{x:.1f}" y2="{y1}" stroke="{pal["rule"]}" '
+                   f'stroke-width="1.6" data-arc="{arc:.4f}" data-target="{_esc_attr(r["Target"])}"/>')
+        svg.append(_svg_text(x, y_axis - 38 if above else y_axis + 46, label_of(str(r['Target'])), 18, fill=pal['ink']))
+        svg.append(_svg_text(x, y_axis - 56 if above else y_axis + 62, f'{arc:.1f}', 11, fill=pal['note']))
     if now is not None and 0.0 <= now <= span:
         x = x_of(now)
-        svg.append(f'<line class="now" x1="{x:.1f}" y1="{y_axis - 66}" x2="{x:.1f}" y2="{y_axis + 8}" stroke="#c00000" '
+        svg.append(f'<line class="now" x1="{x:.1f}" y1="{y_axis - 66}" x2="{x:.1f}" y2="{y_axis + 8}" stroke="{pal["now"]}" '
                    f'stroke-width="2.4" data-now="{now:.4f}"/>')
-        svg.append(_svg_text(x, 44, f'now: age {now:g}', 12, 'bold', '#c00000'))
+        svg.append(_svg_text(x, 44, f'now: age {now:g}', 12, 'bold', pal['now']))
     svg.append('</svg>')
     return ''.join(svg)
 
@@ -15779,6 +15869,16 @@ st.set_page_config(
 # for is simply a page not opened. What restrains the pages now is the
 # reading depth on the Sources page, which folds the supplement.
 
+# The viewer's theme, read once for the pictures. Streamlit 1.62 reports
+# it as st.context.theme.type -- "dark", "light", or None when the browser
+# has not said yet (and under AppTest, which has no browser at all). It is
+# not by itself what a picture is drawn in: the owner's ruling is that the
+# wheels keep their white ground in every theme unless the reader asks
+# otherwise, so this is read here and consulted only when the Dark wheel
+# preference is on (WHEEL_THEME, below with the other readings).
+_context_theme = getattr(st.context, "theme", None)
+VIEWER_THEME = getattr(_context_theme, "type", None) if _context_theme is not None else None
+
 st.sidebar.header("Nativity")
 
 if "saved_charts" not in st.session_state:
@@ -16090,6 +16190,19 @@ PN4_MONTHLY_TURN = _reading("pn4_monthly_turn", "_pn4_monthly_turn", PN4_MONTHLY
 # Owner's decision 2026-09-10: the natal wheel carries the Egyptian-bounds
 # ring too, as every PN IV wheel does -- the course works the bounds by hand.
 CHART_BOUNDS = bool(_reading("chart_bounds", "_chart_bounds", True))
+# Owner's ruling 2026-09-15: the wheels and the strips are drawn on white in
+# every theme, because that is what a chart on paper is, and the dark
+# palette is offered rather than imposed. A display preference like the
+# bounds ring and the wheel layout -- not a doctrinal reading, so not in
+# READINGS_REGISTRY -- set on the Chart page and in the Timing page's
+# Options, one setting for both wheels. Off, every picture is handed None
+# and draws exactly as it always has; on, it is handed the viewer's own
+# theme, which is the dark palette only when the viewer is in the dark
+# theme.
+WHEEL_DARK_HELP = ("The wheels and the strips are drawn on a white ground unless this is on, when they take "
+                   "the dark palette in the dark theme; in the light theme it changes nothing.")
+WHEEL_DARK = bool(_reading("wheel_dark", "_wheel_dark", False))
+WHEEL_THEME = VIEWER_THEME if WHEEL_DARK else None
 # The reading depth (UI_REVIEW_2026-09-10.md §1 B): the course text alone,
 # or with Abu Ma'shar's supplement laid beside it. Set on the Sources page.
 READING_DEPTH = _reading("reading_depth", "_reading_depth", READING_DEPTH_OPTIONS[0])
@@ -16303,9 +16416,9 @@ if location_query and lat is not None and lon is not None:
         chart_name = (_picked if _picked and _picked != "-- New Chart --"
                       else new_chart_name.strip() or "Transits")
         svg_code = generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, local_dt, tz_name,
-                                       chronocrats=chronocrats, bounds=CHART_BOUNDS)
+                                       chronocrats=chronocrats, bounds=CHART_BOUNDS, theme=WHEEL_THEME)
         svg_wide = generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, local_dt, tz_name,
-                                       wide=True, chronocrats=chronocrats, bounds=CHART_BOUNDS)
+                                       wide=True, chronocrats=chronocrats, bounds=CHART_BOUNDS, theme=WHEEL_THEME)
 
         # The app's name is the browser title (st.set_page_config) and the
         # header bar's own; it used to be repeated as an st.title above every
@@ -16373,11 +16486,15 @@ if location_query and lat is not None and lon is not None:
             # A manual offset's name IS its offset ("UTC+05:00"), so it is not
             # printed twice.
             standard = tz_name if tz_name.startswith("UTC") else f"{tz_name} {_offset}"
+            # Coordinates entered directly name themselves -- the place IS
+            # "Manual [43.7792, 11.2463]" -- so the strip prints them once.
+            place = (f"{lat:.2f}, {lon:.2f}" if location_query.startswith("Manual [")
+                     else f"{location_query} {lat:.2f}, {lon:.2f}")
             st.caption(" · ".join((
                 str(name),
                 f"{date_string} {input_time:%H:%M:%S}",
                 standard,
-                f"{location_query} {lat:.2f}, {lon:.2f}",
+                place,
                 sect,
                 f"Day lord {chronocrats['Day Lord']}",
                 f"Hour lord {chronocrats['Hour Lord']}",
@@ -16506,6 +16623,7 @@ if location_query and lat is not None and lon is not None:
                                   help="The Egyptian bounds, with their lords, as a ring inside the degree scale -- "
                                        "as every natal wheel in Persian Nativities IV carries them (Figures 1, 22, "
                                        "25, 26).")
+                _reading_checkbox("Dark wheel", "wheel_dark", "_wheel_dark", help=WHEEL_DARK_HELP)
                 st.download_button("Download the wheel (SVG)", svg_wide if layout == WHEEL_LAYOUT_OPTIONS[1] else svg_code,
                                    key="dl_chart_wheel", mime="image/svg+xml",
                                    file_name=f"{re.sub(r'[^A-Za-z0-9]+', '_', chart_name).strip('_') or 'chart'}_natal.svg")
@@ -17456,6 +17574,7 @@ if location_query and lat is not None and lon is not None:
                                                           "the year, then the root.")
                         wheel_bounds = _reading_checkbox("Bounds ring", "timing_bounds", "_timing_bounds",
                                                          help="The Egyptian bounds as a ring, as every PN IV wheel carries them.")
+                        _reading_checkbox("Dark wheel", "wheel_dark", "_wheel_dark", help=WHEEL_DARK_HELP)
                         want_lots = _reading_checkbox("Lots", "timing_lots", "_timing_lots",
                                                       help="I.6, 3-4: the Lots \"according to how you do it\" -- this app's, "
                                                            "beyond Fortune, as short ticks with their names.")
@@ -17529,7 +17648,8 @@ if location_query and lat is not None and lon is not None:
                     _kw = dict(shade_sign=year_sign, outline_sign=month_sign, profection_from=chart_data['ascendant'],
                                marks=[('TP', pn4['year']['longitude'], 0)])
                 _extras = {i: _ring_extras(r['chart']) for i, r in enumerate(_rings)} if (want_lots or want_rays or want_twelfths) else None
-                svg_timing = generate_multiwheel_svg(_rings, chart_name, wide=_wide_t, bounds=wheel_bounds, extras=_extras, **_kw)
+                svg_timing = generate_multiwheel_svg(_rings, chart_name, wide=_wide_t, bounds=wheel_bounds, extras=_extras,
+                                                     theme=WHEEL_THEME, **_kw)
                 st.image(svg_timing, width='stretch' if _wide_t else 560)
                 st.download_button("Download this wheel (SVG)", svg_timing, key="dl_timing_wheel",
                                    file_name=f"{re.sub(r'[^A-Za-z0-9]+', '_', chart_name).strip('_') or 'chart'}_"
@@ -17848,7 +17968,8 @@ if location_query and lat is not None and lon is not None:
                                "defined.")
                 else:
                     _strip = generate_distribution_strip_svg(pn4['segments'], pn4['elapsed_years'], 'years',
-                                                             PN4_DISTRIBUTION_SPAN_YEARS, 'The distribution from the Ascendant')
+                                                             PN4_DISTRIBUTION_SPAN_YEARS, 'The distribution from the Ascendant',
+                                                             theme=WHEEL_THEME)
                     st.image(_strip, width='stretch')
                     st.download_button("Download this strip (SVG)", _strip, key="dl_strip_asc", mime="image/svg+xml",
                                        file_name="distribution_ascendant.svg")
@@ -17922,7 +18043,8 @@ if location_query and lat is not None and lon is not None:
                     m = pn4['meridian'][point]
                     cur = m['current']
                     _strip = generate_distribution_strip_svg(m['segments'], pn4['elapsed_years'], 'years',
-                                                             PN4_DISTRIBUTION_SPAN_YEARS, f'The distribution from the {point}')
+                                                             PN4_DISTRIBUTION_SPAN_YEARS, f'The distribution from the {point}',
+                                                             theme=WHEEL_THEME)
                     st.image(_strip, width='stretch')
                     st.download_button("Download this strip (SVG)", _strip, key=f"dl_strip_{point[:4].lower()}",
                                        mime="image/svg+xml", file_name=f"distribution_{point[:4].lower()}.svg")
@@ -18097,7 +18219,8 @@ if location_query and lat is not None and lon is not None:
                         st.warning("Refused at this latitude, as the Ascendant's distribution is: the ascension has no unique inverse there.")
                     else:
                         _rstrip = generate_distribution_strip_svg(pn4['releaser_segments'], pn4['elapsed_years'], 'years',
-                                                                  PN4_DISTRIBUTION_SPAN_YEARS, 'The distribution from the releaser')
+                                                                  PN4_DISTRIBUTION_SPAN_YEARS, 'The distribution from the releaser',
+                                                                  theme=WHEEL_THEME)
                         st.image(_rstrip, width='stretch')
                         st.download_button("Download this strip (SVG)", _rstrip, key="dl_strip_releaser", mime="image/svg+xml",
                                            file_name="distribution_releaser.svg")
@@ -18199,7 +18322,8 @@ if location_query and lat is not None and lon is not None:
                                     f"a year to a degree of the birth latitude's ascensions, within {PN4_DISTRIBUTION_SPAN_YEARS:g} years:")
                         if pn4['hm_direction']:
                             _hstrip = generate_hit_strip_svg(pn4['hm_direction'], pn4['elapsed_years'],
-                                                             PN4_DISTRIBUTION_SPAN_YEARS, 'The house-master directed')
+                                                             PN4_DISTRIBUTION_SPAN_YEARS, 'The house-master directed',
+                                                             theme=WHEEL_THEME)
                             st.image(_hstrip, width='stretch')
                             st.download_button("Download this strip (SVG)", _hstrip, key="dl_strip_hm", mime="image/svg+xml",
                                                file_name="house_master_directed.svg")
@@ -18347,7 +18471,8 @@ if location_query and lat is not None and lon is not None:
                                  hide_index=True, width='stretch', height=_rows_height(8))
                 sd_cur = pn4['small_days_current']
                 sr_asc = pn4['sr']['ascendant']
-                _strip = generate_distribution_strip_svg(pn4['small_days'], pn4['day_of_year'], 'days', None, 'The small days')
+                _strip = generate_distribution_strip_svg(pn4['small_days'], pn4['day_of_year'], 'days', None, 'The small days',
+                                                        theme=WHEEL_THEME)
                 st.image(_strip, width='stretch')
                 st.download_button("Download this strip (SVG)", _strip, key="dl_strip_small", mime="image/svg+xml",
                                    file_name="small_days.svg")
@@ -18385,7 +18510,8 @@ if location_query and lat is not None and lon is not None:
                                   "IX.7, 28: thirty of them are the year, \"approximately\", and this is the mighty days. "
                                   "The profected thirty degrees treated as a year, walked degree by degree.")
                 md_cur = pn4['mighty_days_current']
-                _strip = generate_distribution_strip_svg(pn4['mighty_days'], pn4['day_of_year'], 'days', None, 'The mighty days')
+                _strip = generate_distribution_strip_svg(pn4['mighty_days'], pn4['day_of_year'], 'days', None, 'The mighty days',
+                                                        theme=WHEEL_THEME)
                 st.image(_strip, width='stretch')
                 st.download_button("Download this strip (SVG)", _strip, key="dl_strip_mighty", mime="image/svg+xml",
                                    file_name="mighty_days.svg")
