@@ -16437,6 +16437,33 @@ if location_query and lat is not None and lon is not None:
         # where the table carries them. AUDIT: the quotations and the
         # measurements, in an expander under the table.
         #
+        # column_config, name-based: the DataFrame's own values never change
+        # on this branch (the doctrine fixtures compare them), only how a
+        # column is displayed. Value/Text/Reading/Source/Note/Notes/
+        # Quotation/Sentence/Standing are this app's citation- and
+        # prose-heavy columns, cut off at the default width.
+        _WIDE_TEXT_COLUMNS = {'Value', 'Text', 'Reading', 'Source', 'Note', 'Notes',
+                               'Quotation', 'Sentence', 'Standing'}
+
+        def _wide_text_columns(df):
+            """column_config for a table's own text-heavy columns, by name."""
+            return {col: st.column_config.TextColumn(width="large")
+                    for col in df.columns if col in _WIDE_TEXT_COLUMNS}
+
+        # The columns this app actually prints as "Yes" / "No" / "" -- found
+        # by checking each candidate's real values (2026-09-15): "Received"
+        # holds a planet's name and "Active" holds "yes" (lowercase) or a
+        # full sentence, so neither is here despite the family resemblance.
+        # Width alone; no CheckboxColumn and no boolean conversion.
+        _YES_NO_COLUMNS = {'Connected', 'Match', 'Sees ASC', 'Above horizon',
+                            "Domain (hayz)", "Of the chart's sect", 'Averse to its place',
+                            'Rules differ'}
+
+        def _yes_no_columns(df):
+            """column_config for a table's own Yes/No/"" columns, by name."""
+            return {col: st.column_config.TextColumn(width="small")
+                    for col in df.columns if col in _YES_NO_COLUMNS}
+
         # A finding with nothing to report is not given a heading at all --
         # it is collected and named in one line at the foot of its group,
         # which is what turns seventeen "No X found" headings into four.
@@ -16455,7 +16482,9 @@ if location_query and lat is not None and lon is not None:
             # columns= pins the order (pandas otherwise takes the first
             # row's); height= shows every row of a table meant to be read
             # whole, instead of st.dataframe's ten-row inner scroll.
-            st.dataframe(pd.DataFrame(data, columns=columns), hide_index=True, width='stretch',
+            _df = pd.DataFrame(data, columns=columns)
+            st.dataframe(_df, hide_index=True, width='stretch',
+                         column_config={**_wide_text_columns(_df), **_yes_no_columns(_df)},
                          **({'height': height} if height is not None else {}))
             if notes:
                 with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
@@ -16580,6 +16609,9 @@ if location_query and lat is not None and lon is not None:
                             ('97', '97 averse / lost receiver'), ('98', '98 alien'), ('99', '99 with nodes'),
                             ('100', '100 inverted')]
         _PARAGRAPH = re.compile(r'\((\d{2,3})(?=[;,)])')
+        # citation reads "Sahl, The Introduction Ch. 3, 78-88": everything
+        # before the trailing run of sentence numbers is the chapter locator.
+        _CITATION_LOCATOR = re.compile(r'^(.*), [\d\s,-]+$')
 
         def _tick_grid(bucket, title, citation, data, text_key, columns, glance=None, notes=None):
             if not data:
@@ -16596,7 +16628,22 @@ if location_query and lat is not None and lon is not None:
                     cells[header] = '\u2713' if num in cited else ''
                 cells['Count'] = row['Count']
                 grid.append(cells)
-            st.dataframe(pd.DataFrame(grid), hide_index=True, width='stretch', height=_rows_height(len(grid)))
+            # Each testimony column's header becomes the words alone -- "78
+            # excellent place" reads "excellent place" -- with the sentence
+            # number moved into the header's tooltip: the chapter locator
+            # read off `citation` itself (not invented) plus the number, or
+            # "sentence 78" alone where the citation does not name a chapter.
+            _locator_match = _CITATION_LOCATOR.match(citation) if citation else None
+            _locator = _locator_match.group(1) if _locator_match else None
+            _grid_columns = {'Planet': st.column_config.TextColumn(width="small"),
+                              'Count': st.column_config.TextColumn(width="small")}
+            for num, header in columns:
+                _grid_columns[header] = st.column_config.TextColumn(
+                    label=header[len(num) + 1:],
+                    help=f"{_locator}, {num}" if _locator else f"sentence {num}",
+                    width="small")
+            st.dataframe(pd.DataFrame(grid), hide_index=True, width='stretch', height=_rows_height(len(grid)),
+                         column_config=_grid_columns)
             with st.expander("Answer key: testimonies in words"):
                 st.dataframe(pd.DataFrame(data, columns=['Planet', text_key, 'Count']),
                              hide_index=True, width='stretch', height=_rows_height(len(data)))
@@ -16739,7 +16786,8 @@ if location_query and lat is not None and lon is not None:
                 {"Quantity": "MC", "Value": get_degree_string(chart_data['mc'])},
                 {"Quantity": "Ascendant", "Value": get_degree_string(chart_data['ascendant'])},
             ]
-            st.dataframe(pd.DataFrame(calc_rows), hide_index=True, width='content')
+            st.dataframe(pd.DataFrame(calc_rows), hide_index=True, width='content',
+                         column_config=_wide_text_columns(pd.DataFrame(calc_rows)))
             pos_col, moon_col = st.columns([2, 1], vertical_alignment="center")
             pos_col.subheader('Planetary Positions', help="The seven classical planets' ecliptic (tropical) longitude at the moment of birth, in sign and degree.")
             with moon_col:
@@ -16786,7 +16834,8 @@ if location_query and lat is not None and lon is not None:
                                else 'Stationary' if acc_p['Stationary'] else 'Direct'),
                     "Solar phase": (f"{phase}, {side}" if phase and side else (phase or '–')),
                 })
-            st.dataframe(pd.DataFrame(pos_list), hide_index=True, width='stretch')
+            st.dataframe(pd.DataFrame(pos_list), hide_index=True, width='stretch',
+                         column_config=_yes_no_columns(pd.DataFrame(pos_list)))
             st.caption("Quadrant column: Alchabitius house, advancing or retreating in Sahl's sense "
                        "(The Introduction Ch. 3, 4-5): stake or succedent versus falling. "
                        "Sees ASC: whole-sign aversion to the first place (the 2nd, 6th, 8th and 12th do not see it).")
@@ -16896,7 +16945,8 @@ if location_query and lat is not None and lon is not None:
                 st.subheader("Mars in his own domicile, by sect (Abu Bakr)",
                              help="Abu Bakr, On Nativities II.1.0: Mars in his own domicile (Aries, Scorpio) by night, or by day; Mars in a domicile of Saturn (Capricorn, Aquarius); and, as a second row, Mars in the Midheaven, read as the whole-sign tenth. The sentence for the case is quoted whole; where none reaches him the row says so. Display only; nothing scores it.")
                 st.dataframe(pd.DataFrame(mars_abu_bakr_data), hide_index=True, width='stretch',
-                             height=_rows_height(len(mars_abu_bakr_data)))
+                             height=_rows_height(len(mars_abu_bakr_data)),
+                             column_config=_wide_text_columns(pd.DataFrame(mars_abu_bakr_data)))
                 st.caption("Supplement · display only · Abu Bakr, On Nativities II.1.0. The condition is his own domicile by the sect of the chart, "
                            "not his being of or contrary to the sect at large; the fortune's aspect and \"he would rejoice in his own place\" are not tested.")
                 with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
@@ -17006,7 +17056,8 @@ if location_query and lat is not None and lon is not None:
                         "Of the chart's sect": 'Yes' if own_diurnal == (sect == 'Diurnal') else 'No',
                         "Domain (hayz)": 'Yes' if accidental[p]['Hayz'] else 'No',
                     })
-                st.dataframe(pd.DataFrame(sect_rows), hide_index=True, width='stretch', height=_rows_height(len(sect_rows)))
+                st.dataframe(pd.DataFrame(sect_rows), hide_index=True, width='stretch', height=_rows_height(len(sect_rows)),
+                             column_config=_yes_no_columns(pd.DataFrame(sect_rows)))
             st.caption("Sect: Sahl, The Introduction Ch. 3, 85. Domain: Gr. Intr. VII.1, 37 and VII.6, 13 "
                        "(or Masha'allah, On Nativities 1.23, 17, per the switch).")
             st.subheader('Topical Planets in Houses', help="Each planet's whole-sign house placement with BOTH readings for that pairing, good and bad, as the TNAC Reference Guide for the Planets and Places (Dykes, 2023) summarises them: its Rhetorius column from Rhetorius Ch. 57 and Firmicus, Mathesis III (texts not in hand; the Guide's summary is the witness), its PN IV column from Book II's lord of the year in the places, which the Guide applies to natal planets -- a reading of the Guide's, followed here.")
@@ -17027,7 +17078,8 @@ if location_query and lat is not None and lon is not None:
             lords_rows = [{**{k: v for k, v in r.items() if k != "Masha'allah Signification"},
                            'Averse to its place': 'Yes' if (r['Placed in (WS place)'] - r['Topical House']) % 12 in (1, 5, 7, 11) else 'No'}
                           for r in house_lords_data]
-            st.dataframe(pd.DataFrame(lords_rows), hide_index=True, width='content', height=_rows_height(len(lords_rows)))
+            st.dataframe(pd.DataFrame(lords_rows), hide_index=True, width='content', height=_rows_height(len(lords_rows)),
+                         column_config=_yes_no_columns(pd.DataFrame(lords_rows)))
             st.caption("Masha'allah's condition is his own, stated at the end of every lord-of-the-Nth section: \"Work in this chapter "
                        "if the lord of the third and the third [itself] were free of the infortunes, and the fortunes do not witness\" "
                        "(On Nativities 3.10, 14; likewise 4.11, 24; 6.3.4, 24; 7.1, 217; 9.4, 35; 10.2.4, 13; 11.1, 28; 12.1, 47). "
@@ -17397,7 +17449,8 @@ if location_query and lat is not None and lon is not None:
                 row['Formula'] = formula_by_lot[r['Lot Name']]
                 row['Standing'] = r['Standing']
                 classical_rows.append(row)
-            st.dataframe(pd.DataFrame(classical_rows), hide_index=True, width='stretch', height=_rows_height(len(classical_rows)))
+            st.dataframe(pd.DataFrame(classical_rows), hide_index=True, width='stretch', height=_rows_height(len(classical_rows)),
+                         column_config=_wide_text_columns(pd.DataFrame(classical_rows)))
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
                 st.markdown('Fortune and Exaltation are stated in Sahl. Spirit -- the Lot of the Invisible, which Sahl names -- is stated at Gr. Intr. VIII.3, 28-29: by day from the Moon to the Sun, by night the reverse, from the Ascendant. Basis is stated at Gr. Intr. VIII.4, 22-24 as "the Lot of firmness and survival, the Lot of the Ascendant\'s support" (fn 67: the Greek Basis): by day from Fortune to the Invisible, by night the contrary, from the Ascendant -- the same construction as Sahl\'s Lot of passion (7.1, 141) and Abu Ma\'shar\'s Lot of Venus, with which VIII.4, 24 says it coincides. All four carry their provenance in the Topical Lots table below.')
             st.subheader('Topical Lots (Sahl, On Nativities)' + ("; three rows of Abu Ma'shar's" if READING_DEPTH == READING_DEPTH_OPTIONS[1] else ''), help="Sahl's topical Lots, each with its own provenance. He gives several of them MORE THAN ONCE, with formulas that genuinely conflict, and Dykes's apparatus does not silently reconcile them -- so neither does this table.")
@@ -17446,7 +17499,8 @@ if location_query and lat is not None and lon is not None:
                 {"Metric": "Almuten by 5/4/3/2/1 points (al-Qabisi's weights, ITA I.18; a technique not in Sahl)",
                  "Value": f"{syzygy['almuten']} (Score: {syzygy['almuten_score']})"},
             ]
-            st.dataframe(pd.DataFrame(syzygy_rows), hide_index=True, width='stretch')
+            st.dataframe(pd.DataFrame(syzygy_rows), hide_index=True, width='stretch',
+                         column_config=_wide_text_columns(pd.DataFrame(syzygy_rows)))
             with st.expander("Governor of the syzygy degree: the five lords under 1.7, 3-7"):
                 st.dataframe(pd.DataFrame(syzygy_governor['rows']), hide_index=True, width='stretch',
                              height=_rows_height(len(syzygy_governor['rows'])))
@@ -17571,7 +17625,8 @@ if location_query and lat is not None and lon is not None:
                                   "TRUE-Sun return; Abu Ma'shar computes a mean Sun and then applies the Hipparchan "
                                   "tropical year (I.4, 23-31), which Dykes says plainly does not make sense.")
                 st.dataframe(pd.DataFrame(pn4['revolution_rows']), hide_index=True, width='stretch',
-                             height=_rows_height(len(pn4['revolution_rows'])))
+                             height=_rows_height(len(pn4['revolution_rows'])),
+                             column_config=_wide_text_columns(pd.DataFrame(pn4['revolution_rows'])))
 
                 # --- The charts, drawn (2026-09-10) ---------------------------------
                 # I.6, 1-6 and IX.3, 4-8 describe images holding the root, the
@@ -17719,7 +17774,8 @@ if location_query and lat is not None and lon is not None:
                 image_rows, image_counts = pn4['image']
                 st.markdown("The count: " + ", ".join(f"{k} {v}" for k, v in image_counts.items())
                             + f" -- I.6, 8 counts 154 without the Lots{' and the count agrees' if image_counts['total of I.6, 8'] == 154 else ', and this chart differs'}.")
-                st.dataframe(pd.DataFrame(image_rows), hide_index=True, width='stretch', height=_rows_height(16))
+                st.dataframe(pd.DataFrame(image_rows), hide_index=True, width='stretch', height=_rows_height(16),
+                             column_config=_wide_text_columns(pd.DataFrame(image_rows)))
                 st.caption("A table, not the wheel of I.6, 1: every point by the revolution's house cusps -- I.6, 2: "
                            "\"calculating the houses by their degrees and minutes, in the way that you calculate the houses by "
                            "the portions of hours and the ascensions of the right circle\" (the Alchabitius cusps this app "
@@ -17759,7 +17815,8 @@ if location_query and lat is not None and lon is not None:
                                   "twelfth-parts, returns, course, transits, the Lots, the stakes, the Sun. 25-26: \"its "
                                   "indication will be according to its place and condition in the two times together.\"")
                 st.markdown("**I.7, 2-6 -- the revolution's Ascendant:**")
-                st.dataframe(pd.DataFrame(pn4['i7_ascendant']), hide_index=True, width='stretch', height=_rows_height(5))
+                st.dataframe(pd.DataFrame(pn4['i7_ascendant']), hide_index=True, width='stretch', height=_rows_height(5),
+                             column_config=_wide_text_columns(pd.DataFrame(pn4['i7_ascendant'])))
                 st.markdown("**I.7, 7-24 -- the planets, in both times** (the numbers are I.7's sentences):")
                 st.dataframe(pd.DataFrame(pn4['i7_planets']), hide_index=True, width='stretch', height=_rows_height(14))
                 st.caption("Facts from the app's own evaluators, run on the revolution's data as on the root's: the "
@@ -17778,7 +17835,8 @@ if location_query and lat is not None and lon is not None:
                                   "year outranks the distributor (II.1, 25; II.23, 1). Across several years the "
                                   "distribution is the stronger (III.2, 2-3) -- PN IV ranks them by scope; Sahl's 1.23, 33 "
                                   "and 1.24, 2 contradict each other as printed (the caption under the table).")
-                st.dataframe(pd.DataFrame(pn4['year_rows']), hide_index=True, width='stretch')
+                st.dataframe(pd.DataFrame(pn4['year_rows']), hide_index=True, width='stretch',
+                             column_config=_wide_text_columns(pd.DataFrame(pn4['year_rows'])))
                 st.caption(PN4_YEAR_INDICATOR_SCOPE_NOTE)
 
                 st.subheader("The sign of the terminal point and its lord, examined (II.3, 2-19)",
@@ -17791,13 +17849,17 @@ if location_query and lat is not None and lon is not None:
                                   "Ascendant under an infortune, aversion to the Ascendant.")
                 ii3 = pn4['ii3']
                 st.markdown(f"**The sign of the terminal point, {pn4['year']['sign']}, in the root (II.3, 2):**")
-                st.dataframe(pd.DataFrame(ii3['root_rows']), hide_index=True, width='stretch', height=_rows_height(5))
+                st.dataframe(pd.DataFrame(ii3['root_rows']), hide_index=True, width='stretch', height=_rows_height(5),
+                             column_config=_wide_text_columns(pd.DataFrame(ii3['root_rows'])))
                 st.markdown("**In the revolution (II.3, 3):**")
-                st.dataframe(pd.DataFrame(ii3['revolution_rows']), hide_index=True, width='stretch', height=_rows_height(5))
+                st.dataframe(pd.DataFrame(ii3['revolution_rows']), hide_index=True, width='stretch', height=_rows_height(5),
+                             column_config=_wide_text_columns(pd.DataFrame(ii3['revolution_rows'])))
                 st.markdown(f"**The lord of the year, {pn4['year']['lord']}: the factors of II.3, 5-6, per chart:**")
-                st.dataframe(pd.DataFrame(ii3['lord_rows']), hide_index=True, width='stretch', height=_rows_height(6))
+                st.dataframe(pd.DataFrame(ii3['lord_rows']), hide_index=True, width='stretch', height=_rows_height(6),
+                             column_config=_wide_text_columns(pd.DataFrame(ii3['lord_rows'])))
                 st.dataframe(pd.DataFrame(ii3['refinement_rows']), hide_index=True, width='stretch',
-                             height=_rows_height(len(ii3['refinement_rows'])))
+                             height=_rows_height(len(ii3['refinement_rows'])),
+                             column_config=_wide_text_columns(pd.DataFrame(ii3['refinement_rows'])))
                 st.markdown("**Figure 55 -- the four cases, in the book's words; which one holds is left to the reader:**")
                 st.dataframe(pd.DataFrame(ii3['figure_55']), hide_index=True, width='stretch', height=_rows_height(4))
                 st.caption("Facts, not a verdict. II.3, 5-6 name the factors of a suitable and a contrary condition and "
@@ -17821,7 +17883,8 @@ if location_query and lat is not None and lon is not None:
                                   "does not do, and #16 and #17 follow the year's transits, which are not tracked -- "
                                   "those three rows say so.")
                 st.dataframe(pd.DataFrame(pn4['further_rows']), hide_index=True, width='stretch',
-                             height=_rows_height(14))
+                             height=_rows_height(14),
+                             column_config=_wide_text_columns(pd.DataFrame(pn4['further_rows'])))
                 st.caption("Facts, not judgments: the delineation chapters behind these rows (II.6-21, V.1-8, VI.3-6, "
                            "VII.9, VIII.1-15) are not built. #8 grades a transit as V.1, 2-3 does -- the degree, the "
                            "bound, or only the sign. #10 counts each lord from its own Ascendant (fn 128). #14 and #19 "
@@ -17843,7 +17906,8 @@ if location_query and lat is not None and lon is not None:
                                   "the same name from age 12 on; both are shown, neither is stated for 18-19, and the reset "
                                   "Dykes proposes (Intro Sect. 13, \"my idea\") is a third answer, his own.")
                 st.dataframe(pd.DataFrame(pn4['orb_rows']), hide_index=True, width='stretch',
-                             height=_rows_height(len(pn4['orb_rows'])))
+                             height=_rows_height(len(pn4['orb_rows'])),
+                             column_config=_wide_text_columns(pd.DataFrame(pn4['orb_rows'])))
                 st.caption("What PN IV presupposes here rather than states: the planetary hours. Their sequence from "
                            "the day lord at sunrise is Dykes's Figure 45 (Intro Sect. 13), which the Chart page's hour "
                            "lord follows with real sunrise and sunset, and with a flagged equal-hour approximation where "
@@ -17864,17 +17928,20 @@ if location_query and lat is not None and lon is not None:
                                   "sign governs the year too.")
                 gov_rows, gov = pn4['governor']
                 st.markdown(f"**IX.9:** {gov['text']}")
-                st.dataframe(pd.DataFrame(gov_rows), hide_index=True, width='stretch', height=_rows_height(8))
+                st.dataframe(pd.DataFrame(gov_rows), hide_index=True, width='stretch', height=_rows_height(8),
+                             column_config=_wide_text_columns(pd.DataFrame(gov_rows)))
                 if pn4['governor_condition']:
                     st.markdown(f"**IX.9, 11-13, the condition of the primary planet ({gov['primary'][0]}), as facts** -- the "
                                 "conclusions quoted, not pronounced; 13's place half (\"in a stake or in what follows a stake\") is "
                                 "judged by the Alchabitius DIVISION in the revolution, the five degrees at the four axial degrees -- "
                                 "the unit is THIS APP'S CONVENTION (an adopted dynamic-fitness reading), not the text's; "
                                 "the row states the three parts and the qualified confidence (IX.5, 4 fn 106).")
-                    st.dataframe(pd.DataFrame(pn4['governor_condition']), hide_index=True, width='stretch', height=_rows_height(3))
+                    st.dataframe(pd.DataFrame(pn4['governor_condition']), hide_index=True, width='stretch', height=_rows_height(3),
+                                 column_config=_wide_text_columns(pd.DataFrame(pn4['governor_condition'])))
                 fm_rows, fm_verdict = pn4['first_month_governor']
                 st.markdown(f"**IX.2, 4:** {fm_verdict}")
-                st.dataframe(pd.DataFrame(fm_rows), hide_index=True, width='stretch', height=_rows_height(5))
+                st.dataframe(pd.DataFrame(fm_rows), hide_index=True, width='stretch', height=_rows_height(5),
+                             column_config=_wide_text_columns(pd.DataFrame(fm_rows)))
                 st.caption("Partial by nature, and said so per row. Testimony #3 and the releaser's half of #4 need the "
                            "longevity releaser, which PN IV does not supply (IX.8, 123); they are filled from the releaser's "
                            "distribution (Sahl, On Nativities 1.15, in The releaser chapter) when that finds one, #4 "
@@ -17940,7 +18007,8 @@ if location_query and lat is not None and lon is not None:
                 else:
                     st.markdown(f"This year's lord is **{pn4['year']['lord']}**.")
                     st.dataframe(pd.DataFrame(pn4['proxies']), hide_index=True, width='stretch',
-                                 height=_rows_height(len(pn4['proxies'])))
+                                 height=_rows_height(len(pn4['proxies'])),
+                                 column_config=_wide_text_columns(pd.DataFrame(pn4['proxies'])))
                 st.caption("The first proxy in every version is the sign the longevity releaser's distribution stands "
                            "in, which PN IV does not supply (IX.8, 123); it is filled from the releaser's distribution "
                            "(Sahl, On Nativities 1.15, in The releaser chapter) when that finds one, and reads "
@@ -17964,13 +18032,15 @@ if location_query and lat is not None and lon is not None:
                                   "two rows.")
                 st.markdown(f"Turned by **{pn4['age']}** completed years, a sign for each (VI.2, 1).")
                 st.dataframe(pd.DataFrame(pn4['turning_rows']), hide_index=True, width='stretch',
-                             height=_rows_height(min(len(pn4['turning_rows']), 16)))
+                             height=_rows_height(min(len(pn4['turning_rows']), 16)),
+                             column_config=_wide_text_columns(pd.DataFrame(pn4['turning_rows'])))
                 st.markdown("**The triplicity lords examined beside the turning (VI.2, 4-5)** -- the sect light's for assets "
                             "(4; fn 13), the lords of Mars's natal sign for siblings (5: the first the older, the second the "
                             "middle, the third the younger); each lord's condition in the root and in the revolution, as the "
                             "II.3 examination prints it. fn 14's age mapping is the editor's and is not applied.")
                 st.dataframe(pd.DataFrame(pn4['turning_triplicity_rows']), hide_index=True, width='stretch',
-                             height=_rows_height(len(pn4['turning_triplicity_rows'])))
+                             height=_rows_height(len(pn4['turning_triplicity_rows'])),
+                             column_config=_wide_text_columns(pd.DataFrame(pn4['turning_triplicity_rows'])))
                 st.caption("The direction \"a year for every degree\" is proportional semi-arcs, each row saying where it "
                            "stands at this age: for planets and Lots it is III.1, 12's third case (fn 16), for the cusps "
                            "VI.2, 21's \"portions of the hours and the right circle\" (fn 33) -- the point's degree "
@@ -18164,7 +18234,8 @@ if location_query and lat is not None and lon is not None:
                 rel = pn4['releaser']
                 st.markdown(f"**{rel['verdict']}**")
                 st.dataframe(pd.DataFrame(rel['candidates']), hide_index=True, width='stretch',
-                             height=_rows_height(len(rel['candidates'])))
+                             height=_rows_height(len(rel['candidates'])),
+                             column_config=_wide_text_columns(pd.DataFrame(rel['candidates'])))
                 if rel['ranking']:
                     st.markdown("**The lords looking at the releaser, ranked** (1.15, 13; 1.20, 2-5) -- the first is the house-master:")
                     st.dataframe(pd.DataFrame(rel['ranking']), hide_index=True, width='stretch',
@@ -18173,7 +18244,8 @@ if location_query and lat is not None and lon is not None:
                 st.markdown(f"**The short-life testimonies (Sahl, *On Nativities* 1.18, 1-10, Masha'allah, fn 125): {_sl['count']} of "
                             f"the four counted** -- {_sl['sentence']}. Shown beside the releaser; they do not disqualify it here. "
                             f"5-7 are \"equivalent\" and not counted (fn 126, 129).")
-                st.dataframe(pd.DataFrame(_sl['rows']), hide_index=True, width='stretch', height=_rows_height(7))
+                st.dataframe(pd.DataFrame(_sl['rows']), hide_index=True, width='stretch', height=_rows_height(7),
+                             column_config=_wide_text_columns(pd.DataFrame(_sl['rows'])))
                 if pn4['hm_years']:
                     _y = pn4['hm_years']
                     st.markdown(f"**The house-master's years** (Sahl, *On Nativities* 1.20, 7-34, Nawbakht -- the section "
@@ -18358,7 +18430,8 @@ if location_query and lat is not None and lon is not None:
                             st.download_button("Download this strip (SVG)", _hstrip, key="dl_strip_hm", mime="image/svg+xml",
                                                file_name="house_master_directed.svg")
                             st.dataframe(pd.DataFrame(pn4['hm_direction']), hide_index=True, width='stretch',
-                                         height=_rows_height(len(pn4['hm_direction'])))
+                                         height=_rows_height(len(pn4['hm_direction'])),
+                                         column_config=_wide_text_columns(pd.DataFrame(pn4['hm_direction'])))
                         else:
                             st.markdown("No target within the span.")
                         if pn4['hm_this_year']:
@@ -18369,7 +18442,8 @@ if location_query and lat is not None and lon is not None:
                             st.markdown(f"This year (age {pn4['age']}) is not one the direction points out. The revolution's "
                                         f"facts for the house-master, for the record (1.23, 3-4):")
                         st.dataframe(pd.DataFrame(pn4['hm_revolution']), hide_index=True, width='stretch',
-                                     height=_rows_height(len(pn4['hm_revolution'])))
+                                     height=_rows_height(len(pn4['hm_revolution'])),
+                                     column_config=_wide_text_columns(pd.DataFrame(pn4['hm_revolution'])))
                     st.markdown(
                         "**The join, and the denial beside it.** The house-master directed here is selected by NAWBAKHT'S "
                         "rule (1.15, 13: the dignity lord looking at the releaser) and directed by MASHA'ALLAH'S operation "
@@ -18387,7 +18461,8 @@ if location_query and lat is not None and lon is not None:
                         "the one operation Abu Ma'shar licenses for the indicator, follows as PN IV's:")
                     if pn4['hm_turning']:
                         st.dataframe(pd.DataFrame(pn4['hm_turning']), hide_index=True, width='stretch',
-                                     height=_rows_height(min(len(pn4['hm_turning']), 12)))
+                                     height=_rows_height(min(len(pn4['hm_turning']), 12)),
+                                     column_config=_wide_text_columns(pd.DataFrame(pn4['hm_turning'])))
                     else:
                         st.markdown("The turned sign reaches no cutter's body, opposition or square within the span.")
                     st.caption(f"**{pn4['house_master']}** turned a year a sign from its natal sign (whole signs, as VI.2, 1), "
@@ -18424,7 +18499,8 @@ if location_query and lat is not None and lon is not None:
                         if _tab is None:
                             st.warning("Refused at this latitude: the ascension has no unique inverse there.")
                         elif _tab:
-                            st.dataframe(pd.DataFrame(_tab), hide_index=True, width='stretch', height=_rows_height(min(len(_tab), 8)))
+                            st.dataframe(pd.DataFrame(_tab), hide_index=True, width='stretch', height=_rows_height(min(len(_tab), 8)),
+                                         column_config=_wide_text_columns(pd.DataFrame(_tab)))
                         else:
                             st.markdown("No target within the span.")
                 if pn4['father_lot']:
@@ -18441,14 +18517,16 @@ if location_query and lat is not None and lon is not None:
                                 f"directed is **the {_fl['second']}** (32). fn 288 -- Dykes: Mars the main malefic in both sects, "
                                 f"Saturn barred by night because he indicates the father, Mercury when made unfortunate -- is the "
                                 f"editor's reading and is quoted, not applied; 31 is applied as printed.")
-                    st.dataframe(pd.DataFrame(_fl['harmers']), hide_index=True, width='stretch', height=_rows_height(len(_fl['harmers'])))
+                    st.dataframe(pd.DataFrame(_fl['harmers']), hide_index=True, width='stretch', height=_rows_height(len(_fl['harmers'])),
+                                 column_config=_wide_text_columns(pd.DataFrame(_fl['harmers'])))
                     for _lab, _tab in (("From the degree of the Lot of the father (32), to the harmers' bodies, squares and oppositions", _fl['from_lot']),
                                        (f"From the {_fl['second']} (32), to the same", _fl['from_second'])):
                         st.markdown(f"*{_lab}*")
                         if _tab is None:
                             st.warning("Refused at this latitude: the ascension has no unique inverse there.")
                         elif _tab:
-                            st.dataframe(pd.DataFrame(_tab), hide_index=True, width='stretch', height=_rows_height(min(len(_tab), 8)))
+                            st.dataframe(pd.DataFrame(_tab), hide_index=True, width='stretch', height=_rows_height(min(len(_tab), 8)),
+                                         column_config=_wide_text_columns(pd.DataFrame(_tab)))
                         else:
                             st.markdown("No target within the span.")
                     st.caption("Readings: \"casting its rays\" is met by the direction's targets, the harmers' bodies, squares and "
@@ -18584,11 +18662,14 @@ if location_query and lat is not None and lon is not None:
                                   "(43-72), worked at 57-69. IX.7, 56: all in equal hours. IX.7, 79 declines day and hour "
                                   "charts and keeps these.")
                 dm_rows, dm_month, dm_ninth = pn4['day_methods']
-                st.dataframe(pd.DataFrame(dm_rows), hide_index=True, width='stretch', height=_rows_height(9))
+                st.dataframe(pd.DataFrame(dm_rows), hide_index=True, width='stretch', height=_rows_height(9),
+                             column_config=_wide_text_columns(pd.DataFrame(dm_rows)))
                 st.markdown("**8. The month's days** (IX.7, 34-39), from the four rooted monthly indicators (fn 181) and the month's Ascendant, Lot and Moon:")
-                st.dataframe(pd.DataFrame(dm_month), hide_index=True, width='stretch', height=_rows_height(len(dm_month)))
+                st.dataframe(pd.DataFrame(dm_month), hide_index=True, width='stretch', height=_rows_height(len(dm_month)),
+                             column_config=_wide_text_columns(pd.DataFrame(dm_month)))
                 st.markdown("**9. The ninth-parts** (IX.7, 43-72), from the three starts:")
-                st.dataframe(pd.DataFrame(dm_ninth), hide_index=True, width='stretch', height=_rows_height(3))
+                st.dataframe(pd.DataFrame(dm_ninth), hide_index=True, width='stretch', height=_rows_height(3),
+                             column_config=_wide_text_columns(pd.DataFrame(dm_ninth)))
                 st.caption("A \"day\" is a whole 24-hour period from the birth moment -- fn 161 says the book never says "
                            "whether from birth or from dawn -- and the moment read is the target date at noon. The "
                            "hours are equal (IX.7, 56): 3 3/7 apiece among seven (fn 164), 14 to a sign in a week (fn "
@@ -18660,7 +18741,8 @@ if location_query and lat is not None and lon is not None:
                                   "will gain good fortune at the end of his lifespan\". PN IV VI.2, 4 names the same "
                                   "lords \"at that time of his lifespan\".")
                 st.dataframe(pd.DataFrame(pn4['life_lords_rows']), hide_index=True, width='stretch',
-                             height=_rows_height(len(pn4['life_lords_rows'])))
+                             height=_rows_height(len(pn4['life_lords_rows'])),
+                             column_config=_wide_text_columns(pd.DataFrame(pn4['life_lords_rows'])))
                 st.caption("The three lords of the sect light's triplicity (the Sun's by day, the Moon's by night) in the "
                            "day-night-partner order for a day birth and night-day-partner for a night birth, each with its "
                            "natal condition. No text in hand assigns a number of years to any lord's stretch of the life, "
@@ -18881,7 +18963,8 @@ if location_query and lat is not None and lon is not None:
             _rows = [{'Reading': label, 'In force': str(_reading(wk, sk, default)), 'Default': str(default),
                       'Set on': page, 'Differs': 'yes' if _reading(wk, sk, default) != default else ''}
                      for label, wk, sk, default, page in READINGS_REGISTRY]
-            st.dataframe(pd.DataFrame(_rows), hide_index=True, width='stretch', height=_rows_height(len(_rows)))
+            st.dataframe(pd.DataFrame(_rows), hide_index=True, width='stretch', height=_rows_height(len(_rows)),
+                         column_config=_wide_text_columns(pd.DataFrame(_rows)))
             if st.button("Reset every reading to the defaults", icon=":material/restart_alt:"):
                 for _label, wk, sk, _default, _page in READINGS_REGISTRY:
                     st.session_state.pop(wk, None)
@@ -19061,7 +19144,8 @@ if location_query and lat is not None and lon is not None:
                                   "wet or dry (Gr. Intr. IV.1, 6-12), each sentence's words beside the reading. A "
                                   "supplement table: this app computes with no planet's nature.")
                 st.dataframe(pd.DataFrame(PLANET_NATURES_IV1), hide_index=True, width='content',
-                             height=_rows_height(len(PLANET_NATURES_IV1)))
+                             height=_rows_height(len(PLANET_NATURES_IV1)),
+                             column_config=_wide_text_columns(pd.DataFrame(PLANET_NATURES_IV1)))
                 st.caption("Display only: Abu Ma'shar's report of Ptolemy, \"this is what Ptolemy claimed about the "
                            "natures of the planets\" (Gr. Intr. IV.1, 13); his own objections follow at IV.1, 15-43 and "
                            "are not tabled. Nothing in this app reads a planet's nature.")
