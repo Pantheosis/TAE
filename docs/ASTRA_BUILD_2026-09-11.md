@@ -638,3 +638,49 @@ under Course text and supplement on the Timing page's last tab beside Sahl's lor
 life, kept apart from them. Pinned in `tests/test_andarzaghar_triplicity_lords_2026_09_15.py`
 (every quote a substring of the corpus span; 0° Aries Diurnal: house 1 Sun, Jupiter, Saturn,
 house 4 Venus, Mars, Moon; by night the first two swap). No fixture moved.
+
+## 2026-09-15: affliction and fortification after Rhetorius (coverage list, gap 6)
+
+Source: Rhetorius, *Astrological Compendium* (Holden), Chs. 26, 27, 28, 41, 42, pp. 21-24 of the
+corpus file; pp. 21 and 24 read off the page images (`pdf024.pdf`, `pdf027.pdf`): the OCR and the
+page agree word for word in all four chapters quoted, no sentence differed. `RHETORIUS_AFFLICTION_CONDITIONS`
+(13 entries) and `evaluate_rhetorius_affliction(planetary_data, asc_lon, sect)`; a supplement-only
+`_finding` on the Chart page, Chs. 27, 41, 42 (and 28, 26, 34) quoted whole in its notes. Readings made:
+(1) "aspected by malefics" by whole sign, the four aspects, not co-presence; (2) "besieged" by Ch. 41's
+7 degrees, body or ray of any two planets (Ch. 41 names no malefics), the nearest on each side being the
+"no other casting a ray in between"; (3) "applying to a destructive [star]" by whole sign, the planet the
+swifter, no degree; (4) "becomes in kollêsis" by Ch. 34's three degrees, where Ch. 27's fn 1 sends the word,
+read bodily since Ch. 34 lacks the "or by aspect" of Chs. 37 and 39, and with a malefic (the sentence's
+object); (5) "is opposed" by any planet, whole sign; (6) "disposed of by one badly situated in the
+ineffective houses": the domicile lord in 2, 3, 6, 8 or 12 from the Ascendant, "badly situated" read as
+just that; (7) Ch. 26 dominance from the Cancer/Aries example (the other in the 10th sign counted from
+the planet, and the 9th and 11th for "another kind"), reported neutrally since the chapter names no harm;
+(8) Ch. 42 "terms" read with the Egyptian bounds, "stronger houses" as Ch. 28's 1, 4, 7, 10, 5, 9, 11;
+"in proper phase" and "well-configured" are listed but NOT tested -- the chapters define neither. Ch. 41
+read literally fires often (five of seven planets on 1240-05-23); it is the text. Test:
+`tests/test_rhetorius_affliction_2026_09_15.py` (verbatim texts against the pp. 21-24 span, hand-built
+charts for each tested condition, the 1240 chart).
+
+After the check (`BUILD_RHETORIUS_CHECK_REPORT_2026-09-15.md`): kollēsis by degrees alone, across a sign
+boundary (Ch. 34 names three degrees, not the sign); the malefic frame said to be Ch. 27's; the
+"stronger houses" = Ch. 28 equation said to be the app's. Open to the owner: Ch. 41's besieging read
+with any two planets as besiegers, as the chapter has it (four of the seven planets on 1240-05-23),
+under the heading "Afflicted" that Ch. 27 gives it -- restricting the besiegers to the malefics is a
+ruling, not a reading the text makes. The corpus has "Kollèsis" where p. 23 prints "Kollêsis".
+
+The besieging question answered from the text (ITA IV.4.2, photographed and OCR'd the same day): the
+besieging that afflicts is between the malefics (Abbr. IV.21-25; al-Qabisi III.28b), and enclosure by
+the fortunes is a condition of its own (Gr. Intr. VII.6 as ITA quotes it; BW VIII.76). The row is
+limited to Saturn and Mars, a fourteenth row "enclosed by the fortunes" added under Fortified, the
+sentences quoted in the notes; a third body or ray between breaks either. `LOT`-style count 13 -> 14.
+
+After the ITA rulings audit (entry 31): kollēsis is the same-sign connection -- Dykes distinguishes it
+from sun-aphē across signs (ITA III.7 comment, p. 136) -- so the across-the-boundary reading made
+after the check is reversed; the same sign required again, now with his definition cited.
+
+Reconciliation decision 3 (owner, 2026-09-15): the breaker is ITA's, not Rhetorius's "any third".
+A malefic besieging is loosened by the Sun or a fortune aspecting the planet by a friendly aspect
+(its body counted with the rays, Figure 102) under seven degrees (Gr. Intr. VII.6; al-Qabisi
+III.28b); an enclosure by the fortunes is broken by a malefic body or ray in the region (Dykes's
+comment). Both are said on the row rather than dropping it; the besiegers are now found among the
+malefics (or the fortunes) alone, so a third body of another kind neither makes nor breaks either.
