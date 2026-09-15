@@ -784,3 +784,56 @@ passages off the photographed pages. Branch base `origin/victor-weights-note-202
 
 Tests: the six named files 403 passed; the whole suite 2040 passed. Two pins moved, both on strings
 this order told me to change (above); `tests/test_prose_counts.py` untouched.
+
+## 2026-09-15: the Moon on the third day and the fetus's stay (decision 18)
+
+Reconciliation decision 18 (owner): two course-text findings on the Chart page, Sahl canon, not
+gated by the reading depth, display only.
+
+**The Moon on the third day (Sahl)**, cited "Sahl, On Nativities 1.29, 11-12; 1.26, 7".
+`evaluate_moon_third_day(chart_data)` -> `third_day_positions(jd)` (the Moon, Sun, Saturn and Mars
+by swisseph at birth + 3.0 days) -> `moon_third_day_rows(third, natal_infortunes, asc)`, pure.
+The reading of "the third day of the Moon": three days after the birth moment, the birth hour
+kept -- Sahl's own words elsewhere are "the position of the Moon, where she is on the third day
+from the nativity" (9, 3) and "the position of the Moon on the third day, the seventh, and the
+fortieth day" (1.30, 22); no sentence fixes the hour, and the page says the hour is the app's.
+"Corrupted" in 1.29's own terms, 1.29, 3 ("safe from the infortunes, burning, and falling"): an
+infortune looking by whole sign (the infortunes where they stand on the third day), burned within
+the Moon's twelve degrees (Introduction Ch. 3, 103, as `evaluate_corruption_of_the_moon` reads it),
+or falling from the stakes by the whole-sign place from the Ascendant OF THE NATIVITY (1.30, 33);
+nothing else of the ten defects. The four-footed sign is 1.38, 1's list (`FOUR_FOOTED['On
+Nativities']`, the second half of Sagittarius from 15°). Rows: the Moon's degree and place; four
+feet; the infortunes looking; burning; falling; corrupted; 1.26, 7 met or not; 1.29, 11's last
+clause (the triplicity lords and the fortune in a stake NOT tested, said); 1.29, 12's first clause
+("the two infortunes were in the Ascendant or seventh" read as both natal infortunes in the
+whole-sign 1st or 7th, said; the second clause not tested, said). Fn 303 (the alternative reading:
+the fortune not corrupted on that day) and fn 304 quoted in the notes.
+
+**The fetus's stay (Sahl)**, cited "Sahl, On Nativities 1.8-1.9". `evaluate_gestation(chart_data,
+lat, lon)`. What 1.8 lets the app compute: 5-6 only -- the meeting before the birth (the last New
+Moon, from `sahl_prenatal_meeting_and_fullness`; fn 40 allows the lunation generally, so the
+opposition is a further row when it was the nearer lunation) and its Ascendant erected for that hour
+at the birthplace. NOT computed, said on the row: the three divisions of 3-4 and their reading in
+7-13 -- the divisions are framed "from the degree of the Ascendant" of a chart the sentence does not
+name; Dykes (fn 38, his comment) assumes the pre-conception lunation, which no sentence of 1.8 shows
+how to find (the conception is 1.10's matter). 1.9, 1-10 computed as written by
+`gestation_moons(jd)` + `gestation_1_9_rows(natal, past, renewed, asc)`, pure: the three Moons
+(fn 45), the year read as the calendar anniversary at the birth hour (`_anniversary_jd`; a Julian
+year of 365.25 days only where the digits name no day -- Feb 29), the aspects whole-sign via
+`_sahl_looks`; every sentence of 2-10 whose condition holds is a row (9's "trine of the Moon or
+Ascendant" tests both), the sextile and her own sign named by none and said so. 1.9, 11 (the
+meeting of the conception) and 12-13 (the stays; fnn 54-55's 258/273/288) presented, not computed.
+Dykes's fnn 47, 49, 51, 53 quoted on the rows they concern. On 1240-05-23 the meeting fell at
+sunrise on the birth day, so its Ascendant equals its degree -- a coincidence of the fixture, checked.
+
+Tests: `tests/test_moon_third_day_2026_09_15.py` -- the third-day Moon against swisseph at
+jd + 3 computed in the test; hand-built four-footed-and-afflicted (Leo, Mars square) and
+not-four-footed cases, falling and burned separately; 1.38, 1's list; every quotation verbatim in
+the corpus (sups and entities stripped); the gestation rows carry their sentences, the anniversary
+against `swe.julday` (1240 a leap year: 366 back, 365 on); each of 1.9, 2-10 hit once and the
+sextile by none. `tables.json` regenerated: on the chart page for each of the six dates two tables
+added ("The Moon on the third day (Sahl)" and "The fetus's stay (Sahl)", Item/Value/Text); the
+sign-categories table (11 columns, inside its own expander, which the inventory does not read as a
+heading) is now listed under "The fetus's stay (Sahl)" as the last preceding subheader instead of
+"Special Degrees & Conditions" / "Degrees of nobility and rank" / "Quadrant divisions (Alchabitius)"
+-- the same table, re-attributed; nothing else moved.
