@@ -1295,7 +1295,8 @@ if location_query and lat is not None and lon is not None:
                       "a page names its sentence.",
                       "Enter or load a nativity in the sidebar. Part 1 sets out what the chart contains, "
                       "Part 2 what the year holds; the reference tables and the sources close the page "
-                      "list. The judgment is the astrologer's.")
+                      "list. The judgment is the astrologer's.",
+                      "Click a planet or a sign on the wheel for what the tables say of it; hover a sign for its bounds and triplicity lords.")
             # They are read once and then in the way, so they stand open for
             # the first two launches and fold themselves after that, one
             # click from the reader either way. The count is the launches

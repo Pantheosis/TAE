@@ -313,15 +313,15 @@ def test_the_chart_pages_wheel_controls_are_all_inside_the_fragment(layout):
 
 
 def test_the_page_around_the_chart_fragment_is_untouched():
-    """The three captions, the circumpolar warning and everything below stay
+    """The four captions, the circumpolar warning and everything below stay
     outside, where a click on a control does not redraw them."""
     at = _at("chart")
     kids = list(at.main.children.values())
     # The header, the chart strip, the fragment, the three sentences, then
     # the page as it was.
     assert [type(k).__name__ for k in kids[:3]] == ["Header", "Caption", "Block"]
-    assert [type(k).__name__ for k in kids[3:6]] == ["Caption"] * 3
-    assert kids[6].value == "Calculation"
+    assert [type(k).__name__ for k in kids[3:7]] == ["Caption"] * 4
+    assert kids[7].value == "Calculation"
 
 
 def test_the_timing_fragment_holds_the_subheader_picture_and_controls_only():
