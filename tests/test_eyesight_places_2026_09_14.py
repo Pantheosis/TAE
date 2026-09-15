@@ -102,3 +102,16 @@ def test_calculated_chart_runs(engine):
     chart = engine["calculate_traditional_chart"](datetime(1240, 5, 23, 13, 45), 43.7792, 11.2463)
     rows = engine["evaluate_eyesight_places"](chart['planetary_data'], chart['ascendant'])
     assert isinstance(rows, list)
+
+
+def test_the_lord_of_the_ascendant_is_read_as_sahl_48_names_it(engine):
+    # Ascendant in Taurus: the lord is Venus. Venus in the Pleiades' span
+    # (Sahl 49-55 name the Moon; 48 names "the lord of the Ascendant").
+    p = pdata(Sun=200.0, Moon=250.0)
+    p['Venus'] = {'longitude': 30.0 + 8.5}
+    rows = engine["evaluate_eyesight_places"](p, 40.0)
+    assert rows and all(r['Point'] == 'Lord of the Ascendant (Venus)' for r in rows)
+    # Ascendant in Leo: the Sun is the lord, and its one row carries both roles.
+    p2 = pdata(Sun=30.0 + 8.5, Moon=250.0)
+    rows2 = engine["evaluate_eyesight_places"](p2, 130.0)
+    assert rows2 and {r['Point'] for r in rows2} == {'Sun (the lord of the Ascendant)'}

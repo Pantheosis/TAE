@@ -618,3 +618,8 @@ Readings I was unsure of: 49's "passed half [of it] until she completes 18°" as
 Abu Ma'shar's single longitudes (21°08' Cancer, 15°20' Sagittarius) as the whole degree they fall
 in. 73 (Aries first degrees, Capricorn last: "sickly") and VI.20, 3 (Libra, Leo, no degrees) are
 not rows. Test: `tests/test_eyesight_places_2026_09_14.py`.
+
+After the check (`BUILD_EYESIGHT_CHECK_REPORT_2026-09-14.md`): the lord of the Ascendant, which 6.2, 48
+names, is now read (the domicile lord of the rising sign; one row carrying both roles when it is a
+luminary); the Ascendant degree itself is said to be this app's addition; "al-Dafārah" as printed;
+Abu Ma'shar's bare 20° and 22° declared as measured whole degrees; "to fourteen" degrees of disagreement.
