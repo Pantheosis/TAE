@@ -1,19 +1,23 @@
-"""The pictures in the viewer's own theme.
+"""The pictures in the viewer's own theme, behind a preference.
 
 Each picture is an SVG inside an <img>, where no page CSS reaches it, so
 every one of them carried its own opaque white ground and black ink and
 showed as a white square on a dark page. The four renderers now take a
 theme: None is the palette they have always drawn in -- held here to the
 byte -- and "dark" is the same geometry on Streamlit's dark ground, with
-nothing white or black left in it.
+nothing white or black left in it. The white ground stays the default in
+every theme, so what reaches a renderer is the viewer's theme only when
+the Dark wheel preference is on and None otherwise; that rule is lifted
+out of the app and evaluated here.
 """
+import ast
 import re
 import xml.etree.ElementTree as ET
 from datetime import date, datetime
 
 import pytest
 
-from conftest import assert_no_exception, make_app, ui_source
+from conftest import assert_no_exception, find_page_widget, make_app, ui_source
 
 PETOSKEY = (45.37334, -84.95533)
 REFERENCE_UTC = datetime(1982, 11, 19, 16, 44)
@@ -103,15 +107,60 @@ def test_the_geometry_is_the_same_picture_in_both_palettes(engine, chart, bundle
         assert light_shape == dark_shape, f"{name}: the geometry moved with the palette"
 
 
-# --- 3. The UI half reads the viewer's theme once and passes it on --------
+# --- 3. The UI half reads the viewer's theme once and passes one value on -
 
-def test_the_ui_reads_the_theme_once_and_hands_it_to_every_picture():
+def test_the_ui_reads_the_theme_once_and_hands_one_value_to_every_picture():
     src = ui_source()
     assert 'getattr(st.context, "theme", None)' in src, "the read must survive a missing attribute"
     assert 'getattr(_context_theme, "type", None)' in src
-    assert src.count("APP_THEME = ") == 1, "read once, at the top level"
+    assert src.count("VIEWER_THEME = ") == 1, "read once, at the top level"
+    assert src.count("WHEEL_THEME = ") == 1, "one value decides every picture"
     # Two wheels on the Chart page, the Timing page's wheel, six strips.
-    assert src.count("theme=APP_THEME") == 9
+    assert src.count("theme=WHEEL_THEME") == 9
+    assert "theme=VIEWER_THEME" not in src, "no picture takes the viewer's theme unfiltered"
+
+
+def wheel_theme_rule():
+    """The app's own WHEEL_THEME expression, lifted out of the UI half and
+    evaluated -- the rule itself, not a copy of it."""
+    src = ui_source()
+    tree = ast.parse(src)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and any(getattr(t, "id", None) == "WHEEL_THEME" for t in node.targets):
+            expression = ast.get_source_segment(src, node.value)
+            return lambda viewer, dark: eval(expression, {},
+                                             {"VIEWER_THEME": viewer, "WHEEL_DARK": dark})
+    raise AssertionError("the UI half assigns no WHEEL_THEME")
+
+
+@pytest.mark.parametrize("viewer", [None, "light", "dark"])
+def test_with_the_preference_off_every_picture_is_drawn_on_white(viewer, engine):
+    """The default, in every theme: the wheel the app has always drawn."""
+    rule = wheel_theme_rule()
+    assert rule(viewer, False) is None
+    assert engine["_wheel_palette"](rule(viewer, False)) is engine["_PALETTE_LIGHT"]
+
+
+def test_with_the_preference_on_the_viewer_theme_decides(engine):
+    rule = wheel_theme_rule()
+    # The dark theme: the dark palette.
+    assert rule("dark", True) == "dark"
+    assert engine["_wheel_palette"]("dark") is engine["_PALETTE_DARK"]
+    # The light theme: "light" is what reaches the renderer, and "light" is
+    # the palette the pictures have always been drawn in, so the toggle
+    # changes nothing there -- which is what its help text says.
+    assert rule("light", True) == "light"
+    assert engine["_wheel_palette"]("light") is engine["_PALETTE_LIGHT"]
+    # No theme reported yet: the white wheel, not a guess.
+    assert rule(None, True) is None
+
+
+def test_the_dark_wheel_is_a_display_preference_and_not_a_reading(engine):
+    assert "_wheel_dark" in engine["PREFERENCE_KEYS"], "it must survive the session"
+    src = ui_source()
+    registry = src[src.index("READINGS_REGISTRY = ("):]
+    registry = registry[:registry.index("\n)\n")]
+    assert "_wheel_dark" not in registry, "a display preference is not a doctrinal reading"
 
 
 @pytest.mark.parametrize("page", ["chart", "timing"])
@@ -120,3 +169,17 @@ def test_the_pages_with_pictures_render_under_a_theme_the_harness_cannot_report(
     pages must render on the light palette rather than raise."""
     at = make_app(page=page).run()
     assert_no_exception(at, page)
+
+
+@pytest.mark.parametrize("page", ["chart", "timing"])
+def test_both_wheels_carry_the_same_control_and_it_persists(page):
+    """One control, one preference: the Chart page's wheel block and the
+    Timing page's Options popover set the same store key, as the wheel
+    layout does."""
+    at = make_app(page=page).run()
+    assert_no_exception(at, page)
+    box = find_page_widget(at, "checkbox", "Dark wheel")
+    assert box.value is False, "the white wheel is the default"
+    box.check().run()
+    assert_no_exception(at, f"{page} with the dark wheel on")
+    assert at.session_state["_wheel_dark"] is True

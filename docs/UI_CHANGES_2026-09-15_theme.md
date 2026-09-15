@@ -63,18 +63,50 @@ equals `bg` in the dark palette by choice: those fills exist to mask what is und
 shaded sector, the spokes, the sign band), not to be seen, and a lighter hub would read as a
 second ring.
 
+### The owner's ruling: white by default, the dark palette on request
+
+Reviewing the first version of this branch, the owner ruled that the wheels keep their white
+ground in **every** theme — that is what a chart on paper is — and that the dark palette is
+offered rather than imposed. So the viewer's theme is no longer what a picture is drawn in; it
+is consulted only when the reader asks for it.
+
+**The preference**, modelled exactly on the bounds ring: widget key `wheel_dark`, store key
+`_wheel_dark`, default `False`, added to `PREFERENCE_KEYS` so it survives the session — and
+deliberately **not** added to `READINGS_REGISTRY`, because it is a display preference like the
+bounds ring and the wheel layout, not a doctrinal reading. It does not appear in the Sources
+page's table of readings in force, and the Reset there does not reach it.
+
+**The control**, `_reading_checkbox("Dark wheel", "wheel_dark", "_wheel_dark", ...)`, sits
+directly under the Bounds ring checkbox in two places: the Chart page's wheel block
+(`_layout_control()`) and the Timing page's Options popover. The same widget key on both, as
+the wheel layout radio already does — only one page renders per run, so there is no collision —
+so the two wheels follow one setting and a reader who turns it on where the wheel is turns it
+on everywhere. One sentence of help, written once as `WHEEL_DARK_HELP` and passed to both.
+
+**What reaches a renderer** is one value, read beside the other readings:
+
+    WHEEL_DARK = bool(_reading("wheel_dark", "_wheel_dark", False))
+    WHEEL_THEME = VIEWER_THEME if WHEEL_DARK else None
+
+Off — the default — every picture is handed `None` and draws exactly as it always has, in the
+light theme and the dark. On, it is handed the viewer's own theme: `"dark"` takes the dark
+palette; `"light"` reaches the renderer and resolves to the light palette, so the toggle
+changes nothing in the light theme, which is what its help text says; `None`, which is what a
+browser that has not reported yet and every `AppTest` run give, is the white wheel rather than
+a guess.
+
 ### Where the theme comes from
 
 In the UI half, at the top level, once:
 
     _context_theme = getattr(st.context, "theme", None)
-    APP_THEME = getattr(_context_theme, "type", None) if _context_theme is not None else None
+    VIEWER_THEME = getattr(_context_theme, "type", None) if _context_theme is not None else None
 
 Two `getattr`s rather than a `try`, so a Streamlit without the attribute and a theme reported
 as `None` take the same road, which is the light palette. Under `AppTest` there is no browser
-to report one and `APP_THEME` is `None`; the pages render exactly as they did.
+to report one and `VIEWER_THEME` is `None`; the pages render exactly as they did.
 
-`theme=APP_THEME` then goes to all nine renderer calls: the Chart page's two wheels (square and
+`theme=WHEEL_THEME` then goes to all nine renderer calls: the Chart page's two wheels (square and
 wide), the Timing page's wheel — which is all five views, one call — and the six direction
 strips (the Ascendant, a meridian point, the releaser, the house-master's hits, the small days,
 the mighty days). The SVG download buttons are handed the same string that is on screen, so a
@@ -158,13 +190,21 @@ parser as it went in. The Lot case is built the way the app builds it — a `LOT
 through `lot_by_id` into the ring's extras, as the Timing page's `_ring_extras` does — not by
 editing the SVG.
 
-`tests/test_theme_pictures_2026_09_15.py`, ten: `theme=None`, `"light"`, `""` and `"Light"` all
+`tests/test_theme_pictures_2026_09_15.py`, seventeen: `theme=None`, `"light"`, `""` and `"Light"` all
 return the old picture byte for byte; the dark pictures parse, carry no white or black, and
 have the dark ground on their backing rectangle; the two palettes answer for the same keys with
 the same shapes; the geometry is identical between the palettes once the colours are struck out
 (the strongest guard that the palette cannot move a line); the UI half reads the theme once
-with the two `getattr`s and passes `theme=APP_THEME` nine times; and the Chart and Timing pages
-render under `AppTest`, where no theme is reported.
+with the two `getattr`s and passes `theme=WHEEL_THEME` nine times and `VIEWER_THEME` never; and
+the Chart and Timing pages render under `AppTest`, where no theme is reported. Seven of the
+seventeen are the preference: the `WHEEL_THEME` expression is lifted out of the UI half by AST
+and evaluated — the app's own rule, not a copy — against each theme with the preference off
+(always `None`, always the light palette) and on (`"dark"` → the dark palette, `"light"` → the
+light one, `None` → the light one); `_wheel_dark` is in `PREFERENCE_KEYS` and not in
+`READINGS_REGISTRY`; and on each of the two pages the Dark wheel checkbox is found, is off, and
+writes `_wheel_dark` when checked.
 
-Full suite: **2206 passed, 6 xfailed in 95.31 s**, with `-n auto` on the owner's venv. 2188 to
-2206 is those eighteen and nothing else.
+Full suite: **2213 passed, 6 xfailed in 95.91 s**, with `-n auto` on the owner's venv. 2188 to
+2213 is those twenty-five new tests and nothing else. The engine half's whole share of the
+preference is one line: `'_wheel_dark'` at the end of `PREFERENCE_KEYS`, which is a list of
+display and reading keys, not doctrine.

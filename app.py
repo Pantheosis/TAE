@@ -110,7 +110,7 @@ PREFERENCE_KEYS = (
     '_fitting_infortune', '_domain_rule', '_lot_house_cusp', '_pn4_monthly_turn', '_reading_depth',
     # display
     '_wheel_layout', '_chart_bounds', '_timing_bounds', '_wheel_order', '_timing_lots', '_timing_rays',
-    '_timing_twelfths', '_timing_wheel_view', '_target_mode',
+    '_timing_twelfths', '_timing_wheel_view', '_target_mode', '_wheel_dark',
 )
 
 PREFERENCE_RENAMES = (
@@ -15871,13 +15871,13 @@ st.set_page_config(
 
 # The viewer's theme, read once for the pictures. Streamlit 1.62 reports
 # it as st.context.theme.type -- "dark", "light", or None when the browser
-# has not said yet (and under AppTest, which has no browser at all); None
-# and "light" both take the palette the pictures have always been drawn
-# in. Only the pictures use it: they are SVG inside an <img>, where no page
-# CSS reaches them, so a wheel on an opaque white ground stayed a white
-# square on a dark page.
+# has not said yet (and under AppTest, which has no browser at all). It is
+# not by itself what a picture is drawn in: the owner's ruling is that the
+# wheels keep their white ground in every theme unless the reader asks
+# otherwise, so this is read here and consulted only when the Dark wheel
+# preference is on (WHEEL_THEME, below with the other readings).
 _context_theme = getattr(st.context, "theme", None)
-APP_THEME = getattr(_context_theme, "type", None) if _context_theme is not None else None
+VIEWER_THEME = getattr(_context_theme, "type", None) if _context_theme is not None else None
 
 st.sidebar.header("Nativity")
 
@@ -16190,6 +16190,19 @@ PN4_MONTHLY_TURN = _reading("pn4_monthly_turn", "_pn4_monthly_turn", PN4_MONTHLY
 # Owner's decision 2026-09-10: the natal wheel carries the Egyptian-bounds
 # ring too, as every PN IV wheel does -- the course works the bounds by hand.
 CHART_BOUNDS = bool(_reading("chart_bounds", "_chart_bounds", True))
+# Owner's ruling 2026-09-15: the wheels and the strips are drawn on white in
+# every theme, because that is what a chart on paper is, and the dark
+# palette is offered rather than imposed. A display preference like the
+# bounds ring and the wheel layout -- not a doctrinal reading, so not in
+# READINGS_REGISTRY -- set on the Chart page and in the Timing page's
+# Options, one setting for both wheels. Off, every picture is handed None
+# and draws exactly as it always has; on, it is handed the viewer's own
+# theme, which is the dark palette only when the viewer is in the dark
+# theme.
+WHEEL_DARK_HELP = ("The wheels and the strips are drawn on a white ground unless this is on, when they take "
+                   "the dark palette in the dark theme; in the light theme it changes nothing.")
+WHEEL_DARK = bool(_reading("wheel_dark", "_wheel_dark", False))
+WHEEL_THEME = VIEWER_THEME if WHEEL_DARK else None
 # The reading depth (UI_REVIEW_2026-09-10.md §1 B): the course text alone,
 # or with Abu Ma'shar's supplement laid beside it. Set on the Sources page.
 READING_DEPTH = _reading("reading_depth", "_reading_depth", READING_DEPTH_OPTIONS[0])
@@ -16403,9 +16416,9 @@ if location_query and lat is not None and lon is not None:
         chart_name = (_picked if _picked and _picked != "-- New Chart --"
                       else new_chart_name.strip() or "Transits")
         svg_code = generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, local_dt, tz_name,
-                                       chronocrats=chronocrats, bounds=CHART_BOUNDS, theme=APP_THEME)
+                                       chronocrats=chronocrats, bounds=CHART_BOUNDS, theme=WHEEL_THEME)
         svg_wide = generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, local_dt, tz_name,
-                                       wide=True, chronocrats=chronocrats, bounds=CHART_BOUNDS, theme=APP_THEME)
+                                       wide=True, chronocrats=chronocrats, bounds=CHART_BOUNDS, theme=WHEEL_THEME)
 
         # The app's name is the browser title (st.set_page_config) and the
         # header bar's own; it used to be repeated as an st.title above every
@@ -16610,6 +16623,7 @@ if location_query and lat is not None and lon is not None:
                                   help="The Egyptian bounds, with their lords, as a ring inside the degree scale -- "
                                        "as every natal wheel in Persian Nativities IV carries them (Figures 1, 22, "
                                        "25, 26).")
+                _reading_checkbox("Dark wheel", "wheel_dark", "_wheel_dark", help=WHEEL_DARK_HELP)
                 st.download_button("Download the wheel (SVG)", svg_wide if layout == WHEEL_LAYOUT_OPTIONS[1] else svg_code,
                                    key="dl_chart_wheel", mime="image/svg+xml",
                                    file_name=f"{re.sub(r'[^A-Za-z0-9]+', '_', chart_name).strip('_') or 'chart'}_natal.svg")
@@ -17560,6 +17574,7 @@ if location_query and lat is not None and lon is not None:
                                                           "the year, then the root.")
                         wheel_bounds = _reading_checkbox("Bounds ring", "timing_bounds", "_timing_bounds",
                                                          help="The Egyptian bounds as a ring, as every PN IV wheel carries them.")
+                        _reading_checkbox("Dark wheel", "wheel_dark", "_wheel_dark", help=WHEEL_DARK_HELP)
                         want_lots = _reading_checkbox("Lots", "timing_lots", "_timing_lots",
                                                       help="I.6, 3-4: the Lots \"according to how you do it\" -- this app's, "
                                                            "beyond Fortune, as short ticks with their names.")
@@ -17634,7 +17649,7 @@ if location_query and lat is not None and lon is not None:
                                marks=[('TP', pn4['year']['longitude'], 0)])
                 _extras = {i: _ring_extras(r['chart']) for i, r in enumerate(_rings)} if (want_lots or want_rays or want_twelfths) else None
                 svg_timing = generate_multiwheel_svg(_rings, chart_name, wide=_wide_t, bounds=wheel_bounds, extras=_extras,
-                                                     theme=APP_THEME, **_kw)
+                                                     theme=WHEEL_THEME, **_kw)
                 st.image(svg_timing, width='stretch' if _wide_t else 560)
                 st.download_button("Download this wheel (SVG)", svg_timing, key="dl_timing_wheel",
                                    file_name=f"{re.sub(r'[^A-Za-z0-9]+', '_', chart_name).strip('_') or 'chart'}_"
@@ -17954,7 +17969,7 @@ if location_query and lat is not None and lon is not None:
                 else:
                     _strip = generate_distribution_strip_svg(pn4['segments'], pn4['elapsed_years'], 'years',
                                                              PN4_DISTRIBUTION_SPAN_YEARS, 'The distribution from the Ascendant',
-                                                             theme=APP_THEME)
+                                                             theme=WHEEL_THEME)
                     st.image(_strip, width='stretch')
                     st.download_button("Download this strip (SVG)", _strip, key="dl_strip_asc", mime="image/svg+xml",
                                        file_name="distribution_ascendant.svg")
@@ -18029,7 +18044,7 @@ if location_query and lat is not None and lon is not None:
                     cur = m['current']
                     _strip = generate_distribution_strip_svg(m['segments'], pn4['elapsed_years'], 'years',
                                                              PN4_DISTRIBUTION_SPAN_YEARS, f'The distribution from the {point}',
-                                                             theme=APP_THEME)
+                                                             theme=WHEEL_THEME)
                     st.image(_strip, width='stretch')
                     st.download_button("Download this strip (SVG)", _strip, key=f"dl_strip_{point[:4].lower()}",
                                        mime="image/svg+xml", file_name=f"distribution_{point[:4].lower()}.svg")
@@ -18205,7 +18220,7 @@ if location_query and lat is not None and lon is not None:
                     else:
                         _rstrip = generate_distribution_strip_svg(pn4['releaser_segments'], pn4['elapsed_years'], 'years',
                                                                   PN4_DISTRIBUTION_SPAN_YEARS, 'The distribution from the releaser',
-                                                                  theme=APP_THEME)
+                                                                  theme=WHEEL_THEME)
                         st.image(_rstrip, width='stretch')
                         st.download_button("Download this strip (SVG)", _rstrip, key="dl_strip_releaser", mime="image/svg+xml",
                                            file_name="distribution_releaser.svg")
@@ -18308,7 +18323,7 @@ if location_query and lat is not None and lon is not None:
                         if pn4['hm_direction']:
                             _hstrip = generate_hit_strip_svg(pn4['hm_direction'], pn4['elapsed_years'],
                                                              PN4_DISTRIBUTION_SPAN_YEARS, 'The house-master directed',
-                                                             theme=APP_THEME)
+                                                             theme=WHEEL_THEME)
                             st.image(_hstrip, width='stretch')
                             st.download_button("Download this strip (SVG)", _hstrip, key="dl_strip_hm", mime="image/svg+xml",
                                                file_name="house_master_directed.svg")
@@ -18457,7 +18472,7 @@ if location_query and lat is not None and lon is not None:
                 sd_cur = pn4['small_days_current']
                 sr_asc = pn4['sr']['ascendant']
                 _strip = generate_distribution_strip_svg(pn4['small_days'], pn4['day_of_year'], 'days', None, 'The small days',
-                                                        theme=APP_THEME)
+                                                        theme=WHEEL_THEME)
                 st.image(_strip, width='stretch')
                 st.download_button("Download this strip (SVG)", _strip, key="dl_strip_small", mime="image/svg+xml",
                                    file_name="small_days.svg")
@@ -18496,7 +18511,7 @@ if location_query and lat is not None and lon is not None:
                                   "The profected thirty degrees treated as a year, walked degree by degree.")
                 md_cur = pn4['mighty_days_current']
                 _strip = generate_distribution_strip_svg(pn4['mighty_days'], pn4['day_of_year'], 'days', None, 'The mighty days',
-                                                        theme=APP_THEME)
+                                                        theme=WHEEL_THEME)
                 st.image(_strip, width='stretch')
                 st.download_button("Download this strip (SVG)", _strip, key="dl_strip_mighty", mime="image/svg+xml",
                                    file_name="mighty_days.svg")
