@@ -638,3 +638,25 @@ under Course text and supplement on the Timing page's last tab beside Sahl's lor
 life, kept apart from them. Pinned in `tests/test_andarzaghar_triplicity_lords_2026_09_15.py`
 (every quote a substring of the corpus span; 0° Aries Diurnal: house 1 Sun, Jupiter, Saturn,
 house 4 Venus, Mars, Moon; by night the first two swap). No fixture moved.
+
+## 2026-09-15: affliction and fortification after Rhetorius (coverage list, gap 6)
+
+Source: Rhetorius, *Astrological Compendium* (Holden), Chs. 26, 27, 28, 41, 42, pp. 21-24 of the
+corpus file; pp. 21 and 24 read off the page images (`pdf024.pdf`, `pdf027.pdf`): the OCR and the
+page agree word for word in all four chapters quoted, no sentence differed. `RHETORIUS_AFFLICTION_CONDITIONS`
+(13 entries) and `evaluate_rhetorius_affliction(planetary_data, asc_lon, sect)`; a supplement-only
+`_finding` on the Chart page, Chs. 27, 41, 42 (and 28, 26, 34) quoted whole in its notes. Readings made:
+(1) "aspected by malefics" by whole sign, the four aspects, not co-presence; (2) "besieged" by Ch. 41's
+7 degrees, body or ray of any two planets (Ch. 41 names no malefics), the nearest on each side being the
+"no other casting a ray in between"; (3) "applying to a destructive [star]" by whole sign, the planet the
+swifter, no degree; (4) "becomes in kollêsis" by Ch. 34's three degrees, where Ch. 27's fn 1 sends the word,
+read bodily since Ch. 34 lacks the "or by aspect" of Chs. 37 and 39, and with a malefic (the sentence's
+object); (5) "is opposed" by any planet, whole sign; (6) "disposed of by one badly situated in the
+ineffective houses": the domicile lord in 2, 3, 6, 8 or 12 from the Ascendant, "badly situated" read as
+just that; (7) Ch. 26 dominance from the Cancer/Aries example (the other in the 10th sign counted from
+the planet, and the 9th and 11th for "another kind"), reported neutrally since the chapter names no harm;
+(8) Ch. 42 "terms" read with the Egyptian bounds, "stronger houses" as Ch. 28's 1, 4, 7, 10, 5, 9, 11;
+"in proper phase" and "well-configured" are listed but NOT tested -- the chapters define neither. Ch. 41
+read literally fires often (five of seven planets on 1240-05-23); it is the text. Test:
+`tests/test_rhetorius_affliction_2026_09_15.py` (verbatim texts against the pp. 21-24 span, hand-built
+charts for each tested condition, the 1240 chart).

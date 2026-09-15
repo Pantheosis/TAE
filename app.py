@@ -1672,6 +1672,219 @@ def evaluate_mercury_phase_sect(planetary_data, sect):
         'Reading': MERCURY_PHASE_SECT_READING[match],
     }]
 
+# --- Affliction and fortification after Rhetorius (Holden) ----------------
+# Chapters 26 (Dominance), 27 (Affliction and Ineffective Houses), 28
+# (Effective Houses), 41 (Besieging) and 42 (Fortified Stars), each
+# condition in the text's own words. Two degrees are in the text (Ch. 41:
+# seven; Ch. 34, where Ch. 27's footnote sends the word kollesis: three);
+# every other condition is read by whole sign, and the reading is printed
+# beside the condition. Display only: nothing scores these rows.
+RHETORIUS_INEFFECTIVE_HOUSES = (6, 3, 2, 8, 12)          # Ch. 27, in its order
+RHETORIUS_EFFECTIVE_HOUSES = (1, 10, 7, 4, 5, 9, 11)     # Ch. 28: the angles, the two trines, the succedent of the MC
+RHETORIUS_BESIEGING_DEGREES = 7.0                        # Ch. 41
+RHETORIUS_KOLLESIS_DEGREES = 3.0                         # Ch. 34
+
+RHETORIUS_CH26 = ('Dominance and superiority is when a star situated in the tenth house makes a square to '
+                  'the left. Let Cancer be the ASC: then those [planets] in Aries are superior to one in '
+                  'Cancer. Another kind of superiority is when some one being in a house on the right '
+                  'beholds one by a left trine or square or sextile.')
+RHETORIUS_CH27 = ('Affliction is said when one is aspected by malefics or besieged, or applying to a '
+                  'destructive [star] or becomes in kollêsis, or is opposed or is disposed of by one badly '
+                  'situated in the ineffective houses, which are the sixth from the ASC and the third and '
+                  'the second and the eighth and the twelfth.')
+RHETORIUS_CH28 = ('Effective houses are the four angles and the two trines on either side of the ASC and '
+                  'the succedent of the MC.')
+RHETORIUS_CH34 = ('Kollèsis is the most important application when a star moves towards a star, the swifter '
+                  'to the slower, if it is not more than three degrees away.')
+RHETORIUS_CH41 = ('Besieging is when two planets have another one between them according to some aspect '
+                  'pattern, with no other casting a ray in between, within 7 degrees to the front or the rear.')
+RHETORIUS_CH42 = ('Each one of the stars is said to be fortified when [it is] in its own domicile or '
+                  'exaltation or terms or in proper phase or well-configured or in one of the stronger '
+                  'houses of the chart.')
+
+RHETORIUS_AFFLICTION_CONDITIONS = [
+    # key; family; chapter; the condition in the text's words; the reading (how it is tested),
+    # or `untested` with the reason when the chapters give nothing to test.
+    {'key': 'aspected by malefics', 'family': 'Afflicted', 'chapter': 'Rhetorius Ch. 27 (Holden)',
+     'text': 'aspected by malefics',
+     'reading': 'Whole sign: Saturn or Mars in the second, third, fourth or sixth sign from the planet, on either side. '
+                'The text gives no degree, so none is applied; a malefic in the same sign is not an aspect and is not counted here.'},
+    {'key': 'besieged', 'family': 'Afflicted', 'chapter': 'Rhetorius Ch. 27 with Ch. 41 (Holden)',
+     'text': 'besieged',
+     'reading': 'By degree, as Ch. 41 defines it: one planet\'s body or ray within 7 degrees behind the planet and another\'s '
+                'within 7 degrees ahead, with no third body or ray falling between the two. Rays are the sextile, square, trine and '
+                'opposition ("according to some aspect pattern"). Ch. 41 names no malefics: the row names the two besiegers, whoever they are.'},
+    {'key': 'applying to a destructive star', 'family': 'Afflicted', 'chapter': 'Rhetorius Ch. 27 (Holden)',
+     'text': 'applying to a destructive [star]',
+     'reading': 'Whole sign: the planet is the swifter of the two and is moving toward the exact conjunction or aspect '
+                '(sextile, square, trine, opposition) with Saturn or Mars. No degree is given, so none is applied. '
+                'Needs the planet\'s daily motion; a chart without it gives no row.'},
+    {'key': 'in kollesis', 'family': 'Afflicted', 'chapter': 'Rhetorius Ch. 27 with Ch. 34 (Holden)',
+     'text': 'becomes in kollêsis',
+     'reading': 'By degree, as Ch. 34 defines the word: the planet, the swifter, moving towards Saturn or Mars in the same sign '
+                'and not more than three degrees away. Ch. 34 does not add "or by aspect" where Chs. 37 and 39 do, so this is read bodily. '
+                'Needs the planet\'s daily motion.'},
+    {'key': 'opposed', 'family': 'Afflicted', 'chapter': 'Rhetorius Ch. 27 (Holden)',
+     'text': 'is opposed',
+     'reading': 'Whole sign: any planet in the seventh sign from the planet. The text names no opposer, so any planet counts; '
+                'a malefic opposer also gives the "aspected by malefics" row.'},
+    {'key': 'disposed by one in an ineffective house', 'family': 'Afflicted', 'chapter': 'Rhetorius Ch. 27 (Holden)',
+     'text': 'is disposed of by one badly situated in the ineffective houses, which are the sixth from the ASC and the third '
+             'and the second and the eighth and the twelfth',
+     'reading': 'Whole sign: the lord of the planet\'s sign by domicile stands in the sixth, third, second, eighth or twelfth sign '
+                'from the Ascendant. "Badly situated" is read as standing in one of those houses, since the sentence defines them and '
+                'nothing else. A planet in its own domicile disposes itself and gives no row.'},
+    {'key': 'dominated', 'family': 'Dominated', 'chapter': 'Rhetorius Ch. 26 (Holden)',
+     'text': 'when a star situated in the tenth house makes a square to the left',
+     'reading': 'Whole sign, from the example ("Let Cancer be the ASC: then those [planets] in Aries are superior to one in Cancer"): '
+                'a planet in the tenth sign counted from another dominates it. "Another kind of superiority" adds the ninth and the '
+                'eleventh sign ("a left trine or square or sextile"). The chapter says nothing of harm, so the row is neither an '
+                'affliction nor a fortification and is shown on its own.'},
+    {'key': 'in its own domicile', 'family': 'Fortified', 'chapter': 'Rhetorius Ch. 42 (Holden)',
+     'text': 'in its own domicile', 'reading': 'Whole sign: the planet\'s sign is one it rules by domicile.'},
+    {'key': 'in its own exaltation', 'family': 'Fortified', 'chapter': 'Rhetorius Ch. 42 (Holden)',
+     'text': 'exaltation', 'reading': 'Whole sign: the planet\'s sign is its exaltation.'},
+    {'key': 'in its own terms', 'family': 'Fortified', 'chapter': 'Rhetorius Ch. 42 (Holden)',
+     'text': 'terms',
+     'reading': 'By degree: the planet stands in a bound of its own. The chapter names no table; the Egyptian bounds this app uses '
+                'everywhere are read.'},
+    {'key': 'in proper phase', 'family': 'Fortified', 'chapter': 'Rhetorius Ch. 42 (Holden)',
+     'text': 'in proper phase', 'reading': None,
+     'untested': 'Not tested: none of these chapters says what "proper phase" is, and no reading is imported from elsewhere.'},
+    {'key': 'well-configured', 'family': 'Fortified', 'chapter': 'Rhetorius Ch. 42 (Holden)',
+     'text': 'well-configured', 'reading': None,
+     'untested': 'Not tested: none of these chapters says what "well-configured" is, and no reading is imported from elsewhere.'},
+    {'key': 'in one of the stronger houses', 'family': 'Fortified', 'chapter': 'Rhetorius Ch. 42 with Ch. 28 (Holden)',
+     'text': 'in one of the stronger houses of the chart',
+     'reading': 'Whole sign: the planet stands in one of Ch. 28\'s effective houses from the Ascendant -- the four angles (1, 10, 7, 4), '
+                'the two trines on either side of the ASC (5, 9) and the succedent of the MC (11).'},
+]
+
+def _rhetorius_ordinal(n):
+    return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
+
+def _rhetorius_signs_ahead(lon_from, lon_to):
+    """How many signs lon_to lies ahead of lon_from in zodiacal order, 0-11."""
+    return (int((lon_to % 360.0) // 30) - int((lon_from % 360.0) // 30)) % 12
+
+def _rhetorius_applying(lon_p, v_p, lon_other, v_other, signs_apart):
+    """Whether the planet at lon_p, being the swifter, is moving toward the
+    exact conjunction or aspect with the other; signs_apart is the whole-
+    sign count 0, 2, 3, 4 or 6. Returns (applying, degrees short of exact)."""
+    if v_p is None or v_other is None or abs(v_p) <= abs(v_other):
+        return False, None
+    target = 30.0 * signs_apart
+    rel = (lon_p - lon_other) % 360.0
+    exact = target if rel <= 180.0 else 360.0 - target
+    delta = rel - exact                     # positive: the planet is past the exact point in zodiacal order
+    if delta == 0.0:
+        return False, 0.0
+    return delta * (v_p - v_other) < 0.0, abs(delta)
+
+def _rhetorius_besiegers(planet, planetary_data, planets):
+    """Ch. 41: the nearest body or ray behind the planet and the nearest
+    ahead, each within 7 degrees, from two different planets. Taking the
+    NEAREST on each side leaves nothing between them, which is the text's
+    "with no other casting a ray in between". Returns (behind, gap, ahead,
+    gap) or None."""
+    lon = planetary_data[planet]['longitude'] % 360.0
+    behind, ahead = None, None
+    for other in planets:
+        if other == planet:
+            continue
+        for ray in _ray_degrees(planetary_data[other]['longitude'] % 360.0):
+            gap_behind = (lon - ray) % 360.0
+            gap_ahead = (ray - lon) % 360.0
+            if 0.0 < gap_behind <= RHETORIUS_BESIEGING_DEGREES and (behind is None or gap_behind < behind[1]):
+                behind = (other, gap_behind)
+            if 0.0 < gap_ahead <= RHETORIUS_BESIEGING_DEGREES and (ahead is None or gap_ahead < ahead[1]):
+                ahead = (other, gap_ahead)
+    if behind is None or ahead is None or behind[0] == ahead[0]:
+        return None
+    return behind[0], behind[1], ahead[0], ahead[1]
+
+def evaluate_rhetorius_affliction(planetary_data, asc_lon, sect):
+    """Rhetorius Chs. 26-28, 41-42 (Holden): a row per planet per condition
+    met, each read as RHETORIUS_AFFLICTION_CONDITIONS says. `sect` is
+    accepted for the page's uniform call and unused: none of the five
+    chapters mentions sect. The seven planets only; display only."""
+    planets = [p for p in ('Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon') if p in planetary_data]
+    by_key = {c['key']: c for c in RHETORIUS_AFFLICTION_CONDITIONS}
+    aspect_names = {2: 'sextile', 3: 'square', 4: 'trine', 6: 'opposition'}
+    rows = []
+
+    def add(planet, key, by):
+        c = by_key[key]
+        rows.append({'Planet': planet, 'Condition': f"{c['family']}: {c['key']}",
+                     'By': by, 'Chapter': c['chapter'], 'Text': c['text']})
+
+    for planet in planets:
+        lon = planetary_data[planet]['longitude'] % 360.0
+        speed = planetary_data[planet].get('speed_in_lon')
+        sign = get_zodiac_sign(lon)
+        house = get_wsh_house(lon, asc_lon)
+
+        # --- Chs. 27 and 26 --------------------------------------------
+        malefic_aspects, opposers, applying, kollesis, dominators = [], [], [], [], []
+        for other in planets:
+            if other == planet:
+                continue
+            o_lon = planetary_data[other]['longitude'] % 360.0
+            o_speed = planetary_data[other].get('speed_in_lon')
+            ahead = _rhetorius_signs_ahead(lon, o_lon)
+            apart = min(ahead, 12 - ahead)
+            aspect_name = aspect_names.get(apart)
+            if other in INFORTUNES and aspect_name:
+                malefic_aspects.append(f'{other} by whole-sign {aspect_name}')
+            if apart == 6:
+                opposers.append(f'{other} by whole-sign opposition')
+            if other in INFORTUNES and apart in (0, 2, 3, 4, 6):
+                is_applying, short = _rhetorius_applying(lon, speed, o_lon, o_speed, apart)
+                if is_applying:
+                    applying.append(f"{other} by {aspect_name or 'conjunction'}, {short:.1f}° short of exact")
+                    if apart == 0 and short <= RHETORIUS_KOLLESIS_DEGREES:
+                        kollesis.append(f'{other}, {short:.1f}° away in {sign}')
+            # Ch. 26: the other stands in the ninth, tenth or eleventh sign
+            # counted from the planet (its right-side trine, square, sextile).
+            if ahead in (8, 9, 10):
+                dominators.append(other + ' in ' + {9: 'the tenth sign, a square (the first kind)',
+                                                    8: 'the ninth sign, a trine',
+                                                    10: 'the eleventh sign, a sextile'}[ahead])
+        if malefic_aspects:
+            add(planet, 'aspected by malefics', '; '.join(malefic_aspects))
+        siege = _rhetorius_besiegers(planet, planetary_data, planets)
+        if siege:
+            b, bg, a, ag = siege
+            add(planet, 'besieged', f'{b} ({bg:.1f}° behind) and {a} ({ag:.1f}° ahead), by body or ray')
+        if applying:
+            add(planet, 'applying to a destructive star', '; '.join(applying))
+        if kollesis:
+            add(planet, 'in kollesis', '; '.join(kollesis))
+        if opposers:
+            add(planet, 'opposed', '; '.join(opposers))
+        lord = next((p for p, signs in DOMICILES.items() if sign in signs), None)
+        if lord and lord != planet and lord in planetary_data:
+            lord_house = get_wsh_house(planetary_data[lord]['longitude'], asc_lon)
+            if lord_house in RHETORIUS_INEFFECTIVE_HOUSES:
+                add(planet, 'disposed by one in an ineffective house',
+                    f'{lord}, lord of {sign}, in the {_rhetorius_ordinal(lord_house)} house from the Ascendant')
+        if dominators:
+            add(planet, 'dominated', '; '.join(dominators))
+
+        # --- Ch. 42 ------------------------------------------------------
+        if sign in DOMICILES.get(planet, []):
+            add(planet, 'in its own domicile', sign)
+        if sign in EXALTATIONS.get(planet, []):
+            add(planet, 'in its own exaltation', sign)
+        for limit, term_lord in EGYPTIAN_TERMS[sign]:
+            if lon % 30.0 < limit:
+                if term_lord == planet:
+                    add(planet, 'in its own terms', f'{get_degree_string(lon)}, its own bound')
+                break
+        if house in RHETORIUS_EFFECTIVE_HOUSES:
+            add(planet, 'in one of the stronger houses', f'the {_rhetorius_ordinal(house)} house from the Ascendant')
+    return rows
+
 def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None,
                                   armc=None, obliquity=None, geo_lat=None):
     """Accidental dignity scoring: house angularity (Whole Sign, anchored to
@@ -14189,6 +14402,7 @@ if location_query and lat is not None and lon is not None:
         moon_phase_valens_data = evaluate_moon_phase_valens(p_data)
         morin_aspects_data = evaluate_morin_aspects(p_data, chart_data['houses'], chart_data['ascendant'])
         eyesight_places_data = evaluate_eyesight_places(p_data, chart_data['ascendant'])
+        rhetorius_affliction_data = evaluate_rhetorius_affliction(p_data, chart_data['ascendant'], sect)
         rays_by_ascension_data = evaluate_rays_by_ascension(p_data, chart_data['armc'], chart_data['obliquity'], lat)
         house_lords_data = evaluate_house_lords(p_data, chart_data['ascendant'])
         victors_data = evaluate_victors(p_data, chart_data['ascendant'], chart_data['lot_of_fortune'],
@@ -14564,6 +14778,18 @@ if location_query and lat is not None and lon is not None:
                         columns=['Point', 'Position', 'Place', 'Source', 'Text'],
                         glance='The "degrees of chronic illness in the signs" -- the nebulous places named for the Pleiades, the cloud of Cancer, the forehead and sting of the Scorpion, the arrow, the spines and the rope: a row when the Moon, the lord of the Ascendant, the Sun or the Ascendant degree stands in one, each text\'s span under its own source, none reconciled. Sahl\'s rule names the Moon and the lord of the Ascendant (48), the Moon by night and the Sun by day (69); the Ascendant degree itself is shown beside them as this app\'s addition, and the further conditions each rule attaches -- the infortunes looking, the Moon\'s light, made unfortunate -- are printed in the Text column and are not tested. Display only; nothing scores it; shown under Course text and supplement.',
                         notes='Sahl, On Nativities 6.2, 48: "And if you found the Moon in the degrees of chronic illness in the signs, and the infortunes looked at her and their bound, <it indicates> a defect of the eyesight generally, or in the rest of the body: because in the signs are positions which if the Moon is made unfortunate in them, or the lord of the Ascendant, it indicates the corruption of the eye; and that is:" -- then 49-55, the places. 56-57: "If you found the Moon in something of these signs, decreasing in glow, made unfortunate from hostility, then the eyesight will be chronically afflicted. And if she was increasing in glow, full, there will be water in his eyesight, and [uncertain] and [what] resembles that like [uncertain], and his eyesight will not be obscured." Rhetorius\'s list follows (60: "The [degrees] indicative of chronic illness are:", 61-68), which Dykes says "overlap with, but are not identical to, the degrees harming the eyes"; then the Bizidaj (69: "Now as for the degrees which indicate the corruption of vision especially, if the Moon was with them by night and the Sun by day, made unfortunate, that is in the conjunction of:", 70-72); then Nawbakht (74: "And likewise if the Moon was in the middle of Taurus, or in the ninth degree of Cancer, or in the first degree of Sagittarius, for the native will have darkness in his eyes."). Nawbakht\'s 73 (the first degrees of Aries, the last of Capricorn) says the child will be sickly, not that the eyes are harmed, and is not a row.\n\nAbu Ma\'shar, Gr. Intr. VI.20, 1-3: "The positions in the signs which indicate an ailment of the eyes, are [1] the position of the Pleiades in Taurus, [2] the position of the nebula in Cancer, Scorpio (the position of [3] its leg and the position of [4] its stinger), Sagittarius (the position of [5] the arrows), and Capricorn (the position of [6] the spines). And the position of [7] the pour of water from Aquarius also indicates an eruption in the eyes. But as for Libra and Leo, they both sometimes corrupt the vision as well." His longitudes (4-9) differ from Sahl\'s by a few degrees to fourteen, not in one direction (his spines of Capricorn stand before Sahl\'s, the rest after), and 10: "these positions which we have stated are their degrees in longitude and latitude in our time period; but their positions must be searched out and measured for every time period, because they move and withdraw from these degrees which we have stated." Neither table is precessed here: each is applied as printed. Dykes notes (fn 278) that Abu Ma\'shar names the leg where the sting is customary. Libra and Leo (3) carry no degrees and are not rows.\n\nReadings, this app\'s: a degree named as an ordinal or printed bare ("the ninth degree", "from 6° to 9°") is the ordinal degree, as Figure 57 is read, so "the ninth to the fifteenth" is 8°00\'-15°00\'; a longitude measured in minutes is taken as printed, a single one as the whole degree it falls in, and Abu Ma\'shar\'s bare "20°" and "22°" (VI.20, 6 and 8) as measured whole degrees, 20°00\'-21°00\' and 22°00\'-23°00\'. Two spans are this app\'s reading of a phrase: 49\'s "having already passed half [of it] until she completes 18°" as 15°00\'-18°00\', and Nawbakht\'s "the middle of Taurus" as the 15th and 16th degrees. 50\'s bare "(and in 23)" is read as the 23rd degree, the sting (fn 75).')
+                _finding(_gap, "Affliction and fortification after Rhetorius (supplement, display only)",
+                          "Rhetorius Chs. 26-28, 41-42 (Holden)", rhetorius_affliction_data,
+                          glance="Rhetorius's definitions of a planet's being harmed (Ch. 27's list, with Ch. 41's besieging) or fortified (Ch. 42's list), a row per planet per condition met, and Ch. 26's dominance on its own since that chapter ties it to no harm. Each condition is quoted in the text's words and read as the notes say. Display only; nothing scores it.",
+                          notes=("Rhetorius Ch. 27 (Holden): \"" + RHETORIUS_CH27 + "\"\n\n"
+                                 "Rhetorius Ch. 41 (Holden): \"" + RHETORIUS_CH41 + "\"\n\n"
+                                 "Rhetorius Ch. 42 (Holden): \"" + RHETORIUS_CH42 + "\"\n\n"
+                                 "Rhetorius Ch. 28 (Holden): \"" + RHETORIUS_CH28 + "\" Holden's notes name them: the fifth house and the ninth; the eleventh house.\n\n"
+                                 "Rhetorius Ch. 26 (Holden): \"" + RHETORIUS_CH26 + "\"\n\n"
+                                 "Rhetorius Ch. 34 (Holden), where Ch. 27's note sends the word: \"" + RHETORIUS_CH34 + "\"\n\n"
+                                 "How this app reads each condition. Where a chapter gives a degree (Ch. 41's seven, Ch. 34's three) it is applied; where it gives none, the condition is read by whole sign and no degree is invented. Malefics are Saturn and Mars.\n\n"
+                                 + "\n".join(f"- **{c['key']}** ({c['chapter']}), \"{c['text']}\": {c.get('reading') or c['untested']}"
+                                             for c in RHETORIUS_AFFLICTION_CONDITIONS)))
             _absent(_gap)
             # The orders of the dignities and the good places -- static tables --
             # moved to the Reference tables page on 2026-09-10; what stays is
