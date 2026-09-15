@@ -5357,7 +5357,7 @@ LOT_DEFINITIONS = [
               'from the Ascendant" (VIII.3, 40). "Its indication is for might, victory, aid, prosperity, '
               'generosity, praised outcomes, uprightness, and seeking religion ... hope, and everything a '
               'man obtains pertaining to good deeds" (41).'),
-    dict(id='saturn_burdensome', topic='Fortune', name='Lot of Saturn ("the burdensome"), Abu Ma\'shar',
+    dict(id='saturn_burdensome', topic='Fortune', name='Lot of Saturn (the burdensome), Abu Ma\'shar',
          start='Saturn', end='fortune', project='Ascendant', reverse_at_night=True, supplement=True,
          source="Abu Ma'shar, Gr. Intr. VIII.3, 37-38; VIII.6, 14",
          confidence='attested; the supplement (not in Sahl)',
