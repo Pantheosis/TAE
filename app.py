@@ -1606,8 +1606,9 @@ def solar_phase_note(planet, side, speed_in_lon, elongation):
 # Firmicus, Mathesis III.7 (Dykes), fn 194: Mercury's phase matching the
 # sect of the chart -- morning star with a diurnal nativity, evening star
 # with a nocturnal one -- is the case the successful examples share (III.7,
-# 8-9, 26, 29); the other two pairings are the mismatch fn 186 names for
-# the second place (7) and 27-28 show for the sixth. A statement about every
+# 8, 26, 29); the other two pairings are the mismatch fn 186 names for
+# the second place (7; and 9, the evening star by day) and 27-28 show for
+# the sixth. A statement about every
 # chart, so the row is always returned. Display only: nothing scores it.
 MERCURY_PHASE_SECT_READING = {
     True: "the success that comes from Mercury's phase matching that of the chart",
