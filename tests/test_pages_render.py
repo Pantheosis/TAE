@@ -7,7 +7,9 @@ To accept a deliberate change to the set of tables:
 
     UPDATE_TABLE_FIXTURE=1 .venv/bin/python -m pytest tests/test_pages_render.py
 
-then read the diff of tests/fixtures/tables.json before committing it.
+then read the diff of tests/fixtures/tables.json before committing it. Serially: the
+writer is per session, so under xdist each worker would write only its own slots, and
+conftest refuses an update run that has -n.
 """
 import json
 import os
