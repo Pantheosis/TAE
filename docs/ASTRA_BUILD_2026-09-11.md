@@ -552,3 +552,20 @@ the Chart page shows it under Course text and supplement beside the degrees of n
 footnotes quoted whole in its notes. Display only; no verdict reads it. Pinned in
 `tests/test_mercury_phase_sect_2026_09_14.py` (the four pairings by hand, the side against
 `solar_phase` across 0°, and the 1240 Florence chart: Diurnal, morning star, match).
+
+## 2026-09-14: the Lots of Jupiter and Saturn (coverage list, gap 2)
+
+Abū Ma'shar's seven planetary Lots (VIII.3, 17-50; the list at VIII.6, 7-14): the app carried
+Fortune, the Invisible, Venus's (`desire`), Mercury's (`necessity`) and Mars's (`courage`), not
+Jupiter's or Saturn's. Two rows added, `supplement=True` like the father Lot's VIII.4, 75 form,
+since Sahl's Nativities has neither: **Lot of Jupiter (prosperity, aid, victory)** -- by day from
+the Invisible to Jupiter, reversed by night, from the Ascendant (VIII.3, 40-41; VIII.6, 13); **Lot
+of Saturn ("the burdensome")** -- by day from Saturn to Fortune, reversed by night, from the
+Ascendant (VIII.3, 37-38; VIII.6, 14), the courage construction with Saturn for Mars. Both
+quoted whole in their notes. The Lots heading at the supplement depth now says three rows of
+his. `LOT_DEFINITIONS` 38 → 40. Test: the formulas by day and by night on the 1240-05-23 chart.
+
+Open to the owner: the course teaches these two under Lesson 18 ("the Hermetic planetary Lots",
+as Victory and Nemesis), so whether they belong at the course-text depth rather than the
+supplement is a ruling, not a build question; the supplement is the conservative default. Filed
+from the corpus text only; Valens (Riley) was filed the same day and is not cited here.

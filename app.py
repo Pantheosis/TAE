@@ -5342,6 +5342,33 @@ LOT_DEFINITIONS = [
               'might mean the Hermetic Lot of courage: by day from Mars to the Lot of '
               'Fortune (by night the reverse). ... However, I SUSPECT that one of them -- '
               'probably the Lot of valor -- is originally Dorotheus\'s Lot of expedition."'),
+    # Abu Ma'shar's Lots of Jupiter and Saturn, the two of his seven planetary
+    # Lots (VIII.3, 17-50; the list at VIII.6, 7-14) this file did not carry:
+    # Fortune, the Invisible (Spirit), Venus (desire), Mercury (necessity) and
+    # Mars (courage) are above. Supplement rows, like the father Lot's VIII.4,
+    # 75 form: Sahl's Nativities has neither (coverage list, 2026-09-14).
+    dict(id='jupiter_prosperity', topic='Fortune', name="Lot of Jupiter (prosperity, aid, victory), Abu Ma'shar",
+         start='spirit', end='Jupiter', project='Ascendant', reverse_at_night=True, supplement=True,
+         source="Abu Ma'shar, Gr. Intr. VIII.3, 40-41; VIII.6, 13",
+         confidence='attested; the supplement (not in Sahl)',
+         note='"The Lot of Jupiter (comprising prosperity and aid) is taken by day from the Lot of the '
+              'Invisible (indicative of good fortune) to Jupiter (indicative of prosperity and aid), and '
+              'by night the contrary, and to it is added the degrees of the Ascendant, and it is cast out '
+              'from the Ascendant" (VIII.3, 40). "Its indication is for might, victory, aid, prosperity, '
+              'generosity, praised outcomes, uprightness, and seeking religion ... hope, and everything a '
+              'man obtains pertaining to good deeds" (41).'),
+    dict(id='saturn_burdensome', topic='Fortune', name='Lot of Saturn ("the burdensome"), Abu Ma\'shar',
+         start='Saturn', end='fortune', project='Ascendant', reverse_at_night=True, supplement=True,
+         source="Abu Ma'shar, Gr. Intr. VIII.3, 37-38; VIII.6, 14",
+         confidence='attested; the supplement (not in Sahl)',
+         note='"The Lot of Saturn (\'the burdensome\') is taken by day from the degree of Saturn to the '
+              'degree of the Lot of Fortune, and by night the contrary, and to it is added the degrees of '
+              'the Ascendant, and it is projected from the beginning of the Ascendant" (VIII.3, 37). "Its '
+              'indication is for preservation, depth of thought, religion, piety ... everything which has '
+              'gone astray, was stolen, ran away ... the condition of the dead, and how the death will be '
+              '... old age, and burdens, and every thing which is in fetters or prison, and its rescue" '
+              '(38); VIII.6, 14 names it "the Lot of fetters and prison, and whether one would be rescued '
+              'from it or not". The same construction as the Hermetic Lot of courage with Saturn for Mars.'),
     dict(id='deception_men', topic='Deception', name="Lot of men's deception",
          start='Sun', end='Venus', project='Ascendant', reverse_at_night=False,
          source='Sahl, On Nativities Ch. 7.1, 220',
@@ -14483,7 +14510,7 @@ if location_query and lat is not None and lon is not None:
             st.dataframe(pd.DataFrame(classical_rows), hide_index=True, width='stretch', height=_rows_height(len(classical_rows)))
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
                 st.markdown('Fortune and Exaltation are stated in Sahl. Spirit -- the Lot of the Invisible, which Sahl names -- is stated at Gr. Intr. VIII.3, 28-29: by day from the Moon to the Sun, by night the reverse, from the Ascendant. Basis is stated at Gr. Intr. VIII.4, 22-24 as "the Lot of firmness and survival, the Lot of the Ascendant\'s support" (fn 67: the Greek Basis): by day from Fortune to the Invisible, by night the contrary, from the Ascendant -- the same construction as Sahl\'s Lot of passion (7.1, 141) and Abu Ma\'shar\'s Lot of Venus, with which VIII.4, 24 says it coincides. All four carry their provenance in the Topical Lots table below.')
-            st.subheader('Topical Lots (Sahl, On Nativities)' + ("; one row of Abu Ma'shar's" if READING_DEPTH == READING_DEPTH_OPTIONS[1] else ''), help="Sahl's topical Lots, each with its own provenance. He gives several of them MORE THAN ONCE, with formulas that genuinely conflict, and Dykes's apparatus does not silently reconcile them -- so neither does this table.")
+            st.subheader('Topical Lots (Sahl, On Nativities)' + ("; three rows of Abu Ma'shar's" if READING_DEPTH == READING_DEPTH_OPTIONS[1] else ''), help="Sahl's topical Lots, each with its own provenance. He gives several of them MORE THAN ONCE, with formulas that genuinely conflict, and Dykes's apparatus does not silently reconcile them -- so neither does this table.")
             _reading_radio("House-based Lots measure to the", LOT_HOUSE_CUSP_OPTIONS, "lot_house_cusp", "_lot_house_cusp",
                            help="'The second place', 'the degree of the eighth place', 'the ninth' (On Nativities 2.15, 1; "
                                 "8.6, 1; Ch. 9, 9): the Ascendant's degree carried into that sign, or the Alchabitius cusp. "
