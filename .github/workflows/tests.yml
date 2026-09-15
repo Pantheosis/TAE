@@ -9,10 +9,13 @@ name: Tests
 # by hand when the machine is off. The desktop build stays manual in
 # build.yml -- that one is expensive and produces artifacts.
 #
-# Self-hosted on a public repository runs pull-request code on the
-# owner's machine. Pull requests here are the owner's own; the repository
-# setting "Require approval for all outside collaborators" keeps a fork's
-# workflow from starting without a click.
+# Self-hosted on a public repository would run pull-request code on the
+# owner's machine, so the job refuses pull requests from forks outright:
+# the `if` below runs it only for pushes, hand-started runs, and pull
+# requests whose head branch lives in this repository. A fork's pull
+# request gets no check and cannot merge unless the owner starts the
+# hosted fallback on it by hand. The repository setting "Require approval
+# for all outside collaborators" is the second lock on the same door.
 on:
   push:
     branches: [main]
@@ -34,6 +37,7 @@ concurrency:
 jobs:
   pytest:
     # The job id is the check the ruleset requires; keep it "pytest".
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.runner || 'self-hosted' }}
     # Two minutes on the box with xdist; 33 on the hosted fallback. A
     # stuck-job guard, not a target.
