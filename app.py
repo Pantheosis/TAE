@@ -8591,7 +8591,13 @@ def evaluate_house_lords(planetary_data, ascendant_lon):
 # the Ascendant, Sun, Moon, and Lot of Fortune. Two parallel weighting
 # traditions are given directly in the source, disagreeing on whether
 # Bound or Triplicity ranks higher, so both are computed side by side
-# rather than silently picking one:
+# rather than silently picking one. The "older" label is the course's,
+# kept as printed (owner, 2026-09-15): the one passage in the corpus that
+# attributes weights to 'Umar -- Abu Bakr, On Nativities II.5.14 (via
+# al-'Anbas; PN II) -- gives triplicity 3, bound 2, the "newer" order, and
+# Dykes's introduction there says the weighted victor is not found in Sahl
+# or Masha'allah; the bound-3 order has no witness in the corpus. Said on
+# the Victors page.
 VICTOR_WEIGHTS = {
     "Older (al-Tabari/Masha'allah)": {'domicile': 5, 'exaltation': 4, 'triplicity': 2, 'term': 3, 'face': 1},
     "Newer (Al-Qabisi/Abu Ma'shar)": dict(ESSENTIAL_DIGNITY_WEIGHTS),
@@ -15378,7 +15384,7 @@ if location_query and lat is not None and lon is not None:
                         _victor_grid(scheme_name, res)
 
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-                st.markdown('The first five rows score each planet\'s essential-dignity claim AT THAT POINT\'S degree -- Sun, Moon, Ascendant, Lot of Fortune, and the prenatal New/Full Moon. Then Lord of the Day (+7), Lord of the Hour (+6) and Places are added ONCE each, not per point; Places is keyed the other way round, by the candidate planet\'s own whole-sign house. Every column is summed into Totals, and the single highest total is the chart\'s victor.\n\nTWO INDEPENDENT AXES, and all four combinations are shown. The dignity weights are Older (al-Tabari/Masha\'allah, Bound 3 > Triplicity 2) or Newer (al-Qabisi/Abu Ma\'shar, Triplicity 3 > Bound 2); the Places wheel is ibn Ezra\'s own or Masha\'allah\'s. Nothing in the source says which wheel goes with which weighting, so pairing each with the wheel of its own named tradition is a reading, not a fact -- those two are labelled "matched preset" and the two off-diagonal combinations, previously not computed at all, are shown beside them. Where all four agree the victor is robust; where they part, the disagreement is the finding. Ibn Ezra\'s later victor #2 (1507) replaces the two chronocrator rows with a Superiors row scored only for Saturn, Jupiter and Mars; its weight is stated in no text in hand, so it is not implemented rather than guessed.')
+                st.markdown('The first five rows score each planet\'s essential-dignity claim AT THAT POINT\'S degree -- Sun, Moon, Ascendant, Lot of Fortune, and the prenatal New/Full Moon. Then Lord of the Day (+7), Lord of the Hour (+6) and Places are added ONCE each, not per point; Places is keyed the other way round, by the candidate planet\'s own whole-sign house. Every column is summed into Totals, and the single highest total is the chart\'s victor.\n\nTWO INDEPENDENT AXES, and all four combinations are shown. The dignity weights are Older (al-Tabari/Masha\'allah, Bound 3 > Triplicity 2) or Newer (al-Qabisi/Abu Ma\'shar, Triplicity 3 > Bound 2); the Places wheel is ibn Ezra\'s own or Masha\'allah\'s. The "Older" attribution is kept as its source prints it; the one passage in these texts that gives \'Umar\'s weights -- Abu Bakr, On Nativities II.5.14, through al-\'Anbas -- has triplicity 3 and bound 2, the "Newer" order, and the bound-3 order has no witness here. Nothing in the source says which wheel goes with which weighting, so pairing each with the wheel of its own named tradition is a reading, not a fact -- those two are labelled "matched preset" and the two off-diagonal combinations, previously not computed at all, are shown beside them. Where all four agree the victor is robust; where they part, the disagreement is the finding. Ibn Ezra\'s later victor #2 (1507) replaces the two chronocrator rows with a Superiors row scored only for Saturn, Jupiter and Mars; its weight is stated in no text in hand, so it is not implemented rather than guessed.')
         def page_timing():
             st.header("Timing")
             st.caption("Part 2: prediction. Every rule on this page comes from Abu Ma'shar, "

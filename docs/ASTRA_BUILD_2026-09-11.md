@@ -684,3 +684,12 @@ A malefic besieging is loosened by the Sun or a fortune aspecting the planet by 
 III.28b); an enclosure by the fortunes is broken by a malefic body or ray in the region (Dykes's
 comment). Both are said on the row rather than dropping it; the besiegers are now found among the
 malefics (or the fortunes) alone, so a third body of another kind neither makes nor breaks either.
+
+## 2026-09-15: the victor weights' "older" label, kept with a note (owner's ruling)
+
+The PN II synthesis found the one corpus passage that attributes weights to 'Umar -- Abu Bakr, On
+Nativities II.5.14, through al-'Anbas -- giving triplicity 3, bound 2 (the "newer" order), and Dykes's
+2010 introduction saying the weighted victor is not found in Sahl or Masha'allah. The course prints
+the "older method" as bound 3, triplicity 2. Owner's ruling: keep the course's label as printed, with
+a note on the Victors page and in `VICTOR_WEIGHTS`'s comment citing Abu Bakr II.5.14 and saying the
+bound-3 order has no witness in the corpus. No number changes.
