@@ -1721,9 +1721,10 @@ RHETORIUS_AFFLICTION_CONDITIONS = [
                 'Needs the planet\'s daily motion; a chart without it gives no row.'},
     {'key': 'in kollesis', 'family': 'Afflicted', 'chapter': 'Rhetorius Ch. 27 with Ch. 34 (Holden)',
      'text': 'becomes in kollêsis',
-     'reading': 'By degree, as Ch. 34 defines the word: the planet, the swifter, moving towards Saturn or Mars in the same sign '
-                'and not more than three degrees away. Ch. 34 does not add "or by aspect" where Chs. 37 and 39 do, so this is read bodily. '
-                'Needs the planet\'s daily motion.'},
+     'reading': 'By degree, as Ch. 34 defines the word: the planet, the swifter, moving towards Saturn or Mars and not more '
+                'than three degrees short of him, a sign boundary between them notwithstanding (Ch. 34 names degrees, not the sign). '
+                'That the other is a malefic is Ch. 27\'s frame ("affliction"), not Ch. 34\'s. Ch. 34 does not add "or by aspect" '
+                'where Chs. 37 and 39 do, so this is read bodily. Needs the planet\'s daily motion.'},
     {'key': 'opposed', 'family': 'Afflicted', 'chapter': 'Rhetorius Ch. 27 (Holden)',
      'text': 'is opposed',
      'reading': 'Whole sign: any planet in the seventh sign from the planet. The text names no opposer, so any planet counts; '
@@ -1757,7 +1758,8 @@ RHETORIUS_AFFLICTION_CONDITIONS = [
     {'key': 'in one of the stronger houses', 'family': 'Fortified', 'chapter': 'Rhetorius Ch. 42 with Ch. 28 (Holden)',
      'text': 'in one of the stronger houses of the chart',
      'reading': 'Whole sign: the planet stands in one of Ch. 28\'s effective houses from the Ascendant -- the four angles (1, 10, 7, 4), '
-                'the two trines on either side of the ASC (5, 9) and the succedent of the MC (11).'},
+                'the two trines on either side of the ASC (5, 9) and the succedent of the MC (11). Taking Ch. 42\'s "stronger houses" '
+                'to be Ch. 28\'s effective ones is this app\'s equation; Ch. 42 names no chapter.'},
 ]
 
 def _rhetorius_ordinal(n):
@@ -1842,8 +1844,12 @@ def evaluate_rhetorius_affliction(planetary_data, asc_lon, sect):
                 is_applying, short = _rhetorius_applying(lon, speed, o_lon, o_speed, apart)
                 if is_applying:
                     applying.append(f"{other} by {aspect_name or 'conjunction'}, {short:.1f}° short of exact")
-                    if apart == 0 and short <= RHETORIUS_KOLLESIS_DEGREES:
-                        kollesis.append(f'{other}, {short:.1f}° away in {sign}')
+            if other in INFORTUNES and speed is not None and o_speed is not None and speed > o_speed:
+                # Ch. 34 by degrees alone: the swifter planet behind the
+                # malefic by three degrees or fewer, whatever the sign.
+                fwd = (o_lon - lon) % 360.0
+                if fwd <= RHETORIUS_KOLLESIS_DEGREES:
+                    kollesis.append(f'{other}, {fwd:.1f}° ahead')
             # Ch. 26: the other stands in the ninth, tenth or eleventh sign
             # counted from the planet (its right-side trine, square, sextile).
             if ahead in (8, 9, 10):

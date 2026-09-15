@@ -660,3 +660,10 @@ the planet, and the 9th and 11th for "another kind"), reported neutrally since t
 read literally fires often (five of seven planets on 1240-05-23); it is the text. Test:
 `tests/test_rhetorius_affliction_2026_09_15.py` (verbatim texts against the pp. 21-24 span, hand-built
 charts for each tested condition, the 1240 chart).
+
+After the check (`BUILD_RHETORIUS_CHECK_REPORT_2026-09-15.md`): kollēsis by degrees alone, across a sign
+boundary (Ch. 34 names three degrees, not the sign); the malefic frame said to be Ch. 27's; the
+"stronger houses" = Ch. 28 equation said to be the app's. Open to the owner: Ch. 41's besieging read
+with any two planets as besiegers, as the chapter has it (four of the seven planets on 1240-05-23),
+under the heading "Afflicted" that Ch. 27 gives it -- restricting the besiegers to the malefics is a
+ruling, not a reading the text makes. The corpus has "Kollèsis" where p. 23 prints "Kollêsis".
