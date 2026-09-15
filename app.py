@@ -9018,20 +9018,14 @@ def evaluate_planetary_years_display(planetary_data, cusps, ascendant_lon, sect,
 #
 # The third case of III.1, 12 -- everything that is neither the Ascendant
 # nor the meridian, directed "according to what we stated in our book [on
-# that topic]" -- is absent. PN IV defers the method to a book it
-# does not reproduce; Dykes' fn 16 identifies it as Ptolemy's proportional
-# semi-arcs (VI.2, 21 fn 33 the same), but that is an editor's note, not
-# Abu Ma'shar's sentence. The formula itself IS in a text in hand: al-Qabisi
-# IV.11c-12c (ITA VIII.2.2b-e, pp. 362-364) states it as the "hours of the
-# distance from the angle" with the significator of the right circle and of
-# the region and the "equation" (OCR, unverified), and Dykes works it in ITA
-# Appendix E (pp. 402-407), PromMD - (SigMD/SigSA) x PromSA, with and without
-# latitude, "Al-Qabisi's method is essentially the same as this" (OCR,
-# unverified). So the strings say "stated by al-Qabisi and worked by Dykes,
-# not built" (reconciliation 3.1, 2026-09-15), no longer "stated in no text
-# in hand"; building it is decision 5's second half, a separate work order
-# with Appendix E's example as the fixture. Named as unavailable, never as a
-# prohibition (III.1, 5 directs all planets and Lots).
+# that topic]" -- was listed as unavailable until 2026-09-15 (never as a
+# prohibition: III.1, 5 directs all planets and Lots). PN IV defers the
+# method to a book it does not reproduce; Dykes' fn 16 identifies it as
+# Ptolemy's proportional semi-arcs (VI.2, 21 fn 33 the same). Built under
+# reconciliation decision 5 from al-Qabisi IV.11-12 (ITA VIII.2.2) and
+# Dykes's Appendix E (ITA pp. 402-407), whose worked example is the
+# fixture: semi_arc_direction and pn4_distribution_by_semi_arcs, below the
+# meridian distribution.
 
 PN4_SEVEN = ('Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon')
 
@@ -9104,22 +9098,23 @@ def pn4_direction_unit(chart_level):
 # DEGREE of its point and for a planet ON that degree itself; the third
 # case's method is not in PN IV at all, being deferred to a book he does
 # not reproduce (fn 16: Ptolemy's proportional semi-arcs; VI.2, 21 fn 33
-# "That is, by normal proportional semi-arcs"); the formula is al-Qabisi's
-# (ITA VIII.2.2) and Dykes works it (ITA Appendix E) -- see the comment above
-# PN4_SEVEN -- and it is not yet built. The owner's ruling of 2026-09-11 (evening; GAP-37 /
+# "That is, by normal proportional semi-arcs"), and since 2026-09-15
+# (reconciliation decision 5) is built from al-Qabisi (ITA VIII.2.2) and
+# Dykes's Appendix E, for the DEGREE of every other point (see
+# semi_arc_direction). The owner's ruling of 2026-09-11 (evening; GAP-37 /
 # PN4R-4b-4, reading (e)): "in the Ascendant / Midheaven / fourth" means
 # ON the axial degree, recognised with a NUMERICAL tolerance
 # (PN4_AXIS_TOLERANCE, floating-point equality -- not an astrological orb:
 # no 3, no 5, no band); get_effective_house and the five-degree carry-over
-# have no role in method selection; every planet not on an axis is listed
-# with the sentence below, a computational gap and never a prohibition
-# (III.1, 5 directs all planets and Lots), with no fall-back to RA or OA.
-# The Descendant stays out (fn 15: omitted by the author). Proportional
-# semi-arcs are authorised as a NEW work order after the PR merges; when
-# built, the sentence is replaced by the arc. The state strings are
-# asserted verbatim by test_pn4_printed_reference_tables_derive_from_the_rules.
+# have no role in method selection; every planet not on an axis is
+# directed by proportional semi-arcs (the third case), with no fall-back
+# to RA or OA. The Descendant stays out (fn 15: omitted by the author).
+# The state strings are asserted verbatim by
+# test_pn4_printed_reference_tables_derive_from_the_rules.
 PN4_AXIS_TOLERANCE = 1e-9   # degrees: floating-point equality with the axial degree, documented, not an orb
-PN4_SEMIARCS_UNAVAILABLE = 'Requires proportional semi-arcs; calculation unavailable.'
+PN4_SEMIARCS_SOURCES = 'al-Qabisi, Introduction IV (ITA VIII.2.2); Dykes, ITA Appendix E'
+PN4_SEMIARCS_REFUSED = ('Refused at this latitude: some degrees never rise or set there, and a degree without a '
+                        'semi-arc has nothing to proportion.')
 PN4_ASCENSION_RULE = {
     'Ascendant': ('oblique ascensions of the birth latitude',
                   'applied to the degree of the Ascendant and to a planet on the degree itself (numerical tolerance, no orb)'),
@@ -9128,9 +9123,10 @@ PN4_ASCENSION_RULE = {
     'Fourth (IC)': ('right ascensions',
                     'applied to the degrees of the Midheaven and the fourth and to a planet on the degree itself (numerical tolerance, no orb)'),
     'anything else': ('proportional semi-arcs',
-                      PN4_SEMIARCS_UNAVAILABLE + " Not a prohibition: III.1, 5 directs all planets and Lots; the method is "
-                      "Ptolemy's as Dykes identifies it (III.1, 12 fn 16; VI.2, 21 fn 33), the formula stated by al-Qabisi "
-                      "(ITA VIII.2.2) and worked by Dykes (ITA Appendix E), not built"),
+                      "applied to the degree of every point on none of the three axial degrees (III.1, 5 directs all "
+                      "planets and Lots): the significator's distance from the meridian in proportion to its semi-arc, "
+                      "carried to the promittor's semi-arc -- Ptolemy's method as Dykes identifies it (III.1, 12 fn 16; "
+                      "VI.2, 21 fn 33), stated by al-Qabisi (ITA VIII.2.2) and worked by Dykes (ITA Appendix E)"),
 }
 
 def pn4_ascension_measure(point):
@@ -9392,6 +9388,216 @@ def pn4_distribution_from_meridian(planetary_data, mc_lon, obliquity, point='Mid
     start = mc_lon if point == 'Midheaven' else mc_lon + 180.0
     return _pn4_distribute(planetary_data, start, lambda lon: _ra_decl(lon, obliquity)[0],
                            span_years, point)
+
+# --- III.1, 12's third case: proportional semi-arcs -----------------------
+# "What is not in these three positions is directed according to what we
+# stated in our book" (III.1, 12): PN IV defers the method to a book it
+# does not reproduce, and Dykes identifies it as Ptolemy's proportional
+# semi-arcs (fn 16; VI.2, 21 fn 33, "by normal proportional semi-arcs").
+# Built (reconciliation decision 5, 2026-09-15) from the two texts in hand
+# that state it: al-Qabisi, Introduction IV.11-12 (ITA VIII.2.2b-e, pp.
+# 362-364) -- the significator's distance from the angle in hours of its
+# own semi-arc, carried to the promittor's semi-arc -- and Dykes's Appendix
+# E (ITA pp. 402-407), which states Gansten's form of the same rule,
+#     PromMD - (SigMD / SigSA) * PromSA = Arc,
+# shows that al-Qabisi's "equation" (the sixth of the difference between
+# the significator of the right circle and the significator of the region,
+# multiplied by the hours from the angle) is that formula with the 6
+# cancelled, and works it on a chart of 4 September 2010, 2:15:09 PM CDT,
+# Minneapolis (93w15'49", 44n58'48"): Venus (promittor) directed to Saturn
+# (significator), with the planets' latitudes (A) and without (B). That
+# worked example is the fixture, tests/test_semiarcs_2026_09_15.py: every
+# printed term and both arcs reproduce to the arc-second from the chart
+# cast here.
+#
+# What Appendix E leaves unsaid and this engine chooses (docstring of
+# semi_arc_direction): the sign of the meridian distance, the meridian to
+# measure from when the two points are not in one quadrant, and the
+# promittor's semi-arc in that case. Al-Qabisi's own rule for a promittor
+# in another quarter (IV.12c: direct to the angle between, then from the
+# angle, and add) is a different, approximate join and is NOT built; the
+# single formula with signed distances is exact for every quadrant.
+# The page directs the DEGREE of each point, latitude 0, as the two built
+# cases direct degrees and as fn 27 says al-Qabisi's tables did; the
+# engine takes latitude, and the fixture holds both of Dykes's forms.
+
+def _wrap_180(x):
+    """A signed arc in [-180, 180)."""
+    return ((x + 180.0) % 360.0) - 180.0
+
+def semi_arc_terms(lon, lat, ramc, geo_lat, obliquity):
+    """The equatorial terms of one point (Appendix E, pp. 403-404): right
+    ascension and declination from its longitude and latitude; the
+    ascensional difference; the diurnal and nocturnal semi-arcs, 90 + AD and
+    90 - AD in degrees of right ascension (closed to 180 from one AD, as
+    _semiarcs does); the signed meridian distance from the upper meridian,
+    RA - RAMC in [-180, 180), positive on the eastern side (the point has
+    yet to culminate), and from the lower meridian, positive on the western
+    side (it has yet to reach the fourth) -- primary motion DECREASES both;
+    and whether the point is above the horizon, |MD from the upper
+    meridian| <= diurnal semi-arc. A point that never rises or sets at this
+    latitude (|tan(phi) tan(delta)| >= 1) has 'circumpolar' True and no
+    semi-arc to proportion."""
+    ra, decl, _r = swe.cotrans((lon % 360.0, lat, 1.0), -obliquity)
+    ra %= 360.0
+    x = math.tan(math.radians(geo_lat)) * math.tan(math.radians(decl))
+    circumpolar = abs(x) >= 1.0
+    ad = math.degrees(math.asin(max(-1.0, min(1.0, x))))
+    dsa = 90.0 + ad
+    md_upper = _wrap_180(ra - ramc)
+    return {
+        'longitude': lon % 360.0, 'latitude': lat, 'ra': ra, 'declination': decl,
+        'ascensional_difference': ad, 'diurnal_sa': dsa, 'nocturnal_sa': 180.0 - dsa,
+        'md_upper': md_upper, 'md_lower': _wrap_180(ra - ramc - 180.0),
+        'above': abs(md_upper) <= dsa, 'circumpolar': circumpolar,
+    }
+
+def semi_arc_direction(sig_lon, sig_lat, prom_lon, prom_lat, ramc, geo_lat, obliquity):
+    """The arc of direction, in degrees of right ascension, of a promittor
+    to a significator by proportional semi-arcs, exactly as ITA Appendix E
+    states it (p. 404):
+
+        Arc = PromMD - (SigMD / SigSA) * PromSA
+
+    -- the significator's meridian distance divided by its semi-arc is the
+    share of the semi-arc it has travelled; that share of the promittor's
+    semi-arc, taken from the promittor's meridian distance, is what the
+    promittor has still to travel by primary motion to reach the place
+    proportional to the significator's (al-Qabisi IV.11-12, ITA VIII.2.2:
+    the hours from the angle, applied to the other degree's hours).
+
+    Each point's RA and declination come from its longitude AND latitude
+    (Appendix E part A directs the bodies; part B, with latitude 0, the
+    zodiacal degrees; pass 0 for the second). Returns a dict: 'arc' (None
+    when refused), the two points' terms under 'significator' and
+    'promittor' (semi_arc_terms), the meridian and semi-arc actually used
+    ('meridian': 'upper' or 'lower'; 'sig_md', 'sig_sa', 'prom_md',
+    'prom_sa'), the significator's share 'fraction', and 'refused', a
+    sentence, where a point never rises or sets at this latitude.
+
+    Where the text is silent, and what is chosen here:
+    * SIGN. Appendix E works one quadrant, both points east of the upper
+      meridian, and subtracts the smaller RA from the larger. Here the
+      meridian distance is SIGNED: positive before the meridian in primary
+      motion (east of the Midheaven; west of the fourth), negative after,
+      so one formula serves every quadrant and Dykes's numbers come out
+      unchanged (+24 23' 27" and +5 43' 16").
+    * WHICH MERIDIAN, WHICH SEMI-ARC. The significator's side of the
+      horizon decides: above it, both distances are from the upper meridian
+      and both semi-arcs are diurnal; below it, from the lower meridian and
+      nocturnal (fn 24: below the horizon, "one of the two nocturnal
+      semi-arcs"). The promittor's distance is from THAT meridian even when
+      it currently stands on the other side of the horizon, and its
+      semi-arc is the one of the hemisphere it will be in when it arrives;
+      for a promittor below the horizon coming to a significator above it
+      this equals the promittor's rise (its oblique ascension less the
+      Ascendant's) plus its share of its own diurnal arc. A point ON the
+      horizon (|MD| = SA) counts as above.
+    * DIRECT ONLY. The arc is taken modulo 360, so a promittor that has
+      already passed the proportional place comes round after a
+      revolution; converse directions are not built, no text in hand
+      asking for them.
+    * REFUSAL. A point that never rises or sets at this latitude has no
+      semi-arc to proportion (the significator's would divide by zero);
+      'arc' is None and 'refused' says so, in the file's style.
+    """
+    sig = semi_arc_terms(sig_lon, sig_lat, ramc, geo_lat, obliquity)
+    prom = semi_arc_terms(prom_lon, prom_lat, ramc, geo_lat, obliquity)
+    out = {'significator': sig, 'promittor': prom, 'arc': None, 'refused': None}
+    if sig['circumpolar'] or prom['circumpolar']:
+        who = 'significator' if sig['circumpolar'] else 'promittor'
+        out['refused'] = (f"the {who} never rises or sets at this latitude, so it has no semi-arc to proportion")
+        return out
+    if sig['above']:
+        meridian, sig_md, sig_sa, prom_md, prom_sa = 'upper', sig['md_upper'], sig['diurnal_sa'], prom['md_upper'], prom['diurnal_sa']
+    else:
+        meridian, sig_md, sig_sa, prom_md, prom_sa = 'lower', sig['md_lower'], sig['nocturnal_sa'], prom['md_lower'], prom['nocturnal_sa']
+    fraction = sig_md / sig_sa
+    out.update({'meridian': meridian, 'sig_md': sig_md, 'sig_sa': sig_sa, 'prom_md': prom_md, 'prom_sa': prom_sa,
+                'fraction': fraction, 'raw': prom_md - fraction * prom_sa})
+    out['arc'] = out['raw'] % 360.0
+    return out
+
+def pn4_distribution_by_semi_arcs(planetary_data, start_lon, obliquity, geo_lat, ramc,
+                                  span_years=PN4_DISTRIBUTION_SPAN_YEARS, label=None):
+    """III.1, 12's third case: the DEGREE of a point that is on none of the
+    three axial degrees, directed through the bounds by proportional
+    semi-arcs (semi_arc_direction, the point's degree at latitude 0 as
+    significator, every bound start, body and ray as a promittor at
+    latitude 0), one degree of the arc to a year (III.1, 13), with the
+    same distributor and partner as any other direction (III.1, 10-11,
+    15-16). Segments as _pn4_distribute returns them, or None where the
+    method has no domain: above the polar circle (|latitude| + obliquity
+    >= 90, where some degrees never rise or set), as the Ascendant's
+    distribution refuses."""
+    if not _ascensional_method_applies(obliquity, geo_lat):
+        return None
+    start_lon %= 360.0
+    if semi_arc_terms(start_lon, 0.0, ramc, geo_lat, obliquity)['circumpolar']:
+        return None
+
+    def measure(lon):
+        return semi_arc_direction(start_lon, 0.0, lon, 0.0, ramc, geo_lat, obliquity)['raw']
+
+    return _pn4_distribute(planetary_data, start_lon, measure, span_years,
+                           label or f"{get_degree_string(start_lon)} by proportional semi-arcs")
+
+def pn4_semi_arc_terms_rows(sig_lon, obliquity, geo_lat, ramc, segments, current):
+    """The arc and its terms, as the Timing page prints them beside a
+    semi-arc distribution: one row for the significator (the point's
+    degree), one for the promittor that opened the period now running --
+    or the degree itself when the period is the one open at birth -- and
+    one for the promittor the direction reaches next. Right ascension,
+    declination, the signed meridian distance from the meridian used, the
+    semi-arc used, and the arc in degrees and in III.1, 13's time."""
+    def fmt(v):
+        return f"{v:.2f}°"
+
+    def row(point, d, promittor):
+        t = d['promittor'] if promittor else d['significator']
+        md, sa = (d['prom_md'], d['prom_sa']) if promittor else (d['sig_md'], d['sig_sa'])
+        return {'Point': point, 'Longitude': get_degree_string(t['longitude']),
+                'Right ascension': fmt(t['ra']), 'Declination': fmt(t['declination']),
+                'Meridian distance': f"{md:+.2f}° from the {'Midheaven' if d['meridian'] == 'upper' else 'fourth'}",
+                'Semi-arc': f"{fmt(sa)} ({'diurnal' if d['meridian'] == 'upper' else 'nocturnal'})",
+                'Arc': f"{fmt(d['arc'])} = {pn4_format_arc_time(d['arc'])}" if promittor else '-'}
+
+    own = semi_arc_direction(sig_lon, 0.0, sig_lon, 0.0, ramc, geo_lat, obliquity)
+    if own['arc'] is None:
+        return []
+    rows = [row('significator: the degree itself', own, False)]
+    if not segments:
+        return rows
+    idx = segments.index(current) if current in segments else 0
+    for seg, what in ((segments[idx], 'opened the period now running'),
+                      (segments[idx + 1] if idx + 1 < len(segments) else None, 'reached next')):
+        if seg is None:
+            continue
+        if seg['from'] <= 0.0:
+            rows.append({**rows[0], 'Point': 'the period open at birth: the degree itself', 'Arc': fmt(0.0)})
+            continue
+        d = semi_arc_direction(sig_lon, 0.0, seg['from_lon'], 0.0, ramc, geo_lat, obliquity)
+        rows.append(row(f"promittor that {what}: {seg['opened_by']}", d, True))
+    return rows
+
+def pn4_semi_arc_stand(planetary_data, natal_lon, obliquity, geo_lat, ramc, age):
+    """VI.2, 1, "directed from its degree (a year for every degree)": where
+    a point's direction by proportional semi-arcs stands at an age -- the
+    sign it has reached (every sign starts a bound, so the period's opening
+    degree is in the sign the direction stands in), the distributor and
+    the partner of the period, and its span. VI.2, 21 sends a displaced
+    cusp's degree to "the portions of the hours and the right circle" (fn
+    33: proportional semi-arcs), the same operation. A sentence, for the
+    turning table's column."""
+    segs = pn4_distribution_by_semi_arcs(planetary_data, natal_lon, obliquity, geo_lat, ramc)
+    if segs is None:
+        return 'by proportional semi-arcs: refused at this latitude, where some degrees never rise or set'
+    cur = pn4_distribution_at_age(segs, age)
+    if cur is None:
+        return f"by proportional semi-arcs: age {age} is past the {PN4_DISTRIBUTION_SPAN_YEARS:g}-year table"
+    return (f"by proportional semi-arcs: in {get_zodiac_sign(cur['from_lon'])}, standing from "
+            f"{get_degree_string(cur['from_lon'])}; distributor {cur['distributor']}, partner "
+            f"{cur['partner'] or 'none'} (age {cur['from']:.2f} to {cur['to']:.2f})")
 
 # --- IX.7, 29-31: "the small days" ---------------------------------------
 # "you look at the degree of the Ascendant of the revolution of the year,
@@ -11385,15 +11591,14 @@ def pn4_named_lords_of_the_orb(natal_hour_lord, completed_years):
 # from the house by counting and from the sign the degree falls in
 # (VI.2, 22), directed from its actual degree (21).
 #
-# ONLY THE TURNING IS BUILT. It is whole-sign profection from each point's
-# own natal position, one sign a year, exactly as the Ascendant's. The
-# direction "a year for every degree" is III.1, 12's third case for
-# planets and Lots (method not stated in PN IV) and, for cusps, VI.2, 21's
-# "portions of the hours and the right circle" -- a name for semi-arcs
-# with no procedure -- so it stays refused, and the table says so per
-# row. The Ascendant's and the meridian's directions are the two
-# distributions on the page and the rows for houses 1, 10 and 4 point to
-# them.
+# The turning is whole-sign profection from each point's own natal
+# position, one sign a year, exactly as the Ascendant's. The direction "a
+# year for every degree" is III.1, 12's third case for planets and Lots
+# and, for cusps, VI.2, 21's "portions of the hours and the right circle"
+# (fn 33: proportional semi-arcs): since 2026-09-15 each row carries where
+# that direction stands at the age (pn4_semi_arc_stand). The Ascendant's
+# and the meridian's directions are the two distributions on the page and
+# the rows for houses 1, 10 and 4 point to them.
 #
 # What is read in and said on the page: which "twelve Lots" is not
 # stated; the formulas in fn 12-31 are Dykes' identifications from Sahl
@@ -11444,10 +11649,6 @@ PN4_TURNING_LOTS = (
     ('enemies_slaves', 'enemies', 'VI.2, 17; fn 31', 'one of fn 31\'s three'),
     ('enemies_hermes', 'enemies', 'VI.2, 17; fn 31', 'one of fn 31\'s three'),
 )
-
-PN4_TURNING_DIRECTION_REFUSED = (PN4_SEMIARCS_UNAVAILABLE + " III.1, 12's third case, Ptolemy's method as Dykes "
-                                 "identifies it (fn 16), the formula stated by al-Qabisi (ITA VIII.2.2) and worked by Dykes "
-                                 "(ITA Appendix E), not built")
 
 def pn4_turning_planet_topics(sect):
     """VI.2, 2, 6 and 8: what each planet is turned for. The parents'
@@ -11699,26 +11900,44 @@ def pn4_turning_rows(chart_data, completed_years):
             'Source': cite,
         }
 
+    # III.1, 12's third case for the planets and the Lots; VI.2, 21's
+    # "portions of the hours and the right circle" (fn 33) for a cusp's
+    # degree: the DEGREE directed by proportional semi-arcs, where it stands
+    # at this age.
+    def stand(natal_lon):
+        return pn4_semi_arc_stand(planetary, natal_lon, chart_data['obliquity'], chart_data['geo_lat'],
+                                  chart_data['armc'], age)
+
     rows = []
     topics = pn4_turning_planet_topics(sect)
     for planet in PN4_SEVEN:
         if planet in planetary:
             rows.append(row(planet, planetary[planet]['longitude'], topics[planet], 'VI.2, 1-2',
-                            PN4_TURNING_DIRECTION_REFUSED))
+                            stand(planetary[planet]['longitude']) + ' (III.1, 12 fn 16)'))
 
     directed_at = {1: 'the distribution from the Ascendant, above (III.1, 12)',
                    10: 'the distribution from the Midheaven, above (III.1, 12)',
                    4: 'the distribution from the fourth, above (III.1, 12)'}
     for house, topic, cite in PN4_TURNING_HOUSES:
         ws_start = ((asc // 30.0) * 30.0 + 30.0 * (house - 1)) % 360.0
-        directed = directed_at.get(house, PN4_SEMIARCS_UNAVAILABLE + " VI.2, 21's \"portions of the hours and the "
-                                          "right circle\" (fn 33: \"by normal proportional semi-arcs\"), the formula "
-                                          "stated by al-Qabisi (ITA VIII.2.2) and worked by Dykes (ITA Appendix E), not built")
-        rows.append(row(f'House {house} (by counting)', ws_start, topic, cite, directed))
         cusp = cusps[house - 1] if cusps and len(cusps) >= house else None
+        # VI.2, 1, 21, 23, 25 direct a house from its cusp's degree; no
+        # sentence directs the first degree of the whole sign. The
+        # by-counting row therefore stands from the cusp when it shares
+        # the sign, and reports the sign only when it does not (the
+        # displaced cusp then gets its own row below).
+        if house in directed_at:
+            directed = directed_at[house]
+        elif cusp is not None and get_zodiac_sign(cusp) == get_zodiac_sign(ws_start):
+            directed = stand(cusp) + ' (VI.2, 21 fn 33; from the cusp\'s degree, ' + get_degree_string(cusp) + ')'
+        else:
+            directed = 'the sign by counting; its degree is directed in the row below (VI.2, 21-24)'
+        rows.append(row(f'House {house} (by counting)', ws_start, topic, cite, directed))
         if cusp is not None and get_zodiac_sign(cusp) != get_zodiac_sign(ws_start):
+            # VI.2, 21: the displaced cusp is directed "from the actual degree it rests in"
             rows.append(row(f'House {house} (its degree, {get_degree_string(cusp)}, in another sign)', cusp,
-                            topic + ' -- the second turning, VI.2, 22 [2]', 'VI.2, 21-24', directed))
+                            topic + ' -- the second turning, VI.2, 22 [2]', 'VI.2, 21-24',
+                            stand(cusp) + ' (VI.2, 21 fn 33)'))
 
     for lot_id, topic, cite, note in PN4_TURNING_LOTS:
         d = next(x for x in LOT_DEFINITIONS if x['id'] == lot_id)
@@ -11726,7 +11945,7 @@ def pn4_turning_rows(chart_data, completed_years):
         if lon is None:
             continue
         rows.append(row(d['name'] + (f' -- {note}' if note else ''), lon, topic, cite,
-                        PN4_TURNING_DIRECTION_REFUSED))
+                        stand(lon) + ' (III.1, 12 fn 16)'))
     return rows
 
 # --- II.1, 11-24: indicators 6-19 of the year, the FACT each one reads ----
@@ -14385,8 +14604,9 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
     # that degree is (orders GAP-37 / PN4R-4b-4; the owner's ruling (e) of
     # 2026-09-11, evening: the degree itself, PN4_AXIS_TOLERANCE, no orb; the
     # division and the carry-over play no part). Every other planet is
-    # listed with PN4_SEMIARCS_UNAVAILABLE -- a computational gap, not a
-    # prohibition (III.1, 5) -- and is NOT directed by RA or OA instead.
+    # III.1, 12's third case: its degree directed by proportional semi-arcs
+    # (pn4_distribution_by_semi_arcs), with the arc's terms beside it; never
+    # by RA or OA instead.
     angle_planets = []
     for planet in PN4_SEVEN:
         if planet not in chart_data['planetary_data']:
@@ -14402,13 +14622,15 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
                                                   start_lon=p_lon, label=f"{planet} in {where}")
             how = 'right ascension'
         else:
-            angle_planets.append({'planet': planet, 'axis': None, 'where': 'not on an axial degree',
-                                  'how': PN4_SEMIARCS_UNAVAILABLE, 'segments': None, 'current': None, 'rows': []})
-            continue
+            segs = pn4_distribution_by_semi_arcs(chart_data['planetary_data'], p_lon, chart_data['obliquity'], lat,
+                                                 chart_data['armc'], label=f"{planet} by proportional semi-arcs")
+            where, how = 'not on an axial degree', 'proportional semi-arcs'
+        ap_current = pn4_distribution_at_age(segs, elapsed) if segs else None
         angle_planets.append({'planet': planet, 'axis': axis, 'where': where, 'how': how, 'segments': segs,
-                              'current': pn4_distribution_at_age(segs, elapsed) if segs else None,
-                              'rows': _pn4_distribution_rows(segs, pn4_distribution_at_age(segs, elapsed) if segs else None,
-                                                             origin_jd=chart_data['julian_day'])})
+                              'current': ap_current, 'degree': p_lon,
+                              'rows': _pn4_distribution_rows(segs, ap_current, origin_jd=chart_data['julian_day']),
+                              'terms': (pn4_semi_arc_terms_rows(p_lon, chart_data['obliquity'], lat, chart_data['armc'],
+                                                                segs, ap_current) if axis is None and segs else [])})
 
     # --- III.7, 32-42: when each natal indication comes out -- confirmed (42)
     # against every distribution on the page (order PN4R-4a-2) ---
@@ -16535,9 +16757,10 @@ if location_query and lat is not None and lon is not None:
                             "II.3 examination prints it. fn 14's age mapping is the editor's and is not applied.")
                 st.dataframe(pd.DataFrame(pn4['turning_triplicity_rows']), hide_index=True, width='stretch',
                              height=_rows_height(len(pn4['turning_triplicity_rows'])))
-                st.caption("The direction \"a year for every degree\" is not built and each row says so: for planets and "
-                           "Lots it is III.1, 12's third case, whose method PN IV does not state; for the cusps VI.2, 21 "
-                           "names \"the portions of the hours and the right circle\", semi-arcs, and gives no procedure. "
+                st.caption("The direction \"a year for every degree\" is proportional semi-arcs, each row saying where it "
+                           "stands at this age: for planets and Lots it is III.1, 12's third case (fn 16), for the cusps "
+                           "VI.2, 21's \"portions of the hours and the right circle\" (fn 33) -- the point's degree "
+                           "directed as the planets are in The distribution chapter (" + PN4_SEMIARCS_SOURCES + "). "
                            "The Ascendant's and the meridian's directions are the distributions above. Which \"twelve "
                            "Lots\" VI.2, 1 means is not stated; the formulas in fn 12-31 are Dykes's identifications from "
                            "Sahl and the Great Introduction, and the app's Lots are paired to them here, with the two "
@@ -16664,26 +16887,49 @@ if location_query and lat is not None and lon is not None:
                            "recognised with a numerical tolerance (floating-point equality), not an astrological "
                            "orb -- no 3 degrees, no 5, no band; the Alchabitius division and the five-degree carry-over play no "
                            "part in choosing the method. A planet on one of the three degrees is directed as that degree is, "
-                           "below. Every planet not on an axis is listed with \"" + PN4_SEMIARCS_UNAVAILABLE + "\" -- a "
-                           "computational gap, NOT a prohibition: III.1, 5 directs all planets and Lots, and the method for "
-                           "\"what is not in these three positions\" is Ptolemy's proportional semi-arcs as Dykes identifies it "
-                           "(III.1, 12 fn 16; VI.2, 21 fn 33), stated by al-Qabisi (ITA VIII.2.2) and worked by Dykes (ITA "
-                           "Appendix E), not built here; no right or oblique "
-                           "ascension is substituted for it. The Descendant is not one of the three positions (fn 15).")
-                st.markdown("**The planets, each with its measure under III.1, 12** (on an axial degree, directed as that "
-                            "degree is; otherwise the sentence):")
+                           "below; every other planet is \"what is not in these three positions\", the third case, "
+                           "directed by proportional semi-arcs in the next section. The Descendant is not one of the three "
+                           "positions (fn 15).")
+                st.subheader("The planets, each with its measure under III.1, 12",
+                             help="III.1, 12: \"the Ascendant and the things in it are directed by degrees of ascensions of the "
+                                  "country in which the native was born, while what is in the Midheaven or the fourth is "
+                                  "directed by the ascensions of the right sphere, and what is not in these three positions "
+                                  "is directed according to what we stated in our book [on that topic]\". A planet ON an axial degree is directed as that degree is. Every "
+                                  "other planet is the third case, whose method PN IV defers to a book it does not "
+                                  "reproduce: Ptolemy's method as Dykes identifies it (III.1, 12 fn 16; VI.2, 21 fn 33), "
+                                  "proportional semi-arcs, as al-Qabisi states it (Introduction IV, ITA VIII.2.2) and Dykes "
+                                  "works it (ITA Appendix E): the significator's distance from the meridian, in proportion "
+                                  "to its semi-arc, is carried to the promittor's semi-arc, and what the promittor has "
+                                  "still to travel is the arc -- PromMD - (SigMD / SigSA) * PromSA -- a degree of it a year "
+                                  "(III.1, 13). Here the planet's DEGREE is the significator (latitude 0, as the two other "
+                                  "cases direct degrees and as al-Qabisi's tables probably did (fn 27), Appendix E fn 27), the bound starts, "
+                                  "bodies and rays the promittors, the distributor and partner as in every distribution "
+                                  "(III.1, 10-11, 15-16). The meridian distance is signed, positive before the meridian in "
+                                  "primary motion; the meridian and the semi-arcs are those of the significator's side of "
+                                  "the horizon, the promittor's taken from the same meridian even when it stands on the "
+                                  "other side; a promittor already past the proportional place comes round after a "
+                                  "revolution and falls outside the table. Al-Qabisi's join across quarters (IV.12c) is "
+                                  "a different, approximate procedure and is not used; converse directions are not built.")
                 for ap in pn4['angle_planets']:
                     if ap['axis'] is None:
-                        st.markdown(f"**{ap['planet']}** -- {ap['how']}")
-                        continue
-                    st.markdown(f"**{ap['planet']}** on the degree of {ap['where']}, by the {ap['how']}"
-                                + (f" -- now: distributor **{ap['current']['distributor']}**, partner "
-                                   f"**{ap['current']['partner'] or 'none'}**" if ap['current'] else '') + ":")
-                    if ap['segments'] is None:
-                        st.warning("Refused at this latitude: the ascension has no unique inverse there.")
+                        st.markdown(f"**{ap['planet']}** at {get_degree_string(ap['degree'])}, {ap['where']}: its degree by "
+                                    f"{ap['how']}"
+                                    + (f" -- now: distributor **{ap['current']['distributor']}**, partner "
+                                       f"**{ap['current']['partner'] or 'none'}**" if ap['current'] else '') + ":")
                     else:
-                        st.dataframe(pd.DataFrame(ap['rows']), hide_index=True, width='stretch',
-                                     height=_rows_height(min(len(ap['rows']), 8)))
+                        st.markdown(f"**{ap['planet']}** on the degree of {ap['where']}, by the {ap['how']}"
+                                    + (f" -- now: distributor **{ap['current']['distributor']}**, partner "
+                                       f"**{ap['current']['partner'] or 'none'}**" if ap['current'] else '') + ":")
+                    if ap['segments'] is None:
+                        st.warning(PN4_SEMIARCS_REFUSED if ap['axis'] is None
+                                   else "Refused at this latitude: the ascension has no unique inverse there.")
+                        continue
+                    st.dataframe(pd.DataFrame(ap['rows']), hide_index=True, width='stretch',
+                                 height=_rows_height(min(len(ap['rows']), 8)))
+                    if ap['terms']:
+                        st.markdown(f"The arc and its terms for {ap['planet']} ({PN4_SEMIARCS_SOURCES}):")
+                        st.dataframe(pd.DataFrame(ap['terms']), hide_index=True, width='stretch',
+                                     height=_rows_height(len(ap['terms'])))
 
             with tab_rel:
                 # --- SAHL: the releaser and the house-master (2026-09-10) ---
@@ -16909,8 +17155,9 @@ if location_query and lat is not None and lon is not None:
                 st.caption("Readings: \"the degree of burning\" is the Sun's natal degree; \"a year for every degree of "
                            "ascensions\" is the oblique ascension of the birth latitude applied to the house-master's own "
                            "degree, as 1.15, 17, 1.16, 4 and 1.18, 21 apply \"the ascensions of that city\" to the "
-                           "luminaries and the Ascendant alike (PN IV III.1, 12's third case, the proportional semi-arcs, "
-                           "is not built); \"in the year of age\" is the completed year the arc falls in. Facts, not judgment: "
+                           "luminaries and the Ascendant alike, not PN IV III.1, 12's third case, the proportional "
+                           "semi-arcs, which is Abu Ma'shar's assignment and not Sahl's); \"in the year of age\" is the "
+                           "completed year the arc falls in. Facts, not judgment: "
                            "1.23, 4's verdict is quoted in the help and not pronounced. Not applied: 4.12, 6 (a retrograde "
                            "planet's rays directed conversely); 1.23, 5-11's further witnesses (the lord of the "
                            "revolution's Ascendant, the lord of the year, the profection reaching an infortune's sign), "
@@ -17143,9 +17390,8 @@ if location_query and lat is not None and lon is not None:
                                "that degree itself (a numerical tolerance, no orb). The **third case** -- everything not on "
                                "one of the three degrees -- has no method in PN IV: III.1, 12 sends the reader to \"what we "
                                "stated in our book [on that topic]\", and Dykes's fn 16 (with VI.2, 21 fn 33) identifies it as "
-                               "Ptolemy's proportional semi-arcs, the formula al-Qabisi states (ITA VIII.2.2) and Dykes works "
-                               "(ITA Appendix E), not built here; the "
-                               "planets are listed with that sentence, and no other ascension is substituted.")
+                               "Ptolemy's proportional semi-arcs, which are applied from the texts that state the method "
+                               "(" + PN4_SEMIARCS_SOURCES + "); no other ascension is substituted.")
                     st.markdown("**III.1, 6 -- the unit, by level of chart**")
                     st.dataframe(pd.DataFrame(PN4_UNIT_ROWS), hide_index=True, width='stretch')
                 with c2:
@@ -17255,8 +17501,9 @@ if location_query and lat is not None and lon is not None:
                            "as looking) -- whether the position is the current bound's sign or its degree, and whether "
                            "co-presence counts, are silences -- and a looking fixed planet's row says III.7, 36 applies "
                            "\"whenever it distributes\" IF strong, which the chapter does not define, so no row is promoted. "
-                           "The confirmation column (III.7, 42) is checked against every distribution on this page: the "
-                           "Ascendant's, the Midheaven's, the fourth's and the releaser's, each named. "
+                           "The confirmation column (III.7, 42) is checked against the distributions of the Ascendant, the "
+                           "Midheaven, the fourth and the releaser, each named; the planets' own semi-arc directions are "
+                           "not among them, no sentence asking for a planet to confirm itself. "
                            "III.7, 37 exempts the manager, which \"will produce its indication\" whenever it manages.")
 
                 st.subheader("The Ages of Man",
@@ -17308,10 +17555,10 @@ if location_query and lat is not None and lon is not None:
                     "Planetary years table shows 1.20's grade for every planet and *On Times* 4, 7 for comparison; PN IV is "
                     "silent (IX.8, 123) and III.2, 110-111's gate now has the input it names.\n\n"
                     "**Directing anything that is not the Ascendant or the meridian.** III.1, 12 sends the reader to "
-                    "\"what we stated in our book [on that topic]\" for every other point. Dykes's fn 16 identifies the "
-                    "method as Ptolemy's proportional semi-arcs, an editor's note rather than Abu Ma'shar's sentence; "
-                    "the formula is stated by al-Qabisi (ITA VIII.2.2, the hours of the distance from the angle) and worked "
-                    "by Dykes (ITA Appendix E), and is not built here; it is named rather than guessed.\n\n"
+                    "\"what we stated in our book [on that topic]\" for every other point, and PN IV never states it. "
+                    "Dykes's fn 16 identifies the method as Ptolemy's proportional semi-arcs; it is applied from the "
+                    "texts in hand that state it (" + PN4_SEMIARCS_SOURCES + "), and the page says which choices "
+                    "those texts leave open.\n\n"
                     "**Revolutions of the day and the hour.** Defined in principle (I.3, 10-13) and then declined by "
                     "the author: \"there is no need for us [to do] that, because these nine indicators ... are complete "
                     "for everything needed\" (IX.7, 79).\n\n"

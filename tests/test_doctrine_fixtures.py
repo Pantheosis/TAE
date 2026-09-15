@@ -1450,7 +1450,12 @@ def _turning_chart(engine, asc=5.0, cusps=None, sect="Diurnal", **planets):
         cusps = [(base + 30.0 * i) % 360.0 for i in range(12)]
     seven = dict(Sun=100.0, Moon=200.0, Mercury=110.0, Venus=130.0, Mars=300.0, Jupiter=250.0, Saturn=20.0)
     seven.update(planets)
-    return {"planetary_data": pdata(**seven), "ascendant": asc, "houses": cusps, "sect": sect}
+    # A horizon consistent with the Ascendant (its oblique ascension is the
+    # RAMC + 90), so the semi-arc column (2026-09-15) has a meridian.
+    obliquity, geo_lat = 23.44, 43.78
+    armc = (engine["_oblique_ascension"](asc, obliquity, geo_lat) - 90.0) % 360.0
+    return {"planetary_data": pdata(**seven), "ascendant": asc, "houses": cusps, "sect": sect,
+            "obliquity": obliquity, "geo_lat": geo_lat, "armc": armc}
 
 
 def test_pn4_turning_is_from_each_points_own_position(engine):
@@ -1500,22 +1505,34 @@ def test_pn4_turning_displaced_cusp_is_turned_both_ways(engine):
     assert len([r for r in rows if r["Point"].startswith("House 6")]) == 1
 
 
-def test_pn4_turning_direction_column_refuses_and_points_to_the_distributions(engine):
-    """Only the turning is built. Planets and Lots say the direction is
-    III.1, 12's third case and ordinary houses VI.2, 21's semi-arcs, in the
-    one sentence the owner ruled for the gap ("Requires proportional
-    semi-arcs; calculation unavailable."); houses 1, 10 and 4 point to the
-    distributions the page already applies."""
-    rows = {r["Point"]: r for r in engine["pn4_turning_rows"](_turning_chart(engine), 2)}
-    assert rows["Mars"]["Directed a year per degree"].startswith("Requires proportional semi-arcs; calculation unavailable.")
-    assert "III.1, 12" in rows["Mars"]["Directed a year per degree"] and "fn 16" in rows["Mars"]["Directed a year per degree"]
-    assert "VI.2, 21" in rows["House 7 (by counting)"]["Directed a year per degree"] and "fn 33" in rows["House 7 (by counting)"]["Directed a year per degree"]
-    assert rows["House 7 (by counting)"]["Directed a year per degree"].startswith("Requires proportional semi-arcs")
+def test_pn4_turning_direction_column_stands_by_semi_arcs_and_points_to_the_distributions(engine):
+    """Since 2026-09-15 (reconciliation decision 5) the direction column
+    says where each point's degree stands by proportional semi-arcs at the
+    age: planets and Lots under III.1, 12's third case (fn 16), ordinary
+    houses under VI.2, 21 (fn 33), each naming the sign, distributor and
+    partner of the period; houses 1, 10 and 4 point to the distributions
+    the page already applies. The sentence agrees with the distribution
+    the same engine returns for the point."""
+    chart = _turning_chart(engine)
+    rows = {r["Point"]: r for r in engine["pn4_turning_rows"](chart, 2)}
+    mars = rows["Mars"]["Directed a year per degree"]
+    assert mars.startswith("by proportional semi-arcs: in ") and "distributor " in mars and "partner " in mars
+    assert mars.endswith("(III.1, 12 fn 16)")
+    segs = engine["pn4_distribution_by_semi_arcs"](chart["planetary_data"], 300.0, chart["obliquity"], chart["geo_lat"], chart["armc"])
+    cur = engine["pn4_distribution_at_age"](segs, 2)
+    assert f"distributor {cur['distributor']}, partner {cur['partner'] or 'none'}" in mars
+    assert f"in {engine['get_zodiac_sign'](cur['from_lon'])}" in mars
+    house7 = rows["House 7 (by counting)"]["Directed a year per degree"]
+    # after the check: a house by counting stands from its cusp's degree when the
+    # cusp shares the sign (VI.2, 21), else the row defers to the displaced-cusp row
+    assert (house7.startswith("by proportional semi-arcs: in ") and "from the cusp's degree" in house7) \
+        or house7.startswith("the sign by counting; its degree is directed in the row below")
     assert "Ascendant" in rows["House 1 (by counting)"]["Directed a year per degree"]
     assert "Midheaven" in rows["House 10 (by counting)"]["Directed a year per degree"]
     assert "fourth" in rows["House 4 (by counting)"]["Directed a year per degree"]
     lot = next(r for k, r in rows.items() if k.startswith("Lot of travel"))
-    assert lot["Directed a year per degree"].startswith("Requires proportional semi-arcs")
+    assert lot["Directed a year per degree"].startswith("by proportional semi-arcs: in ")
+    assert "unavailable" not in " ".join(r["Directed a year per degree"] for r in rows.values())
 
 
 def test_pn4_turning_parents_indicators_follow_the_sect(engine):
@@ -2484,22 +2501,21 @@ def test_pn4_printed_reference_tables_derive_from_the_rules(engine):
     state = {r["Point directed"]: r["In this app"] for r in engine["PN4_ASCENSION_ROWS"]}
     # III.1, 12's three cases do not stand alike and the table must not say
     # they do: two are built (since 2026-09-10), each for the DEGREE of its
-    # point and not for the planets in it; the third has no stated method
-    # at all. A row may claim "applied" only for what the engine directs,
-    # so directing a planet on an angle, or building the third case, means
-    # changing these strings too.
+    # point and for a planet on the degree itself; the third (since
+    # 2026-09-15, reconciliation decision 5) for the degree of everything
+    # else, by proportional semi-arcs, and its row names the texts the
+    # method is taken from since PN IV states none. A row may claim
+    # "applied" only for what the engine directs.
     applied = {k: v for k, v in state.items() if v.startswith("applied")}
-    assert sorted(applied) == ["Ascendant, and things in it", "Midheaven, or the fourth"]
+    assert sorted(applied) == ["Anything else", "Ascendant, and things in it", "Midheaven, or the fourth"]
     # since 2026-09-11 (GAP-37 / PN4R-4b-4, the owner's ruling (e)) a planet ON an axial degree is directed as it is
     assert applied["Ascendant, and things in it"] == "applied to the degree of the Ascendant and to a planet on the degree itself (numerical tolerance, no orb)"
     assert applied["Midheaven, or the fourth"] == "applied to the degrees of the Midheaven and the fourth and to a planet on the degree itself (numerical tolerance, no orb)"
-    assert state["Anything else"].startswith("Requires proportional semi-arcs; calculation unavailable.")
-    # since 2026-09-15 (reconciliation 3.1 / decision 5's relabel): the formula IS stated -- al-Qabisi IV.11-12
-    # (ITA VIII.2.2), worked in ITA Appendix E -- and the row says so; "stated in no text in hand" was false
+    assert state["Anything else"].startswith("applied to the degree of every point on none of the three axial degrees")
     assert "III.1, 12 fn 16; VI.2, 21 fn 33" in state["Anything else"]
-    assert "stated by al-Qabisi (ITA VIII.2.2) and worked by Dykes (ITA Appendix E), not built" in state["Anything else"]
-    assert "no text in hand" not in state["Anything else"]
-    assert "Not a prohibition: III.1, 5" in state["Anything else"]
+    assert "stated by al-Qabisi (ITA VIII.2.2) and worked by Dykes (ITA Appendix E)" in state["Anything else"]
+    assert "III.1, 5 directs all planets and Lots" in state["Anything else"]
+    assert "unavailable" not in state["Anything else"]
 
 
 # --- III.7, 32-42: when a natal indication comes out ----------------------
@@ -3340,12 +3356,13 @@ def test_first_month_governor_names_the_primary_sign_when_the_strict_test_fails(
 
 # --- GAP-37 / PN4R-4b-4: the planets in the Midheaven, the fourth and the Ascendant, directed -----
 
-def test_planets_on_an_axial_degree_are_directed_as_it_is_and_the_rest_require_semiarcs(engine):
+def test_planets_on_an_axial_degree_are_directed_as_it_is_and_the_rest_by_semiarcs(engine):
     """III.1, 12 under the owner's ruling (e) of 2026-09-11 (GAP-37 /
     PN4R-4b-4): "in the Ascendant / Midheaven / fourth" is ON the axial
     degree, floating-point equality, no orb. The signed-offset table of
     GAP-37_astra_reading.md: dl = wrap(planet - MC) in {-6, -3, 0, +3, +6},
-    only 0 selects right ascension, the four others "requires semi-arcs";
+    only 0 selects right ascension, the four others proportional semi-arcs
+    (since 2026-09-15 built, each with a distribution and the arc's terms);
     the exact Ascendant and IC; wraparound (an axis at 0, a point just
     under 360); and independence from the five-degree setting."""
     axis_of = engine["pn4_axis_of"]
@@ -3371,12 +3388,14 @@ def test_planets_on_an_axial_degree_are_directed_as_it_is_and_the_rest_require_s
     assert aps["Saturn"]["segments"][0]["from_lon"] == pytest.approx(chart["mc"])
     for pl, ap in aps.items():
         if pl != "Saturn":
-            assert ap["axis"] is None and ap["how"] == "Requires proportional semi-arcs; calculation unavailable." and ap["segments"] is None
+            assert ap["axis"] is None and ap["how"] == "proportional semi-arcs" and ap["segments"] and ap["terms"]
+            assert ap["segments"][0]["from_lon"] == pytest.approx(chart["planetary_data"][pl]["longitude"] % 360.0)
+            assert ap["terms"][0]["Point"] == "significator: the degree itself" and ap["terms"][0]["Arc"] == "-"
     near = copy.deepcopy(chart)
-    near["planetary_data"]["Saturn"]["longitude"] = (chart["mc"] + 3.0) % 360.0                    # in the tenth division, carried or not: unavailable
+    near["planetary_data"]["Saturn"]["longitude"] = (chart["mc"] + 3.0) % 360.0                    # in the tenth division, carried or not: semi-arcs
     assert engine["get_effective_house"](near["planetary_data"]["Saturn"]["longitude"], chart["houses"]) == 10
     ap = {a["planet"]: a for a in bundle(near)["angle_planets"]}["Saturn"]
-    assert ap["axis"] is None and ap["how"].startswith("Requires proportional semi-arcs")
+    assert ap["axis"] is None and ap["how"] == "proportional semi-arcs"
     old = engine["FIVE_DEGREE_CARRYOVER"]
     try:
         engine["FIVE_DEGREE_CARRYOVER"] = 0.0                                                      # the five-degree setting has no role here

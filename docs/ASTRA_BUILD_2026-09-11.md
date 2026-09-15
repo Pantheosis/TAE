@@ -892,3 +892,91 @@ Abu 'Ali's stated cases (one, two, four impediments) are the app's reading of "o
 count of months or days is 'Umar's and Sahl's, not the chapter's; 'Umar's "greater years" for the
 succedent flagged as Dykes's emendation (fn 82); his I.4.4 sentence -- greater years in an angle
 "oriental or not oriental" -- quoted against the ladder's orientality step.
+
+## 2026-09-15: proportional semi-arcs (decision 5)
+
+Reconciliation decision 5 (owner): III.1, 12's third case -- "what is not in these three positions is
+directed according to what we stated in our book", the method PN IV defers and Dykes identifies as
+Ptolemy's proportional semi-arcs (fn 16; VI.2, 21 fn 33) -- is built from the two texts in hand that
+state it: al-Qabisi, Introduction IV.11-12 (ITA VIII.2.2b-e, pp. 362-364: the significator's hours
+from the angle, the "significator of the right circle", the "significator of the region", the
+"equation" of a sixth of their difference by the hours) and Dykes's Appendix E (ITA pp. 402-407:
+Gansten's form `PromMD - (SigMD / SigSA) * PromSA = Arc`, which p. 406 shows to be al-Qabisi's with
+the 6 cancelled). The `PN4_SEMIARCS_UNAVAILABLE` sentence is gone from its three sites.
+
+**The method** (`semi_arc_direction(sig_lon, sig_lat, prom_lon, prom_lat, ramc, geo_lat,
+obliquity)`, with `semi_arc_terms` for one point): RA and declination of each point from its
+longitude AND latitude (`swe.cotrans`); ascensional difference `asin(tan phi tan delta)`; diurnal
+semi-arc 90 + AD, nocturnal 180 minus it (closed from one AD, as `_semiarcs`); the signed meridian
+distance from the upper meridian (RA - RAMC, positive east, before culmination) and from the lower;
+the formula, the arc modulo 360; returned with every term for the page. Choices where the texts are
+silent, all in the docstring: (1) MD is SIGNED, positive before the meridian in primary motion, so one
+formula serves every quadrant and Dykes's +24 23' 27" / +5 43' 16" come out as printed; (2) the
+significator's side of the horizon (|MD| <= DSA, the horizon itself counted above) picks the
+meridian and the semi-arcs for BOTH points, the promittor's MD taken from that meridian even when it
+stands on the other side of the horizon -- for a promittor below coming to a significator above this
+equals its rise (OA less the Ascendant's OA) plus its share of its own diurnal arc, proved in the
+tests; (3) direct only: a promittor past the place comes round (arc near 360, outside the 120-year
+table), converse directions not built; (4) a point that never rises or sets (|tan phi tan delta| >= 1)
+refuses with a sentence naming which point, and the distribution refuses above the polar circle as
+the Ascendant's does. Al-Qabisi's join across quarters (IV.12c: to the angle between, then from it,
+summed) is a DIFFERENT, approximate procedure (it uses the angle's semi-arc for the first leg) and is
+not built; the single formula is exact there. The page directs the DEGREE of each point (latitude
+0), as the two built cases direct degrees and as Appendix E fn 27 says al-Qabisi's tables did; the
+engine takes latitude and the fixture holds both of Dykes's forms. No new unit helper: the Timing
+page already reports arcs through `_pn4_distribution_rows` and `pn4_format_arc_time` (III.1, 13), and
+the terms table uses the same.
+
+**The fixture** (`tests/test_semiarcs_2026_09_15.py`): Dykes's chart, p. 402's figure -- 4 September
+2010, 2:15:09 PM CDT, Minneapolis 93w15'49" 44n58'48" -- cast by `calculate_traditional_chart`
+(19:15:09 UT) reproduces the figure's Saturn 4 Libra 33, Venus 26 Libra 57, MC 29 Virgo 15, Ascendant
+7 Sagittarius 47, and then EVERY printed term of both examples to the arc-second: A (with latitude,
+p. 406) RAMC 179 19' 33", RA Venus 203 43' 00", RA Saturn 185 02' 49", MD 24 23' 27" and 5 43' 16",
+DSA 75 57' 21" and 90 10' 46", arc 19 34' 20" (engine 19 34' 20.0"); B (degrees only, p. 407) RA
+205 00' 51" / 184 11' 10", MD 25 41' 18" / 4 51' 37", DSA 79 26' 40" / 88 11' 16", arc 21 18' 36"
+(engine 21 18' 36.0"). Also: the formula on his printed inputs alone; (b) a significator on the
+Midheaven or the fourth gives the promittor's MD (the RA direction); (c) on the Ascendant or
+Descendant gives the promittor's OA difference (the OA direction); (d) declination 0 gives 90 and 90
+at every latitude, the solstices' arcs swap; the sign and meridian choices; the refusal; the
+distribution's segments dated by the engine's own arcs with Venus's body row opening at the B arc;
+the bundle directing all seven of Dykes's planets.
+
+**The three sites.** (1) `PN4_ASCENSION_RULE['anything else']` now reads "applied to the degree of
+every point on none of the three axial degrees ... stated by al-Qabisi (ITA VIII.2.2) and worked by
+Dykes (ITA Appendix E)"; the reference table's caption follows. (2) `pn4_timing_bundle`'s
+`angle_planets`: every planet off an axis gets `pn4_distribution_by_semi_arcs` (its degree through
+the bounds, `_pn4_distribute` with the semi-arc measure, distributor and partner as everywhere) and
+`pn4_semi_arc_terms_rows` -- the significator, the opener of the period now running (or "the period
+open at birth"), the promittor reached next: longitude, RA, declination, signed MD naming its
+meridian, semi-arc naming its hemisphere, arc in degrees and III.1, 13's time. The page prints them
+under a new subheader "The planets, each with its measure under III.1, 12" (help: the sentence, the
+formula, the choices), the terms table captioned `PN4_SEMIARCS_SOURCES` = "al-Qabisi, Introduction IV
+(ITA VIII.2.2); Dykes, ITA Appendix E"; the refusal sentence is `PN4_SEMIARCS_REFUSED`. (3)
+`pn4_turning_rows`: `PN4_TURNING_DIRECTION_REFUSED` is gone -- the turning code needs only where the
+direction stands, so `pn4_semi_arc_stand` gives "by proportional semi-arcs: in {sign}, standing from
+{degree}; distributor X, partner Y (age a to b)" for planets and Lots (III.1, 12 fn 16) and for
+houses other than 1, 10, 4 and for displaced cusps (VI.2, 21 fn 33); the sign is the opening degree's,
+since every sign start is a bound start. `_turning_chart` in the doctrine tests now carries a
+horizon (armc from the Ascendant's OA). Captions touched: the meridian section's item (5), the
+turning table's, the Sahl house-master's, III.7, 42's (the planets' own directions do not confirm
+themselves), the "does not settle" expander's entry.
+
+**Cells moved.** `tests/fixtures/tables.json` regenerated (`UPDATE_TABLE_FIXTURE=1`): 84 lines added,
+none removed -- for each of the six fixture dates, seven distribution tables (the ten distribution
+columns) and seven terms tables (Point, Longitude, Right ascension, Declination, Meridian distance,
+Semi-arc, Arc) under the new subheader; no fixture planet stands on an axial degree, so all seven are
+the third case on every date. No existing table changed shape. Under the harness's target date the
+1240 charts are past the 120-year table, so their turning cells say so, as the other distributions
+do.
+
+**Left to the owner.** Whether the page should direct the planets' BODIES (Appendix E part A,
+"modern computer programs") rather than their degrees (part B, al-Qabisi's tables); the engine does
+either. Whether the planets' semi-arc distributions should count for III.7, 42's confirmation
+(not done: no sentence asks it). PN IV's own sentence still states no method; the row and the help
+say the method is taken from ITA.
+
+After the check (`BUILD_SEMIARCS_CHECK_REPORT_2026-09-15.md`; the arithmetic recomputed independently and
+found within 1" of Dykes's page): the by-counting house rows stand from the CUSP's degree when it shares
+the sign -- VI.2, 1/21/23/25 direct a house from its cusp, no sentence from the sign's first degree -- and
+defer to the displaced-cusp row when it does not; III.1, 12 quoted as printed in the subheader help;
+fn 27's "probably" kept. Fixture rows for the by-counting houses changed accordingly.
