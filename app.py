@@ -1792,16 +1792,15 @@ def _rhetorius_applying(lon_p, v_p, lon_other, v_other, signs_apart):
         return False, 0.0
     return delta * (v_p - v_other) < 0.0, abs(delta)
 
-def _rhetorius_besiegers(planet, planetary_data, planets):
+def _rhetorius_besiegers(planet, planetary_data, planets, group=None):
     """Ch. 41: the nearest body or ray behind the planet and the nearest
-    ahead, each within 7 degrees, from two different planets. Taking the
-    NEAREST on each side leaves nothing between them, which is the text's
-    "with no other casting a ray in between". Returns (behind, gap, ahead,
-    gap) or None."""
+    ahead, each within 7 degrees, from two different planets -- of GROUP
+    (the malefics for besieging, the fortunes for enclosure by them; ITA
+    IV.4.2) when one is given. Returns (behind, gap, ahead, gap) or None."""
     lon = planetary_data[planet]['longitude'] % 360.0
     behind, ahead = None, None
     for other in planets:
-        if other == planet:
+        if other == planet or (group is not None and other not in group):
             continue
         for ray in _ray_degrees(planetary_data[other]['longitude'] % 360.0):
             gap_behind = (lon - ray) % 360.0
@@ -1813,6 +1812,28 @@ def _rhetorius_besiegers(planet, planetary_data, planets):
     if behind is None or ahead is None or behind[0] == ahead[0]:
         return None
     return behind[0], behind[1], ahead[0], ahead[1]
+
+def _rhetorius_loosener(planet, planetary_data, planets, breakers, friendly_only):
+    """ITA IV.4.2 (Gr. Intr. VII.6 and al-Qabisi III.28b): a malefic
+    besieging is loosened when the Sun or a fortune aspects the besieged
+    planet by a friendly aspect (trine, sextile) with fewer than 7 degrees
+    between the planet and the ray -- its body in the region counted with
+    them, as Dykes's Figure 102 has it; his comment there: a malefic body or
+    ray in the region breaks an enclosure by the fortunes. Returns the
+    first breaker found as text, or None."""
+    lon = planetary_data[planet]['longitude'] % 360.0
+    angles = (0.0, 60.0, 120.0, 240.0, 300.0) if friendly_only else (0.0, 60.0, 90.0, 120.0, 180.0, 240.0, 270.0, 300.0)
+    for other in planets:
+        if other == planet or other not in breakers:
+            continue
+        o = planetary_data[other]['longitude'] % 360.0
+        for a in angles:
+            ray = (o + a) % 360.0
+            gap = min((ray - lon) % 360.0, (lon - ray) % 360.0)
+            if gap < RHETORIUS_BESIEGING_DEGREES:
+                what = 'body' if a == 0.0 else {60.0: 'sextile', 120.0: 'trine', 90.0: 'square', 180.0: 'opposition'}.get(a % 360.0 if a <= 180.0 else 360.0 - a, 'ray')
+                return f"{other}'s {what} {gap:.1f}° off"
+    return None
 
 def evaluate_rhetorius_affliction(planetary_data, asc_lon, sect):
     """Rhetorius Chs. 26-28, 41-42 (Holden): a row per planet per condition
@@ -1868,13 +1889,18 @@ def evaluate_rhetorius_affliction(planetary_data, asc_lon, sect):
                                                     10: 'the eleventh sign, a sextile'}[ahead])
         if malefic_aspects:
             add(planet, 'aspected by malefics', '; '.join(malefic_aspects))
-        siege = _rhetorius_besiegers(planet, planetary_data, planets)
+        siege = _rhetorius_besiegers(planet, planetary_data, planets, INFORTUNES)
         if siege:
             b, bg, a, ag = siege
-            if b in INFORTUNES and a in INFORTUNES:
-                add(planet, 'besieged', f'{b} ({bg:.1f}° behind) and {a} ({ag:.1f}° ahead), by body or ray')
-            elif b in FORTUNES and a in FORTUNES:
-                add(planet, 'enclosed by the fortunes', f'{b} ({bg:.1f}° behind) and {a} ({ag:.1f}° ahead), by body or ray')
+            loosened = _rhetorius_loosener(planet, planetary_data, planets, FORTUNES | {'Sun'}, friendly_only=True)
+            add(planet, 'besieged', f'{b} ({bg:.1f}° behind) and {a} ({ag:.1f}° ahead), by body or ray'
+                + (f' -- loosened by {loosened} (ITA IV.4.2)' if loosened else ''))
+        good = _rhetorius_besiegers(planet, planetary_data, planets, FORTUNES)
+        if good:
+            b, bg, a, ag = good
+            broken = _rhetorius_loosener(planet, planetary_data, planets, INFORTUNES, friendly_only=False)
+            add(planet, 'enclosed by the fortunes', f'{b} ({bg:.1f}° behind) and {a} ({ag:.1f}° ahead), by body or ray'
+                + (f" -- broken by {broken} (Dykes, ITA IV.4.2 comment)" if broken else ''))
         if applying:
             add(planet, 'applying to a destructive star', '; '.join(applying))
         if kollesis:
@@ -14806,7 +14832,7 @@ if location_query and lat is not None and lon is not None:
                                  "Rhetorius Ch. 28 (Holden): \"" + RHETORIUS_CH28 + "\" Holden's notes name them: the fifth house and the ninth; the eleventh house.\n\n"
                                  "Rhetorius Ch. 26 (Holden): \"" + RHETORIUS_CH26 + "\"\n\n"
                                  "Rhetorius Ch. 34 (Holden), where Ch. 27's note sends the word: \"" + RHETORIUS_CH34 + "\"\n\n"
-                                 "The besiegers of an afflicted planet are the malefics, as the definitions gathered in ITA IV.4.2 have it -- Abbr. IV.21-25: \"And there is another kind of misfortune which is called \u201cenclosure.\u201d But this is twofold. First, with some star between two malevolents or between two rays of malevolents, or if it heads from a malevolent to a malevolent. And likewise concerning the rays.\"; al-Qabisi III.28b: \"This is if a planet is in some sign, and in addition a bad one or its rays is in front of it, and a bad one or its rays after it.\" Enclosure by the fortunes is its own row: \"And if a planet or sign were besieged by the fortunes, this will be of the more worthy fortunes\" (Gr. Intr. VII.6, in ITA IV.4.2); BW VIII.76: \"[But if a significator is] from the class of being-in-the-middle [between infortunes], it denotes [prison and torture; if between fortunes], a good condition is going to come.\". A third body or ray between the two breaks either, as the same passage says of a fortune's ray within seven degrees.\n\n"
+                                 "The besiegers of an afflicted planet are the malefics, as the definitions gathered in ITA IV.4.2 have it -- Abbr. IV.21-25: \"And there is another kind of misfortune which is called \u201cenclosure.\u201d But this is twofold. First, with some star between two malevolents or between two rays of malevolents, or if it heads from a malevolent to a malevolent. And likewise concerning the rays.\"; al-Qabisi III.28b: \"This is if a planet is in some sign, and in addition a bad one or its rays is in front of it, and a bad one or its rays after it.\" Enclosure by the fortunes is its own row: \"And if a planet or sign were besieged by the fortunes, this will be of the more worthy fortunes\" (Gr. Intr. VII.6, in ITA IV.4.2); BW VIII.76: \"[But if a significator is] from the class of being-in-the-middle [between infortunes], it denotes [prison and torture; if between fortunes], a good condition is going to come.\". What loosens a malefic besieging is the Sun or a fortune aspecting the besieged planet by a friendly aspect with fewer than seven degrees between it and the ray (Gr. Intr. VII.6; al-Qabisi III.28b, both in ITA IV.4.2); what breaks an enclosure by the fortunes is a malefic body or ray in the region (Dykes's comment there). Either is said on the row; a besieging is not silently dropped for a third body of another kind.\n\n"
                                  "How this app reads each condition. Where a chapter gives a degree (Ch. 41's seven, Ch. 34's three) it is applied; where it gives none, the condition is read by whole sign and no degree is invented. Malefics are Saturn and Mars.\n\n"
                                  + "\n".join(f"- **{c['key']}** ({c['chapter']}), \"{c['text']}\": {c.get('reading') or c['untested']}"
                                              for c in RHETORIUS_AFFLICTION_CONDITIONS)))

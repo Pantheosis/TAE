@@ -677,3 +677,10 @@ sentences quoted in the notes; a third body or ray between breaks either. `LOT`-
 After the ITA rulings audit (entry 31): kollēsis is the same-sign connection -- Dykes distinguishes it
 from sun-aphē across signs (ITA III.7 comment, p. 136) -- so the across-the-boundary reading made
 after the check is reversed; the same sign required again, now with his definition cited.
+
+Reconciliation decision 3 (owner, 2026-09-15): the breaker is ITA's, not Rhetorius's "any third".
+A malefic besieging is loosened by the Sun or a fortune aspecting the planet by a friendly aspect
+(its body counted with the rays, Figure 102) under seven degrees (Gr. Intr. VII.6; al-Qabisi
+III.28b); an enclosure by the fortunes is broken by a malefic body or ray in the region (Dykes's
+comment). Both are said on the row rather than dropping it; the besiegers are now found among the
+malefics (or the fortunes) alone, so a third body of another kind neither makes nor breaks either.

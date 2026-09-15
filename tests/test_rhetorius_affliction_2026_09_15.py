@@ -75,21 +75,28 @@ def test_besieged_per_ch_41(engine):
     assert siege[0]['By'] == 'Mars (3.0° behind) and Saturn (5.0° ahead), by body or ray'
     assert siege[0]['Chapter'] == 'Rhetorius Ch. 27 with Ch. 41 (Holden); ITA IV.4.2'
     assert siege[0]['Text'] == 'besieged'
-    # A benefic's body falling between breaks it (ITA IV.4.2, Dykes's comment;
-    # Gr. Intr. VII.6 "loosening"): Venus at 15 Libra, and no row of either kind.
+    # A fortune in the region loosens it and the row says so (ITA IV.4.2):
+    # Venus's body at 15 Libra.
     chart['Venus'] = {'longitude': 195.0}
     rows2 = _rows(engine, chart, asc=100.0)
-    assert not _of(rows2, 'Moon', 'besieged') and not _of(rows2, 'Moon', 'enclosed by the fortunes')
+    assert _of(rows2, 'Moon', 'besieged')[0]['By'].endswith("loosened by Venus's body 2.0° off (ITA IV.4.2)")
+    assert not _of(rows2, 'Moon', 'enclosed by the fortunes')
+    # Mercury's body between does not: Rhetorius's "any third" is not the reading.
+    del chart['Venus']; chart['Mercury'] = {'longitude': 195.0}
+    assert 'loosened' not in _of(_rows(engine, chart, asc=100.0), 'Moon', 'besieged')[0]['By']
 
 
 def test_enclosure_by_the_fortunes_is_its_own_fortified_row(engine):
     # Moon at 13 Libra between Jupiter's body at 10 Libra and Venus's trine ray from 18 Gemini.
     chart = {'Moon': {'longitude': 193.0}, 'Jupiter': {'longitude': 190.0}, 'Venus': {'longitude': 78.0},
-             'Sun': {'longitude': 300.0}, 'Saturn': {'longitude': 320.0}, 'Mars': {'longitude': 250.0}}
+             'Sun': {'longitude': 300.0}, 'Saturn': {'longitude': 335.0}, 'Mars': {'longitude': 265.0}}
     rows = _rows(engine, chart, asc=100.0)
     assert not _of(rows, 'Moon', 'besieged')
     good = _of(rows, 'Moon', 'enclosed by the fortunes')
     assert len(good) == 1 and good[0]['By'] == 'Jupiter (3.0° behind) and Venus (5.0° ahead), by body or ray'
+    # a malefic's ray into the region breaks it (Dykes's comment): Mars's sextile from 15 Leo.
+    chart['Mars'] = {'longitude': 135.0}
+    assert 'broken by Mars' in _of(_rows(engine, chart, asc=100.0), 'Moon', 'enclosed by the fortunes')[0]['By']
     # And beyond 7 degrees there is no siege at all.
     chart['Venus'] = {'longitude': 240.0}
     chart['Saturn'] = {'longitude': 21.0}
