@@ -21,13 +21,26 @@ wheel, which is what the page is for, had half the page and a quarter of its wid
 
 ### The square layout
 
-The wheel is drawn in the middle column of `st.columns([1, 2, 1])` at `width=560`. `st.image`
-draws at the left edge of whatever holds it, so a centred picture needs a container narrower
-than the page and centred in it; `[1, 2, 1]` is the narrowest of those that leaves 560 px of
-room at the window widths the app is read at. The wheel's viewBox is `0 0 1000 1000`, square,
-so 560 px of width is 560 px of height, and nothing about the picture changes but its scale:
-at 400 px the minute figures beside a planet were at the edge of legibility, and at 560 they
-are not.
+The wheel is drawn at `width=560` inside
+`st.container(horizontal=True, horizontal_alignment="center")`. The wheel's viewBox is
+`0 0 1000 1000`, square, so 560 px of width is 560 px of height, and nothing about the picture
+changes but its scale: at 400 px the minute figures beside a planet were at the edge of
+legibility, and at 560 they are not.
+
+**Not by columns, which was the first attempt and was wrong.** `st.image` draws at the left
+edge of whatever holds it, so the obvious centring is a picture in the middle column of
+`st.columns([1, 2, 1])` — and that centres it, but it also caps it. A column is a *fraction of
+the page*, not a fixed width, and `st.image` shrinks a picture to the width it is given rather
+than overflowing it, so the middle of `[1, 2, 1]` drew the wheel at **454 px at a 1400 px
+window and 394 px at 1280** — narrower, at the smaller size, than the 400 px the change was
+meant to enlarge. Measured in the browser, which is the only place it shows: under `AppTest`
+the column split and the container are both simply a block holding the image, and every
+structural assertion passed on the capped version.
+
+A horizontal container is a flex row rather than a fraction of the page. Its proto reads
+`direction: HORIZONTAL`, `justify: JUSTIFY_CENTER`, `width_config { use_stretch: true }`: the
+row is the full width of the main area, its children keep their own widths, and the row centres
+them. So the wheel is 560 px at every window width, and centred at every one.
 
 The wide layout is unchanged in substance — `st.image(svg_wide, width='stretch')`, the
 positions panel drawn inside the picture, the full page width, scrolling.
@@ -35,12 +48,23 @@ positions panel drawn inside the picture, the full page width, scrolling.
 ### One row of controls, under the wheel
 
 `_layout_control()` keeps everything it did and lays it out differently: the four controls now
-sit in `st.columns([2, 1, 1, 1.4], vertical_alignment="bottom")` in the order the ruling gives
-them — the Wheel layout radio (horizontal, as it always was), the Bounds ring checkbox, the
-Dark wheel checkbox, the Download button. The feet are aligned rather than the tops, so the
-radio's row of options, the two checkbox rows and the button sit on one line; aligned at the
-top they fall at three heights, because a radio carries its label and its options and a button
-carries neither.
+sit in `st.container(horizontal=True, vertical_alignment="bottom", gap="medium")` in the order
+the ruling gives them — the Wheel layout radio (horizontal, as it always was), the Bounds ring
+checkbox, the Dark wheel checkbox, the Download button. The feet are aligned rather than the
+tops, so the radio's row of options, the two checkbox rows and the button sit on one line;
+aligned at the top they fall at three heights, because a radio carries its label and its
+options and a button carries neither. The row is left-aligned and the page's full width, which
+is how the row of controls was asked for.
+
+**Again not by columns, and again found only in a browser.** The first version used
+`st.columns([2, 1, 1, 1.4], vertical_alignment="bottom")`, and on the owner's screen the four
+controls ran straight down the left-hand edge in a single column. Streamlit stacks columns
+vertically below about 640 px of page width, and a reader zoomed in, or in a narrow window, is
+below that breakpoint — so the "one row" was a row only on a wide enough screen. A horizontal
+container is a flex row at every width: `direction: HORIZONTAL`, `align: ALIGN_END`,
+`justify: JUSTIFY_START`, `wrap: true`, so the four stay side by side and wrap only when they
+genuinely cannot fit, which is the behaviour the ruling describes and `st.columns` does not
+give.
 
 The radio's help text said "the wheel beside the controls and the introduction, the header
 metrics under it", which describes a page that no longer exists; it now says "the wheel
@@ -100,16 +124,33 @@ The strip, on every page, for the harness's chart:
 
 ## What the browser showed
 
-**Nothing: the live check could not be run, and this is the one thing the brief asked for that
-is not here.** The preview tools resolve `.claude/launch.json` from the shared checkout at
-`Executable/`, not from the worktree, and a worktree-isolated agent may not write to the shared
-checkout; a launch configuration for port 8516 was written in the worktree's own
-`.claude/launch.json`, where the tool does not look for it, and starting the server any other
-way is not available either. Nothing was measured in a browser, so **no wheel-foot-against-fold
-numbers were taken at 1400×900 or at 1280×720**, and the one open question — how far the
-560 px wheel's foot falls below the fold at 1280×720 — is unanswered. Running the app on 8516
-from this worktree and reading `img.getBoundingClientRect().bottom` against
-`window.innerHeight` on the Chart page is what would close it.
+The branch could not reach a browser from where it was built: the preview tools resolve
+`.claude/launch.json` from the shared checkout at `Executable/`, not from the worktree, and a
+worktree-isolated agent may not write to the shared checkout; the launch configuration for port
+8516 was written in the worktree's own `.claude/launch.json`, where the tool does not look for
+it. QA ran the worktree on 8516 and measured it instead, and the owner looked at the page; that
+is how both of the column faults below were found. Neither could have been caught by the
+harness: under `AppTest` a column split and a flex container are both simply a block holding
+the children, and the widths and the breakpoint that separate them exist only in a browser. The
+lesson for the next UI branch is that `st.columns` lays out *proportions of the page*, and that
+neither a picture of a fixed width nor a row that must stay a row is a proportion.
+
+**The wheel, first arrangement, `st.columns([1, 2, 1])`:** the image 454 px wide at 1400×900,
+its foot at 696 px of 900; 394 px wide at 1280×720, foot at 658 px of 720. Centred to within
+5 px, no metric on the page, the strip correct — and the wheel *smaller* than the 400 px it
+replaced at the smaller window, because a column is a fraction of the page and `st.image`
+shrinks to the width it is given. Rejected on the measurement.
+
+**The controls, first arrangement, `st.columns([2, 1, 1, 1.4])`:** on the owner's screen the
+four ran vertically down the left-hand edge. Streamlit stacks columns below about 640 px of
+page width, so the row was a row only above that breakpoint and a zoomed or narrow window fell
+under it.
+
+**Both, second arrangement, the horizontal containers:** to be re-measured. Expected for the
+wheel, and accepted by the owner in advance: about 560 px wide at both sizes, the foot near
+800 px of 900 at 1400×900 — inside the fold — and about 100 px below the fold at 1280×720,
+where the reader scrolls to the controls anyway. Expected for the controls: one row at any
+width, wrapping only when the four genuinely cannot fit.
 
 What could be checked without a browser was checked.
 
@@ -121,9 +162,9 @@ degree and minute figures beside each planet, the Alchabitius cusp numbers and t
 marks are all legible, which at 400 px the minutes were not.
 
 **The arrangement, from the rendered page.** `AppTest` renders the real element tree, and the
-Chart page's children come out in the ruled order: the header, the strip caption, a block of
-three columns whose middle one holds the image and whose outer two are empty, a block of four
-columns holding the radio, the two checkboxes and the download button in that order, then the
+Chart page's children come out in the ruled order: the header, the strip caption, a centred
+flex row holding the image, a bottom-aligned flex row holding the radio, the two checkboxes and
+the download button in that order, then the
 three captions, then the `Calculation` subheader. No metric anywhere on the page, at either
 layout and at either reading depth. The circumpolar caption is absent on the Florence default
 chart and appears directly under the controls row, above the three sentences, for a chart cast
@@ -154,10 +195,14 @@ and not merely the calls that produce it:
   the UI half;
 - the strip has eight parts on every one of the nine pages, with `Conjunctional lunation` sixth
   and after the sect (nine cases), and the strip takes the first word of `event_label`;
-- the square wheel stands in the middle column of a three-column block whose outer columns are
-  empty, at 560 px; the wide wheel is still an image at the page's full width;
-- the four controls stand in one row of four columns, Radio, Checkbox, Checkbox,
-  DownloadButton in that order, at both layouts, aligned on their feet;
+- the square wheel is the one child of a full-width flex row whose proto reads
+  `direction: HORIZONTAL` and `justify: JUSTIFY_CENTER`, at 560 px, and `st.columns([1, 2, 1])`
+  is asserted **absent** so the cap cannot come back; the wide wheel is still an image at the
+  page's full width;
+- the four controls are the four children of one flex row — `direction: HORIZONTAL`,
+  `align: ALIGN_END`, `justify: JUSTIFY_START`, `wrap: true`, full width — as Radio, Checkbox,
+  Checkbox, DownloadButton in that order, at both layouts, with the column split that collapsed
+  asserted absent;
 - the layout is read before the control is drawn and the wheel is drawn between the two;
 - the three captions follow the controls in order and are the owner's three sentences to the
   character, at both layouts, with `Calculation` next after them; both layouts print the same

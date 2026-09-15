@@ -16625,22 +16625,26 @@ if location_query and lat is not None and lon is not None:
                 # The four controls in one row across the page, aligned on
                 # their feet so the radio's row of options, the two checkboxes
                 # and the button sit on one line rather than at three heights.
-                ctl_layout, ctl_bounds, ctl_dark, ctl_download = st.columns(
-                    [2, 1, 1, 1.4], vertical_alignment="bottom")
-                with ctl_layout:
+                #
+                # A flex row, not st.columns: Streamlit stacks columns
+                # vertically below about 640 px of page width, and a reader
+                # zoomed in or in a narrow window is below it, so the four
+                # controls ran down the left-hand edge in a column. A
+                # horizontal container keeps them in a row at any width and
+                # wraps (wrap defaults to True) only when they genuinely
+                # cannot fit. Left-aligned and the page's full width, as the
+                # row of controls was asked for.
+                with st.container(horizontal=True, vertical_alignment="bottom", gap="medium"):
                     layout = _reading_radio(
                         "Wheel layout", WHEEL_LAYOUT_OPTIONS, "wheel_layout", "_wheel_layout",
                         help="Square: the wheel centred, with the controls and the introduction beneath it. Wide: the wheel with a "
                              "positions panel across the page. Hover either and use the expand "
                              "arrows for a full-window view.")
-                with ctl_bounds:
                     _reading_checkbox("Bounds ring", "chart_bounds", "_chart_bounds",
                                       help="The Egyptian bounds, with their lords, as a ring inside the degree scale -- "
                                            "as every natal wheel in Persian Nativities IV carries them (Figures 1, 22, "
                                            "25, 26).")
-                with ctl_dark:
                     _reading_checkbox("Dark wheel", "wheel_dark", "_wheel_dark", help=WHEEL_DARK_HELP)
-                with ctl_download:
                     st.download_button("Download the wheel (SVG)", svg_wide if layout == WHEEL_LAYOUT_OPTIONS[1] else svg_code,
                                        key="dl_chart_wheel", mime="image/svg+xml",
                                        file_name=f"{re.sub(r'[^A-Za-z0-9]+', '_', chart_name).strip('_') or 'chart'}_natal.svg")
@@ -16650,12 +16654,16 @@ if location_query and lat is not None and lon is not None:
             if wheel_layout == WHEEL_LAYOUT_OPTIONS[1]:
                 st.image(svg_wide, width='stretch')
             else:
-                # The narrowest arrangement that centres a 560 px picture on
-                # the page: st.image draws at the left edge of whatever holds
-                # it, so the middle column of a [1, 2, 1] split is what puts
-                # the wheel in the middle.
-                _left_margin, wheel_col, _right_margin = st.columns([1, 2, 1])
-                with wheel_col:
+                # st.image draws at the left edge of whatever holds it, so the
+                # wheel needs a container that centres its contents. A three
+                # column split does NOT do it: a column is a fraction of the
+                # page, and the middle of [1, 2, 1] is 454 px at 1400 and
+                # 394 px at 1280 -- narrower than the 400 px this replaced,
+                # because st.image shrinks a picture to the width it is given.
+                # A horizontal container is a flex row instead: its children
+                # keep their own width and the row centres them, so the wheel
+                # is 560 px at every window width.
+                with st.container(horizontal=True, horizontal_alignment="center"):
                     st.image(svg_code, width=560)
             _layout_control()
             if chronocrats.get('Approximate'):

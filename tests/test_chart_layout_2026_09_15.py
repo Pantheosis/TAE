@@ -93,15 +93,27 @@ def test_the_strip_takes_the_first_word_of_the_event_label():
 
 # --- The wheel, centred --------------------------------------------------
 
-def test_the_square_wheel_is_centred_in_the_middle_of_three_columns():
+def test_the_square_wheel_is_centred_by_a_horizontal_container():
+    """A three-column split centres the wheel but also caps it: a column is a
+    fraction of the page, and st.image shrinks a picture to the width it is
+    given, so the middle of [1, 2, 1] drew the wheel at 454 px at a 1400 px
+    window and 394 px at 1280 -- narrower than the 400 px it replaced. A
+    horizontal container is a flex row: it stretches the full width, its one
+    child keeps its own 560 px, and the row centres it."""
     at = _chart(layout="Square")
     wheel_block = _kids(at)[2]
-    columns = list(wheel_block.children.values())
-    assert len(columns) == 3, _kinds(wheel_block)
-    assert [_kinds(c) for c in columns] == [[], ["Image"], []]
+    assert _kinds(wheel_block) == ["Image"]
+    flex = wheel_block.proto.flex_container
+    assert flex.direction == flex.Direction.HORIZONTAL, flex.direction
+    assert flex.justify == flex.Justify.JUSTIFY_CENTER, flex.justify
+    # The row itself is the page's full width; only the picture inside it is
+    # 560 px. A container narrower than the page would cap the wheel again.
+    assert wheel_block.proto.width_config.use_stretch is True
     src = ui_source()
-    assert "st.columns([1, 2, 1])" in src
+    assert 'st.container(horizontal=True, horizontal_alignment="center")' in src
     assert "st.image(svg_code, width=560)" in src
+    # The split that capped it must not come back.
+    assert "st.columns([1, 2, 1])" not in src
 
 
 def test_the_wide_wheel_still_runs_the_full_width():
@@ -114,14 +126,25 @@ def test_the_wide_wheel_still_runs_the_full_width():
 
 @pytest.mark.parametrize("layout", LAYOUTS)
 def test_the_four_controls_stand_in_one_row_under_the_wheel(layout):
+    """The four are children of one flex row, in the ruled order. Not
+    st.columns: Streamlit stacks columns vertically below about 640 px of
+    page width, and the owner's browser showed the four running down the
+    left-hand edge. A horizontal container holds the row at any width."""
     at = _chart(layout=layout)
     controls = _kids(at)[3]
-    columns = list(controls.children.values())
-    assert [_kinds(c) for c in columns] == [
-        ["Radio"], ["Checkbox"], ["Checkbox"], ["DownloadButton"]], _kinds(controls)
+    assert _kinds(controls) == ["Radio", "Checkbox", "Checkbox", "DownloadButton"]
+    flex = controls.proto.flex_container
+    assert flex.direction == flex.Direction.HORIZONTAL, flex.direction
+    assert flex.align == flex.Align.ALIGN_END, flex.align        # feet aligned
+    assert flex.justify == flex.Justify.JUSTIFY_START, flex.justify   # full width, left
+    assert flex.wrap is True          # a row that truly cannot fit may wrap
+    assert controls.proto.width_config.use_stretch is True
     assert at.main.radio[0].label == "Wheel layout"
     assert [c.label for c in at.main.checkbox][:2] == ["Bounds ring", "Dark wheel"]
-    assert 'vertical_alignment="bottom"' in ui_source()
+    src = ui_source()
+    assert 'st.container(horizontal=True, vertical_alignment="bottom", gap="medium")' in src
+    # The split that collapsed into a column must not come back.
+    assert "st.columns(\n                    [2, 1, 1, 1.4]" not in src
 
 
 def test_the_layout_is_read_before_the_control_is_drawn():
