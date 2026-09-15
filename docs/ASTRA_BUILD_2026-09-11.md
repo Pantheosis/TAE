@@ -1062,3 +1062,8 @@ classing. 2.3, 7's "and the rays" and "from a strong position" restored, the lat
 the owner: whether the Lot's gate is Sahl's "made unfortunate" (2.3, 6) rather than Abu 'Ali's "both cadent";
 whether 2.17, 8 ("even if he was a king") should class; 2.3, 19-21 and 2.19, 6 as listed rows or named as
 not read.
+
+Owner's rulings on the check's four open points (all as recommended): the Lot's gate stays Abu 'Ali's
+both-cadent, with Sahl's wider "made unfortunate" (2.3, 6) named as not applied; 2.17, 8 listed, not
+classing; 2.3, 19-21 as listed Decline rows; 2.19, 6 as a listed Rising row on 2.17, 7's footing, BA's
+difference in the places named.

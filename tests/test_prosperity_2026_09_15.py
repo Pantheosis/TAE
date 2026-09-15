@@ -45,7 +45,7 @@ def chapter_two():
 
 def test_every_sahl_sentence_is_verbatim(engine, chapter_two):
     sentences = engine["PROSPERITY_SAHL"]
-    assert len(sentences) == 41
+    assert len(sentences) == 44
     for ref, sentence in sentences.items():
         assert re.sub(r"\s+", " ", sentence) in chapter_two, ref
 

@@ -11905,6 +11905,11 @@ PROSPERITY_SAHL = {
     '2.3, 18': "And if you found the planet in what follows the stake, or it is falling in the sign, and is in the "
                "stake [by] degrees, it indicates assets and a fine condition, with difficulty in [his] reputation and "
                "no fame, and especially if the planet was western [and] under the earth.",
+    '2.3, 19': "Now if you found the lord of the triplicity in the second and eighth, it indicates a decline of [his] "
+               "condition in the matter which the planet likewise produces.",
+    '2.3, 20': "Now if that planet was a fortune, then his affairs will be set aright after their corruption.",
+    '2.3, 21': "And whenever you find Jupiter in one of these two places, (if he was not the governor of the "
+               "triplicity) then it indicates a decline of [his] condition even though he will not provide injustice.",
     '2.11, 1': "If you found both of the two lords of the triplicity of the luminary to be strong, they indicate "
                "high rank from the beginning of his life to its end.",
     '2.11, 2': "And if one of the two was strong and the other weak, his benefit will be in the time of the strong "
@@ -12403,6 +12408,16 @@ def evaluate_prosperity(chart_data):
         row('falling', 'Falling', f"the Moon separating from {sep} and connecting with {con}, by degree within her orb",
             sahl('2.17, 10'), PROSPERITY_ALSO['falling'] + "; BA III.2.2 [2.10]")
 
+    # --- 2.3, 19-21: a lord of the triplicity in the second or eighth (owner: listed rows) ---
+    for f in (first, second, third):
+        if f is not None and f['house'] in (2, 8):
+            row('falling', 'Decline', f"{f['lord']}, a lord of the sect light's triplicity, in the {_prosperity_nth(f['house'])}"
+                + (" -- a fortune: his affairs set aright after their corruption" if f['lord'] in FORTUNES else ''),
+                sahl('2.3, 19', '2.3, 20') if f['lord'] in FORTUNES else sahl('2.3, 19'), PROSPERITY_ALSO['falling'])
+    if 'Jupiter' in natal and houses.get('Jupiter') in (2, 8) and 'Jupiter' not in lords:
+        row('falling', 'Decline', f"Jupiter in the {_prosperity_nth(houses['Jupiter'])}, not a governor of the triplicity",
+            sahl('2.3, 21'), PROSPERITY_ALSO['falling'])
+
     # --- rising (2.19) ---
     present_inf = [p for p in INFORTUNES if p in natal]
     present_for = [p for p in FORTUNES if p in natal]
@@ -12412,6 +12427,16 @@ def evaluate_prosperity(chart_data):
     if sep in INFORTUNES and con in FORTUNES:
         row('rising', 'Rising', f"the Moon separating from {sep} and connecting with {con}, by degree within her orb",
             sahl('2.19, 2'), PROSPERITY_ALSO['rising'] + "; BA III.2.4 [4.2]")
+    if lot is not None and lot_lord_house is not None and lot_lord_house not in PROSPERITY_FALLING and lot_lord_house not in (2, 8):
+        # 2.19, 6 (owner: a listed row, as 2.17, 7 is): planets in the bad places from the
+        # Ascendant looking at the Lot, its lord in an excellent place. BA III.2.4 [4.5]
+        # differs in the places ("from the east toward the Midheaven"), not the planets.
+        bad_looking = [p for p in PN4_SEVEN if p in natal and houses.get(p) in PROSPERITY_FALLING
+                       and _prosperity_looks(natal[p]['longitude'], lot) is not None]
+        if bad_looking:
+            row('rising', 'Rising', f"{', '.join(bad_looking)} in the bad places from the Ascendant, looking at the Lot of Fortune; "
+                f"its lord {lot_lord} in the {_prosperity_nth(lot_lord_house)}, an excellent place -- a good livelihood at the end of life",
+                sahl('2.19, 6'), PROSPERITY_ALSO['rising'] + "; BA III.2.4 [4.5], which has the stars \"from the east toward the Midheaven\"")
 
     # --- own hands, force and injustice (2.21) ---
     if lot is not None:
@@ -16304,7 +16329,7 @@ if location_query and lat is not None and lon is not None:
                             "The class is read as Theophilus states it in 2.11, 1-3 -- \"" + PROSPERITY_SAHL['2.11, 1'] + " " + PROSPERITY_SAHL['2.11, 2'] + " " + PROSPERITY_SAHL['2.11, 3'] + "\" -- with 2.11, 5, \"" + PROSPERITY_SAHL['2.11, 5'] + "\", and 2.13, 40, \"" + PROSPERITY_SAHL['2.13, 40'] + "\" Strong is a stake or what follows one, falling the third, sixth, ninth and twelfth (fn 149 on \"strong\"), by whole sign. The first lord's time is the beginning of life (2.13, 39), so the first strong and the second falling is the fall, and the reverse the rise. Both in the stakes is 2.3, 2's greatest good fortune; a lord in what follows a stake is 2.3, 18's \"assets and a fine condition, with difficulty in [his] reputation and no fame\". The infortunes with a lord or in its square or opposition are listed and not judged: 2.11, 4 makes their aspect an increase or a subtraction, and Abu 'Ali's charts read the lords' places alone.\n\n"
                             "When both lords fall the reading goes to the Lot of Fortune, 2.3, 6: \"" + PROSPERITY_SAHL['2.3, 6'] + "\" There 2.20, 1-2 confirm the sixth class, 2.3, 7 and 9 raise it to the first, and 2.16, 2 and 4 give the third; for the Lot, its lord and the lords of places, \"made unfortunate\" is 2.20, 1's own gloss, an infortune with it or looking at it from a square or opposition, by whole sign; 2.3, 7's \"eastern or cleansed\" is read as \"and\" (fn 87). Sahl's further indications -- the partnering lord (2.11, 4), the eleventh from the Ascendant (2.3, 12), the motley mixture (2.16, 5; its third place disputed, fnn 225-226), the falling of 2.17 (4, 5, 7, 8, 10, 11), the rising of 2.19 (1, 2, 5), the earnings of 2.21 (1-4) -- are listed under the class with their sentences and do not move it: the chapter gives no order for combining them and the twelve charts apply none. 2.17, 7's and 2.21, 3's eleventh from the Lot of Fortune is Sahl's own; the Book of Aristotle (III.2.1 [1.7]) has it as strong as the eleventh from the Ascendant. The Moon's separation and connection (2.17, 10; 2.19, 2) are read by degree within her orb when the chart carries motions.\n\n"
                             "The fifteen degrees: \"" + PROSPERITY_SAHL['2.13, 48'] + " " + PROSPERITY_SAHL['2.13, 49'] + " " + PROSPERITY_SAHL['2.13, 50'] + " " + PROSPERITY_SAHL['2.13, 51'] + "\" Measured from the axial degree by ascensions (fnn 82-83, 222): oblique ascension from the Ascendant, oblique descension from the seventh, right ascension from the Midheaven and the fourth, the nearest stake behind the lord. Shown as a grade beside the class when the chart carries its meridian and latitude; the class itself stays by whole sign.\n\n"
-                            "Not read: 2.19, 6, \"" + PROSPERITY_SAHL['2.19, 6'] + "\" -- the Book of Aristotle's parallel (III.2.4 [4.5]) has the stars \"from the east toward the Midheaven\", not the bad places, and which planets are meant is not settled; 2.19, 3-4 and 7-9; 2.17, 6, 12-14 and 2.18; 2.16, 3 except as the grade above; 2.20, 3-6; 2.2's fixed stars; 2.4-2.10 and 2.12-2.15, which are the chapter's other topics.\n\n"
+                            "The Lot's gate is Abu 'Ali's: the reading turns to the Lot when both lords fall, as his twelve charts do; Sahl's 2.3, 6 says \"made unfortunate\", a wider condition this app does not apply. 2.17, 8 states its own precedence (\"even if he was a king\") and is listed, not applied to the class, like every rule of 2.17 and 2.19; 2.3, 19-21 and 2.19, 6 are listed rows on the same footing (BA III.2.4 [4.5] has the stars \"from the east toward the Midheaven\" where Sahl has the bad places). Not read: 2.19, 3-4 and 7-9; 2.17, 6, 12-14 and 2.18; 2.16, 3 except as the grade above; 2.20, 3-6; 2.2's fixed stars; 2.4-2.10 and 2.12-2.15, which are the chapter's other topics.\n\n"
                             "The fixtures are Abu 'Ali's twelve worked charts (PN I, JN Ch. 7, Figures 10-21), each read by whole sign from the positions he prints and held to the verdict he states; the ones he or Dykes reads otherwise are marked in the tests with Dykes's footnote.")
             if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
                 _finding(_gap, "Mercury's phase against the sect (supplement, display only)",
