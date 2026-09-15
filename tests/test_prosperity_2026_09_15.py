@@ -45,7 +45,7 @@ def chapter_two():
 
 def test_every_sahl_sentence_is_verbatim(engine, chapter_two):
     sentences = engine["PROSPERITY_SAHL"]
-    assert len(sentences) == 40
+    assert len(sentences) == 41
     for ref, sentence in sentences.items():
         assert re.sub(r"\s+", " ", sentence) in chapter_two, ref
 
@@ -106,7 +106,9 @@ def test_example_2_figure_11_a_most_elegant_affair(engine):
     key, rows = _verdict(engine, _chart(engine, 'Diurnal', 'Aries', Sun='Aquarius', Mercury='Aquarius', Moon='Sagittarius',
                                         Saturn='Scorpio', Mars='Scorpio', Jupiter='Cancer', Venus='Capricorn'))
     assert key == 'high'
-    assert '2.3, 18' in rows[0]['Sahl'] and 'assets and a fine condition' in rows[0]['Ground']
+    # after the check: 2.3, 18 is a sign-against-degree rule; the JN charts carry no
+    # degrees, so the succedent grade rests on 2.11, 1-2 alone and says so
+    assert '2.11, 2' in rows[0]['Sahl'] and "2.3, 18's degree condition not met" in rows[0]['Ground']
     assert 'infortunes on it, not judged: Saturn by square, Mars by square' in rows[0]['Ground']
 
 

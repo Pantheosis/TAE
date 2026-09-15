@@ -11942,6 +11942,8 @@ PROSPERITY_SAHL = {
     '2.17, 2': "Look for one who is born by day at the lords of the triplicities of the Sun, and for one born by "
                "night at the lords of the triplicities of the Moon: for if they were in excellent places, [but] then "
                "the infortunes made them unfortunate, then he will fall from his good fortune.",
+    '2.17, 3': "And if you found the Lot of Fortune or its lord in an excellent place, and the infortunes made them "
+               "unfortunate, he will also fall from good fortune.",
     '2.17, 4': "if you found the fortunes in the Ascendant or Midheaven, and the infortunes were in the house of "
                "marriage, then it indicates falling from good fortune.",
     '2.17, 5': "if you found Mars or Saturn in the house of assets, and they were not powerful, then it indicates "
@@ -12135,6 +12137,7 @@ def evaluate_prosperity(chart_data):
     only; nothing scores it. Abu 'Ali's twelve charts (JN Ch. 7, Figures
     10-21) are the fixtures in the tests."""
     natal, sect, asc = chart_data['planetary_data'], chart_data['sect'], chart_data['ascendant']
+    cusps = chart_data.get('houses')
     lot = chart_data.get('lot_of_fortune')
     light = 'Sun' if sect == 'Diurnal' else 'Moon'
     if light not in natal or 'Sun' not in natal:
@@ -12164,8 +12167,15 @@ def evaluate_prosperity(chart_data):
         under = phase in ('Burned', 'Under the rays')
         strong = house not in PROSPERITY_FALLING and not under
         infortunes = _prosperity_infortunes_on(lon, natal, exclude=(lord,))
+        # 2.3, 18 is a sign-against-degree rule: the planet "in what follows the
+        # stake, or falling in the sign, and in the stake [by] degrees" -- its
+        # whole sign not a stake while the quadrant cusps put its degree in one.
+        in_stake_by_degree = False
+        if cusps and len(cusps) >= 12 and house not in PROSPERITY_STAKES:
+            in_stake_by_degree = get_house_number(lon, cusps) in (1, 4, 7, 10)
         facts[rank] = {'lord': lord, 'house': house, 'strong': strong, 'under': under, 'infortunes': infortunes,
-                       'word': _prosperity_place_word(house), 'sign': get_zodiac_sign(lon)}
+                       'word': _prosperity_place_word(house), 'sign': get_zodiac_sign(lon),
+                       'stake_by_degree': in_stake_by_degree}
     first, second, third = facts['first'], facts['second'], facts['third']
     if first is None or second is None:
         return []
@@ -12180,11 +12190,19 @@ def evaluate_prosperity(chart_data):
     lords_text = (f"The {light}, the sect light, in {light_sign}; its lords {lords[0]}, {lords[1]}, {lords[2]}. "
                   f"First: {describe(first)}. Second: {describe(second)}.")
     both_stakes = first['house'] in PROSPERITY_STAKES and second['house'] in PROSPERITY_STAKES
+    by_degree = [f['lord'] for f in (first, second) if f['stake_by_degree']]
     if first['strong'] and second['strong']:
-        key, grade_ref = 'high', ('2.3, 2' if both_stakes else '2.3, 18')
-        ground = ("both lords strong: " + ("both in the stakes -- the greatest good fortune" if both_stakes
-                  else "in a stake and what follows one, or both in what follows -- assets and a fine condition, "
-                       "without fame") + "; " + lords_text)
+        key = 'high'
+        if both_stakes:
+            grade_ref, grade_text = '2.3, 2', "both in the stakes -- the greatest good fortune"
+        elif by_degree:
+            grade_ref = '2.3, 18'
+            grade_text = ("in what follows a stake by sign but in the stake by degrees (" + ', '.join(by_degree)
+                          + ") -- assets and a fine condition, without fame")
+        else:
+            grade_ref = '2.11, 2'
+            grade_text = "in a stake and what follows one, or both in what follows -- strong, by 2.11, 1-2; 2.3, 18's degree condition not met"
+        ground = "both lords strong: " + grade_text + "; " + lords_text
         deciding, also = sahl('2.11, 1', grade_ref), PROSPERITY_ALSO['angles' if both_stakes else 'succedent']
     elif not first['strong'] and not second['strong']:
         key = 'low'
@@ -12242,8 +12260,9 @@ def evaluate_prosperity(chart_data):
             # 2.3, 7 and 9: the Lot raises
             if (lot_house not in PROSPERITY_FALLING and side == 'eastern' and lord_looks and not lord_infortunes
                     and fortunes_on_lot and not infortunes_on_lot):
-                lot_rows.append(('high', 'good fortune', f"the Lot in {_prosperity_place_word(lot_house)}, its lord eastern, cleansed by whole "
-                                 f"sign and looking at it; {', '.join(fortunes_on_lot)} looking at the Lot, no infortune looking; "
+                lot_rows.append(('high', 'good fortune', f"the Lot in {_prosperity_place_word(lot_house)}, its lord eastern or cleansed of the infortunes "
+                                 f"and their rays (whole-sign looking, the app's measure) and looking at it -- 'from a strong position' not tested; "
+                                 f"{', '.join(fortunes_on_lot)} looking at the Lot, no infortune looking; "
                                  + lot_text, sahl('2.3, 6', '2.3, 7'), PROSPERITY_ALSO['lot']))
             if lord_looks is None and lot_lord_house in (5, 11):
                 lot_rows.append(('high', 'good fortune', f"the lord of the Lot not looking at the Lot, in the {_prosperity_nth(lot_lord_house)}; " + lot_text,
@@ -12346,6 +12365,18 @@ def evaluate_prosperity(chart_data):
         row('falling', 'Falling', "a fortune in the Ascendant or Midheaven ("
             + ', '.join(p for p in sorted(FORTUNES) if houses.get(p) in (1, 10)) + ") and an infortune in the house of marriage ("
             + ', '.join(p for p in sorted(INFORTUNES) if houses.get(p) == 7) + ")", sahl('2.17, 4'), PROSPERITY_ALSO['falling'] + "; BA III.2.2 [2.3]")
+    # 2.17, 2-3: Sahl's own fall -- the lords in excellent places made
+    # unfortunate; the Lot of Fortune or its lord likewise. Listed, not classing.
+    for f in (first, second):
+        if f['strong'] and f['infortunes']:
+            row('falling', 'Falling', f"{f['lord']}, a lord of the sect light's triplicity, in the {_prosperity_nth(f['house'])} "
+                f"with {', '.join(f['infortunes'])} on it", sahl('2.17, 2'), PROSPERITY_ALSO['falling'] + "; BA III.2.2 [2.1]")
+    if lot is not None:
+        lot_h = get_wsh_house(lot, asc)
+        lot_inf = _prosperity_infortunes_on(lot, natal, exclude=())
+        if lot_h not in PROSPERITY_FALLING and lot_inf:
+            row('falling', 'Falling', f"the Lot of Fortune in the {_prosperity_nth(lot_h)} with {', '.join(lot_inf)} on it",
+                sahl('2.17, 3'), PROSPERITY_ALSO['falling'])
     for p in ('Saturn', 'Mars'):
         if houses.get(p) == 2:
             of_sect = (p == 'Saturn') == (sect == 'Diurnal')

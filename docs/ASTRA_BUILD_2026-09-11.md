@@ -1053,3 +1053,12 @@ the seven classes (Sahl)", 4 columns). The sign-qualities table that follows it 
 own and takes the nearest heading, so its inventory line now carries this finding's title instead of
 the one that happened to precede it on each date (Special Degrees / Quadrant divisions / Degrees of
 nobility): a heading artifact of the inventory, no table changed.
+
+After the check (`BUILD_PROSPERITY_CHECK_REPORT_2026-09-15.md`): 2.3, 18 read as it is written -- a planet in
+what follows a stake, or falling by sign, yet in the stake by degrees (the quadrant cusps) -- and cited only
+when that holds; a succedent grade without it rests on 2.11, 1-2 and says so. 2.17, 2-3 rendered as Falling
+rows (a strong lord, or the Lot or its lord in an excellent place, with an infortune on it), listed not
+classing. 2.3, 7's "and the rays" and "from a strong position" restored, the latter said untested. Open to
+the owner: whether the Lot's gate is Sahl's "made unfortunate" (2.3, 6) rather than Abu 'Ali's "both cadent";
+whether 2.17, 8 ("even if he was a king") should class; 2.3, 19-21 and 2.19, 6 as listed rows or named as
+not read.
