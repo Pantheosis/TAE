@@ -1,14 +1,29 @@
 name: Tests
 
-# Runs on every push and pull request. Cheap enough to be automatic:
-# ubuntu-latest bills at 1x (against windows 2x and macOS 10x), and on a
-# public repository Actions is free outright. The desktop build stays
-# manual in build.yml -- that one is expensive and produces artifacts.
+# Runs on every push and pull request. The suite is 2,100 AppTest renders
+# and unit tests: ~33 minutes single-process on GitHub's hosted runner
+# (2026-09-15), under two minutes on the owner's machine with xdist. So
+# the required check runs on the owner's self-hosted runner, registered
+# with this repository (Settings > Actions > Runners; labels self-hosted,
+# linux), and the hosted runner is kept only as a fallback that is started
+# by hand when the machine is off. The desktop build stays manual in
+# build.yml -- that one is expensive and produces artifacts.
+#
+# Self-hosted on a public repository runs pull-request code on the
+# owner's machine. Pull requests here are the owner's own; the repository
+# setting "Require approval for all outside collaborators" keeps a fork's
+# workflow from starting without a click.
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      runner:
+        description: "Where to run: self-hosted (default) or ubuntu-latest (the hosted fallback, ~33 minutes)"
+        type: choice
+        default: self-hosted
+        options: [self-hosted, ubuntu-latest]
 
 # A second push to the same branch cancels the first: no point finishing a
 # run against code that has already been replaced.
@@ -18,29 +33,46 @@ concurrency:
 
 jobs:
   pytest:
-    runs-on: ubuntu-latest
-    # The suite is ~9 minutes on a fast local machine and about 25 on the
-    # 2-core runner (it reached 82% at 20 minutes on 2026-09-12); this is a
+    # The job id is the check the ruleset requires; keep it "pytest".
+    runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.runner || 'self-hosted' }}
+    # Two minutes on the box with xdist; 33 on the hosted fallback. A
     # stuck-job guard, not a target.
     timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v6
 
+      # The hosted fallback installs Python; the self-hosted runner uses the
+      # machine's python3 (3.14, the version the pins were resolved on).
       - uses: actions/setup-python@v6
+        if: runner.environment == 'github-hosted'
         with:
-          # Matches the venv the pins were resolved on and the interpreter
-          # build.yml now uses. Keep the two workflows on the same version.
           python-version: '3.14'
           cache: pip
           cache-dependency-path: requirements.txt
 
       - name: Install dependencies
-        # requirements.txt is runtime + test only. The desktop/PyInstaller
-        # extras live in requirements-desktop.txt and are not needed here --
-        # nothing in tests/ imports desktop_launcher.
-        run: pip install -r requirements.txt
+        # A venv per requirements.txt hash, kept between runs on the
+        # self-hosted machine under ~/.cache so a run with unchanged pins
+        # installs nothing. requirements.txt is runtime + test only; the
+        # desktop/PyInstaller extras are in requirements-desktop.txt.
+        shell: bash
+        run: |
+          set -e
+          if [ "$RUNNER_ENVIRONMENT" = "github-hosted" ]; then
+            pip install -r requirements.txt
+          else
+            VENV="$HOME/.cache/tae-ci/venv-$(sha256sum requirements.txt | cut -c1-12)"
+            if [ ! -x "$VENV/bin/python" ]; then
+              python3 -m venv "$VENV"
+              "$VENV/bin/pip" install -q -r requirements.txt
+            fi
+            echo "$VENV/bin" >> "$GITHUB_PATH"
+          fi
 
       - name: Run the suite
         # AppTest runs Streamlit in-process: no browser, no server, no port.
-        run: python -m pytest -q
+        # xdist spreads the renders over the cores; the suite has no
+        # order-dependent state (verified 8 workers, 2026-09-15). The tables
+        # fixture is only written under UPDATE_TABLE_FIXTURE, never in CI.
+        run: python -m pytest -q -n auto
