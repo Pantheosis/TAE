@@ -538,3 +538,17 @@ without his 14; still six of the eight disagree. The printed caption says "Ch. 1
 misprint in the book (the table is in 1.38, fn 528 calls it sentence 41); the app already cites
 1.38 and names the figure without the caption's chapter, so no page text moves. Also verified
 from the photograph: sentences 42-45 and fnn. 528-529 as transcribed.
+
+## 2026-09-14: Mercury's phase against the sect (coverage list, gap 10)
+
+Source: Firmicus, *Mathesis* III.7 (Dykes), the excerpt read off the owner's photographs:
+sentences 7-9 and 26-30 with fnn 186 and 194. The reading is fn 194's: Mercury as a morning
+star in a diurnal nativity or an evening star in a nocturnal one matches the sect and gives
+"the success that comes from Mercury's phase matching that of the chart"; the other two
+pairings are the mismatch fn 186 names and produce "less respected and independent uses of
+the intellect and skill". `evaluate_mercury_phase_sect(planetary_data, sect)` returns one row
+for every chart from `solar_phase`'s side (eastern = morning star, western = evening star);
+the Chart page shows it under Course text and supplement beside the degrees of nobility, both
+footnotes quoted whole in its notes. Display only; no verdict reads it. Pinned in
+`tests/test_mercury_phase_sect_2026_09_14.py` (the four pairings by hand, the side against
+`solar_phase` across 0°, and the 1240 Florence chart: Diurnal, morning star, match).
