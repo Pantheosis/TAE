@@ -939,3 +939,25 @@ evaluators over the same 406 charts (`kind3_freq.py`). D-19–D-21's figures are
 | D-15 | **Relabelled** (sheet row 10): the 18° west switch is Dykes's table in 1.22 and fn 175, not Sahl's; the 15 is Gr. Intr. VII.2, 31. | `SOLAR_RAYS_ORB` comment, the checkbox, the Sources page |
 | D-19 | **Kept** (sheet row 15 / GAP-39); the docstring cites it (V.19, 7; fn 108) instead of "for want of a source"; VII.6, 52's own-node clause built from the mean nodes, the mean/true reading declared. | `evaluate_abu_mashar_condition` |
 | The five-degree all-cusps reading | **Retired** (sheet row 3 / the owner's ruling): the rule is a dynamics rule at the four axial degrees only. | `get_effective_house`; the preference is gone |
+
+
+## D-24 — The mighty days: zodiacal degrees or ascensions? — **RULED 2026-09-15: zodiacal (decision 19, as recommended)**
+
+**The question.** PN IV IX.7, 25 and 28 direct by the "mighty days", one degree = 12d 4h 10m 30s
+(`app.py`, `PN4_MIGHTY_DAYS_PER_DEGREE` and its readers; the arithmetic only works on zodiacal degrees).
+The Greek behind the Latin *On Rev. Nat.* (PN III IX.7 method 6, pdf p. 144, via Schmidt and
+Dykes 2010) has "Convert the following 30º into ascensions", and Dykes's PN IV fn 176 (Birchfield)
+says an ascensional measure "would make more sense". 'Umar's 12⅙ days per degree (TBN II.4; OCR,
+unverified) is zodiacal too.
+
+**Side A, zodiacal**: PN IV IX.7, 25, 28 — the Arabic, the text the app builds from; TBN II.4.
+**Side B, ascensions**: PN III IX.7 method 6 (the Greek via Schmidt); PN IV fn 176.
+
+**Ruling.** Keep the zodiacal arithmetic: the Arabic's is the built text, and the variant is the
+one place the Greek is arguably the better astronomy. Recorded here, not on any page
+(`02_reconciliation_pn_ita.md` §6 row 5; PN III item 22 is Class 4 for what is built). Reopen only
+if the ascensional distributions (D-1's machinery, `_oblique_ascension`) are extended to the
+mighty days.
+
+**Cost if reopened.** Small: the rate is one constant and the arc would come from the existing
+ascension functions; the reading would have to be declared on the Timing page.

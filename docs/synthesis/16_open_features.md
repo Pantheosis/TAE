@@ -16,6 +16,8 @@ Numbered `F-N`, appended as they come up, not renumbered.
 | **F-2** | Small days (IX.7, 29-31): direct against houses, Lots, and the Nodes, not just the seven planets | Not built | Janus's own "Solar Return Distribution" hits house cusps, Part of Fortune, the Nodes and the Midheaven as well as the planets; IX.7, 31 licenses the extension ("everything of the planets, Lots, and houses") but only the planets' bodies and rays are wired in |
 | **F-3** | Small days: fixed 59'08"/day rate vs. the Sun's real (varying) daily motion | Already decided 2026-09-10 (fixed rate) — flagged here as newly re-tested | A second Janus cross-check (Pontiac 1990) shows the same aspect sequence as ours but a day-offset that grows through the year (3 days by mid-November, 5+ by month's end) — consistent with Janus using the Sun's true motion rather than the flat average. Not a bug: the owner already chose the fixed rate over IX.7, 32's "exact" alternative. Recorded here so the choice is visible next to the evidence, not to reopen it |
 | **F-4** | "Directing by Triplicities" — a standalone whole-life table of the three triplicity lords in succession | **Built 2026-09-13** (branch `triplicity-life-lords-2026-09-13`) | Keyed to the **sect light**, not the Ascendant: the life-division is stated by Sahl, *On Nativities* 2.11, 1-4 (Theophilus; fn 148: *Carmen* I.24), 2.13, 39 and 2.17, 5, all for the luminary's triplicity; nothing in hand divides the life by the Ascendant's (those are the upbringing lords, 1.29). No years shown (owner's ruling); the Ascendant rows built as a labelled off-by-default comparison (owner's ruling). `triplicity_lords_of_life()`, Timing page, before the *fardar* |
+| **F-5** | 'Umar's 30° profection at 12⅙ days per degree (TBN II.4-8; al-Qabīsī IV.8, ITA VIII.2.1) | Recorded, not built (decision 12, 2026-09-15) | A named alternative to the monthly profection; canon keeps it off the pages |
+| **F-6** | Al-Qabīsī's releaser and *kadukhudhāh* procedure whole (ITA VIII.1.3; directions VIII.2.2) | Recorded, not built (decision 16, 2026-09-15) | In `NOT_IMPLEMENTED_COVERAGE`; the course teaches Sahl's, which is built; large; needs the semi-arcs |
 
 ## F-1 — Calendar dates on the Fardar table
 
@@ -143,3 +145,31 @@ unchanged); `triplicity_lords_of_life(chart_data, point)` with `LIFE_LORDS_SOURC
 the *fardar*, with a checkbox for the Ascendant rows. Tests: three `test_triplicity_lords_of_life_*`
 in `tests/test_doctrine_fixtures.py`, the last on the Pontiac 1990 chart (sect light
 Venus-Mars-Moon; Ascendant Venus-Moon-Mars).
+
+## F-5 — 'Umar's 30° profection at 12⅙ days per degree (recorded 2026-09-15; decision 12: record, do not build)
+
+Two authors in hand profect by 30° increments rather than by whole signs: 'Umar al-Tabari, *Book of
+Nativities* II.4, II.5, II.6.2, II.8 (PN II, PDF pp. 55-70; OCR, unverified) at 12⅙ days per degree,
+and al-Qabīsī IV.8 (ITA VIII.2.1, pp. 358-360; fn 30 "al-Qabīsī uses 30° increments in his
+profections instead of whole-signs"; OCR, unverified). Dykes calls it 'Umar's departure from
+Hellenistic practice (PN II Intro, PDF p. 21). The app's profections are the annual one (`calculate_time_lords`)
+and PN IV's monthly ones by whole sign (`pn4_profect`, the Timing page); the course teaches those, so under
+the canon rule this is a named alternative, not a build. If ever built: a labelled supplement row
+beside the monthly profection, the rate declared, never merged with it. Source table:
+`02_reconciliation_pn_ita.md` Class 1 D1; PN II §7.10; ITA entries 22, §D10.
+
+## F-6 — Al-Qabīsī's releaser and *kadukhudhāh* procedure, whole (recorded 2026-09-15; decision 16: leave unbuilt)
+
+ITA VIII.1.3, al-Qabīsī IV.4-6 (pp. 353-356; OCR, unverified): eleven places for each luminary with
+sign-gender gates, the Moon's rays, quadrant houses "according to how the twelve houses of the
+circle are calculated through the degrees of the hours of the Ascendant" (fn 17: quadrant-style
+houses for this longevity method) with five equal degrees at every cusp, three orderings of the
+lords, the tie-breaks (own place, the nearer degree to the releaser, the Sun's relations), the
+four-sign exception; its directions by the hours of the distance from the angle at VIII.2.2
+(pp. 362-364; Appendix E's worked example the fixture if built). A second longevity procedure
+beside Sahl's; the course teaches Sahl's, which is the one built (`sahl_releaser`,
+`sahl_house_master_years`). Recorded in `NOT_IMPLEMENTED_COVERAGE` (the Sources page) since
+2026-09-15, with ITA VIII.1.3 and VIII.2.2 as the source; the Releaser tab names al-Qabīsī where he
+differs (the five degrees at "any house"; quadrant houses for the places). Depends on the
+proportional semi-arcs (decision 5's build) for its directions. Large. Source table:
+`02_reconciliation_pn_ita.md` Class 1 A2; ITA §D1.

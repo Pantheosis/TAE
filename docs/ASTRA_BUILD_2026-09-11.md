@@ -693,3 +693,94 @@ Nativities II.5.14, through al-'Anbas -- giving triplicity 3, bound 2 (the "newe
 the "older method" as bound 3, triplicity 2. Owner's ruling: keep the course's label as printed, with
 a note on the Victors page and in `VICTOR_WEIGHTS`'s comment citing Abu Bakr II.5.14; the bound-before-triplicity order itself is al-Qabisi's "certain people" (ITA I.22),
 so only the attribution to 'Umar/Masha'allah is unwitnessed (ITA rulings audit, entry 25). No number changes.
+
+## 2026-09-15: the reconciliation's text fixes (Class 3) and decisions 1-2, 4-8, 10, 12, 15-17, 19-20
+
+Text only, from `docs/synthesis/02_reconciliation_pn_ita.md` (§1 Class 3, every remaining item;
+§7's decisions the owner ruled "as recommended"). No computation changes; no number moved. Every
+"this app's" that Dykes states is cited to him (the audit's §C locators); PN I/II passages are
+paraphrased on pages and quoted only in comments and docs, marked (OCR, unverified), as are ITA
+passages off the photographed pages. Branch base `origin/victor-weights-note-2026-09-15` with
+`origin/main` (#18, #20, #21) merged in, since 3.8, 3.10 and decision 20 edit text those PRs added.
+
+- 3.1 / decision 5 (relabel only): `PN4_ASCENSION_RULE`'s third case, `PN4_TURNING_DIRECTION_REFUSED`,
+  the VI.2, 21 cusp rows, the Timing page's III.1, 12 captions and the "does not settle" expander now
+  say the formula is "stated by al-Qabisi (ITA VIII.2.2) and worked by Dykes (ITA Appendix E), not
+  built" -- "stated in no text in hand" was false. Comments above `PN4_SEVEN` and `PN4_ASCENSION_RULE`
+  carry the locators. Pin moved: `test_pn4_printed_reference_tables_derive_from_the_rules` asserted the
+  false phrase and now asserts the true one.
+- 3.4 / decision 20: `docs/COURSE_COVERAGE_2026-09-14.md` rewritten -- header no longer says ITA,
+  Firmicus, Morin, Rhetorius are outside the corpus; gaps restated against #15-#21 (seven built); the
+  Mars row moved under "a corpus text behind it" (Abu Bakr II.1.0, in his domicile by sect); "Not gaps"
+  kept.
+- 3.5 / decision 7: the Releaser tab's caption (5) names al-Qabisi IV.3's three opinions on the
+  fullness's degree (Ptolemy's, the sages', Valens's; ITA VIII.1.2) in place of "no text says"; the
+  Moon default is Valens's, the sages' tie rule named and not adopted. Docstring of
+  `calculate_prenatal_syzygy` and the readings comment updated.
+- 3.6 / decision 1: the Reference page's years caption names the three witnesses for 39 1/2 (Gr. Intr.
+  VII.8 with Fig. 146; Abu Bakr I.16; PN IV I.8, 12) and the three for the ordinary mean 69 1/2 /
+  66 1/2 (Masha'allah, Book of Aristotle III.1.8; Abu 'Ali, Judgments of Nativities Ch. 4; the Latin
+  Gr. Intr. Fig. 108 in ITA VII.2), and says the app keeps 39 1/2. `PLANETARY_YEARS`'s comment no
+  longer says the matter was closed by construction.
+- 3.7: "this app's convention for strength language" (the Victors page's governor caption, the PN IV
+  governor caption, the Releaser tab's unit paragraph) is now Dykes's proposal, ITA Introduction §6,
+  with Alchabitius kept as the app's choice among the quadrant systems; the allowed Lesson 3 citation
+  stays beside it.
+- 3.8: Morin's unfortunate houses -- the 6/8/12 equation stays the app's, the three cited as the
+  tradition's difficult averse places, ITA IV.4.1 fn 43 (p. 224, photographed) quoted on the finding.
+- 3.9: Valens's Moon phases -- the 12° boundaries are Abu Ma'shar's markers (Abbr. II.27-31, ITA
+  II.10.5) applied to Valens's phases, said on the glance, the notes, the comment and the tags; his
+  fourth marker (12° before the opposition) named as not used.
+- 3.10: al-Andarzaghar's sect order of first/second/third is al-Qabisi's own (I.16, ITA I.7; Gr. Intr.
+  V.14, 6 and Sahl 10.2.7, 16 checked in the corpus) -- "this app's reading" dropped from the docstring,
+  the comment and the notes.
+- 3.11 / decision 6: the almuten relabelled -- "al-Qabisi's weights, ITA I.18; a technique not in
+  Sahl" on the syzygy table's row; the governor caption gives the five strengths and fn 210; the
+  Victor of the Chart help says the weights and the five places are al-Qabisi's (I.18; VIII.1.4), the
+  Day/Hour/Places rows ibn Ezra's, with fn 211's critique. Comments at the almuten scoring and
+  `ESSENTIAL_DIGNITY_WEIGHTS`. Pin moved:
+  `test_syzygy_governor_rows_are_on_the_victors_page_with_the_relabelled_almuten`.
+- 3.12 / decision 2: `get_effective_house`'s "by choice" is now al-Qabisi's "five equal degrees" (ITA
+  VIII.1.3; "equal degrees" the ecliptic per ITA VI.1.1 fn 2); the comment above
+  `FIVE_DEGREE_ALL_CUSPS` and the Releaser tab's caption (1) name his "or any house" as another
+  author's reading, the four stakes kept as ruled, no code alternative restored.
+- 3.13: the 15 Libra-15 Scorpio burnt path cited to al-Qabisi III.29 (ITA IV.3) in place of the Course
+  Glossary -- the condition-110 clause, the `DARK_SIGNS` comment, the evaluator comment.
+- 3.14: Mercury's sect as a morning star cited to Gr. Intr. IV.9 (ITA V.11) in `planet_sect_is_diurnal`'s
+  docstring, the hayz comment, the Mathesis comment and the finding's notes; BA II.11's contrary rule
+  named as not imported (Dykes: a corruption of Paul).
+- 3.15: the names Basis, Victory, Nemesis cited to ITA VI.1.4, VI.1.7, VI.1.8's headings on the three
+  Lot rows' sources.
+- 3.16: the governor row's Moon note cites al-Qabisi III.8a (ITA II.10.1) for right = eastern, on the
+  page and in the comment; the pinned "Gr. Intr. VII.2, 4 names her right and left" kept verbatim.
+- 3.17: the seven good places -- Dykes's p. 121 comment (photographed: Sahl "explicitly uses" the
+  Timaeus-Dorotheus seven, "praiseworthy", "stronger") and Introduction §6 cited on caption (6) and in
+  the `SAHL_GOOD_PLACES` comment.
+- Decision 4: the Lot of friends' confidence from "settled" to "reversed at night after al-Andarzaghar
+  (al-Qabisi V.14a, ITA VI.2.45), Masha'allah (BA III.12.1) and Dykes's note 72; Abu Ma'shar
+  unreversed (Abbr. VI.53; the Latin Gr. Intr. VIII.4)". Formula unchanged.
+- Decision 8: the Figure 57 caption (Reference page) and the Chart finding's notes carry Dykes's
+  point-at-the-end resolution (ITA I.3 fn 23: 19° for "the nineteenth", the point where the ordinal
+  span 18°-19° ends) and name al-Qabisi I.53's third table (ITA VII.9, Figure 118) as disagreeing with
+  both and not tabled; the ordinal reading stands as ruled.
+- Decision 10: the printed 1.20, 14-15 flag and the coverage entry carry 'Umar's degree reading (Book
+  of Nativities I.4.3: one condition does not harm a superior; a "serious" impediment gives the lesser
+  years as months or days); "serious" undefined, not coded.
+- Decision 12: `docs/synthesis/16_open_features.md` F-5, 'Umar's 30° profection at 12 1/6 days per
+  degree (TBN II.4-8; al-Qabisi IV.8), recorded, not built.
+- Decision 15: `SAHL_1_7_UNMODELLED` names al-Qabisi IV.5's tie-breaks (stronger in its place; nearer
+  the releaser's degree) as another author's procedure, not borrowed.
+- Decision 16: `NOT_IMPLEMENTED_COVERAGE` gains "ITA VIII.1.3 (al-Qabisi IV.4-6), with its directions at
+  VIII.2.2": his whole releaser and house-master procedure, unbuilt; `16_open_features.md` F-6 the same.
+- Decision 17: al-Qabisi IV.4 named on the Releaser tab as the quadrant witness (caption (1)); the Lot
+  by whole sign stays as ruled.
+- Decision 19: `docs/synthesis/13_open_decisions.md` D-24, the mighty days' ascensional variant (PN
+  III IX.7 method 6; PN IV fn 176) recorded, the zodiacal arithmetic kept.
+- The Sources page's "How citations are written" now says what *ITA I.22 (al-Qabisi)*, *Abu Bakr, On
+  Nativities II.5.14*, *'Umar al-Tabari, Book of Nativities I.4.3*, *Masha'allah, Book of Aristotle
+  III.1.8*, *Abu 'Ali al-Khayyat, Judgments of Nativities Ch. 4* and *Abbr. II.27* locate.
+- Not done here: decision 5's build (the semi-arcs), 3 (on #22, already fixed), 9, 11, 13, 14, 18 (builds
+  or after the marker OCR), 3.2 and 3.3 (fixed on #23 and #22).
+
+Tests: the six named files 403 passed; the whole suite 2040 passed. Two pins moved, both on strings
+this order told me to change (above); `tests/test_prose_counts.py` untouched.
