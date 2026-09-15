@@ -1,6 +1,7 @@
 """The Moon on the third day (Sahl, On Nativities 1.29, 11-12; 1.26, 7) and
 the fetus's stay (1.8-1.9): two course-text, display-only findings. The
-third-day Moon is the ephemeris Moon three days after the birth moment;
+third-day Moon is the ephemeris Moon two days after the birth moment, the
+birth day counted as the first (Firmicus, Mathesis II.29, 34);
 hand-built cases hit 1.26, 7 met and not met; every quoted sentence is
 verbatim in the corpus; the gestation rows carry their sentences."""
 import re
@@ -30,10 +31,11 @@ def _chart(engine):
     return engine["calculate_traditional_chart"](datetime(1240, 5, 23, 13, 45), *FLORENCE)
 
 
-def test_third_day_moon_is_the_ephemeris_moon_three_days_on(engine):
+def test_third_day_moon_is_the_ephemeris_moon_two_days_on(engine):
     chart = _chart(engine)
     third = engine["third_day_positions"](chart['julian_day'])
-    jd3 = chart['julian_day'] + 3.0
+    assert engine["MOON_THIRD_DAY_DAYS"] == 2.0
+    jd3 = chart['julian_day'] + 2.0
     assert third['jd'] == jd3
     expected = swe.calc_ut(jd3, swe.MOON)[0][0] % 360.0
     assert abs(third['Moon'] - expected) < 1e-9
@@ -43,7 +45,7 @@ def test_third_day_moon_is_the_ephemeris_moon_three_days_on(engine):
     first = rows[0]
     assert first['Item'] == 'The Moon on the third day'
     assert first['Value'].startswith(engine["get_degree_string"](expected))
-    assert 'three days after the birth' in first['Value']
+    assert 'two days after the birth, the birth day counted as the first' in first['Value']
     # The finding names its two sentences and 1.26, 7.
     items = [r['Item'] for r in rows]
     assert any(i.startswith('1.29, 11') for i in items)

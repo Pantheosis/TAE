@@ -9007,11 +9007,15 @@ def evaluate_planets_in_houses(planetary_data, abu_mashar_condition, ascendant_l
 # (20+76)/2 = 48. The two luminaries halve the great year first:
 # (least + great/2)/2, giving the Sun (19+60)/2 = 39.5 and the Moon
 # (25+54)/2 = 39.5, not the 69.5 and 66.5 an ordinary mean would give. The
-# second construction is stated outright at Valens VII.5; established by an
-# independent source reconstruction, 2026-09-09, after two earlier passes here
-# had assumed one rule for all seven and read the luminaries as an error.
-# NOT CLOSED BY THAT: the witnesses split three and three. For 39 1/2 --
-# Gr. Intr. VII.8, 3-8 with Figure 146 (the 2020 Arabic volume, photographed);
+# second construction is stated outright at Valens VII.5, now read in Riley's
+# translation ("The sun has half of 120 years and hence receives 60; its
+# minimum period is 19. The total is 79, half of which is 39 years, 6 months";
+# the Moon likewise; his Venus is a "complete period of 84", not 82); first
+# established by an independent source reconstruction, 2026-09-09, after two
+# earlier passes here had assumed one rule for all seven and read the
+# luminaries as an error.
+# NOT CLOSED BY THAT: the witnesses split four and three. For 39 1/2 --
+# Valens VII.5 (Riley, read 2026-09-15); Gr. Intr. VII.8, 3-8 with Figure 146 (the 2020 Arabic volume, photographed);
 # Abu Bakr, On Nativities I.16 (PDF p. 159; OCR, unverified: "by the halving
 # of their greater years and the addition of their lesser years, and the
 # halving of all of them assembled together"); the course's table; PN IV
@@ -9630,7 +9634,9 @@ def semi_arc_direction(sig_lon, sig_lat, prom_lon, prom_lat, ramc, geo_lat, obli
     * DIRECT ONLY. The arc is taken modulo 360, so a promittor that has
       already passed the proportional place comes round after a
       revolution; converse directions are not built, no text in hand
-      asking for them.
+      asking for them (ITA's glossary, p. 382, has them as an allowance
+      of "some later astrologers", a derivation beside the classical
+      direct ones).
     * REFUSAL. A point that never rises or sets at this latitude has no
       semi-arc to proportion (the significator's would divide by zero);
       'arc' is None and 'refused' says so, in the file's style.
@@ -10405,11 +10411,14 @@ def sahl_house_master_years(planet, planetary_data, cusps, sect, essential):
 # reading depth.
 #
 # THE THIRD DAY. "The third day of the Moon" (1.29, 11-12; 1.26, 7) is
-# read as the Moon's position three days after the birth moment, the
-# birth hour kept: Sahl's own words elsewhere are "the position of the
-# Moon, where she is on the third day from the nativity" (Ch. 9, 3) and
-# "the position of the Moon on the third day, the seventh, and the
-# fortieth day" (1.30, 22); no sentence fixes the hour. "Corrupted" is
+# read as the Moon's position two days after the birth moment, the birth
+# day counted as the first and the birth hour kept: Sahl's own words
+# elsewhere are "the position of the Moon, where she is on the third day
+# from the nativity" (Ch. 9, 3) and "the position of the Moon on the
+# third day, the seventh, and the fortieth day" (1.30, 22); no sentence
+# of his fixes the count or the hour. The count is Firmicus's, from his
+# worked chart (Mathesis II.29, 34, the nativity of Albinus; III.14,
+# 17-19) -- see MOON_THIRD_DAY_DAYS. "Corrupted" is
 # read in 1.29's own terms, 1.29, 3: "safe from the infortunes, burning,
 # and falling" -- an infortune looking at her by whole sign (the
 # infortunes where they stand on that day), burned within the twelve
@@ -10463,7 +10472,16 @@ SAHL_9_3 = ("The first item is that you look at the position of the Moon, where 
             "which bound, and with whom she is connecting and who is looking at her, and how her condition is, and "
             "that of her lord.")
 SAHL_1_30_22 = "Then, look at the position of the Moon on the third day, the seventh, and the fortieth day."
-MOON_THIRD_DAY_DAYS = 3.0
+# Two days, the birth day counted as the first. The witness is Firmicus's
+# worked chart: in the nativity of Albinus (Mathesis II.29, 21-22, 34; Figure
+# 34 -- Mar 14 303 AD JC, 10:43:13 PM LMT, Rome, the Moon 14 58' Cancer, Mars
+# 11 18' Aquarius) "on the third day the Moon, being established in Leo, full
+# of light, flung herself into the rays of Mars" (II.29, 34; III.14, 17-19).
+# By the ephemeris the Moon is at 0 Leo one day after the birth (168 from
+# Mars), 14 Leo two days after (182, on his opposition ray), 29 Leo three
+# days after (196, past it): the birth day is the first, the third is
+# birth + 2. Owner's ruling of 2026-09-15.
+MOON_THIRD_DAY_DAYS = 2.0
 MOON_BURNED_DEGREES = 12.0    # The Introduction Ch. 3, 103, as evaluate_corruption_of_the_moon reads it
 MOON_THIRD_DAY_COLUMNS = ['Item', 'Value', 'Text']
 
@@ -10550,8 +10568,9 @@ def sign_has_four_feet(lon):
 
 
 def third_day_positions(jd_natal):
-    """The Moon, the Sun and the two infortunes three days after the birth
-    moment (MOON_THIRD_DAY_DAYS), the birth hour kept."""
+    """The Moon, the Sun and the two infortunes two days after the birth
+    moment (MOON_THIRD_DAY_DAYS), the birth day counted as the first
+    (Firmicus, Mathesis II.29, 34), the birth hour kept."""
     jd = jd_natal + MOON_THIRD_DAY_DAYS
     out = {'jd': jd}
     for name in ('Moon', 'Sun', 'Saturn', 'Mars'):
@@ -10571,7 +10590,7 @@ def moon_third_day_rows(third, natal_positions, ascendant_lon):
     rows = []
     rows.append({'Item': 'The Moon on the third day',
                  'Value': f"{get_degree_string(moon)}, the {_ordinal_place(place)} place from the Ascendant of the nativity "
-                          f"(three days after the birth, the birth hour kept)",
+                          f"(two days after the birth, the birth day counted as the first, the birth hour kept)",
                  'Text': f'On Nativities 9, 3: "{SAHL_9_3}"'})
     feet = sign_has_four_feet(moon)
     rows.append({'Item': 'A sign having four feet (1.26, 7)',
@@ -10629,8 +10648,8 @@ def moon_third_day_rows(third, natal_positions, ascendant_lon):
 
 def evaluate_moon_third_day(chart_data):
     """The Moon on the third day (Sahl, On Nativities 1.29, 11-12; 1.26, 7):
-    rows for her sign and condition three days after the birth. Display
-    only."""
+    rows for her sign and condition two days after the birth, the birth
+    day counted as the first. Display only."""
     third = third_day_positions(chart_data['julian_day'])
     p = chart_data['planetary_data']
     natal = {'Saturn': p['Saturn']['longitude'], 'Mars': p['Mars']['longitude']}
@@ -16611,13 +16630,13 @@ if location_query and lat is not None and lon is not None:
                       notes='On Nativities 1.38, 40-41: "If it happened that a native was born and his Ascendant was one of these degrees, or the Moon and Sun were in the equivalent of these degrees (and that is superior if it was the Sun by day and by night the Moon), then he will reach exaltation and power, or he will rule many lands, by the permission of God." Figure 57 of his volume prints the degrees: Aries 19; Taurus 3; Gemini 13; Cancer 1, 13, 14, 15; Leo 5, 7; Virgo 2, 13, 20; Capricorn 12, 13, 20; Aquarius 12, 20 -- none in Libra, Scorpio, Sagittarius or Pisces. The figure prints bare degrees; this app reads them as ordinals, as Figure 64 prints the same rule\'s degrees -- Dykes\'s own resolution of the tables\' cardinal-or-ordinal inconsistency is the end of the numbered degree, 19 for "the nineteenth" (ITA I.3 fn 23), the point at which the ordinal span tested here ends. The whole table is on the Reference tables page, with al-Qabisi\'s third table of the rule named (ITA VII.9, Figure 118). Abu Ma\'shar states the same rule with a table of his own (Gr. Intr. V.22, 4, Figure 64), twelve signs to its eight, six of those eight disagreeing; it is shown under Course text and supplement, on the Configurations page beside Strength and weakness and on the Reference tables page beside this table.')
             _finding(_gap, "The Moon on the third day (Sahl)", "Sahl, On Nativities 1.29, 11-12; 1.26, 7", moon_third_day_data,
                       columns=MOON_THIRD_DAY_COLUMNS, height=_rows_height(len(moon_third_day_data)),
-                      glance="The Moon three days after the birth: her sign and place, whether the sign has four feet (1.26, 7), whether an infortune looks at her, whether she is burned or falling -- \"corrupted\" in 1.29, 3's own terms -- and what 1.29, 11-12 and 1.26, 7 say of that. Display only; nothing scores it.",
+                      glance="The Moon on the third day -- two days after the birth, the birth day counted as the first: her sign and place, whether the sign has four feet (1.26, 7), whether an infortune looks at her, whether she is burned or falling -- \"corrupted\" in 1.29, 3's own terms -- and what 1.29, 11-12 and 1.26, 7 say of that. Display only; nothing scores it.",
                       notes='On Nativities 1.29, 11: "' + SAHL_1_29_11 + '"\n\n'
                             '1.29, 12: "' + SAHL_1_29_12 + '"\n\n'
                             '1.29, 13: "' + SAHL_1_29_13 + '" (fn 304: "' + SAHL_1_29_FN304 + '")\n\n'
                             'Dykes\'s fn 303 on 11: "' + SAHL_1_29_FN303 + '"\n\n'
                             '1.26, 7: "' + SAHL_1_26_7 + '"\n\n'
-                            'The third day. No sentence of 1.29 or 1.26 says when "the third day of the Moon" is taken; Sahl\'s words elsewhere are "the position of the Moon, where she is on the third day from the nativity" (9, 3) and "the position of the Moon on the third day, the seventh, and the fortieth day" (1.30, 22). This app reads it as three days after the birth moment, the birth hour kept, and computes the Moon, the Sun and the infortunes there; it is this app\'s reading of the hour.\n\n'
+                            'The third day. No sentence of 1.29 or 1.26 says when "the third day of the Moon" is taken; Sahl\'s words elsewhere are "the position of the Moon, where she is on the third day from the nativity" (9, 3) and "the position of the Moon on the third day, the seventh, and the fortieth day" (1.30, 22). This app takes it two days after the birth, the birth day counted as the first (Firmicus, Mathesis II.29, 34, in the nativity of Albinus; III.14, 17-19), the birth hour kept, and computes the Moon, the Sun and the infortunes there. The count is Firmicus\'s own, from his worked chart: with the Moon at 14 Cancer and Mars at 11 Aquarius at the birth, "on the third day the Moon, being established in Leo, full of light, flung herself into the rays of Mars" -- and the Moon reaches Mars\'s opposition ray in Leo two days after that birth, not three. Of the third day he says, "and this day, that is the third, operates in a very powerful way in nativities" (II.29, 34), and at III.14, 17-19 that on it "she decrees all things in a similar way" to the first.\n\n'
                             'Corrupted. 1.29, 3 names the corruptions the chapter has in view: "' + SAHL_1_29_3 + '" So the third-day Moon is read as corrupted when an infortune looks at her by whole sign (Saturn and Mars where they stand on that day), when she is burned (within the twelve degrees this app uses for the Moon, The Introduction Ch. 3, 103), or when she is falling from the stakes by the whole-sign place from the Ascendant of the nativity (1.30, 33: "how is her position relative to the Ascendant"). Nothing else of the Moon\'s ten defects is read here.\n\n'
                             'Four feet. 1.26, 7\'s sign is taken from 1.38, 1: "' + SAHL_1_38_1 + '" -- Aries, Taurus, Leo and the second half of Sagittarius. 1.26, 7 is one indicator among the chapter\'s; the row says met or not met and no more.\n\n'
                             '1.29, 11 and 12. The row for 11 reports only its last clause, the third day not corrupted; the lords of the triplicity and the fortune in a stake are not tested in this table. The row for 12 reads "the two infortunes were in the Ascendant or seventh" as both natal infortunes in the whole-sign first or seventh place, this app\'s reading, and reports its first clause; the second clause (the lords of the triplicities withdrawing from the stakes) is not tested here.')
@@ -16782,6 +16801,7 @@ if location_query and lat is not None and lon is not None:
                                 "aspect on \"a Mars so disposed\" is quoted above and not tested. The paragraph is about Mars alone; no other planet "
                                 "is read here.")
             st.subheader('Topical Planets in Houses', help="Each planet's whole-sign house placement with BOTH readings for that pairing, good and bad, as the TNAC Reference Guide for the Planets and Places (Dykes, 2023) summarises them: its Rhetorius column from Rhetorius Ch. 57 and Firmicus, Mathesis III (texts not in hand; the Guide's summary is the witness), its PN IV column from Book II's lord of the year in the places, which the Guide applies to natal planets -- a reading of the Guide's, followed here.")
+            st.subheader('Topical Planets in Houses', help="Each planet's whole-sign house placement with BOTH readings for that pairing, good and bad, as the TNAC Reference Guide for the Planets and Places (Dykes, 2023) summarises them: its Rhetorius column from Rhetorius Ch. 57 and Firmicus, Mathesis III.2-III.13 (both texts are now in hand; the Guide's summary is still what the table prints, and it has not yet been checked against them), its PN IV column from Book II's lord of the year in the places, which the Guide applies to natal planets -- a reading of the Guide's, followed here.")
             st.caption("Rhetorius & PN IV, as the Reference Guide summarises them; the Guide prints ? for the Moon in the sixth and the eighth, and so does this table.")
             st.dataframe(pd.DataFrame(planets_in_houses_data, columns=['Planet', 'Placed in (WS place)', 'Lean']),
                          hide_index=True, width='content', height=_rows_height(len(planets_in_houses_data)))
@@ -17000,7 +17020,11 @@ if location_query and lat is not None and lon is not None:
                                     "the partner of a planet in its house or exaltation; \"of the sect of the day or ... night\" = both "
                                     "planets of one sect, Mercury not counted. A second stated definition, the honor-guard of 10.2.1, "
                                     "10-15, is the next table; no text in hand arbitrates between the two definitions, so both are "
-                                    "shown and neither enters a score."))
+                                    "shown and neither enters a score. Rhetorius Chs. 23-25 (the doryphory in three kinds: an "
+                                    "angular planet in its house or exaltation looked at by another in its own; a planet of the "
+                                    "sect in another's house looking at an angular luminary, before the Sun and after the Moon; "
+                                    "the out-of-sect kind; the trine and square stronger than the sextile) and Ch. 53 (what each "
+                                    "planet's doryphory of the Sun gives) are witnesses to the doctrine and arbitrate neither."))
                     _finding(_gap, 'The honor-guard, "and it is spear-bearing" (Ptolemy in Sahl, On Nativities 10.2.1, 10-15) -- display only',
                              'Sahl, On Nativities 10.2.1, 10-15: a finding table, no score', honor_guard,
                              glance=("10: the planets \"formed an honor-guard for [the luminaries] (and that is if the planets were eastern "
@@ -17270,7 +17294,9 @@ if location_query and lat is not None and lon is not None:
                        "nativities\" (IX.8, 123), his *Book of the Judgments of Nativities* (Bodleian Hunt. 546, "
                        "fn 315), not in hand, and not the *Great Introduction*, which has only the Lot of the "
                        "releaser. They are taken from Sahl, *On Nativities* (the chapter named The Releaser, cited "
-                       "by that book's chapter and sentence). What neither book settles is listed at the foot of "
+                       "by that book's chapter and sentence). Al-Qabisi's own account of the releaser and the "
+                       "house-master (ITA VIII.1.3, al-Qabisi IV.4-6) is in hand and stands beside Sahl's in the "
+                       "Sources page's coverage table, not built. What neither book settles is listed at the foot of "
                        "the page rather than filled in.")
 
             # --- The year under examination (2026-09-10) ----------------------
@@ -18538,7 +18564,15 @@ if location_query and lat is not None and lon is not None:
                     "house-master grants, how increasers and decreasers are counted, or how to judge a planet that "
                     "passes one test and fails another. Abu Ma'shar says so himself: those \"who look into it are "
                     "wandering around in the dark; but a statement of the truth of that ... is found in the book which "
-                    "we worked on concerning nativities\" (IX.8, 123) -- a book not in hand. Here "
+                    "we worked on concerning nativities\" (IX.8, 123) -- a book not in hand. Two texts in hand do "
+                    "answer parts of it: al-Qabisi states the choice among the five and the house-master's order with "
+                    "its tie-breaks -- the lord stronger in the releaser's place that looks at it, going down the "
+                    "order until one does; equal claimants decided by the stronger in its own place, then the nearer "
+                    "degree; and if no lord looks at the releaser it is unfit and the next is taken (ITA VIII.1.3, "
+                    "al-Qabisi IV.4-6); Abu 'Ali states how the fortunes add and the infortunes subtract -- a fortune "
+                    "joined or in trine or sextile adds its lesser years, an infortune joined or in square or "
+                    "opposition subtracts its own, and the other rays of each add or subtract nothing (Judgments of "
+                    "Nativities Ch. 4). Both are stated in those texts, not built here; the choice stays Sahl's. Here "
                     "the choice is made from **Sahl**, *On Nativities* 1.15 (Nawbakht), and the house-master is directed "
                     "per 1.23, 2 (Masha'allah), in the chapter named The releaser, with every reading that step needed said "
                     "there; the releaser's distribution feeds the governor's testimony #3 and the luminary proxies. "
@@ -18563,7 +18597,10 @@ if location_query and lat is not None and lon is not None:
                     "**The Indian rule for the lord of the year** -- the lord of the first ninth-part of the sign of "
                     "the year (III.10, 1-5), which would restrict the lord of the year to Mars, Venus, Saturn and the "
                     "Moon. PN IV reports it without adopting it, so it is used here only as monthly indicator #2, "
-                    "which is where IX.1, 36 puts it.")
+                    "which is where IX.1, 36 puts it. The ninth-parts themselves are al-Qabisi's and Abu Ma'shar's too "
+                    "-- each sign in nine divisions of 3 1/3 degrees, the first to the lord of the movable sign of the "
+                    "triplicity and the rest in the order of the signs (ITA VII.5, al-Qabisi IV.16-17 and Abbr. "
+                    "VII.22-23, Figure 110) -- but no text in hand makes the first ninth-part's lord the lord of the year.")
 
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
                 st.markdown(
@@ -18757,14 +18794,17 @@ if location_query and lat is not None and lon is not None:
             st.dataframe(pd.DataFrame(years), hide_index=True, width='content', height=_rows_height(len(years)))
             st.caption("Gr. Intr. VII.8, Figure 146; the fardar periods PN IV IV.1, 2. The "
                        "middle years use two constructions, the ordinary mean for the planets and (least + great/2)/2 "
-                       "for the luminaries, per Valens VII.5 (a text not in hand). The luminaries' 39 1/2 has three "
-                       "witnesses in hand -- Gr. Intr. VII.8, 3-8 with Figure 146; Abu Bakr, On Nativities I.16, the same "
+                       "for the luminaries, which Valens VII.5 states outright: \"The sun has half of 120 years and hence "
+                       "receives 60; its minimum period is 19. The total is 79, half of which is 39 years, 6 months.\" "
+                       "The Moon's is the same, half of 108 with 25, 79 halved. So the luminaries' 39 1/2 has four "
+                       "witnesses in hand -- Valens VII.5; Gr. Intr. VII.8, 3-8 with Figure 146; Abu Bakr, On Nativities I.16, the same "
                        "construction in prose (half the greater years added to the lesser, the sum halved); PN IV I.8, 12, "
                        "the Moon's 4 as a tenth of her middle years -- and three against it that take the ordinary mean, "
                        "the Sun 69 1/2 and the Moon 66 1/2: Masha'allah, Book of Aristotle III.1.8; Abu 'Ali al-Khayyat, "
                        "Judgments of Nativities Ch. 4; and the Latin Great Introduction's table of the years as Dykes prints "
                        "it (ITA VII.2, Figure 108). This app keeps 39 1/2, the Arabic Great Introduction's, the table it "
-                       "reads for the rest of the row.")
+                       "reads for the rest of the row. Valens's Venus is a complete period of 84 (half 46), not Figure "
+                       "146's 82 -- a variant not adopted.")
 
             st.subheader("Degrees of nobility and rank",
                          help="Sahl, On Nativities 1.38, 39-41 and Figure 57 of his volume: the degrees in which, with the "
