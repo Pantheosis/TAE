@@ -10991,7 +10991,7 @@ JN_CH4_ADDITIONS_NOTE = (
     "\"middling in strength\" or \"more unsound\": the grade is not decided. The bad one's subtraction and Mercury's "
     "row are not graded by the chapter. Mercury's row is Dykes's reading (fn 28), his company by whole sign with the "
     "house-master itself left out of it; where fn 28 decides nothing -- Mercury joined to the house-master, or in "
-    "neither company, or in both -- the row says so.")
+    "neither company, or in both, or in a company whose aspect fn 28 does not pair with -- the row says so.")
 
 
 def evaluate_jn_years_additions(house_master, planetary_data):
@@ -17954,7 +17954,7 @@ if location_query and lat is not None and lon is not None:
                         _add = pn4['hm_years_additions']
                         _finding([], "Additions and subtractions to the house-master's years (Abu 'Ali; supplement, display only)",
                                  JN_CH4_ADDITIONS_CITATION,
-                                 _add or [{'Planet': '-', 'Looks at the house-master': f"no planet is joined to {rel['house_master']} or looks at it by whole sign",
+                                 _add or [{'Planet': '-', 'Looks at the house-master': f"none of Saturn, Jupiter, Mars, Venus or Mercury is joined to {rel['house_master']} or looks at it by whole sign",
                                            'Ch. 4': '-', 'Its own lesser years': '-', 'If middling in strength': '-',
                                            'If more unsound': '-', 'Grade': '-', 'Reading': '-'}],
                                  glance="What each planet joined to the house-master or looking at it would add to or subtract "
