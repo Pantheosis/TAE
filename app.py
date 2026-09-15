@@ -16490,15 +16490,39 @@ if location_query and lat is not None and lon is not None:
             # "Manual [43.7792, 11.2463]" -- so the strip prints them once.
             place = (f"{lat:.2f}, {lon:.2f}" if location_query.startswith("Manual [")
                      else f"{location_query} {lat:.2f}, {lon:.2f}")
-            st.caption(" · ".join((
+            # The prenatal lunation is one of the first questions asked of a
+            # nativity, and the strip is on every page, so it rides here as
+            # one word: the label is "Conjunctional (New Moon)" and its first
+            # word is the answer. The degree and the house it falls in stay
+            # on the lunation and victors page, whose syzygy table carries
+            # them in full.
+            lunation = syzygy['event_label'].partition(' ')[0]
+            # Two lines, not one: the first is the nativity as it was entered
+            # -- the name, the moment, the standard it is counted in, the
+            # place -- and the second is what the app makes of it. Eight parts
+            # on one line ran past the window and wrapped where the width
+            # happened to fall, which put the break in a different place on
+            # every page. The hard break is two spaces and a newline, which is
+            # how the sidebar's own boxes break a caption.
+            entered = " · ".join((
                 str(name),
                 f"{date_string} {input_time:%H:%M:%S}",
                 standard,
                 place,
+            ))
+            read = " · ".join((
                 sect,
+                f"{lunation} lunation",
                 f"Day lord {chronocrats['Day Lord']}",
                 f"Hour lord {chronocrats['Hour Lord']}",
-            )))
+            ))
+            # The second line in bold: the first line is the nativity as the
+            # reader typed it and they know it already, while these four are
+            # measurements the app made, and nothing else above the fold
+            # states them. The markers wrap the joined line once, not each
+            # part -- a caption renders markdown, as the sidebar's own boxes
+            # do.
+            st.caption("  \n".join((entered, f"**{read}**")))
 
         # Streamlit drops a widget's state when the widget is not rendered
         # on a run, which is why a page-level control resets after
@@ -16526,13 +16550,20 @@ if location_query and lat is not None and lon is not None:
                          key=widget_key, help=help)
             return _persist(widget_key, store_key, options[0])
 
-        def _reading_radio(label, options, widget_key, store_key, help=None):
+        def _reading_radio(label, options, widget_key, store_key, help=None,
+                           label_visibility="visible"):
+            # label_visibility is passed through for the one control that
+            # stands in a row of checkboxes, where a label above the options
+            # puts the radio on a tier of its own. The label string is still
+            # given -- Streamlit requires a non-empty one, and it stays the
+            # widget's accessible name and the name a test looks it up by.
             options = list(options)
             stored = st.session_state.get(store_key, options[0])
             # Seeded, not defaulted by index: the target keys are also written
             # by _restore_chart, and a default beside a seeded key warns.
             st.session_state.setdefault(widget_key, stored if stored in options else options[0])
-            st.radio(label, options, key=widget_key, horizontal=True, help=help)
+            st.radio(label, options, key=widget_key, horizontal=True, help=help,
+                     label_visibility=label_visibility)
             return _persist(widget_key, store_key, options[0])
 
         # Strength and Weakness as tick grids: one row per planet, one column
@@ -16596,89 +16627,73 @@ if location_query and lat is not None and lon is not None:
             _chart_strip()
             _readings_note()
             _gap = []
-            # Looking at the chart is the primary act, so the wheel comes first.
+            # Looking at the chart is the primary act, so the wheel takes the
+            # centre of the page: the square wheel centred at 560 px, its
+            # controls in one row beneath it, the introduction beneath those.
             # st.image shows the SVG through Streamlit's own fullscreen wrapper,
             # the same expand arrows the tables carry; the iframe it replaced
-            # (2026-09-07) had none. The square wheel keeps the 400 px measured
-            # on 2026-09-06 as the most that is fully visible on load at
-            # 1280x720, with the orientation text and header metrics beside
-            # it; the wide variant runs the full page width and scrolls, and
-            # is there for the full-window view, which a square can only fill
-            # to the window's height.
+            # had none. The wide variant runs the full page width and scrolls,
+            # with its positions panel drawn into the picture, and is there for
+            # the full-window view, which a square can only fill to the
+            # window's height. Both layouts then read alike: the same controls
+            # row, the same three sentences.
             #
-            # The layout is read from the control's state BEFORE the control
-            # is drawn, so the control can sit beside the square wheel rather
-            # than above it (a row above the wheel pushed its foot 24 px below
-            # the fold at 1280x720). The widget key holds the new value from
-            # the start of the rerun that a click causes; the store key keeps
-            # it across pages.
+            # The layout is still read from the control's state BEFORE the
+            # control is drawn, because the control now sits under the wheel
+            # and the wheel must know which of the two to draw. The widget key
+            # holds the new value from the start of the rerun that a click
+            # causes; the store key keeps it across pages.
             def _layout_control():
                 st.session_state.setdefault("_chart_bounds", True)
-                layout = _reading_radio(
-                    "Wheel layout", WHEEL_LAYOUT_OPTIONS, "wheel_layout", "_wheel_layout",
-                    help="Square: the wheel beside the controls and the introduction, the header metrics under it. Wide: the wheel with a "
-                         "positions panel across the page. Hover either and use the expand "
-                         "arrows for a full-window view.")
-                _reading_checkbox("Bounds ring", "chart_bounds", "_chart_bounds",
-                                  help="The Egyptian bounds, with their lords, as a ring inside the degree scale -- "
-                                       "as every natal wheel in Persian Nativities IV carries them (Figures 1, 22, "
-                                       "25, 26).")
-                _reading_checkbox("Dark wheel", "wheel_dark", "_wheel_dark", help=WHEEL_DARK_HELP)
-                st.download_button("Download the wheel (SVG)", svg_wide if layout == WHEEL_LAYOUT_OPTIONS[1] else svg_code,
-                                   key="dl_chart_wheel", mime="image/svg+xml",
-                                   file_name=f"{re.sub(r'[^A-Za-z0-9]+', '_', chart_name).strip('_') or 'chart'}_natal.svg")
+                # The four controls in one row across the page, aligned on
+                # their feet so the radio's row of options, the two checkboxes
+                # and the button sit on one line rather than at three heights.
+                #
+                # A flex row, not st.columns: Streamlit stacks columns
+                # vertically below about 640 px of page width, and a reader
+                # zoomed in or in a narrow window is below it, so the four
+                # controls ran down the left-hand edge in a column. A
+                # horizontal container keeps them in a row at any width and
+                # wraps (wrap defaults to True) only when they genuinely
+                # cannot fit. Left-aligned and the page's full width, as the
+                # row of controls was asked for.
+                with st.container(horizontal=True, vertical_alignment="bottom", gap="medium"):
+                    # The label is collapsed and the tooltip dropped here, and
+                    # here only: a radio carries its label above its options
+                    # and a checkbox carries its beside the box, so labelled
+                    # this radio stood a tier above the three controls next to
+                    # it and the row read as two. The two words "Square" and
+                    # "Wide" beneath a wheel say what the control does. The
+                    # label string stays as the widget's accessible name.
+                    layout = _reading_radio(
+                        "Wheel layout", WHEEL_LAYOUT_OPTIONS, "wheel_layout", "_wheel_layout",
+                        label_visibility="collapsed")
+                    _reading_checkbox("Bounds ring", "chart_bounds", "_chart_bounds",
+                                      help="The Egyptian bounds, with their lords, as a ring inside the degree scale -- "
+                                           "as every natal wheel in Persian Nativities IV carries them (Figures 1, 22, "
+                                           "25, 26).")
+                    _reading_checkbox("Dark wheel", "wheel_dark", "_wheel_dark", help=WHEEL_DARK_HELP)
+                    st.download_button("Download the wheel (SVG)", svg_wide if layout == WHEEL_LAYOUT_OPTIONS[1] else svg_code,
+                                       key="dl_chart_wheel", mime="image/svg+xml",
+                                       file_name=f"{re.sub(r'[^A-Za-z0-9]+', '_', chart_name).strip('_') or 'chart'}_natal.svg")
                 return layout
             wheel_layout = st.session_state.get(
                 "wheel_layout", st.session_state.get("_wheel_layout", WHEEL_LAYOUT_OPTIONS[0]))
             if wheel_layout == WHEEL_LAYOUT_OPTIONS[1]:
-                _layout_control()
                 st.image(svg_wide, width='stretch')
-                side_col = st.container()
             else:
-                wheel_col, side_col = st.columns([1, 1])
-                with wheel_col:
-                    st.image(svg_code, width=400)
-                with side_col:
-                    _layout_control()
-            # Three sentences. Wide: one per line, the full page width (a hard
-            # break after each). Square: the half-width column beside the
-            # wheel wrapped each sentence at the column edge AND broke it
-            # again at the hard break, so the lines fell at two rhythms;
-            # there each sentence is its own short paragraph and wraps only
-            # where the column makes it (owner, 2026-09-11).
-            _intro = ("A TNAC study companion: work a chart by hand, then check it here and see the "
-                      "doctrine applied to it.",
-                      "The texts are *The Astrology of Sahl b. Bishr*, vol. I, and Abu Ma'shar's *On the "
-                      "Revolutions of the Years of Nativities* (*Persian Nativities* IV), in Benjamin Dykes's "
-                      "translations; his *Great Introduction* supplements them. Every rule applied on a page "
-                      "names its sentence.",
-                      "Enter a chart in the sidebar, or load a saved one from the top of it. Part 1 calculates "
-                      "the nativity's factors, Part 2 its predictive techniques; the judgment is the "
-                      "astrologer's. The reference tables and the sources are at the end of the page list above.")
-            with side_col:
-                if wheel_layout == WHEEL_LAYOUT_OPTIONS[1]:
-                    st.caption("  \n".join(_intro))
-                else:
-                    for _sentence in _intro:
-                        st.caption(_sentence)
-            # The four header metrics run in one row under the wheel, the full
-            # page width (owner, 2026-09-07: stacked beside the wheel they left
-            # the right-hand column mostly empty). The lunation column is
-            # wider because its value is a long word: "Conjunctional" at the
-            # metric size needs about 260 px, and an even quarter of the page
-            # at 1280 px is less than that.
-            hdr1, hdr2, hdr3, hdr4 = st.columns([1.5, 1, 1, 1])
-            # Lesson 5 asks "conjunctional or preventional?"; the full
-            # syzygy table stays on the victors page, gated at Lesson 19.
-            # The label is "Preventional (Full Moon)": the first word is
-            # the metric, the rest goes in the caption with the position
-            # and place, since the value would otherwise be cut off.
-            _event, _, _kind = syzygy['event_label'].partition(' ')
-            hdr1.metric("Prenatal lunation", _event)
-            hdr1.caption(f"{_kind} at {get_degree_string(syzygy['syzygy_longitude'])} · House {syzygy['natal_house']}")
-            hdr2.metric("Sect", sect)
-            hdr3.metric("Lord of the Day", chronocrats['Day Lord'])
-            hdr4.metric("Lord of the Hour", chronocrats['Hour Lord'])
+                # st.image draws at the left edge of whatever holds it, so the
+                # wheel needs a container that centres its contents. A three
+                # column split does NOT do it: a column is a fraction of the
+                # page, and the middle of [1, 2, 1] is 454 px at 1400 and
+                # 394 px at 1280 -- narrower than the 400 px this replaced,
+                # because st.image shrinks a picture to the width it is given.
+                # A horizontal container is a flex row instead: its children
+                # keep their own width and the row centres them, so the wheel
+                # is 560 px at every window width.
+                with st.container(horizontal=True, horizontal_alignment="center"):
+                    st.image(svg_code, width=560)
+            _layout_control()
             if chronocrats.get('Approximate'):
                 st.caption(
                     "⚠️ **The Lord of the Hour here is not a temporal hour.** No sunrise "
@@ -16688,6 +16703,21 @@ if location_query and lat is not None and lon is not None:
                     "explicitly modern approximation: the civil day divided into 24 equal hours, "
                     "continuing the same Chaldean cycle. The Lord of the Day is still exact."
                 )
+            # Three sentences, the full page width, each its own caption so it
+            # is its own short paragraph and wraps only where the page makes
+            # it. Both layouts print the same three, so the page reads alike
+            # whichever wheel is drawn.
+            _intro = ("A TNAC study companion: cast the chart by hand, then check it here, table by "
+                      "table, against what the texts say.",
+                      "The texts are *The Astrology of Sahl b. Bishr*, vol. I, and Abu Ma'shar's *On the "
+                      "Revolutions of the Years of Nativities* (*Persian Nativities* IV), in Benjamin Dykes's "
+                      "translations, with his *Great Introduction* as the supplement. Every rule applied on "
+                      "a page names its sentence.",
+                      "Enter or load a nativity in the sidebar. Part 1 sets out what the chart contains, "
+                      "Part 2 what the year holds; the reference tables and the sources close the page "
+                      "list. The judgment is the astrologer's.")
+            for _sentence in _intro:
+                st.caption(_sentence)
             # The Lesson 5 worksheet's intermediate lines, so a hand
             # calculation can be checked line by line rather than only at
             # the Ascendant. GST is the Greenwich sidereal time at the UT of
