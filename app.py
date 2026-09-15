@@ -10416,9 +10416,10 @@ def sahl_house_master_years(planet, planetary_data, cusps, sect, essential):
 # elsewhere are "the position of the Moon, where she is on the third day
 # from the nativity" (Ch. 9, 3) and "the position of the Moon on the
 # third day, the seventh, and the fortieth day" (1.30, 22); no sentence
-# of his fixes the count or the hour. The count is Firmicus's, from his
+# of his fixes the count or the hour. The count is read from Firmicus's
 # worked chart (Mathesis II.29, 34, the nativity of Albinus; III.14,
-# 17-19) -- see MOON_THIRD_DAY_DAYS. "Corrupted" is
+# 17-19) by degree in Dykes's approximate Figure 34, the owner's ruling
+# of 2026-09-15 -- see MOON_THIRD_DAY_DAYS. "Corrupted" is
 # read in 1.29's own terms, 1.29, 3: "safe from the infortunes, burning,
 # and falling" -- an infortune looking at her by whole sign (the
 # infortunes where they stand on that day), burned within the twelve
@@ -16636,7 +16637,7 @@ if location_query and lat is not None and lon is not None:
                             '1.29, 13: "' + SAHL_1_29_13 + '" (fn 304: "' + SAHL_1_29_FN304 + '")\n\n'
                             'Dykes\'s fn 303 on 11: "' + SAHL_1_29_FN303 + '"\n\n'
                             '1.26, 7: "' + SAHL_1_26_7 + '"\n\n'
-                            'The third day. No sentence of 1.29 or 1.26 says when "the third day of the Moon" is taken; Sahl\'s words elsewhere are "the position of the Moon, where she is on the third day from the nativity" (9, 3) and "the position of the Moon on the third day, the seventh, and the fortieth day" (1.30, 22). This app takes it two days after the birth, the birth day counted as the first (Firmicus, Mathesis II.29, 34, in the nativity of Albinus; III.14, 17-19), the birth hour kept, and computes the Moon, the Sun and the infortunes there. The count is Firmicus\'s own, from his worked chart: with the Moon at 14 Cancer and Mars at 11 Aquarius at the birth, "on the third day the Moon, being established in Leo, full of light, flung herself into the rays of Mars" -- and the Moon reaches Mars\'s opposition ray in Leo two days after that birth, not three. Of the third day he says, "and this day, that is the third, operates in a very powerful way in nativities" (II.29, 34), and at III.14, 17-19 that on it "she decrees all things in a similar way" to the first.\n\n'
+                            'The third day. No sentence of 1.29 or 1.26 says when "the third day of the Moon" is taken; Sahl\'s words elsewhere are "the position of the Moon, where she is on the third day from the nativity" (9, 3) and "the position of the Moon on the third day, the seventh, and the fortieth day" (1.30, 22). This app takes it two days after the birth, the birth day counted as the first (Firmicus, Mathesis II.29, 34, in the nativity of Albinus; III.14, 17-19), the birth hour kept, and computes the Moon, the Sun and the infortunes there. The count rests on his worked chart, the nativity of Albinus: Firmicus gives its places by sign only (II.29, 22), and "on the third day the Moon, being established in Leo, full of light, flung herself into the rays of Mars"; Leo opposes Mars\'s Aquarius by sign on the second day and the third alike, so the count is read by degree from Dykes\'s Figure 34, his approximate chart (fn 129: within a day) -- the Moon at 14 Cancer and Mars at 11 Aquarius at the birth, and the Moon on Mars\'s opposition ray in Leo two days after, sixteen degrees past it after three. That is this app\'s reading of Firmicus, not his statement of the count. Of the third day he says, "and this day, that is the third, operates in a very powerful way in nativities" (II.29, 34), and at III.14, 17-19 that on it "she decrees all things in a similar way" to the first.\n\n'
                             'Corrupted. 1.29, 3 names the corruptions the chapter has in view: "' + SAHL_1_29_3 + '" So the third-day Moon is read as corrupted when an infortune looks at her by whole sign (Saturn and Mars where they stand on that day), when she is burned (within the twelve degrees this app uses for the Moon, The Introduction Ch. 3, 103), or when she is falling from the stakes by the whole-sign place from the Ascendant of the nativity (1.30, 33: "how is her position relative to the Ascendant"). Nothing else of the Moon\'s ten defects is read here.\n\n'
                             'Four feet. 1.26, 7\'s sign is taken from 1.38, 1: "' + SAHL_1_38_1 + '" -- Aries, Taurus, Leo and the second half of Sagittarius. 1.26, 7 is one indicator among the chapter\'s; the row says met or not met and no more.\n\n'
                             '1.29, 11 and 12. The row for 11 reports only its last clause, the third day not corrupted; the lords of the triplicity and the fortune in a stake are not tested in this table. The row for 12 reads "the two infortunes were in the Ascendant or seventh" as both natal infortunes in the whole-sign first or seventh place, this app\'s reading, and reports its first clause; the second clause (the lords of the triplicities withdrawing from the stakes) is not tested here.')
@@ -18600,7 +18601,7 @@ if location_query and lat is not None and lon is not None:
                     "which is where IX.1, 36 puts it. The ninth-parts themselves are al-Qabisi's and Abu Ma'shar's too "
                     "-- each sign in nine divisions of 3 1/3 degrees, the first to the lord of the movable sign of the "
                     "triplicity and the rest in the order of the signs (ITA VII.5, al-Qabisi IV.16-17 and Abbr. "
-                    "VII.22-23, Figure 110) -- but no text in hand makes the first ninth-part's lord the lord of the year.")
+                    "VII.22-23, Figure 110) -- but no other text in hand makes the first ninth-part's lord the lord of the year.")
 
             with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
                 st.markdown(
