@@ -886,3 +886,9 @@ steps. His reading of the superiors (I.4.3, "not so much ... a serious impedimen
 1.20, 14-15 and is not repeated. Test: `tests/test_years_ladder_2026_09_15.py` (every sentence verbatim in
 the photographed spans and in `on_nativities.md`; Ch. 4's table row by row; Sahl graded -> None; the silent
 cases' classes; the supplement column; the Releaser tab at both depths). No fixture moved.
+
+After the check (`BUILD_LADDER_CHECK_REPORT_2026-09-15.md`): the note says the single steps between
+Abu 'Ali's stated cases (one, two, four impediments) are the app's reading of "one rule", and that the
+count of months or days is 'Umar's and Sahl's, not the chapter's; 'Umar's "greater years" for the
+succedent flagged as Dykes's emendation (fn 82); his I.4.4 sentence -- greater years in an angle
+"oriental or not oriental" -- quoted against the ladder's orientality step.

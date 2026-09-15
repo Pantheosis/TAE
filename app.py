@@ -10493,8 +10493,10 @@ TBN_YEARS_DIFFERENCES = {
     'succedent': ("'Umar counts the eleventh by day and the fifth by night among the greater-years places: \"Which if it "
                   "were in its own domicile or exaltation or its own triplicity, in the Midheaven or in the Ascendant or in "
                   "the 11th (if it were diurnal, that is, in the figure of the day), and in such a strength in the fourth "
-                  "and in the fifth (in the night), it signifies its own greater years.\" Abu 'Ali's follower of the angles "
-                  "is the middle years."),
+                  "and in the fifth (in the night), it signifies its own greater years\" -- \"greater\" is Dykes's emendation "
+                  "(fn 82: reading maiores for minores). Abu 'Ali's follower of the angles is the middle years. And 'Umar's "
+                  "next sentence (I.4.4) has an angular planet give its greater years \"oriental or not oriental (if, however, "
+                  "not retrograde nor burned up)\" -- no step for orientality, where Abu 'Ali's ladder takes one."),
     'cadent': ("'Umar drops a cadent planet under impediment to hours, not by steps: \"But if [this] happened to it with "
                "fall, retrogradation, and peregrination, or descension, it will signify hours according to the number of "
                "its own lesser years.\""),
@@ -10509,7 +10511,7 @@ JN_YEARS_NOTE = (
     "the planet; Sahl's grade, where he gives one, is never overridden by it. Read: the place by the division, as 1.20 is "
     "placed; one step of the ladder for each impediment the chapter names -- not oriental, peregrine, retrograde, burned "
     "up -- in the ranks greater, middle, lesser, months, days, because \"you will observe it likewise for the rest of the "
-    "planets' impediments, because it is one rule\", and no step below days; \"peregrine\" is a planet in none of its five "
+    "planets' impediments, because it is one rule\" (the chapter states the angular cases with one, two and four impediments; the single steps between are this app's reading of \"one rule\"), and no step below days (the count of months or days is not the chapter's -- \"the number of the lesser years\" is 'Umar's and Sahl 1.20, 15's); \"peregrine\" is a planet in none of its five "
     "shares (the chapter's own condition names the domicile, exaltation and triplicity); \"burned up\" is this app's "
     "under-the-rays fact; the Sun takes no step for orientality; \"free from the bad ones\" is not tested, since Ch. 4's "
     "additions and subtractions are not built. Where Ch. 4's count differs from this app's table it is printed as Ch. 4 "

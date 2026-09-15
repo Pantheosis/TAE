@@ -41,7 +41,7 @@ def jn_span():
 
 @pytest.fixture(scope="module")
 def tbn_span():
-    return _prose(PN2, "*[PN II p. 13]*", "*[PN II p. 15]*")
+    return _prose(PN2, "*[PN II p. 13]*", "*[PN II p. 16]*")
 
 
 def test_the_ladder_is_verbatim_in_jn_ch_3_and_4(engine, jn_span):
