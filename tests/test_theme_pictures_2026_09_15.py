@@ -115,8 +115,18 @@ def test_the_ui_reads_the_theme_once_and_hands_one_value_to_every_picture():
     assert 'getattr(_context_theme, "type", None)' in src
     assert src.count("VIEWER_THEME = ") == 1, "read once, at the top level"
     assert src.count("WHEEL_THEME = ") == 1, "one value decides every picture"
-    # Two wheels on the Chart page, the Timing page's wheel, six strips.
-    assert src.count("theme=WHEEL_THEME") == 9
+    # The six direction strips. The three wheels -- two on the Chart page,
+    # one on Timing -- moved inside @st.fragment blocks (item 9,
+    # 2026-09-15), where the top level's WHEEL_THEME is a full run's value
+    # that a fragment rerun does not move: each fragment applies the SAME
+    # rule to its own Dark wheel checkbox instead, and hands the result on
+    # under a name of its own.
+    assert src.count("theme=WHEEL_THEME") == 6
+    assert src.count("theme=_theme") == 2          # the Chart page's two wheels
+    assert src.count("theme=_timing_theme") == 1   # the Timing page's wheel
+    for filtered in ("_theme = VIEWER_THEME if _dark else None",
+                     "_timing_theme = VIEWER_THEME if _timing_dark else None"):
+        assert filtered in src, filtered
     assert "theme=VIEWER_THEME" not in src, "no picture takes the viewer's theme unfiltered"
 
 

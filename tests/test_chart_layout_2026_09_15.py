@@ -47,6 +47,21 @@ def _kinds(block):
     return [type(child).__name__ for child in block.children.values()]
 
 
+# The wheel and its controls are one @st.fragment now (item 9, 2026-09-15),
+# and a fragment renders as a block of its own: main's third child is that
+# block, and the picture and the controls row are ITS two children. Every
+# element the fragment draws is inside it, which is what a fragment requires
+# -- it may not write to a container outside itself -- and it is why the
+# three captions and the circumpolar warning, which stay outside, moved up
+# one index in main's own children.
+def _fragment(at):
+    return _kids(at)[2]
+
+
+def _frag_kids(at):
+    return list(_fragment(at).children.values())
+
+
 # --- The metrics row is gone ---------------------------------------------
 
 @pytest.mark.parametrize("layout", LAYOUTS)
@@ -122,7 +137,7 @@ def test_the_square_wheel_is_centred_by_a_horizontal_container():
     horizontal container is a flex row: it stretches the full width, its one
     child keeps its own 560 px, and the row centres it."""
     at = _chart(layout="Square")
-    wheel_block = _kids(at)[2]
+    wheel_block = _frag_kids(at)[0]
     assert _kinds(wheel_block) == ["Image"]
     flex = wheel_block.proto.flex_container
     assert flex.direction == flex.Direction.HORIZONTAL, flex.direction
@@ -139,7 +154,7 @@ def test_the_square_wheel_is_centred_by_a_horizontal_container():
 
 def test_the_wide_wheel_still_runs_the_full_width():
     at = _chart(layout="Wide")
-    assert type(_kids(at)[2]).__name__ == "Image"
+    assert type(_frag_kids(at)[0]).__name__ == "Image"
     assert "st.image(svg_wide, width='stretch')" in ui_source()
 
 
@@ -152,7 +167,7 @@ def test_the_four_controls_stand_in_one_row_under_the_wheel(layout):
     page width, and the owner's browser showed the four running down the
     left-hand edge. A horizontal container holds the row at any width."""
     at = _chart(layout=layout)
-    controls = _kids(at)[3]
+    controls = _frag_kids(at)[1]
     assert _kinds(controls) == ["Radio", "Checkbox", "Checkbox", "DownloadButton"]
     flex = controls.proto.flex_container
     assert flex.direction == flex.Direction.HORIZONTAL, flex.direction
@@ -205,7 +220,7 @@ def test_the_layout_is_read_before_the_control_is_drawn():
     which wheel to draw before the radio renders."""
     src = ui_source()
     wheel = src.index("st.image(svg_code, width=560)")
-    control = src.index("            _layout_control()\n")
+    control = src.index("                _layout_control()\n")
     read = src.index('wheel_layout = st.session_state.get(')
     assert read < wheel < control
 
@@ -216,16 +231,16 @@ def test_the_layout_is_read_before_the_control_is_drawn():
 def test_the_three_captions_follow_the_controls_in_order(layout):
     at = _chart(layout=layout)
     kids = _kids(at)
-    assert [type(k).__name__ for k in kids[4:7]] == ["Caption"] * 3
-    assert [k.value for k in kids[4:7]] == list(INTRO)
+    assert [type(k).__name__ for k in kids[3:6]] == ["Caption"] * 3
+    assert [k.value for k in kids[3:6]] == list(INTRO)
     # And the Calculation section is what follows them, as before.
-    assert kids[7].value == "Calculation"
+    assert kids[6].value == "Calculation"
 
 
 def test_both_layouts_print_the_same_three_captions_and_not_one_joined():
     """Wide used to join the three with hard breaks in a single caption."""
-    square = [k.value for k in _kids(_chart(layout="Square"))[4:7]]
-    wide = [k.value for k in _kids(_chart(layout="Wide"))[4:7]]
+    square = [k.value for k in _kids(_chart(layout="Square"))[3:6]]
+    wide = [k.value for k in _kids(_chart(layout="Wide"))[3:6]]
     assert square == wide == list(INTRO)
     assert '"  \\n".join(_intro)' not in ui_source()
 
@@ -250,6 +265,6 @@ def test_the_circumpolar_caption_stands_directly_under_the_controls_row():
     under the controls, before the three sentences."""
     at = _chart(manual_lat_key=78.2, manual_lon_key=15.6)
     kids = _kids(at)
-    assert type(kids[4]).__name__ == "Caption"
-    assert "not a temporal hour" in kids[4].value, kids[4].value
-    assert [k.value for k in kids[5:8]] == list(INTRO)
+    assert type(kids[3]).__name__ == "Caption"
+    assert "not a temporal hour" in kids[3].value, kids[3].value
+    assert [k.value for k in kids[4:7]] == list(INTRO)

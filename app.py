@@ -593,15 +593,21 @@ if location_query and lat is not None and lon is not None:
         # the name typed for saving, else "Transits" (owner's decision D5,
         # 2026-09-07: an unnamed chart cast for a date is a transit chart).
         # Loading a saved chart and then editing its date keeps the saved
-        # name; accepted. Both wheel layouts are built here, since the page
-        # picks one with a control of its own and the strings are cheap.
+        # name; accepted.
+        #
+        # The two natal wheels used to be built here, at the top level, from
+        # CHART_BOUNDS and WHEEL_THEME. They are built inside the Chart
+        # page's _wheel_block() fragment now (item 9, 2026-09-15), from the
+        # bounds and dark-wheel values its own widgets hold: a fragment rerun
+        # does not re-run this line, so a wheel built here would be the
+        # previous full run's wheel. Nothing else on this page or any other
+        # read svg_code or svg_wide -- the Chart page's picture and its
+        # download button were the only two consumers -- so the top-level
+        # build is gone rather than kept beside the fragment's, and the eight
+        # pages that never draw a natal wheel no longer generate two of them.
         _picked = st.session_state.get("chart_picker")
         chart_name = (_picked if _picked and _picked != "-- New Chart --"
                       else new_chart_name.strip() or "Transits")
-        svg_code = generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, local_dt, tz_name,
-                                       chronocrats=chronocrats, bounds=CHART_BOUNDS, theme=WHEEL_THEME)
-        svg_wide = generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, local_dt, tz_name,
-                                       wide=True, chronocrats=chronocrats, bounds=CHART_BOUNDS, theme=WHEEL_THEME)
 
         # The app's name is the browser title (st.set_page_config) and the
         # header bar's own; it used to be repeated as an st.title above every
@@ -873,7 +879,24 @@ if location_query and lat is not None and lon is not None:
             # and the wheel must know which of the two to draw. The widget key
             # holds the new value from the start of the rerun that a click
             # causes; the store key keeps it across pages.
-            def _layout_control():
+            #
+            # The wheel and its four controls are one @st.fragment (item 9,
+            # 2026-09-15). A click on the radio, either checkbox or the
+            # download button used to rerun the whole script and redraw every
+            # table on the page; a fragment reruns only its own body on its
+            # own widgets' changes. The engine is cheap -- the whole run is
+            # about a fifth of a second -- so this is about the redraw and
+            # the flicker, not the compute. Two consequences the code has to
+            # honour: the SVG is generated INSIDE the fragment, from the
+            # bounds and dark-wheel values the fragment's own widgets hold
+            # (the top-level CHART_BOUNDS and WHEEL_THEME are a full run's
+            # values and do not move on a fragment rerun), and a fragment may
+            # not write to a container outside itself, so everything it draws
+            # -- picture and controls row -- is inside its body and nothing
+            # else is. The three captions, the circumpolar warning and the
+            # rest of the page stay outside, where they are not redrawn.
+            @st.fragment
+            def _wheel_block():
                 st.session_state.setdefault("_chart_bounds", True)
                 # The four controls in one row across the page, aligned on
                 # their feet so the radio's row of options, the two checkboxes
@@ -887,43 +910,73 @@ if location_query and lat is not None and lon is not None:
                 # wraps (wrap defaults to True) only when they genuinely
                 # cannot fit. Left-aligned and the page's full width, as the
                 # row of controls was asked for.
-                with st.container(horizontal=True, vertical_alignment="bottom", gap="medium"):
-                    # The label is collapsed and the tooltip dropped here, and
-                    # here only: a radio carries its label above its options
-                    # and a checkbox carries its beside the box, so labelled
-                    # this radio stood a tier above the three controls next to
-                    # it and the row read as two. The two words "Square" and
-                    # "Wide" beneath a wheel say what the control does. The
-                    # label string stays as the widget's accessible name.
-                    layout = _reading_radio(
-                        "Wheel layout", WHEEL_LAYOUT_OPTIONS, "wheel_layout", "_wheel_layout",
-                        label_visibility="collapsed")
-                    _reading_checkbox("Bounds ring", "chart_bounds", "_chart_bounds",
-                                      help="The Egyptian bounds, with their lords, as a ring inside the degree scale -- "
-                                           "as every natal wheel in Persian Nativities IV carries them (Figures 1, 22, "
-                                           "25, 26).")
-                    _reading_checkbox("Dark wheel", "wheel_dark", "_wheel_dark", help=WHEEL_DARK_HELP)
-                    st.download_button("Download the wheel (SVG)", svg_wide if layout == WHEEL_LAYOUT_OPTIONS[1] else svg_code,
-                                       key="dl_chart_wheel", mime="image/svg+xml",
-                                       file_name=f"{re.sub(r'[^A-Za-z0-9]+', '_', chart_name).strip('_') or 'chart'}_natal.svg")
-                return layout
-            wheel_layout = st.session_state.get(
-                "wheel_layout", st.session_state.get("_wheel_layout", WHEEL_LAYOUT_OPTIONS[0]))
-            if wheel_layout == WHEEL_LAYOUT_OPTIONS[1]:
-                st.image(svg_wide, width='stretch')
-            else:
-                # st.image draws at the left edge of whatever holds it, so the
-                # wheel needs a container that centres its contents. A three
-                # column split does NOT do it: a column is a fraction of the
-                # page, and the middle of [1, 2, 1] is 454 px at 1400 and
-                # 394 px at 1280 -- narrower than the 400 px this replaced,
-                # because st.image shrinks a picture to the width it is given.
-                # A horizontal container is a flex row instead: its children
-                # keep their own width and the row centres them, so the wheel
-                # is 560 px at every window width.
-                with st.container(horizontal=True, horizontal_alignment="center"):
-                    st.image(svg_code, width=560)
-            _layout_control()
+                def _layout_control():
+                    with st.container(horizontal=True, vertical_alignment="bottom", gap="medium"):
+                        # The label is collapsed and the tooltip dropped here, and
+                        # here only: a radio carries its label above its options
+                        # and a checkbox carries its beside the box, so labelled
+                        # this radio stood a tier above the three controls next to
+                        # it and the row read as two. The two words "Square" and
+                        # "Wide" beneath a wheel say what the control does. The
+                        # label string stays as the widget's accessible name.
+                        layout = _reading_radio(
+                            "Wheel layout", WHEEL_LAYOUT_OPTIONS, "wheel_layout", "_wheel_layout",
+                            label_visibility="collapsed")
+                        # The two checkboxes still write their store keys and the
+                        # preferences file through _persist, which works inside a
+                        # fragment exactly as it does at the top level; that is
+                        # what lets the next full run read CHART_BOUNDS and
+                        # WHEEL_DARK and find what the fragment left.
+                        _reading_checkbox("Bounds ring", "chart_bounds", "_chart_bounds",
+                                          help="The Egyptian bounds, with their lords, as a ring inside the degree scale -- "
+                                               "as every natal wheel in Persian Nativities IV carries them (Figures 1, 22, "
+                                               "25, 26).")
+                        _reading_checkbox("Dark wheel", "wheel_dark", "_wheel_dark", help=WHEEL_DARK_HELP)
+                        st.download_button("Download the wheel (SVG)", svg_wide if layout == WHEEL_LAYOUT_OPTIONS[1] else svg_code,
+                                           key="dl_chart_wheel", mime="image/svg+xml",
+                                           file_name=f"{re.sub(r'[^A-Za-z0-9]+', '_', chart_name).strip('_') or 'chart'}_natal.svg")
+                    return layout
+                wheel_layout = st.session_state.get(
+                    "wheel_layout", st.session_state.get("_wheel_layout", WHEEL_LAYOUT_OPTIONS[0]))
+                # Read before draw, for the same reason the layout is: the two
+                # checkboxes sit UNDER the picture, and the picture has to be
+                # generated before them. A widget key holds the new value from
+                # the start of the rerun a click causes, so the wheel the click
+                # asks for is the wheel drawn on that same (fragment) rerun.
+                # The fallback is this run's top-level reading -- CHART_BOUNDS
+                # and WHEEL_DARK are _reading(widget key, store key, default)
+                # and are what every other reader of these two preferences
+                # sees -- which is what the first render of the page uses,
+                # before the checkbox has a key, and after navigating back to
+                # the page, where Streamlit has dropped the widget's state.
+                # On a fragment rerun they are the last full run's values, so
+                # the widget key in front of them is what moves.
+                _bounds = bool(st.session_state.get("chart_bounds", CHART_BOUNDS))
+                _dark = bool(st.session_state.get("wheel_dark", WHEEL_DARK))
+                # The same rule the top level uses for WHEEL_THEME: the
+                # viewer's own theme when the preference is on, None when it
+                # is off, so off the picture is drawn exactly as it always was.
+                _theme = VIEWER_THEME if _dark else None
+                svg_code = generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, local_dt, tz_name,
+                                               chronocrats=chronocrats, bounds=_bounds, theme=_theme)
+                svg_wide = generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, local_dt, tz_name,
+                                               wide=True, chronocrats=chronocrats, bounds=_bounds, theme=_theme)
+                if wheel_layout == WHEEL_LAYOUT_OPTIONS[1]:
+                    st.image(svg_wide, width='stretch')
+                else:
+                    # st.image draws at the left edge of whatever holds it, so the
+                    # wheel needs a container that centres its contents. A three
+                    # column split does NOT do it: a column is a fraction of the
+                    # page, and the middle of [1, 2, 1] is 454 px at 1400 and
+                    # 394 px at 1280 -- narrower than the 400 px this replaced,
+                    # because st.image shrinks a picture to the width it is given.
+                    # A horizontal container is a flex row instead: its children
+                    # keep their own width and the row centres them, so the wheel
+                    # is 560 px at every window width.
+                    with st.container(horizontal=True, horizontal_alignment="center"):
+                        st.image(svg_code, width=560)
+                _layout_control()
+            _wheel_block()
             if chronocrats.get('Approximate'):
                 st.caption(
                     "⚠️ **The Lord of the Hour here is not a temporal hour.** No sunrise "
@@ -1818,131 +1871,165 @@ if location_query and lat is not None and lon is not None:
                 # whole signs, the sign of the year shaded, the profection a
                 # dashed arc, an Egyptian-bounds ring, the default points of p. 12.
                 # The controls are readings of the page, kept across navigation.
-                st.subheader("The charts, drawn",
-                             help="Year: the revolution alone (Figures 4, 26). Year over root: the image of the revolution "
-                                  "of the year, I.6, 3-6 (Figure 51 and fn 33; Figures 5 and 27 in Dykes's order). Month "
-                                  "over year and root: the image of the revolution of the month, IX.3, 4-8 (Figures 39 "
-                                  "and 109, fn 58). Month: the month's revolution alone. Profection: the natal wheel with "
-                                  "the sign of the year and the sign of the month (Figures 3, 15, 33). The Wide layout "
-                                  "adds a positions column per chart; hover the picture for the expand arrows.")
-                st.session_state.setdefault("_timing_bounds", True)
-                v_view, v_layout, v_opts = st.columns([2.2, 1.4, 0.9], vertical_alignment="bottom")
-                with v_view:
-                    wheel_view = _reading_select("View", WHEEL_VIEW_OPTIONS, "timing_wheel_view", "_timing_wheel_view")
-                with v_layout:
-                    _timing_layout = _reading_radio("Wheel layout", WHEEL_LAYOUT_OPTIONS, "wheel_layout", "_wheel_layout")
-                with v_opts:
-                    with st.popover("Options", icon=":material/tune:", width="stretch"):
-                        wheel_order = _reading_radio("Inner wheel", WHEEL_ORDER_OPTIONS, "wheel_order", "_wheel_order",
-                                                     help="Dykes: \"Abu Ma'shar seems to prefer that the SR be the inner "
-                                                          "wheel, but to me this seem unnatural and I only do it to "
-                                                          "illustrate his instructions in Ch. I.6\" (p. 12). Figure 51 "
-                                                          "follows Abu Ma'shar; every other figure in the book puts the "
-                                                          "nativity in the centre. IX.3, 4-6 writes the month first, then "
-                                                          "the year, then the root.")
-                        wheel_bounds = _reading_checkbox("Bounds ring", "timing_bounds", "_timing_bounds",
-                                                         help="The Egyptian bounds as a ring, as every PN IV wheel carries them.")
-                        _reading_checkbox("Dark wheel", "wheel_dark", "_wheel_dark", help=WHEEL_DARK_HELP)
-                        want_lots = _reading_checkbox("Lots", "timing_lots", "_timing_lots",
-                                                      help="I.6, 3-4: the Lots \"according to how you do it\" -- this app's, "
-                                                           "beyond Fortune, as short ticks with their names.")
-                        want_rays = _reading_checkbox("Rays", "timing_rays", "_timing_rays",
-                                                      help="I.6, 3-4 and 8: the 98 rays, as ticks -- too many to letter; the "
-                                                           "inventory table below lists each one.")
-                        want_twelfths = _reading_checkbox("Twelfth-parts", "timing_twelfths", "_timing_twelfths",
-                                                          help="I.6, 3-4 and 8: the 38 twelfth-parts of the planets and of the "
-                                                               "house degrees, as ticks.")
+                # One @st.fragment for the whole of this subheader's block
+                # (item 9, 2026-09-15). Every one of its eight controls -- the
+                # View selectbox, the Wheel layout radio and the five in the
+                # Options popover -- used to rerun the whole script, which
+                # redraws the 67 tables this page carries; a fragment reruns
+                # only its own body on its own widgets' changes. The picture is
+                # what the controls are for, so the picture, its download and
+                # the caption that explains its conventions are inside it and
+                # the direction strips and every table are outside.
+                #
+                # The revolution data is the top level's: pn4 and the charts it
+                # carries are computed once per run, before this page's tabs,
+                # and the fragment reads them from the enclosing scope. What
+                # the fragment regenerates on its own rerun is the SVG, from
+                # the values its own widgets hold -- including the theme, which
+                # is taken from this block's own Dark wheel checkbox rather
+                # than from the top level's WHEEL_THEME, that being a full
+                # run's value and not one a fragment rerun moves.
+                @st.fragment
+                def _timing_wheel_block():
+                    st.subheader("The charts, drawn",
+                                 help="Year: the revolution alone (Figures 4, 26). Year over root: the image of the revolution "
+                                      "of the year, I.6, 3-6 (Figure 51 and fn 33; Figures 5 and 27 in Dykes's order). Month "
+                                      "over year and root: the image of the revolution of the month, IX.3, 4-8 (Figures 39 "
+                                      "and 109, fn 58). Month: the month's revolution alone. Profection: the natal wheel with "
+                                      "the sign of the year and the sign of the month (Figures 3, 15, 33). The Wide layout "
+                                      "adds a positions column per chart; hover the picture for the expand arrows.")
+                    st.session_state.setdefault("_timing_bounds", True)
+                    v_view, v_layout, v_opts = st.columns([2.2, 1.4, 0.9], vertical_alignment="bottom")
+                    with v_view:
+                        wheel_view = _reading_select("View", WHEEL_VIEW_OPTIONS, "timing_wheel_view", "_timing_wheel_view")
+                    with v_layout:
+                        _timing_layout = _reading_radio("Wheel layout", WHEEL_LAYOUT_OPTIONS, "wheel_layout", "_wheel_layout")
+                    with v_opts:
+                        with st.popover("Options", icon=":material/tune:", width="stretch"):
+                            wheel_order = _reading_radio("Inner wheel", WHEEL_ORDER_OPTIONS, "wheel_order", "_wheel_order",
+                                                         help="Dykes: \"Abu Ma'shar seems to prefer that the SR be the inner "
+                                                              "wheel, but to me this seem unnatural and I only do it to "
+                                                              "illustrate his instructions in Ch. I.6\" (p. 12). Figure 51 "
+                                                              "follows Abu Ma'shar; every other figure in the book puts the "
+                                                              "nativity in the centre. IX.3, 4-6 writes the month first, then "
+                                                              "the year, then the root.")
+                            wheel_bounds = _reading_checkbox("Bounds ring", "timing_bounds", "_timing_bounds",
+                                                             help="The Egyptian bounds as a ring, as every PN IV wheel carries them.")
+                            # Every control in this popover stands before the
+                            # picture, so each one's own return is this
+                            # fragment rerun's value -- no read-before-draw is
+                            # needed here, as it is on the Chart page where the
+                            # controls sit under the wheel. _persist still
+                            # writes the store keys and the preferences file
+                            # from inside the fragment, so the next full run's
+                            # WHEEL_DARK and the rest read what was left here.
+                            _timing_dark = _reading_checkbox("Dark wheel", "wheel_dark", "_wheel_dark", help=WHEEL_DARK_HELP)
+                            want_lots = _reading_checkbox("Lots", "timing_lots", "_timing_lots",
+                                                          help="I.6, 3-4: the Lots \"according to how you do it\" -- this app's, "
+                                                               "beyond Fortune, as short ticks with their names.")
+                            want_rays = _reading_checkbox("Rays", "timing_rays", "_timing_rays",
+                                                          help="I.6, 3-4 and 8: the 98 rays, as ticks -- too many to letter; the "
+                                                               "inventory table below lists each one.")
+                            want_twelfths = _reading_checkbox("Twelfth-parts", "timing_twelfths", "_timing_twelfths",
+                                                              help="I.6, 3-4 and 8: the 38 twelfth-parts of the planets and of the "
+                                                                   "house degrees, as ticks.")
 
-                def _ring_extras(chart):
-                    out = []
-                    if want_lots:
-                        for d in LOT_DEFINITIONS:
-                            if d['id'] == 'fortune':
-                                continue
-                            lot_lon = lot_by_id(d['id'], chart['planetary_data'], chart['ascendant'], chart['houses'], chart['sect'])
-                            if lot_lon is not None:
-                                out.append((d['name'], lot_lon, d['name'].replace('Lot of ', '').replace('the ', '')[:9]))
-                    if want_rays:
-                        for ray_lon, kind, who, aspect in pn4_bodies_and_rays(chart['planetary_data']):
-                            if kind != 'body':
-                                out.append((f"{who} by {aspect}", ray_lon, POINT_GLYPHS[who] + _ASPECT_GLYPH.get(aspect, '')))
-                    if want_twelfths:
-                        for who, row in chart['planetary_data'].items():
-                            if who in PLANET_SWE_IDS:
-                                out.append((f"twelfth-part of {who}", pn4_twelfth_part(row['longitude']), '¹²' + POINT_GLYPHS[who]))
-                        for i, cusp in enumerate(list(chart['houses'])[:12]):
-                            out.append((f"twelfth-part of the degree of house {i + 1} ({get_degree_string(cusp)})",
-                                        pn4_twelfth_part(cusp), f'¹²h{i + 1}'))
-                    return out
+                    def _ring_extras(chart):
+                        out = []
+                        if want_lots:
+                            for d in LOT_DEFINITIONS:
+                                if d['id'] == 'fortune':
+                                    continue
+                                lot_lon = lot_by_id(d['id'], chart['planetary_data'], chart['ascendant'], chart['houses'], chart['sect'])
+                                if lot_lon is not None:
+                                    out.append((d['name'], lot_lon, d['name'].replace('Lot of ', '').replace('the ', '')[:9]))
+                        if want_rays:
+                            for ray_lon, kind, who, aspect in pn4_bodies_and_rays(chart['planetary_data']):
+                                if kind != 'body':
+                                    out.append((f"{who} by {aspect}", ray_lon, POINT_GLYPHS[who] + _ASPECT_GLYPH.get(aspect, '')))
+                        if want_twelfths:
+                            for who, row in chart['planetary_data'].items():
+                                if who in PLANET_SWE_IDS:
+                                    out.append((f"twelfth-part of {who}", pn4_twelfth_part(row['longitude']), '¹²' + POINT_GLYPHS[who]))
+                            for i, cusp in enumerate(list(chart['houses'])[:12]):
+                                out.append((f"twelfth-part of the degree of house {i + 1} ({get_degree_string(cusp)})",
+                                            pn4_twelfth_part(cusp), f'¹²h{i + 1}'))
+                        return out
 
-                _natal_when = f"{local_dt.day} {local_dt:%b} {local_dt.year} {local_dt:%H:%M} {tz_name}"
-                natal_ring = {'label': 'Nativity', 'chart': chart_data, 'when': _natal_when}
-                year_ring = {'label': f"Year, age {pn4['age']}", 'chart': pn4['sr'],
-                             'when': f"{pn4_datetime_from_jd(pn4['jd_sr']):%d %b %Y %H:%M} UT"}
-                month_ring = {'label': f"Month {pn4['month']} of 12", 'chart': pn4['mr'],
-                              'when': f"{pn4_datetime_from_jd(pn4['jd_mr']):%d %b %Y %H:%M} UT"}
-                year_sign = SIGN_ORDER.index(pn4['year']['sign'])
-                _month_lon = next((r['longitude'] for r in pn4['monthly_indicators'] if r['number'] == 1), None)
-                month_sign = None if _month_lon is None else int((_month_lon % 360.0) // 30)
-                _cur = pn4['current']
-                _distribution = None
-                if _cur and pn4['segments']:
-                    _distribution = {'start': chart_data['ascendant'],
-                                     'end': _pn4_seg_degree({'from': pn4['elapsed_years']}, chart_data['ascendant'], chart_data, lat)}
-                _badges = {}
-                for _planet, _letter in (((_cur or {}).get('distributor'), 'D'), ((_cur or {}).get('partner'), 'P'),
-                                         ((pn4['fardar'] or {}).get('lord'), 'F'), ((pn4['fardar'] or {}).get('sub_lord'), 'f'),
-                                         (pn4['orb'], 'O')):
-                    if _planet:
-                        _badges[_planet] = (_badges.get(_planet, '') + '·' + _letter).strip('·')
-                _dykes = wheel_order == WHEEL_ORDER_OPTIONS[0]
-                _wide_t = _timing_layout == WHEEL_LAYOUT_OPTIONS[1]
-                if wheel_view == WHEEL_VIEW_OPTIONS[0]:
-                    _rings, _kw = [year_ring], {}
-                elif wheel_view == WHEEL_VIEW_OPTIONS[1]:
-                    _rings = [natal_ring, year_ring] if _dykes else [year_ring, natal_ring]
-                    _n = _rings.index(natal_ring)
-                    _kw = dict(shade_sign=year_sign, profection_from=chart_data['ascendant'], distribution=_distribution,
-                               marks=[('TP', pn4['year']['longitude'], _n)], badges={_n: _badges})
-                elif wheel_view == WHEEL_VIEW_OPTIONS[2]:
-                    _rings = [natal_ring, year_ring, month_ring] if _dykes else [month_ring, year_ring, natal_ring]
-                    _n = _rings.index(natal_ring)
-                    _kw = dict(shade_sign=year_sign, outline_sign=month_sign, profection_from=chart_data['ascendant'],
-                               marks=[('TP', pn4['year']['longitude'], _n)], badges={_n: _badges})
-                elif wheel_view == WHEEL_VIEW_OPTIONS[3]:
-                    _rings, _kw = [month_ring], {}
-                else:
-                    _rings = [natal_ring]
-                    _kw = dict(shade_sign=year_sign, outline_sign=month_sign, profection_from=chart_data['ascendant'],
-                               marks=[('TP', pn4['year']['longitude'], 0)])
-                _extras = {i: _ring_extras(r['chart']) for i, r in enumerate(_rings)} if (want_lots or want_rays or want_twelfths) else None
-                svg_timing = generate_multiwheel_svg(_rings, chart_name, wide=_wide_t, bounds=wheel_bounds, extras=_extras,
-                                                     theme=WHEEL_THEME, **_kw)
-                st.image(svg_timing, width='stretch' if _wide_t else 560)
-                st.download_button("Download this wheel (SVG)", svg_timing, key="dl_timing_wheel",
-                                   file_name=f"{re.sub(r'[^A-Za-z0-9]+', '_', chart_name).strip('_') or 'chart'}_"
-                                             f"{re.sub(r'[^A-Za-z0-9]+', '_', wheel_view).strip('_').lower()}_age{pn4['age']}.svg",
-                                   mime="image/svg+xml")
-                st.caption("PN IV's own conventions, read from its figures: the nativity in the centre and the "
-                           "revolution outside in every bi-wheel but Figure 51, where Dykes follows Abu Ma'shar's order of I.6 "
-                           "and says so (p. 12); the outer charts in whole signs; \"the profected natal Ascendant "
-                           "... which I have shaded in grey\" (fn 33) -- the sign of the terminal point of the year -- "
-                           "with the profection drawn as a dashed arc from the natal Ascendant (Figures 3, 33); the month "
-                           "as a tri-wheel, root, year, month (fn 58); a ring of the Egyptian bounds on its wheels "
-                           "(Figures 1, 22, 25, 26; not the simplified Figure 51). "
-                           "Default points are Dykes's (p. 12): the seven planets, the nodes, Fortune, the angles; "
-                           "I.6, 3-4's Lots, rays and twelfth-parts are the toggles, and the inventory table below is "
-                           "the authority the picture is held to. TP marks the terminal point of the year (I.6, 5); the "
-                           "letters under a natal planet mark I.6, 6's time lords -- D distributor, P partner, F lord of "
-                           "the fardar, f its divider, O lord of the orb; the solid arc from the natal Ascendant is the "
-                           "distribution, ending on the degree reached now with its bound tinted (Figures 2, 65). Two "
-                           "things the text asks for that the picture keeps as Dykes drew it: I.6, 2 has the houses "
-                           "\"by their degrees and minutes ... the portions of hours and the ascensions of the right "
-                           "circle\" -- the Alchabitius cusps this app computes -- and the wheel keeps whole signs, as "
-                           "fn 33 says Figure 51 does \"to make the image easier to understand\"; and I.6, 5 profects the "
-                           "terminal point \"from the Lot of Fortune of the root, and from the rest of the indicators\" "
-                           "as well as from the Ascendant, where only the Ascendant's arc is drawn (the Lot of Fortune's "
-                           "profection is in the month's indicators below).")
+                    _natal_when = f"{local_dt.day} {local_dt:%b} {local_dt.year} {local_dt:%H:%M} {tz_name}"
+                    natal_ring = {'label': 'Nativity', 'chart': chart_data, 'when': _natal_when}
+                    year_ring = {'label': f"Year, age {pn4['age']}", 'chart': pn4['sr'],
+                                 'when': f"{pn4_datetime_from_jd(pn4['jd_sr']):%d %b %Y %H:%M} UT"}
+                    month_ring = {'label': f"Month {pn4['month']} of 12", 'chart': pn4['mr'],
+                                  'when': f"{pn4_datetime_from_jd(pn4['jd_mr']):%d %b %Y %H:%M} UT"}
+                    year_sign = SIGN_ORDER.index(pn4['year']['sign'])
+                    _month_lon = next((r['longitude'] for r in pn4['monthly_indicators'] if r['number'] == 1), None)
+                    month_sign = None if _month_lon is None else int((_month_lon % 360.0) // 30)
+                    _cur = pn4['current']
+                    _distribution = None
+                    if _cur and pn4['segments']:
+                        _distribution = {'start': chart_data['ascendant'],
+                                         'end': _pn4_seg_degree({'from': pn4['elapsed_years']}, chart_data['ascendant'], chart_data, lat)}
+                    _badges = {}
+                    for _planet, _letter in (((_cur or {}).get('distributor'), 'D'), ((_cur or {}).get('partner'), 'P'),
+                                             ((pn4['fardar'] or {}).get('lord'), 'F'), ((pn4['fardar'] or {}).get('sub_lord'), 'f'),
+                                             (pn4['orb'], 'O')):
+                        if _planet:
+                            _badges[_planet] = (_badges.get(_planet, '') + '·' + _letter).strip('·')
+                    _dykes = wheel_order == WHEEL_ORDER_OPTIONS[0]
+                    _wide_t = _timing_layout == WHEEL_LAYOUT_OPTIONS[1]
+                    if wheel_view == WHEEL_VIEW_OPTIONS[0]:
+                        _rings, _kw = [year_ring], {}
+                    elif wheel_view == WHEEL_VIEW_OPTIONS[1]:
+                        _rings = [natal_ring, year_ring] if _dykes else [year_ring, natal_ring]
+                        _n = _rings.index(natal_ring)
+                        _kw = dict(shade_sign=year_sign, profection_from=chart_data['ascendant'], distribution=_distribution,
+                                   marks=[('TP', pn4['year']['longitude'], _n)], badges={_n: _badges})
+                    elif wheel_view == WHEEL_VIEW_OPTIONS[2]:
+                        _rings = [natal_ring, year_ring, month_ring] if _dykes else [month_ring, year_ring, natal_ring]
+                        _n = _rings.index(natal_ring)
+                        _kw = dict(shade_sign=year_sign, outline_sign=month_sign, profection_from=chart_data['ascendant'],
+                                   marks=[('TP', pn4['year']['longitude'], _n)], badges={_n: _badges})
+                    elif wheel_view == WHEEL_VIEW_OPTIONS[3]:
+                        _rings, _kw = [month_ring], {}
+                    else:
+                        _rings = [natal_ring]
+                        _kw = dict(shade_sign=year_sign, outline_sign=month_sign, profection_from=chart_data['ascendant'],
+                                   marks=[('TP', pn4['year']['longitude'], 0)])
+                    _extras = {i: _ring_extras(r['chart']) for i, r in enumerate(_rings)} if (want_lots or want_rays or want_twelfths) else None
+                    # The same rule the top level's WHEEL_THEME follows, read
+                    # from this fragment's own checkbox: the viewer's theme
+                    # when the preference is on, None when it is off. No
+                    # picture is handed the viewer's theme unfiltered.
+                    _timing_theme = VIEWER_THEME if _timing_dark else None
+                    svg_timing = generate_multiwheel_svg(_rings, chart_name, wide=_wide_t, bounds=wheel_bounds, extras=_extras,
+                                                         theme=_timing_theme, **_kw)
+                    st.image(svg_timing, width='stretch' if _wide_t else 560)
+                    st.download_button("Download this wheel (SVG)", svg_timing, key="dl_timing_wheel",
+                                       file_name=f"{re.sub(r'[^A-Za-z0-9]+', '_', chart_name).strip('_') or 'chart'}_"
+                                                 f"{re.sub(r'[^A-Za-z0-9]+', '_', wheel_view).strip('_').lower()}_age{pn4['age']}.svg",
+                                       mime="image/svg+xml")
+                    st.caption("PN IV's own conventions, read from its figures: the nativity in the centre and the "
+                               "revolution outside in every bi-wheel but Figure 51, where Dykes follows Abu Ma'shar's order of I.6 "
+                               "and says so (p. 12); the outer charts in whole signs; \"the profected natal Ascendant "
+                               "... which I have shaded in grey\" (fn 33) -- the sign of the terminal point of the year -- "
+                               "with the profection drawn as a dashed arc from the natal Ascendant (Figures 3, 33); the month "
+                               "as a tri-wheel, root, year, month (fn 58); a ring of the Egyptian bounds on its wheels "
+                               "(Figures 1, 22, 25, 26; not the simplified Figure 51). "
+                               "Default points are Dykes's (p. 12): the seven planets, the nodes, Fortune, the angles; "
+                               "I.6, 3-4's Lots, rays and twelfth-parts are the toggles, and the inventory table below is "
+                               "the authority the picture is held to. TP marks the terminal point of the year (I.6, 5); the "
+                               "letters under a natal planet mark I.6, 6's time lords -- D distributor, P partner, F lord of "
+                               "the fardar, f its divider, O lord of the orb; the solid arc from the natal Ascendant is the "
+                               "distribution, ending on the degree reached now with its bound tinted (Figures 2, 65). Two "
+                               "things the text asks for that the picture keeps as Dykes drew it: I.6, 2 has the houses "
+                               "\"by their degrees and minutes ... the portions of hours and the ascensions of the right "
+                               "circle\" -- the Alchabitius cusps this app computes -- and the wheel keeps whole signs, as "
+                               "fn 33 says Figure 51 does \"to make the image easier to understand\"; and I.6, 5 profects the "
+                               "terminal point \"from the Lot of Fortune of the root, and from the rest of the indicators\" "
+                               "as well as from the Ascendant, where only the Ascendant's arc is drawn (the Lot of Fortune's "
+                               "profection is in the month's indicators below).")
+                _timing_wheel_block()
 
 
                 st.subheader("The image of the revolution of the year: its points (I.6, 3-8)",
@@ -3033,12 +3120,17 @@ if location_query and lat is not None and lon is not None:
 
                 st.subheader('Chronocrator Matrix', help='Two rows: the lord of the year by annual profection, and the Egyptian bound lord of the Ascendant directed symbolically at one degree per year -- which is not a distribution, as its label says. Abu Ma\'shar names the shortcut himself and grades it: "there is an approximation in it, but the correct [approach] is that this way of directing is like the direction of the Sun every day" (IX.7, 32). The ascensional method he prefers is the jar bakhtar table above.')
                 st.dataframe(pd.DataFrame(time_lords_data), hide_index=True, width='stretch')
-                st.subheader("Planetary years (Gr. Intr. VII.8, Figure 146) -- display only",
+                # The one heading the short-headings branch left carrying its
+                # own metadata: the citation and the standing move to a
+                # caption under it, the shape _finding() prints, so the
+                # heading is the table's name and nothing else.
+                st.subheader("Planetary years",
                              help="The lesser, middle, greater and mighty years and the fardar of each planet, beside its placement, "
                                   "the grade On Nativities 1.20, 7-34 would give it as house-master (placed by the division, the "
                                   "POWER unit) and what On Times 4, 7 -- a question-chart rule, 4, 2 -- would "
                                   "give it, for comparison. Applied to one planet only: the house-master the Timing page names "
                                   "from On Nativities 1.15, whose grant is printed there with its sentence.")
+                st.caption("Display only · Gr. Intr. VII.8, Figure 146")
                 st.dataframe(pd.DataFrame(planetary_years_data), hide_index=True, width='stretch', height=_rows_height(len(planetary_years_data)))
                 if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
                     st.caption("The last column, beside each \"1.20 silent\" cell only: the class Abu 'Ali's ladder gives the "
