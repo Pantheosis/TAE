@@ -1183,3 +1183,48 @@ add by his own aspects. Both quoted in the expander; neither applied. Test:
 spans; Jupiter trine adds 12 at three undecided grades; Saturn square subtracts 30; a bad one's trine
 nothing; Venus joined adds 8, Jupiter square nothing; Mercury's four fn 28 cases; no row in aversion; the
 Releaser tab at both depths). `tables.json` untouched (course-text depth).
+
+## 2026-09-15: witnesses in hand -- the pages' "not in hand" claims amended; the third day of the Moon counted inclusively (Firmicus II.29, 34)
+
+Text only, no computation, for the first six; a one-constant change with its finding's strings for the last.
+
+1. Timing page, "What Persian Nativities IV does not settle". The releaser paragraph now says what two texts
+in hand state of the open items: al-Qabisi's choice among the five and the house-master's order with its
+tie-breaks (ITA VIII.1.3, al-Qabisi IV.4-6, pp. 355-357 -- the stronger lord in the releaser's place that
+looks at it, down the order until one does; equals by the stronger in its own place, then the nearer degree;
+no lord looking, the releaser unfit and the next taken), and Abu 'Ali's addition and subtraction (Judgments
+of Nativities Ch. 4: a fortune joined or in trine or sextile adds its lesser years, an infortune joined or in
+square or opposition subtracts its own, the other rays of each nothing). Stated there, not built; the choice
+stays Sahl's. The Indian-rule paragraph adds that the ninth-parts are al-Qabisi's and Abu Ma'shar's too (ITA
+VII.5, al-Qabisi IV.16-17, Abbr. VII.22-23, Figure 110) and that no text in hand makes the first ninth-part's
+lord the lord of the year. The other four paragraphs untouched.
+2. Reference page, planetary-years caption: Valens VII.5 is in hand (Riley's translation, his 4K;5P). His
+Sun sentence quoted -- "The sun has half of 120 years and hence receives 60; its minimum period is 19. The
+total is 79, half of which is 39 years, 6 months." -- the Moon's said to be the same; 39 1/2 now has four
+witnesses to the ordinary mean's three. His Venus is "a complete period of 84" (half 46), not Figure 146's
+82: named as a variant not adopted. The PLANETARY_YEARS comment says the same (four and three).
+3. Dignities page, "Topical Planets in Houses" help: Rhetorius Ch. 57 and Mathesis III.2-III.13 are in hand;
+the Guide's summary is still what the table prints and it has not been checked against them (not attempted).
+4. Timing page caption (the paragraph on the Judgments of Nativities not in hand -- it is there, not on the
+Sources page, and the Reference page has no decisions table): one sentence that al-Qabisi's own account of
+the releaser and house-master (ITA VIII.1.3) is in hand and stands beside Sahl's in the Sources page's
+coverage table, not built.
+5. Configurations page, right-sidedness notes: Rhetorius Chs. 23-25 (the doryphory in three kinds, the
+out-of-sect kind, trine and square over sextile) and Ch. 53 (each planet's doryphory of the Sun) named as
+witnesses to the doctrine that arbitrate neither definition.
+6. Docstring of the semi-arc direction: ITA's glossary (p. 382) has converse directions as an allowance of
+"some later astrologers".
+
+The third day of the Moon. MOON_THIRD_DAY_DAYS 3 -> 2, the birth day counted as the first. The witness is
+Firmicus's worked chart, the nativity of Albinus (Mathesis II.29, 21-22 and 34; Figure 34: Mar 14 303 AD JC,
+10:43:13 PM, LMT -00:49:56, Rome 12e29 41n54; the Moon 14 58' Cancer, Mars 11 18' Aquarius): "on the third
+day the Moon, being established in Leo, full of light, flung herself into the rays of Mars (and this day,
+that is the third, operates in a very powerful way in nativities)" (fn 136 -> III.14, 17-19, where the third
+day "just like the first" decrees). By swisseph (UT 23:33:09, Julian calendar) the Moon is 0 12' Leo one
+day after the birth (168 from Mars), 14 51' Leo two days after (182, on his opposition ray), 29 47' Leo three
+days after (196, past it). So the third day is birth + 2. Every rendered string and the notes say "two days
+after the birth, the birth day counted as the first (Firmicus, Mathesis II.29, 34, in the nativity of
+Albinus; III.14, 17-19)", the birth hour kept; the "this app's reading of the hour" sentence replaced by the
+witness; Sahl's sentences stay the rule. New test `tests/test_third_day_albinus_2026_09_15.py` (Albinus's
+JD -> the third-day Moon in Leo within 3 degrees of Mars's opposition, one day short and three days past,
+the constant 2); `tests/test_moon_third_day_2026_09_15.py` repinned to + 2.0 and the new string.
