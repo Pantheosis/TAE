@@ -11,3 +11,4 @@ pytz==2026.3.post1
 
 # Test suite (tests/): streamlit.testing.v1.AppTest, headless.
 pytest==9.1.1
+pytest-xdist==3.8.0
