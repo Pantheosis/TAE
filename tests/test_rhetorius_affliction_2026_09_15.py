@@ -31,10 +31,14 @@ def span():
 
 def test_every_condition_text_is_verbatim_from_the_corpus(engine, span):
     conditions = engine["RHETORIUS_AFFLICTION_CONDITIONS"]
-    assert len(conditions) == 13
+    assert len(conditions) == 14
+    ita = (CORPUS.parent.parent / 'ita' / 'ita_photographed.md').read_text(encoding='utf-8')
     for c in conditions:
+        if c['key'] == 'enclosed by the fortunes':
+            assert c['text'] in ita, c['key']   # Gr. Intr. VII.6 as ITA IV.4.2 quotes it
+            continue
         assert c['text'] in span, c['key']
-        assert c['chapter'].startswith('Rhetorius Ch. ') and c['chapter'].endswith('(Holden)')
+        assert c['chapter'].startswith('Rhetorius Ch. ') and ('(Holden)' in c['chapter'])
         assert c['family'] in ('Afflicted', 'Fortified', 'Dominated')
         assert (c.get('reading') is None) == ('untested' in c), c['key']
     for name in ('RHETORIUS_CH26', 'RHETORIUS_CH27', 'RHETORIUS_CH28', 'RHETORIUS_CH34', 'RHETORIUS_CH41', 'RHETORIUS_CH42'):
@@ -69,11 +73,23 @@ def test_besieged_per_ch_41(engine):
     siege = _of(rows, 'Moon', 'besieged')
     assert len(siege) == 1
     assert siege[0]['By'] == 'Mars (3.0° behind) and Saturn (5.0° ahead), by body or ray'
-    assert siege[0]['Chapter'] == 'Rhetorius Ch. 27 with Ch. 41 (Holden)'
+    assert siege[0]['Chapter'] == 'Rhetorius Ch. 27 with Ch. 41 (Holden); ITA IV.4.2'
     assert siege[0]['Text'] == 'besieged'
-    # A third ray falling between breaks it: Venus at 15 Libra, by body.
+    # A benefic's body falling between breaks it (ITA IV.4.2, Dykes's comment;
+    # Gr. Intr. VII.6 "loosening"): Venus at 15 Libra, and no row of either kind.
     chart['Venus'] = {'longitude': 195.0}
-    assert _of(_rows(engine, chart, asc=100.0), 'Moon', 'besieged')[0]['By'].startswith('Mars (3.0° behind) and Venus (2.0° ahead)')
+    rows2 = _rows(engine, chart, asc=100.0)
+    assert not _of(rows2, 'Moon', 'besieged') and not _of(rows2, 'Moon', 'enclosed by the fortunes')
+
+
+def test_enclosure_by_the_fortunes_is_its_own_fortified_row(engine):
+    # Moon at 13 Libra between Jupiter's body at 10 Libra and Venus's trine ray from 18 Gemini.
+    chart = {'Moon': {'longitude': 193.0}, 'Jupiter': {'longitude': 190.0}, 'Venus': {'longitude': 78.0},
+             'Sun': {'longitude': 300.0}, 'Saturn': {'longitude': 320.0}, 'Mars': {'longitude': 250.0}}
+    rows = _rows(engine, chart, asc=100.0)
+    assert not _of(rows, 'Moon', 'besieged')
+    good = _of(rows, 'Moon', 'enclosed by the fortunes')
+    assert len(good) == 1 and good[0]['By'] == 'Jupiter (3.0° behind) and Venus (5.0° ahead), by body or ray'
     # And beyond 7 degrees there is no siege at all.
     chart['Venus'] = {'longitude': 240.0}
     chart['Saturn'] = {'longitude': 21.0}

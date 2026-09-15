@@ -1694,7 +1694,7 @@ RHETORIUS_CH27 = ('Affliction is said when one is aspected by malefics or besieg
                   'the second and the eighth and the twelfth.')
 RHETORIUS_CH28 = ('Effective houses are the four angles and the two trines on either side of the ASC and '
                   'the succedent of the MC.')
-RHETORIUS_CH34 = ('Kollèsis is the most important application when a star moves towards a star, the swifter '
+RHETORIUS_CH34 = ('Kollêsis is the most important application when a star moves towards a star, the swifter '
                   'to the slower, if it is not more than three degrees away.')
 RHETORIUS_CH41 = ('Besieging is when two planets have another one between them according to some aspect '
                   'pattern, with no other casting a ray in between, within 7 degrees to the front or the rear.')
@@ -1709,11 +1709,19 @@ RHETORIUS_AFFLICTION_CONDITIONS = [
      'text': 'aspected by malefics',
      'reading': 'Whole sign: Saturn or Mars in the second, third, fourth or sixth sign from the planet, on either side. '
                 'The text gives no degree, so none is applied; a malefic in the same sign is not an aspect and is not counted here.'},
-    {'key': 'besieged', 'family': 'Afflicted', 'chapter': 'Rhetorius Ch. 27 with Ch. 41 (Holden)',
+    {'key': 'besieged', 'family': 'Afflicted', 'chapter': 'Rhetorius Ch. 27 with Ch. 41 (Holden); ITA IV.4.2',
      'text': 'besieged',
      'reading': 'By degree, as Ch. 41 defines it: one planet\'s body or ray within 7 degrees behind the planet and another\'s '
                 'within 7 degrees ahead, with no third body or ray falling between the two. Rays are the sextile, square, trine and '
-                'opposition ("according to some aspect pattern"). Ch. 41 names no malefics: the row names the two besiegers, whoever they are.'},
+                'opposition ("according to some aspect pattern"). Ch. 41 names no malefics; that the besiegers of an AFFLICTED planet '
+                'are Saturn and Mars is the definition the texts in ITA IV.4.2 give -- "between two malevolents or between two rays of '
+                'malevolents" (Abbr. IV.21-25), "a bad one or its rays is in front of it, and a bad one or its rays after it" '
+                '(al-Qabisi III.28b) -- and the row is limited to them.'},
+    {'key': 'enclosed by the fortunes', 'family': 'Fortified', 'chapter': 'Gr. Intr. VII.6 and BW VIII.76, in ITA IV.4.2',
+     'text': 'if a planet or sign were besieged by the fortunes, this will be of the more worthy fortunes',
+     'reading': 'The same 7-degree construction with Jupiter and Venus as the two besiegers: "if a planet or sign were besieged by '
+                'the fortunes, this will be of the more worthy fortunes" (Gr. Intr. VII.6, in ITA IV.4.2); "if between fortunes, a '
+                'good condition is going to come" (BW VIII.76, its brackets the translator\'s). Not a Rhetorius row: added from the ITA passage.'},
     {'key': 'applying to a destructive star', 'family': 'Afflicted', 'chapter': 'Rhetorius Ch. 27 (Holden)',
      'text': 'applying to a destructive [star]',
      'reading': 'Whole sign: the planet is the swifter of the two and is moving toward the exact conjunction or aspect '
@@ -1861,7 +1869,10 @@ def evaluate_rhetorius_affliction(planetary_data, asc_lon, sect):
         siege = _rhetorius_besiegers(planet, planetary_data, planets)
         if siege:
             b, bg, a, ag = siege
-            add(planet, 'besieged', f'{b} ({bg:.1f}° behind) and {a} ({ag:.1f}° ahead), by body or ray')
+            if b in INFORTUNES and a in INFORTUNES:
+                add(planet, 'besieged', f'{b} ({bg:.1f}° behind) and {a} ({ag:.1f}° ahead), by body or ray')
+            elif b in FORTUNES and a in FORTUNES:
+                add(planet, 'enclosed by the fortunes', f'{b} ({bg:.1f}° behind) and {a} ({ag:.1f}° ahead), by body or ray')
         if applying:
             add(planet, 'applying to a destructive star', '; '.join(applying))
         if kollesis:
@@ -14793,6 +14804,7 @@ if location_query and lat is not None and lon is not None:
                                  "Rhetorius Ch. 28 (Holden): \"" + RHETORIUS_CH28 + "\" Holden's notes name them: the fifth house and the ninth; the eleventh house.\n\n"
                                  "Rhetorius Ch. 26 (Holden): \"" + RHETORIUS_CH26 + "\"\n\n"
                                  "Rhetorius Ch. 34 (Holden), where Ch. 27's note sends the word: \"" + RHETORIUS_CH34 + "\"\n\n"
+                                 "The besiegers of an afflicted planet are the malefics, as the definitions gathered in ITA IV.4.2 have it -- Abbr. IV.21-25: \"And there is another kind of misfortune which is called \u201cenclosure.\u201d But this is twofold. First, with some star between two malevolents or between two rays of malevolents, or if it heads from a malevolent to a malevolent. And likewise concerning the rays.\"; al-Qabisi III.28b: \"This is if a planet is in some sign, and in addition a bad one or its rays is in front of it, and a bad one or its rays after it.\" Enclosure by the fortunes is its own row: \"And if a planet or sign were besieged by the fortunes, this will be of the more worthy fortunes\" (Gr. Intr. VII.6, in ITA IV.4.2); BW VIII.76: \"[But if a significator is] from the class of being-in-the-middle [between infortunes], it denotes [prison and torture; if between fortunes], a good condition is going to come.\". A third body or ray between the two breaks either, as the same passage says of a fortune's ray within seven degrees.\n\n"
                                  "How this app reads each condition. Where a chapter gives a degree (Ch. 41's seven, Ch. 34's three) it is applied; where it gives none, the condition is read by whole sign and no degree is invented. Malefics are Saturn and Mars.\n\n"
                                  + "\n".join(f"- **{c['key']}** ({c['chapter']}), \"{c['text']}\": {c.get('reading') or c['untested']}"
                                              for c in RHETORIUS_AFFLICTION_CONDITIONS)))

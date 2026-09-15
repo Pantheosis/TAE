@@ -667,3 +667,9 @@ boundary (Ch. 34 names three degrees, not the sign); the malefic frame said to b
 with any two planets as besiegers, as the chapter has it (four of the seven planets on 1240-05-23),
 under the heading "Afflicted" that Ch. 27 gives it -- restricting the besiegers to the malefics is a
 ruling, not a reading the text makes. The corpus has "Kollèsis" where p. 23 prints "Kollêsis".
+
+The besieging question answered from the text (ITA IV.4.2, photographed and OCR'd the same day): the
+besieging that afflicts is between the malefics (Abbr. IV.21-25; al-Qabisi III.28b), and enclosure by
+the fortunes is a condition of its own (Gr. Intr. VII.6 as ITA quotes it; BW VIII.76). The row is
+limited to Saturn and Mars, a fourteenth row "enclosed by the fortunes" added under Fortified, the
+sentences quoted in the notes; a third body or ray between breaks either. `LOT`-style count 13 -> 14.
