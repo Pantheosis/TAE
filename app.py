@@ -1305,8 +1305,10 @@ CHALDEAN_ORDER = ['Mars', 'Sun', 'Venus', 'Mercury', 'Moon', 'Saturn', 'Jupiter'
 # The weighted five-fold dignity claim used wherever this file totals
 # essential dignities at a degree: a planet's own score, the prenatal
 # syzygy's almuten, and the newer victor scheme (al-Qabisi / Abu Ma'shar,
-# triplicity above bound). The older victor scheme swaps bound and
-# triplicity and is written out at VICTOR_WEIGHTS.
+# triplicity above bound). Stated by al-Qabisi I.22 (ITA I.18, p. 81):
+# domicile 5, exaltation 4, triplicity 3, bound 2, face 1 (OCR, unverified).
+# The older victor scheme swaps bound and triplicity and is written out at
+# VICTOR_WEIGHTS.
 ESSENTIAL_DIGNITY_WEIGHTS = {'domicile': 5, 'exaltation': 4, 'triplicity': 3, 'term': 2, 'face': 1}
 
 # Dorothean triplicity rulers, keyed by element, each with the Day/Night/
@@ -1450,7 +1452,13 @@ NOCTURNAL_SECT_PLANETS = {'Moon', 'Venus', 'Mars'}
 
 def planet_sect_is_diurnal(planet, lon, sun_lon):
     """The planet's own sect. Mercury's follows his solar phase: west of the
-    Sun (a morning riser) is diurnal, east of it nocturnal. This is the one
+    Sun (a morning riser) is diurnal, east of it nocturnal -- Abu Ma'shar's
+    rule, Gr. Intr. IV.9 as ITA V.11 prints it (pp. 276-277; OCR,
+    unverified): "if [Mercury] is arising [before the Sun] he becomes
+    diurnal, but when he sets [after the Sun] he will be nocturnal". The
+    contrary rule, Mercury's sect by the sect of his company (Masha'allah,
+    Book of Aristotle II.11), Dykes calls a corruption of Paul twice (BA fn
+    50; ITA fn 171) and it is not imported. This is the one
     test behind Strength testimony 85 and the Sect table on the Dignities
     page, so the two cannot disagree."""
     if planet == 'Mercury':
@@ -1646,7 +1654,10 @@ def solar_phase_note(planet, side, speed_in_lon, elongation):
 # with a nocturnal one -- is the case the successful examples share (III.7,
 # 8, 26, 29); the other two pairings are the mismatch fn 186 names for
 # the second place (7; and 9, the evening star by day) and 27-28 show for
-# the sixth. A statement about every
+# the sixth. The sect a morning star takes is Abu Ma'shar's rule, not only
+# Firmicus's translator's: Gr. Intr. IV.9 in ITA V.11, rising before the Sun
+# he is diurnal, setting after him nocturnal (planet_sect_is_diurnal; 3.14).
+# A statement about every
 # chart, so the row is always returned. Display only: nothing scores it.
 MERCURY_PHASE_SECT_READING = {
     True: "the success that comes from Mercury's phase matching that of the chart",
@@ -1983,7 +1994,8 @@ def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None,
         # sect, it's on its sect-favored side of the horizon, and it's in
         # a sign of its sect-favored gender. Mercury's own sect is derived
         # from its solar phase (morning riser = diurnal, evening star =
-        # nocturnal) rather than being fixed.
+        # nocturnal) rather than being fixed -- Abu Ma'shar's rule, Gr. Intr.
+        # IV.9 (ITA V.11); see planet_sect_is_diurnal.
         current_sign = get_zodiac_sign(lon)
         if armc is not None and obliquity is not None and geo_lat is not None:
             is_above_horizon = _sin_altitude(lon, data.get('latitude', 0.0), data.get('distance', 1.0),
@@ -4793,17 +4805,31 @@ ANGLE_CUSP_INDICES = (0, 3, 6, 9)  # the four stakes, in swe.houses order
 # reading (Lesson 3 §4-5; Glossary s.v. Angles, succeedents, cadents), not
 # as an all-cusps form. The `five_degree_all_cusps` preference that offered
 # the all-cusps form was retired the same day; the constant stays for the
-# `angles_only` parameter's default and is no longer a reading.
+# `angles_only` parameter's default and is no longer a reading. A primary
+# text of ANOTHER author reads the phrase literally: al-Qabisi IV.4 (ITA
+# VIII.1.3, p. 355; OCR, unverified), inside his own releaser procedure,
+# "every planet which was before the degree of the Ascendant or any house by
+# five equal degrees and less, its strength will be valid in the house which
+# follows it" -- and ITA's Introduction §6 (p. 12) gives the all-cusps form
+# to Ptolemy. The owner's decision of 2026-09-15 (reconciliation decision 2,
+# as recommended): the ruling stands for Sahl's three sentences, the Releaser
+# tab names al-Qabisi's "any house" as the alternative, and no code
+# alternative is restored -- it would import another author's procedure into
+# Sahl's selector.
 FIVE_DEGREE_ALL_CUSPS = False
 
 def get_effective_house(longitude, cusps, angles_only=None):
     """Quadrant house with the five-degree carryover applied: a planet
     within 5 degrees before a cusp is counted as already in that house.
 
-    MEASURED IN ECLIPTIC LONGITUDE, BY CHOICE. Dykes' note on Fifty
-    Aphorisms #44 says the five degrees are reckoned "AS MEASURED IN
-    DIURNAL MOTION, hence Sahl's reference to the 'rear' of the stake" --
-    that is, along the diurnal circle, not in zodiacal degrees. The two
+    MEASURED IN ECLIPTIC LONGITUDE -- a text's own unit, not a choice
+    alone: al-Qabisi IV.4 states the rule "by five equal degrees" (ITA
+    VIII.1.3, p. 355; OCR, unverified), and "equal degrees" is the Great
+    Introduction's term for ecliptic measure (ITA VI.1.1 fn 2, p. 281).
+    Against it, Dykes' note on Fifty Aphorisms #44 says the five degrees
+    are reckoned "AS MEASURED IN DIURNAL MOTION, hence Sahl's reference to
+    the 'rear' of the stake" -- that is, along the diurnal circle, not in
+    zodiacal degrees. The two
     coincide only near the equinoctial points and diverge with latitude
     and with the obliquity of the rising sign. The oblique-ascension
     geometry exists in this file (_oblique_ascension, decision D-1) and is
@@ -4898,8 +4924,17 @@ def calculate_prenatal_syzygy(jd_natal, lat, lon, natal_houses):
       (stated there for the Ascendant's degree; fn 33: the portion is the
       degree; Dykes's comment fixes "above the earth" at the lunation's
       moment). When both or neither is above the earth the Moon's degree
-      is taken -- the engine's choice, no text says (FINAL-A6, 2026-09-11;
-      the line here said "per medieval practice" and cited nothing).
+      is taken (FINAL-A6, 2026-09-11, when the line here said "per medieval
+      practice" and cited nothing). Since 2026-09-15 the choice has its
+      text: al-Qabisi IV.3 (ITA VIII.1.2, p. 352; OCR, unverified) reports
+      three opinions on the fullness's degree -- Ptolemy's, "the degree of
+      the luminary which was above the earth"; "certain ones of the
+      sages'", when one luminary is on the eastern degree and the other on
+      the western, "the degree of the east is the degree of the
+      prevention"; and Valens's, "the degree in which the fullness is --
+      wanting the degree of the Moon". The Moon default is Valens's; the
+      sages' eastern-degree tie rule is named on the page and not adopted
+      (decision 7, as recommended).
 
     The exact moment is located by a Newton-style root search on the
     Sun/Moon ephemeris (not just an average-synodic-month estimate), then
@@ -4972,8 +5007,14 @@ def calculate_prenatal_syzygy(jd_natal, lat, lon, natal_houses):
     # Almuten by 5/4/3/2/1 points: weighted score across the essential
     # dignities ruling this degree (only the sect-appropriate triplicity
     # lord counts, not the Participating ruler, matching standard almuten
-    # scoring). The course's technique; the weights are stated in no text
-    # in hand. Sahl's own procedure for the governor of this degree (On
+    # scoring). The course's technique; the weights are al-Qabisi's, ITA
+    # I.18 (al-Qabisi I.22, p. 81; OCR, unverified): "the Lord of a domicile
+    # has five strengths, and the Lord of the exaltation four, and the Lord
+    # of the triplicity three, and the Lord of the bound two, and the Lord
+    # of the face one", fn 210 "only the primary triplicity Lord receives
+    # points"; the five places are his too (IV.7, ITA VIII.1.4). Relabelled
+    # 2026-09-15 (decision 6); until then the page said "stated in no text
+    # in hand". Sahl's own procedure for the governor of this degree (On
     # Nativities 1.7, 3-7) is sahl_syzygy_governor, shown beside it.
     scores = {}
     def _add_score(planet, pts):
@@ -5006,8 +5047,8 @@ def calculate_prenatal_syzygy(jd_natal, lat, lon, natal_houses):
 # the owner's ruling after Astra's blind reading, GOV-1.7 --
 # process/astra_2026-09-11/1.7_governor_ruling.md.) Sahl states his own
 # procedure for the one in charge of the degree of the meeting or
-# opposition; the 5/4/3/2/1 almuten above is the course's technique and is
-# kept beside it under its own name. 1.7, 3: "you will know the one in
+# opposition; the 5/4/3/2/1 almuten above is the course's technique (the
+# weights al-Qabisi's, ITA I.18) and is kept beside it under its own name. 1.7, 3: "you will know the one in
 # charge of that portion from five things: the lord of the house,
 # triplicity, exaltation, bound, and image, and the eastern one of them --
 # if [one] had superior claims over the rest of them". 1.7, 4: "Then see
@@ -5039,11 +5080,21 @@ def calculate_prenatal_syzygy(jd_natal, lat, lon, natal_houses):
 # the text's own word for the stakes is the counted sign (Introduction 2,
 # 31). The Moon's side by the same rising-before-the-Sun rule as the
 # planets, declared (Gr. Intr. VII.2, 4 names her right and left, not
-# "eastern"). Every condition read in the NATAL chart, declared.
+# "eastern"; al-Qabisi III.8a, ITA II.10.1 p. 98, states the bridge: the
+# superiors from the rays to the opposition "are called 'eastern' and
+# 'right'", OCR, unverified -- 3.16). Every condition read in the NATAL
+# chart, declared. Al-Qabisi's own tie-breaks for his governor (IV.5, ITA
+# VIII.1.3 p. 356: equal claimants that all aspect, "the one which was
+# stronger in [its own] place"; equal there, "the one which was closer to
+# the degree of the releaser", OCR, unverified) are a different technique of
+# a different author, named in SAHL_1_7_UNMODELLED and not borrowed
+# (decision 15).
 SAHL_1_7_LOOKING_SIGN_COUNTS = (0, 2, 3, 4, 6)   # the same sign or a whole-sign aspect to it
 SAHL_1_7_UNMODELLED = ("4's \"stronger in its [own] place\", 5-6 (the lord of the best; the one changed more quickly "
                        "into the superior condition) and 7's ranking among candidates that each hold a listed advantage "
-                       "are not modelled")
+                       "are not modelled; al-Qabisi's tie-breaks for his own governor -- the claimant stronger in its place, "
+                       "then the one nearer the releaser's degree (ITA VIII.1.3, al-Qabisi IV.5) -- are a different author's "
+                       "procedure, named here and not borrowed")
 SAHL_1_7_MODEL_DISCLOSURE = ("this app's arithmetic, not a rule Sahl states: the eastern candidates taken first (the Sun "
                              "having no side), then one point for a stake (by the division) and one each for own house, "
                              "exaltation, triplicity and bound, the highest total the pick; 4's comparative place strength "
@@ -5388,7 +5439,7 @@ LOT_DEFINITIONS = [
     dict(id='basis', topic='Basis', name='Lot of Basis',
          start='fortune', end='spirit', project='Ascendant', reverse_at_night=True,
          source="Gr. Intr. VIII.4, 22-24 ([9] the Lot of firmness and survival, \"the Lot of the Ascendant's support\"; fn 67: "
-                "the Greek Lot of Basis); VIII.7, 5",
+                "the Greek Lot of Basis); VIII.7, 5; the name is ITA VI.1.4's heading, \"The Lot of Basis\"",
          confidence='stated (Gr. Intr. VIII.4, 22-24; VIII.7, 5); not in Sahl under this name',
          note='"Is taken by day from the Lot of Fortune to the Lot of the Invisible, and by night the contrary, and it is '
               'added to what the degrees of the Ascendant come to, and it is cast out from the beginning of the sign of the '
@@ -5593,7 +5644,9 @@ LOT_DEFINITIONS = [
     dict(id='friends', topic='Friends', name='Lot of friends',
          start='Moon', end='Mercury', project='Ascendant', reverse_at_night=True,
          source='Sahl, On Nativities Ch. 11, 5 (the chapter preamble) and Ch. 11.1, 29',
-         confidence='settled',
+         confidence="reversed at night after al-Andarzaghar (al-Qabisi V.14a, in ITA VI.2.45), Masha'allah (Book of "
+                    "Aristotle III.12.1) and Dykes's note 72; Abu Ma'shar unreversed (Abbr. VI.53 and the Latin Gr. "
+                    "Intr. VIII.4, in ITA VI.2.45: from the Moon to Mercury by day and by night)",
          note='Dykes\' note 72 on Ch. 9.5, 3 identifies it: \"the Moon-Mercury Lot (projected from '
               'the Ascendant, reversed by night), which is identical to Dorotheus\'s Lot '
               'of friendship." In the Ch. 11 preamble the Moon-to-Mercury words are Dykes\' '
@@ -5645,7 +5698,7 @@ LOT_DEFINITIONS = [
     # 75 form: Sahl's Nativities has neither (coverage list, 2026-09-14).
     dict(id='jupiter_prosperity', topic='Fortune', name="Lot of Jupiter (prosperity, aid, victory), Abu Ma'shar",
          start='spirit', end='Jupiter', project='Ascendant', reverse_at_night=True, supplement=True,
-         source="Abu Ma'shar, Gr. Intr. VIII.3, 40-41; VIII.6, 13",
+         source="Abu Ma'shar, Gr. Intr. VIII.3, 40-41; VIII.6, 13; ITA VI.1.7's heading names it \"The Lot of Victory or Jupiter\"",
          confidence='attested; the supplement (not in Sahl)',
          note='"The Lot of Jupiter (comprising prosperity and aid) is taken by day from the Lot of the '
               'Invisible (indicative of good fortune) to Jupiter (indicative of prosperity and aid), and '
@@ -5655,7 +5708,7 @@ LOT_DEFINITIONS = [
               'man obtains pertaining to good deeds" (41).'),
     dict(id='saturn_burdensome', topic='Fortune', name='Lot of Saturn (the burdensome), Abu Ma\'shar',
          start='Saturn', end='fortune', project='Ascendant', reverse_at_night=True, supplement=True,
-         source="Abu Ma'shar, Gr. Intr. VIII.3, 37-38; VIII.6, 14",
+         source="Abu Ma'shar, Gr. Intr. VIII.3, 37-38; VIII.6, 14; ITA VI.1.8's heading names it \"The Lot of Nemesis or Saturn\"",
          confidence='attested; the supplement (not in Sahl)',
          note='"The Lot of Saturn (\'the burdensome\') is taken by day from the degree of Saturn to the '
               'degree of the Lot of Fortune, and by night the contrary, and to it is added the degrees of '
@@ -5837,7 +5890,18 @@ NOT_IMPLEMENTED_COVERAGE = [
      "(Fig. 121: the Moon at 29 59' Aquarius, Saturn at 1 Cancer casting his trine ray to 1 Pisces). Only the "
      "body-to-body case of VII.4, 13-14 is reported."),
     ("Sahl, On Nativities Ch. 1.20, 13-15", "Two sentences of the house-master's years: 13 is illegible "
-     "in part, 14-15 unclear in sense (fn 156); both are printed on the Releaser tab and not applied."),
+     "in part, 14-15 unclear in sense (fn 156); both are printed on the Releaser tab and not applied. 'Umar "
+     "al-Tabari, Book of Nativities I.4.3, reads 14-15 by degree -- one such condition (peregrination, setting, "
+     "retrogradation, burning) does not harm a superior planet as it does an inferior; a superior under a "
+     "serious impediment gives its lesser years as months or days -- and 'serious' is defined in no text, so "
+     "the reading rides in the printed note and is not coded."),
+    ("ITA VIII.1.3 (al-Qabisi IV.4-6), with its directions at VIII.2.2", "AL-QABISI'S OWN RELEASER AND HOUSE-MASTER "
+     "PROCEDURE, whole: eleven places for each luminary with sign-gender gates, the Moon's rays, the twelve houses "
+     "by the degrees of the Ascendant's hours with the five degrees at every cusp, three orderings of the lords, "
+     "the tie-breaks (own place, the nearer degree, the Sun's relations), the four-sign exception, and the "
+     "directions by the hours of the distance from the angle (VIII.2.2). A second longevity procedure beside "
+     "Sahl's, from a text in hand; Sahl's is the one built, and the Releaser tab names al-Qabisi where he "
+     "differs (the five degrees at any house; quadrant houses for the places)."),
     ("Sahl, On Nativities Ch. 2.2", "The chapter's own judgment of EMINENCE from the fixed stars. The "
      "28 stars Sahl carries are placed on the Timing page for PN IV's I.6, 7 and III.8, 9; 2.2's "
      "delineation is not built."),
@@ -5886,7 +5950,10 @@ WELLED_DEGREES = {
 # beginning of Scorpio" (Introduction Ch. 1, 19; On Nativities 1.38, 9).
 # Sahl gives the burned place NO degrees. The 15 Libra-15 Scorpio span this
 # app once flagged is the definition "often" given (Dykes, Carmen p. 258 fn
-# 104; the Course Glossary) and is not applied to Sahl; the 19 Libra-3
+# 104) and al-Qabisi's own, III.29 in ITA IV.3 (p. 222; OCR, unverified):
+# "the burnt path (which is the last half of Libra and the first half of
+# Scorpio)" -- a primary text in hand, cited since 2026-09-15 in place of
+# the Course Glossary (3.13) -- and is not applied to Sahl; the 19 Libra-3
 # Scorpio span is Abu Ma'shar's own harsher band (VII.6, 40,
 # HARSH_BURNED_PATH below), applied where the table is his and BORROWED,
 # labelled as borrowed, for Sahl's condition 110 (Introduction 3, 110: "the
@@ -6278,19 +6345,25 @@ def evaluate_nobility_degrees(planetary_data, ascendant_lon, sect):
 # indicates and the planet that adds its influence to a day of the Moon's
 # motion. The text gives moments, not spans: a phase here runs from its own
 # degree to the next one's, and the boundaries the text does not give are
-# the app's -- 12 degrees after the conjunction for the new moon and 12
-# before it for the final visibility (the Moon's own under-the-rays
-# distance), 12 after the opposition for the full moon, and the waning
-# phase from there to the second gibbous at 225. Display only: nothing
-# scores it. Each 'indicates' is quoted as Riley has it.
+# Abu Ma'shar's markers of the Moon's phases applied to Valens's phases --
+# Abbr. II.27-31 in ITA II.10.5 (p. 108; OCR, unverified): the conjunction,
+# "if she receded from him by 12°", 90°, "distant from the opposite of the
+# Sun by 12°", the opposition, "if she would add 12° on top of the
+# opposite", 90°, "distant from the Sun by 12°". Used: 12 degrees after the
+# conjunction for the new moon and 12 before it for the final visibility,
+# 12 after the opposition for the full moon (the waning phase from there to
+# the second gibbous at 225). Not used: his fourth marker, 12 before the
+# opposition -- Valens's gibbous runs to 180. Until 2026-09-15 the tags and
+# the page called these boundaries the app's own (3.9). Display only:
+# nothing scores it. Each 'indicates' is quoted as Riley has it.
 VALENS_MOON_PHASES = [
     # (phase, lower bound, upper bound, bound source, indicates, ruler, to day)
-    ('New moon', 0.0, 12.0, 'app',
+    ('New moon', 0.0, 12.0, "Abu Ma'shar (12 after the conjunction)",
      'indicative of rank and power, of kingly and despotic dispositions, of all public business '
      'concerning cities, of parents, marriages, religion, and of all universal, cosmic matters. The '
      'rulers of the new moon, of the latitude, and of the motion are indicative of the same things.',
      None, None),
-    ('First visibility', 12.0, 45.0, 'app',
+    ('First visibility', 12.0, 45.0, "Abu Ma'shar (lower), Valens (upper)",
      'indicative of life, occupation, and future wealth; in addition, it strengthens the matters '
      'influences by the now moon. The ruler of the “light” indicates the overall influences in the '
      'same way that the monthly cycles and the universal cycles are observed by means of the first '
@@ -6306,12 +6379,12 @@ VALENS_MOON_PHASES = [
     ('Gibbous', 135.0, 180.0, 'Valens',
      'indicative of prosperity, future success, travel, and the affinity of relatives.',
      'Sun', 14),
-    ('Full moon', 180.0, 192.0, 'Valens (lower), app (upper)',
+    ('Full moon', 180.0, 192.0, "Valens (lower), Abu Ma'shar (upper: 12 after the opposition)",
      'indicative of fame and infamy, of travel and violent events, of those who fall from '
      'pre-eminence as well as those who rise from a humble state, of affinities, passions, political '
      'opposition, and the affinity of parents. This phase has the color of the sign in the Descendant.',
      None, None),
-    ('First waning of the light', 192.0, 225.0, 'app (lower), Valens (upper)',
+    ('First waning of the light', 192.0, 225.0, "Abu Ma'shar (lower), Valens (upper)",
      'indicative of the diminishing of resources, of the chilling of occupations, of those who grow '
      'humble and lowly, and of sudden falls. This phase has the same influence as the sign which '
      'just follows the Descendant.',
@@ -6323,10 +6396,10 @@ VALENS_MOON_PHASES = [
     ('Second quarter', 270.0, 315.0, 'Valens',
      'indicative of old affairs, of chronic diseases, and of children.',
      'Saturn', 30),
-    ('Second crescent', 315.0, 348.0, 'Valens (lower), app (upper)',
+    ('Second crescent', 315.0, 348.0, "Valens (lower), Abu Ma'shar (upper: 12 before the conjunction)",
      'indicative of a wife’s death, of unemployment or robbery.',
      None, None),
-    ('Final visibility', 348.0, 360.0, 'app (lower), Valens (upper)',
+    ('Final visibility', 348.0, 360.0, "Abu Ma'shar (lower), Valens (upper)",
      'indicative of chains, imprisonment, secrets, condemnation, and infamy.',
      None, None),
 ]
@@ -6336,7 +6409,8 @@ def evaluate_moon_phase_valens(planetary_data):
     phases by its waxing angle from the Sun, (Moon - Sun) mod 360, with the
     phase's 'indicates' and the planet that adds its influence to the day
     the text names. One row always; display only -- see VALENS_MOON_PHASES
-    for which boundaries are the text's and which the app's."""
+    for which boundaries are the text's and which are Abu Ma'shar's 12-degree
+    markers (Abbr. II.27-31) applied to it."""
     angle = (planetary_data['Moon']['longitude'] - planetary_data['Sun']['longitude']) % 360.0
     for phase, lo, hi, _src, indicates, ruler, day in VALENS_MOON_PHASES:
         if lo <= angle < hi:
@@ -6354,7 +6428,14 @@ def evaluate_moon_phase_valens(planetary_data):
 # sextile as the favorable rays and opposition and square as the adverse
 # ones (the semi-sextile and quincunx it calls weak, and p. 110 sets them
 # aside unless partile; this app's aspect table has neither). "Unfortunate
-# houses" it never lists; the 6th, 8th and 12th are this app's reading.
+# houses" it never lists; the 6th, 8th and 12th are this app's reading --
+# the equation with Morin's phrase is the app's, the three houses the
+# tradition's difficult averse places: Dykes on al-Qabisi III.28c, ITA
+# IV.4.1 fn 43 (p. 224, photographed) on "cadent from the Ascendant": "That
+# is, being in aversion to it; in a sign which does not aspect the rising
+# sign, particularly the twelfth, eighth, and sixth; the second sign is also
+# cadent from the Ascendant but is not considered as difficult" (3.8,
+# 2026-09-15).
 
 MORIN_FORTUNATE_HOUSES = (1, 2, 3, 4, 5, 7, 9, 10, 11)
 MORIN_UNFORTUNATE_HOUSES = (6, 8, 12)
@@ -8482,13 +8563,15 @@ def evaluate_corruption_of_the_moon(planetary_data, ascendant_lon, sect):
         # implemented); an earlier comment claimed Sahl's wording "matches"
         # the band, which it does not state. Readings, not tests: 15 Libra to
         # 15 Scorpio is the definition "often" given (Dykes, Carmen p. 258 fn
-        # 104; the Course Glossary); Dorotheus's own (Carmen p. 258, 6: the
+        # 104) and al-Qabisi's (III.29, ITA IV.3: the last half of Libra and
+        # the first half of Scorpio); Dorotheus's own (Carmen p. 258, 6: the
         # equinoctial point taken southward) is a different construction.
         # Both readings are ON THE PAGE, in the clause (review D5).
         if HARSH_BURNED_PATH[0] <= lon < HARSH_BURNED_PATH[1]:
             hit(110, 'In the burned path, "the end of Libra and the beginning of Scorpio" -- Sahl gives no degrees; '
                      "the 19 Libra-3 Scorpio span is Gr. Intr. VII.6, 40's harsher band (fn 120), borrowed. "
-                     'READINGS, not tests: 15 Libra-15 Scorpio is the definition "often" given (Dykes, Carmen p. 258 fn 104), '
+                     'READINGS, not tests: 15 Libra-15 Scorpio is the definition "often" given (Dykes, Carmen p. 258 fn 104) '
+                     "and al-Qabisi's own, the last half of Libra and the first half of Scorpio (ITA IV.3, al-Qabisi III.29), "
                      "so it is not true that no source in hand states it; Dorotheus's own definition "
                      "(Carmen p. 258, 6: the equinoctial point taken southward) is a different construction")
 
@@ -8793,6 +8876,18 @@ def evaluate_planets_in_houses(planetary_data, abu_mashar_condition, ascendant_l
 # second construction is stated outright at Valens VII.5; established by an
 # independent source reconstruction, 2026-09-09, after two earlier passes here
 # had assumed one rule for all seven and read the luminaries as an error.
+# NOT CLOSED BY THAT: the witnesses split three and three. For 39 1/2 --
+# Gr. Intr. VII.8, 3-8 with Figure 146 (the 2020 Arabic volume, photographed);
+# Abu Bakr, On Nativities I.16 (PDF p. 159; OCR, unverified: "by the halving
+# of their greater years and the addition of their lesser years, and the
+# halving of all of them assembled together"); the course's table; PN IV
+# I.8, 12 is Abu Ma'shar again. For the ordinary mean, Sun 69 1/2 / Moon
+# 66 1/2 -- Masha'allah, Book of Aristotle III.1.8 (PN I pdf p. 105; OCR,
+# unverified); Abu 'Ali, Judgments of Nativities Ch. 4 (pdf p. 279; OCR,
+# unverified); the Latin Gr. Intr. Figure 108 as ITA VII.2 prints it (p. 332,
+# read on the page by the owner). Dykes calls 69 1/2 "traditional" at PN II
+# fn 625. Owner's decision of 2026-09-15 (reconciliation decision 1, as
+# recommended): keep 39 1/2, and say all six on the Reference page.
 PLANETARY_YEARS = {
     'Saturn':  {'fardar': 11, 'lesser': 30, 'middle': 43.5, 'greater': 57,  'mighty': 265},
     'Jupiter': {'fardar': 12, 'lesser': 12, 'middle': 45.5, 'greater': 79,  'mighty': 427},
@@ -8916,9 +9011,17 @@ def evaluate_planetary_years_display(planetary_data, cusps, ascendant_lon, sect,
 # that topic]" -- is absent. PN IV defers the method to a book it
 # does not reproduce; Dykes' fn 16 identifies it as Ptolemy's proportional
 # semi-arcs (VI.2, 21 fn 33 the same), but that is an editor's note, not
-# Abu Ma'shar's sentence. Named as unavailable, never as a prohibition
-# (III.1, 5 directs all planets and Lots); authorised as a new work order
-# after the 2026-09-11 PR merges, an outside-corpus import.
+# Abu Ma'shar's sentence. The formula itself IS in a text in hand: al-Qabisi
+# IV.11c-12c (ITA VIII.2.2b-e, pp. 362-364) states it as the "hours of the
+# distance from the angle" with the significator of the right circle and of
+# the region and the "equation" (OCR, unverified), and Dykes works it in ITA
+# Appendix E (pp. 402-407), PromMD - (SigMD/SigSA) x PromSA, with and without
+# latitude, "Al-Qabisi's method is essentially the same as this" (OCR,
+# unverified). So the strings say "stated by al-Qabisi and worked by Dykes,
+# not built" (reconciliation 3.1, 2026-09-15), no longer "stated in no text
+# in hand"; building it is decision 5's second half, a separate work order
+# with Appendix E's example as the fixture. Named as unavailable, never as a
+# prohibition (III.1, 5 directs all planets and Lots).
 
 PN4_SEVEN = ('Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon')
 
@@ -8991,8 +9094,9 @@ def pn4_direction_unit(chart_level):
 # DEGREE of its point and for a planet ON that degree itself; the third
 # case's method is not in PN IV at all, being deferred to a book he does
 # not reproduce (fn 16: Ptolemy's proportional semi-arcs; VI.2, 21 fn 33
-# "That is, by normal proportional semi-arcs"), so it is not built from
-# this corpus. The owner's ruling of 2026-09-11 (evening; GAP-37 /
+# "That is, by normal proportional semi-arcs"); the formula is al-Qabisi's
+# (ITA VIII.2.2) and Dykes works it (ITA Appendix E) -- see the comment above
+# PN4_SEVEN -- and it is not yet built. The owner's ruling of 2026-09-11 (evening; GAP-37 /
 # PN4R-4b-4, reading (e)): "in the Ascendant / Midheaven / fourth" means
 # ON the axial degree, recognised with a NUMERICAL tolerance
 # (PN4_AXIS_TOLERANCE, floating-point equality -- not an astrological orb:
@@ -9015,7 +9119,8 @@ PN4_ASCENSION_RULE = {
                     'applied to the degrees of the Midheaven and the fourth and to a planet on the degree itself (numerical tolerance, no orb)'),
     'anything else': ('proportional semi-arcs',
                       PN4_SEMIARCS_UNAVAILABLE + " Not a prohibition: III.1, 5 directs all planets and Lots; the method is "
-                      "Ptolemy's as Dykes identifies it (III.1, 12 fn 16; VI.2, 21 fn 33), the formula stated in no text in hand"),
+                      "Ptolemy's as Dykes identifies it (III.1, 12 fn 16; VI.2, 21 fn 33), the formula stated by al-Qabisi "
+                      "(ITA VIII.2.2) and worked by Dykes (ITA Appendix E), not built"),
 }
 
 def pn4_ascension_measure(point):
@@ -9459,7 +9564,14 @@ def pn4_distribution_at_age(segments, age_years):
 # fn 187 ("Dorotheus ... is using dynamic divisions to speak of the planets'
 # power, because one can only move from a stake to a decline by primary
 # motion") -- with fn 109 on 1.15, 6 agreeing ("quadrant divisions, not
-# whole signs"). The corpus's own vocabulary counts SIGNS: Introduction 2,
+# whole signs"); and the dispatch is Dykes's own published proposal, ITA
+# Introduction §6, pp. 15-20 ("(1) adopt whole signs for topics; ... (3)
+# apply Nechepso's eight-place scheme to quadrant-based dynamical
+# divisions", OCR, unverified), so the page cites him (3.7, 2026-09-15).
+# Al-Qabisi IV.4 (ITA VIII.1.3) uses quadrant houses in his own releaser
+# procedure with the five degrees at "any house" -- named on the tab as a
+# different author's method (decisions 2 and 17). The corpus's own
+# vocabulary counts SIGNS: Introduction 2,
 # 31-35 defines the stakes, "what follows the stakes" and the falling
 # places as counted signs, and 1.20, 10 says "the sign of the west"; so the
 # division reading is the translator's, not Sahl's or Nawbakht's. 1.18, 19
@@ -9484,11 +9596,17 @@ def pn4_distribution_at_age(segments, age_years):
 # "take the portion of whichever of the two luminaries was above the
 # earth", stated for the Ascendant's degree and applied here by the shared
 # word "portion" (1.15, 12); when both or neither is up the engine takes
-# the Moon's degree, and no text says (FINAL-A6). (6) "In good places" for
+# the Moon's degree (FINAL-A6) -- Valens's opinion of the three al-Qabisi
+# IV.3 reports (ITA VIII.1.2: Ptolemy's the luminary above the earth; the
+# sages' the eastern degree when one is rising and the other setting;
+# Valens's the Moon's; see the docstring of calculate_prenatal_syzygy);
+# none of the other two adopted (decision 7). (6) "In good places" for
 # the Ascendant's lord (1.15, 16) is Sahl's seven praised places
 # (Introduction 2, 37-44: "praised, powerful"; 1.30, 71 names them; fn 372
 # "good or advantageous"), counted by whole-sign place; no sentence defines
-# 16's phrase, an interpretation (owner, sheet row 12). (7) The day chart
+# 16's phrase, an interpretation (owner, sheet row 12) -- Dykes identifies
+# the seven as Timaeus's and Dorotheus's busy places, "good" and "strong"
+# (ITA pp. 18, 121; reconciliation 3.17). (7) The day chart
 # consults the Sun, the meeting, then the Ascendant -- 1.15, 9: "if the
 # meeting and the Sun were both falling, then the releaser at that time
 # will be the Ascendant" closes the day list -- and the night chart the
@@ -9525,7 +9643,10 @@ SAHL_DIGNITY_RANK = ('bound', 'house', 'exaltation', 'triplicity', 'face')   # 1
 # and the trines of the Ascendant, and the eleventh)"; fn 372 calls them
 # "good or advantageous". No sentence defines 16's phrase, so the
 # identification is an interpretation (the engine had used the eight-place
-# stake-or-succedent class of 1.15, 11 as reading 6). Counted by WHOLE-SIGN
+# stake-or-succedent class of 1.15, 11 as reading 6); Dykes says the seven
+# are the busy places of Timaeus and Dorotheus, which Sahl "explicitly uses"
+# in Introduction §4 (ITA III.4 comment, p. 121) and Dorotheus calls "good"
+# and "strong" (ITA Introduction §6, p. 18) (OCR, unverified; 3.17). Counted by WHOLE-SIGN
 # PLACE: topic language, the canon of 2026-09-11. Owner, decision sheet row
 # 12 (REL-2-6), corroborated blind (astra_2026-09-11/1.15_readings_ruling Q2).
 SAHL_GOOD_PLACES = (1, 10, 7, 4, 11, 9, 5)
@@ -9918,7 +10039,10 @@ def sahl_house_master_years(planet, planetary_data, cusps, sect, essential):
         flags.append('1.20, 14-15, printed and not applied (fn 156: "to me the meaning is still unclear"): "Know that exile, '
                      'setting, retrogradation, and burning do not stick to the superior planets, but they do stick to the '
                      'inferior planets. And if a superior one was in the condition which sticks to it, it is corrupting, for it '
-                     'indicates its lesser years as months or days."')
+                     'indicates its lesser years as months or days." \'Umar al-Tabari reads the pair by degree (Book of '
+                     'Nativities I.4.3): one such condition does not harm a superior planet as it does an inferior, and a '
+                     'superior under a serious impediment gives its lesser years as months or days; what makes an impediment '
+                     'serious no text states, so the reading is carried here and not applied.')
     if q == 5 and planet == 'Venus':
         flags.append('1.20, 13 (Venus in her own shares in the fifth, eastern, the governor) is illegible in part and not applied.')
     return {'grade': grade, 'sentence': (f"1.20, {n}" if n else None), 'years': years, 'text': text, 'flags': flags,
@@ -10800,7 +10924,8 @@ PN4_TURNING_LOTS = (
 )
 
 PN4_TURNING_DIRECTION_REFUSED = (PN4_SEMIARCS_UNAVAILABLE + " III.1, 12's third case, Ptolemy's method as Dykes "
-                                 "identifies it (fn 16), the formula stated in no text in hand")
+                                 "identifies it (fn 16), the formula stated by al-Qabisi (ITA VIII.2.2) and worked by Dykes "
+                                 "(ITA Appendix E), not built")
 
 def pn4_turning_planet_topics(sect):
     """VI.2, 2, 6 and 8: what each planet is turned for. The parents'
@@ -10983,8 +11108,9 @@ def evaluate_andarzaghar_triplicity_lords(asc_lon, sect):
     """al-Andarzaghar's triplicity lords of the twelve houses (al-Qabisi
     I.57b-68, in ITA I.13): for each whole-sign house from the Ascendant,
     the Dorothean lords of its sign's triplicity in the chart's sect order
-    (this app's reading of "first, second, third": by day the day lord
-    first, by night the night lord) beside what al-Andarzaghar says each
+    ("first, second, third" as al-Qabisi himself orders them, I.16 in ITA
+    I.7: by day the day lord first, by night the night lord -- Abbr. I.86
+    and Gr. Intr. V.14, 6 the same, and Sahl 10.2.7, 16) beside what al-Andarzaghar says each
     signifies. Twelve rows; display only. The planets' conditions are not
     read, and I.58's "which one of them is stronger in being and place" is
     quoted, not weighed."""
@@ -11065,7 +11191,7 @@ def pn4_turning_rows(chart_data, completed_years):
         ws_start = ((asc // 30.0) * 30.0 + 30.0 * (house - 1)) % 360.0
         directed = directed_at.get(house, PN4_SEMIARCS_UNAVAILABLE + " VI.2, 21's \"portions of the hours and the "
                                           "right circle\" (fn 33: \"by normal proportional semi-arcs\"), the formula "
-                                          "stated in no text in hand")
+                                          "stated by al-Qabisi (ITA VIII.2.2) and worked by Dykes (ITA Appendix E), not built")
         rows.append(row(f'House {house} (by counting)', ws_start, topic, cite, directed))
         cusp = cusps[house - 1] if cusps and len(cusps) >= house else None
         if cusp is not None and get_zodiac_sign(cusp) != get_zodiac_sign(ws_start):
@@ -14798,16 +14924,16 @@ if location_query and lat is not None and lon is not None:
                       notes='ENTERING: "every planet which is at the beginning of a sign is weak until it is firmly established in it and comes to be 5 degrees within it" (Fifty Aphorisms #44, 87), repeated in On Nativities Ch. 1.22, 9. This is the other half of the five-degree rule that also governs advancement.\n\nLEAVING: "if a planet came to be in the last degree of the sign, then its strength has already gone away from that sign, and its strength is in the next sign ... like a man putting his foot on the threshold of his door. And if a planet was in the twenty-ninth degree, then indeed the strength of the planet IS in that sign" (Fifty Aphorisms #15, 31-33) -- so the 29th degree still counts and only the 30th has left.')
             _finding(_gap, 'Degrees of nobility and rank', 'Sahl, On Nativities 1.38, 39-41 (Figure 57)', nobility_degrees_data,
                       glance='Sahl\'s own table of the degrees in which "the native will reach nobility and rank": a row when the Ascendant, the Sun or the Moon stands in one. Display only; nothing scores it.',
-                      notes='On Nativities 1.38, 40-41: "If it happened that a native was born and his Ascendant was one of these degrees, or the Moon and Sun were in the equivalent of these degrees (and that is superior if it was the Sun by day and by night the Moon), then he will reach exaltation and power, or he will rule many lands, by the permission of God." Figure 57 of his volume prints the degrees: Aries 19; Taurus 3; Gemini 13; Cancer 1, 13, 14, 15; Leo 5, 7; Virgo 2, 13, 20; Capricorn 12, 13, 20; Aquarius 12, 20 -- none in Libra, Scorpio, Sagittarius or Pisces. The figure prints bare degrees; this app reads them as ordinals, as Figure 64 prints the same rule\'s degrees. The whole table is on the Reference tables page. Abu Ma\'shar states the same rule with a table of his own (Gr. Intr. V.22, 4, Figure 64), twelve signs to its eight, six of those eight disagreeing; it is shown under Course text and supplement, on the Configurations page beside Strength and weakness and on the Reference tables page beside this table.')
+                      notes='On Nativities 1.38, 40-41: "If it happened that a native was born and his Ascendant was one of these degrees, or the Moon and Sun were in the equivalent of these degrees (and that is superior if it was the Sun by day and by night the Moon), then he will reach exaltation and power, or he will rule many lands, by the permission of God." Figure 57 of his volume prints the degrees: Aries 19; Taurus 3; Gemini 13; Cancer 1, 13, 14, 15; Leo 5, 7; Virgo 2, 13, 20; Capricorn 12, 13, 20; Aquarius 12, 20 -- none in Libra, Scorpio, Sagittarius or Pisces. The figure prints bare degrees; this app reads them as ordinals, as Figure 64 prints the same rule\'s degrees -- Dykes\'s own resolution of the tables\' cardinal-or-ordinal inconsistency is the end of the numbered degree, 19 for "the nineteenth" (ITA I.3 fn 23), the point at which the ordinal span tested here ends. The whole table is on the Reference tables page, with al-Qabisi\'s third table of the rule named (ITA VII.9, Figure 118). Abu Ma\'shar states the same rule with a table of his own (Gr. Intr. V.22, 4, Figure 64), twelve signs to its eight, six of those eight disagreeing; it is shown under Course text and supplement, on the Configurations page beside Strength and weakness and on the Reference tables page beside this table.')
             if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
                 _finding(_gap, "Mercury's phase against the sect (supplement, display only)",
                           "Firmicus, Mathesis III.7, 7-9 and 26-30 (Dykes's fnn 186, 194)", mercury_phase_sect_data,
                           glance="Whether Mercury's phase matches the sect of the chart: a morning star in a diurnal nativity or an evening star in a nocturnal one matches; the other two pairings do not. One row for every chart, in Dykes's words for each case. Display only; nothing scores it.",
-                          notes="Firmicus, Mathesis III.7 (Dykes), fn 194, on the figures for the sixth place (26-29): \"In the Figures here I have put the scenarios slightly out of order. In the top row we see the success that comes from Mercury's phase matching that of the chart (morning star-diurnal, evening star-nocturnal). In the second row, mismatches between the phase and sect produce less respected and independent uses of the intellect and skill.\" Fn 186, on the morning star in the second place (7): \"In this case he would be a morning star in a nocturnal chart, so there would be a mismatch between his phase and the sect of the chart.\" The examples: 7-9 for the second place (obscure men; lenders and business men; philologists), 26-30 for the sixth (the greatest fortune from speech, advocacy or business; interpreters, fishermen, sculptors; malign people; those in charge of accounts, banking, granaries, medicines, legal instruments; the scribes of judges). This app reads \"morning star\" as Mercury eastern of the Sun, rising before him, and \"evening star\" as western, the same reading its Solar phase column uses; the Reading column gives fn 194's phrase for the matching and the mismatching case.")
+                          notes="Firmicus, Mathesis III.7 (Dykes), fn 194, on the figures for the sixth place (26-29): \"In the Figures here I have put the scenarios slightly out of order. In the top row we see the success that comes from Mercury's phase matching that of the chart (morning star-diurnal, evening star-nocturnal). In the second row, mismatches between the phase and sect produce less respected and independent uses of the intellect and skill.\" Fn 186, on the morning star in the second place (7): \"In this case he would be a morning star in a nocturnal chart, so there would be a mismatch between his phase and the sect of the chart.\" The examples: 7-9 for the second place (obscure men; lenders and business men; philologists), 26-30 for the sixth (the greatest fortune from speech, advocacy or business; interpreters, fishermen, sculptors; malign people; those in charge of accounts, banking, granaries, medicines, legal instruments; the scribes of judges). This app reads \"morning star\" as Mercury eastern of the Sun, rising before him, and \"evening star\" as western, the same reading its Solar phase column uses; the sect each phase gives him is Abu Ma'shar's rule, rising before the Sun diurnal and setting after him nocturnal (Gr. Intr. IV.9, in ITA V.11), the rule the Sect table applies. The Reading column gives fn 194's phrase for the matching and the mismatching case.")
                 _finding(_gap, "The Moon's phase, Valens's eleven (supplement, display only)", 'Valens, Anthologies II.36 (Riley)', moon_phase_valens_data,
-                          glance="Valens's eleven phases of the Moon, the chart's Moon placed in one by its angle ahead of the Sun, with what he says the phase indicates and the planet that adds its influence to the day he names. Eight of his boundaries are degrees he gives; the rest are this app's, and the notes say which. Display only; nothing scores it.",
+                          glance="Valens's eleven phases of the Moon, the chart's Moon placed in one by its angle ahead of the Sun, with what he says the phase indicates and the planet that adds its influence to the day he names. Eight of his boundaries are degrees he gives; the rest are Abu Ma'shar's 12-degree markers of the Moon's phases applied to Valens's, and the notes say which. Display only; nothing scores it.",
                           notes='Valens lists the phases so: "1. New moon; 2. First visibility; 3. Next the crescent moon, 45° from the sun; 4. Next the quarter moon at 90°; 5. Next the gibbous moon at 135°; 6. Next the full moon at 180°; 7. Next the second gibbous phase when it is 45° from full, i.e. 225° <from the sun>; 8. Next the second quarter at 270°; 9. Next the second crescent at 315°; 10. Final visibility at 360°; 11. There is another phase as well, when it first begins to wane."\n\n'
-                                'His degrees are moments; this app reads each phase as running from its own degree to the next one\'s, so the crescent is 45-90, the quarter 90-135, the gibbous 135-180, the second gibbous 225-270, the second quarter 270-315 -- his degrees at both ends. The boundaries he does not give are this app\'s: the new moon to 12° after the conjunction and the final visibility from 12° before it (the Moon\'s own distance under the rays), the first visibility from 12° to his 45°, the full moon to 12° after the opposition, and the phase "when it first begins to wane" from there to his second gibbous at 225°, where his "What Each Phase Indicates" puts it, between the full moon and the second gibbous. The angle is the Moon\'s longitude less the Sun\'s, counted forward.\n\n'
+                                'His degrees are moments; this app reads each phase as running from its own degree to the next one\'s, so the crescent is 45-90, the quarter 90-135, the gibbous 135-180, the second gibbous 225-270, the second quarter 270-315 -- his degrees at both ends. The boundaries he does not give are Abu Ma\'shar\'s markers of the Moon\'s phases (Abbr. II.27-31, in ITA II.10.5), where she changes her property at 12° from the conjunction and from the opposition, applied here to Valens\'s phases: the new moon to 12° after the conjunction and the final visibility from 12° before it, the first visibility from 12° to his 45°, the full moon to 12° after the opposition, and the phase "when it first begins to wane" from there to his second gibbous at 225°, where his "What Each Phase Indicates" puts it, between the full moon and the second gibbous. Abu Ma\'shar\'s fourth marker, 12° before the opposition, is not used: Valens\'s gibbous runs to his 180°. The angle is the Moon\'s longitude less the Sun\'s, counted forward.\n\n'
                                 'What Each Phase Indicates and What Effects It Has, as Riley has it: "We will append how the preceding phases are to be taken in casting horoscopes and to which god they belong. '
                                 'The new moon is indicative of rank and power, of kingly and despotic dispositions, of all public business concerning cities, of parents, marriages, religion, and of all universal, cosmic matters. The rulers of the new moon, of the latitude, and of the motion are indicative of the same things. '
                                 'The first visibility of the moon (which is also called its “light”) and its ruler are indicative of life, occupation, and future wealth; in addition, it strengthens the matters influences by the now moon. The ruler of the “light” indicates the overall influences in the same way that the monthly cycles and the universal cycles are observed by means of the first visibility. Mercury adds its influence until day 4 of the moon’s motion. '
@@ -14825,7 +14951,7 @@ if location_query and lat is not None and lon is not None:
                 _finding(_gap, "Morin's rules for aspects into good and bad houses (supplement, display only)",
                           'Morin, Astrologia Gallica 21.II.X (Holden, pp. 105-106)', morin_aspects_data,
                           glance='Each trine, sextile, square or opposition that a Fortune (Jupiter, Venus) or an Infortune (Saturn, Mars) casts to another planet, read by the kind of ray and the kind of house it falls into -- the whole-sign house of the aspected planet -- with Morin\'s sentence for that case. Display only; nothing scores it.',
-                          notes='Morin, Astrologia Gallica 21.II.X (Holden, pp. 105-106). The chapter\'s opening names the trine, sextile and semi-sextile as the rays "by nature benefic" and the opposition, square and quincunx as those "by nature malefic"; this app\'s aspect table has the four the ancients used (p. 110), so the two weak rays are not read. The four governing sentences, whole:\n\n"The distinction should be observed, however, that the favorable rays of benefic planets are more prone to good, and the unfavorable rays are less prone to evil, than is true for the malefic planets."\n\n"Moreover, a benefic planet\'s favorable rays produce good with ease and in abundance, and cause good in the fortunate houses as well as prevent or mitigate evil in the unfortunate ones, but its unfavorable rays bring difficulties, hindrances, or misfortunes to be surmounted."\n\n"On the other hand, a malefic planet\'s malefic rays are extremely harmful, causing evil in the unfortunate houses and preventing or spoiling the good in the fortunate ones, unless it rules over the location where the adverse aspect falls, for in that case the aspect produces good in fortunate houses, but this good will be accompanied by violence, evil, or misfortune."\n\n"And again, the favorable rays indicate something good gained by difficult means; for example, in the horoscope of the king of Sweden, Saturn ruled the second, and its trine to the Sun in the first house indicated great wealth, which he would acquire through war because Mercury, ruler of the seventh, is placed in the second; and in obtaining these things he had good fortune since Jupiter, Mercury, Venus, and the part of fortune were in the second house—and all ruled in turn by Saturn."\n\nMorin says "the unfortunate houses" without listing them; this app takes the 6th, 8th and 12th as the unfortunate ones and the other nine as fortunate, its own reading. Where one clause covers both kinds of house (a Fortune\'s adverse rays, an Infortune\'s favorable rays) the Rule column repeats the clause and says so. The "unless it rules over the location" exception is quoted, not tested: the table does not look up the ruler of the house. The chapter goes on to make the aspecting planet\'s own house, its celestial state and its rulership part of the judgment; none of that is read here.')
+                          notes='Morin, Astrologia Gallica 21.II.X (Holden, pp. 105-106). The chapter\'s opening names the trine, sextile and semi-sextile as the rays "by nature benefic" and the opposition, square and quincunx as those "by nature malefic"; this app\'s aspect table has the four the ancients used (p. 110), so the two weak rays are not read. The four governing sentences, whole:\n\n"The distinction should be observed, however, that the favorable rays of benefic planets are more prone to good, and the unfavorable rays are less prone to evil, than is true for the malefic planets."\n\n"Moreover, a benefic planet\'s favorable rays produce good with ease and in abundance, and cause good in the fortunate houses as well as prevent or mitigate evil in the unfortunate ones, but its unfavorable rays bring difficulties, hindrances, or misfortunes to be surmounted."\n\n"On the other hand, a malefic planet\'s malefic rays are extremely harmful, causing evil in the unfortunate houses and preventing or spoiling the good in the fortunate ones, unless it rules over the location where the adverse aspect falls, for in that case the aspect produces good in fortunate houses, but this good will be accompanied by violence, evil, or misfortune."\n\n"And again, the favorable rays indicate something good gained by difficult means; for example, in the horoscope of the king of Sweden, Saturn ruled the second, and its trine to the Sun in the first house indicated great wealth, which he would acquire through war because Mercury, ruler of the seventh, is placed in the second; and in obtaining these things he had good fortune since Jupiter, Mercury, Venus, and the part of fortune were in the second house—and all ruled in turn by Saturn."\n\nMorin says "the unfortunate houses" without listing them; this app takes the 6th, 8th and 12th as the unfortunate ones and the other nine as fortunate. The equation with Morin\'s phrase is the app\'s; the three are the tradition\'s difficult averse places, as Dykes\'s note on al-Qabisi III.28\'s "cadent from the Ascendant" has it (ITA IV.4.1 fn 43): "That is, being in aversion to it; in a sign which does not aspect the rising sign, particularly the twelfth, eighth, and sixth; the second sign is also cadent from the Ascendant but is not considered as difficult." Where one clause covers both kinds of house (a Fortune\'s adverse rays, an Infortune\'s favorable rays) the Rule column repeats the clause and says so. The "unless it rules over the location" exception is quoted, not tested: the table does not look up the ruler of the house. The chapter goes on to make the aspecting planet\'s own house, its celestial state and its rulership part of the judgment; none of that is read here.')
                 _finding(_gap, 'Places harming the eyesight (display only)', 'Sahl, On Nativities 6.2, 48-75; Gr. Intr. VI.20',
                         eyesight_places_data,
                         columns=['Point', 'Position', 'Place', 'Source', 'Text'],
@@ -15336,7 +15462,7 @@ if location_query and lat is not None and lon is not None:
                  "Value": f"{syzygy_governor['governor']} -- {syzygy_governor['how']}"},
                 {"Metric": "This app's approximation of 1.7 (one point a listed condition)",
                  "Value": syzygy_governor['model_how']},
-                {"Metric": "Almuten by 5/4/3/2/1 points (a technique from outside these texts; the weights are stated in no text in hand)",
+                {"Metric": "Almuten by 5/4/3/2/1 points (al-Qabisi's weights, ITA I.18; a technique not in Sahl)",
                  "Value": f"{syzygy['almuten']} (Score: {syzygy['almuten_score']})"},
             ]
             st.dataframe(pd.DataFrame(syzygy_rows), hide_index=True, width='stretch')
@@ -15361,15 +15487,21 @@ if location_query and lat is not None and lon is not None:
                            "with none, and two that each hold one are left unresolved, the text stating no ranking among them and "
                            "1.20, 2-4's ranking of the lords being stated for the house-master, not borrowed here. NOT MODELLED: "
                            + SAHL_1_7_UNMODELLED + ". READINGS: \"in a stake\" is read by the DIVISION (Alchabitius, the five "
-                           "degrees at the four axial degrees), this app's convention for strength language -- the text's own word "
+                           "degrees at the four axial degrees), the convention Dykes proposes for strength language (ITA "
+                           "Introduction §6, quadrant divisions for power; Alchabitius this app's choice among them) -- the text's own word "
                            "for the stakes is the counted sign, \"the sign of the Ascendant, the fourth, the seventh, and the "
                            "tenth\" (The Introduction Ch. 2, 31); the Moon's side is the same rising-before-the-Sun rule as the "
                            "planets', the texts not defining her easternness for this procedure (Gr. Intr. VII.2, 4 names her right "
-                           "and left, not \"eastern\"); the target degree is the lunation's and every condition is read in the "
+                           "and left, not \"eastern\"; al-Qabisi bridges the two words, the superiors from the Sun's rays to his "
+                           "opposition being called eastern and right, ITA II.10.1, al-Qabisi III.8); the target degree is the "
+                           "lunation's and every condition is read in the "
                            "NATAL chart, extending the natal context of Dykes's comment to 3-7, whose moment the text does not "
                            "state. THE APPROXIMATION row is " + SAHL_1_7_MODEL_DISCLOSURE + "; the almuten row is the 5/4/3/2/1 "
-                           "technique from outside these texts. Where the three differ, the difference is the finding.")
-            st.subheader('Victor of the Chart', help="Ibn Ezra's victor worksheet, a technique from outside these texts (his book is not in hand), reproduced cell for cell so it can be checked against a hand-filled sheet. The seven planets are the columns.")
+                           "weighting al-Qabisi states (ITA I.18: the lord of the domicile five strengths, of the exaltation "
+                           "four, of the triplicity three, of the bound two, of the face one; Dykes's fn 210 there, only the "
+                           "primary triplicity lord scoring), a technique not in Sahl. Where the three differ, the difference "
+                           "is the finding.")
+            st.subheader('Victor of the Chart', help="Ibn Ezra's victor worksheet (his book is not in hand), reproduced cell for cell so it can be checked against a hand-filled sheet. The weights and the five places are al-Qabisi's -- ITA I.18, the five dignities' points, and ITA VIII.1.4 (al-Qabisi IV.7), the victor over the native from the Ascendant, the two luminaries, the Lot of Fortune and the prenatal syzygy; the worksheet's Day, Hour and Places rows are ibn Ezra's. Dykes's standing critique of the weighting (ITA I.18 fn 211): with the Dorothean triplicities and the Egyptian bounds, and only the primary triplicity lord scoring, the victor is always the domicile or the exaltation lord but for a few degrees of Pisces (Mars) and of Cancer (Venus). The seven planets are the columns.")
             st.caption("ibn Ezra's victor #1, 1485/1537")
             # The two same-tradition pairings are the grids a student fills
             # in; the two off-diagonal pairings are the cross-check.
@@ -15767,7 +15899,8 @@ if location_query and lat is not None and lon is not None:
                            "IX.2 test is strict and most years fail it, so its five conditions are shown one by one; "
                            "Dykes's fn 39 (age 39, everything in Cancer, the Moon) is the case it is checked against. "
                            "IX.9, 11-13 are shown as facts above (12's 'harmonized by nature' not read; 13's place half by the "
-                           "division, this app's convention); IX.2, 8-11, the delineations, are not built.")
+                           "division, the convention Dykes proposes for strength language, ITA Introduction §6); IX.2, 8-11, "
+                           "the delineations, are not built.")
 
                 st.subheader("The Moon's connections in her sign, and the portions of the year (II.22)",
                              help="II.22, 1: \"the planet which the Moon connects with, so long as she is in her [current] "
@@ -15983,7 +16116,8 @@ if location_query and lat is not None and lon is not None:
                            "below. Every planet not on an axis is listed with \"" + PN4_SEMIARCS_UNAVAILABLE + "\" -- a "
                            "computational gap, NOT a prohibition: III.1, 5 directs all planets and Lots, and the method for "
                            "\"what is not in these three positions\" is Ptolemy's proportional semi-arcs as Dykes identifies it "
-                           "(III.1, 12 fn 16; VI.2, 21 fn 33), stated in no text in hand and not built; no right or oblique "
+                           "(III.1, 12 fn 16; VI.2, 21 fn 33), stated by al-Qabisi (ITA VIII.2.2) and worked by Dykes (ITA "
+                           "Appendix E), not built here; no right or oblique "
                            "ascension is substituted for it. The Descendant is not one of the three positions (fn 15).")
                 st.markdown("**The planets, each with its measure under III.1, 12** (on an axial degree, directed as that "
                             "degree is; otherwise the sentence):")
@@ -16084,17 +16218,25 @@ if location_query and lat is not None and lon is not None:
                            "(1.15, 6-16) is read as a test of the planet's POWER and counted by the Alchabitius divisions with the "
                            "five-degree allowance at the four axial degrees only -- a planet 0-5 degrees past the Ascendant, "
                            "Midheaven, setting degree or fourth into the cadent division keeps the stake's power, measured from "
-                           "the axial degree, in longitude (a proxy). The warrant for the unit is the translator's "
-                           "convention, adopted here -- Alchabitius, and the five degrees at the four axial degrees only, are "
-                           "the course's (Lesson 3, A Chart Tour, §4-5; the Course Glossary s.v. Advancement); the texts in "
-                           "hand give the dispatch: Carmen p. 108 fn 187, \"Dorotheus ... is using dynamic divisions to speak "
+                           "the axial degree, in longitude -- a proxy, though al-Qabisi's own unit: his rule reads \"five "
+                           "equal degrees\", the zodiac's (ITA VIII.1.3, al-Qabisi IV.4). The warrant for the unit is the "
+                           "translator's convention, adopted here: Dykes proposes it as his own solution -- whole signs for "
+                           "topics, quadrant divisions for power (ITA Introduction §6) -- and Alchabitius, and the five degrees "
+                           "at the four axial degrees only, are the course's (Lesson 3, A Chart Tour, §4-5; the Course Glossary "
+                           "s.v. Advancement), Alchabitius being this app's choice among the quadrant systems he names; the texts "
+                           "in hand give the dispatch: Carmen p. 108 fn 187, \"Dorotheus ... is using dynamic divisions to speak "
                            "of the planets' power, because one can only move from a stake to a decline by primary motion\"; "
                            "with fn 109 on 1.15, 6 agreeing (\"quadrant divisions, not whole signs\"). These texts' own "
                            "vocabulary counts SIGNS -- Introduction 2, 31-35 defines the stakes, \"what follows the stakes\" and "
                            "the falling places as counted signs, and 1.20, 10 says \"the sign of the west\" -- so the division "
                            "reading is the translator's, not Sahl's or Nawbakht's; 1.18, 19 (\"its strength will be in the "
                            "Ascendant ... and likewise in all of the houses\") is about strength and is read as the four "
-                           "stakes; Aphorism #44 and 1.22, 9 witness the five degrees, not the house system. The Lot of Fortune "
+                           "stakes; Aphorism #44 and 1.22, 9 witness the five degrees, not the house system. Al-Qabisi, in his own "
+                           "releaser procedure, states the same five degrees for every house -- before the degree of the "
+                           "Ascendant \"or any house\" (ITA VIII.1.3, al-Qabisi IV.4) -- and is the quadrant witness for that "
+                           "procedure: he looks for the releaser in the angles and their followers as the twelve houses are "
+                           "calculated through the degrees of the Ascendant's hours, a different author's method; here the five "
+                           "degrees stay at the four stakes and the places are Sahl's. The Lot of Fortune "
                            "(a candidate by night, 1.15, 14) has no dynamic angularity and is tested by its whole-sign place. "
                            "The meeting's and the fullness's degrees (1.15, 6-8, 12) are neither planet nor Lot: the division is "
                            "used for them, an open reading. The day list is the five places 1.15, 6 names, the night list every "
@@ -16104,11 +16246,19 @@ if location_query and lat is not None and lon is not None:
                            "fullness the last Full Moon before birth; the fullness's degree is the luminary that was above the "
                            "earth at the Full Moon: On Nativities 1.7, 2 (\"take the portion of whichever of the two luminaries "
                            "was above the earth\"), stated there for the Ascendant's degree and applied here by the same word, "
-                           "\"portion\" (1.15, 12); when both or neither is above the earth the app takes the Moon's degree; "
-                           "no text says. (6) \"In good places\" for the Ascendant's lord (1.15, 16): Sahl's seven praised "
+                           "\"portion\" (1.15, 12); when both or neither is above the earth the app takes the Moon's degree. "
+                           "Al-Qabisi reports three opinions on the fullness's degree (ITA VIII.1.2, al-Qabisi IV.3): Ptolemy's, "
+                           "the degree of the luminary that was above the earth; certain sages', that when one luminary is on "
+                           "the eastern degree and the other on the western, the eastern degree is the prevention's; and "
+                           "Valens's, the Moon's degree. The Moon default is Valens's; the sages' tie rule is named here and "
+                           "not adopted. (6) \"In good places\" for the Ascendant's lord (1.15, 16): Sahl's seven praised "
                            "places (Introduction 2, 37-44: \"praised, powerful\"; 1.30, 71 names them; fn 372 calls them "
-                           "\"good or advantageous\"), counted by whole-sign place; no sentence defines 16's phrase, so the "
-                           "identification is an interpretation. (7) The day chart consults the Sun, the meeting, then the "
+                           "\"good or advantageous\"), counted by whole-sign place; no sentence of Sahl's defines 16's phrase, so "
+                           "the identification is an interpretation -- with Dykes's backing: the seven are the busy places of "
+                           "Timaeus and Dorotheus, which he says Sahl \"explicitly uses\" in the Introduction, calling them "
+                           "\"praiseworthy\" and \"stronger\" (ITA III.4, Dykes's comment; ITA Introduction §6). (7) The day "
+                           "chart consults the "
+                           "Sun, the meeting, then the "
                            "Ascendant (1.15, 9: \"if the meeting and the Sun were both falling, then the releaser at that time "
                            "will be the Ascendant\"); the night chart the Moon, the fullness, the Lot, then the Ascendant "
                            "(10-14). 1.15, 15 lists all five before the Ascendant and is read as the summary of the two lists; "
@@ -16431,7 +16581,8 @@ if location_query and lat is not None and lon is not None:
                                "that degree itself (a numerical tolerance, no orb). The **third case** -- everything not on "
                                "one of the three degrees -- has no method in PN IV: III.1, 12 sends the reader to \"what we "
                                "stated in our book [on that topic]\", and Dykes's fn 16 (with VI.2, 21 fn 33) identifies it as "
-                               "Ptolemy's proportional semi-arcs, the formula stated in no text in hand and not built; the "
+                               "Ptolemy's proportional semi-arcs, the formula al-Qabisi states (ITA VIII.2.2) and Dykes works "
+                               "(ITA Appendix E), not built here; the "
                                "planets are listed with that sentence, and no other ascension is substituted.")
                     st.markdown("**III.1, 6 -- the unit, by level of chart**")
                     st.dataframe(pd.DataFrame(PN4_UNIT_ROWS), hide_index=True, width='stretch')
@@ -16475,7 +16626,8 @@ if location_query and lat is not None and lon is not None:
                 if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
                     # al-Andarzaghar's per-house triplicity lords (coverage gap 9,
                     # 2026-09-15): a separate table from Sahl's lords over the life
-                    # above; the sect order is the app's reading of first/second/third.
+                    # above; the sect order of first/second/third is al-Qabisi's own
+                    # (I.16, ITA I.7; 3.10 of the reconciliation, 2026-09-15).
                     _andarzaghar_rows = evaluate_andarzaghar_triplicity_lords(chart_data['ascendant'], sect)
                     _andarzaghar_first = ANDARZAGHAR_TRIPLICITY_LORDS[1]['text']
                     _finding([], "The triplicity lords of the twelve houses, al-Andarzaghar (supplement, display only)",
@@ -16485,7 +16637,10 @@ if location_query and lat is not None and lon is not None:
                                     "only; nothing scores it, and the lords' conditions are not read.",
                              notes="The lords are the Dorothean triplicity lords (day lord, night lord, partner) in the "
                                    "chart's sect order -- by day the day lord first, by night the night lord first -- which "
-                                   "is this app's reading of al-Andarzaghar's \"first\", \"second\" and \"third\" Lord of "
+                                   "is the order al-Qabisi himself states for the lords of a triplicity (ITA I.7, al-Qabisi "
+                                   "I.16: by day the Sun and then Jupiter, by night Jupiter and then the Sun; Abu Ma'shar the "
+                                   "same at Gr. Intr. V.14, 6 and Abbr. I.86, and Sahl at On Nativities 10.2.7, 16), so his "
+                                   "own table reads al-Andarzaghar's \"first\", \"second\" and \"third\" Lord of "
                                    "the triplicity; the house is the whole sign counted from the Ascendant. Each row's "
                                    "words are al-Andarzaghar's as al-Qabisi reports them in the section named. For the "
                                    f"first house (I.57b) whole: \"{_andarzaghar_first}\" (fn 158: \"the matter\" reads "
@@ -16588,8 +16743,9 @@ if location_query and lat is not None and lon is not None:
                     "silent (IX.8, 123) and III.2, 110-111's gate now has the input it names.\n\n"
                     "**Directing anything that is not the Ascendant or the meridian.** III.1, 12 sends the reader to "
                     "\"what we stated in our book [on that topic]\" for every other point. Dykes's fn 16 identifies the "
-                    "method as Ptolemy's proportional semi-arcs, but that is an editor's note rather than Abu Ma'shar's "
-                    "sentence, and the reconstructions differ; it is named rather than guessed.\n\n"
+                    "method as Ptolemy's proportional semi-arcs, an editor's note rather than Abu Ma'shar's sentence; "
+                    "the formula is stated by al-Qabisi (ITA VIII.2.2, the hours of the distance from the angle) and worked "
+                    "by Dykes (ITA Appendix E), and is not built here; it is named rather than guessed.\n\n"
                     "**Revolutions of the day and the hour.** Defined in principle (I.3, 10-13) and then declined by "
                     "the author: \"there is no need for us [to do] that, because these nine indicators ... are complete "
                     "for everything needed\" (IX.7, 79).\n\n"
@@ -16635,7 +16791,12 @@ if location_query and lat is not None and lon is not None:
                        "is Abu Ma'shar's Great Introduction (Dykes); *PN IV IX.1, 26* is his On the Revolutions of "
                        "the Years of Nativities, Persian Nativities IV (Dykes) -- and on the Timing page, whose rules "
                        "all come from that book, its locators are bare Book.chapter, sentence. Both of Abu Ma'shar's "
-                       "volumes have a Book VII, which is why his name alone no longer locates anything.")
+                       "volumes have a Book VII, which is why his name alone no longer locates anything. *ITA I.22 "
+                       "(al-Qabisi)* is Dykes's Introductions to Traditional Astrology, its section and the author excerpted "
+                       "there (al-Qabisi's own numbering, *al-Qabisi IV.4*, where it is given); *Abu Bakr, On Nativities "
+                       "II.5.14*, *'Umar al-Tabari, Book of Nativities I.4.3*, *Masha'allah, Book of Aristotle III.1.8* and "
+                       "*Abu 'Ali al-Khayyat, Judgments of Nativities Ch. 4* are the four nativity treatises of Persian "
+                       "Nativities I and II (Dykes); *Abbr. II.27* is Abu Ma'shar's Abbreviation as ITA prints it.")
             # --- The readings in force (2026-09-10) ----------------------------
             st.subheader("Readings in force",
                          help="Every doctrinal switch, where it is set, what it says now and what the default "
@@ -16788,7 +16949,14 @@ if location_query and lat is not None and lon is not None:
             st.dataframe(pd.DataFrame(years), hide_index=True, width='content', height=_rows_height(len(years)))
             st.caption("Gr. Intr. VII.8, Figure 146; the fardar periods PN IV IV.1, 2. The "
                        "middle years use two constructions, the ordinary mean for the planets and (least + great/2)/2 "
-                       "for the luminaries, per Valens VII.5 (a text not in hand).")
+                       "for the luminaries, per Valens VII.5 (a text not in hand). The luminaries' 39 1/2 has three "
+                       "witnesses in hand -- Gr. Intr. VII.8, 3-8 with Figure 146; Abu Bakr, On Nativities I.16, the same "
+                       "construction in prose (half the greater years added to the lesser, the sum halved); PN IV I.8, 12, "
+                       "the Moon's 4 as a tenth of her middle years -- and three against it that take the ordinary mean, "
+                       "the Sun 69 1/2 and the Moon 66 1/2: Masha'allah, Book of Aristotle III.1.8; Abu 'Ali al-Khayyat, "
+                       "Judgments of Nativities Ch. 4; and the Latin Great Introduction's table of the years as Dykes prints "
+                       "it (ITA VII.2, Figure 108). This app keeps 39 1/2, the Arabic Great Introduction's, the table it "
+                       "reads for the rest of the row.")
 
             st.subheader("Degrees of nobility and rank",
                          help="Sahl, On Nativities 1.38, 39-41 and Figure 57 of his volume: the degrees in which, with the "
@@ -16801,6 +16969,11 @@ if location_query and lat is not None and lon is not None:
                     row["Abu Ma'shar (Gr. Intr. V.22, 4)"] = ', '.join(str(d) for d in ELEVATION_DEGREES.get(row['Sign'], [])) or '-'
             st.dataframe(pd.DataFrame(_nob_rows), hide_index=True, width='content', height=_rows_height(12))
             st.caption("Sahl\'s figure prints bare degrees, read here as ordinals -- how Abu Ma\'shar\'s Figure 64 prints the same rule\'s degrees. "
+                       "Dykes resolves the ordinal to a point: on the inconsistency between cardinal and ordinal numbers in "
+                       "these tables his sense is that the authors meant the end of the nineteenth degree, that is 19° (ITA I.3 "
+                       "fn 23), the point at which the ordinal span tested here (18° to 19° for the nineteenth) ends. Al-Qabisi\'s own table of the same rule "
+                       "(al-Qabisi I.53, ITA VII.9, Figure 118) is a third list, printed as ordinals and disagreeing with both "
+                       "Sahl\'s and Abu Ma\'shar\'s; it is not tabled here. "
                        + ("Abu Ma'shar's column is the supplement's: the same rule, stated at V.22, 4 with Figure 64's table, "
                           "twelve signs to Sahl's eight, six of the eight disagreeing; the text reconciles none of it."
                           if READING_DEPTH == READING_DEPTH_OPTIONS[1] else

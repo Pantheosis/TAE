@@ -2494,7 +2494,11 @@ def test_pn4_printed_reference_tables_derive_from_the_rules(engine):
     assert applied["Ascendant, and things in it"] == "applied to the degree of the Ascendant and to a planet on the degree itself (numerical tolerance, no orb)"
     assert applied["Midheaven, or the fourth"] == "applied to the degrees of the Midheaven and the fourth and to a planet on the degree itself (numerical tolerance, no orb)"
     assert state["Anything else"].startswith("Requires proportional semi-arcs; calculation unavailable.")
-    assert "III.1, 12 fn 16; VI.2, 21 fn 33" in state["Anything else"] and "stated in no text in hand" in state["Anything else"]
+    # since 2026-09-15 (reconciliation 3.1 / decision 5's relabel): the formula IS stated -- al-Qabisi IV.11-12
+    # (ITA VIII.2.2), worked in ITA Appendix E -- and the row says so; "stated in no text in hand" was false
+    assert "III.1, 12 fn 16; VI.2, 21 fn 33" in state["Anything else"]
+    assert "stated by al-Qabisi (ITA VIII.2.2) and worked by Dykes (ITA Appendix E), not built" in state["Anything else"]
+    assert "no text in hand" not in state["Anything else"]
     assert "Not a prohibition: III.1, 5" in state["Anything else"]
 
 
@@ -3918,7 +3922,9 @@ def test_syzygy_governor_rows_are_on_the_victors_page_with_the_relabelled_almute
     src = re.sub(r'"\s*\n\s*"', '', ui_source())          # adjacent string literals joined, as Python joins them
     assert 'Governor of the syzygy degree (Sahl, On Nativities 1.7, 3-7)' in src
     assert '"This app\'s approximation of 1.7 (one point a listed condition)"' in src
-    assert "Almuten by 5/4/3/2/1 points (a technique from outside these texts; the weights are stated in no text in hand)" in src
+    # relabelled 2026-09-15 (decision 6): the weights are al-Qabisi's (ITA I.18), the technique not Sahl's
+    assert "Almuten by 5/4/3/2/1 points (al-Qabisi's weights, ITA I.18; a technique not in Sahl)" in src
+    assert "the weights are stated in no text in hand" not in src
     assert '"Syzygy Lord (Almuten)"' not in src
     for phrase in ("THE VERDICT names a planet only where the text's clear subcases decide",
                    "is a preference among the claim-holders, not a veto",
