@@ -95,17 +95,22 @@ hiddenimports += ["swisseph"]
 # data for the same reason: nothing imports it at build time either, and
 # Streamlit puts the script's own directory on sys.path before running it,
 # which is how app.py's "from engine import *" finds it in the frozen build
-# exactly as it does from a source checkout. atlas.db is the offline
-# GeoNames lookup database queried in place of a network geocoding API.
-# app_icon.ico is loaded at runtime via _resource_path("app_icon.ico") for
-# the pywebview window icon, and doubles as the .exe icon below.
-# ephe/sefstars.txt is the Swiss Ephemeris fixed-star catalogue the app
-# ships (AGPL-3.0, see ephe/README.md); app.py looks for it first, beside
-# itself, exactly as it reads atlas.db, and points the ephemeris at that
-# directory directly. No .se1 planetary file is bundled and none may be
-# put in ephe/: the planets stay on the built-in Moshier ephemeris
-# (docs/BUILD_NOTES.md).
-datas += [("app.py", "."), ("engine.py", "."), ("atlas.db", "."), ("app_icon.ico", "."), ("ephe/sefstars.txt", "ephe")]
+# exactly as it does from a source checkout. glyph_font.py (2026-09-15) goes
+# beside engine.py for the same reason again: engine.py's own "from
+# glyph_font import font_face_css" needs it on sys.path at run time, and
+# nothing analyzes it at build time either -- it is pure data (two base64
+# WOFF2 strings), not a package Analysis would find through imports. atlas.db
+# is the offline GeoNames lookup database queried in place of a network
+# geocoding API. app_icon.ico is loaded at runtime via
+# _resource_path("app_icon.ico") for the pywebview window icon, and doubles
+# as the .exe icon below. ephe/sefstars.txt is the Swiss Ephemeris fixed-star
+# catalogue the app ships (AGPL-3.0, see ephe/README.md); app.py looks for it
+# first, beside itself, exactly as it reads atlas.db, and points the
+# ephemeris at that directory directly. No .se1 planetary file is bundled and
+# none may be put in ephe/: the planets stay on the built-in Moshier
+# ephemeris (docs/BUILD_NOTES.md).
+datas += [("app.py", "."), ("engine.py", "."), ("glyph_font.py", "."), ("atlas.db", "."),
+         ("app_icon.ico", "."), ("ephe/sefstars.txt", "ephe")]
 
 a = Analysis(
     ["desktop_launcher.py"],

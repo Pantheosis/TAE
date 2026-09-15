@@ -24,6 +24,10 @@ import sqlite3
 import os
 import sys
 import threading
+# The wheel's embedded symbol-font subset (docs/UI_CHANGES_2026-09-15_symbol_font.md).
+# glyph_font.py sits beside this file precisely as engine.py sits beside app.py, and
+# build.spec bundles it as data for the same reason: nothing imports it at build time.
+from glyph_font import font_face_css
 
 # ==========================================
 # THE READINGS OF ONE RUN
@@ -518,7 +522,7 @@ LABEL_MIN_SEP = 10.5                  # degrees between neighbouring label stack
 LABEL_STAGGER = 30                    # px inward for alternate members of a crowded run
 # One tint per triplicity (D3): fire, earth, air, water; sign i uses i % 4.
 TRIPLICITY_TINT = ('#f7f7f7', '#dedede', '#ededed', '#cdcdcd')
-_WHEEL_FONT = "'Noto Sans Symbols', 'Segoe UI Symbol', 'DejaVu Sans', sans-serif"
+_WHEEL_FONT = "'TAE Symbols', 'Noto Sans Symbols', 'Segoe UI Symbol', 'DejaVu Sans', sans-serif"
 _CUSP_COLOUR = '#a94442'
 _AXIS_COLOUR = {0: '#0000cc', 6: '#0000cc', 9: '#1e7b1e', 3: '#1e7b1e'}   # horizon blue, meridian green (D4)
 _VS = '︎'                        # text-presentation selector: never an emoji
@@ -619,6 +623,7 @@ def generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, dt_loc
     width = WHEEL_WIDE_WIDTH if wide else size
     svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {size}" width="{width}" height="{size}" '
            f'style="font-family:{_WHEEL_FONT}">',
+           f'<style>{font_face_css()}</style>',
            f'<rect width="{width}" height="{size}" fill="{pal["bg"]}"/>']
 
     # 1. Sign band shaded by triplicity, sign glyphs, whole-sign place
@@ -999,6 +1004,7 @@ def generate_multiwheel_svg(rings, chart_name, wide=False, bounds=True, shade_si
     width = WHEEL_WIDE_WIDTH if wide else size
     svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {size}" width="{width}" height="{size}" '
            f'style="font-family:{_WHEEL_FONT}">',
+           f'<style>{font_face_css()}</style>',
            f'<rect width="{width}" height="{size}" fill="{pal["bg"]}"/>']
     layout = _ring_layout(len(rings), bounds)
     r_top = layout[-1][1]
@@ -1269,6 +1275,7 @@ def generate_distribution_strip_svg(segments, now, unit='years', span=None, titl
 
     svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {STRIP_WIDTH} {STRIP_HEIGHT}" width="{STRIP_WIDTH}" '
            f'height="{STRIP_HEIGHT}" style="font-family:{_WHEEL_FONT}">',
+           f'<style>{font_face_css()}</style>',
            f'<rect width="{STRIP_WIDTH}" height="{STRIP_HEIGHT}" fill="{pal["bg"]}"/>']
     if title:
         svg.append(_svg_text(x_left, 26, _esc_text(title), 18, 'bold', pal['ink'], anchor='start'))
@@ -1340,6 +1347,7 @@ def generate_hit_strip_svg(rows, now, span=None, title='', theme=None):
 
     svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {STRIP_WIDTH} {STRIP_HEIGHT}" width="{STRIP_WIDTH}" '
            f'height="{STRIP_HEIGHT}" style="font-family:{_WHEEL_FONT}">',
+           f'<style>{font_face_css()}</style>',
            f'<rect width="{STRIP_WIDTH}" height="{STRIP_HEIGHT}" fill="{pal["bg"]}"/>']
     if title:
         svg.append(_svg_text(x_left, 26, _esc_text(title), 18, 'bold', pal['ink'], anchor='start'))

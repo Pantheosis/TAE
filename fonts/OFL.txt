@@ -1,0 +1,48 @@
+Licence notice for the embedded symbol font (glyph_font.py, 2026-09-15)
+========================================================================
+
+glyph_font.py embeds two subsets of Google's Noto Sans Symbols fonts:
+
+    NotoSansSymbols-Regular.ttf   "Noto Sans Symbols",   Version 2.003
+    NotoSansSymbols2-Regular.ttf  "Noto Sans Symbols 2", Version 2.008
+
+as shipped by Arch Linux's `noto-fonts` package, version 1:2026.09.01-1.
+
+Both files' own `name` table (checked with fontTools) carries this notice,
+identically, and it is reproduced here VERBATIM:
+
+    Copyright: Copyright 2022 The Noto Project Authors
+               (https://github.com/notofonts/symbols)
+
+    License description: This Font Software is licensed under the SIL
+    Open Font License, Version 1.1. This license is available with a FAQ
+    at: https://scripts.sil.org/OFL
+
+    License URL: https://scripts.sil.org/OFL
+
+WHAT IS MISSING FROM THIS FILE
+-------------------------------
+
+The full SIL Open Font License, Version 1.1 legal text is NOT included
+below. It was sought on the build machine and not found where expected:
+
+  - `pacman -Qi noto-fonts` reports "Licenses: OFL-1.1-no-RFN".
+  - The file the package actually ships at
+    `/usr/share/licenses/noto-fonts/LICENSE` is, verbatim, the Apache
+    License, Version 2.0 -- not the OFL text. This is a packaging
+    mismatch on that machine, not a statement about the font's own
+    licence (which the font's own metadata above states plainly, and
+    which is well known to be OFL 1.1 for the Noto family generally).
+  - No other copy of the OFL 1.1 text was found on that machine under
+    `/usr/share/licenses/` (three unrelated packages there -- ttf-opensans,
+    ttf-fantasque-nerd, ttf-fira-sans -- do ship a correct OFL.txt; none of
+    them is Noto's).
+
+THIS FILE STILL NEEDS: the full SIL Open Font License, Version 1.1 text,
+copied from https://scripts.sil.org/OFL (or from a `noto-fonts` package
+build where the licence file is not mismatched), appended below this
+notice, to complete this repository's compliance with the licence the
+embedded font declares itself under. Nothing in this repository's build or
+test process depends on the full text being present -- this is a
+documentation completion, not a functional one -- but it should not be
+left this way indefinitely.

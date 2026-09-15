@@ -84,4 +84,8 @@ with the books can check every rule.
 ## Licence
 
 AGPL-3.0 — see [`LICENSE`](LICENSE). The fixed-star catalogue in `ephe/` is Swiss Ephemeris
-data redistributed under the same licence.
+data redistributed under the same licence. `glyph_font.py` embeds a 26-glyph subset of Google's
+Noto Sans Symbols and Noto Sans Symbols 2 (SIL Open Font License 1.1) as base64 WOFF2, so every
+picture the app draws carries its own zodiac and planet glyphs regardless of what is installed
+on the viewing machine — see [`fonts/OFL.txt`](fonts/OFL.txt) for the licence notice and
+`docs/UI_CHANGES_2026-09-15_symbol_font.md` for what the subset does and does not cover.
