@@ -1136,3 +1136,50 @@ Left, per decision 13: the other Lesson 10 rows (Rhetorius's and Abu Bakr's of/c
 delineations for the other planets) -- the course's digest is their only witness in hand, and they are not
 built. E3's two companions from the same synthesis item, I.12.3 (Mars destroying nourishing by day) and
 II.1.1 (Saturn in the Midheaven by night), stay OCR-only and unbuilt.
+
+## 2026-09-15: additions and subtractions to the house-master's years (Abu 'Ali, JN Ch. 4)
+
+The second half of *Judgments of Nativities* Ch. 4 (PN I pp. 235-236, photographed 2026-09-15; fn 27-28),
+built DISPLAY ONLY at the supplement depth on the owner's work order. Sahl 1.20 stays the grant of the
+house-master's years; the app's 1.21 declaration ("the 1.21 additions" not applied) stands; no sum is formed
+and nothing is scored. Engine: `JN_CH4_SENTENCES` (the chapter's five sentences and fn 27-28, verbatim;
+'nothing' is `JN_CH4_ADDITIONS` already on the ladder), `JN_CH4_GRADES` (the three grades of the fortune's
+addition in the chapter's words: years, months, days or hours), `ABU_BAKR_I15_ADDITIONS` (PN II pp. 129-130,
+four sentences) and `TBN_I44_ADDITIONS` (PN II pp. 15-16, five sentences) as witnesses, `JN_CH4_ADDITIONS_NOTE`,
+`JN_CH4_ADDITIONS_CITATION`, `evaluate_jn_years_additions(house_master, planetary_data)` (one dict a planet:
+planet, aspect, effect adds / subtracts / nothing / not decided, the lesser years, the grades, the sentence,
+the reading) and `jn_years_additions_rows` (the same in words). Bundle key `hm_years_additions`. Page: the
+Releaser tab, directly under the house-master's years and the supplement's ladder, under Course text and
+supplement only -- a `_finding` titled "Additions and subtractions to the house-master's years (Abu 'Ali;
+supplement, display only)" with the rows, the glance, and the Sources expander quoting the chapter whole,
+fn 27-28, the note, Abu Bakr and 'Umar. `JN_YEARS_NOTE` now says the additions are "listed below planet by
+planet and not applied" where it said they were not built.
+
+Readings (said in the note): joined and the aspects by WHOLE SIGN, as the app's other Abu 'Ali readings are
+('Umar's "or were with it in one sign" beside it); the fortunes Jupiter and Venus, the bad ones Saturn and
+Mars; the luminaries, unnamed by the chapter, get no row ('Umar's sentence on the Sun is quoted as a witness
+only); the lesser years from `PLANETARY_YEARS`, whose lesser column Ch. 4's table matches; a fortune's square
+or opposition and a bad one's sextile or trine are listed as rows that "add or subtract nothing", since the
+chapter rules on them; the three grades are printed on every fortune row at the same count and the grade
+is NOT decided, no text defining "middling in strength" or "more unsound" (the app's pattern for 'serious'
+in TBN I.4.3); the bad one's subtraction and Mercury's addition are not graded, the chapter grading the
+fortune's addition only. Mercury is Dykes's reading (fn 28), marked so on the row: adds when with or
+aspecting a fortune (whole sign) and himself sextile or trine to the house-master; subtracts when with or
+aspecting a bad one and himself square or opposite; the house-master itself is not counted as his company;
+where fn 28 decides nothing -- joined to the house-master, in neither company, in both, or in a company
+whose aspect fn 28 does not pair with -- the row says "not decided" and why.
+
+Witnesses. Abu Bakr I.15 has the rule in the same shape ("the fortunes add to the native's years by
+conjunction or the sextile or trine aspect, but the infortunes subtract by their conjunction or square
+aspect or the opposition"), grades the aspecting planet by ITS place and condition (angles: the lesser
+years; retrograde, burned or unfortunate: months; days or hours under more) where Abu 'Ali says "middling"
+and "more unsound", and differs twice: a bad one's trine or sextile "from a good place" ADDS its lesser
+years, and a fortune "by any aspect ... will always add". 'Umar I.4.4 has the fortunes add their lesser
+years when the house-master is not under the rays, an impeded or besieged fortune add months or days, the
+bad ones subtract from the square, opposition or "with it in one sign", the fortunes' square and
+opposition add (with Sahl 1.21, 8, against Abu 'Ali -- already quoted on the ladder), and the Sun cut off or
+add by his own aspects. Both quoted in the expander; neither applied. Test:
+`tests/test_jn_years_additions_2026_09_15.py` (every sentence and both footnotes verbatim in the photographed
+spans; Jupiter trine adds 12 at three undecided grades; Saturn square subtracts 30; a bad one's trine
+nothing; Venus joined adds 8, Jupiter square nothing; Mercury's four fn 28 cases; no row in aversion; the
+Releaser tab at both depths). `tables.json` untouched (course-text depth).

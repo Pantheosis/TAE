@@ -10763,8 +10763,9 @@ def evaluate_gestation(chart_data, lat=None, lon=None):
 # sentences are quoted from Persian Nativities I, pp. 233-235 (photographed
 # 2026-09-15) and Persian Nativities II, pp. 13-14; the test
 # tests/test_years_ladder_2026_09_15.py holds them to the page. Ch. 4's
-# additions and subtractions are NOT built (the app declares Sahl's 1.21
-# additions not applied); the one place JN and Sahl contradict each other
+# additions and subtractions are listed, display only, by
+# evaluate_jn_years_additions below (2026-09-15; the app still declares
+# Sahl's 1.21 additions not applied); the one place JN and Sahl contradict each other
 # -- the fortunes' squares and oppositions -- is quoted on the page, both
 # sides. 'Umar's reading of the superiors (I.4.3, "not so much ... a
 # serious impediment") rides in 1.20, 14-15's note (decision 10) and is not
@@ -10854,7 +10855,7 @@ JN_YEARS_NOTE = (
     "planets' impediments, because it is one rule\" (the chapter states the angular cases with one, two and four impediments; the single steps between are this app's reading of \"one rule\"), and no step below days (the count of months or days is not the chapter's -- \"the number of the lesser years\" is 'Umar's and Sahl 1.20, 15's); \"peregrine\" is a planet in none of its five "
     "shares (the chapter's own condition names the domicile, exaltation and triplicity); \"burned up\" is this app's "
     "under-the-rays fact; the Sun takes no step for orientality; \"free from the bad ones\" is not tested, since Ch. 4's "
-    "additions and subtractions are not built. Where Ch. 4's count differs from this app's table it is printed as Ch. 4 "
+    "additions and subtractions are listed below planet by planet and not applied. Where Ch. 4's count differs from this app's table it is printed as Ch. 4 "
     "has it. On the additions Abu 'Ali and Sahl disagree: Ch. 4, \"" + JN_CH4_ADDITIONS + "\"; On Nativities 1.21, 8 as "
     "printed, \"" + SAHL_1_21_8 + "\" (fn 160: 8-14 \"do match TBN I.4.4\"). Neither is applied.")
 
@@ -10910,6 +10911,171 @@ def jn_years_fallback(planet, planetary_data, cusps, sect, essential):
         text = f"{cls}, the number of the lesser years ({count:g}, {planet}), {place} by the division ({q}){stepped}"
     return {'class': cls, 'count': count, 'unit': unit, 'place': place, 'division': q, 'facts': facts, 'steps': steps,
             'jn': place_row[2], 'umar': umar, 'text': text, 'citation': JN_YEARS_CITATION, 'table_note': table_note}
+
+# --- Abu 'Ali's additions and subtractions to the house-master's years (JN Ch. 4), DISPLAY ONLY, supplement ---
+# The chapter's second half, built 2026-09-15 on the owner's work order. Sahl
+# 1.20 stays the grant of the years and the app's 1.21 declaration ("the 1.21
+# additions" not applied) stands: this lists what each planet WOULD add or
+# subtract by Ch. 4, one row a planet, and forms no sum. Sentences quoted
+# from Persian Nativities I, pp. 235-236 (photographed 2026-09-15), fn 27-28;
+# Abu Bakr I.15 (PN II pp. 129-130) and 'Umar I.4.4 (PN II pp. 15-16) as
+# witnesses. The test tests/test_jn_years_additions_2026_09_15.py holds the
+# sentences to the page.
+JN_CH4_SENTENCES = {
+    'fortune': ("If therefore you examined how much the kadukhudhāh signified (of years, months and days), and you wished "
+                "to know what the planets added to it or subtracted from it, do thusly: consider diligently if a fortune "
+                "were joined with it or aspected it by a trine or sextile aspect: it will add its own lesser years to [the "
+                "kadukhudhāh]; and if [the fortune] were middling in strength, [it will give] so many months; and if it "
+                "were more unsound, days or hours."),
+    'infortune': ("But if a bad one were joined to [the kadukhudhāh] or aspected it by a square [or] opposite aspect, it "
+                  "will subtract its own lesser years from [the kadukhudhāh]."),
+    'nothing': JN_CH4_ADDITIONS,
+    'mercury': ("Mercury however, if he were with fortunes (which add), he will add his own lesser years to the "
+                "kadukhudhāh; and if he were with bad ones, he will subtract them."),
+    'mars': "But of all of those which impede the kadukhudhāh more, it is Mars.",
+    'fn27': "Reading quadrati vel oppositi...radii for quadratos vel oppositos...radios.",
+    'fn28': ("This probably means that if Mercury were with or in aspect to a benefic, and he himself were in a sextile "
+             "or trine relationship to the kadukhudhāh, he would add years; but if he were with or in aspect to a "
+             "malefic, and he himself were in a square or opposition to the kadukhudhāh, he would subtract. Nativities "
+             "§4 is much briefer."),
+}
+# The three grades of the fortune's addition, in the chapter's words; no
+# text defines "middling in strength" or "more unsound", so no grade is chosen.
+JN_CH4_GRADES = (("its own lesser years", "years"),
+                 ("if [the fortune] were middling in strength, [it will give] so many months", "months"),
+                 ("if it were more unsound, days or hours", "days or hours"))
+# Witnesses beside Abu 'Ali (verbatim).
+ABU_BAKR_I15_ADDITIONS = {
+    'method': ("Therefore operate according to this method by adding with the fortunes and diminishing with the "
+               "infortunes. And the fortunes add to the native's years by conjunction or the sextile or trine aspect, "
+               "but the infortunes subtract by their conjunction or square aspect or the opposition."),
+    'grades': ("Which if planets aspecting the kadukhudhāh were in the Ascendant, the 10th or 7th house, they will give "
+               "their own lesser years. If they were in the 5th, in the 10th or 4th, and in their own domiciles, "
+               "exaltations, triplicities or bounds, they will confer their own lesser years. But if they were "
+               "retrograde, burned up or unfortunate, they will give months for their own lesser years. And if they "
+               "were in angles or succeedents, and also retrograde, burned up or impeded, or in their own fall, as was "
+               "said, they will give days or hours for the lesser years."),
+    'differs': ("If an infortune aspected the significator of life from the square or opposite aspect, it will subtract "
+                "from it its own years from the given years. And if the said infortune aspected the said significator by "
+                "a trine or sextile aspect, and from a good place, it will add its own lesser years with the given "
+                "years. And if a fortune aspected it by any aspect, it will subtract nothing from the given years, but "
+                "it will always add."),
+    'mercury': ("But this is not to be said about Mercury: for if he were with an infortune, he will increase the evil "
+                "and misfortune."),
+}
+TBN_I44_ADDITIONS = {
+    'fortunes': ("Know that if fortunes aspected the kadukhudhāh, and it were not under the rays of the Sun, they will "
+                 "increase for it, and they will give it their own lesser years."),
+    'grades': ("Which if the good ones gave something to the kadukhudhāh by means of an aspect, [the good one] will "
+               "increase for it [by] months or days according to its own lesser years, if [the good one] were impeded "
+               "or seized."),
+    'squares': ("Know that the fortunes, if they aspected from out of a square aspect or the opposition, or they were "
+                "with the kadukhudhāh, they do not cut off anything from him—that is, it does not take away from it, "
+                "but they increase the lesser years if they were not retrograde or burned up or impeded by the bad ones."),
+    'infortunes': ("And if the bad ones aspected the kadukhudhāh from out of the opposition or the square aspect, or "
+                   "were with it in one sign, they will subtract from it according to their own lesser years, whether "
+                   "they received it or not."),
+    'sun': ("If the Sun were with the kadukhudhāh by conjunction or opposition and the square aspect, he likewise cuts "
+            "off [according to the number of] his lesser years. If he aspected the kadukhudhāh from out of a trine or "
+            "sextile, he adds his own lesser years to it."),
+}
+JN_CH4_ADDITIONS_CITATION = "Abu 'Ali, Judgments of Nativities Ch. 4 (fn 27-28), with Abu Bakr I.15 and 'Umar, TBN I.4.4"
+JN_CH4_ADDITIONS_NOTE = (
+    "Display only: these rows say what each planet would add to or subtract from the house-master's years by Abu "
+    "'Ali's chapter, planet by planet; no sum is formed, nothing is scored, and Sahl's grant of the years above is not "
+    "changed by them (Sahl's own 1.21 additions stay not applied). Read: \"joined\" and the aspects by whole sign, as "
+    "this app's other readings of Abu 'Ali are and as 'Umar's \"or were with it in one sign\" has it; the fortunes "
+    "are Jupiter and Venus, the bad ones Saturn and Mars, the luminaries unnamed by the chapter and given no row; "
+    "the lesser years from this app's table, which Ch. 4's table matches in that column. The three grades are the "
+    "chapter's for a fortune's addition and each row prints the count at all three, because no text defines "
+    "\"middling in strength\" or \"more unsound\": the grade is not decided. The bad one's subtraction and Mercury's "
+    "row are not graded by the chapter. Mercury's row is Dykes's reading (fn 28), his company by whole sign with the "
+    "house-master itself left out of it; where fn 28 decides nothing -- Mercury joined to the house-master, or in "
+    "neither company, or in both, or in a company whose aspect fn 28 does not pair with -- the row says so.")
+
+
+def evaluate_jn_years_additions(house_master, planetary_data):
+    """JN Ch. 4's additions and subtractions to the house-master's years,
+    DISPLAY ONLY: one row for each other planet joined to the house-master
+    or aspecting it by whole sign -- a fortune joined, trine or sextile
+    adds its lesser years (three grades, none chosen), a bad one joined,
+    square or opposite subtracts its lesser years, a fortune's square or
+    opposition and a bad one's sextile or trine add or subtract nothing,
+    Mercury by fn 28 (Dykes's reading). The luminaries are unnamed by the
+    chapter and get no row; a planet in aversion gets none. Returns a list
+    of dicts (empty when there is no house-master); each carries 'planet',
+    'aspect', 'effect' ('adds', 'subtracts', 'nothing', 'not decided'),
+    'lesser', 'grades' (count and unit at each of JN_CH4_GRADES, or None
+    where the chapter grades nothing), 'sentence', 'reading'. No sum."""
+    if not house_master or house_master not in planetary_data:
+        return []
+    hm_lon = planetary_data[house_master]['longitude']
+    rows = []
+    for planet in ('Saturn', 'Jupiter', 'Mars', 'Venus', 'Mercury'):
+        if planet == house_master or planet not in planetary_data:
+            continue
+        look = _prosperity_looks(planetary_data[planet]['longitude'], hm_lon)
+        if look is None:
+            continue
+        aspect = 'joined' if look == 'with' else look
+        lesser = JN_YEARS_TABLE[planet][2]   # Ch. 4's own lesser column, as jn_years_fallback reads it
+        reading = None
+        if planet in ('Jupiter', 'Venus'):
+            if look in ('with', 'trine', 'sextile'):
+                effect, sentence = 'adds', JN_CH4_SENTENCES['fortune']
+            else:
+                effect, sentence = 'nothing', JN_CH4_SENTENCES['nothing']
+        elif planet in SAHL_INFORTUNES:
+            if look in ('with', 'square', 'opposition'):
+                effect, sentence = 'subtracts', JN_CH4_SENTENCES['infortune']
+            else:
+                effect, sentence = 'nothing', JN_CH4_SENTENCES['nothing']
+        else:                                                   # Mercury, fn 28
+            company = {p: _prosperity_looks(planetary_data[planet]['longitude'], planetary_data[p]['longitude'])
+                       for p in ('Jupiter', 'Venus', 'Saturn', 'Mars') if p != house_master and p in planetary_data}
+            good = [p for p in ('Jupiter', 'Venus') if company.get(p)]
+            bad = [p for p in ('Saturn', 'Mars') if company.get(p)]
+            sentence = JN_CH4_SENTENCES['mercury']
+            if good and not bad and look in ('sextile', 'trine'):
+                effect = 'adds'
+                reading = f"Dykes's reading (fn 28): with or aspecting {', '.join(good)}, himself {look} to the house-master"
+            elif bad and not good and look in ('square', 'opposition'):
+                effect = 'subtracts'
+                reading = f"Dykes's reading (fn 28): with or aspecting {', '.join(bad)}, himself {look} to the house-master"
+            else:
+                effect = 'not decided'
+                why = ("joined to the house-master, which fn 28 does not decide" if look == 'with'
+                       else "in the company of neither a fortune nor a bad one" if not good and not bad
+                       else "in the company of both a fortune and a bad one" if good and bad
+                       else f"in the company of {', '.join(good or bad)} but himself {look} to the house-master, which fn 28 does not decide")
+                reading = f"Dykes's reading (fn 28) reaches no verdict: {why}"
+        grades = None
+        if effect == 'adds' and planet != 'Mercury':
+            grades = tuple((text, lesser, unit) for text, unit in JN_CH4_GRADES)
+        rows.append({'planet': planet, 'aspect': aspect, 'effect': effect, 'lesser_years': lesser, 'grades': grades,
+                     'sentence': sentence, 'reading': reading})
+    return rows
+
+
+def jn_years_additions_rows(house_master, planetary_data):
+    """The Ch. 4 rows as the Releaser tab prints them (evaluate_jn_years_additions in words)."""
+    out = []
+    for r in evaluate_jn_years_additions(house_master, planetary_data):
+        n = r['lesser_years']
+        effect = {'adds': f"adds its lesser years ({n:g})", 'subtracts': f"subtracts its lesser years ({n:g})",
+                  'nothing': "adds or subtracts nothing", 'not decided': "not decided"}[r['effect']]
+        if r['grades']:
+            cells = [f"{n:g} {unit}" for _, _, unit in r['grades']]
+            grade = "not decided: no text defines \"middling in strength\" or \"more unsound\""
+        elif r['effect'] in ('adds', 'subtracts'):
+            cells = [f"{n:g} years", "-", "-"]
+            grade = "the chapter grades the fortune's addition only"
+        else:
+            cells, grade = ["-", "-", "-"], "-"
+        out.append({'Planet': r['planet'], 'Looks at the house-master': f"{r['aspect']} (whole sign)", 'Ch. 4': effect,
+                    'Its own lesser years': cells[0], 'If middling in strength': cells[1], 'If more unsound': cells[2],
+                    'Grade': grade, 'Reading': r['reading'] or "the chapter's sentence"})
+    return out
 
 # --- Spear-bearing: two stated definitions, DISPLAY ONLY (owner, 2026-09-11, decision sheet row 11 / DEC-D-18) ---
 # A. Right-sidedness, Sahl, On Nativities 2.5, 2-3 ("what is called the
@@ -15484,6 +15650,8 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
         'hm_years_jn': (jn_years_fallback(house_master, chart_data['planetary_data'], chart_data['houses'], chart_data['sect'],
                                           evaluate_essential_dignities(chart_data['planetary_data'], chart_data['sect']))
                         if house_master else None),
+        # JN Ch. 4's additions and subtractions, display only (2026-09-15); supplement only.
+        'hm_years_additions': jn_years_additions_rows(house_master, chart_data['planetary_data']) if house_master else [],
         'ii3': pn4_ii3_examination(chart_data, sr, year, jd_sr),
         'iii2_type': pn4_static_type(current['distributor'], current['partner']) if current else None,
         'iii2_checklist': pn4_distribution_checklist(chart_data, sr, year['longitude'], current),
@@ -17781,6 +17949,31 @@ if location_query and lat is not None and lon is not None:
                         for _u in _j['umar']:
                             st.markdown(f"- {_u.replace('<', chr(92) + '<')}")
                         st.caption(JN_YEARS_NOTE.replace('<', chr(92) + '<'))
+                    if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
+                        # JN Ch. 4's second half, display only (2026-09-15): one row a planet, no sum.
+                        _add = pn4['hm_years_additions']
+                        _finding([], "Additions and subtractions to the house-master's years (Abu 'Ali; supplement, display only)",
+                                 JN_CH4_ADDITIONS_CITATION,
+                                 _add or [{'Planet': '-', 'Looks at the house-master': f"none of Saturn, Jupiter, Mars, Venus or Mercury is joined to {rel['house_master']} or looks at it by whole sign",
+                                           'Ch. 4': '-', 'Its own lesser years': '-', 'If middling in strength': '-',
+                                           'If more unsound': '-', 'Grade': '-', 'Reading': '-'}],
+                                 glance="What each planet joined to the house-master or looking at it would add to or subtract "
+                                        "from its years by Abu 'Ali's chapter: a fortune joined, trine or sextile adds its "
+                                        "lesser years, at one of three grades the chapter leaves undefined; a bad one joined, "
+                                        "square or opposite subtracts its lesser years; Mercury by Dykes's reading. Display "
+                                        "only: no sum is formed, and Sahl's grant above is not changed.",
+                                 notes=(f"Abu 'Ali, Judgments of Nativities Ch. 4, whole: \"{JN_CH4_SENTENCES['fortune']}\" \"{JN_CH4_SENTENCES['infortune']}\" "
+                                        f"\"{JN_CH4_SENTENCES['nothing']}\" \"{JN_CH4_SENTENCES['mercury']}\" \"{JN_CH4_SENTENCES['mars']}\" "
+                                        f"Fn 27 on \"rays\": \"{JN_CH4_SENTENCES['fn27']}\" Fn 28 on Mercury: \"{JN_CH4_SENTENCES['fn28']}\"\n\n"
+                                        f"{JN_CH4_ADDITIONS_NOTE}\n\n"
+                                        f"Abu Bakr, On Nativities I.15, a witness beside Abu 'Ali (not applied): \"{ABU_BAKR_I15_ADDITIONS['method']}\" "
+                                        f"He grades the aspecting planet by its place and condition where Abu 'Ali says \"middling\" and \"more unsound\": "
+                                        f"\"{ABU_BAKR_I15_ADDITIONS['grades']}\" And he differs on the bad one's trine and sextile and the fortune's square and "
+                                        f"opposition: \"{ABU_BAKR_I15_ADDITIONS['differs']}\" On Mercury: \"{ABU_BAKR_I15_ADDITIONS['mercury']}\"\n\n"
+                                        f"'Umar al-Tabari, Book of Nativities I.4.4, a witness (not applied): \"{TBN_I44_ADDITIONS['fortunes']}\" "
+                                        f"\"{TBN_I44_ADDITIONS['grades']}\" \"{TBN_I44_ADDITIONS['infortunes']}\" With Sahl 1.21, 8, and against Abu 'Ali, on the "
+                                        f"fortunes' square and opposition: \"{TBN_I44_ADDITIONS['squares']}\" And the Sun, whom Abu 'Ali does not name: "
+                                        f"\"{TBN_I44_ADDITIONS['sun']}\""))
                 if rel['releaser'] is None:
                     st.markdown("**The stand-in (Sahl, *On Nativities* 1.32, 11-14, al-Andarzaghar).** The Ascendant's "
                                 "distribution in the tab \"from the Ascendant\" is \"the first of them\" (13); the Moon, "
