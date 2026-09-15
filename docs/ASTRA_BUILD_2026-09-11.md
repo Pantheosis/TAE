@@ -691,5 +691,5 @@ The PN II synthesis found the one corpus passage that attributes weights to 'Uma
 Nativities II.5.14, through al-'Anbas -- giving triplicity 3, bound 2 (the "newer" order), and Dykes's
 2010 introduction saying the weighted victor is not found in Sahl or Masha'allah. The course prints
 the "older method" as bound 3, triplicity 2. Owner's ruling: keep the course's label as printed, with
-a note on the Victors page and in `VICTOR_WEIGHTS`'s comment citing Abu Bakr II.5.14 and saying the
-bound-3 order has no witness in the corpus. No number changes.
+a note on the Victors page and in `VICTOR_WEIGHTS`'s comment citing Abu Bakr II.5.14; the bound-before-triplicity order itself is al-Qabisi's "certain people" (ITA I.22),
+so only the attribution to 'Umar/Masha'allah is unwitnessed (ITA rulings audit, entry 25). No number changes.
