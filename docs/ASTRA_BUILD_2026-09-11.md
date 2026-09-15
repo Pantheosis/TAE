@@ -605,3 +605,16 @@ into. The chapter never lists the unfortunate houses; 6, 8 and 12 are the app's 
 page says so. The "unless it rules over the location" exception is quoted, not tested. The notes
 quote the four governing sentences whole; the fixture is unchanged because the default depth hides
 the finding. Test: `tests/test_morin_aspects_2026_09_14.py`.
+
+## 2026-09-14: places harming the eyesight (coverage list, gap 1)
+
+`EYESIGHT_PLACES` and `evaluate_eyesight_places()`: Sahl 6.2's four lists (al-Andarzaghar 49-55,
+Rhetorius 61-68, the Bizidaj 70-72, Nawbakht 74) and Abu Ma'shar's VI.20, 4-9, each span as
+printed, none reconciled; the Sun, Moon and Ascendant tested against them; the rules' conditions
+ride in the Text column. The Chart finding is at the supplement depth only: the 1240-05-25 chart
+(the Moon 13° Cancer, Praesepe) showed a row at Course text, and `tables.json` was not regenerated.
+Readings I was unsure of: 49's "passed half [of it] until she completes 18°" as 15°00'-18°00';
+50's bare "(and in 23)" as the 23rd degree; Nawbakht's "the middle of Taurus" as the 15th-16th;
+Abu Ma'shar's single longitudes (21°08' Cancer, 15°20' Sagittarius) as the whole degree they fall
+in. 73 (Aries first degrees, Capricorn last: "sickly") and VI.20, 3 (Libra, Leo, no degrees) are
+not rows. Test: `tests/test_eyesight_places_2026_09_14.py`.
