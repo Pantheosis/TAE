@@ -156,6 +156,9 @@ PREFERENCE_KEYS = (
     # display
     '_wheel_layout', '_chart_bounds', '_timing_bounds', '_wheel_order', '_timing_lots', '_timing_rays',
     '_timing_twelfths', '_timing_wheel_view', '_target_mode', '_wheel_dark',
+    # how many times the app has been opened, counted so that the Chart
+    # page's introduction can fold itself once it has been read
+    '_launches',
 )
 
 PREFERENCE_RENAMES = (

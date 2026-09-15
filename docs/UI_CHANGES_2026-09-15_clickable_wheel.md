@@ -64,7 +64,8 @@ stands for the rerun the click causes and no longer.
 **The frontend** creates a child div under the component's own root (writing
 `innerHTML` on the root itself would overwrite the CSS and HTML the component was
 registered with), drops the SVG into it, sizes it from the envelope, and attaches
-the click listeners. Hovering a sign raises a small absolutely-positioned div with
+the click listeners. Hovering a sign raises a small tooltip div (fixed to the
+viewport -- see ruling 3 below) with
 that sign's bounds and triplicity lords — the text was computed in Python and sent
 in the envelope, so a hover is answered in the browser and never reaches the
 server. The expand control is a button in the corner: it puts the wrapper at
@@ -151,13 +152,97 @@ click on the wheel writes nothing at all; the one control this check did touch w
 the layout radio, which was set to Wide and then back to Square, leaving
 `_wheel_layout` as it was found.
 
+## Four rulings from the owner's own screen
+
+The branch was reviewed running, and four things came back.
+
+### 1. The wheel was no longer centred
+
+`st.image` centred itself inside the horizontal container; a mount does not
+inherit that. The component's root spans the main area, and an inline-block wrapper
+sat at its left edge. The wrapper is a block with `margin: 0 auto` now, so the
+560 px wheel centres inside the host; at Wide, where the width is 100%, the margins
+come to nothing and nothing changes. The container outside it is untouched.
+
+Measured against the main area's own centre, the SVG's centre inside the shadow
+root:
+
+| viewport | wheel width | offset from the main area's centre |
+|---|---|---|
+| 1400 × 900 | 560 px | −5 px |
+| 1280 × 720 | 560 px | −5 px |
+
+Wide, at 1400: the wrapper is 100%, its left margin 0, and the picture renders at
+the host's full 930 px, as before.
+
+### 2. The panel reads two across
+
+Six sections stacked one under another ran far past the wheel. They are laid out
+`st.columns(2)` now, each section its caption **above** its table so the pair reads
+as a labelled block, filling left, right, left, right over the sections that have
+rows — an empty section takes no slot, so the columns stay level. For the Sun on
+the owner's chart, which has no reception and rules no Lot: left, its places and
+its accidental conditions; right, its dignity and its connections.
+
+### 3. The tooltip was clipped at the right-hand edge
+
+Positioned inside the wheel's wrapper, a tooltip raised over a right-hand sign had
+nowhere to go and wrapped itself into a column one word wide ("Cancer · Water", a
+word a line). It is `position: fixed` against the viewport now, at one fixed width
+(22 rem, `max-width: calc(100vw - 2rem)`), placed at the pointer on `pointermove`,
+and flipped to the left of the pointer when it would pass the right edge — likewise
+above the pointer at the bottom edge. The wrapper's overflow is visible.
+
+Measured at 1400 × 900, the tooltip's own rect:
+
+| sign | pointer | tooltip rect | |
+|---|---|---|---|
+| Capricorn (left of centre) | x 610 | left 624, right 992, 368 × 79 | not flipped, three lines |
+| Cancer (right of centre) | x 1080 | left 698, right 1066, 368 × 79 | **flipped left**, three lines |
+
+Both sit wholly inside the 1400 px viewport at the full width, so the text breaks
+where it breaks everywhere else. In the expanded overlay the same holds: Cancer
+flips left (pointer 1086, left 704), and Aries near the foot of the screen (pointer
+y 836) flips **above** the pointer (bottom 822).
+
+The text keeps its three lines — `white-space: pre-line` with the fixed width wraps
+exactly as `normal` would and keeps the paragraph the owner saw, so the line breaks
+that separate the sign from its bounds from its triplicity lords are still there.
+
+### 4. The introduction folds itself after two launches
+
+The three paragraphs under the wheel are read once and then in the way. A launch
+counter keeps the count: `_launches`, an integer preference beside `_wheel_dark`,
+**one line added to `PREFERENCE_KEYS` in `engine.py`, which is that item's only
+engine edit**, incremented once per session in the block that sets
+`_autoload_done` (which runs exactly once) and written through `_remember` like any
+other preference. `LAUNCH_COUNT` is read at the top level on every run, so a
+fragment rerun and a page change see the same number.
+
+At two launches or fewer the three captions stand open as they always have; from
+the third the Chart page draws them inside `st.expander("About this app",
+expanded=False)` — the same three captions, one click away, in the place the
+captions stood, outside the wheel fragment. The expander's title is the only new
+page text.
+
+Under the harness preferences are neither read nor written
+(`ALMUTEN_NO_PREFERENCES=1`), so the count stays 0 and every existing test that
+expects the three captions still finds them. A count already in the session that
+the file did not put there is a test's, and the launch block leaves it alone —
+the same rule the preferences read follows.
+
+Watched live: the file gained `_launches: 2` on the second launch with the three
+captions bare, and on the third `_launches: 3` with the introduction folded, the
+expander collapsed, the three captions inside it when opened, and the intro text
+absent from the page until then.
+
 ## What the tests showed
 
 `tests/fixtures/tables.json` is **unchanged** — AppTest cannot click a component,
 so no panel renders under the harness and the page's inventory of tables is what
 it was.
 
-**One new file, twenty-eight tests**, `tests/test_clickable_wheel_2026_09_15.py`:
+**One new file, thirty-five tests**, `tests/test_clickable_wheel_2026_09_15.py`:
 
 - the normalised SVG equals `main`'s at five flag combinations (skipped where the
   checkout cannot produce `main`'s `engine.py`, as the engine-split file does);
@@ -197,8 +282,15 @@ read from now), and `test_chart_layout_2026_09_15.py`,
 gained an assertion rather than losing one: the Chart page now draws **no**
 `st.image` at all.
 
-Full suite: **2342 passed, 6 xfailed in 28.31s**, `-n auto` on the owner's venv.
-2314 to 2342 is the twenty-eight new tests and nothing else.
+Seven of the thirty-five are the four rulings' own: the wrapper centres itself and
+its overflow is visible, the tooltip is fixed to the viewport at one width and
+flips, the panel lays its sections out two across with each caption above its
+table, the launch count is a preference counted once a session, the introduction
+stands open at one and two launches and folds at three with the same three
+captions inside the expander, and the expander stands where the captions stood.
+
+Full suite: **2349 passed, 6 xfailed in 28.12s**, `-n auto` on the owner's venv.
+2314 to 2349 is the thirty-five new tests and nothing else.
 
 **The engine diff, by AST against `main`**: one function changed,
 `generate_hybrid_svg`; two added, `point_summary` and `sign_summary`; none

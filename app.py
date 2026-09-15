@@ -74,10 +74,19 @@ VIEWER_THEME = getattr(_context_theme, "type", None) if _context_theme is not No
 # own Dark wheel preference. Styles are isolated in a shadow root
 # (isolate_styles defaults to True), so none of this reaches the app.
 NATAL_WHEEL_CSS = """
+/* The component's own root spans the main area, and an inline-block inside
+   it sat at the left edge -- st.image used to do the centring itself, which
+   the mount does not inherit. A block with auto margins centres the 560 px
+   wheel inside the host, and at Wide, where the width is 100%, the margins
+   come to nothing and the picture runs the full width as before. The outer
+   st.container(horizontal=True, horizontal_alignment="center") stays where
+   it is. overflow is visible so the tooltip is not cut off at the edge. */
 .nw-wrap {
     position: relative;
-    display: inline-block;
+    display: block;
+    margin: 0 auto;
     max-width: 100%;
+    overflow: visible;
 }
 .nw-wrap.nw-full {
     position: fixed;
@@ -122,10 +131,17 @@ NATAL_WHEEL_CSS = """
     opacity: 0.55;
 }
 .nw-expand:hover { opacity: 1; }
+/* The tooltip is placed against the VIEWPORT, not against the wrapper: at
+   the right-hand side of the wheel a tooltip bounded by the wrapper had
+   nowhere to go and wrapped itself into a column one word wide. Fixed
+   position, one fixed width so the text breaks in the same place wherever
+   it is raised, and the frontend flips it to the left of the pointer, or
+   above it, when it would otherwise run off the screen. */
 .nw-tip {
-    position: absolute;
-    z-index: 2;
-    max-width: 22rem;
+    position: fixed;
+    z-index: 2147483001;
+    width: 22rem;
+    max-width: calc(100vw - 2rem);
     white-space: pre-line;
     pointer-events: none;
     padding: 0.3rem 0.45rem;
@@ -198,14 +214,26 @@ export default function (component) {
         element.addEventListener("click", () => {
             setTriggerValue("picked", "sign:" + index);
         });
-        element.addEventListener("mousemove", (event) => {
+        element.addEventListener("pointermove", (event) => {
             const text = signs[Number(index)];
             if (!text) { return; }
-            const box = wrap.getBoundingClientRect();
             tip.textContent = text;
             tip.hidden = false;
-            tip.style.left = Math.max(0, event.clientX - box.left + 14) + "px";
-            tip.style.top = Math.max(0, event.clientY - box.top + 14) + "px";
+            // Placed in viewport coordinates, and flipped to the other side
+            // of the pointer when it would otherwise run off the screen --
+            // which is what the right-hand signs did before.
+            const gap = 14;
+            const box = tip.getBoundingClientRect();
+            let left = event.clientX + gap;
+            let top = event.clientY + gap;
+            if (left + box.width + gap > window.innerWidth) {
+                left = Math.max(gap, event.clientX - gap - box.width);
+            }
+            if (top + box.height + gap > window.innerHeight) {
+                top = Math.max(gap, event.clientY - gap - box.height);
+            }
+            tip.style.left = left + "px";
+            tip.style.top = top + "px";
         });
         element.addEventListener("mouseleave", () => { tip.hidden = true; });
     });
@@ -320,12 +348,26 @@ chart_options = ["-- New Chart --"] + sorted(st.session_state["saved_charts"].ke
 # The app opens on the chart it was last working on (owner's decision
 # 2026-09-10), unless something has already seeded the sidebar -- the
 # harness does, and a fresh session has not.
+LAUNCH_COUNT = 0          # bound every run; the count is set just below, once per session
 if "_autoload_done" not in st.session_state:
     st.session_state["_autoload_done"] = True
+    # One launch, counted once: this block runs exactly once per session.
+    # The count includes the launch in hand, and it is what decides whether
+    # the Chart page's introduction stands open or folded -- three
+    # paragraphs that are read once and then in the way. A count already in
+    # the session that the file did not put there is a test's, and is left
+    # as it stands, which is the same rule the preferences read above
+    # follows: a seeded session_state wins.
+    if '_launches' not in st.session_state or '_launches' in st.session_state["_prefs"]:
+        st.session_state["_launches"] = int(st.session_state["_prefs"].get('_launches', 0) or 0) + 1
+        _remember('_launches', st.session_state["_launches"])
     _last = st.session_state["_prefs"].get('last_chart')
     if _last in st.session_state["saved_charts"] and "date_input_key" not in st.session_state:
         st.session_state["chart_picker"] = _last
         _restore_chart(_last)
+# Read at the top level on every run, as every other reading is, so that a
+# fragment rerun and a page change see the same number the launch set.
+LAUNCH_COUNT = int(st.session_state.get("_launches", 0) or 0)
 load_col, del_col = st.sidebar.columns([3, 1])
 load_col.selectbox("\U0001F4C2 Load saved chart", chart_options, key="chart_picker", on_change=_apply_selected_chart)
 if del_col.button("\U0001F5D1", help="Delete the selected saved chart"):
@@ -1045,11 +1087,21 @@ if location_query and lat is not None and lon is not None:
                         f"Triplicity ({sect}): {summary['lords'][2]['Lord']}, "
                         f"with {summary['lords'][3]['Lord']} partnering")
 
-            def _panel_table(rows, caption):
-                if not rows:
+            # Two across rather than one down: a caption and a small table
+            # stacked six deep ran the panel far past the wheel. Each section
+            # is its caption and then its table, so the pair reads as a
+            # labelled block, and the sections fill left, right, left, right
+            # in their own order. A section with no rows draws nothing and
+            # takes no slot, so the two columns stay level.
+            def _panel_columns(sections):
+                filled = [(caption, rows) for caption, rows in sections if rows]
+                if not filled:
                     return
-                st.dataframe(pd.DataFrame(rows), hide_index=True, width='content')
-                st.caption(caption)
+                columns = st.columns(2)
+                for index, (caption, rows) in enumerate(filled):
+                    with columns[index % 2]:
+                        st.caption(caption)
+                        st.dataframe(pd.DataFrame(rows), hide_index=True, width='content')
 
             def _pick_panel(picked):
                 """The panel under the controls row: nothing until a planet,
@@ -1058,27 +1110,31 @@ if location_query and lat is not None and lon is not None:
                 if kind == "sign" and value.isdigit():
                     summary = sign_summary(int(value), sect)
                     st.subheader(summary['sign'])
-                    _panel_table(summary['lords'], "The lords of the sign. The Reference page carries every sign.")
-                    _panel_table(summary['bounds'], "The Egyptian bounds, which the Reference page carries in full.")
-                    _panel_table(summary['faces'], "The three faces, which the Reference page carries beside the other dignities.")
+                    _panel_columns([
+                        ("The lords of the sign. The Reference page carries every sign.", summary['lords']),
+                        ("The Egyptian bounds, which the Reference page carries in full.", summary['bounds']),
+                        ("The three faces, which the Reference page carries beside the other dignities.", summary['faces']),
+                    ])
                 elif kind == "planet":
                     summary = point_summary(value, chart_data, essential, accidental, aspects,
                                             reception_data, classical_lots, topical_lots)
                     if summary is None:
                         return
                     st.subheader(summary['point'])
-                    _panel_table(summary['position'],
-                                 "Where it stands. The Calculated Points and Quadrant divisions tables below carry every point.")
-                    _panel_table(summary['essential'],
-                                 "Its dignity at its own degree. The Dignities page carries the full lordship table.")
-                    _panel_table(summary['accidental'],
-                                 "Its accidental conditions. The Dignities page carries them for every planet.")
-                    _panel_table(summary['connections'],
-                                 "The connections it stands in. The Configurations page carries the whole aspects table.")
-                    _panel_table(summary['receptions'],
-                                 f"Reception under the {CONNECTION_PROFILE} rule. The Configurations page carries the full table.")
-                    _panel_table(summary['lots'],
-                                 "The Lots it is lord of. The Lots page carries the classical and the topical Lots in full.")
+                    _panel_columns([
+                        ("Where it stands. The Calculated Points and Quadrant divisions tables below carry every point.",
+                         summary['position']),
+                        ("Its dignity at its own degree. The Dignities page carries the full lordship table.",
+                         summary['essential']),
+                        ("Its accidental conditions. The Dignities page carries them for every planet.",
+                         summary['accidental']),
+                        ("The connections it stands in. The Configurations page carries the whole aspects table.",
+                         summary['connections']),
+                        (f"Reception under the {CONNECTION_PROFILE} rule. The Configurations page carries the full table.",
+                         summary['receptions']),
+                        ("The Lots it is lord of. The Lots page carries the classical and the topical Lots in full.",
+                         summary['lots']),
+                    ])
 
             # Looking at the chart is the primary act, so the wheel takes the
             # centre of the page: the square wheel centred at 560 px, its
@@ -1240,8 +1296,18 @@ if location_query and lat is not None and lon is not None:
                       "Enter or load a nativity in the sidebar. Part 1 sets out what the chart contains, "
                       "Part 2 what the year holds; the reference tables and the sources close the page "
                       "list. The judgment is the astrologer's.")
-            for _sentence in _intro:
-                st.caption(_sentence)
+            # They are read once and then in the way, so they stand open for
+            # the first two launches and fold themselves after that, one
+            # click from the reader either way. The count is the launches
+            # including this one; under the harness, where preferences are
+            # neither read nor written, it stays 0 and the three stand open.
+            if LAUNCH_COUNT <= 2:
+                for _sentence in _intro:
+                    st.caption(_sentence)
+            else:
+                with st.expander("About this app", expanded=False):
+                    for _sentence in _intro:
+                        st.caption(_sentence)
             # The Lesson 5 worksheet's intermediate lines, so a hand
             # calculation can be checked line by line rather than only at
             # the Ascendant. GST is the Greenwich sidereal time at the UT of

@@ -239,6 +239,62 @@ def test_the_components_css_does_not_colour_the_wheel():
     assert "fill" not in css and "stroke" not in css
 
 
+def _css():
+    tree = ast.parse(APP_PATH.read_text())
+    return {node.targets[0].id: node.value.value for node in tree.body
+            if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name)
+            and isinstance(node.value, ast.Constant)}["NATAL_WHEEL_CSS"]
+
+
+def _rule(css, selector):
+    match = re.search(re.escape(selector) + r"\s*\{([^{}]*)\}", css)
+    assert match, f"no rule for {selector}"
+    return match.group(1)
+
+
+def test_the_component_centres_the_wheel_inside_its_own_host():
+    """The mount's host spans the main area, and st.image's own centring is
+    not inherited: an inline-block sat at the left edge of it. A block with
+    auto margins centres the 560 px wheel; at Wide the width is 100% and the
+    margins come to nothing. The container outside it is unchanged."""
+    body = _rule(_css(), ".nw-wrap")
+    assert "display: block;" in body
+    assert "margin: 0 auto;" in body
+    assert "overflow: visible;" in body, "the tooltip must not be cut off at the wrapper's edge"
+    assert 'st.container(horizontal=True, horizontal_alignment="center")' in APP_PATH.read_text()
+
+
+def test_the_tooltip_is_placed_against_the_viewport_and_flips():
+    """Bounded by the wrapper, a tooltip raised over a right-hand sign had
+    nowhere to go and wrapped into a column one word wide. It is fixed to
+    the viewport now, at one width, and the frontend turns it back on itself
+    at either edge."""
+    body = _rule(_css(), ".nw-tip")
+    assert "position: fixed;" in body
+    assert "width: 22rem;" in body
+    assert "max-width: calc(100vw - 2rem);" in body
+    javascript = {node.targets[0].id: node.value.value for node in ast.walk(ast.parse(APP_PATH.read_text()))
+                  if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name)
+                  and isinstance(node.value, ast.Constant)}["NATAL_WHEEL_JS"]
+    assert "pointermove" in javascript
+    assert "window.innerWidth" in javascript and "window.innerHeight" in javascript
+    assert "tip.textContent = text;" in javascript, "the text is set as text, never as markup"
+
+
+def test_the_panel_lays_its_sections_out_two_across():
+    """Caption above its table, and the sections that have rows fill left,
+    right, left, right -- so an empty one takes no slot and the columns stay
+    level."""
+    source = APP_PATH.read_text()
+    body = source[source.index("def _panel_columns("):]
+    body = body[:body.index("\n            def ", 1)]
+    assert "st.columns(2)" in body
+    assert body.index("st.caption(caption)") < body.index("st.dataframe("), "the caption stands above its table"
+    assert "columns[index % 2]" in body
+    assert "if rows" in body, "a section with no rows takes no slot"
+    assert "_panel_table(" not in source, "the one-down layout is gone"
+
+
 @pytest.mark.parametrize("layout", ["Square", "Wide"])
 def test_the_chart_page_mounts_the_wheel_and_draws_no_panel(layout):
     """Under AppTest nothing is clicked, so the fragment is the picture and
@@ -274,6 +330,74 @@ def test_the_envelope_carries_the_svg_the_width_and_the_twelve_signs():
                         ("Mars", "24"), ("Saturn", "30")):
         assert f"{lord} to {limit}°" in gemini, gemini
     assert "Triplicity (Diurnal): Saturn, with Jupiter partnering" in gemini
+
+
+# --- The introduction folds itself after two launches ---------------------
+
+INTRO_OPENING = "A TNAC study companion"
+
+
+def _chart_page(launches=None):
+    at = make_app(page="chart")
+    if launches is not None:
+        at.session_state["_launches"] = launches
+    at.run()
+    assert_no_exception(at, f"chart, {launches} launches")
+    return at
+
+
+def test_the_introduction_stands_open_on_the_first_two_launches():
+    """Three paragraphs a reader needs once. Under the harness preferences
+    are neither read nor written, so the count stays 0 and every test that
+    expects the three captions still finds them."""
+    for launches in (None, 1, 2):
+        at = _chart_page(launches)
+        captions = [c.value for c in at.main.caption]
+        assert any(c.startswith(INTRO_OPENING) for c in captions), launches
+        assert not [e for e in at.main.get("expander") if e.label == "About this app"], launches
+
+
+def test_the_introduction_folds_itself_from_the_third_launch():
+    """Folded, not dropped: the same three captions, one click away."""
+    at = _chart_page(3)
+    folded = [e for e in at.main.get("expander") if e.label == "About this app"]
+    assert len(folded) == 1, [e.label for e in at.main.get("expander")]
+    assert folded[0].proto.expanded is False
+    inside = [c.value for c in folded[0].caption]
+    assert len(inside) == 3 and inside[0].startswith(INTRO_OPENING)
+    # and none of the three is left standing bare: the page's own children
+    # carry the chart strip's caption and no more.
+    bare = [child.value for child in at.main.children.values()
+            if type(child).__name__ == "Caption"]
+    assert all(not value.startswith(INTRO_OPENING) for value in bare), bare
+    assert [c.value for c in at.main.caption if c.value.startswith(INTRO_OPENING)] == inside[:1]
+
+
+def test_the_launch_count_is_a_preference_counted_once_a_session():
+    """One line in the engine -- the store key -- and one increment in the
+    app, in the block that runs exactly once per session."""
+    engine_text = (EXECUTABLE_DIR / "engine.py").read_text()
+    assert "'_launches'," in engine_text[engine_text.index("PREFERENCE_KEYS = ("):
+                                        engine_text.index("PREFERENCE_RENAMES")]
+    source = APP_PATH.read_text()
+    block = source[source.index('if "_autoload_done" not in st.session_state:'):]
+    block = block[:block.index("\nload_col, del_col")]
+    assert "_remember('_launches'" in block, "the count is written to the file like any preference"
+    assert source.count("_remember('_launches'") == 1, "counted once, in that block only"
+    assert 'LAUNCH_COUNT = int(st.session_state.get("_launches", 0) or 0)' in source
+    assert "if LAUNCH_COUNT <= 2:" in source
+    assert source.count('st.expander("About this app"') == 1
+
+
+def test_the_folded_introduction_stands_where_the_captions_stood():
+    """Outside the wheel fragment, in the place the three captions had:
+    header, strip, fragment, then the introduction."""
+    at = _chart_page(3)
+    kids = list(at.main.children.values())
+    assert [type(k).__name__ for k in kids[:3]] == ["Header", "Caption", "Block"]
+    assert type(kids[3]).__name__ == "Expander"
+    assert kids[3].label == "About this app"
+    assert kids[4].value == "Calculation"
 
 
 # --- C. The panel says what the tables say --------------------------------
