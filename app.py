@@ -16601,7 +16601,7 @@ if location_query and lat is not None and lon is not None:
                 st.dataframe(pd.DataFrame(mars_abu_bakr_data), hide_index=True, width='stretch',
                              height=_rows_height(len(mars_abu_bakr_data)))
                 st.caption("Abu Bakr, On Nativities II.1.0. The condition is his own domicile by the sect of the chart, "
-                           "not his being of or contrary to the sect at large; nothing else in the paragraph is tested.")
+                           "not his being of or contrary to the sect at large; the fortune's aspect and \"he would rejoice in his own place\" are not tested.")
                 with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
                     st.markdown("Abu Bakr, On Nativities II.1.0, the paragraph whole: \"" + ABU_BAKR_MARS_II_1_0['Nocturnal'][1] + " "
                                 + ABU_BAKR_MARS_II_1_0['Diurnal'][1] + " " + ABU_BAKR_MARS_II_1_0['Saturn'][1] + " "
