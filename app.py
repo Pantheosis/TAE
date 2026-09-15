@@ -5343,7 +5343,7 @@ LOT_DEFINITIONS = [
               'Fortune (by night the reverse). ... However, I SUSPECT that one of them -- '
               'probably the Lot of valor -- is originally Dorotheus\'s Lot of expedition."'),
     # Abu Ma'shar's Lots of Jupiter and Saturn, the two of his seven planetary
-    # Lots (VIII.3, 17-50; the list at VIII.6, 7-14) this file did not carry:
+    # Lots (VIII.3, 17-51; the list at VIII.6, 7-14) this file did not carry:
     # Fortune, the Invisible (Spirit), Venus (desire), Mercury (necessity) and
     # Mars (courage) are above. Supplement rows, like the father Lot's VIII.4,
     # 75 form: Sahl's Nativities has neither (coverage list, 2026-09-14).
@@ -14518,8 +14518,8 @@ if location_query and lat is not None and lon is not None:
             # Fortune, Spirit and Exaltation are in the Classical Lots table
             # above, with the same Formula; the provenance columns are in the
             # expander so the table itself is the worksheet.
-            # A row flagged Supplement (Abu Ma'shar's form of a Lot Sahl also
-            # gives) is shown only under Course text and supplement.
+            # A row flagged Supplement (Abu Ma'shar's: a form of a Lot Sahl also
+            # gives, or a Lot of his Sahl has not) is shown only under Course text and supplement.
             _lots_supplement = READING_DEPTH == READING_DEPTH_OPTIONS[1]
             topical_rows = [r for r in topical_lots if r['Lot'] not in ('Lot of Fortune', 'Lot of Spirit', 'Lot of Exaltation', 'Lot of Basis')
                             and (_lots_supplement or not r['Supplement'])]
