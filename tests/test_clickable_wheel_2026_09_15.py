@@ -108,9 +108,9 @@ def _main_engine_namespace():
 @pytest.mark.parametrize("flags", [{}, {"wide": True}, {"bounds": True},
                                    {"wide": True, "bounds": True}, {"theme": "dark"}])
 def test_the_normalised_svg_is_mains_svg(engine, flags):
-    """The proof that the renderer only gained handles: strip the added
-    <g ...> wrappers from this branch's SVG and what is left is main's,
-    string for string, for the default chart at every flag."""
+    """The proof that the renderer only gained handles: strip the <g ...>
+    wrappers from this branch's SVG and from main's and what is left is the
+    same picture, string for string, for the default chart at every flag."""
     old = _main_engine_namespace()
     if old is None:
         pytest.skip("main's engine.py is not in this checkout (a shallow clone); "
@@ -118,8 +118,11 @@ def test_the_normalised_svg_is_mains_svg(engine, flags):
     _chart_data, arguments = _wheel_arguments(engine)
     here = engine["generate_hybrid_svg"](**arguments, **flags)
     there = old["generate_hybrid_svg"](**arguments, **flags)
-    assert GROUP.sub("", here) == there
-    assert here != there, "the handles are in the branch's SVG"
+    # Both sides normalised: main carries the handles too once this branch
+    # has merged, and the guard is that the wheel minus its handles is the
+    # same picture on both, and that the handles are there.
+    assert GROUP.sub("", here) == GROUP.sub("", there)
+    assert GROUP.search(here), "the handles are in the branch's SVG"
 
 
 def test_the_only_added_markup_is_the_groups_and_their_data_attributes(engine):
@@ -358,13 +361,13 @@ def test_the_introduction_stands_open_on_the_first_two_launches():
 
 
 def test_the_introduction_folds_itself_from_the_third_launch():
-    """Folded, not dropped: the same three captions, one click away."""
+    """Folded, not dropped: the same four captions, one click away."""
     at = _chart_page(3)
     folded = [e for e in at.main.get("expander") if e.label == "About this app"]
     assert len(folded) == 1, [e.label for e in at.main.get("expander")]
     assert folded[0].proto.expanded is False
     inside = [c.value for c in folded[0].caption]
-    assert len(inside) == 3 and inside[0].startswith(INTRO_OPENING)
+    assert len(inside) == 4 and inside[0].startswith(INTRO_OPENING)
     # and none of the three is left standing bare: the page's own children
     # carry the chart strip's caption and no more.
     bare = [child.value for child in at.main.children.values()

@@ -7,14 +7,14 @@ every page carries.
 
 These tests read the rendered page's element order, not only its source, so
 the arrangement itself is pinned: the wheel block, then the controls block,
-then the three captions.
+then the four captions.
 """
 import pytest
 
 from conftest import (PAGES, READING_DEPTHS, assert_no_exception, make_app,
                       natal_wheel_envelope, ui_source)
 
-# The three sentences, verbatim, as the page prints them.
+# The four sentences, verbatim, as the page prints them.
 INTRO = (
     "A TNAC study companion: cast the chart by hand, then check it here, table by table, "
     "against what the texts say.",
@@ -25,6 +25,7 @@ INTRO = (
     "Enter or load a nativity in the sidebar. Part 1 sets out what the chart contains, "
     "Part 2 what the year holds; the reference tables and the sources close the page "
     "list. The judgment is the astrologer's.",
+    "Click a planet or a sign on the wheel for what the tables say of it; hover a sign for its bounds and triplicity lords.",
 )
 LAYOUTS = ["Square", "Wide"]
 
@@ -53,7 +54,7 @@ def _kinds(block):
 # block, and the picture and the controls row are ITS two children. Every
 # element the fragment draws is inside it, which is what a fragment requires
 # -- it may not write to a container outside itself -- and it is why the
-# three captions and the circumpolar warning, which stay outside, moved up
+# four captions and the circumpolar warning, which stay outside, moved up
 # one index in main's own children.
 def _fragment(at):
     return _kids(at)[2]
@@ -231,19 +232,19 @@ def test_the_layout_is_read_before_the_control_is_drawn():
 # --- The three sentences, under the controls -----------------------------
 
 @pytest.mark.parametrize("layout", LAYOUTS)
-def test_the_three_captions_follow_the_controls_in_order(layout):
+def test_the_four_captions_follow_the_controls_in_order(layout):
     at = _chart(layout=layout)
     kids = _kids(at)
-    assert [type(k).__name__ for k in kids[3:6]] == ["Caption"] * 3
-    assert [k.value for k in kids[3:6]] == list(INTRO)
+    assert [type(k).__name__ for k in kids[3:7]] == ["Caption"] * 4
+    assert [k.value for k in kids[3:7]] == list(INTRO)
     # And the Calculation section is what follows them, as before.
-    assert kids[6].value == "Calculation"
+    assert kids[7].value == "Calculation"
 
 
-def test_both_layouts_print_the_same_three_captions_and_not_one_joined():
+def test_both_layouts_print_the_same_four_captions_and_not_one_joined():
     """Wide used to join the three with hard breaks in a single caption."""
-    square = [k.value for k in _kids(_chart(layout="Square"))[3:6]]
-    wide = [k.value for k in _kids(_chart(layout="Wide"))[3:6]]
+    square = [k.value for k in _kids(_chart(layout="Square"))[3:7]]
+    wide = [k.value for k in _kids(_chart(layout="Wide"))[3:7]]
     assert square == wide == list(INTRO)
     assert '"  \\n".join(_intro)' not in ui_source()
 
@@ -270,4 +271,4 @@ def test_the_circumpolar_caption_stands_directly_under_the_controls_row():
     kids = _kids(at)
     assert type(kids[3]).__name__ == "Caption"
     assert "not a temporal hour" in kids[3].value, kids[3].value
-    assert [k.value for k in kids[4:7]] == list(INTRO)
+    assert [k.value for k in kids[4:8]] == list(INTRO)
