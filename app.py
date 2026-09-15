@@ -1040,14 +1040,41 @@ if location_query and lat is not None and lon is not None:
                     label=header[len(num) + 1:],
                     help=f"{_locator}, {num}" if _locator else f"sentence {num}",
                     width="small")
-            st.dataframe(pd.DataFrame(grid), hide_index=True, width='stretch', height=_rows_height(len(grid)),
-                         column_config=_grid_columns)
+            # A row can be selected (single-row, rerun): the grid's key is
+            # its title, lower-cased and underscored. The selection reruns
+            # the fragment this grid stands in and nothing else on the page.
+            _grid_key = re.sub(r'\W+', '_', title.lower()).strip('_') + '_grid'
+            _event = st.dataframe(pd.DataFrame(grid), hide_index=True, width='stretch', height=_rows_height(len(grid)),
+                                  column_config=_grid_columns, on_select="rerun", selection_mode="single-row",
+                                  key=_grid_key)
+            _picked = list(_event.selection.rows)
+            if _picked and 0 <= _picked[0] < len(data):
+                _row_detail(data[_picked[0]], len(columns), _locator)
             with st.expander("Answer key: testimonies in words"):
                 st.dataframe(pd.DataFrame(data, columns=['Planet', text_key, 'Count']),
                              hide_index=True, width='stretch', height=_rows_height(len(data)))
             if notes:
                 with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
                     st.markdown(notes)
+
+        # Why a tick fired: the selected planet's row, one block per ticked
+        # testimony in numerical order -- the sentence's locator as the
+        # column tooltips give it, the sentence as the answer key words it,
+        # then the chart values the evaluator tested, which it reports as
+        # "Fact: Value" strings alongside each label (its Testimonies key).
+        # Nothing here is computed on the page; the panel restates the
+        # evaluator's own reasoning and adds no test of its own.
+        def _row_detail(row, total, locator):
+            st.subheader(f"{row['Planet']}: {row['Count']} of {total} testimonies")
+            for testimony in sorted(row.get('Testimonies', []), key=lambda t: int(t['n'])):
+                st.caption(f"{locator}, {testimony['n']}" if locator else f"sentence {testimony['n']}")
+                st.markdown(testimony['sentence'])
+                facts = [fact.partition(': ') for fact in testimony['facts']]
+                if len(facts) == 1:
+                    st.caption(testimony['facts'][0])
+                elif facts:
+                    st.dataframe(pd.DataFrame([{'Fact': name, 'Value': value} for name, _, value in facts]),
+                                 hide_index=True, width='stretch', height=_rows_height(len(facts)))
 
         # Table heights: st.dataframe shows about ten rows and then scrolls
         # inside itself. A table meant to be read whole gets its own height:
@@ -1779,14 +1806,28 @@ if location_query and lat is not None and lon is not None:
             def sahl_strength():
                 with st.container(border=True):
                     st.markdown("**Strength and weakness** — Ch. 3, 77-112")
-                    _tick_grid(_gap, 'Strength of the Planets', 'Sahl, The Introduction Ch. 3, 78-88', strength_data,
-                               'Strength Testimonies', STRENGTH_COLUMNS,
-                               glance="The eleven testimonies of a planet's strength at the time of judgment (Sahl, The Introduction Ch. 3, 78-88), one column per testimony; the answer key under the grid spells each one out in words.",
-                               notes='Testimonies 78 and 83 look similar but are different measurements. 78 is whole-sign, narrowed to the six places that LOOK at the Ascendant. 83, advancing, is DYNAMIC -- read against the Alchabitius quadrant cusps, since the note on 83 says the word means "dynamically angular or succeedent, i.e. by primary motion with respect to the angular axes, and not by whole sign." A planet leaving an angle is withdrawing even while its whole sign is still angular, so the two disagree for about a third of placements.\n\n83 also carries Sahl\'s FIVE-DEGREE RULE: "the planet will not be falling from the stake unless it was 5 degrees distant from its rear -- I mean, if the stake was 10 degrees of Aries, then every planet which has less than 5 degrees between it and the stake is truly counted as being in the stake" (Fifty Aphorisms #44, 88), which he states again in On Nativities Ch. 1.22, 9. A planet a few degrees short of an angle is therefore angular, not cadent; the row says so when that is why it qualifies. It moves about 5% of placements, all of them cadent-to-angular. Sahl states the rule twice for the stakes and once for every house (On Nativities 1.18, 19: "and likewise in all of the houses"); this app reads that as the four stakes only, the course\'s reading, Lesson 3 §4-5, adopted here.\n\nDistinct from the Abu Ma\'shar-based Planetary Condition table, which scores a broader, later scheme.')
-                    _tick_grid(_gap, 'Weakness of the Planets', 'Sahl, The Introduction Ch. 3, 91-100', weakness_data,
-                               'Weakness Testimonies', WEAKNESS_COLUMNS,
-                               glance="The ten testimonies of a planet's weakness at the time of judgment (Sahl, The Introduction Ch. 3, 91-100), one column per testimony; the answer key under the grid spells each one out in words.",
-                               notes="The ten (91-100): falling and averse to the Ascendant (the 6th or 12th), retrograde, under the rays, connecting with an infortune by assembly, square or opposition, enclosed between both infortunes, in its own fall, connecting with a falling planet or separating from a would-be receiver, alien (no house, exaltation or triplicity where it sits), with the Node and no latitude, or inverted (in detriment). Distinct from the Abu Ma'shar-based Planetary Condition table in his view, which scores a broader, later scheme.")
+
+                    # Each tick grid, with its answer key, its notes and the
+                    # row detail a selection opens, is one @st.fragment:
+                    # selecting a row reruns that grid's block alone, the way
+                    # a wheel control reruns _wheel_block(). Everything the
+                    # fragment draws is drawn inside _tick_grid, inside its body.
+                    @st.fragment
+                    def _strength_grid_block():
+                        _tick_grid(_gap, 'Strength of the Planets', 'Sahl, The Introduction Ch. 3, 78-88', strength_data,
+                                   'Strength Testimonies', STRENGTH_COLUMNS,
+                                   glance="The eleven testimonies of a planet's strength at the time of judgment (Sahl, The Introduction Ch. 3, 78-88), one column per testimony; the answer key under the grid spells each one out in words.",
+                                   notes='Testimonies 78 and 83 look similar but are different measurements. 78 is whole-sign, narrowed to the six places that LOOK at the Ascendant. 83, advancing, is DYNAMIC -- read against the Alchabitius quadrant cusps, since the note on 83 says the word means "dynamically angular or succeedent, i.e. by primary motion with respect to the angular axes, and not by whole sign." A planet leaving an angle is withdrawing even while its whole sign is still angular, so the two disagree for about a third of placements.\n\n83 also carries Sahl\'s FIVE-DEGREE RULE: "the planet will not be falling from the stake unless it was 5 degrees distant from its rear -- I mean, if the stake was 10 degrees of Aries, then every planet which has less than 5 degrees between it and the stake is truly counted as being in the stake" (Fifty Aphorisms #44, 88), which he states again in On Nativities Ch. 1.22, 9. A planet a few degrees short of an angle is therefore angular, not cadent; the row says so when that is why it qualifies. It moves about 5% of placements, all of them cadent-to-angular. Sahl states the rule twice for the stakes and once for every house (On Nativities 1.18, 19: "and likewise in all of the houses"); this app reads that as the four stakes only, the course\'s reading, Lesson 3 §4-5, adopted here.\n\nDistinct from the Abu Ma\'shar-based Planetary Condition table, which scores a broader, later scheme.')
+
+                    @st.fragment
+                    def _weakness_grid_block():
+                        _tick_grid(_gap, 'Weakness of the Planets', 'Sahl, The Introduction Ch. 3, 91-100', weakness_data,
+                                   'Weakness Testimonies', WEAKNESS_COLUMNS,
+                                   glance="The ten testimonies of a planet's weakness at the time of judgment (Sahl, The Introduction Ch. 3, 91-100), one column per testimony; the answer key under the grid spells each one out in words.",
+                                   notes="The ten (91-100): falling and averse to the Ascendant (the 6th or 12th), retrograde, under the rays, connecting with an infortune by assembly, square or opposition, enclosed between both infortunes, in its own fall, connecting with a falling planet or separating from a would-be receiver, alien (no house, exaltation or triplicity where it sits), with the Node and no latitude, or inverted (in detriment). Distinct from the Abu Ma'shar-based Planetary Condition table in his view, which scores a broader, later scheme.")
+
+                    _strength_grid_block()
+                    _weakness_grid_block()
                     _ab = ascensional_bands
                     _finding(_gap, "The sect light's first triplicity lord by ascensional band -- and the app's generalisation",
                              "Sahl, On Nativities 2.13, 48-51 (fn 189: Carmen I.28, 1-6); Fifty Aphorisms #45, 90-92 with fn 57, as printed and not applied",

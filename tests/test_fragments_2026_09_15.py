@@ -108,11 +108,13 @@ def test_the_picture_block_is_a_fragment(name):
     assert name in _fragment_defs(), sorted(_fragment_defs())
 
 
-def test_those_two_are_the_only_fragments_in_the_app():
-    """So that a third one cannot appear without this file being read: a
+def test_these_four_are_the_only_fragments_in_the_app():
+    """So that another cannot appear without this file being read: a
     fragment that draws outside its own body is a runtime error, not a test
-    failure, and the harness cannot see a partial rerun at all."""
-    assert sorted(_fragment_defs()) == ["_timing_wheel_block", "_wheel_block"]
+    failure, and the harness cannot see a partial rerun at all. The two grid
+    blocks are item 12's (test_row_detail_2026_09_15.py)."""
+    assert sorted(_fragment_defs()) == ["_strength_grid_block", "_timing_wheel_block",
+                                        "_weakness_grid_block", "_wheel_block"]
 
 
 def test_the_chart_fragment_generates_its_own_svg_and_the_top_level_does_not():

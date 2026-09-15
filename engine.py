@@ -7494,6 +7494,33 @@ SEVEN_PLACE_RANKING_NOTE = ("Printed order (manuscripts H and L: ... 11, 9, 5). 
                             "the printed text takes H/L's order plus B's note that the ninth is the Sun's joy "
                             "(Introduction Ch. 2, 42, fn 42) -- Dykes's conflation, kept as printed.")
 
+def _fact(name, value):
+    """One fact of a testimony's row detail, "<name>: <value>", from a value
+    the evaluator already holds when it decides the testimony. Booleans
+    print yes/no, degrees to two places, sets in zodiac or numeric order,
+    an empty collection or None as "none". The name never contains ": ",
+    which is where the page splits it into Fact and Value."""
+    if isinstance(value, bool):
+        text = 'yes' if value else 'no'
+    elif value is None:
+        text = 'none'
+    elif isinstance(value, float):
+        text = f'{value:.2f}'
+    elif isinstance(value, (set, frozenset, list, tuple)):
+        items = list(value)
+        if not items:
+            text = 'none'
+        elif all(isinstance(v, str) and v in SIGN_ORDER for v in items):
+            text = ', '.join(sorted(items, key=SIGN_ORDER.index))
+        elif all(isinstance(v, int) for v in items):
+            text = ', '.join(str(v) for v in sorted(items))
+        else:
+            text = ', '.join(str(v) for v in items)
+    else:
+        text = str(value)
+    return f'{name}: {text}'
+
+
 def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendant_lon, sect, natal_houses):
     """Strength of the Planets (Sahl, The Introduction Ch.3, 78-88): the
     eleven testimonies of a planet's strength at the time of judgment that
@@ -7540,21 +7567,35 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
             quadrant_house = get_effective_house(lon, natal_houses)
             ess, acc = essential[planet], accidental[planet]
             labels = []
+            # Each label also as a structure -- the paragraph number, the
+            # label's own words, and the chart values the branch tested --
+            # for the row detail under the grid. The label list is what it
+            # was; the structure restates it and adds no test.
+            testimonies = []
+
+            def _add(n, label, *facts):
+                labels.append(label)
+                testimonies.append({'n': n, 'sentence': label, 'facts': list(facts)})
 
             # (78) In an excellent place: a stake or what follows one, limited
             # to those that look at the Ascendant (see EXCELLENT_PLACES). An
             # earlier version used all eight angular+succeedent houses, which
             # wrongly admitted the 2nd and 8th.
             if house in EXCELLENT_PLACES:
-                labels.append('In an excellent place from the Ascendant (78)')
+                _add('78', 'In an excellent place from the Ascendant (78)',
+                     _fact('Whole-sign place', house), _fact('Excellent places', EXCELLENT_PLACES))
 
             # (79) In something of its own share: house, exaltation, triplicity, bound, face, or joy.
             if ess['Domicile'] or ess['Exalt'] or ess['Triplicity'] or ess['Term'] or ess['Face'] or acc['Joy']:
-                labels.append('In its own share of dignity (79)')
+                _add('79', 'In its own share of dignity (79)',
+                     _fact('Share of dignity', [k for k in ('Domicile', 'Exalt', 'Triplicity', 'Term', 'Face') if ess[k]]
+                           + (['Joy'] if acc['Joy'] else [])))
 
             # (80) Direct in course.
             if not acc['Retrograde']:
-                labels.append('Direct in course (80)')
+                _add('80', 'Direct in course (80)',
+                     _fact('Retrograde (accidental)', acc['Retrograde']),
+                     _fact('Speed in longitude', data['speed_in_lon']))
 
             # (81) No infortune "with it in its sign, connecting with it, or
             # looking at it FROM A SQUARE OR OPPOSITION" -- Fig. 24 renders
@@ -7571,17 +7612,24 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
                 for r in rows if planet in (r['p1'], r['p2'])
             )
             if not infortune_contact:
-                labels.append('Not in the whole-sign angles of an infortune (81)')
+                _others81 = effective_infortunes() - {planet}
+                _add('81', 'Not in the whole-sign angles of an infortune (81)',
+                     _fact('Infortunes', sorted(_others81)),
+                     *[_fact(f'Configuration with {_inf}', _r['aspect_name'])
+                       for _inf in sorted(_others81)
+                       for _r in rows if {_r['p1'], _r['p2']} == {planet, _inf}])
 
             # (82) Not connecting with a planet falling from the ASC or in its
             # own fall, and not itself in its own fall.
             connects_weak_target = False
+            _seen82 = []
             for r in rows:
                 if r['aspect_name'] == 'Aversion' or not _is_connected(r) or planet not in (r['light_name'], r['heavy_name']):
                     continue
                 other = r['heavy_name'] if r['light_name'] == planet else r['light_name']
                 other_house = get_wsh_house(planetary_data[other]['longitude'], ascendant_lon)
                 other_sign = get_zodiac_sign(planetary_data[other]['longitude'])
+                _seen82.append((other, other_house, other_sign))
                 # Sahl's "falling away from the Ascendant" is AVERSION, not
                 # cadency. Sahl's glossary (Vol. I p. 774, Cadent) says so:
                 # "3rd, 6th, 9th, 12th. But see also FALLING AWAY FROM, WHICH
@@ -7598,7 +7646,10 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
                     connects_weak_target = True
                     break
             if not connects_weak_target and not ess['Fall']:
-                labels.append('Not connecting with a falling/fallen planet, nor itself in its fall (82)')
+                _add('82', 'Not connecting with a falling/fallen planet, nor itself in its fall (82)',
+                     _fact('Connected with', [o for o, _, _ in _seen82]),
+                     *[_fact(o, f'whole-sign place {h}, {s}') for o, h, s in _seen82],
+                     _fact('Fall (essential)', ess['Fall']))
 
             # (83) Advancing -- measured DYNAMICALLY, against the quadrant
             # cusps, not by whole sign. The note on 83 is explicit that the
@@ -7624,10 +7675,13 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
             # which places LOOK at the Ascendant, and its own footnote counts
             # the six resulting places.
             if quadrant_house in ANGLE_HOUSES | SUCCEDENT_HOUSES:
+                _facts83 = [_fact('Quadrant division', quadrant_house),
+                            _fact('Angular and succedent divisions', ANGLE_HOUSES | SUCCEDENT_HOUSES)]
                 if quadrant_house != quadrant_house_strict:
-                    labels.append(f'Advancing, by the five-degree rule into the {HOUSE_ORDINAL[quadrant_house]} (83)')
+                    _add('83', f'Advancing, by the five-degree rule into the {HOUSE_ORDINAL[quadrant_house]} (83)',
+                         *_facts83, _fact('Quadrant division, strict', quadrant_house_strict))
                 else:
-                    labels.append('Advancing (83)')
+                    _add('83', 'Advancing (83)', *_facts83)
 
             # (84) A masculine planet (Saturn, Jupiter, Mars) eastern, arising at dawn.
             # 84 is "eastern, ARISING AT DAWN" -- visible, not merely on the
@@ -7650,8 +7704,10 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
                     # allowance ("considered to be eastern"), inside the 15
                     # degrees this same table calls under the rays (93). Mars's
                     # 15 is Dykes' inference at 1.22 fn. 174, not text.
-                    labels.append(f'Masculine planet, eastern, {visible_floor:.0f}+ deg from the Sun '
-                                  f'(84; "considered eastern", On Nativities 1.22, 1)')
+                    _add('84', f'Masculine planet, eastern, {visible_floor:.0f}+ deg from the Sun '
+                               f'(84; "considered eastern", On Nativities 1.22, 1)',
+                         _fact('Signed distance from the Sun (negative is eastern)', signed_from_sun),
+                         _fact('Visible floor', visible_floor))
 
             # (85) "In their own glow: that is, a masculine planet in the day,
             # and a feminine planet in the night." The translator's footnote
@@ -7663,11 +7719,12 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
             # gender, and so under-reported the testimony.
             planet_is_diurnal = planet_sect_is_diurnal(planet, lon, planetary_data['Sun']['longitude'])
             if planet_is_diurnal == (sect == 'Diurnal'):
-                labels.append('In its own glow, i.e. of the sect (85)')
+                _add('85', 'In its own glow, i.e. of the sect (85)',
+                     _fact('Planet is diurnal', planet_is_diurnal), _fact('Sect', sect))
 
             # (86) In a fixed sign.
             if sign in FIXED_SIGNS:
-                labels.append('In a fixed sign (86)')
+                _add('86', 'In a fixed sign (86)', _fact('Sign', sign), _fact('Fixed signs', FIXED_SIGNS))
 
             # (87) In the heart of the Sun -- "when they are with him in one
             # degree." Sahl's own one-degree window, not the later 16-17
@@ -7676,7 +7733,9 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
             if planet != 'Sun':
                 sun_lon = planetary_data['Sun']['longitude']
                 if abs(((lon - sun_lon + 180.0) % 360.0) - 180.0) <= 1.0:
-                    labels.append('In the heart of the Sun (87)')
+                    _add('87', 'In the heart of the Sun (87)',
+                         _fact('Distance from the Sun', abs(((lon - sun_lon + 180.0) % 360.0) - 180.0)),
+                         _fact('Window', 1.0))
 
             # (88) Masculine/feminine QUADRANT and sign matching the planet's
             # own gender. This is Sahl's ELEVENTH testimony, not the tenth --
@@ -7699,11 +7758,16 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
                      or (gender == 'Feminine' and sign in FEMININE_SIGNS))
             if _q88 or _s88:
                 _parts = (['quadrant'] if _q88 else []) + (['sign'] if _s88 else [])
-                labels.append(f"In a matching-gender ({gender.lower()}) {' and '.join(_parts)} (88)")
+                _add('88', f"In a matching-gender ({gender.lower()}) {' and '.join(_parts)} (88)",
+                     _fact('Gender', gender),
+                     _fact('Quadrant division', quadrant_house),
+                     _fact('Quadrant gender', 'Masculine' if quadrant_house in MASCULINE_QUADRANT_HOUSES else 'Feminine'),
+                     _fact('Sign', sign),
+                     _fact('Sign gender', 'Masculine' if sign in MASCULINE_SIGNS else 'Feminine'))
 
             if labels:
                 results.append({'Planet': planet, 'Strength Testimonies': ', '.join(labels), 'Count': len(labels),
-                                'Labels': labels})
+                                'Labels': labels, 'Testimonies': testimonies})
         return results
 
 def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendant_lon, sect):
@@ -7741,14 +7805,25 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
             house = get_wsh_house(lon, ascendant_lon)
             ess, acc = essential[planet], accidental[planet]
             labels = []
+            # The same structure as the strength table's: number, the
+            # label's words, the values tested. See evaluate_strength_of_planets.
+            testimonies = []
+
+            def _add(n, label, *facts):
+                labels.append(label)
+                testimonies.append({'n': n, 'sentence': label, 'facts': list(facts)})
 
             # (91) Falling from the stakes, and not looking at (averse to) the Ascendant.
             if house in CADENT_HOUSES and _averse_to_ascendant(lon, ascendant_lon):
-                labels.append('Falling from the stakes, averse to the Ascendant (91)')
+                _add('91', 'Falling from the stakes, averse to the Ascendant (91)',
+                     _fact('Whole-sign place', house), _fact('Cadent places', CADENT_HOUSES),
+                     _fact('Averse to the Ascendant', True))
 
             # (92) Retrograde.
             if acc['Retrograde']:
-                labels.append('Retrograde (92)')
+                _add('92', 'Retrograde (92)',
+                     _fact('Retrograde (accidental)', acc['Retrograde']),
+                     _fact('Speed in longitude', data['speed_in_lon']))
 
             # (93, 99) Under the rays of the Sun. 99's first clause -- western,
             # "the Sun having already overtaken it (that is, if it was in front
@@ -7757,7 +7832,10 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
             if acc['Combust'] or acc['UnderBeams']:
                 signed_from_sun = ((lon - sun_lon + 180.0) % 360.0) - 180.0
                 western = signed_from_sun > 0
-                labels.append('Under the rays of the Sun' + (', western/overtaken (93, 99)' if western else ' (93)'))
+                _add('93', 'Under the rays of the Sun' + (', western/overtaken (93, 99)' if western else ' (93)'),
+                     _fact('Combust (accidental)', acc['Combust']),
+                     _fact('Under the beams (accidental)', acc['UnderBeams']),
+                     _fact('Signed distance from the Sun (positive is western)', signed_from_sun))
 
             # (94) Connecting with the infortunes from an assembly, opposition,
             # or square -- an ordinary harmful connection, and a testimony in
@@ -7767,30 +7845,35 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
             # single item, and appending a label per matching planet let one
             # numbered testimony vote twice.
             _hit94 = []
+            _facts94 = []
             for r in rows:
                 if r['aspect_name'] not in ('Conjunction', 'Square', 'Opposition') or planet not in (r['p1'], r['p2']):
                     continue
                 other = r['p2'] if r['p1'] == planet else r['p1']
                 if other in effective_infortunes() and _is_connected(r):
                     _hit94.append(other)
+                    _facts94.append(_fact(f'Connecting with {other}', r['aspect_name']))
             if _hit94:
-                labels.append(f"Connecting with {' and '.join(sorted(_hit94))} by assembly, square, or opposition (94)")
+                _add('94', f"Connecting with {' and '.join(sorted(_hit94))} by assembly, square, or opposition (94)",
+                     *_facts94)
 
             # (95) Enclosed between the two infortunes -- separating from one,
             # connecting with the other (Sahl's own Enclosure, 119-123).
             is_enc, severe, sep, con = _sahl_enclosed(planet, effective_infortunes(), rows, blocking_pairs)
             if is_enc:
-                labels.append(f'Enclosed between the infortunes, separating from {sep} and connecting to {con} (95, 119-123)')
+                _add('95', f'Enclosed between the infortunes, separating from {sep} and connecting to {con} (95, 119-123)',
+                     _fact('Separating from', sep), _fact('Connecting to', con))
 
             # (96) In its own fall.
             if ess['Fall']:
-                labels.append('In its own fall (96)')
+                _add('96', 'In its own fall (96)', _fact('Fall (essential)', ess['Fall']))
 
             # (97) Connecting with a planet falling from the Ascendant, or
             # separating from a planet that would have received it.
             # Likewise ONE testimony for 97, whose two clauses and any number of
             # matching planets previously produced a label each.
             _averse97, _sep97 = [], []
+            _rulers97 = None
             for r in rows:
                 if r['aspect_name'] == 'Aversion' or planet not in (r['light_name'], r['heavy_name']):
                     continue
@@ -7808,15 +7891,21 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
                     # at once") leaves the two clauses' conjunction open; the
                     # engine applies each clause on its own, a reading.
                     my_rulers = get_essential_rulers(planetary_data[planet]['longitude'])
+                    _rulers97 = my_rulers
                     if other in (my_rulers['domicile'], my_rulers['exaltation']):
                         _sep97.append(other)
             if _averse97 or _sep97:
                 _parts = []
+                _facts97 = []
                 if _averse97:
                     _parts.append(f"connecting with {' and '.join(sorted(_averse97))}, averse to the Ascendant")
+                    _facts97.append(_fact('Connecting with, averse to the Ascendant', sorted(_averse97)))
                 if _sep97:
                     _parts.append(f"separating from {' and '.join(sorted(_sep97))}, which would have received it")
-                labels.append('; '.join(_parts).capitalize() + ' (97)')
+                    _facts97.append(_fact('Separating from', sorted(_sep97)))
+                    _facts97.append(_fact('Domicile lord of its degree', _rulers97['domicile']))
+                    _facts97.append(_fact('Exaltation lord of its degree', _rulers97['exaltation']))
+                _add('97', '; '.join(_parts).capitalize() + ' (97)', *_facts97)
 
             # (98) "In a house in which it did not have testimony (neither
             # house nor exaltation nor triplicity)" -- alien/peregrine, and a
@@ -7829,22 +7918,27 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
             alien_rulers = get_essential_rulers(lon)
             triplicity_key_local = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
             if planet not in (alien_rulers['domicile'], alien_rulers['exaltation'], alien_rulers[triplicity_key_local]):
-                labels.append('Alien: no house, exaltation, or triplicity where it sits (98)')
+                _add('98', 'Alien: no house, exaltation, or triplicity where it sits (98)',
+                     _fact('Domicile lord where it sits', alien_rulers['domicile']),
+                     _fact('Exaltation lord where it sits', alien_rulers['exaltation']),
+                     _fact(f'Triplicity lord where it sits ({triplicity_key_local})', alien_rulers[triplicity_key_local]))
 
             # (99) With the Head or Tail, without latitude.
             north_node_lon = planetary_data['North Node']['longitude']
             south_node_lon = (north_node_lon + 180.0) % 360.0
             node_dist = min(abs(((lon - north_node_lon + 180) % 360) - 180), abs(((lon - south_node_lon + 180) % 360) - 180))
             if node_dist < 12.0 and abs(lat) < 1.0:
-                labels.append('With the Head or Tail, without latitude (99; 12 deg orb for either node, Ch. 3, 107 and VII.6, 52)')
+                _add('99', 'With the Head or Tail, without latitude (99; 12 deg orb for either node, Ch. 3, 107 and VII.6, 52)',
+                     _fact('Distance from the nearer node', node_dist), _fact('Latitude', lat))
 
             # (100) Inverted: in the seventh sign from its own house (Detriment).
             if ess['Detriment']:
-                labels.append('Inverted, in the seventh sign from its own house (100)')
+                _add('100', 'Inverted, in the seventh sign from its own house (100)',
+                     _fact('Detriment (essential)', ess['Detriment']))
 
             if labels:
                 results.append({'Planet': planet, 'Weakness Testimonies': ', '.join(labels), 'Count': len(labels),
-                                'Labels': labels})
+                                'Labels': labels, 'Testimonies': testimonies})
         return results
 
 def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential, accidental, jd, ascendant_lon, sim=None):
