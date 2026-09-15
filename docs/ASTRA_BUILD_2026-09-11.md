@@ -766,3 +766,9 @@ do.
 either. Whether the planets' semi-arc distributions should count for III.7, 42's confirmation
 (not done: no sentence asks it). PN IV's own sentence still states no method; the row and the help
 say the method is taken from ITA.
+
+After the check (`BUILD_SEMIARCS_CHECK_REPORT_2026-09-15.md`; the arithmetic recomputed independently and
+found within 1" of Dykes's page): the by-counting house rows stand from the CUSP's degree when it shares
+the sign -- VI.2, 1/21/23/25 direct a house from its cusp, no sentence from the sign's first degree -- and
+defer to the displaced-cusp row when it does not; III.1, 12 quoted as printed in the subheader help;
+fn 27's "probably" kept. Fixture rows for the by-counting houses changed accordingly.

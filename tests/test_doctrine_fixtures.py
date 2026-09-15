@@ -1523,7 +1523,10 @@ def test_pn4_turning_direction_column_stands_by_semi_arcs_and_points_to_the_dist
     assert f"distributor {cur['distributor']}, partner {cur['partner'] or 'none'}" in mars
     assert f"in {engine['get_zodiac_sign'](cur['from_lon'])}" in mars
     house7 = rows["House 7 (by counting)"]["Directed a year per degree"]
-    assert house7.startswith("by proportional semi-arcs: in ") and house7.endswith("(VI.2, 21 fn 33)")
+    # after the check: a house by counting stands from its cusp's degree when the
+    # cusp shares the sign (VI.2, 21), else the row defers to the displaced-cusp row
+    assert (house7.startswith("by proportional semi-arcs: in ") and "from the cusp's degree" in house7) \
+        or house7.startswith("the sign by counting; its degree is directed in the row below")
     assert "Ascendant" in rows["House 1 (by counting)"]["Directed a year per degree"]
     assert "Midheaven" in rows["House 10 (by counting)"]["Directed a year per degree"]
     assert "fourth" in rows["House 4 (by counting)"]["Directed a year per degree"]

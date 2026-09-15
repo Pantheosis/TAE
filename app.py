@@ -11920,9 +11920,19 @@ def pn4_turning_rows(chart_data, completed_years):
                    4: 'the distribution from the fourth, above (III.1, 12)'}
     for house, topic, cite in PN4_TURNING_HOUSES:
         ws_start = ((asc // 30.0) * 30.0 + 30.0 * (house - 1)) % 360.0
-        directed = directed_at.get(house) or stand(ws_start) + ' (VI.2, 21 fn 33)'
-        rows.append(row(f'House {house} (by counting)', ws_start, topic, cite, directed))
         cusp = cusps[house - 1] if cusps and len(cusps) >= house else None
+        # VI.2, 1, 21, 23, 25 direct a house from its cusp's degree; no
+        # sentence directs the first degree of the whole sign. The
+        # by-counting row therefore stands from the cusp when it shares
+        # the sign, and reports the sign only when it does not (the
+        # displaced cusp then gets its own row below).
+        if house in directed_at:
+            directed = directed_at[house]
+        elif cusp is not None and get_zodiac_sign(cusp) == get_zodiac_sign(ws_start):
+            directed = stand(cusp) + ' (VI.2, 21 fn 33; from the cusp\'s degree, ' + get_degree_string(cusp) + ')'
+        else:
+            directed = 'the sign by counting; its degree is directed in the row below (VI.2, 21-24)'
+        rows.append(row(f'House {house} (by counting)', ws_start, topic, cite, directed))
         if cusp is not None and get_zodiac_sign(cusp) != get_zodiac_sign(ws_start):
             # VI.2, 21: the displaced cusp is directed "from the actual degree it rests in"
             rows.append(row(f'House {house} (its degree, {get_degree_string(cusp)}, in another sign)', cusp,
@@ -16881,10 +16891,10 @@ if location_query and lat is not None and lon is not None:
                            "directed by proportional semi-arcs in the next section. The Descendant is not one of the three "
                            "positions (fn 15).")
                 st.subheader("The planets, each with its measure under III.1, 12",
-                             help="III.1, 12: \"the Ascendant and the things in it are directed by the ascensions of the "
-                                  "country ... what is in the Midheaven or the fourth is directed by the ascensions of the "
-                                  "right sphere, and what is not in these three positions is directed according to what we "
-                                  "stated in our book\". A planet ON an axial degree is directed as that degree is. Every "
+                             help="III.1, 12: \"the Ascendant and the things in it are directed by degrees of ascensions of the "
+                                  "country in which the native was born, while what is in the Midheaven or the fourth is "
+                                  "directed by the ascensions of the right sphere, and what is not in these three positions "
+                                  "is directed according to what we stated in our book [on that topic]\". A planet ON an axial degree is directed as that degree is. Every "
                                   "other planet is the third case, whose method PN IV defers to a book it does not "
                                   "reproduce: Ptolemy's method as Dykes identifies it (III.1, 12 fn 16; VI.2, 21 fn 33), "
                                   "proportional semi-arcs, as al-Qabisi states it (Introduction IV, ITA VIII.2.2) and Dykes "
@@ -16892,7 +16902,7 @@ if location_query and lat is not None and lon is not None:
                                   "to its semi-arc, is carried to the promittor's semi-arc, and what the promittor has "
                                   "still to travel is the arc -- PromMD - (SigMD / SigSA) * PromSA -- a degree of it a year "
                                   "(III.1, 13). Here the planet's DEGREE is the significator (latitude 0, as the two other "
-                                  "cases direct degrees and as al-Qabisi's tables did, Appendix E fn 27), the bound starts, "
+                                  "cases direct degrees and as al-Qabisi's tables probably did (fn 27), Appendix E fn 27), the bound starts, "
                                   "bodies and rays the promittors, the distributor and partner as in every distribution "
                                   "(III.1, 10-11, 15-16). The meridian distance is signed, positive before the meridian in "
                                   "primary motion; the meridian and the semi-arcs are those of the significator's side of "
