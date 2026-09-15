@@ -525,3 +525,16 @@ second form quotes VIII.4, 75 whole and carries Dykes's fn 93 objection in its s
 as written for both sects; Figure 57 prints bare degrees and the pages now say the ordinal
 reading is the app's (Figure 64's manner); the out-of-sect gloss softened; the Lots table's
 heading names Abū Ma'shar's row when the supplement shows it; a stale harness comment.
+
+## 2026-09-14: Figure 57 read off the page
+
+The owner photographed Sahl I p. 378. Seven rows match the transcription cell for cell; the
+seventh row is **Capricorn** (♑ 12°, 13°, 20°), not Scorpio -- a glyph error in the corpus
+transcription, carried into PR #13. `NOBILITY_DEGREES`, its comment, the Chart finding's notes
+and the test pin corrected; the corpus row and the photograph
+(`images/p378_sahl_i_figure_57_2026-09-14.jpg`) committed there. Read against Figure 64: Sahl's
+empty signs are now Libra, Scorpio, Sagittarius, Pisces; Capricorn has Abū Ma'shar's 12, 13, 20
+without his 14; still six of the eight disagree. The printed caption says "Ch. 1.28, 41" -- a
+misprint in the book (the table is in 1.38, fn 528 calls it sentence 41); the app already cites
+1.38 and names the figure without the caption's chapter, so no page text moves. Also verified
+from the photograph: sentences 42-45 and fnn. 528-529 as transcribed.

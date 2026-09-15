@@ -5877,19 +5877,19 @@ def evaluate_book_v_degrees(planetary_data, ascendant_lon, fortune_lon, sect):
 # (and that is superior if it was the Sun by day and by night the Moon),
 # then he will reach exaltation and power, or he will rule many lands."
 # The same rule as Gr. Intr. V.22, 4 (ELEVATION_DEGREES) with a table
-# of its own: eight signs, no degree in Libra, Sagittarius, Capricorn or
-# Pisces, and Gemini 13 for his 11, Cancer 13 for his 2-3, Virgo and
-# Scorpio 13 where he has 12 and none. Both luminaries qualify; the sect
+# of its own: eight signs, no degree in Libra, Scorpio, Sagittarius or
+# Pisces, and Gemini 13 for his 11, Cancer 13 for his 2-3, Virgo 13 where
+# he has 12, Capricorn without his 14. Both luminaries qualify; the sect
 # light is "superior". The figure prints bare degrees ("19°", "3°"); they
 # are READ as ordinals, which is how Figure 64 prints the same rule's
-# degrees and makes the shared cells coincide -- the app's reading. Taken
-# from the transcription of the figure, not yet read off the page
-# photograph (2026-09-13; no photograph of p. 378 is in the corpus);
+# degrees and makes the shared cells coincide -- the app's reading. Read
+# off the page photograph 2026-09-14 (the corpus transcription had
+# Scorpio for the seventh row's Capricorn, corrected the same day);
 # pinned in tests/test_base_tables.py.
 # Course text: always shown, unlike the V.22 tables it stands beside.
 NOBILITY_DEGREES = {
     'Aries': [19], 'Taurus': [3], 'Gemini': [13], 'Cancer': [1, 13, 14, 15],
-    'Leo': [5, 7], 'Virgo': [2, 13, 20], 'Scorpio': [12, 13, 20], 'Aquarius': [12, 20],
+    'Leo': [5, 7], 'Virgo': [2, 13, 20], 'Capricorn': [12, 13, 20], 'Aquarius': [12, 20],
 }
 
 def evaluate_nobility_degrees(planetary_data, ascendant_lon, sect):
@@ -13995,7 +13995,7 @@ if location_query and lat is not None and lon is not None:
                       notes='ENTERING: "every planet which is at the beginning of a sign is weak until it is firmly established in it and comes to be 5 degrees within it" (Fifty Aphorisms #44, 87), repeated in On Nativities Ch. 1.22, 9. This is the other half of the five-degree rule that also governs advancement.\n\nLEAVING: "if a planet came to be in the last degree of the sign, then its strength has already gone away from that sign, and its strength is in the next sign ... like a man putting his foot on the threshold of his door. And if a planet was in the twenty-ninth degree, then indeed the strength of the planet IS in that sign" (Fifty Aphorisms #15, 31-33) -- so the 29th degree still counts and only the 30th has left.')
             _finding(_gap, 'Degrees of nobility and rank', 'Sahl, On Nativities 1.38, 39-41 (Figure 57)', nobility_degrees_data,
                       glance='Sahl\'s own table of the degrees in which "the native will reach nobility and rank": a row when the Ascendant, the Sun or the Moon stands in one. Display only; nothing scores it.',
-                      notes='On Nativities 1.38, 40-41: "If it happened that a native was born and his Ascendant was one of these degrees, or the Moon and Sun were in the equivalent of these degrees (and that is superior if it was the Sun by day and by night the Moon), then he will reach exaltation and power, or he will rule many lands, by the permission of God." Figure 57 of his volume prints the degrees: Aries 19; Taurus 3; Gemini 13; Cancer 1, 13, 14, 15; Leo 5, 7; Virgo 2, 13, 20; Scorpio 12, 13, 20; Aquarius 12, 20 -- none in Libra, Sagittarius, Capricorn or Pisces. The figure prints bare degrees; this app reads them as ordinals, as Figure 64 prints the same rule\'s degrees. The whole table is on the Reference tables page. Abu Ma\'shar states the same rule with a table of his own (Gr. Intr. V.22, 4, Figure 64), twelve signs to its eight, six of those eight disagreeing; it is shown under Course text and supplement, on the Configurations page beside Strength and weakness and on the Reference tables page beside this table.')
+                      notes='On Nativities 1.38, 40-41: "If it happened that a native was born and his Ascendant was one of these degrees, or the Moon and Sun were in the equivalent of these degrees (and that is superior if it was the Sun by day and by night the Moon), then he will reach exaltation and power, or he will rule many lands, by the permission of God." Figure 57 of his volume prints the degrees: Aries 19; Taurus 3; Gemini 13; Cancer 1, 13, 14, 15; Leo 5, 7; Virgo 2, 13, 20; Capricorn 12, 13, 20; Aquarius 12, 20 -- none in Libra, Scorpio, Sagittarius or Pisces. The figure prints bare degrees; this app reads them as ordinals, as Figure 64 prints the same rule\'s degrees. The whole table is on the Reference tables page. Abu Ma\'shar states the same rule with a table of his own (Gr. Intr. V.22, 4, Figure 64), twelve signs to its eight, six of those eight disagreeing; it is shown under Course text and supplement, on the Configurations page beside Strength and weakness and on the Reference tables page beside this table.')
             _absent(_gap)
             # The orders of the dignities and the good places -- static tables --
             # moved to the Reference tables page on 2026-09-10; what stays is
