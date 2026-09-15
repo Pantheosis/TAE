@@ -6011,6 +6011,86 @@ def evaluate_nobility_degrees(planetary_data, ascendant_lon, sect):
                             'Degree': f'{get_zodiac_sign(lon)} {degree_1_based}', 'Note': note})
     return results
 
+# Valens, Anthologies II.36 (Riley): the eleven phases of the Moon. Ten are
+# listed with a degree from the Sun (the crescent at 45, the quarter at 90,
+# the gibbous at 135, the full at 180, the second gibbous at 225, the second
+# quarter at 270, the second crescent at 315, the final visibility at 360;
+# the new moon and the first visibility carry none) and an eleventh, "when
+# it first begins to wane", carries none. The chapter then gives what each
+# indicates and the planet that adds its influence to a day of the Moon's
+# motion. The text gives moments, not spans: a phase here runs from its own
+# degree to the next one's, and the boundaries the text does not give are
+# the app's -- 12 degrees after the conjunction for the new moon and 12
+# before it for the final visibility (the Moon's own under-the-rays
+# distance), 12 after the opposition for the full moon, and the waning
+# phase from there to the second gibbous at 225. Display only: nothing
+# scores it. Each 'indicates' is quoted as Riley has it.
+VALENS_MOON_PHASES = [
+    # (phase, lower bound, upper bound, bound source, indicates, ruler, to day)
+    ('New moon', 0.0, 12.0, 'app',
+     'indicative of rank and power, of kingly and despotic dispositions, of all public business '
+     'concerning cities, of parents, marriages, religion, and of all universal, cosmic matters. The '
+     'rulers of the new moon, of the latitude, and of the motion are indicative of the same things.',
+     None, None),
+    ('First visibility', 12.0, 45.0, 'app',
+     'indicative of life, occupation, and future wealth; in addition, it strengthens the matters '
+     'influences by the now moon. The ruler of the “light” indicates the overall influences in the '
+     'same way that the monthly cycles and the universal cycles are observed by means of the first '
+     'visibility.',
+     'Mercury', 4),
+    ('Crescent', 45.0, 90.0, 'Valens',
+     'indicative of nurture and expectations in life, of wives and mothers.',
+     'Mercury', 8),
+    ('Quarter', 90.0, 135.0, 'Valens',
+     'indicative of injuries, diseases, and violent accidents; also of children, status, and good '
+     'things to come.',
+     'Venus', 12),
+    ('Gibbous', 135.0, 180.0, 'Valens',
+     'indicative of prosperity, future success, travel, and the affinity of relatives.',
+     'Sun', 14),
+    ('Full moon', 180.0, 192.0, 'Valens (lower), app (upper)',
+     'indicative of fame and infamy, of travel and violent events, of those who fall from '
+     'pre-eminence as well as those who rise from a humble state, of affinities, passions, political '
+     'opposition, and the affinity of parents. This phase has the color of the sign in the Descendant.',
+     None, None),
+    ('First waning of the light', 192.0, 225.0, 'app (lower), Valens (upper)',
+     'indicative of the diminishing of resources, of the chilling of occupations, of those who grow '
+     'humble and lowly, and of sudden falls. This phase has the same influence as the sign which '
+     'just follows the Descendant.',
+     'Mars', 21),
+    ('Second gibbous', 225.0, 270.0, 'Valens',
+     'indicative of travel abroad, of great activities, and of prosperity. It has the same influence '
+     'as <the IX Place of> the God.',
+     'Jupiter', 25),
+    ('Second quarter', 270.0, 315.0, 'Valens',
+     'indicative of old affairs, of chronic diseases, and of children.',
+     'Saturn', 30),
+    ('Second crescent', 315.0, 348.0, 'Valens (lower), app (upper)',
+     'indicative of a wife’s death, of unemployment or robbery.',
+     None, None),
+    ('Final visibility', 348.0, 360.0, 'app (lower), Valens (upper)',
+     'indicative of chains, imprisonment, secrets, condemnation, and infamy.',
+     None, None),
+]
+
+def evaluate_moon_phase_valens(planetary_data):
+    """Anthologies II.36: the chart's Moon placed in one of Valens's eleven
+    phases by its waxing angle from the Sun, (Moon - Sun) mod 360, with the
+    phase's 'indicates' and the planet that adds its influence to the day
+    the text names. One row always; display only -- see VALENS_MOON_PHASES
+    for which boundaries are the text's and which the app's."""
+    angle = (planetary_data['Moon']['longitude'] - planetary_data['Sun']['longitude']) % 360.0
+    for phase, lo, hi, _src, indicates, ruler, day in VALENS_MOON_PHASES:
+        if lo <= angle < hi:
+            break
+    else:                                         # 360.0 cannot occur after the modulo; guard anyway
+        phase, indicates, ruler, day = VALENS_MOON_PHASES[-1][0], VALENS_MOON_PHASES[-1][4], None, None
+    return [{'Moon': get_degree_string(planetary_data['Moon']['longitude']),
+             'Angle from Sun': f"{angle:.2f}°",
+             'Phase': phase,
+             'Indicates': indicates,
+             'Ruler (to day)': f"{ruler} (to day {day})" if ruler else '--'}]
+
 def evaluate_special_degrees(planetary_data):
     """Flags planets in Sahl's dark signs, in the two signs of his burned
     place (no degrees -- see DARK_SIGNS above), in a classical welled
@@ -13750,6 +13830,7 @@ if location_query and lat is not None and lon is not None:
         book_v_degrees_data = evaluate_book_v_degrees(p_data, chart_data['ascendant'], chart_data['lot_of_fortune'], sect)
         nobility_degrees_data = evaluate_nobility_degrees(p_data, chart_data['ascendant'], sect)
         mercury_phase_sect_data = evaluate_mercury_phase_sect(p_data, sect)
+        moon_phase_valens_data = evaluate_moon_phase_valens(p_data)
         rays_by_ascension_data = evaluate_rays_by_ascension(p_data, chart_data['armc'], chart_data['obliquity'], lat)
         house_lords_data = evaluate_house_lords(p_data, chart_data['ascendant'])
         victors_data = evaluate_victors(p_data, chart_data['ascendant'], chart_data['lot_of_fortune'],
@@ -14098,6 +14179,24 @@ if location_query and lat is not None and lon is not None:
                           "Firmicus, Mathesis III.7, 7-9 and 26-30 (Dykes's fnn 186, 194)", mercury_phase_sect_data,
                           glance="Whether Mercury's phase matches the sect of the chart: a morning star in a diurnal nativity or an evening star in a nocturnal one matches; the other two pairings do not. One row for every chart, in Dykes's words for each case. Display only; nothing scores it.",
                           notes="Firmicus, Mathesis III.7 (Dykes), fn 194, on the figures for the sixth place (26-29): \"In the Figures here I have put the scenarios slightly out of order. In the top row we see the success that comes from Mercury's phase matching that of the chart (morning star-diurnal, evening star-nocturnal). In the second row, mismatches between the phase and sect produce less respected and independent uses of the intellect and skill.\" Fn 186, on the morning star in the second place (7): \"In this case he would be a morning star in a nocturnal chart, so there would be a mismatch between his phase and the sect of the chart.\" The examples: 7-9 for the second place (obscure men; lenders and business men; philologists), 26-30 for the sixth (the greatest fortune from speech, advocacy or business; interpreters, fishermen, sculptors; malign people; those in charge of accounts, banking, granaries, medicines, legal instruments; the scribes of judges). This app reads \"morning star\" as Mercury eastern of the Sun, rising before him, and \"evening star\" as western, the same reading its Solar phase column uses; the Reading column gives fn 194's phrase for the matching and the mismatching case.")
+                _finding(_gap, "The Moon's phase, Valens's eleven (supplement, display only)", 'Valens, Anthologies II.36 (Riley)', moon_phase_valens_data,
+                          glance="Valens's eleven phases of the Moon, the chart's Moon placed in one by its angle ahead of the Sun, with what he says the phase indicates and the planet that adds its influence to the day he names. Eight of his boundaries are degrees he gives; the rest are this app's, and the notes say which. Display only; nothing scores it.",
+                          notes='Valens lists the phases so: "1. New moon; 2. First visibility; 3. Next the crescent moon, 45° from the sun; 4. Next the quarter moon at 90°; 5. Next the gibbous moon at 135°; 6. Next the full moon at 180°; 7. Next the second gibbous phase when it is 45° from full, i.e. 225° <from the sun>; 8. Next the second quarter at 270°; 9. Next the second crescent at 315°; 10. Final visibility at 360°; 11. There is another phase as well, when it first begins to wane."\n\n'
+                                'His degrees are moments; this app reads each phase as running from its own degree to the next one\'s, so the crescent is 45-90, the quarter 90-135, the gibbous 135-180, the second gibbous 225-270, the second quarter 270-315 -- his degrees at both ends. The boundaries he does not give are this app\'s: the new moon to 12° after the conjunction and the final visibility from 12° before it (the Moon\'s own distance under the rays), the first visibility from 12° to his 45°, the full moon to 12° after the opposition, and the phase "when it first begins to wane" from there to his second gibbous at 225°, where his "What Each Phase Indicates" puts it, between the full moon and the second gibbous. The angle is the Moon\'s longitude less the Sun\'s, counted forward.\n\n'
+                                'What Each Phase Indicates and What Effects It Has, as Riley has it: "We will append how the preceding phases are to be taken in casting horoscopes and to which god they belong. '
+                                'The new moon is indicative of rank and power, of kingly and despotic dispositions, of all public business concerning cities, of parents, marriages, religion, and of all universal, cosmic matters. The rulers of the new moon, of the latitude, and of the motion are indicative of the same things. '
+                                'The first visibility of the moon (which is also called its “light”) and its ruler are indicative of life, occupation, and future wealth; in addition, it strengthens the matters influences by the now moon. The ruler of the “light” indicates the overall influences in the same way that the monthly cycles and the universal cycles are observed by means of the first visibility. Mercury adds its influence until day 4 of the moon’s motion. '
+                                'The crescent formation is indicative of nurture and expectations in life, of wives and mothers. Mercury adds its influence until day 8. '
+                                'The quarter formation is indicative of injuries, diseases, and violent accidents; also of children, status, and good things to come. Venus is configured with the moon until day 12. '
+                                'The gibbous phase is indicative of prosperity, future success, travel, and the affinity of relatives. The sun works with the moon until day 14. '
+                                'The full moon is indicative of fame and infamy, of travel and violent events, of those who fall from pre-eminence as well as those who rise from a humble state, of affinities, passions, political opposition, and the affinity of parents. This phase has the color of the sign in the Descendant. '
+                                'The first ruler of the waning of the light is indicative of the diminishing of resources, of the chilling of occupations, of those who grow humble and lowly, and of sudden falls. This phase has the same influence as the sign which just follows the Descendant. Mars is its ruler until day 21. '
+                                'The second gibbous phase is indicative of travel abroad, of great activities, and of prosperity. It has the same influence as <the IX Place of> the God. Jupiter is its ruler to day 25 of the moon. '
+                                'The second quarter phase is indicative of old affairs, of chronic diseases, and of children. It has the same influence as… Saturn is its ruler to day 30. '
+                                'The ruler of the last crescent is indicative of a wife’s death, of unemployment or robbery. '
+                                'Finally, the last visibility is indicative of chains, imprisonment, secrets, condemnation, and infamy. '
+                                'The preceding was the arrangement of the moon’s phases, their relationships with the five gods and the sun in the … angles."\n\n'
+                                'The Ruler column carries the planet and day only where the sentence names one; the new moon, the full moon, the last crescent and the last visibility have none. "The rulers of the new moon, of the latitude, and of the motion" are not computed.')
             _absent(_gap)
             # The orders of the dignities and the good places -- static tables --
             # moved to the Reference tables page on 2026-09-10; what stays is

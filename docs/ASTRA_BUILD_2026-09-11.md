@@ -578,3 +578,17 @@ per planet in the app's order: the hot/cold and wet/dry read off the sentence, t
 words verbatim, and the sentence number. The Reference page shows it under Course text and
 supplement only, after the degrees of nobility; nothing in the engine reads it. Pinned in
 `tests/test_planet_natures_iv1_2026_09_14.py` (seven rows, the order, every quotation in the corpus).
+
+## 2026-09-14: the Moon's phases after Valens II.36 (coverage list, gap 3)
+
+Valens, Anthologies II.36 (Riley's `35K;36P`), read whole from the corpus file: eleven phases,
+eight with a degree from the Sun (45, 90, 135, 180, 225, 270, 315, 360), the new moon, the first
+visibility and "when it first begins to wane" with none; then "What Each Phase Indicates" with a
+ruler to a day for six of them. Built as `VALENS_MOON_PHASES` and `evaluate_moon_phase_valens`,
+one row for the chart's Moon by its waxing angle `(Moon - Sun) % 360`, shown on the Chart page
+under "Course text and supplement" only (display only; the render fixture is untouched since the
+default depth hides it). The text's degrees stand at both ends of the crescent, quarter, gibbous,
+second gibbous and second quarter; the app's boundaries are the new moon to 12° after the
+conjunction and the final visibility from 12° before it, first visibility 12-45, full moon 180-192,
+and the waning phase 192-225 (placed between full and second gibbous, where the "Indicates" list
+puts it). The page says so, and quotes the whole "Indicates" passage as Riley has it.
