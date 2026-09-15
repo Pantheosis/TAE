@@ -135,10 +135,12 @@ def test_chart_page_names_the_wheel_and_offers_both_layouts():
     src = ui_source()
     assert 'or "Transits")' in src, "an unnamed chart is a transit chart (D5)"
     assert 'st.session_state.get("chart_picker")' in src
-    # The square wheel is centred at 560 px in the middle column of a
-    # [1, 2, 1] split; the wide one runs the page's full width.
-    assert "st.image(svg_code, width=560)" in src and "st.image(svg_wide, width='stretch')" in src
-    assert "st.iframe(" not in src, "the iframe had no fullscreen control; st.image has"
+    # The square wheel is centred at 560 px; the wide one runs the page's
+    # full width. Both are the same component mount, the layout deciding
+    # which SVG and which width go into its envelope (item 11, 2026-09-15).
+    assert '"svg": svg_wide if _picked_wide else svg_code,' in src
+    assert '"width": "stretch" if _picked_wide else 560,' in src
+    assert "st.iframe(" not in src, "the iframe had no fullscreen control; the component carries its own"
     assert '"Wheel layout", WHEEL_LAYOUT_OPTIONS, "wheel_layout", "_wheel_layout"' in src
     # The layout is decided from the control's state before the control is
     # drawn, so the controls can sit under the wheel rather than above it.
