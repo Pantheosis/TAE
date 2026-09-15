@@ -142,4 +142,4 @@ def test_chart_page_names_the_wheel_and_offers_both_layouts():
     assert '"Wheel layout", WHEEL_LAYOUT_OPTIONS, "wheel_layout", "_wheel_layout"' in src
     # The layout is decided from the control's state before the control is
     # drawn, so the controls can sit under the wheel rather than above it.
-    assert 'st.session_state.get(\n                "wheel_layout", st.session_state.get("_wheel_layout"' in src
+    assert 'st.session_state.get(\n                    "wheel_layout", st.session_state.get("_wheel_layout"' in src
