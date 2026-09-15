@@ -10635,6 +10635,105 @@ def triplicity_lords_of_life(chart_data, point='sect light'):
     return rows
 
 
+# al-Andarzaghar's triplicity lords of the twelve houses, as al-Qabisi
+# reports them house by house (I.57b-68, in ITA I.13, pp. 71-76). Three
+# verbatim fragments per house -- what each lord "signifies" -- and the
+# sentence whole. The house-2 entry carries al-Andarzaghar's extra rule
+# (the stronger of the three "in being and place" is the authority over
+# assets); nothing here weighs the lords, so it is quoted and not applied.
+ANDARZAGHAR_TRIPLICITY_LORDS = {
+    1: {'section': 'I.57b', 'house': 'the Ascendant',
+        'first': "life and the nature of the native or of the one asking, and his delights and pleasures, and what he "
+                 "esteems or what he hates, and what good or evil finds him at the beginning of his life",
+        'second': "life and the body and virtue and the middle of life",
+        'third': "what its companions signified, and it signifies the end of the matter at death",
+        'text': "in a nativity the first Lord of the triplicity of the Ascendant signifies life and the nature of the "
+                "native or of the one asking, and his delights and pleasures, and what he esteems or what he hates, and "
+                "what good or evil finds him at the beginning of his life. And the second Lord of the triplicity "
+                "signifies life and the body and virtue and the middle of life. And the third Lord of the triplicity "
+                "signifies what its companions signified, and it signifies the end of the matter at death."},
+    2: {'section': 'I.58', 'house': 'the house of assets',
+        'first': "gives assets at the beginning of life",
+        'second': "in the middle",
+        'third': "at its end",
+        'text': "see which one of them is stronger in being and place: you will make this one deservedly the authority "
+                "over assets and the significator of their acquisition. Which if it were in the Mid-heaven, he will "
+                "find this from the king; and if it were in the house of faith, it will be better. Likewise, the first "
+                "Lord of the triplicity gives assets at the beginning of life, the second one in the middle, and the "
+                "third at its end."},
+    3: {'section': 'I.59', 'house': 'the house of brothers',
+        'first': "older brothers", 'second': "the middle ones", 'third': "the younger ones",
+        'text': "the first Lord of the triplicity of the house of brothers signifies older brothers, and the second one "
+                "the middle ones, but the third one the younger ones; and their worthiness will be according to their "
+                "places."},
+    4: {'section': 'I.60', 'house': 'the house of fathers',
+        'first': "fathers", 'second': "cities and lands", 'third': "the ends of matters and prisons",
+        'text': "the first Lord of the triplicity of the house of fathers signifies fathers, the second cities and "
+                "lands, but the third the ends of matters and prisons."},
+    5: {'section': 'I.61', 'house': 'the house of children',
+        'first': "children and life", 'second': "delight", 'third': "legates",
+        'text': "the first Lord of the triplicity of the house of children signifies children and life, the second "
+                "delight, but the third signifies legates."},
+    6: {'section': 'I.62', 'house': 'the house of infirmities',
+        'first': "infirmities and recovery from infirmities", 'second': "domestics and slaves",
+        'third': "what will find him in terms of those, and their usefulness and works",
+        'text': "the first Lord of the triplicity of the house of infirmities signifies infirmities and recovery from "
+                "infirmities, the second one signifies domestics and slaves, the third signifies what will find him in "
+                "terms of those, and their usefulness and works."},
+    7: {'section': 'I.63', 'house': 'the house of women',
+        'first': "women", 'second': "contentions", 'third': "uniting [with others]",
+        'text': "the first Lord of the triplicity of the house of women signifies women, the second one contentions, "
+                "the third uniting [with others]."},
+    8: {'section': 'I.64', 'house': 'the house of death',
+        'first': "death", 'second': "ancient things", 'third': "inheritance",
+        'text': "the first Lord of the triplicity of the house of death signifies death, and the second one ancient "
+                "things, and the third inheritance."},
+    9: {'section': 'I.65', 'house': 'the house of pilgrimage',
+        'first': "pilgrimage and everything which happens on it",
+        'second': "faith and religion and the good state of these things and their manner",
+        'third': "wisdom and dreams, also stars and omens and their truth and lying in this",
+        'text': "the first Lord of the triplicity of the house of pilgrimage signifies pilgrimage and everything which "
+                "happens on it, the second one signifies faith and religion and the good state of these things and "
+                "their manner, and the third one is the significator of wisdom and dreams, also stars and omens and "
+                "their truth and lying in this."},
+    10: {'section': 'I.66', 'house': 'the royal house',
+         'first': "work and exaltation, and the highest station", 'second': "[one's] voice and courage in the same",
+         'third': "its stability and durability",
+         'text': "the first Lord of the triplicity of the royal house signifies work and exaltation, and the highest "
+                 "station; the second one signifies [one's] voice and courage in the same; the third signifies its "
+                 "stability and durability."},
+    11: {'section': 'I.67', 'house': 'the house of trust',
+         'first': "trust", 'second': "friends", 'third': "their usefulness",
+         'text': "the first Lord of the triplicity of the house of trust signifies trust, and the second one friends, "
+                 "the third signifies their usefulness."},
+    12: {'section': 'I.68', 'house': 'the house of enemies',
+         'first': "enemies", 'second': "labors", 'third': "beasts [for riding] and flock-animals",
+         'text': "the first Lord of the triplicity of the house of enemies signifies enemies, the second one labors, "
+                 "but the third signifies beasts [for riding] and flock-animals."},
+}
+
+
+def evaluate_andarzaghar_triplicity_lords(asc_lon, sect):
+    """al-Andarzaghar's triplicity lords of the twelve houses (al-Qabisi
+    I.57b-68, in ITA I.13): for each whole-sign house from the Ascendant,
+    the Dorothean lords of its sign's triplicity in the chart's sect order
+    (this app's reading of "first, second, third": by day the day lord
+    first, by night the night lord) beside what al-Andarzaghar says each
+    signifies. Twelve rows; display only. The planets' conditions are not
+    read, and I.58's "which one of them is stronger in being and place" is
+    quoted, not weighed."""
+    start = SIGN_ORDER.index(get_zodiac_sign(asc_lon))
+    rows = []
+    for house in range(1, 13):
+        sign = SIGN_ORDER[(start + house - 1) % 12]
+        first, second, third = _triplicity_lords_in_sect_order(sign, sect)
+        entry = ANDARZAGHAR_TRIPLICITY_LORDS[house]
+        rows.append({'House': house, 'Sign': sign, 'First lord': first, 'Second lord': second, 'Third lord': third,
+                     'Signifies (1st / 2nd / 3rd)': f"{entry['first']} / {entry['second']} / {entry['third']}",
+                     'Source': f"al-Qabisi {entry['section']} (al-Andarzaghar), in ITA I.13"})
+    return rows
+
+
 def pn4_turning_triplicity_lords(chart_data, sr):
     """VI.2, 4-5: the triplicity lords examined beside the turning. 4, for
     assets: "every one of the lords of the triplicities of the luminary
@@ -16093,6 +16192,33 @@ if location_query and lat is not None and lon is not None:
                                           "only so the difference can be seen."):
                     st.dataframe(pd.DataFrame(pn4['life_lords_ascendant_rows']), hide_index=True, width='stretch',
                                  height=_rows_height(len(pn4['life_lords_ascendant_rows'])))
+                if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
+                    # al-Andarzaghar's per-house triplicity lords (coverage gap 9,
+                    # 2026-09-15): a separate table from Sahl's lords over the life
+                    # above; the sect order is the app's reading of first/second/third.
+                    _andarzaghar_rows = evaluate_andarzaghar_triplicity_lords(chart_data['ascendant'], sect)
+                    _andarzaghar_first = ANDARZAGHAR_TRIPLICITY_LORDS[1]['text']
+                    _finding([], "The triplicity lords of the twelve houses, al-Andarzaghar (supplement, display only)",
+                             "al-Qabisi I.57b-68 (al-Andarzaghar), in ITA I.13", _andarzaghar_rows,
+                             glance="For each of the twelve houses, the three lords of its sign's triplicity beside what "
+                                    "al-Andarzaghar says each signifies, as al-Qabisi reports him house by house. Display "
+                                    "only; nothing scores it, and the lords' conditions are not read.",
+                             notes="The lords are the Dorothean triplicity lords (day lord, night lord, partner) in the "
+                                   "chart's sect order -- by day the day lord first, by night the night lord first -- which "
+                                   "is this app's reading of al-Andarzaghar's \"first\", \"second\" and \"third\" Lord of "
+                                   "the triplicity; the house is the whole sign counted from the Ascendant. Each row's "
+                                   "words are al-Andarzaghar's as al-Qabisi reports them in the section named. For the "
+                                   f"first house (I.57b) whole: \"{_andarzaghar_first}\" (fn 158: \"the matter\" reads "
+                                   "with the Arabic for \"life\"). For the house of assets (I.58) he adds a rule this "
+                                   "table does not apply: \"see which one of them is stronger in being and place: you "
+                                   "will make this one deservedly the authority over assets and the significator of their "
+                                   "acquisition. Which if it were in the Mid-heaven, he will find this from the king; and "
+                                   "if it were in the house of faith, it will be better.\" The third house adds \"and "
+                                   "their worthiness will be according to their places\"; the seventh's \"uniting [with "
+                                   "others]\" is glossed \"partnerships and agreements\" (fn 172); the twelfth's "
+                                   "\"labors\" is \"or, 'suffering'\" in the Arabic (fn 192). Sahl's lords of the sect "
+                                   "light's triplicity over the life, above, are a different doctrine and are kept apart.",
+                             height=_rows_height(len(_andarzaghar_rows)))
 
                 st.subheader("The *fardar*",
                              help="IV.1, 2-4: the years are Sun 10, Venus 8, Mercury 13, Moon 9, Saturn 11, Jupiter 12, "

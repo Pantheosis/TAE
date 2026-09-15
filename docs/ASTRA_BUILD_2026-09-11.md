@@ -623,3 +623,18 @@ After the check (`BUILD_EYESIGHT_CHECK_REPORT_2026-09-14.md`): the lord of the A
 names, is now read (the domicile lord of the rising sign; one row carrying both roles when it is a
 luminary); the Ascendant degree itself is said to be this app's addition; "al-Dafārah" as printed;
 Abu Ma'shar's bare 20° and 22° declared as measured whole degrees; "to fourteen" degrees of disagreement.
+
+## 2026-09-15: al-Andarzaghar's triplicity lords by house (coverage list, gap 9)
+
+Source: al-Qabisi I.57b-68 as Dykes prints it in ITA I.13 (pp. 71-76, the corpus file's
+marker OCR read against the running text, no photograph needed: every al-Andarzaghar sentence
+reads clean; the only oddity is the page break splitting "be-/ginning" at pp. 71-72, and fn
+168's "phrased to as to" typo lies outside the quoted words). `ANDARZAGHAR_TRIPLICITY_LORDS`
+holds the twelve entries, three verbatim fragments each and the sentence whole;
+`evaluate_andarzaghar_triplicity_lords(asc_lon, sect)` gives twelve rows, the Dorothean lords
+of each whole-sign house's triplicity in the chart's sect order (the app's reading of
+"first/second/third"; I.58's "stronger in being and place" rule is quoted, not weighed). Shown
+under Course text and supplement on the Timing page's last tab beside Sahl's lords over the
+life, kept apart from them. Pinned in `tests/test_andarzaghar_triplicity_lords_2026_09_15.py`
+(every quote a substring of the corpus span; 0° Aries Diurnal: house 1 Sun, Jupiter, Saturn,
+house 4 Venus, Mars, Moon; by night the first two swap). No fixture moved.
