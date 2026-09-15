@@ -1603,6 +1603,37 @@ def solar_phase_note(planet, side, speed_in_lon, elongation):
         return " -- VII.2, 44 as printed (6 degrees), not 40's 7; Dykes fn 43: 'should be 7 as in 40'"
     return " -- retrograde in the east: 37/40's 7 degrees, not 44's 6"
 
+# Firmicus, Mathesis III.7 (Dykes), fn 194: Mercury's phase matching the
+# sect of the chart -- morning star with a diurnal nativity, evening star
+# with a nocturnal one -- is the case the successful examples share (III.7,
+# 8, 26, 29); the other two pairings are the mismatch fn 186 names for
+# the second place (7; and 9, the evening star by day) and 27-28 show for
+# the sixth. A statement about every
+# chart, so the row is always returned. Display only: nothing scores it.
+MERCURY_PHASE_SECT_READING = {
+    True: "the success that comes from Mercury's phase matching that of the chart",
+    False: "less respected and independent uses of the intellect and skill",
+}
+
+def evaluate_mercury_phase_sect(planetary_data, sect):
+    """Mathesis III.7, fn 194: does Mercury's phase match the sect? Morning
+    star (eastern, rising before the Sun) with Diurnal, evening star
+    (western) with Nocturnal. One row, always; the reading is fn 194's
+    phrase for each case. Display only."""
+    merc = planetary_data['Mercury']
+    _phase, side, _elong = solar_phase('Mercury', merc['longitude'],
+                                       planetary_data['Sun']['longitude'],
+                                       merc.get('speed_in_lon'))
+    phase = 'morning star (eastern)' if side == 'eastern' else 'evening star (western)'
+    match = (side == 'eastern') == (sect == 'Diurnal')
+    return [{
+        'Mercury': get_degree_string(merc['longitude']),
+        'Phase': phase,
+        'Sect': sect,
+        'Match': 'Yes' if match else 'No',
+        'Reading': MERCURY_PHASE_SECT_READING[match],
+    }]
+
 def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None,
                                   armc=None, obliquity=None, geo_lat=None):
     """Accidental dignity scoring: house angularity (Whole Sign, anchored to
@@ -13653,6 +13684,7 @@ if location_query and lat is not None and lon is not None:
         special_degrees = evaluate_special_degrees(p_data)
         book_v_degrees_data = evaluate_book_v_degrees(p_data, chart_data['ascendant'], chart_data['lot_of_fortune'], sect)
         nobility_degrees_data = evaluate_nobility_degrees(p_data, chart_data['ascendant'], sect)
+        mercury_phase_sect_data = evaluate_mercury_phase_sect(p_data, sect)
         rays_by_ascension_data = evaluate_rays_by_ascension(p_data, chart_data['armc'], chart_data['obliquity'], lat)
         house_lords_data = evaluate_house_lords(p_data, chart_data['ascendant'])
         victors_data = evaluate_victors(p_data, chart_data['ascendant'], chart_data['lot_of_fortune'],
@@ -13996,6 +14028,11 @@ if location_query and lat is not None and lon is not None:
             _finding(_gap, 'Degrees of nobility and rank', 'Sahl, On Nativities 1.38, 39-41 (Figure 57)', nobility_degrees_data,
                       glance='Sahl\'s own table of the degrees in which "the native will reach nobility and rank": a row when the Ascendant, the Sun or the Moon stands in one. Display only; nothing scores it.',
                       notes='On Nativities 1.38, 40-41: "If it happened that a native was born and his Ascendant was one of these degrees, or the Moon and Sun were in the equivalent of these degrees (and that is superior if it was the Sun by day and by night the Moon), then he will reach exaltation and power, or he will rule many lands, by the permission of God." Figure 57 of his volume prints the degrees: Aries 19; Taurus 3; Gemini 13; Cancer 1, 13, 14, 15; Leo 5, 7; Virgo 2, 13, 20; Capricorn 12, 13, 20; Aquarius 12, 20 -- none in Libra, Scorpio, Sagittarius or Pisces. The figure prints bare degrees; this app reads them as ordinals, as Figure 64 prints the same rule\'s degrees. The whole table is on the Reference tables page. Abu Ma\'shar states the same rule with a table of his own (Gr. Intr. V.22, 4, Figure 64), twelve signs to its eight, six of those eight disagreeing; it is shown under Course text and supplement, on the Configurations page beside Strength and weakness and on the Reference tables page beside this table.')
+            if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
+                _finding(_gap, "Mercury's phase against the sect (supplement, display only)",
+                          "Firmicus, Mathesis III.7, 7-9 and 26-30 (Dykes's fnn 186, 194)", mercury_phase_sect_data,
+                          glance="Whether Mercury's phase matches the sect of the chart: a morning star in a diurnal nativity or an evening star in a nocturnal one matches; the other two pairings do not. One row for every chart, in Dykes's words for each case. Display only; nothing scores it.",
+                          notes="Firmicus, Mathesis III.7 (Dykes), fn 194, on the figures for the sixth place (26-29): \"In the Figures here I have put the scenarios slightly out of order. In the top row we see the success that comes from Mercury's phase matching that of the chart (morning star-diurnal, evening star-nocturnal). In the second row, mismatches between the phase and sect produce less respected and independent uses of the intellect and skill.\" Fn 186, on the morning star in the second place (7): \"In this case he would be a morning star in a nocturnal chart, so there would be a mismatch between his phase and the sect of the chart.\" The examples: 7-9 for the second place (obscure men; lenders and business men; philologists), 26-30 for the sixth (the greatest fortune from speech, advocacy or business; interpreters, fishermen, sculptors; malign people; those in charge of accounts, banking, granaries, medicines, legal instruments; the scribes of judges). This app reads \"morning star\" as Mercury eastern of the Sun, rising before him, and \"evening star\" as western, the same reading its Solar phase column uses; the Reading column gives fn 194's phrase for the matching and the mismatching case.")
             _absent(_gap)
             # The orders of the dignities and the good places -- static tables --
             # moved to the Reference tables page on 2026-09-10; what stays is
