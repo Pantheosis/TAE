@@ -15592,8 +15592,13 @@ def _reading(widget_key, store_key, default):
 # popup is the wrong control for 1240, and the harness sets this key as a
 # string. A malformed date no longer stops the script -- which took the
 # page list with it -- but keeps the last good date and says so.
+# Seeded through session state rather than a default argument: a loaded
+# chart writes these keys before the widgets run, and Streamlit warns when a
+# widget has both a default and a seeded key (the konsole warning of
+# 2026-09-15). The same for every key _restore_chart writes.
+st.session_state.setdefault("date_input_key", "1240-05-23")
 date_string = st.sidebar.text_input(
-    "Date (YYYY-MM-DD)", "1240-05-23", key="date_input_key",
+    "Date (YYYY-MM-DD)", key="date_input_key",
     help="The civil date of birth. Before 1582-10-15 the digits are read as a JULIAN-calendar date, "
          "as Solar Fire and astro.com read them; from that day on, Gregorian. Years before 1000 "
          "are typed with their leading zeros (0787-08-10).")
@@ -15608,7 +15613,8 @@ _cal_note = ("Julian calendar (before the reform of 1582-10-15)"
              if (input_date.year, input_date.month, input_date.day) < (1582, 10, 15) else "Gregorian calendar")
 
 # To the second: the engine reads seconds, and a rectified time has them.
-input_time = st.sidebar.time_input("Time", time(14, 30), key="time_input_key", step=timedelta(seconds=1))
+st.session_state.setdefault("time_input_key", time(14, 30))
+input_time = st.sidebar.time_input("Time", key="time_input_key", step=timedelta(seconds=1))
 
 # The time standard gets a key, so it is saved with the chart (F1 of the
 # 2026-09-10 evaluation: the saved reference nativity, recorded EST, was
@@ -15622,8 +15628,9 @@ time_standard = st.sidebar.selectbox(
          "offset the birth record states, east positive (EST is -5, CDT is -5, IST is +5.5).")
 utc_offset_manual = None
 if time_standard == TIME_STANDARD_OPTIONS[2]:
+    st.session_state.setdefault("utc_offset_key", 0.0)
     utc_offset_manual = st.sidebar.number_input(
-        "UTC offset (hours, east positive)", min_value=-14.0, max_value=14.0, value=0.0, step=0.25,
+        "UTC offset (hours, east positive)", min_value=-14.0, max_value=14.0, step=0.25,
         format="%.2f", key="utc_offset_key")
 time_standard_box = st.sidebar.empty()
 time_standard_box.caption(_cal_note)
@@ -15641,8 +15648,10 @@ manual_coords = st.sidebar.toggle("Enter coordinates directly", key="manual_coor
                                   help="Or type them into the search box as 'latitude, longitude'.")
 
 if manual_coords:
-    lat = st.sidebar.number_input("Latitude", value=43.7698, format="%.4f", key="manual_lat_key")
-    lon = st.sidebar.number_input("Longitude", value=11.2556, format="%.4f", key="manual_lon_key")
+    st.session_state.setdefault("manual_lat_key", 43.7698)
+    st.session_state.setdefault("manual_lon_key", 11.2556)
+    lat = st.sidebar.number_input("Latitude", format="%.4f", key="manual_lat_key")
+    lon = st.sidebar.number_input("Longitude", format="%.4f", key="manual_lon_key")
     # If these coordinates came from loading a saved chart and haven't been
     # hand-edited since, show the friendly place name it was saved under
     # instead of a bare coordinate pair.
@@ -15657,8 +15666,8 @@ if manual_coords:
     else:
         location_query = f"Manual [{lat:.4f}, {lon:.4f}]"
 else:
-    default_loc = st.session_state.get('location_input_key', 'Florence')
-    city_search = st.sidebar.text_input("City, or latitude, longitude", default_loc, key="location_input_key",
+    st.session_state.setdefault('location_input_key', 'Florence')
+    city_search = st.sidebar.text_input("City, or latitude, longitude", key="location_input_key",
                                         placeholder="Florence  |  45.3733, -84.9553")
     _typed = parse_lat_lon(city_search) if city_search else None
     if _typed:
@@ -16042,8 +16051,10 @@ if location_query and lat is not None and lon is not None:
         def _reading_radio(label, options, widget_key, store_key, help=None):
             options = list(options)
             stored = st.session_state.get(store_key, options[0])
-            st.radio(label, options, index=options.index(stored) if stored in options else 0,
-                     key=widget_key, horizontal=True, help=help)
+            # Seeded, not defaulted by index: the target keys are also written
+            # by _restore_chart, and a default beside a seeded key warns.
+            st.session_state.setdefault(widget_key, stored if stored in options else options[0])
+            st.radio(label, options, key=widget_key, horizontal=True, help=help)
             return _persist(widget_key, store_key, options[0])
 
         # Strength and Weakness as tick grids: one row per planet, one column
@@ -16956,11 +16967,12 @@ if location_query and lat is not None and lon is not None:
                 if target_mode == TARGET_MODE_OPTIONS[1]:
                     # No upper bound: the default chart is 1240, and "past the
                     # table" is a state the page reports, not an error.
-                    st.number_input("Age (completed years)", min_value=0, value=int(target_age), step=1,
-                                    key="target_age")
+                    st.session_state.setdefault("target_age", int(target_age))
+                    st.number_input("Age (completed years)", min_value=0, step=1, key="target_age")
                     _persist("target_age", "_target_age", target_age)
                 else:
-                    st.text_input("Target date (YYYY-MM-DD)", value=target_date.isoformat(), key="target_date")
+                    st.session_state.setdefault("target_date", target_date.isoformat())
+                    st.text_input("Target date (YYYY-MM-DD)", key="target_date")
                     _persist("target_date", "_target_date", target_date.isoformat())
                     if parse_iso_date(st.session_state.get("target_date", target_date.isoformat())) is None:
                         st.caption(f"Not a YYYY-MM-DD date; using {target_date:%Y-%m-%d}.")
