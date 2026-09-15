@@ -6,10 +6,7 @@
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
-   ["The Moon on the third day (Sahl)", ["Item", "Value", "Text"]],
-   ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
-   ["Fortune and livelihood: the seven classes (Sahl)", ["Class", "Ground", "Sahl", "Also"]],
-   ["Fortune and livelihood: the seven classes (Sahl)", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
+   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations": [
    ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
@@ -25,9 +22,9 @@
    ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
    ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
    ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
-   ["The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the app's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "App grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
-   ["Right-sidedness, \"the spear-bearing of the planets\" (Sahl, On Nativities 2.5, 1-3) -- display only", ["Pair", "Aspect (whole sign)", "Casting rays on each other", "Dignities", "One sect", "In the sect of the chart (2.5, 1)", "Grade", "Source"]],
-   ["The honor-guard, \"and it is spear-bearing\" (Ptolemy in Sahl, On Nativities 10.2.1, 10-15) -- display only", ["Planet", "Role", "Sign", "Whole-sign place", "In a stake", "Eastern from the Sun", "Western from the Moon", "Looks at the luminaries", "Source"]],
+   ["The sect light's first triplicity lord by ascensional band -- and the app's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "App grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
+   ["Right-sidedness, \"the spear-bearing of the planets\"", ["Pair", "Aspect (whole sign)", "Casting rays on each other", "Dignities", "One sect", "In the sect of the chart (2.5, 1)", "Grade", "Source"]],
+   ["The honor-guard, \"and it is spear-bearing\"", ["Planet", "Role", "Sign", "Whole-sign place", "In a stake", "Eastern from the Sun", "Western from the Moon", "Looks at the luminaries", "Source"]],
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
@@ -42,6 +39,11 @@
    ["Topical Planets in Houses", ["Planet", "Placed in (WS place)", "Lean"]],
    ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Masha'allah's condition", "Averse to its place"]],
    ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
+  ],
+  "findings": [
+   ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
+   ["The Moon on the third day (Sahl)", ["Item", "Value", "Text"]],
+   ["Fortune and livelihood: the seven classes (Sahl)", ["Class", "Ground", "Sahl", "Also"]]
   ],
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
@@ -139,10 +141,7 @@
    ["Planetary Positions", ["Planet", "Position", "Absolute", "WS place", "Sees ASC", "Quadrant", "Motion", "Solar phase"]],
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
-   ["The Moon on the third day (Sahl)", ["Item", "Value", "Text"]],
-   ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
-   ["Fortune and livelihood: the seven classes (Sahl)", ["Class", "Ground", "Sahl", "Also"]],
-   ["Fortune and livelihood: the seven classes (Sahl)", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
+   ["Quadrant divisions (Alchabitius)", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations": [
    ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
@@ -155,9 +154,9 @@
    ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
    ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
    ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
-   ["The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the app's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "App grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
-   ["Right-sidedness, \"the spear-bearing of the planets\" (Sahl, On Nativities 2.5, 1-3) -- display only", ["Pair", "Aspect (whole sign)", "Casting rays on each other", "Dignities", "One sect", "In the sect of the chart (2.5, 1)", "Grade", "Source"]],
-   ["The honor-guard, \"and it is spear-bearing\" (Ptolemy in Sahl, On Nativities 10.2.1, 10-15) -- display only", ["Planet", "Role", "Sign", "Whole-sign place", "In a stake", "Eastern from the Sun", "Western from the Moon", "Looks at the luminaries", "Source"]],
+   ["The sect light's first triplicity lord by ascensional band -- and the app's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "App grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
+   ["Right-sidedness, \"the spear-bearing of the planets\"", ["Pair", "Aspect (whole sign)", "Casting rays on each other", "Dignities", "One sect", "In the sect of the chart (2.5, 1)", "Grade", "Source"]],
+   ["The honor-guard, \"and it is spear-bearing\"", ["Planet", "Role", "Sign", "Whole-sign place", "In a stake", "Eastern from the Sun", "Western from the Moon", "Looks at the luminaries", "Source"]],
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
@@ -170,6 +169,11 @@
    ["Topical Planets in Houses", ["Planet", "Placed in (WS place)", "Lean"]],
    ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Masha'allah's condition", "Averse to its place"]],
    ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
+  ],
+  "findings": [
+   ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
+   ["The Moon on the third day (Sahl)", ["Item", "Value", "Text"]],
+   ["Fortune and livelihood: the seven classes (Sahl)", ["Class", "Ground", "Sahl", "Also"]]
   ],
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
@@ -271,10 +275,7 @@
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
    ["Degrees of nobility and rank", ["Point", "Position", "Degree", "Note"]],
-   ["The Moon on the third day (Sahl)", ["Item", "Value", "Text"]],
-   ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
-   ["Fortune and livelihood: the seven classes (Sahl)", ["Class", "Ground", "Sahl", "Also"]],
-   ["Fortune and livelihood: the seven classes (Sahl)", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
+   ["Degrees of nobility and rank", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations": [
    ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
@@ -290,9 +291,9 @@
    ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
    ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
    ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
-   ["The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the app's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "App grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
-   ["Right-sidedness, \"the spear-bearing of the planets\" (Sahl, On Nativities 2.5, 1-3) -- display only", ["Pair", "Aspect (whole sign)", "Casting rays on each other", "Dignities", "One sect", "In the sect of the chart (2.5, 1)", "Grade", "Source"]],
-   ["The honor-guard, \"and it is spear-bearing\" (Ptolemy in Sahl, On Nativities 10.2.1, 10-15) -- display only", ["Planet", "Role", "Sign", "Whole-sign place", "In a stake", "Eastern from the Sun", "Western from the Moon", "Looks at the luminaries", "Source"]],
+   ["The sect light's first triplicity lord by ascensional band -- and the app's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "App grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
+   ["Right-sidedness, \"the spear-bearing of the planets\"", ["Pair", "Aspect (whole sign)", "Casting rays on each other", "Dignities", "One sect", "In the sect of the chart (2.5, 1)", "Grade", "Source"]],
+   ["The honor-guard, \"and it is spear-bearing\"", ["Planet", "Role", "Sign", "Whole-sign place", "In a stake", "Eastern from the Sun", "Western from the Moon", "Looks at the luminaries", "Source"]],
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
@@ -307,6 +308,11 @@
    ["Topical Planets in Houses", ["Planet", "Placed in (WS place)", "Lean"]],
    ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Masha'allah's condition", "Averse to its place"]],
    ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
+  ],
+  "findings": [
+   ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
+   ["The Moon on the third day (Sahl)", ["Item", "Value", "Text"]],
+   ["Fortune and livelihood: the seven classes (Sahl)", ["Class", "Ground", "Sahl", "Also"]]
   ],
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
@@ -406,10 +412,7 @@
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
    ["Degrees of nobility and rank", ["Point", "Position", "Degree", "Note"]],
-   ["The Moon on the third day (Sahl)", ["Item", "Value", "Text"]],
-   ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
-   ["Fortune and livelihood: the seven classes (Sahl)", ["Class", "Ground", "Sahl", "Also"]],
-   ["Fortune and livelihood: the seven classes (Sahl)", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
+   ["Degrees of nobility and rank", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations": [
    ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
@@ -424,9 +427,9 @@
    ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
    ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
    ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
-   ["The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the app's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "App grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
-   ["Right-sidedness, \"the spear-bearing of the planets\" (Sahl, On Nativities 2.5, 1-3) -- display only", ["Pair", "Aspect (whole sign)", "Casting rays on each other", "Dignities", "One sect", "In the sect of the chart (2.5, 1)", "Grade", "Source"]],
-   ["The honor-guard, \"and it is spear-bearing\" (Ptolemy in Sahl, On Nativities 10.2.1, 10-15) -- display only", ["Planet", "Role", "Sign", "Whole-sign place", "In a stake", "Eastern from the Sun", "Western from the Moon", "Looks at the luminaries", "Source"]],
+   ["The sect light's first triplicity lord by ascensional band -- and the app's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "App grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
+   ["Right-sidedness, \"the spear-bearing of the planets\"", ["Pair", "Aspect (whole sign)", "Casting rays on each other", "Dignities", "One sect", "In the sect of the chart (2.5, 1)", "Grade", "Source"]],
+   ["The honor-guard, \"and it is spear-bearing\"", ["Planet", "Role", "Sign", "Whole-sign place", "In a stake", "Eastern from the Sun", "Western from the Moon", "Looks at the luminaries", "Source"]],
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
@@ -440,6 +443,11 @@
    ["Topical Planets in Houses", ["Planet", "Placed in (WS place)", "Lean"]],
    ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Masha'allah's condition", "Averse to its place"]],
    ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
+  ],
+  "findings": [
+   ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
+   ["The Moon on the third day (Sahl)", ["Item", "Value", "Text"]],
+   ["Fortune and livelihood: the seven classes (Sahl)", ["Class", "Ground", "Sahl", "Also"]]
   ],
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
@@ -542,10 +550,7 @@
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
-   ["The Moon on the third day (Sahl)", ["Item", "Value", "Text"]],
-   ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
-   ["Fortune and livelihood: the seven classes (Sahl)", ["Class", "Ground", "Sahl", "Also"]],
-   ["Fortune and livelihood: the seven classes (Sahl)", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
+   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations": [
    ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
@@ -560,9 +565,9 @@
    ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
    ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
    ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
-   ["The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the app's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "App grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
-   ["Right-sidedness, \"the spear-bearing of the planets\" (Sahl, On Nativities 2.5, 1-3) -- display only", ["Pair", "Aspect (whole sign)", "Casting rays on each other", "Dignities", "One sect", "In the sect of the chart (2.5, 1)", "Grade", "Source"]],
-   ["The honor-guard, \"and it is spear-bearing\" (Ptolemy in Sahl, On Nativities 10.2.1, 10-15) -- display only", ["Planet", "Role", "Sign", "Whole-sign place", "In a stake", "Eastern from the Sun", "Western from the Moon", "Looks at the luminaries", "Source"]],
+   ["The sect light's first triplicity lord by ascensional band -- and the app's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "App grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
+   ["Right-sidedness, \"the spear-bearing of the planets\"", ["Pair", "Aspect (whole sign)", "Casting rays on each other", "Dignities", "One sect", "In the sect of the chart (2.5, 1)", "Grade", "Source"]],
+   ["The honor-guard, \"and it is spear-bearing\"", ["Planet", "Role", "Sign", "Whole-sign place", "In a stake", "Eastern from the Sun", "Western from the Moon", "Looks at the luminaries", "Source"]],
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
    ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]],
@@ -574,6 +579,11 @@
    ["Topical Planets in Houses", ["Planet", "Placed in (WS place)", "Lean"]],
    ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Masha'allah's condition", "Averse to its place"]],
    ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
+  ],
+  "findings": [
+   ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
+   ["The Moon on the third day (Sahl)", ["Item", "Value", "Text"]],
+   ["Fortune and livelihood: the seven classes (Sahl)", ["Class", "Ground", "Sahl", "Also"]]
   ],
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
@@ -675,10 +685,7 @@
    ["Calculated Points", ["Point", "Position"]],
    ["Quadrant divisions (Alchabitius)", ["House", "Cusp"]],
    ["Special Degrees & Conditions", ["Planet", "Position", "Condition"]],
-   ["The Moon on the third day (Sahl)", ["Item", "Value", "Text"]],
-   ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
-   ["Fortune and livelihood: the seven classes (Sahl)", ["Class", "Ground", "Sahl", "Also"]],
-   ["Fortune and livelihood: the seven classes (Sahl)", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
+   ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations": [
    ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
@@ -695,9 +702,9 @@
    ["Answer key: testimonies in words", ["Planet", "Strength Testimonies", "Count"]],
    ["Weakness of the Planets", ["Planet", "91 falling, averse ASC", "92 retrograde", "93 under rays", "94 connects infortune", "95 enclosed", "96 own fall", "97 averse / lost receiver", "98 alien", "99 with nodes", "100 inverted", "Count"]],
    ["Answer key: testimonies in words", ["Planet", "Weakness Testimonies", "Count"]],
-   ["The sect light's first triplicity lord by ascensional band (Sahl, On Nativities 2.13, 48-51) -- and the app's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "App grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
-   ["Right-sidedness, \"the spear-bearing of the planets\" (Sahl, On Nativities 2.5, 1-3) -- display only", ["Pair", "Aspect (whole sign)", "Casting rays on each other", "Dignities", "One sect", "In the sect of the chart (2.5, 1)", "Grade", "Source"]],
-   ["The honor-guard, \"and it is spear-bearing\" (Ptolemy in Sahl, On Nativities 10.2.1, 10-15) -- display only", ["Planet", "Role", "Sign", "Whole-sign place", "In a stake", "Eastern from the Sun", "Western from the Moon", "Looks at the luminaries", "Source"]],
+   ["The sect light's first triplicity lord by ascensional band -- and the app's generalisation", ["Planet", "Follows the stake", "Ascensional distance", "To the next stake", "App grade (generalised from 2.13, 48-51)", "Aphorism #45 as printed (15 zodiacal degrees; not applied)", "2.13, 48-51 (the sect light's first triplicity lord only)"]],
+   ["Right-sidedness, \"the spear-bearing of the planets\"", ["Pair", "Aspect (whole sign)", "Casting rays on each other", "Dignities", "One sect", "In the sect of the chart (2.5, 1)", "Grade", "Source"]],
+   ["The honor-guard, \"and it is spear-bearing\"", ["Planet", "Role", "Sign", "Whole-sign place", "In a stake", "Eastern from the Sun", "Western from the Moon", "Looks at the luminaries", "Source"]],
    ["Corruption of the Moon", ["Planet", "Defects", "Count"]],
    ["Planetary Condition", ["Planet", "Good Fortune", "Strength", "Weakness", "Misfortune", "Moon Defects", "Good Fortune / Strength", "Weakness / Misfortune", "Net", "Verdict"]],
    ["Natural connections", ["Pair", "Family", "Degrees", "From exact", "Motion", "Affinity (76-77)", "Ordinary aspect", "Standing"]],
@@ -711,6 +718,11 @@
    ["Topical Planets in Houses", ["Planet", "Placed in (WS place)", "Lean"]],
    ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Masha'allah's condition", "Averse to its place"]],
    ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
+  ],
+  "findings": [
+   ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
+   ["The Moon on the third day (Sahl)", ["Item", "Value", "Text"]],
+   ["Fortune and livelihood: the seven classes (Sahl)", ["Class", "Ground", "Sahl", "Also"]]
   ],
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],

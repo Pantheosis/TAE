@@ -151,7 +151,7 @@ def _timing_text(date, depth):
 
 
 def test_the_finding_renders_at_the_supplement_depth_only():
-    title = "Additions and subtractions to the house-master's years (Abu 'Ali; supplement, display only)"
+    title = "Additions and subtractions to the house-master's years (Abu 'Ali)"
     for depth, shown in (("Course text", False), ("Course text and supplement", True)):
         text = _timing_text("1240-05-23", depth)
         assert "The house-master's years" in text
