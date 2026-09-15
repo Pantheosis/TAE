@@ -1683,6 +1683,77 @@ def evaluate_mercury_phase_sect(planetary_data, sect):
         'Reading': MERCURY_PHASE_SECT_READING[match],
     }]
 
+# --- Mars in his own domicile, by the sect of the chart (Abu Bakr) --------
+# Abu Bakr, On Nativities II.1.0 (PN II p. 142): one paragraph on Mars,
+# read from the photograph. The condition it states is Mars IN HIS OWN
+# DOMICILE, by night or by day -- not "of the sect" or "contrary to the
+# sect" at large; the paragraph also has Mars in a domicile of Saturn, and
+# a back-reference for Mars in the Midheaven "rejoicing in his own place".
+# Each sentence is carried whole and verbatim, the footnote marker
+# dropped (fn 652 on "unsound" is named in the page's notes). Read: own
+# domicile = Aries or Scorpio; a domicile of Saturn = Capricorn or
+# Aquarius; the Midheaven = the whole-sign tenth, "he would rejoice in his
+# own place" quoted, not tested; the fortune's aspect on "a Mars so
+# disposed" quoted in the notes, not tested. The other planets of the
+# same lesson have no such witness here and are not built (decision 13).
+# Supplement only; display only: nothing scores it. Pinned in
+# tests/test_mars_abubakr_2026_09_15.py.
+ABU_BAKR_MARS_II_1_0 = {
+    'source': 'Abu Bakr, On Nativities II.1.0',
+    'Nocturnal': ('in his own domicile, in a nocturnal nativity',
+                  'Mars in a nocturnal nativity, appearing in his own domicile, signifies that the native will be one '
+                  'master, and he will have others under himself, and he will be a good soldier, and fortunate in '
+                  'slaughter and in wars, and always conquering, and wise in wars.'),
+    'Diurnal': ('in his own domicile, in a diurnal nativity',
+                'And if he were in his own domicile in a diurnal nativity, the native will be lazy in those things in '
+                'which he ought to make money; infirm, greedy, an evil plunderer of strangers, a fornicator, esteeming '
+                'murders and evils, violent and unsound.'),
+    'Saturn': ('in a domicile of Saturn',
+               'And if Mars were in a domicile of Saturn, the native will have a fatty liver, he will be quick in his '
+               'acts, he will put the evil which is inflicted upon him into his own heart, and will retain it for a '
+               'long time; and he will express his words hastily.'),
+    'Midheaven': ('in the Midheaven (the whole-sign tenth)',
+                  'And it was already stated that if Mars would appear in the Midheaven, and he would rejoice in his '
+                  'own place, the native will be fortunate in war and slaughter, and a beautiful organizer of wars, '
+                  'and wise in them.'),
+    'Fortune': ('And if a fortune aspected a Mars so disposed, the native will acquire advantage and great fame from '
+                'his wars.'),
+    'fn652': ('Insanus, the root of our "insane." Nowadays this word has clinical overtones that are not present in '
+              'the Latin, though Latins would have seen it as roughly equivalent to "crazy," which is a much looser '
+              'notion.'),
+}
+ABU_BAKR_MARS_NO_SENTENCE = 'in none of his own domiciles, nor of Saturn\'s, nor in the Midheaven: no sentence of II.1.0 reaches him'
+
+def evaluate_mars_abu_bakr(planetary_data, sect, ascendant_lon):
+    """Abu Bakr, On Nativities II.1.0 on Mars: a row when he stands in Aries
+    or Scorpio (his own domicile), with the sentence for the chart's sect;
+    a row when he stands in Capricorn or Aquarius (a domicile of Saturn);
+    a second row when he stands in the whole-sign tenth (the Midheaven
+    sentence, its "rejoice in his own place" quoted, not tested); one row
+    saying so when none of these reaches him. Display only."""
+    lon = planetary_data['Mars']['longitude'] % 360.0
+    sign = get_zodiac_sign(lon)
+    src = ABU_BAKR_MARS_II_1_0['source']
+    rows = []
+
+    def row(case, text):
+        rows.append({'Mars': get_degree_string(lon), 'Sign': sign, "Chart's sect": sect,
+                     'Case': case, 'Source': src, 'Text': text})
+
+    if sign in DOMICILES['Mars']:
+        case, text = ABU_BAKR_MARS_II_1_0['Diurnal' if sect == 'Diurnal' else 'Nocturnal']
+        if sect != 'Diurnal':
+            row(case, text)
+        else:
+            row(case, text + ' (fn 652 on "unsound": ' + ABU_BAKR_MARS_II_1_0['fn652'] + ')')
+    elif sign in DOMICILES['Saturn']:
+        row(*ABU_BAKR_MARS_II_1_0['Saturn'])
+    if get_wsh_house(lon, ascendant_lon) == 10:
+        row(*ABU_BAKR_MARS_II_1_0['Midheaven'])
+    if not rows:
+        row(ABU_BAKR_MARS_NO_SENTENCE, '')
+    return rows
+
 # --- Affliction and fortification after Rhetorius (Holden) ----------------
 # Chapters 26 (Dominance), 27 (Affliction and Ineffective Houses), 28
 # (Effective Houses), 41 (Besieging) and 42 (Fortified Stars), each
@@ -16022,6 +16093,7 @@ if location_query and lat is not None and lon is not None:
         morin_aspects_data = evaluate_morin_aspects(p_data, chart_data['houses'], chart_data['ascendant'])
         eyesight_places_data = evaluate_eyesight_places(p_data, chart_data['ascendant'])
         rhetorius_affliction_data = evaluate_rhetorius_affliction(p_data, chart_data['ascendant'], sect)
+        mars_abu_bakr_data = evaluate_mars_abu_bakr(p_data, sect, chart_data['ascendant'])
         prosperity_data = evaluate_prosperity(chart_data)
         rays_by_ascension_data = evaluate_rays_by_ascension(p_data, chart_data['armc'], chart_data['obliquity'], lat)
         house_lords_data = evaluate_house_lords(p_data, chart_data['ascendant'])
@@ -16519,6 +16591,28 @@ if location_query and lat is not None and lon is not None:
                 st.dataframe(pd.DataFrame(sect_rows), hide_index=True, width='stretch', height=_rows_height(len(sect_rows)))
             st.caption("Sect: Sahl, The Introduction Ch. 3, 85. Domain: Gr. Intr. VII.1, 37 and VII.6, 13 "
                        "(or Masha'allah, On Nativities 1.23, 17, per the switch).")
+            # Abu Bakr's one paragraph on Mars by sect (II.1.0), whose condition
+            # is his own domicile -- the sect of the chart decides which of two
+            # sentences reaches him. Supplement only, display only; the other
+            # planets have no such witness here and are not built.
+            if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
+                st.subheader("Mars in his own domicile, by sect (Abu Bakr; supplement, display only)",
+                             help="Abu Bakr, On Nativities II.1.0: Mars in his own domicile (Aries, Scorpio) by night, or by day; Mars in a domicile of Saturn (Capricorn, Aquarius); and, as a second row, Mars in the Midheaven, read as the whole-sign tenth. The sentence for the case is quoted whole; where none reaches him the row says so. Display only; nothing scores it.")
+                st.dataframe(pd.DataFrame(mars_abu_bakr_data), hide_index=True, width='stretch',
+                             height=_rows_height(len(mars_abu_bakr_data)))
+                st.caption("Abu Bakr, On Nativities II.1.0. The condition is his own domicile by the sect of the chart, "
+                           "not his being of or contrary to the sect at large; the fortune's aspect and \"he would rejoice in his own place\" are not tested.")
+                with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
+                    st.markdown("Abu Bakr, On Nativities II.1.0, the paragraph whole: \"" + ABU_BAKR_MARS_II_1_0['Nocturnal'][1] + " "
+                                + ABU_BAKR_MARS_II_1_0['Diurnal'][1] + " " + ABU_BAKR_MARS_II_1_0['Saturn'][1] + " "
+                                + ABU_BAKR_MARS_II_1_0['Midheaven'][1] + " " + ABU_BAKR_MARS_II_1_0['Fortune'] + "\"\n\n"
+                                "Dykes's fn 652, on \"unsound\": \"" + ABU_BAKR_MARS_II_1_0['fn652'] + "\"\n\n"
+                                "How this app reads it: his own domicile is Aries or Scorpio, a domicile of Saturn Capricorn or Aquarius, by sign; "
+                                "the nativity's being nocturnal or diurnal is the chart's sect as the Chart page states it. The Midheaven is the "
+                                "whole-sign tenth, and \"he would rejoice in his own place\" is quoted, not tested -- the text does not say which "
+                                "place is meant. \"It was already stated\" points back to an earlier passage of the book, not quoted here. The fortune's "
+                                "aspect on \"a Mars so disposed\" is quoted above and not tested. The paragraph is about Mars alone; no other planet "
+                                "is read here.")
             st.subheader('Topical Planets in Houses', help="Each planet's whole-sign house placement with BOTH readings for that pairing, good and bad, as the TNAC Reference Guide for the Planets and Places (Dykes, 2023) summarises them: its Rhetorius column from Rhetorius Ch. 57 and Firmicus, Mathesis III (texts not in hand; the Guide's summary is the witness), its PN IV column from Book II's lord of the year in the places, which the Guide applies to natal planets -- a reading of the Guide's, followed here.")
             st.caption("Rhetorius & PN IV, as the Reference Guide summarises them; the Guide prints ? for the Moon in the sixth and the eighth, and so does this table.")
             st.dataframe(pd.DataFrame(planets_in_houses_data, columns=['Planet', 'Placed in (WS place)', 'Lean']),
