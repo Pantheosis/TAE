@@ -16307,7 +16307,10 @@ if location_query and lat is not None and lon is not None:
         svg_wide = generate_hybrid_svg(chart_data, chart_name, location_query, lat, lon, local_dt, tz_name,
                                        wide=True, chronocrats=chronocrats, bounds=CHART_BOUNDS)
 
-        st.title("Traditional Astrology Engine")
+        # The app's name is the browser title (st.set_page_config) and the
+        # header bar's own; it used to be repeated as an st.title above every
+        # page's st.header, which cost a heading's height on every page and
+        # told the reader nothing the window did not already say.
 
         # --- one finding, at three depths ---------------------------------
         # Provenance used to live in help= because that was the nearest
@@ -16349,6 +16352,36 @@ if location_query and lat is not None and lon is not None:
             if bucket:
                 st.caption("Not present in this chart: " + ", ".join(bucket) + ".")
                 del bucket[:]
+
+        # The strip under every page header: which chart the page is reading.
+        # The app opens on the last chart used, and nothing above the fold
+        # named it except the sidebar's picker and the wheel's hub -- and the
+        # wheel is on one page of nine. One caption, the parts separated by a
+        # middle dot, each formatted as the sidebar's own boxes format it, so
+        # the strip and the sidebar cannot come to disagree.
+        def _chart_strip():
+            picked = st.session_state.get("chart_picker")
+            name = picked if picked and picked != "-- New Chart --" else "Unsaved chart"
+            _sign = "+" if utc_offset_hours >= 0 else "-"
+            _tot = int(round(abs(utc_offset_hours) * 3600))
+            # LMT resolves to the second, as its box prints it; a named zone
+            # and a manual offset resolve to the minute, as theirs do.
+            if time_standard == TIME_STANDARD_OPTIONS[0]:
+                _offset = f"{_sign}{_tot // 3600:02d}:{(_tot % 3600) // 60:02d}:{_tot % 60:02d}"
+            else:
+                _offset = f"{_sign}{_tot // 3600:02d}:{(_tot % 3600) // 60:02d}"
+            # A manual offset's name IS its offset ("UTC+05:00"), so it is not
+            # printed twice.
+            standard = tz_name if tz_name.startswith("UTC") else f"{tz_name} {_offset}"
+            st.caption(" · ".join((
+                str(name),
+                f"{date_string} {input_time:%H:%M:%S}",
+                standard,
+                f"{location_query} {lat:.2f}, {lon:.2f}",
+                sect,
+                f"Day lord {chronocrats['Day Lord']}",
+                f"Hour lord {chronocrats['Hour Lord']}",
+            )))
 
         # Streamlit drops a widget's state when the widget is not rendered
         # on a run, which is why a page-level control resets after
@@ -16443,6 +16476,7 @@ if location_query and lat is not None and lon is not None:
 
         def page_chart():
             st.header("Chart")
+            _chart_strip()
             _readings_note()
             _gap = []
             # Looking at the chart is the primary act, so the wheel comes first.
@@ -16502,7 +16536,7 @@ if location_query and lat is not None and lon is not None:
                       "names its sentence.",
                       "Enter a chart in the sidebar, or load a saved one from the top of it. Part 1 calculates "
                       "the nativity's factors, Part 2 its predictive techniques; the judgment is the "
-                      "astrologer's. The reference tables and the sources are at the foot of the sidebar.")
+                      "astrologer's. The reference tables and the sources are at the end of the page list above.")
             with side_col:
                 if wheel_layout == WHEEL_LAYOUT_OPTIONS[1]:
                     st.caption("  \n".join(_intro))
@@ -16658,6 +16692,7 @@ if location_query and lat is not None and lon is not None:
         # does not name after those, the oldest first.
         def page_findings():
             st.header("Findings")
+            _chart_strip()
             st.caption("Part 1: the nativity. The delineations the texts read off the chart already cast -- "
                        "Sahl's own findings first, then the supplement's -- each under the sentence it applies. "
                        "Nothing here is scored; the judgment is the astrologer's.")
@@ -16774,6 +16809,7 @@ if location_query and lat is not None and lon is not None:
 
         def page_dignities():
             st.header("Dignities and places")
+            _chart_strip()
             _readings_note()
             st.subheader('Lordship Mapping', help="The domicile, exaltation, triplicity, term (bound), and face ruler of each planet's OWN degree -- the five essential dignities, read at the planet's own position rather than another point.")
             triplicity_key = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
@@ -16891,6 +16927,7 @@ if location_query and lat is not None and lon is not None:
 
         def page_configurations():
             st.header("Configurations")
+            _chart_strip()
             _readings_note()
             _gap = []
             # The connection rule and the fitting infortune govern tables on every
@@ -17199,6 +17236,7 @@ if location_query and lat is not None and lon is not None:
 
         def page_lots():
             st.header("Lots")
+            _chart_strip()
             _readings_note()
             st.subheader('Classical Lots', help='Lots: sect-dependent formulas combining two planets or points with the Ascendant to derive a new sensitive degree tied to a specific topic (e.g. Fortune = body/livelihood, Spirit = mind/action).')
             # Formula from the same LOT_DEFINITIONS text the Topical Lots
@@ -17237,6 +17275,7 @@ if location_query and lat is not None and lon is not None:
                 st.markdown('The STANDING column records his editorial position in his own words where he states one.\n\nFour kinds of case. SAHL HIMSELF RULES: of the two sibling Lots, "both of the Lots are correct, so work with them both together" (3.11, 4) -- neither is subordinate. DYKES NAMES HIS CHOICE: of the three witnesses to the Lot of enemies, "I have used M here"; on the night reversal of the Saturn-Moon work Lot, "Paul instructs us to reverse it by night, but Abu Ma\'shar says not to. We should follow Paul." DYKES MARKS ONE STANDARD: on children, "the usual calculation ... is that of Hermes." DYKES ONLY TABULATES: three Lots for work, after noting that "Sahl quietly switches to Masha\'allah\'s treatise on Lots ... without telling us that the formula is different."\n\nEvery formula is taken from the running prose or a footnote, never from one of the summary tables.\n\nThe Lot of death is projected from Saturn: STATED by Abu Ma\'shar (Gr. Intr. VIII.4, 226; VIII.6, 69), and Sahl 8.6, 1 as printed agrees, his manuscripts reading the Ascendant (fn 89, with Masha\'allah\'s manuscripts and Dorotheus for Saturn). A stated rule with a manuscript variant, not an emendation.')
         def page_victors():
             st.header("Lunation and victors")
+            _chart_strip()
             st.subheader('Prenatal Lunation (Syzygy)', help='The New or Full Moon before birth: its degree, its natal place, the five lords of the degree and the governor among them (Sahl, On Nativities 1.7, 3-7), with this app\'s approximation and the almuten beside it.')
             r = syzygy['rulers']
             triplicity_str = (
@@ -17315,6 +17354,7 @@ if location_query and lat is not None and lon is not None:
                 st.markdown('The first five rows score each planet\'s essential-dignity claim AT THAT POINT\'S degree -- Sun, Moon, Ascendant, Lot of Fortune, and the prenatal New/Full Moon. Then Lord of the Day (+7), Lord of the Hour (+6) and Places are added ONCE each, not per point; Places is keyed the other way round, by the candidate planet\'s own whole-sign house. Every column is summed into Totals, and the single highest total is the chart\'s victor.\n\nTWO INDEPENDENT AXES, and all four combinations are shown. The dignity weights are Older (al-Tabari/Masha\'allah, Bound 3 > Triplicity 2) or Newer (al-Qabisi/Abu Ma\'shar, Triplicity 3 > Bound 2); the Places wheel is ibn Ezra\'s own or Masha\'allah\'s. The "Older" attribution is kept as its source prints it; the one passage in these texts that gives \'Umar\'s weights -- Abu Bakr, On Nativities II.5.14, through al-\'Anbas -- has triplicity 3 and bound 2, the "Newer" order; al-Qabisi knows the other order without naming its authors ("certain people put the bound before the triplicity", Introduction I.22), so only the attribution is unwitnessed here. Nothing in the source says which wheel goes with which weighting, so pairing each with the wheel of its own named tradition is a reading, not a fact -- those two are labelled "matched preset" and the two off-diagonal combinations, previously not computed at all, are shown beside them. Where all four agree the victor is robust; where they part, the disagreement is the finding. Ibn Ezra\'s later victor #2 (1507) replaces the two chronocrator rows with a Superiors row scored only for Saturn, Jupiter and Mars; its weight is stated in no text in hand, so it is not implemented rather than guessed.')
         def page_timing():
             st.header("Timing")
+            _chart_strip()
             st.caption("Part 2: prediction. Every rule on this page comes from Abu Ma'shar, "
                        "*On the Revolutions of the Years of Nativities* (*Persian Nativities* IV), "
                        "cited as Book.chapter, sentence -- except the releaser and the house-master, which "
@@ -18660,6 +18700,7 @@ if location_query and lat is not None and lon is not None:
 
         def page_sources():
             st.header("Sources and readings")
+            _chart_strip()
             st.caption("What the app reads from, how it can be read, and what it does not cover.  \n"
                        "**How citations are written.** A locator names its volume, never the author alone: "
                        "*Sahl, The Introduction Ch. 3, 85* and *Sahl, On Nativities 1.22, 9*; *Gr. Intr. VII.6, 27* "
@@ -18771,6 +18812,7 @@ if location_query and lat is not None and lon is not None:
         # page, lesson-tagged, that reads no chart.
         def page_reference():
             st.header("Reference tables")
+            _chart_strip()
             st.caption("The reference tables, printed from the data this app computes with. Nothing on this "
                        "page reads the chart in the sidebar.")
 
@@ -18880,6 +18922,15 @@ if location_query and lat is not None and lon is not None:
 
         pages = {
             "Part 1: the nativity": [
+                # The default page is served at the ROOT path, never at
+                # /chart: Page.url_path returns "" when default is set, and
+                # st.navigation registers that empty pathname, so /chart is not
+                # a route and the browser falls back to root. url_path= stays
+                # all the same, because Page._script_hash is calc_hash of the
+                # PRIVATE _url_path, which keeps the string it was given: it is
+                # the page's identity inside the app (and the string the
+                # regression harness hashes to select this page). Dropping it
+                # would rename the page to "page_chart" for no gain.
                 st.Page(page_chart, url_path="chart", title="Chart", icon=":material/explore:", default=True),
                 st.Page(page_dignities, url_path="dignities", title="Dignities and places", icon=":material/shield:"),
                 st.Page(page_findings, url_path="findings", title="Findings", icon=":material/menu_book:"),
@@ -18895,7 +18946,11 @@ if location_query and lat is not None and lon is not None:
                 st.Page(page_sources, url_path="sources", title="Sources and readings", icon=":material/menu_book:"),
             ],
         }
-        st.navigation(pages, position="sidebar", expanded=True).run()
+        # The page list is a header bar across the top, not the first thing in
+        # the sidebar: the sidebar is the nativity form, and it opens on the
+        # Date field with Save inside the fold. expanded= is read only when
+        # position="sidebar", so it goes with the move.
+        st.navigation(pages, position="top").run()
 
     else:
         st.sidebar.error("Timezone boundary not found for coordinates.")
