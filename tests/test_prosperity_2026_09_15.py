@@ -343,6 +343,6 @@ def test_force_and_injustice_and_the_supplement_flag(engine):
 
 def test_the_chart_page_renders_the_finding_with_its_four_columns():
     from conftest import make_app, assert_no_exception, table_inventory
-    at = make_app(page="chart").run()
-    assert_no_exception(at, "chart")
+    at = make_app(page="findings").run()
+    assert_no_exception(at, "findings")
     assert ("Fortune and livelihood: the seven classes (Sahl)", COLUMNS) in table_inventory(at)

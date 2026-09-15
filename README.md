@@ -25,6 +25,10 @@ and survive updates.
   the special degrees, the prenatal lunation, sect, the lords of the day and hour.
 - **Dignities and places** — the essential dignities at each planet's own degree, sect and
   domain, planets in the places and the lords of the places with their delineations.
+- **Findings** — the delineations read off the cast chart: the fetus's stay, the Moon on the
+  third day, Sahl's seven classes of fortune and livelihood, and, under the fuller reading
+  depth, Mars by sect, the Moon's phases, Mercury's phase, Rhetorius's afflictions, Morin's
+  aspect rules and the places harming the eyesight. Each cites its sentence; none is scored.
 - **Configurations** — Sahl's connections, receptions and their refusals, the handing-over,
   prevented connections, strength and weakness, the corruption of the Moon; Abū Ma'shar's
   planetary conditions (Gr. Intr. VII) beside them, and the forward-looking conditions
