@@ -10049,6 +10049,364 @@ def sahl_house_master_years(planet, planetary_data, cusps, sect, essential):
             'division': q, 'facts': {'share': share, 'eastern': east, 'westernizing': west, 'retrograde': retro,
                                      'under the rays': rays, 'fall': fall}, 'readings': SAHL_1_20_READINGS}
 
+# --- Sahl, On Nativities 1.29, 11-12 and 1.26, 7: the Moon on the third day; 1.8-1.9: the fetus's stay ---
+# Two course-text findings (reconciliation decision 18, 2026-09-15), DISPLAY
+# ONLY: nothing scores either. Sahl is canon, so neither is gated by the
+# reading depth.
+#
+# THE THIRD DAY. "The third day of the Moon" (1.29, 11-12; 1.26, 7) is
+# read as the Moon's position three days after the birth moment, the
+# birth hour kept: Sahl's own words elsewhere are "the position of the
+# Moon, where she is on the third day from the nativity" (Ch. 9, 3) and
+# "the position of the Moon on the third day, the seventh, and the
+# fortieth day" (1.30, 22); no sentence fixes the hour. "Corrupted" is
+# read in 1.29's own terms, 1.29, 3: "safe from the infortunes, burning,
+# and falling" -- an infortune looking at her by whole sign (the
+# infortunes where they stand on that day), burned within the twelve
+# degrees the app already uses for the Moon (The Introduction Ch. 3,
+# 103), or falling from the stakes by the whole-sign place from the
+# Ascendant OF THE NATIVITY (1.30, 33 asks "how is her position relative
+# to the Ascendant"). 1.26, 7's four-footed sign is 1.38, 1's list
+# (FOUR_FOOTED['On Nativities']; the second half of Sagittarius). 1.29,
+# 12's "the two infortunes were in the Ascendant or seventh" is read as
+# both natal infortunes in the whole-sign first or seventh place; 1.29,
+# 11's antecedents (the triplicity lords corrupted, a fortune in a
+# stake) are not tested here -- the Timing page carries the upbringing
+# lords -- and the row says so.
+#
+# THE FETUS'S STAY. 1.8, 5-6 are computable: the meeting before the birth
+# (the last New Moon; Dykes's fn 40 allows the lunation generally, so the
+# nearer opposition is shown when that is what preceded the birth) and
+# the Ascendant erected for its hour at the birthplace. 1.8, 3-4's three
+# divisions are framed "from the degree of the Ascendant" of a chart the
+# sentence does not name; Dykes reads it as the pre-conception lunation
+# (fn 38 and his comment), which no sentence of 1.8 shows how to find, so
+# the divisions and 7-13 are not computed and the rows say so. 1.9, 1-10
+# are computed as written: the Moon of the nativity, the Moon a year
+# before ("the past Moon") and a year after ("the renewed Moon"), the
+# year read as the calendar anniversary at the birth hour (the app's
+# reading; a Julian year of 365.25 days only where the anniversary's
+# digits name no day), the aspects whole-sign. 1.9, 11 needs the meeting
+# of the conception and 12-13 the stay itself, neither in hand before
+# 1.10: presented, not computed.
+SAHL_1_29_3 = ("For if they were safe from the infortunes, burning, and falling, then the native will be brought up "
+               "and will reach [his] lifespan; and if they were corrupted, it destroys and he will not be brought up.")
+SAHL_1_29_11 = ("And if you found the lords of the triplicities of the Ascendant in the stakes and what follows them, "
+                "then the native will be brought up; now if the lords of its triplicity were corrupted and there was "
+                "a fortune in a stake, and the third day of the Moon not corrupted, then he will be brought up.")
+SAHL_1_29_12 = ("And if the two infortunes were in the Ascendant or seventh, and the third day of the Moon corrupted, "
+                "he will not be brought up; and likewise if you found the two infortunes in the Ascendant and the "
+                "seventh, and the lords of the triplicities [of the Ascendant] withdrawing from the stakes, and they "
+                "are <not> looking at the Ascendant, he will not be brought up.")
+SAHL_1_29_13 = ("And if the lords of the triplicity of the Ascendant were corrupted and the Moon safe, as well as her "
+                "third, and the Lot of Fortune and the third lord of the triplicity, he will be brought up.")
+SAHL_1_29_FN303 = ("This could possibly also be translated as, \"...in a stake, and not corrupted on the third day,\" "
+                   "in other words, it is the fortune which is not corrupted on that day. But it is more likely that "
+                   "the Moon's own condition is meant, as in Carmen I.12, and in Ch. 1.30, 28 below.")
+SAHL_1_29_FN304 = "This probably means her third day."
+SAHL_1_26_7 = ("And if the third day of the Moon she reached a sign having four feet, and the infortunes are looking "
+               "at her, then that is an indicator that the native will have four feet or what resembles that.")
+SAHL_1_38_1 = ("The signs having two feet and four: Gemini, Libra, and Aquarius have two feet; Aries, Leo, Taurus "
+               "have four feet; and the <first> half of Sagittarius has two feet, and the other has four feet.")
+SAHL_9_3 = ("The first item is that you look at the position of the Moon, where she is on the third day from the "
+            "nativity, and who is looking at her (of the fortunes and infortunes), and in which sign she is, and "
+            "which bound, and with whom she is connecting and who is looking at her, and how her condition is, and "
+            "that of her lord.")
+SAHL_1_30_22 = "Then, look at the position of the Moon on the third day, the seventh, and the fortieth day."
+MOON_THIRD_DAY_DAYS = 3.0
+MOON_BURNED_DEGREES = 12.0    # The Introduction Ch. 3, 103, as evaluate_corruption_of_the_moon reads it
+MOON_THIRD_DAY_COLUMNS = ['Item', 'Value', 'Text']
+
+SAHL_1_8_1 = ("Now indeed the indicators will be corrupted if the native was one of seven months (and likewise "
+              "nativities having four feet): the amount of the stay in the belly will not be adequate, because "
+              "animals are those whose stay is one month, five months, and more than that and less, and the "
+              "indicator will not be suitable unless for one born in nine months.")
+SAHL_1_8_3 = ("Know that the degrees of the circumference of the circle are 360, and they are divided into three "
+              "sections; you start with the first division from the degree of the Ascendant up to the degree of "
+              "the Midheaven, to the degree of the eighth, [then] to the degree of the stake of the earth, [then] "
+              "to the degree of the Ascendant.")
+SAHL_1_8_4 = ("And this dividing is made according to equal degrees which belong to the belt [of the zodiac]: so "
+              "the first division is 150°, the second division 120°, and the third division 90°.")
+SAHL_1_8_5 = ("Then calculate the meeting of the Sun and Moon which was before the native was born, in the month "
+              "in which he was born, until you know in which sign it was, and which degree and minute.")
+SAHL_1_8_6 = ("Then erect the degree of the Ascendant for that hour, and the Ascendant of the meeting will be at "
+              "that time.")
+SAHL_1_8_FN38 = "That is, of the pre-natal conception (according to Hephaistion)."
+SAHL_1_8_FN40 = ("Or rather the lunation, whether it was a conjunction or opposition (assuming that Hephaistion does "
+                 "not insist on only a conjunction).")
+SAHL_1_8_COMMENT = ("It also omits to say in which chart the template is applied, but we will assume it is the "
+                    "pre-conception lunation, as with Hephaistion")
+SAHL_1_9_1 = ("Look at the Moon on the day the native was born, and erect her [position] by one year before that "
+              "and a year after it; then look at these three stakes:")
+SAHL_1_9_FN45 = ("This will yield three Moons: the rough Moon on the day of birth, the Moon exactly one year "
+                 "before, and the Moon exactly one year after (the \"renewed\" Moon).")
+SAHL_1_9_RULES = (
+    (2, "For if the past Moon and the renewed Moon are looking at the Moon of the nativity from the trine, then "
+        "the native will be complete at nine months."),
+    (3, "And if the two Moons are looking at the Moon of the nativity from a square, then the native will be born "
+        "at the shorter period, which is 258 days."),
+    (4, "And if the past Moon was in its trine and the renewed Moon in its square, then the nativity belongs to "
+        "the middle period; and likewise if [the situation] was reversed."),
+    (5, "And if the past Moon was in the square of the Moon of the nativity, and the renewed Moon is not looking "
+        "at the Moon of the nativity, then the native will be one of eight months, and will not survive, and "
+        "will come out dead."),
+    (6, "And if the first Moon opposed it and the second Moon was turned away from it, it indicates the shortness "
+        "of [its] survival."),
+    (7, "And if the two Moons were not looking at the Moon of the nativity, then the native will come out dead, "
+        "and harsh misfortune will afflict the mother."),
+    (8, "And if each one of the two Moons were in the seventh from the Moon of the nativity, then the native will "
+        "be one of seven months."),
+    (9, "And if the past Moon was in the seventh from the Moon of the nativity, and the renewed one in the trine "
+        "of the Moon or Ascendant [of the nativity], then it will also be one of seven months."),
+    (10, "And likewise [it is seven months] if the first Moon was in its trine or square, and the second Moon in "
+         "its opposite."),
+)
+SAHL_1_9_11 = "And likewise if the Sun was in the seventh from the sign of the meeting of the conception."
+SAHL_1_9_12 = ("And know that a native whose stay in the womb is greater than the second stay, up to the third, "
+               "will be superior in his body and growth: for example, growing fleshier in the face and body.")
+SAHL_1_9_13 = ("And those whose stay is more than the first stay up to the second one, their bodies will have "
+               "decrease and weakness.")
+SAHL_1_9_14 = ("Now once you knew that the native was one of nine months, then you ought to know the day and hour "
+               "in which the planting [of the sperm] takes place in the womb, and how long the stay is in the "
+               "belly of its mother, by the day and hour; and the knowledge of that is according to what I will "
+               "explain to you.")
+SAHL_1_9_FN47 = "Valens specifies 269 days."
+SAHL_1_9_FN49 = "Valens has the trine here."
+SAHL_1_9_FN51 = ("In this sentence Sahl or his source has combined two thoughts in Valens that indicate seven "
+                 "months. The first has the past Moon opposing, the renewed Moon squaring the natal Moon and "
+                 "Ascendant (as a continuation of 9). The second has the past Moon squaring, the renewed Moon "
+                 "opposing.")
+SAHL_1_9_FN53 = "Valens does not specify which meeting it is, but this seems to be the only option."
+SAHL_1_9_FN54 = "That is, between a normal term (273 days) and the greater term (288 days)."
+SAHL_1_9_FN55 = "That is, early term (258) to normal term (273)."
+GESTATION_COLUMNS = ['Item', 'Value', 'Text']
+GESTATION_NOT_COMPUTED = "Not computed"
+
+
+def _ordinal_place(n):
+    return f"{n}{'th' if 11 <= n % 100 <= 13 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
+
+
+def sign_has_four_feet(lon):
+    """1.38, 1's list (FOUR_FOOTED['On Nativities']): the whole sign, or the
+    second half of Sagittarius (15° on). Returns the list's word or None."""
+    sign = get_zodiac_sign(lon)
+    part = FOUR_FOOTED['On Nativities'].get(sign)
+    if part is None:
+        return None
+    if part == 'the second half' and (lon % 30.0) < 15.0:
+        return None
+    return part
+
+
+def third_day_positions(jd_natal):
+    """The Moon, the Sun and the two infortunes three days after the birth
+    moment (MOON_THIRD_DAY_DAYS), the birth hour kept."""
+    jd = jd_natal + MOON_THIRD_DAY_DAYS
+    out = {'jd': jd}
+    for name in ('Moon', 'Sun', 'Saturn', 'Mars'):
+        out[name] = swe.calc_ut(jd, PLANET_SWE_IDS[name])[0][0] % 360.0
+    return out
+
+
+def moon_third_day_rows(third, natal_positions, ascendant_lon):
+    """The rows of the finding from positions already in hand: `third` has
+    the Moon, Sun, Saturn and Mars on the third day; `natal_positions`
+    the natal Saturn and Mars (for 1.29, 12's first clause);
+    `ascendant_lon` the Ascendant of the nativity. Pure, so a test can
+    hand-build a case."""
+    moon = third['Moon'] % 360.0
+    sign = get_zodiac_sign(moon)
+    place = get_wsh_house(moon, ascendant_lon)
+    rows = []
+    rows.append({'Item': 'The Moon on the third day',
+                 'Value': f"{get_degree_string(moon)}, the {_ordinal_place(place)} place from the Ascendant of the nativity "
+                          f"(three days after the birth, the birth hour kept)",
+                 'Text': f'On Nativities 9, 3: "{SAHL_9_3}"'})
+    feet = sign_has_four_feet(moon)
+    rows.append({'Item': 'A sign having four feet (1.26, 7)',
+                 'Value': (f"Yes: {sign}, {feet}" if feet else f"No: {sign} is not in 1.38, 1's list"
+                           + (" (the first half of Sagittarius has two feet)" if sign == 'Sagittarius' else "")),
+                 'Text': f'On Nativities 1.38, 1: "{SAHL_1_38_1}"'})
+    looking = []
+    for inf in ('Saturn', 'Mars'):
+        how = _sahl_looks(third[inf], moon)
+        if how is not None:
+            looking.append(f"{inf} {'with her in ' + sign if how == 'in it' else 'by ' + how + ' from ' + get_zodiac_sign(third[inf])}")
+    rows.append({'Item': 'The infortunes looking at her (1.26, 7; 1.29, 3)',
+                 'Value': ("Yes: " + "; ".join(looking) if looking
+                           else f"No: Saturn in {get_zodiac_sign(third['Saturn'])} and Mars in {get_zodiac_sign(third['Mars'])} "
+                                f"are both in aversion to {sign}") + " (whole sign, the infortunes where they stand on that day)",
+                 'Text': f'On Nativities 1.26, 7: "{SAHL_1_26_7}"'})
+    sun_dist = abs(((moon - third['Sun'] + 180.0) % 360.0) - 180.0)
+    burned = sun_dist <= MOON_BURNED_DEGREES
+    rows.append({'Item': 'Burning (1.29, 3)',
+                 'Value': (f"Yes: {sun_dist:.1f}° from the Sun, within {MOON_BURNED_DEGREES:.0f}°" if burned
+                           else f"No: {sun_dist:.1f}° from the Sun (burned within {MOON_BURNED_DEGREES:.0f}°, The Introduction Ch. 3, 103)"),
+                 'Text': f'On Nativities 1.29, 3: "{SAHL_1_29_3}"'})
+    falling = place in CADENT_HOUSES
+    rows.append({'Item': 'Falling (1.29, 3)',
+                 'Value': (f"Yes: the {_ordinal_place(place)} place from the Ascendant of the nativity, falling from the stakes"
+                           if falling else f"No: the {_ordinal_place(place)} place from the Ascendant of the nativity"),
+                 'Text': 'On Nativities 1.30, 33 asks "how is her position relative to the Ascendant"; the place is whole-sign.'})
+    reasons = ((["an infortune looking (" + "; ".join(looking) + ")"] if looking else [])
+               + (["burned"] if burned else []) + (["falling"] if falling else []))
+    corrupted = bool(reasons)
+    rows.append({'Item': "Corrupted, in 1.29, 3's terms",
+                 'Value': ("Corrupted: " + "; ".join(reasons) if corrupted
+                           else "Not corrupted: no infortune looking, not burned, not falling"),
+                 'Text': f'On Nativities 1.29, 13: "{SAHL_1_29_13}" (fn 304: "{SAHL_1_29_FN304}")'})
+    rows.append({'Item': '1.26, 7, the native with four feet',
+                 'Value': ("Met: a sign having four feet, and " + "; ".join(looking) + " -- 1.26, 7's indicator, one among the chapter's"
+                           if feet and looking
+                           else "Not met: " + ("no infortune looking at her" if feet else "the sign has no four feet")),
+                 'Text': f'On Nativities 1.26, 7: "{SAHL_1_26_7}"'})
+    rows.append({'Item': '1.29, 11, the third day not corrupted',
+                 'Value': (("Holds: the third day of the Moon not corrupted" if not corrupted
+                            else "Does not hold: the third day of the Moon corrupted")
+                           + "; the lords of the triplicity and the fortune in a stake are not tested here"),
+                 'Text': f'On Nativities 1.29, 11: "{SAHL_1_29_11}" (fn 303: "{SAHL_1_29_FN303}")'})
+    in_asc_or_seventh = [inf for inf in ('Saturn', 'Mars') if get_wsh_house(natal_positions[inf], ascendant_lon) in (1, 7)]
+    both = len(in_asc_or_seventh) == 2
+    nat_places = ", ".join(f"{inf} in the {_ordinal_place(get_wsh_house(natal_positions[inf], ascendant_lon))}" for inf in ('Saturn', 'Mars'))
+    rows.append({'Item': '1.29, 12, the two infortunes in the Ascendant or seventh with the third day corrupted',
+                 'Value': (("Met: " if both and corrupted else "Not met: ")
+                           + f"the two infortunes {'in' if both else 'not both in'} the Ascendant or seventh ({nat_places}, whole-sign places of the nativity); "
+                           + ("the third day corrupted" if corrupted else "the third day not corrupted")),
+                 'Text': f'On Nativities 1.29, 12: "{SAHL_1_29_12}"'})
+    return rows
+
+
+def evaluate_moon_third_day(chart_data):
+    """The Moon on the third day (Sahl, On Nativities 1.29, 11-12; 1.26, 7):
+    rows for her sign and condition three days after the birth. Display
+    only."""
+    third = third_day_positions(chart_data['julian_day'])
+    p = chart_data['planetary_data']
+    natal = {'Saturn': p['Saturn']['longitude'], 'Mars': p['Mars']['longitude']}
+    return moon_third_day_rows(third, natal, chart_data['ascendant'])
+
+
+def _anniversary_jd(jd, years):
+    """The calendar anniversary of a UT moment, the hour kept: the same
+    digits with the year moved (the app's reading of 1.9, 1's "one year");
+    a Julian year of 365.25 days where the digits name no day."""
+    c = CivilMoment.from_jd(jd)
+    if civil_is_valid(c.year + years, c.month, c.day):
+        return civil_to_jd(c.year + years, c.month, c.day, c.hour_decimal())
+    return jd + years * 365.25
+
+
+def gestation_moons(jd_natal):
+    """1.9, 1's three Moons: the Moon of the nativity, the past Moon a year
+    before, the renewed Moon a year after."""
+    out = {}
+    for key, years in (('natal', 0), ('past', -1), ('renewed', 1)):
+        jd = jd_natal if years == 0 else _anniversary_jd(jd_natal, years)
+        out[key] = {'jd': jd, 'longitude': swe.calc_ut(jd, swe.MOON)[0][0] % 360.0}
+    return out
+
+
+def _looks_phrase(how):
+    if how is None:
+        return 'not looking (in aversion)'
+    if how == 'in it':
+        return 'in her sign'
+    return f'from the {how}' if how != 'opposition' else 'from the seventh (the opposition)'
+
+
+def gestation_1_9_rows(natal_moon, past_moon, renewed_moon, ascendant_lon):
+    """1.9, 1-10 read from three longitudes and the Ascendant of the
+    nativity, the aspects whole-sign. Pure, so a test can hand-build a case."""
+    past, renewed = _sahl_looks(past_moon, natal_moon), _sahl_looks(renewed_moon, natal_moon)
+    renewed_asc = _sahl_looks(renewed_moon, ascendant_lon)
+    natal_sign = get_zodiac_sign(natal_moon)
+    rows = [
+        {'Item': 'The Moon of the nativity (1.9, 1)',
+         'Value': f"{get_degree_string(natal_moon)}",
+         'Text': f'On Nativities 1.9, 1: "{SAHL_1_9_1}" (fn 45: "{SAHL_1_9_FN45}")'},
+        {'Item': 'The past Moon, a year before (1.9, 1)',
+         'Value': f"{get_degree_string(past_moon)}, {_looks_phrase(past)} at {natal_sign} "
+                  f"(the calendar anniversary at the birth hour, the app's reading of the year)",
+         'Text': f'fn 45: "{SAHL_1_9_FN45}"'},
+        {'Item': 'The renewed Moon, a year after (1.9, 1)',
+         'Value': f"{get_degree_string(renewed_moon)}, {_looks_phrase(renewed)} at {natal_sign}"
+                  + (f"; from the trine of the Ascendant ({get_zodiac_sign(ascendant_lon)})" if renewed_asc == 'trine' else ""),
+         'Text': f'fn 45: "{SAHL_1_9_FN45}"'},
+    ]
+    hits = {
+        2: past == 'trine' and renewed == 'trine',
+        3: past == 'square' and renewed == 'square',
+        4: (past == 'trine' and renewed == 'square') or (past == 'square' and renewed == 'trine'),
+        5: past == 'square' and renewed is None,
+        6: past == 'opposition' and renewed is None,
+        7: past is None and renewed is None,
+        8: past == 'opposition' and renewed == 'opposition',
+        9: past == 'opposition' and (renewed == 'trine' or renewed_asc == 'trine'),
+        10: past in ('trine', 'square') and renewed == 'opposition',
+    }
+    verdicts = {2: 'complete at nine months', 3: 'the shorter period, which is 258 days',
+                4: 'the middle period (fn 47: "' + SAHL_1_9_FN47 + '")',
+                5: 'one of eight months, and will not survive, and will come out dead',
+                6: 'the shortness of [its] survival (fn 49: "' + SAHL_1_9_FN49 + '")',
+                7: 'will come out dead, and harsh misfortune will afflict the mother',
+                8: 'one of seven months', 9: 'one of seven months',
+                10: 'seven months (fn 51: "' + SAHL_1_9_FN51 + '")'}
+    matched = False
+    for n, text in SAHL_1_9_RULES:
+        if hits[n]:
+            matched = True
+            rows.append({'Item': f'1.9, {n}', 'Value': f"Met: {verdicts[n]}", 'Text': f'On Nativities 1.9, {n}: "{text}"'})
+    if not matched:
+        rows.append({'Item': '1.9, 2-10',
+                     'Value': f"No sentence names this pair: the past Moon {_looks_phrase(past)}, the renewed Moon {_looks_phrase(renewed)}",
+                     'Text': 'On Nativities 1.9, 2-10 name the trine, the square, the seventh and not looking; the sextile and her own sign are not named.'})
+    rows.append({'Item': '1.9, 11, the meeting of the conception',
+                 'Value': f"{GESTATION_NOT_COMPUTED}: the sign of the meeting of the conception is not in hand before 1.10",
+                 'Text': f'On Nativities 1.9, 11: "{SAHL_1_9_11}" (fn 53: "{SAHL_1_9_FN53}")'})
+    rows.append({'Item': '1.9, 12-13, the three stays',
+                 'Value': f"{GESTATION_NOT_COMPUTED}: the stay itself is found by 1.10; the terms are fn 54's and fn 55's",
+                 'Text': f'On Nativities 1.9, 12-13: "{SAHL_1_9_12} {SAHL_1_9_13}" (fn 54: "{SAHL_1_9_FN54}"; fn 55: "{SAHL_1_9_FN55}"). 1.9, 14: "{SAHL_1_9_14}"'})
+    return rows
+
+
+def evaluate_gestation(chart_data, lat=None, lon=None):
+    """The fetus's stay (Sahl, On Nativities 1.8-1.9): what the two chapters
+    let the app state. Display only."""
+    jd = chart_data['julian_day']
+    lat = chart_data.get('geo_lat') if lat is None else lat
+    lon = chart_data.get('geo_lon') if lon is None else lon
+    lunations = sahl_prenatal_meeting_and_fullness(jd, lat, lon)
+    meeting = lunations['meeting']
+    _, ascmc = swe.houses(meeting['jd'], lat, lon, b'B')
+    rows = [
+        {'Item': 'The meeting before the birth (1.8, 5)',
+         'Value': f"The last New Moon before the birth: {get_degree_string(meeting['longitude'])}",
+         'Text': f'On Nativities 1.8, 5: "{SAHL_1_8_5}"'},
+        {'Item': 'The Ascendant of the meeting (1.8, 6)',
+         'Value': f"{get_degree_string(ascmc[0])}, erected for the hour of the meeting at the birthplace",
+         'Text': f'On Nativities 1.8, 6: "{SAHL_1_8_6}"'},
+    ]
+    fullness = lunations['fullness']
+    if fullness['jd'] > meeting['jd']:
+        _, ascmc_f = swe.houses(fullness['jd'], lat, lon, b'B')
+        rows.append({'Item': 'The lunation nearer the birth, an opposition (fn 40)',
+                     'Value': f"The Full Moon after that meeting: {get_degree_string(fullness['longitude'])} "
+                              f"(the degree of {fullness['degree_of']}), its Ascendant {get_degree_string(ascmc_f[0])}",
+                     'Text': f'Dykes, fn 40: "{SAHL_1_8_FN40}"'})
+    rows.append({'Item': 'The three divisions (1.8, 3-4) and their reading (1.8, 7-13)',
+                 'Value': f"{GESTATION_NOT_COMPUTED}: the divisions are framed from the degree of the Ascendant of a chart "
+                          f"the sentence does not name; Dykes reads it as the pre-conception lunation, which no sentence "
+                          f"of 1.8 shows how to find, so 7-13 are not read",
+                 'Text': f'On Nativities 1.8, 3-4: "{SAHL_1_8_3} {SAHL_1_8_4}" (fn 38: "{SAHL_1_8_FN38}"; Dykes\'s comment: "{SAHL_1_8_COMMENT}")'})
+    rows.append({'Item': 'What the indicators presume (1.8, 1)',
+                 'Value': 'The chapter\'s indicators are for one born in nine months',
+                 'Text': f'On Nativities 1.8, 1: "{SAHL_1_8_1}"'})
+    moons = gestation_moons(jd)
+    rows.extend(gestation_1_9_rows(moons['natal']['longitude'], moons['past']['longitude'],
+                                   moons['renewed']['longitude'], chart_data['ascendant']))
+    return rows
+
 # --- Spear-bearing: two stated definitions, DISPLAY ONLY (owner, 2026-09-11, decision sheet row 11 / DEC-D-18) ---
 # A. Right-sidedness, Sahl, On Nativities 2.5, 2-3 ("what is called the
 #    'spear-bearing' of the planets", the chapter head): 2 "If you found one
@@ -14577,6 +14935,8 @@ if location_query and lat is not None and lon is not None:
         special_degrees = evaluate_special_degrees(p_data)
         book_v_degrees_data = evaluate_book_v_degrees(p_data, chart_data['ascendant'], chart_data['lot_of_fortune'], sect)
         nobility_degrees_data = evaluate_nobility_degrees(p_data, chart_data['ascendant'], sect)
+        moon_third_day_data = evaluate_moon_third_day(chart_data)
+        gestation_data = evaluate_gestation(chart_data, lat, lon)
         mercury_phase_sect_data = evaluate_mercury_phase_sect(p_data, sect)
         moon_phase_valens_data = evaluate_moon_phase_valens(p_data)
         morin_aspects_data = evaluate_morin_aspects(p_data, chart_data['houses'], chart_data['ascendant'])
@@ -14925,6 +15285,28 @@ if location_query and lat is not None and lon is not None:
             _finding(_gap, 'Degrees of nobility and rank', 'Sahl, On Nativities 1.38, 39-41 (Figure 57)', nobility_degrees_data,
                       glance='Sahl\'s own table of the degrees in which "the native will reach nobility and rank": a row when the Ascendant, the Sun or the Moon stands in one. Display only; nothing scores it.',
                       notes='On Nativities 1.38, 40-41: "If it happened that a native was born and his Ascendant was one of these degrees, or the Moon and Sun were in the equivalent of these degrees (and that is superior if it was the Sun by day and by night the Moon), then he will reach exaltation and power, or he will rule many lands, by the permission of God." Figure 57 of his volume prints the degrees: Aries 19; Taurus 3; Gemini 13; Cancer 1, 13, 14, 15; Leo 5, 7; Virgo 2, 13, 20; Capricorn 12, 13, 20; Aquarius 12, 20 -- none in Libra, Scorpio, Sagittarius or Pisces. The figure prints bare degrees; this app reads them as ordinals, as Figure 64 prints the same rule\'s degrees -- Dykes\'s own resolution of the tables\' cardinal-or-ordinal inconsistency is the end of the numbered degree, 19 for "the nineteenth" (ITA I.3 fn 23), the point at which the ordinal span tested here ends. The whole table is on the Reference tables page, with al-Qabisi\'s third table of the rule named (ITA VII.9, Figure 118). Abu Ma\'shar states the same rule with a table of his own (Gr. Intr. V.22, 4, Figure 64), twelve signs to its eight, six of those eight disagreeing; it is shown under Course text and supplement, on the Configurations page beside Strength and weakness and on the Reference tables page beside this table.')
+            _finding(_gap, "The Moon on the third day (Sahl)", "Sahl, On Nativities 1.29, 11-12; 1.26, 7", moon_third_day_data,
+                      columns=MOON_THIRD_DAY_COLUMNS, height=_rows_height(len(moon_third_day_data)),
+                      glance="The Moon three days after the birth: her sign and place, whether the sign has four feet (1.26, 7), whether an infortune looks at her, whether she is burned or falling -- \"corrupted\" in 1.29, 3's own terms -- and what 1.29, 11-12 and 1.26, 7 say of that. Display only; nothing scores it.",
+                      notes='On Nativities 1.29, 11: "' + SAHL_1_29_11 + '"\n\n'
+                            '1.29, 12: "' + SAHL_1_29_12 + '"\n\n'
+                            '1.29, 13: "' + SAHL_1_29_13 + '" (fn 304: "' + SAHL_1_29_FN304 + '")\n\n'
+                            'Dykes\'s fn 303 on 11: "' + SAHL_1_29_FN303 + '"\n\n'
+                            '1.26, 7: "' + SAHL_1_26_7 + '"\n\n'
+                            'The third day. No sentence of 1.29 or 1.26 says when "the third day of the Moon" is taken; Sahl\'s words elsewhere are "the position of the Moon, where she is on the third day from the nativity" (9, 3) and "the position of the Moon on the third day, the seventh, and the fortieth day" (1.30, 22). This app reads it as three days after the birth moment, the birth hour kept, and computes the Moon, the Sun and the infortunes there; it is this app\'s reading of the hour.\n\n'
+                            'Corrupted. 1.29, 3 names the corruptions the chapter has in view: "' + SAHL_1_29_3 + '" So the third-day Moon is read as corrupted when an infortune looks at her by whole sign (Saturn and Mars where they stand on that day), when she is burned (within the twelve degrees this app uses for the Moon, The Introduction Ch. 3, 103), or when she is falling from the stakes by the whole-sign place from the Ascendant of the nativity (1.30, 33: "how is her position relative to the Ascendant"). Nothing else of the Moon\'s ten defects is read here.\n\n'
+                            'Four feet. 1.26, 7\'s sign is taken from 1.38, 1: "' + SAHL_1_38_1 + '" -- Aries, Taurus, Leo and the second half of Sagittarius. 1.26, 7 is one indicator among the chapter\'s; the row says met or not met and no more.\n\n'
+                            '1.29, 11 and 12. The row for 11 reports only its last clause, the third day not corrupted; the lords of the triplicity and the fortune in a stake are not tested in this table. The row for 12 reads "the two infortunes were in the Ascendant or seventh" as both natal infortunes in the whole-sign first or seventh place, this app\'s reading, and reports its first clause; the second clause (the lords of the triplicities withdrawing from the stakes) is not tested here.')
+            _finding(_gap, "The fetus's stay (Sahl)", "Sahl, On Nativities 1.8-1.9", gestation_data,
+                      columns=GESTATION_COLUMNS, height=_rows_height(len(gestation_data)),
+                      glance="What 1.8 and 1.9 let this app state of the fetus's stay in the belly: the meeting before the birth and its Ascendant (1.8, 5-6), the three Moons of 1.9, 1 and the sentence of 1.9, 2-10 that names their aspects. 1.8's three divisions are framed from a chart the text does not name and are not computed; the rows say what is not. Display only; nothing scores it.",
+                      notes='On Nativities 1.8, 5-6: "' + SAHL_1_8_5 + ' ' + SAHL_1_8_6 + '" -- the meeting is the last New Moon before the birth; Dykes\'s fn 40 ("' + SAHL_1_8_FN40 + '") allows the lunation generally, so the opposition is shown beside it when that was the lunation nearer the birth. The Ascendant is erected for the hour of the meeting at the birthplace.\n\n'
+                            '1.8, 3-4: "' + SAHL_1_8_3 + ' ' + SAHL_1_8_4 + '" Fn 38 on "the degree of the Ascendant": "' + SAHL_1_8_FN38 + '" Dykes\'s comment: "' + SAHL_1_8_COMMENT + '". The sentence does not name the chart whose Ascendant frames the divisions; the pre-conception lunation is not found by any sentence of 1.8 (the conception is the matter of 1.10); so this app lays out no divisions and does not read 7-13. Dykes also notes that 7-9 disagree with Hephaistion (fnn 41-42) and that 10-13 give three of the six permutations.\n\n'
+                            '1.8, 1: "' + SAHL_1_8_1 + '"\n\n'
+                            '1.9, 1: "' + SAHL_1_9_1 + '" Fn 45: "' + SAHL_1_9_FN45 + '" This app takes the year as the calendar anniversary at the birth hour (a Julian year of 365.25 days only where the anniversary\'s digits name no day), its own reading, and the aspects of the past and renewed Moons to the Moon of the nativity by whole sign; a sentence of 2-10 whose condition holds is a row, and where none holds the row says so.\n\n'
+                            '1.9, 2-10: "' + ' '.join(t for _, t in SAHL_1_9_RULES) + '" (fn 47: "' + SAHL_1_9_FN47 + '"; fn 49: "' + SAHL_1_9_FN49 + '"; fn 51: "' + SAHL_1_9_FN51 + '")\n\n'
+                            '1.9, 11: "' + SAHL_1_9_11 + '" (fn 53: "' + SAHL_1_9_FN53 + '") -- not computed: the meeting of the conception is not in hand.\n\n'
+                            '1.9, 12-14: "' + SAHL_1_9_12 + ' ' + SAHL_1_9_13 + ' ' + SAHL_1_9_14 + '" (fn 54: "' + SAHL_1_9_FN54 + '"; fn 55: "' + SAHL_1_9_FN55 + '") -- the stay by the day and hour is 1.10\'s matter and is not computed here.')
             if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
                 _finding(_gap, "Mercury's phase against the sect (supplement, display only)",
                           "Firmicus, Mathesis III.7, 7-9 and 26-30 (Dykes's fnn 186, 194)", mercury_phase_sect_data,
