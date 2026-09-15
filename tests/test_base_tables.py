@@ -216,12 +216,12 @@ ELEVATION_FIG64 = {
 
 # --- Sahl, On Nativities 1.38, 39-41, Figure 57 (Sahl I, p. 378): his own
 # table of the degrees of nobility and rank, the rule Abu Ma'shar's Figure
-# 64 also states. Eight signs; from the corpus transcription of the figure
-# (on_nativities.md), captured 2026-09-13, not yet read off the page
-# photograph. Course text, always shown.
+# 64 also states. Eight signs; read off the page photograph 2026-09-14
+# (the corpus transcription had Scorpio for the seventh row's Capricorn).
+# Course text, always shown.
 NOBILITY_FIG57 = {
     'Aries': [19], 'Taurus': [3], 'Gemini': [13], 'Cancer': [1, 13, 14, 15],
-    'Leo': [5, 7], 'Virgo': [2, 13, 20], 'Scorpio': [12, 13, 20], 'Aquarius': [12, 20],
+    'Leo': [5, 7], 'Virgo': [2, 13, 20], 'Capricorn': [12, 13, 20], 'Aquarius': [12, 20],
 }
 
 
@@ -229,10 +229,11 @@ def test_nobility_degrees_match_sahl_figure_57(engine):
     assert engine["NOBILITY_DEGREES"] == NOBILITY_FIG57
     assert sum(len(v) for v in NOBILITY_FIG57.values()) == 17
     # The two witnesses to one rule differ: Gemini 13 for 11, Cancer 13 for
-    # 2-3, Virgo and Scorpio 13 where Figure 64 has none, four signs empty.
-    assert set(NOBILITY_FIG57) == set(ELEVATION_FIG64) - {'Libra', 'Sagittarius', 'Capricorn', 'Pisces'}
+    # 2-3, Virgo 13 where Figure 64 has 12, Capricorn without Figure 64's
+    # 14, four signs empty.
+    assert set(NOBILITY_FIG57) == set(ELEVATION_FIG64) - {'Libra', 'Scorpio', 'Sagittarius', 'Pisces'}
     differing = {s for s in NOBILITY_FIG57 if NOBILITY_FIG57[s] != ELEVATION_FIG64[s]}
-    assert differing == {'Gemini', 'Cancer', 'Leo', 'Virgo', 'Scorpio', 'Aquarius'}
+    assert differing == {'Gemini', 'Cancer', 'Leo', 'Virgo', 'Capricorn', 'Aquarius'}
 
 
 def test_nobility_degrees_read_the_ascendant_and_both_luminaries(engine):
