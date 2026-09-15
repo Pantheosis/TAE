@@ -127,7 +127,7 @@ def test_applying_and_kollesis(engine):
     chart = {'Moon': {'longitude': 10.0, 'speed_in_lon': 13.0}, 'Mars': {'longitude': 12.0, 'speed_in_lon': 0.5}}
     rows = _rows(engine, chart)
     assert _of(rows, 'Moon', 'applying to a destructive star')[0]['By'] == 'Mars by conjunction, 2.0° short of exact'
-    assert _of(rows, 'Moon', 'in kollesis')[0]['By'] == 'Mars, 2.0° ahead'
+    assert _of(rows, 'Moon', 'in kollesis')[0]['By'] == 'Mars, 2.0° ahead in Aries'
     chart['Moon']['longitude'] = 5.0
     rows = _rows(engine, chart)
     assert _of(rows, 'Moon', 'applying to a destructive star')[0]['By'] == 'Mars by conjunction, 7.0° short of exact'
@@ -183,11 +183,16 @@ def test_the_1240_chart_runs(engine):
         assert r['Chapter'].startswith('Rhetorius Ch.')
 
 
-def test_kollesis_crosses_a_sign_boundary_as_ch_34_names_degrees_not_signs(engine):
-    # Moon 29 Aries applying to Mars 1 Taurus: two degrees short, different signs.
+def test_kollesis_is_the_same_sign_connection(engine):
+    # Moon 29 Aries applying to Mars 1 Taurus: two degrees short but different
+    # signs -- sun-aphe, not kollesis (Dykes, ITA p. 136): no row.
     pdata = {'Sun': {'longitude': 200.0, 'speed_in_lon': 1.0}, 'Moon': {'longitude': 29.0, 'speed_in_lon': 13.0},
              'Mars': {'longitude': 31.0, 'speed_in_lon': 0.5}, 'Saturn': {'longitude': 300.0, 'speed_in_lon': 0.1},
              'Jupiter': {'longitude': 250.0, 'speed_in_lon': 0.1}, 'Venus': {'longitude': 190.0, 'speed_in_lon': 1.2},
              'Mercury': {'longitude': 210.0, 'speed_in_lon': 1.3}}
+    rows = engine["evaluate_rhetorius_affliction"](pdata, 120.0, 'Diurnal')
+    assert not any(r['Planet'] == 'Moon' and r['Condition'] == 'Afflicted: in kollesis' for r in rows)
+    # the same two degrees inside one sign: Moon 10 Aries, Mars 12 Aries.
+    pdata['Moon']['longitude'] = 10.0; pdata['Mars']['longitude'] = 12.0
     rows = engine["evaluate_rhetorius_affliction"](pdata, 120.0, 'Diurnal')
     assert any(r['Planet'] == 'Moon' and r['Condition'] == 'Afflicted: in kollesis' for r in rows)

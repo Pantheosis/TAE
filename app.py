@@ -1729,8 +1729,9 @@ RHETORIUS_AFFLICTION_CONDITIONS = [
                 'Needs the planet\'s daily motion; a chart without it gives no row.'},
     {'key': 'in kollesis', 'family': 'Afflicted', 'chapter': 'Rhetorius Ch. 27 with Ch. 34 (Holden)',
      'text': 'becomes in kollêsis',
-     'reading': 'By degree, as Ch. 34 defines the word: the planet, the swifter, moving towards Saturn or Mars and not more '
-                'than three degrees short of him, a sign boundary between them notwithstanding (Ch. 34 names degrees, not the sign). '
+     'reading': 'By degree, as Ch. 34 defines the word: the planet, the swifter, moving towards Saturn or Mars in the same sign '
+                'and not more than three degrees short of him. The same sign is the word itself: the Greek distinguishes the '
+                'connection within one sign, kollesis, from that across signs, sun-aphe (Dykes, ITA III.7 comment, p. 136). '
                 'That the other is a malefic is Ch. 27\'s frame ("affliction"), not Ch. 34\'s. Ch. 34 does not add "or by aspect" '
                 'where Chs. 37 and 39 do, so this is read bodily. Needs the planet\'s daily motion.'},
     {'key': 'opposed', 'family': 'Afflicted', 'chapter': 'Rhetorius Ch. 27 (Holden)',
@@ -1852,12 +1853,13 @@ def evaluate_rhetorius_affliction(planetary_data, asc_lon, sect):
                 is_applying, short = _rhetorius_applying(lon, speed, o_lon, o_speed, apart)
                 if is_applying:
                     applying.append(f"{other} by {aspect_name or 'conjunction'}, {short:.1f}° short of exact")
-            if other in INFORTUNES and speed is not None and o_speed is not None and speed > o_speed:
-                # Ch. 34 by degrees alone: the swifter planet behind the
-                # malefic by three degrees or fewer, whatever the sign.
+            if other in INFORTUNES and speed is not None and o_speed is not None and speed > o_speed and apart == 0:
+                # Ch. 34: the swifter planet behind the malefic by three
+                # degrees or fewer, in the same sign -- kollesis is the
+                # same-sign connection (Dykes, ITA p. 136).
                 fwd = (o_lon - lon) % 360.0
                 if fwd <= RHETORIUS_KOLLESIS_DEGREES:
-                    kollesis.append(f'{other}, {fwd:.1f}° ahead')
+                    kollesis.append(f'{other}, {fwd:.1f}° ahead in {sign}')
             # Ch. 26: the other stands in the ninth, tenth or eleventh sign
             # counted from the planet (its right-side trine, square, sextile).
             if ahead in (8, 9, 10):

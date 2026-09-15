@@ -673,3 +673,7 @@ besieging that afflicts is between the malefics (Abbr. IV.21-25; al-Qabisi III.2
 the fortunes is a condition of its own (Gr. Intr. VII.6 as ITA quotes it; BW VIII.76). The row is
 limited to Saturn and Mars, a fourteenth row "enclosed by the fortunes" added under Fortified, the
 sentences quoted in the notes; a third body or ray between breaks either. `LOT`-style count 13 -> 14.
+
+After the ITA rulings audit (entry 31): kollēsis is the same-sign connection -- Dykes distinguishes it
+from sun-aphē across signs (ITA III.7 comment, p. 136) -- so the across-the-boundary reading made
+after the check is reversed; the same sign required again, now with his definition cited.
