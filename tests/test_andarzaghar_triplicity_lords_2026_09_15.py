@@ -58,8 +58,8 @@ def test_lords_by_sect_on_a_hand_built_chart(engine):
     h1, h4 = day[0], day[3]
     assert (h1['Sign'], h1['First lord'], h1['Second lord'], h1['Third lord']) == ('Aries', 'Sun', 'Jupiter', 'Saturn')
     assert (h4['Sign'], h4['First lord'], h4['Second lord'], h4['Third lord']) == ('Cancer', 'Venus', 'Mars', 'Moon')
-    assert h1['Source'] == "al-Qabīsī I.57b (al-Andarzaghar), in ITA I.13"
-    assert h4['Source'] == "al-Qabīsī I.60 (al-Andarzaghar), in ITA I.13"
+    assert h1['Source'] == "al-Qabisi I.57b (al-Andarzaghar), in ITA I.13"
+    assert h4['Source'] == "al-Qabisi I.60 (al-Andarzaghar), in ITA I.13"
     assert h4['Signifies (1st / 2nd / 3rd)'] == "fathers / cities and lands / the ends of matters and prisons"
 
     night = engine["evaluate_andarzaghar_triplicity_lords"](0.0, 'Nocturnal')

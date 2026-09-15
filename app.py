@@ -10730,7 +10730,7 @@ def evaluate_andarzaghar_triplicity_lords(asc_lon, sect):
         entry = ANDARZAGHAR_TRIPLICITY_LORDS[house]
         rows.append({'House': house, 'Sign': sign, 'First lord': first, 'Second lord': second, 'Third lord': third,
                      'Signifies (1st / 2nd / 3rd)': f"{entry['first']} / {entry['second']} / {entry['third']}",
-                     'Source': f"al-Qabīsī {entry['section']} (al-Andarzaghar), in ITA I.13"})
+                     'Source': f"al-Qabisi {entry['section']} (al-Andarzaghar), in ITA I.13"})
     return rows
 
 
@@ -16199,7 +16199,7 @@ if location_query and lat is not None and lon is not None:
                     _andarzaghar_rows = evaluate_andarzaghar_triplicity_lords(chart_data['ascendant'], sect)
                     _andarzaghar_first = ANDARZAGHAR_TRIPLICITY_LORDS[1]['text']
                     _finding([], "The triplicity lords of the twelve houses, al-Andarzaghar (supplement, display only)",
-                             "al-Qabīsī I.57b-68 (al-Andarzaghar), in ITA I.13", _andarzaghar_rows,
+                             "al-Qabisi I.57b-68 (al-Andarzaghar), in ITA I.13", _andarzaghar_rows,
                              glance="For each of the twelve houses, the three lords of its sign's triplicity beside what "
                                     "al-Andarzaghar says each signifies, as al-Qabisi reports him house by house. Display "
                                     "only; nothing scores it, and the lords' conditions are not read.",

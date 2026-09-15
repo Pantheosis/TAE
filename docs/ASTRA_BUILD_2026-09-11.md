@@ -626,7 +626,7 @@ Abu Ma'shar's bare 20° and 22° declared as measured whole degrees; "to fourtee
 
 ## 2026-09-15: al-Andarzaghar's triplicity lords by house (coverage list, gap 9)
 
-Source: al-Qabīsī I.57b-68 as Dykes prints it in ITA I.13 (pp. 71-76, the corpus file's
+Source: al-Qabisi I.57b-68 as Dykes prints it in ITA I.13 (pp. 71-76, the corpus file's
 marker OCR read against the running text, no photograph needed: every al-Andarzaghar sentence
 reads clean; the only oddity is the page break splitting "be-/ginning" at pp. 71-72, and fn
 168's "phrased to as to" typo lies outside the quoted words). `ANDARZAGHAR_TRIPLICITY_LORDS`
