@@ -40,6 +40,22 @@ os.environ.setdefault("XDG_DATA_HOME", str(Path(__file__).parent / ".xdg-scratch
 # themselves delete this variable and point XDG_DATA_HOME at a tmp_path.
 os.environ.setdefault("ALMUTEN_NO_PREFERENCES", "1")
 
+# The fixture writer in test_pages_render.py is session-scoped and collects
+# only the slots its own process rendered. Under xdist every worker is its
+# own session, each writes the slots it happened to get, and the last one to
+# finish overwrites the rest: six charts and eight pages came out as two and
+# three (2026-09-15). So an update run refuses to start with workers.
+def pytest_configure(config):
+    if os.environ.get("UPDATE_TABLE_FIXTURE") != "1":
+        return
+    workers = os.environ.get("PYTEST_XDIST_WORKER") or getattr(config.option, "numprocesses", None)
+    if workers:
+        raise pytest.UsageError(
+            "UPDATE_TABLE_FIXTURE=1 must run without xdist (no -n): each worker would write only "
+            "its own slots to tests/fixtures/tables.json. Run  UPDATE_TABLE_FIXTURE=1 "
+            "python -m pytest tests/test_pages_render.py  (about forty seconds).")
+
+
 # --- Charts and pages ----------------------------------------------------
 # All Florence, LMT, 14:30. Between them they populate the conditional
 # tables that are empty on the default chart.
