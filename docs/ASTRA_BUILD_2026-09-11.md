@@ -685,210 +685,84 @@ III.28b); an enclosure by the fortunes is broken by a malefic body or ray in the
 comment). Both are said on the row rather than dropping it; the besiegers are now found among the
 malefics (or the fortunes) alone, so a third body of another kind neither makes nor breaks either.
 
-## 2026-09-15: the victor weights' "older" label, kept with a note (owner's ruling)
+## 2026-09-15: proportional semi-arcs (decision 5)
 
-The PN II synthesis found the one corpus passage that attributes weights to 'Umar -- Abu Bakr, On
-Nativities II.5.14, through al-'Anbas -- giving triplicity 3, bound 2 (the "newer" order), and Dykes's
-2010 introduction saying the weighted victor is not found in Sahl or Masha'allah. The course prints
-the "older method" as bound 3, triplicity 2. Owner's ruling: keep the course's label as printed, with
-a note on the Victors page and in `VICTOR_WEIGHTS`'s comment citing Abu Bakr II.5.14; the bound-before-triplicity order itself is al-Qabisi's "certain people" (ITA I.22),
-so only the attribution to 'Umar/Masha'allah is unwitnessed (ITA rulings audit, entry 25). No number changes.
+Reconciliation decision 5 (owner): III.1, 12's third case -- "what is not in these three positions is
+directed according to what we stated in our book", the method PN IV defers and Dykes identifies as
+Ptolemy's proportional semi-arcs (fn 16; VI.2, 21 fn 33) -- is built from the two texts in hand that
+state it: al-Qabisi, Introduction IV.11-12 (ITA VIII.2.2b-e, pp. 362-364: the significator's hours
+from the angle, the "significator of the right circle", the "significator of the region", the
+"equation" of a sixth of their difference by the hours) and Dykes's Appendix E (ITA pp. 402-407:
+Gansten's form `PromMD - (SigMD / SigSA) * PromSA = Arc`, which p. 406 shows to be al-Qabisi's with
+the 6 cancelled). The `PN4_SEMIARCS_UNAVAILABLE` sentence is gone from its three sites.
 
-## 2026-09-15: the reconciliation's text fixes (Class 3) and decisions 1-2, 4-8, 10, 12, 15-17, 19-20
+**The method** (`semi_arc_direction(sig_lon, sig_lat, prom_lon, prom_lat, ramc, geo_lat,
+obliquity)`, with `semi_arc_terms` for one point): RA and declination of each point from its
+longitude AND latitude (`swe.cotrans`); ascensional difference `asin(tan phi tan delta)`; diurnal
+semi-arc 90 + AD, nocturnal 180 minus it (closed from one AD, as `_semiarcs`); the signed meridian
+distance from the upper meridian (RA - RAMC, positive east, before culmination) and from the lower;
+the formula, the arc modulo 360; returned with every term for the page. Choices where the texts are
+silent, all in the docstring: (1) MD is SIGNED, positive before the meridian in primary motion, so one
+formula serves every quadrant and Dykes's +24 23' 27" / +5 43' 16" come out as printed; (2) the
+significator's side of the horizon (|MD| <= DSA, the horizon itself counted above) picks the
+meridian and the semi-arcs for BOTH points, the promittor's MD taken from that meridian even when it
+stands on the other side of the horizon -- for a promittor below coming to a significator above this
+equals its rise (OA less the Ascendant's OA) plus its share of its own diurnal arc, proved in the
+tests; (3) direct only: a promittor past the place comes round (arc near 360, outside the 120-year
+table), converse directions not built; (4) a point that never rises or sets (|tan phi tan delta| >= 1)
+refuses with a sentence naming which point, and the distribution refuses above the polar circle as
+the Ascendant's does. Al-Qabisi's join across quarters (IV.12c: to the angle between, then from it,
+summed) is a DIFFERENT, approximate procedure (it uses the angle's semi-arc for the first leg) and is
+not built; the single formula is exact there. The page directs the DEGREE of each point (latitude
+0), as the two built cases direct degrees and as Appendix E fn 27 says al-Qabisi's tables did; the
+engine takes latitude and the fixture holds both of Dykes's forms. No new unit helper: the Timing
+page already reports arcs through `_pn4_distribution_rows` and `pn4_format_arc_time` (III.1, 13), and
+the terms table uses the same.
 
-Text only, from `docs/synthesis/02_reconciliation_pn_ita.md` (§1 Class 3, every remaining item;
-§7's decisions the owner ruled "as recommended"). No computation changes; no number moved. Every
-"this app's" that Dykes states is cited to him (the audit's §C locators); PN I/II passages are
-paraphrased on pages and quoted only in comments and docs, marked (OCR, unverified), as are ITA
-passages off the photographed pages. Branch base `origin/victor-weights-note-2026-09-15` with
-`origin/main` (#18, #20, #21) merged in, since 3.8, 3.10 and decision 20 edit text those PRs added.
+**The fixture** (`tests/test_semiarcs_2026_09_15.py`): Dykes's chart, p. 402's figure -- 4 September
+2010, 2:15:09 PM CDT, Minneapolis 93w15'49" 44n58'48" -- cast by `calculate_traditional_chart`
+(19:15:09 UT) reproduces the figure's Saturn 4 Libra 33, Venus 26 Libra 57, MC 29 Virgo 15, Ascendant
+7 Sagittarius 47, and then EVERY printed term of both examples to the arc-second: A (with latitude,
+p. 406) RAMC 179 19' 33", RA Venus 203 43' 00", RA Saturn 185 02' 49", MD 24 23' 27" and 5 43' 16",
+DSA 75 57' 21" and 90 10' 46", arc 19 34' 20" (engine 19 34' 20.0"); B (degrees only, p. 407) RA
+205 00' 51" / 184 11' 10", MD 25 41' 18" / 4 51' 37", DSA 79 26' 40" / 88 11' 16", arc 21 18' 36"
+(engine 21 18' 36.0"). Also: the formula on his printed inputs alone; (b) a significator on the
+Midheaven or the fourth gives the promittor's MD (the RA direction); (c) on the Ascendant or
+Descendant gives the promittor's OA difference (the OA direction); (d) declination 0 gives 90 and 90
+at every latitude, the solstices' arcs swap; the sign and meridian choices; the refusal; the
+distribution's segments dated by the engine's own arcs with Venus's body row opening at the B arc;
+the bundle directing all seven of Dykes's planets.
 
-- 3.1 / decision 5 (relabel only): `PN4_ASCENSION_RULE`'s third case, `PN4_TURNING_DIRECTION_REFUSED`,
-  the VI.2, 21 cusp rows, the Timing page's III.1, 12 captions and the "does not settle" expander now
-  say the formula is "stated by al-Qabisi (ITA VIII.2.2) and worked by Dykes (ITA Appendix E), not
-  built" -- "stated in no text in hand" was false. Comments above `PN4_SEVEN` and `PN4_ASCENSION_RULE`
-  carry the locators. Pin moved: `test_pn4_printed_reference_tables_derive_from_the_rules` asserted the
-  false phrase and now asserts the true one.
-- 3.4 / decision 20: `docs/COURSE_COVERAGE_2026-09-14.md` rewritten -- header no longer says ITA,
-  Firmicus, Morin, Rhetorius are outside the corpus; gaps restated against #15-#21 (seven built); the
-  Mars row moved under "a corpus text behind it" (Abu Bakr II.1.0, in his domicile by sect); "Not gaps"
-  kept.
-- 3.5 / decision 7: the Releaser tab's caption (5) names al-Qabisi IV.3's three opinions on the
-  fullness's degree (Ptolemy's, the sages', Valens's; ITA VIII.1.2) in place of "no text says"; the
-  Moon default is Valens's, the sages' tie rule named and not adopted. Docstring of
-  `calculate_prenatal_syzygy` and the readings comment updated.
-- 3.6 / decision 1: the Reference page's years caption names the three witnesses for 39 1/2 (Gr. Intr.
-  VII.8 with Fig. 146; Abu Bakr I.16; PN IV I.8, 12) and the three for the ordinary mean 69 1/2 /
-  66 1/2 (Masha'allah, Book of Aristotle III.1.8; Abu 'Ali, Judgments of Nativities Ch. 4; the Latin
-  Gr. Intr. Fig. 108 in ITA VII.2), and says the app keeps 39 1/2. `PLANETARY_YEARS`'s comment no
-  longer says the matter was closed by construction.
-- 3.7: "this app's convention for strength language" (the Victors page's governor caption, the PN IV
-  governor caption, the Releaser tab's unit paragraph) is now Dykes's proposal, ITA Introduction §6,
-  with Alchabitius kept as the app's choice among the quadrant systems; the allowed Lesson 3 citation
-  stays beside it.
-- 3.8: Morin's unfortunate houses -- the 6/8/12 equation stays the app's, the three cited as the
-  tradition's difficult averse places, ITA IV.4.1 fn 43 (p. 224, photographed) quoted on the finding.
-- 3.9: Valens's Moon phases -- the 12° boundaries are Abu Ma'shar's markers (Abbr. II.27-31, ITA
-  II.10.5) applied to Valens's phases, said on the glance, the notes, the comment and the tags; his
-  fourth marker (12° before the opposition) named as not used.
-- 3.10: al-Andarzaghar's sect order of first/second/third is al-Qabisi's own (I.16, ITA I.7; Gr. Intr.
-  V.14, 6 and Sahl 10.2.7, 16 checked in the corpus) -- "this app's reading" dropped from the docstring,
-  the comment and the notes.
-- 3.11 / decision 6: the almuten relabelled -- "al-Qabisi's weights, ITA I.18; a technique not in
-  Sahl" on the syzygy table's row; the governor caption gives the five strengths and fn 210; the
-  Victor of the Chart help says the weights and the five places are al-Qabisi's (I.18; VIII.1.4), the
-  Day/Hour/Places rows ibn Ezra's, with fn 211's critique. Comments at the almuten scoring and
-  `ESSENTIAL_DIGNITY_WEIGHTS`. Pin moved:
-  `test_syzygy_governor_rows_are_on_the_victors_page_with_the_relabelled_almuten`.
-- 3.12 / decision 2: `get_effective_house`'s "by choice" is now al-Qabisi's "five equal degrees" (ITA
-  VIII.1.3; "equal degrees" the ecliptic per ITA VI.1.1 fn 2); the comment above
-  `FIVE_DEGREE_ALL_CUSPS` and the Releaser tab's caption (1) name his "or any house" as another
-  author's reading, the four stakes kept as ruled, no code alternative restored.
-- 3.13: the 15 Libra-15 Scorpio burnt path cited to al-Qabisi III.29 (ITA IV.3) in place of the Course
-  Glossary -- the condition-110 clause, the `DARK_SIGNS` comment, the evaluator comment.
-- 3.14: Mercury's sect as a morning star cited to Gr. Intr. IV.9 (ITA V.11) in `planet_sect_is_diurnal`'s
-  docstring, the hayz comment, the Mathesis comment and the finding's notes; BA II.11's contrary rule
-  named as not imported (Dykes: a corruption of Paul).
-- 3.15: the names Basis, Victory, Nemesis cited to ITA VI.1.4, VI.1.7, VI.1.8's headings on the three
-  Lot rows' sources.
-- 3.16: the governor row's Moon note cites al-Qabisi III.8a (ITA II.10.1) for right = eastern, on the
-  page and in the comment; the pinned "Gr. Intr. VII.2, 4 names her right and left" kept verbatim.
-- 3.17: the seven good places -- Dykes's p. 121 comment (photographed: Sahl "explicitly uses" the
-  Timaeus-Dorotheus seven, "praiseworthy", "stronger") and Introduction §6 cited on caption (6) and in
-  the `SAHL_GOOD_PLACES` comment.
-- Decision 4: the Lot of friends' confidence from "settled" to "reversed at night after al-Andarzaghar
-  (al-Qabisi V.14a, ITA VI.2.45), Masha'allah (BA III.12.1) and Dykes's note 72; Abu Ma'shar
-  unreversed (Abbr. VI.53; the Latin Gr. Intr. VIII.4)". Formula unchanged.
-- Decision 8: the Figure 57 caption (Reference page) and the Chart finding's notes carry Dykes's
-  point-at-the-end resolution (ITA I.3 fn 23: 19° for "the nineteenth", the point where the ordinal
-  span 18°-19° ends) and name al-Qabisi I.53's third table (ITA VII.9, Figure 118) as disagreeing with
-  both and not tabled; the ordinal reading stands as ruled.
-- Decision 10: the printed 1.20, 14-15 flag and the coverage entry carry 'Umar's degree reading (Book
-  of Nativities I.4.3: one condition does not harm a superior; a "serious" impediment gives the lesser
-  years as months or days); "serious" undefined, not coded.
-- Decision 12: `docs/synthesis/16_open_features.md` F-5, 'Umar's 30° profection at 12 1/6 days per
-  degree (TBN II.4-8; al-Qabisi IV.8), recorded, not built.
-- Decision 15: `SAHL_1_7_UNMODELLED` names al-Qabisi IV.5's tie-breaks (stronger in its place; nearer
-  the releaser's degree) as another author's procedure, not borrowed.
-- Decision 16: `NOT_IMPLEMENTED_COVERAGE` gains "ITA VIII.1.3 (al-Qabisi IV.4-6), with its directions at
-  VIII.2.2": his whole releaser and house-master procedure, unbuilt; `16_open_features.md` F-6 the same.
-- Decision 17: al-Qabisi IV.4 named on the Releaser tab as the quadrant witness (caption (1)); the Lot
-  by whole sign stays as ruled.
-- Decision 19: `docs/synthesis/13_open_decisions.md` D-24, the mighty days' ascensional variant (PN
-  III IX.7 method 6; PN IV fn 176) recorded, the zodiacal arithmetic kept.
-- The Sources page's "How citations are written" now says what *ITA I.22 (al-Qabisi)*, *Abu Bakr, On
-  Nativities II.5.14*, *'Umar al-Tabari, Book of Nativities I.4.3*, *Masha'allah, Book of Aristotle
-  III.1.8*, *Abu 'Ali al-Khayyat, Judgments of Nativities Ch. 4* and *Abbr. II.27* locate.
-- Not done here: decision 5's build (the semi-arcs), 3 (on #22, already fixed), 9, 11, 13, 14, 18 (builds
-  or after the marker OCR), 3.2 and 3.3 (fixed on #23 and #22).
+**The three sites.** (1) `PN4_ASCENSION_RULE['anything else']` now reads "applied to the degree of
+every point on none of the three axial degrees ... stated by al-Qabisi (ITA VIII.2.2) and worked by
+Dykes (ITA Appendix E)"; the reference table's caption follows. (2) `pn4_timing_bundle`'s
+`angle_planets`: every planet off an axis gets `pn4_distribution_by_semi_arcs` (its degree through
+the bounds, `_pn4_distribute` with the semi-arc measure, distributor and partner as everywhere) and
+`pn4_semi_arc_terms_rows` -- the significator, the opener of the period now running (or "the period
+open at birth"), the promittor reached next: longitude, RA, declination, signed MD naming its
+meridian, semi-arc naming its hemisphere, arc in degrees and III.1, 13's time. The page prints them
+under a new subheader "The planets, each with its measure under III.1, 12" (help: the sentence, the
+formula, the choices), the terms table captioned `PN4_SEMIARCS_SOURCES` = "al-Qabisi, Introduction IV
+(ITA VIII.2.2); Dykes, ITA Appendix E"; the refusal sentence is `PN4_SEMIARCS_REFUSED`. (3)
+`pn4_turning_rows`: `PN4_TURNING_DIRECTION_REFUSED` is gone -- the turning code needs only where the
+direction stands, so `pn4_semi_arc_stand` gives "by proportional semi-arcs: in {sign}, standing from
+{degree}; distributor X, partner Y (age a to b)" for planets and Lots (III.1, 12 fn 16) and for
+houses other than 1, 10, 4 and for displaced cusps (VI.2, 21 fn 33); the sign is the opening degree's,
+since every sign start is a bound start. `_turning_chart` in the doctrine tests now carries a
+horizon (armc from the Ascendant's OA). Captions touched: the meridian section's item (5), the
+turning table's, the Sahl house-master's, III.7, 42's (the planets' own directions do not confirm
+themselves), the "does not settle" expander's entry.
 
-Tests: the six named files 403 passed; the whole suite 2040 passed. Two pins moved, both on strings
-this order told me to change (above); `tests/test_prose_counts.py` untouched.
+**Cells moved.** `tests/fixtures/tables.json` regenerated (`UPDATE_TABLE_FIXTURE=1`): 84 lines added,
+none removed -- for each of the six fixture dates, seven distribution tables (the ten distribution
+columns) and seven terms tables (Point, Longitude, Right ascension, Declination, Meridian distance,
+Semi-arc, Arc) under the new subheader; no fixture planet stands on an axial degree, so all seven are
+the third case on every date. No existing table changed shape. Under the harness's target date the
+1240 charts are past the 120-year table, so their turning cells say so, as the other distributions
+do.
 
-## 2026-09-15: the Moon on the third day and the fetus's stay (decision 18)
-
-Reconciliation decision 18 (owner): two course-text findings on the Chart page, Sahl canon, not
-gated by the reading depth, display only.
-
-**The Moon on the third day (Sahl)**, cited "Sahl, On Nativities 1.29, 11-12; 1.26, 7".
-`evaluate_moon_third_day(chart_data)` -> `third_day_positions(jd)` (the Moon, Sun, Saturn and Mars
-by swisseph at birth + 3.0 days) -> `moon_third_day_rows(third, natal_infortunes, asc)`, pure.
-The reading of "the third day of the Moon": three days after the birth moment, the birth hour
-kept -- Sahl's own words elsewhere are "the position of the Moon, where she is on the third day
-from the nativity" (9, 3) and "the position of the Moon on the third day, the seventh, and the
-fortieth day" (1.30, 22); no sentence fixes the hour, and the page says the hour is the app's.
-"Corrupted" in 1.29's own terms, 1.29, 3 ("safe from the infortunes, burning, and falling"): an
-infortune looking by whole sign (the infortunes where they stand on the third day), burned within
-the Moon's twelve degrees (Introduction Ch. 3, 103, as `evaluate_corruption_of_the_moon` reads it),
-or falling from the stakes by the whole-sign place from the Ascendant OF THE NATIVITY (1.30, 33);
-nothing else of the ten defects. The four-footed sign is 1.38, 1's list (`FOUR_FOOTED['On
-Nativities']`, the second half of Sagittarius from 15°). Rows: the Moon's degree and place; four
-feet; the infortunes looking; burning; falling; corrupted; 1.26, 7 met or not; 1.29, 11's last
-clause (the triplicity lords and the fortune in a stake NOT tested, said); 1.29, 12's first clause
-("the two infortunes were in the Ascendant or seventh" read as both natal infortunes in the
-whole-sign 1st or 7th, said; the second clause not tested, said). Fn 303 (the alternative reading:
-the fortune not corrupted on that day) and fn 304 quoted in the notes.
-
-**The fetus's stay (Sahl)**, cited "Sahl, On Nativities 1.8-1.9". `evaluate_gestation(chart_data,
-lat, lon)`. What 1.8 lets the app compute: 5-6 only -- the meeting before the birth (the last New
-Moon, from `sahl_prenatal_meeting_and_fullness`; fn 40 allows the lunation generally, so the
-opposition is a further row when it was the nearer lunation) and its Ascendant erected for that hour
-at the birthplace. NOT computed, said on the row: the three divisions of 3-4 and their reading in
-7-13 -- the divisions are framed "from the degree of the Ascendant" of a chart the sentence does not
-name; Dykes (fn 38, his comment) assumes the pre-conception lunation, which no sentence of 1.8 shows
-how to find (the conception is 1.10's matter). 1.9, 1-10 computed as written by
-`gestation_moons(jd)` + `gestation_1_9_rows(natal, past, renewed, asc)`, pure: the three Moons
-(fn 45), the year read as the calendar anniversary at the birth hour (`_anniversary_jd`; a Julian
-year of 365.25 days only where the digits name no day -- Feb 29), the aspects whole-sign via
-`_sahl_looks`; every sentence of 2-10 whose condition holds is a row (9's "trine of the Moon or
-Ascendant" tests both), the sextile and her own sign named by none and said so. 1.9, 11 (the
-meeting of the conception) and 12-13 (the stays; fnn 54-55's 258/273/288) presented, not computed.
-Dykes's fnn 47, 49, 51, 53 quoted on the rows they concern. On 1240-05-23 the meeting fell at
-sunrise on the birth day, so its Ascendant equals its degree -- a coincidence of the fixture, checked.
-
-Tests: `tests/test_moon_third_day_2026_09_15.py` -- the third-day Moon against swisseph at
-jd + 3 computed in the test; hand-built four-footed-and-afflicted (Leo, Mars square) and
-not-four-footed cases, falling and burned separately; 1.38, 1's list; every quotation verbatim in
-the corpus (sups and entities stripped); the gestation rows carry their sentences, the anniversary
-against `swe.julday` (1240 a leap year: 366 back, 365 on); each of 1.9, 2-10 hit once and the
-sextile by none. `tables.json` regenerated: on the chart page for each of the six dates two tables
-added ("The Moon on the third day (Sahl)" and "The fetus's stay (Sahl)", Item/Value/Text); the
-sign-categories table (11 columns, inside its own expander, which the inventory does not read as a
-heading) is now listed under "The fetus's stay (Sahl)" as the last preceding subheader instead of
-"Special Degrees & Conditions" / "Degrees of nobility and rank" / "Quadrant divisions (Alchabitius)"
--- the same table, re-attributed; nothing else moved.
-
-## 2026-09-15: the years ladder as a supplement fallback (decision 9)
-
-Owner's ruling (reconciliation decision 9): the house-master's years ladder of Abu 'Ali (*Judgments of
-Nativities* Ch. 3-4, PN I pp. 233-235, photographed 2026-09-15) and 'Umar (*Book of Nativities* I.4.3, PN II
-pp. 13-14), applied ONLY where Sahl's grading prints "1.20 silent". Sahl 1.20 stays the canon and is never
-overridden. Engine: `JN_YEARS_LADDER` (the three place sentences, the preface, the four demotion sentences,
-the ranks greater / middle / lesser / months / days), `JN_YEARS_TABLE` (Ch. 4's table; the luminaries' middle
-years are 69 1/2 and 66 1/2 there against this app's 39 1/2, recorded in `JN_YEARS_TABLE_DIFFERS` and printed on
-the row), `TBN_YEARS_RULE` (I.4.3's first paragraph whole), `TBN_YEARS_DIFFERENCES` (where 'Umar differs, by
-place), `JN_CH4_ADDITIONS` and `SAHL_1_21_8` (the disagreement), `JN_YEARS_NOTE`, `JN_YEARS_CITATION`, and
-`jn_years_fallback(planet, planetary_data, cusps, sect, essential)`, which calls `sahl_house_master_years` and
-returns None wherever it grades. Page: the Releaser tab's house-master block, under Course text and supplement
-only, when the grade is None -- the class, the count, the steps with their sentences, 'Umar's sentences, the
-note; and a last column on the planetary-years table (Fardar, Ages & Reference Tables tab) beside each
-"1.20 silent" cell, at that depth only, so `tests/fixtures/tables.json` (course-text depth) is untouched.
-
-The reading of Ch. 3 (said in the note): the place by the division, as 1.20 is placed; ONE STEP for each
-impediment the chapter names -- not oriental, peregrine, retrograde, burned up -- since its own three
-sentences step angle-not-oriental to middle, occidental-and-peregrine to lesser, and all four to days ("from
-the quality of the lesser years and months ... to days"), and "you will observe it likewise for the rest of the
-planets' impediments, because it is one rule"; no step below days; "peregrine" = none of the five shares (the
-chapter's ladder head names domicile, exaltation, triplicity -- a planet in bound or face alone is not
-stepped); "burned up" = the app's under-the-rays fact, as 1.20's grading reads it; the Sun takes no orientality
-step; "free from the bad ones" is not tested, since Ch. 4's additions and subtractions are not built.
-
-Which "silent" cases the ladder covers (from `_sahl_1_20_grade` and the 19/22 fallback): (a) a stake,
-retrograde and NOT under the rays, unless alien and westernizing (22 takes that) -- JN: greater, stepped by
-retrograde and by not-oriental / peregrine as they hold; (b) the eleventh or fifth, direct, not enhanced, in a
-share or eastern (a share and westernizing; a share and burned; alien and eastern; the Sun in a share; by day
-the fifth even when enhanced, 11's parenthesis being nocturnal) -- JN: middle, stepped; (c) the ninth, a share
-without easternization, or alien and eastern, not both retrograde and burned -- JN: lesser, stepped to months
-or days; (d) the third, direct, alien and eastern -- JN: lesser, stepped to months (days if burned). The
-second, eighth, sixth and twelfth are never silent. On the six fixture charts no house-master is silent
-(Mercury on 1240-01-04 is, in the table: lesser, 20 -- peregrine, retrograde); 1240-02-02 (Florence, 14:30)
-has the Moon silent as house-master and pins the Releaser-tab render.
-
-Where JN and Sahl disagree: JN Ch. 4, "the square or opposite rays of the fortunes add or subtract nothing
-from the kadukhudhāh"; Sahl 1.21, 8 as Dykes emends it, the fortunes from a square or opposition "will <not>
-withhold years, but will even add the equivalent of its lesser years" (fn 160: 8-14 "do match TBN I.4.4").
-Both are quoted in the note; neither is applied, the app's 1.21 declaration standing. Where 'Umar differs
-from JN (quoted on the row): his greater years ask the Ascendant or Midheaven and the planet's own hayyiz;
-the eleventh by day and the fifth by night are greater-years places for him; a peregrine planet in an angle
-or follower keeps "its own years whether it were peregrine or whatever its condition was -- unless it were
-burned up"; a cadent planet under fall, retrogradation, peregrination or descension drops to hours, not by
-steps. His reading of the superiors (I.4.3, "not so much ... a serious impediment") is decision 10's note on
-1.20, 14-15 and is not repeated. Test: `tests/test_years_ladder_2026_09_15.py` (every sentence verbatim in
-the photographed spans and in `on_nativities.md`; Ch. 4's table row by row; Sahl graded -> None; the silent
-cases' classes; the supplement column; the Releaser tab at both depths). No fixture moved.
-
-After the check (`BUILD_LADDER_CHECK_REPORT_2026-09-15.md`): the note says the single steps between
-Abu 'Ali's stated cases (one, two, four impediments) are the app's reading of "one rule", and that the
-count of months or days is 'Umar's and Sahl's, not the chapter's; 'Umar's "greater years" for the
-succedent flagged as Dykes's emendation (fn 82); his I.4.4 sentence -- greater years in an angle
-"oriental or not oriental" -- quoted against the ladder's orientality step.
+**Left to the owner.** Whether the page should direct the planets' BODIES (Appendix E part A,
+"modern computer programs") rather than their degrees (part B, al-Qabisi's tables); the engine does
+either. Whether the planets' semi-arc distributions should count for III.7, 42's confirmation
+(not done: no sentence asks it). PN IV's own sentence still states no method; the row and the help
+say the method is taken from ITA.
