@@ -980,3 +980,76 @@ found within 1" of Dykes's page): the by-counting house rows stand from the CUSP
 the sign -- VI.2, 1/21/23/25 direct a house from its cusp, no sentence from the sign's first degree -- and
 defer to the displaced-cusp row when it does not; III.1, 12 quoted as printed in the subheader help;
 fn 27's "probably" kept. Fixture rows for the by-counting houses changed accordingly.
+
+## 2026-09-15: fortune and livelihood, the seven classes (decision 11)
+
+Reconciliation decision 11 (owner): the prosperity classifier from Sahl, *On Nativities* Ch. 2 (canon),
+with the Book of Aristotle III.2.0's frame and Abu 'Ali's twelve worked charts (JN Ch. 7, Figures 10-21)
+as fixtures. Built: `evaluate_prosperity(chart_data)` with `PROSPERITY_SAHL` (forty sentences, each
+verbatim in `on_nativities.md`, tested), `PROSPERITY_ALSO` (the BA/JN parallels, the quotations tested
+against `pn1_photographed.md`), `PROSPERITY_CLASSES` (Sahl's 2.1, 3-9 numbering; 4 duplicates 2 per
+Dykes's comment and is not a key); the Chart page finding "Fortune and livelihood: the seven classes
+(Sahl)", rows Class / Ground / Sahl / Also, one row the class and one per further rule met. Display
+only. The DELIN-TABLES order (2.14, the lord of the second in the places) is not touched.
+
+**The spine.** Theophilus's paragraph as Sahl carries it, 2.11, 1-5 (fn 148: *Carmen* I.24, 1-8 -- the
+source of Abu 'Ali's charts), with 2.3, 1-2 and 2.13, 40 ("let your reliance be on ... the positions
+of the lords of the triplicities of the luminaries in the excellent and bad places"): the first and
+second lords of the sect light's triplicity by whole-sign place, strong (a stake or what follows one,
+fn 149) or falling, and "under the rays" the one further weakness Sahl names (2.11, 5; `solar_phase`'s
+Burned / Under the rays). Both strong: class 1 (both in the stakes 2.3, 2's greatest good fortune;
+otherwise 2.3, 18's assets without fame). Both weak: class 6. One and one: 2.11, 2's "benefit in the
+time of the strong one", the first lord's time the beginning of life (2.13, 39) -- first strong /
+second weak is class 2, the reverse class 5. When both fall, 2.3, 6 sends the reading to the Lot:
+2.20, 1 and 2 confirm class 6; 2.3, 7 (its "eastern or cleansed" read as "and", fn 87) and 2.3, 9 raise
+to class 1; 2.16, 2 and 2.16, 4 ("all" read as both fortunes and both infortunes) give class 3, in that
+precedence. "Cleansed of the infortunes" for the spine lords is listed as facts and not judged (the PN IV
+governor rows' convention; 2.11, 4 makes the aspect an increase or subtraction; Abu 'Ali's charts read
+the places alone -- Figures 11 and 12 have a lord squared by Mars and are prosperity and a kingdom).
+For the Lot, its lord and the lords of places, 2.20, 1's own gloss is applied: an infortune with it, or
+in its square or opposition, by whole sign.
+
+**Listed under the class, not moving it** (the chapter gives no order for combining them; the twelve
+charts apply none): 2.11, 4 the partnering lord (with 2.19, 5 when in the seventh); 2.3, 12 the eleventh
+from the Ascendant; 2.16, 5 the motley mixture (its third place disputed, fnn 225-226); 2.16, 6
+(bracketed from BA III.2.3, 6) as a supplement row, shown under Course text and supplement only; the
+falling of 2.17, 4, 5 (fn 232: not of the sect), 7 (the eleventh from the Ascendant and from the Lot --
+Sahl's own, so course text; BA III.2.1 [1.7] and Valens II.21 as Also), 8, 10, 11; the rising of 2.19, 1
+(every infortune in a stake, every fortune in what follows), 2; the earnings of 2.21, 1 (the bound by
+`EGYPTIAN_TERMS`), 2, 3, 4. The Moon's separation and connection (2.17, 10; 2.19, 2) by degree within
+her orb (`PLANETARY_ORBS`) when motions are present. The 15 degrees by ascensions (2.13, 48-51; 2.3, 4-5
+with fnn 82-83; 2.16, 3 with fn 222) as a grade row beside the class when the chart carries `armc`,
+`obliquity`, `geo_lat`: oblique ascension from the Ascendant, oblique descension from the seventh,
+right ascension from the Midheaven and the fourth, the nearest stake behind the lord; bands of 15;
+the class itself stays by whole sign. Tested at the equator with obliquity 0.
+
+**Left, with the sentence.** 2.19, 6, "And a native whose planets you find in the bad places from the
+Ascendant, and they are looking at the Lot of Fortune, and its lord in an excellent place, then at the
+end of his life he will have a good livelihood" -- BA III.2.4 [4.5] has "the stars traversing from the
+east toward the Midheaven", and which planets are meant is unsettled; by whole sign it fires on Figure
+17 (three planets in the sixth square the Lot, Venus in the fourth), whose verdict is poverty. 2.19,
+3-4 (the sect's contrary planets looking at the Lot; the lords in each other's houses, fn 248 garbled),
+7-9; 2.17, 6, 12-14 and 2.18 (the lord of the meeting or fullness); 2.20, 3-6; 2.16, 3 except as the
+grade; 2.2's fixed stars (already on the coverage list); 2.4-2.10 and 2.12-2.15.
+
+**The twelve fixtures** (`tests/test_prosperity_2026_09_15.py`, each hand-built by sign, 0 degrees
+unless a degree is printed, the Lot by `lot_by_id`; a planet at 0 degrees in the Sun's sign is in his
+heart, not burned, so no sign-only chart reads 2.11, 5). Pass, the class Abu 'Ali states: Figure 10
+(class 6, both lords cadent), Figure 11 (class 1 by 2.3, 18, both succedent; diurnal per the text against
+the caption), Figure 12 (class 1, all in angles; Saturn in the eleventh listed), Figure 13 (class 1;
+Saturn the third lord "brings them down"), Figure 17 (class 6), Figure 19 (class 5: Mars burned and
+squared by Saturn, Venus in the fourth; the Lot at 7 Sagittarius as printed). xfail(strict), Dykes's
+footnote quoted: Figure 14 (fn 51: Gemini not succedent, Scorpio not cadent -- by whole sign both lords
+in the fifth, class 1, not middling), Figure 15 (fn 52: the Sun in a watery sign, not fiery -- class 5,
+not 1), Figure 16 (fn 53: "Saturn is not cadent" -- class 1, not the labor stated), Figure 18 (fn 56:
+the Sun in the seventh sign, cadent only by quadrant -- class 5, not 6), Figure 20 (the rise rests on
+the Moon as third lord in the Midheaven and a Lot "of the nature of Venus", neither a rule Sahl states;
+fn 60 on the Lot -- class 6, not 5), Figure 21 (fn 62: the Lot cannot be where printed; computed it
+falls in Capricorn -- class 2, not 5; the Sun's application to Saturn unreceived listed, not judged).
+Six of twelve reproduce; five of the six that do not are the ones Dykes himself flags.
+
+`tables.json`: one table added on the Chart page for each of the six dates ("Fortune and livelihood:
+the seven classes (Sahl)", 4 columns). The sign-qualities table that follows it has no subheader of its
+own and takes the nearest heading, so its inventory line now carries this finding's title instead of
+the one that happened to precede it on each date (Special Degrees / Quadrant divisions / Degrees of
+nobility): a heading artifact of the inventory, no table changed.
