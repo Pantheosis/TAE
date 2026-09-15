@@ -1104,3 +1104,35 @@ corpus is absent; the Moon at 9°30' Cancer and 27°30' Leo; the Dorotheus rows;
 strings). `test_eyesight_places_2026_09_14.py` filters its pin to the two older sources and adds Abu
 Bakr's row where 8° Cancer and 0°30' Sagittarius now hit it. `tables.json` unchanged: no fixture chart
 has a point in one of the new spans.
+
+## 2026-09-15: Mars in his own domicile by sect (Abu Bakr II.1.0)
+
+Decision 13 (E3 of `02_reconciliation_pn_ita.md`; gap 9 of `COURSE_COVERAGE_2026-09-14.md`): the one
+Lesson 10 row with a corpus witness, built as a supplement finding after the page was photographed
+(`pn2/pn2_photographed.md`, the block under `*[PN II p. 142]*`; the PDF-text OCR is no longer the witness).
+
+Built: `ABU_BAKR_MARS_II_1_0` (the four sentences of the paragraph verbatim, the footnote marker dropped;
+the fortune-aspect clause and Dykes's fn 652 on *insanus* carried for the notes), `ABU_BAKR_MARS_NO_SENTENCE`,
+and `evaluate_mars_abu_bakr(planetary_data, sect, ascendant_lon)` beside the other evaluators; on the
+Dignities page under the Sect table, shown at the supplement depth only, display only, with a
+"Sources and editorial notes" expander that prints the paragraph whole. The condition is the one the
+text states -- Mars **in his own domicile** (Aries, Scorpio), the chart's sect choosing the sentence: by
+night "a good soldier ... always conquering", by day "lazy in those things in which he ought to make money
+... violent and unsound" (fn 652 named on the row) -- not "of the sect" or "contrary to the sect" at large.
+Two further cases from the same paragraph: Mars in a domicile of Saturn (Capricorn, Aquarius: "a fatty
+liver ..."), and, as a second row when he stands in the whole-sign tenth, the Midheaven sentence ("it was
+already stated that if Mars would appear in the Midheaven, and he would rejoice in his own place ..."),
+where "rejoice in his own place" is quoted and not tested since the text does not say which place. When
+none reaches him, one row says so. Readings, this build's: domicile by sign; the Midheaven as the
+whole-sign tenth; "it was already stated" left as a back-reference (the earlier passage falls in the
+unphotographed pp. 23-112); the fortune's aspect on "a Mars so disposed" quoted in the notes, not tested.
+
+Test `tests/test_mars_abubakr_2026_09_15.py`: every sentence a substring of the photographed page (skipped
+where the corpus is not on the machine); Scorpio by night the soldier, Aries by day the lazy one with fn 652,
+Capricorn under either sect the Saturn-domicile sentence, Gemini the no-sentence row, the tenth a second
+row (and alone, no no-sentence row). `tables.json` unchanged: the finding is hidden at the default depth.
+
+Left, per decision 13: the other Lesson 10 rows (Rhetorius's and Abu Bakr's of/contrary-to-sect
+delineations for the other planets) -- the course's digest is their only witness in hand, and they are not
+built. E3's two companions from the same synthesis item, I.12.3 (Mars destroying nourishing by day) and
+II.1.1 (Saturn in the Midheaven by night), stay OCR-only and unbuilt.
