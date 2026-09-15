@@ -258,7 +258,11 @@ def test_switch_options_match_the_values_the_code_compares_against(engine):
             f"the {prefix!r} radio should take {const}_OPTIONS"
         assert re.search(const + r" = _reading\(\"\w+\", \"" + SWITCHES[name][0] + r"\", " + const + r"_OPTIONS\[0\]\)", src), \
             f"the top-level read of {const} should default to {const}_OPTIONS[0]"
-        assert f"{const} == {const}_OPTIONS[1]" in src, f"the engine should compare {const} against its OPTIONS tuple"
+        # The engine reads the run's own value through reading() (the split of
+        # 2026-09-15 made the readings per-thread); what this guards is the
+        # right-hand side -- the OPTIONS tuple rather than a typed-out string.
+        assert f"reading('{const}') == {const}_OPTIONS[1]" in src, \
+            f"the engine should compare {const} against its OPTIONS tuple"
         # No bare literal comparison anywhere.
         assert not re.search(const + r" == ['\"]", src), f"{const} is compared against a bare literal somewhere"
     # The Connection rule radio derives its options from CONNECTION_PROFILES,

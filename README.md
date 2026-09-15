@@ -69,7 +69,8 @@ To build the portable app yourself, see [`docs/BUILD_NOTES.md`](docs/BUILD_NOTES
 
 | Path | What |
 |---|---|
-| `app.py` | the whole app: the engine first, the Streamlit pages after the marker `# 4. STREAMLIT UI INTEGRATION` |
+| `engine.py` | the engine: the chart, the dignities, the evaluators, the lots, the timing, and the pictures drawn from them |
+| `app.py` | the Streamlit pages, after the marker `# 4. STREAMLIT UI INTEGRATION`; it takes the engine whole and is the file to run |
 | `tests/` | the suite; `tests/fixtures/tables.json` pins which tables each page renders |
 | `ephe/` | the Swiss Ephemeris fixed-star catalogue the app ships (AGPL-3.0; see its README) |
 | `atlas.db` | the offline place lookup |
