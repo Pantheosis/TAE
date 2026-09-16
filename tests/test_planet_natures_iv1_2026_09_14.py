@@ -1,12 +1,11 @@
 """The natures of the planets after Ptolemy, Gr. Intr. IV.1, 6-12: a display-only
 table on the Reference page at the supplement depth (2026-09-14). Seven rows in the
 app's planet order, every 'As stated' string verbatim in the corpus."""
-from pathlib import Path
-
 import pytest
 
-CORPUS = Path("/home/apothic/Desktop/Fifty Aphorism OCR Project/consolidated_texts_final/gr_intr/"
-              "abu_mashar_great_introduction.md")
+from corpus_paths import corpus_file
+
+CORPUS = corpus_file("gr_intr/abu_mashar_great_introduction.md")
 
 
 def test_seven_rows_in_the_apps_order_each_sourced_to_iv1(engine):

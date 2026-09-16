@@ -19,6 +19,7 @@ from pathlib import Path
 import pytest
 
 from conftest import app_source
+from corpus_paths import corpus_file
 
 CH3_MIN, CH3_MAX = 2, 132
 
@@ -42,10 +43,8 @@ CH3_CITE = re.compile(r"Ch\.\s?3,\s*(\d+)(?:-(\d+))?")
 # "Aphorism #44", "Aphorisms #44, 87-89", "Aphorism #45 (misstated"
 APH_CITE = re.compile(r"Aphorisms?\s+#(\d+)(?:,\s*(\d+)(?:-(\d+))?)?")
 
-CORPUS_DIR = Path(os.environ.get(
-    "CORPUS_DIR", Path.home() / "Desktop" / "Fifty Aphorism OCR Project" / "consolidated_texts"))
-CH3_FILE = CORPUS_DIR / "sahl_introduction_ch3.md"
-APH_FILE = CORPUS_DIR / "fifty_aphorisms.md"
+CH3_FILE = corpus_file("sahl_introduction_ch3.md")
+APH_FILE = corpus_file("fifty_aphorisms.md")
 
 
 def ch3_citations():

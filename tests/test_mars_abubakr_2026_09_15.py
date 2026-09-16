@@ -8,9 +8,10 @@ from pathlib import Path
 
 import pytest
 
+from corpus_paths import corpus_file
 from test_doctrine_fixtures import pdata
 
-PN2 = Path("/home/apothic/Desktop/Fifty Aphorism OCR Project/consolidated_texts_final/pn2/pn2_photographed.md")
+PN2 = corpus_file("pn2/pn2_photographed.md")
 SOURCE = 'Abu Bakr, On Nativities II.1.0'
 COLUMNS = ['Mars', 'Sign', "Chart's sect", 'Case', 'Source', 'Text']
 

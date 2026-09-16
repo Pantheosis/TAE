@@ -18,7 +18,9 @@ from pathlib import Path
 
 import pytest
 
-CORPUS = Path("/home/apothic/Desktop/Fifty Aphorism OCR Project/consolidated_texts_final/on_nativities.md")
+from corpus_paths import corpus_file
+
+CORPUS = corpus_file("on_nativities.md")
 PN1 = CORPUS.parent / "pn1" / "pn1_photographed.md"
 COLUMNS = ['Class', 'Ground', 'Sahl', 'Also']
 

@@ -8,8 +8,9 @@ from pathlib import Path
 
 import pytest
 
-CORPUS = Path("/home/apothic/Desktop/Fifty Aphorism OCR Project/consolidated_texts_final/rhetorius/"
-              "rhetorius_holden_PROVISIONAL.md")
+from corpus_paths import corpus_file
+
+CORPUS = corpus_file("rhetorius/rhetorius_holden_PROVISIONAL.md")
 COLUMNS = ['Planet', 'Condition', 'By', 'Chapter', 'Text']
 
 

@@ -19,6 +19,7 @@ from pathlib import Path
 import pytest
 
 from conftest import app_source
+from corpus_paths import corpus_file
 
 MAX_PARAGRAPH = {
     "VII.1": 39, "VII.2": 75, "VII.3": 11, "VII.4": 109, "VII.5": 142,
@@ -29,9 +30,7 @@ MAX_PARAGRAPH = {
 # The paragraph list stops at the first token that is not a number or range.
 CITE = re.compile(r"VII\.(\d)(?:,\s*((?:\d+(?:-\d+)?)(?:(?:,\s*|\s+and\s+)\d+(?:-\d+)?)*))?")
 
-CORPUS_DIR = Path(os.environ.get(
-    "CORPUS_DIR", Path.home() / "Desktop" / "Fifty Aphorism OCR Project" / "consolidated_texts"))
-CORPUS_FILE = CORPUS_DIR / "abu_mashar_book_vii.md"
+CORPUS_FILE = corpus_file("abu_mashar_book_vii.md")
 
 
 def vii_citations():

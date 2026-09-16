@@ -9,13 +9,14 @@ from pathlib import Path
 
 import pytest
 
+from corpus_paths import corpus_file
 from test_doctrine_fixtures import pdata
 
 SAHL = 'Sahl, On Nativities 6.2'
 ABU = 'Gr. Intr. VI.20'
 ABUBAKR = 'Abu Bakr, On Nativities II.7.3'
 RULE = '"And it must be known that in some signs are some degrees which destroy vision:"'
-CORPUS = Path('/home/apothic/Desktop/Fifty Aphorism OCR Project/consolidated_texts_final/pn2/pn2_photographed.md')
+CORPUS = corpus_file('pn2/pn2_photographed.md')
 
 # (sign, lo, hi, dorotheus) -- ordinal degrees, half-open, read as Sahl's
 # are: "the sixth" is 5.0-6.0, and neighbouring ordinals are one span.

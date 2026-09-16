@@ -23,9 +23,9 @@ import pytest
 
 # The corpus is only on the owner's machine; the re-derivation tests below
 # skip without it (same convention as test_abu_mashar_citations.py).
-CORPUS_DIR = Path(os.environ.get(
-    "CORPUS_DIR", Path.home() / "Desktop" / "Fifty Aphorism OCR Project" / "consolidated_texts"))
-BOOK_VII = CORPUS_DIR / "abu_mashar_book_vii.md"
+from corpus_paths import corpus_file
+
+BOOK_VII = corpus_file("abu_mashar_book_vii.md")
 
 SIGNS = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
          'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces']

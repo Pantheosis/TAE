@@ -9,9 +9,9 @@ from pathlib import Path
 import pytest
 
 from conftest import assert_no_exception, make_app
+from corpus_paths import CORPUS_DIR as CORPUS
 from test_doctrine_fixtures import _sahl_chart
 
-CORPUS = Path("/home/apothic/Desktop/Fifty Aphorism OCR Project/consolidated_texts_final")
 PN1 = CORPUS / "pn1" / "pn1_photographed.md"
 PN2 = CORPUS / "pn2" / "pn2_photographed.md"
 SAHL = CORPUS / "on_nativities.md"
