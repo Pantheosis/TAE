@@ -1346,3 +1346,8 @@ the anchors are all the app repo carries; the checker's sentence table (all 144:
 cite, file line, the sentence's first six words) is in the corpus repo's process directory beside
 the plan. `tables.json` regenerated once: unchanged, since it inventories headings and column
 names, and neither changed. Whole suite 2806 passed, 1 skipped, 6 xfailed (main: 2665 / 1 / 6).
+
+After the check (`BUILD_DELIN_A_CHECK_REPORT_2026-09-16.md`: 144 cells verified, none defective, three
+notes): [12][1] hangs "in its nature" on the planet as 1.36, 96 does, not on the place; [5][10] names
+the children as the ones who meet the hardship from the Sultan (10.2.4, 5); the structural-guard
+comment in `tests/test_base_tables.py` no longer says the lords table is audited against the Guide.

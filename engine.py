@@ -1924,7 +1924,7 @@ MASHAALLAH_LORDS = {
         7: {'text': 'Marries a woman younger than himself, with compassion and goodness of character', 'cite': '7.1, 209'},
         8: {'text': 'His children die in their youth, or have more power over the people because of the Sultan', 'cite': '8.5, 6'},
         9: {'text': 'Children in a country not his own, and he will marry; his eye delights in the children', 'cite': '9.4, 27'},
-        10: {'text': 'His children with a chronic illness or disease, and they die; hardship from the Sultan', 'cite': '10.2.4, 5'},
+        10: {'text': 'His children with a chronic illness or disease, and they die; they meet hardship from the Sultan', 'cite': '10.2.4, 5'},
         11: {'text': 'Delightful children, blessed with good and comfort from the first of them to the last', 'cite': '11.1, 20'},
         12: {'text': 'His children disobey him and are hostile towards him; defects in them, and their condition bad', 'cite': '12.1, 39'},
     },
@@ -2013,7 +2013,7 @@ MASHAALLAH_LORDS = {
         12: {'text': 'He leaves the goodness of friends, and they return to enmity; unhappy', 'cite': '12.1, 45'},
     },
     12: {
-        1: {'text': 'Miserable, a bad livelihood, many enemies who prevail over him; if it connects with no planet in a stake or an excellent place that is in its nature, miserable until ruined; if the planet it connects with is an infortune or harmed, enemies kill him', 'cite': '1.36, 95-97'},
+        1: {'text': 'Miserable, a bad livelihood, many enemies who prevail over him; if it connects with no planet in a stake or an excellent place, the planet in its nature, miserable until ruined; if the planet it connects with is an infortune or harmed, enemies kill him', 'cite': '1.36, 95-97'},
         2: {'text': 'Gain in relation to prisons and enemies; poor in soul, much distressed', 'cite': '2.14, 28'},
         3: {'text': 'His siblings are hostile to him, take his authority and are superior to him', 'cite': '3.10, 13'},
         4: {'text': 'The fathers foreigners who left their own land for the badness of their condition, one of them devout; if a fortune looked at it, good in the exile, if an infortune, tribulation; best if the fortune received it, then good or elevated status in the exile', 'cite': '4.11, 21-23'},
