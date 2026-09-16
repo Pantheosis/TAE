@@ -1517,11 +1517,12 @@ Mars, III.5 the Sun, III.6 Venus, III.7 Mercury and III.13 the Moon (Dykes), eac
 (III.8-III.12, Mercury with another planet, not used). Every Mathesis sentence cited was read against
 its page photograph. Course text; nothing supplement-gated.
 
-Counts. 121 halves rest on both texts, 7 on Rhetorius alone (the Moon in the fifth, seventh and
-eighth, where Firmicus's Moon is missing, III.13, 19-22, and Saturn in the third and Jupiter in the
-third's Good), 23 on Firmicus alone (the eleventh's Saturn, Jupiter, Mars and Mercury, whose
-Rhetorius paragraphs are the fifth's; the Sun in the tenth's Bad, whose Rhetorius paragraph is
-lost; and the halves where Rhetorius gives the planet no reading of that valuation), 17 dashes.
+Counts (as pushed at f43e4f3; the after-the-check counts are at the end). 121 halves rest on both
+texts, 7 on Rhetorius alone (the Moon in the fifth, the sixth's Bad, the seventh, and the eighth's
+Good, where Firmicus's Moon is missing, III.13, 19-22, and Saturn in the third's Good), 23 on
+Firmicus alone (the eleventh's Saturn, Jupiter, Mars and Mercury, whose Rhetorius paragraphs are
+the fifth's; the Sun in the tenth's Bad, whose Rhetorius paragraph is lost; and the halves where
+Rhetorius gives the planet no reading of that valuation), 17 dashes.
 Locators: Rhetorius by chapter, house and Holden's page (`Ch. 57, the sixth, p. 76` -- he has no
 sentence numbers; the page is the one the sentence begins on), Firmicus by chapter and sentence
 (`III.2, 8`), both when both are used (`Ch. 57, the first, p. 52; III.2, 1-2`); the reader prints
@@ -1669,3 +1670,72 @@ the push; the checker's sentence table (house, planet, half, locators, corpus li
 anchors) and the OCR corrections are in the corpus repo's process directory,
 `BUILD_DELIN_C_SENTENCES_2026-09-16.md`. `tables.json` regenerated once: unchanged, since it
 inventories headings and column names. Whole suite 3136 passed, 1 skipped, 6 xfailed (build B: 2977 / 1 / 6).
+
+After the check (`BUILD_DELIN_C_CHECK_REPORT_2026-09-16.md`: 165 halves verified, three defective,
+one docstring, one log count; the owner's rulings in `DELIN-TABLES_C_ruling_2026-09-16.md`), on the
+same branch:
+
+- F2, the Moon in the fourth, Good: Rhetorius p. 71's Sun-in-the-Ascendant clause is his out-of-sect
+  branch (a day chart); it now reads "by day, with the Sun in the Ascendant, thought worthy of
+  praise ..." inside the Good half, whose "In sect (by night)" prefix covers only the mother's
+  sentence.
+- F3, Venus in the ninth, Bad: the Saturn-and-Mars clause is Rhetorius's in-sect sentence and
+  Firmicus III.6, 45 (by night); it is split off as "in sect (by night), with Saturn and Mars ..."
+  and the locator is `Ch. 57, the ninth, pp. 65-66, 90; III.6, 42-43, 45`.
+- F4, Saturn in the first, Bad: III.2, 5's second condition restored -- "with no benefic in a good
+  place joined to them by a strong ray, if Mars takes up the waxing Moon's rays, a violent death".
+- F7 (ruled): the reassigned paragraphs are the ninth's and the fifth's text. Rhetorius pp. 65-67 are
+  folded into the ninth's Saturn, Jupiter, Mars, Venus, Mercury and Moon halves, Rhetorius first,
+  and pp. 97-99's Saturn, Jupiter, Mars and Mercury into the fifth's, each cited under the house it
+  belongs to beside the house's own pages (`pp. 65, 88-89`; `pp. 72-74, 98`). What the reassigned
+  copies add: Saturn's "surrounds some of them with hindrances" (p. 65), Jupiter's "consecrated" and
+  "fond of gold (or of oracles)" (p. 65), Mercury's "in opposition to Mars, sacrilegious persons and
+  temple-robbers" (p. 66, now the ninth's Bad beside III.7, 40-43, no longer Firmicus alone), the
+  Moon's "in honor", "acquisitive", "in dishonor", "seek sanctuary" (p. 67); Jupiter's "victors in
+  contests, divine doctrines" (p. 98), Mars's "friends among the powerful", "the power of the
+  sword", "changes of place and living abroad on account of strange events", "restored to their own
+  country" (pp. 98-99), Mercury's "the bearing of a demigod", "agents, accounting offices,
+  astronomers" (p. 99), Saturn's "losing what they had acquired" (p. 98).
+- F6 (ruled): Holden's fn 4 to p. 65 keeps the Sun paragraph there in the third (its "ignoble or
+  servile duties in temples" is III.5, 31's clause), and the Venus paragraph there names "the God or
+  the Goddess". The Sun in the third's Good gains "God-fearing, inspired by the gods" and its Bad
+  "ignoble or servile duties in temples", both citing p. 65 beside Firmicus; Venus in the third's
+  Good gains the paragraph's by-night reading (good prophets, explainers of prodigies, divines; with
+  Jupiter, managers of women advancing through them), and its Bad, a dash before, fills from the
+  paragraph's in-sect sentence, which is a bad reading -- "involved with demons or wearing rags in
+  temples ... with Saturn or Mars in conjunction, square or opposition, disputes on account of women,
+  quarrels, misfortunes and ingratitudes" (`Ch. 57, the third, pp. 65-66`) -- with the cell noting
+  that this page's sect label ("in sect") is the reverse of the ninth's copy (p. 90, "out of sect")
+  and of Firmicus (III.6, 42, by day).
+- F10 (ruled): Venus in the twelfth's Good, a dash before, fills from III.6, 70-71 (Dykes's fn 176
+  places the run in the twelfth): "joined by a ray with Jupiter, freed from the attack of the
+  preceding malice ... increases to the patrimony through their own actions, and excluded from every
+  disgrace of vice, if the Moon does not regard her, so placed with Jupiter, from the opposition";
+  69, the Saturn clause of the same run, joins the Bad (`III.6, 63-65, 69`).
+- F5 (ruled): a half whose sentences run over a page break or fold in the house's earlier general
+  sentences cites the page range (`Ch. 57, the second, pp. 57-61`), and the ninth's and fifth's
+  halves that rest on a reassigned paragraph cite its page in a list beside their own
+  (`pp. 65, 88-89`); `RHETORIUS_CITE` admits `p. N`, `pp. N-M`, `pp. N, M-K` and a Firmicus list
+  (`III.6, 42-43, 45`), and the test checks the pages and sentences ascend and that `p.` names one
+  page. Sixty-five halves changed locator on this account alone (every one the checker listed and
+  the page-break cases besides: Saturn, Sun, Venus and the Moon in the first's Good, Jupiter in the
+  second's Good, the Sun in the fourth's Bad, Mercury in the fifth's Bad, Venus in the sixth's and
+  the tenth's Bad, Venus in the eighth's Good, the Moon in the ninth's Good and the tenth's Bad).
+- F12: `evaluate_planets_in_houses`'s docstring says each half prints with its own locator.
+- F16: the Rhetorius-alone membership above corrected (Jupiter in the third's Good cites both; the
+  seventh was the Moon in the sixth's Bad).
+- F18: Jupiter in the fourth's Good says "forbidden activities" as Holden has it; the two lacuna
+  asides ("the sentence is broken / damaged") leave the rendered cells of Saturn in the eighth's Bad
+  and the Sun in the fourth's Bad (the sentences file keeps the note); the Sun in the sixth's Good
+  keeps only III.5, 42's reading and its Bad takes III.5, 43's mitigation (`III.5, 40-43`).
+- The three balance placements (Mars in the fourth's Good, Mars in the eighth's Good, Venus in the
+  fifth's Bad) stand as built; Saturn in the ninth by night stands.
+
+Counts after: 123 halves on both texts, 8 on Rhetorius alone (the Moon in the fifth, the sixth's
+Bad, the seventh, and the eighth's Good; Saturn in the third's Good; Venus in the third's Bad), 22
+on Firmicus alone, 15 dashes (Jupiter and Mercury in the third's Bad; Saturn, Jupiter, Mars and the
+Moon in the sixth's Good; Mars in the seventh's Good; the Sun in the eighth's Good and the Moon in
+the eighth's Bad; Saturn, Mars and Mercury in the eleventh's Bad; Saturn, Mars and the Sun in the
+twelfth's Good). Ninety-three halves changed in all (text, locator or both). The help and caption
+say fifteen dashes and describe the page-range locators; `tables.json` regenerated once, unchanged.
+Whole suite 3136 passed, 1 skipped, 6 xfailed.
