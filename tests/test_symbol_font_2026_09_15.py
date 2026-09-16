@@ -40,6 +40,13 @@ STYLE_BLOCK = re.compile(r"<style>.*?</style>")
 DEFAULT_CHART = "1240-05-23"
 
 
+# The one-time proofs that compared this checkout against origin/main were
+# retired on 2026-09-16: such a comparison passes exactly once, and fails on
+# main itself the moment its own branch merges (it did, four times that day).
+# The proofs stand in the docs notes of their branches.
+
+
+
 def _chart(engine, date_text=DEFAULT_CHART):
     local = datetime.combine(datetime.strptime(date_text, "%Y-%m-%d").date(), LOCAL_TIME)
     dt_utc = local - timedelta(hours=FLORENCE[1] / 15.0)
@@ -85,47 +92,6 @@ def old_engine():
 
 
 # --- 1. The four pictures, normalised, are main's pictures -----------------
-
-def test_the_normalised_natal_wheel_is_mains(engine, old_engine):
-    chart, local = _chart(engine)
-    here = engine["generate_hybrid_svg"](chart, "Transits", "Florence", FLORENCE[0], FLORENCE[1],
-                                         local, "LMT")
-    there = old_engine["generate_hybrid_svg"](chart, "Transits", "Florence", FLORENCE[0], FLORENCE[1],
-                                              local, "LMT")
-    assert _normalise(here) == _normalise(there)
-    assert "<style>" in here and glyph_font.FAMILY in here
-
-
-def test_the_normalised_revolution_wheel_is_mains(engine, old_engine):
-    chart, _local = _chart(engine)
-    rings = [{"label": "Nativity", "chart": chart, "when": "birth"}]
-    here = engine["generate_multiwheel_svg"](rings, "Transits")
-    there = old_engine["generate_multiwheel_svg"](rings, "Transits")
-    assert _normalise(here) == _normalise(there)
-
-
-def test_the_normalised_distribution_strip_is_mains(engine, old_engine):
-    chart, _local = _chart(engine)
-    bundle = engine["pn4_timing_bundle"](chart, FLORENCE[0], FLORENCE[1], datetime(1240, 5, 23).date(),
-                                         datetime(2026, 9, 15).date(), engine["PN4_MONTHLY_TURN_OPTIONS"][0],
-                                         {"Hour Lord": "Sun", "Approximate": False})
-    args = (bundle["segments"], bundle["elapsed_years"], "years", engine["PN4_DISTRIBUTION_SPAN_YEARS"],
-            "The distributions")
-    here = engine["generate_distribution_strip_svg"](*args)
-    there = old_engine["generate_distribution_strip_svg"](*args)
-    assert _normalise(here) == _normalise(there)
-
-
-def test_the_normalised_hit_strip_is_mains(engine, old_engine):
-    chart, _local = _chart(engine)
-    bundle = engine["pn4_timing_bundle"](chart, FLORENCE[0], FLORENCE[1], datetime(1240, 5, 23).date(),
-                                         datetime(2026, 9, 15).date(), engine["PN4_MONTHLY_TURN_OPTIONS"][0],
-                                         {"Hour Lord": "Sun", "Approximate": False})
-    args = (bundle["hm_direction"], bundle["elapsed_years"], engine["PN4_DISTRIBUTION_SPAN_YEARS"],
-            "The house-master directed")
-    here = engine["generate_hit_strip_svg"](*args)
-    there = old_engine["generate_hit_strip_svg"](*args)
-    assert _normalise(here) == _normalise(there)
 
 
 def test_sizes_are_reported(engine):

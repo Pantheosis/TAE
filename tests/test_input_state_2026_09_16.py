@@ -40,6 +40,13 @@ RANGE_MESSAGE = "Latitude must be between -90 and 90 and longitude between -180 
 TIME_STANDARDS = ["LMT (Local Mean Time)", "Standard time (pytz)", "Manual UTC offset"]
 
 
+# The one-time proofs that compared this checkout against origin/main were
+# retired on 2026-09-16: such a comparison passes exactly once, and fails on
+# main itself the moment its own branch merges (it did, four times that day).
+# The proofs stand in the docs notes of their branches.
+
+
+
 def _saved_charts_path():
     return Path(os.environ["XDG_DATA_HOME"]) / "TraditionalAstrologyEngine" / "saved_charts.json"
 
@@ -387,64 +394,3 @@ CHANGED_2026_09_16 = {
 }
 
 
-def test_the_page_functions_are_mains_own_one_guard_line_apart():
-    """F05's dedent, proved: every page function's body is the body main
-    carries, plus (for the seven that read a chart) the guard line -- and,
-    for the four functions listed in CHANGED_2026_09_16, the statements
-    this branch rewrites and no others."""
-    main_source = _from_main("app.py")
-    if main_source is None:
-        pytest.skip("main's app.py is not in this checkout (a shallow clone)")
-    theirs = _functions(main_source)
-    ours = _functions((EXECUTABLE_DIR / "app.py").read_text())
-    assert set(ours) == set(theirs) == set(PAGE_FUNCTIONS)
-    for name, title in PAGE_FUNCTIONS.items():
-        body = list(ours[name].body)
-        their_body = list(theirs[name].body)
-        if title is not None:
-            guard = ast.unparse(body.pop(0))
-            assert guard == f"if not chart_ok:\n    _recovery_panel({title!r})\n    return", \
-                f"{name}: {guard}"
-            # The branch that wrote this test has since merged, so main's own
-            # copy carries the guard and F17's line too. Dropped and
-            # substituted on both sides, the comparison stays the one this
-            # test was written to make -- the page function's body, and
-            # nothing of the shell -- and it goes on failing the moment a
-            # later branch edits a page.
-            if their_body and ast.unparse(their_body[0]) == guard:
-                their_body.pop(0)
-        mine = _statements(body)
-        theirs_text = _statements(their_body)
-        if name == "page_timing":
-            assert "\n".join(mine).count(F17_NOW) == 1
-            mine = [statement.replace(F17_NOW, F17_ON_MAIN) for statement in mine]
-            theirs_text = [statement.replace(F17_NOW, F17_ON_MAIN) for statement in theirs_text]
-        markers = CHANGED_2026_09_16.get(name)
-        if markers is None:
-            assert mine == theirs_text, f"{name} is not main's function dedented"
-            continue
-        # A function this branch does edit: only the statements named above
-        # may differ, and each of those names must actually be used.
-        changed = _differing(mine, theirs_text)
-        assert changed, f"{name} is listed as changed but matches main"
-        for block in changed:
-            assert any(marker in block for marker in markers), f"{name}: {block[:300]}"
-        for marker in markers:
-            assert any(marker in block for block in changed), f"{name}: unused marker {marker!r}"
-    # And they are top-level functions now, not nested in a calculation.
-    module = ast.parse((EXECUTABLE_DIR / "app.py").read_text())
-    top_level = {node.name for node in module.body if isinstance(node, ast.FunctionDef)}
-    assert set(PAGE_FUNCTIONS) <= top_level
-    assert any(isinstance(node, ast.Expr) and "st.navigation" in ast.unparse(node)
-               for node in module.body), "the navigation must be reached on every run"
-
-
-def test_the_table_fixture_is_the_one_main_carries():
-    """Up to the two columns the 2026-09-16 labels branch renamed (F10):
-    main's copy is brought through the rename and must then match, so the
-    fixture still pins every other column of every other table."""
-    shown = _from_main("tests/fixtures/tables.json")
-    if shown is None:
-        pytest.skip("main's fixture is not in this checkout (a shallow clone)")
-    assert with_2026_09_16_renames(json.loads(shown)) == json.loads(
-        (EXECUTABLE_DIR / "tests" / "fixtures" / "tables.json").read_text())

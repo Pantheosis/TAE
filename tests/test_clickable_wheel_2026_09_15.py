@@ -53,6 +53,13 @@ GROUP = re.compile(r"</?g\b[^>]*>")
 _STYLE_BLOCK = re.compile(r"<style>.*?</style>")
 
 
+# The one-time proofs that compared this checkout against origin/main were
+# retired on 2026-09-16: such a comparison passes exactly once, and fails on
+# main itself the moment its own branch merges (it did, four times that day).
+# The proofs stand in the docs notes of their branches.
+
+
+
 def _normalise(svg):
     svg = GROUP.sub("", svg)
     svg = _STYLE_BLOCK.sub("", svg)
@@ -115,41 +122,6 @@ def _main_engine_namespace():
             exec(compile(source.stdout, str(EXECUTABLE_DIR / "engine.py"), "exec"), namespace)
             return namespace
     return None
-
-
-@pytest.mark.parametrize("flags", [{}, {"wide": True}, {"bounds": True},
-                                   {"wide": True, "bounds": True}, {"theme": "dark"}])
-def test_the_normalised_svg_is_mains_svg(engine, flags):
-    """The proof that the renderer only gained handles: strip the <g ...>
-    wrappers from this branch's SVG and from main's and what is left is the
-    same picture, string for string, for the default chart at every flag.
-
-    Both sides are normalised, not just this branch's: `main` at this
-    repository's current HEAD already carries the `<g>` wrappers this proof
-    was first written against, since item 11 (the branch this test file
-    belongs to) has itself been merged, so stripping them from `here` alone
-    no longer proves anything against `there`, which still carries them
-    unstripped -- PR #48 made the comparison symmetric for exactly this
-    reason. The symbol-font branch (item 13) adds a second, unrelated
-    difference on top: a `<style>` element and an embedded family name
-    prepended to `font-family`, present in `here` and not in `there`, so
-    `_normalise` also strips those, on both sides, before comparing --
-    `GROUP.search(here)` and the embedded-font checks below stand in for
-    the equality this stripping would otherwise erase."""
-    old = _main_engine_namespace()
-    if old is None:
-        pytest.skip("main's engine.py is not in this checkout (a shallow clone); "
-                    "see docs/UI_CHANGES_2026-09-15_clickable_wheel.md for the branch's own run")
-    _chart_data, arguments = _wheel_arguments(engine)
-    here = engine["generate_hybrid_svg"](**arguments, **flags)
-    there = old["generate_hybrid_svg"](**arguments, **flags)
-    # Both sides normalised, past both known additions: main carries the
-    # handles (item 11, merged) and never the embedded font's <style> and
-    # family name (item 13, this branch, not on main); what is left after
-    # stripping all of it is the same picture on both.
-    assert _normalise(here) == _normalise(there)
-    assert GROUP.search(here), "the handles are in the branch's SVG"
-    assert "<style>" in here and glyph_font.FAMILY in here, "the embedded font is in the branch's SVG"
 
 
 def test_the_only_added_markup_is_the_groups_and_their_data_attributes(engine):
