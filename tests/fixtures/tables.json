@@ -9,7 +9,7 @@
    ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
+   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Connecting planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connection", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Collection of Light", ["Collector", "Collects"]],
    ["Enclosure", ["Planet", "Enclosed By", "Separating From", "Connecting To", "Severity"]],
@@ -144,7 +144,7 @@
    ["Quadrant divisions (Alchabitius)", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
+   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Connecting planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connection", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Handing Over", ["Type", "Planet", "Hands Over To"]],
    ["Non-reception", ["Kind", "Connecting", "With"]],
@@ -278,7 +278,7 @@
    ["Degrees of nobility and rank", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
+   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Connecting planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connection", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Collection of Light", ["Collector", "Collects"]],
    ["Handing Over", ["Type", "Planet", "Hands Over To"]],
@@ -415,7 +415,7 @@
    ["Degrees of nobility and rank", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
+   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Connecting planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connection", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Enclosure", ["Planet", "Enclosed By", "Separating From", "Connecting To", "Severity"]],
    ["Handing Over", ["Type", "Planet", "Hands Over To"]],
@@ -553,7 +553,7 @@
    ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
+   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Connecting planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connection", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Handing Over", ["Type", "Planet", "Hands Over To"]],
    ["Reception — Sahl rule", ["Receiver", "Received", "Direction", "Via", "Grade", "Mode"]],
@@ -688,7 +688,7 @@
    ["Special Degrees & Conditions", ["Point", "Sign", "Four-footed (Intro)", "Four-footed (Nat.)", "Voice (Intro)", "Voice (Nat.)", "Barren (Intro)", "Barren (Nat.)", "Many children (both)", "Dark (both)", "Burned place, no degrees (both)"]]
   ],
   "configurations": [
-   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Applying Planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connected", "Rules differ"]],
+   ["Aspects, aversions and connections", ["Light Planet", "Aspect", "Heavy Planet", "Connecting planet", "Motion", "Orientation", "Exact Orb Dist", "Bodies", "Strength", "Connection", "Rules differ"]],
    ["Transfer of Light", ["Type", "Carrier", "Separates From", "Connects To"]],
    ["Collection of Light", ["Collector", "Collects"]],
    ["Enclosure", ["Planet", "Enclosed By", "Separating From", "Connecting To", "Severity"]],

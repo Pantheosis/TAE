@@ -301,6 +301,23 @@ def dump_fixture(data):
     return "\n".join(out) + "\n"
 
 
+# The 2026-09-16 labels branch renamed two columns of the aspects table
+# (Astra F10): the directed-agency column and the connection verdict, which
+# is now a named state rather than Yes/No. The guards that compare this
+# fixture with main's bring main's copy forward through the rename, so they
+# go on pinning every other column of every other table.
+LABEL_RENAMES_2026_09_16 = {"Applying Planet": "Connecting planet", "Connected": "Connection"}
+
+
+def with_2026_09_16_renames(inventory):
+    """A tables.json structure with those two column names brought forward."""
+    if isinstance(inventory, dict):
+        return {key: with_2026_09_16_renames(value) for key, value in inventory.items()}
+    if isinstance(inventory, list):
+        return [with_2026_09_16_renames(value) for value in inventory]
+    return LABEL_RENAMES_2026_09_16.get(inventory, inventory)
+
+
 def load_table_fixture():
     if not TABLES_FIXTURE.exists():
         pytest.fail(f"{TABLES_FIXTURE} is missing; run  UPDATE_TABLE_FIXTURE=1 pytest tests/test_pages_render.py")

@@ -1,13 +1,10 @@
 """The engine's move into engine.py, and the readings that moved with it.
 
-Three things are proved here.
-
-**The differential.** Every evaluator the top level calls, run on main's
-engine half and on engine.py, over all six fixture charts and both values of
-every switch, and compared. This is the migration's own proof and it needs
-main's app.py, so it skips where the checkout cannot produce one (a shallow
-CI clone); the numbers from the branch's own run are in
-docs/ENGINE_SPLIT_2026-09-15.md.
+Two things are proved here. The third, the migration's own differential --
+every evaluator run on main's engine half and on engine.py over all six
+fixture charts and both values of every switch -- is retired: main's app.py
+has had no engine half above the UI marker since the split merged, so the
+test could only skip. Its run is recorded in docs/ENGINE_SPLIT_2026-09-15.md.
 
 **The readings, by value.** One test per reading, asserting that the two
 values produce *different* evaluator output -- the gap that let the first
@@ -24,46 +21,12 @@ must place as many stars as the first.
 """
 from __future__ import annotations
 
-import inspect
-import subprocess
 import threading
 from datetime import date, datetime
 
 import pytest
 
-from conftest import CHARTS, EXECUTABLE_DIR, FLORENCE, LOCAL_TIME, SWITCHES, UI_MARKER
-
-# --- The evaluator set, as the top level calls it ------------------------
-# Every evaluate_*/calculate_* the UI half calls at its own top level, in
-# that order, plus pn4_timing_bundle. Arguments are resolved by parameter
-# name out of the pool built below, which is how the top level assembles
-# them too.
-EVALUATORS = (
-    "evaluate_essential_dignities", "evaluate_accidental_dignities",
-    "evaluate_ptolemaic_aspects", "evaluate_transfers_of_light",
-    "evaluate_collections_of_light", "evaluate_abu_mashar_condition",
-    "evaluate_sahl_banishment", "evaluate_abu_natural_connections",
-    "evaluate_abu_wildness", "evaluate_reflections_of_light",
-    "evaluate_blocking", "evaluate_enclosure", "evaluate_handing_over",
-    "evaluate_reception", "evaluate_non_reception",
-    "evaluate_strength_of_planets", "evaluate_weakness_of_planets",
-    "evaluate_ascensional_bands", "evaluate_right_sidedness",
-    "evaluate_honor_guard", "evaluate_corruption_of_the_moon",
-    "evaluate_returning", "evaluate_revoking", "evaluate_resistance",
-    "evaluate_escape", "evaluate_cutting_the_light",
-    "evaluate_favor_and_recompense", "calculate_classical_lots",
-    "calculate_topical_lots", "evaluate_special_degrees",
-    "evaluate_book_v_degrees", "evaluate_nobility_degrees",
-    "evaluate_moon_third_day", "evaluate_gestation",
-    "evaluate_mercury_phase_sect", "evaluate_moon_phase_valens",
-    "evaluate_morin_aspects", "evaluate_eyesight_places",
-    "evaluate_rhetorius_affliction", "evaluate_mars_abu_bakr",
-    "evaluate_prosperity", "evaluate_rays_by_ascension",
-    "evaluate_house_lords", "evaluate_victors",
-    "evaluate_planets_in_houses", "calculate_time_lords",
-    "evaluate_planetary_years_display",
-    "evaluate_andarzaghar_triplicity_lords", "pn4_timing_bundle",
-)
+from conftest import FLORENCE, LOCAL_TIME
 
 BIRTH = date(1240, 5, 23)
 TARGET = date(1283, 5, 23)
@@ -107,75 +70,10 @@ def _pool(ns, day):
     }
 
 
-def run_evaluators(ns, day):
-    """{evaluator: repr(result)} for one chart, called as the top level does."""
-    pool = _pool(ns, day)
-    out = {}
-    for name in EVALUATORS:
-        fn = ns[name]
-        parameters = inspect.signature(fn).parameters
-        args = [pool[p] for p in parameters if p in pool]
-        out[name] = repr(fn(*args))
-    return out
-
-
-# --- A. The doctrine differential ----------------------------------------
-
-def _main_engine_namespace():
-    """main's engine half, executed as tests/conftest.py used to execute it."""
-    for ref in ("origin/main", "main"):
-        try:
-            source = subprocess.run(["git", "show", f"{ref}:app.py"], cwd=EXECUTABLE_DIR,
-                                    capture_output=True, text=True, timeout=60)
-        except (OSError, subprocess.SubprocessError):
-            continue
-        if source.returncode == 0 and UI_MARKER in source.stdout:
-            text = source.stdout[:source.stdout.index(UI_MARKER)]
-            ns = {"__file__": str(EXECUTABLE_DIR / "app.py"), "__name__": "main_engine_half_under_test"}
-            exec(compile(text, str(EXECUTABLE_DIR / "app.py"), "exec"), ns)
-            return ns
-    return None
-
-
-def test_every_reading_and_chart_evaluates_as_main_did(engine):
-    """The migration's own proof: six charts times fourteen switch states,
-    every evaluator, main's engine half against engine.py."""
-    old = _main_engine_namespace()
-    if old is None:
-        pytest.skip("main's app.py is not in this checkout (a shallow clone); "
-                    "see docs/ENGINE_SPLIT_2026-09-15.md for the branch's own run")
-    states = [(name, value) for name, (_store, values, *_rest) in SWITCHES.items() for value in values]
-    assert len(states) == 14, states
-    # the course text's own readings, off the module constants themselves
-    defaults = {name: engine[name] for name in engine["READINGS"]}
-    compared = 0
-    for day_text in CHARTS:
-        day = date.fromisoformat(day_text)
-        asc = _pool(engine, day)["ascendant_lon"]
-        for switch, value in states:
-            reading_name, engine_value = _READING_OF_SWITCH[switch](value, engine, asc)
-            old[reading_name] = engine_value                      # main: a module global
-            engine["set_readings"](**{reading_name: engine_value})  # here: this thread's reading
-            assert run_evaluators(old, day) == run_evaluators(engine, day), (day_text, switch, value)
-            compared += 1
-            # back to the course text before the next state
-            old[reading_name] = defaults[reading_name]
-            engine["set_readings"](**{reading_name: defaults[reading_name]})
-    assert compared == len(CHARTS) * len(states) == 84, compared
-
-
-# Each conftest switch, as the reading the engine actually reads. The fitting
-# infortune reaches the engine as the planet it softens rather than as the
-# switch, because the page computes it per chart (D-13).
-_READING_OF_SWITCH = {
-    "connection": lambda v, ns, asc: ("CONNECTION_PROFILE", v),
-    "eastern": lambda v, ns, asc: ("EASTERN_RULE", v),
-    "moon_rays": lambda v, ns, asc: ("MOON_RAYS_ORB", 15.0 if v else 12.0),
-    "mars_west": lambda v, ns, asc: ("MARS_WEST_RAYS_18", bool(v)),
-    "domain": lambda v, ns, asc: ("DOMAIN_RULE", v),
-    "lot_cusp": lambda v, ns, asc: ("LOT_HOUSE_CUSP", v),
-    "fitting": lambda v, ns, asc: ("SOFTENED_INFORTUNE", ns["fitting_infortune"](asc) if v else None),
-}
+# --- A. The doctrine differential (retired) ------------------------------
+# The differential against main's engine half is recorded in
+# docs/ENGINE_SPLIT_2026-09-15.md; main has had no engine half to compare
+# with since the split merged, so the test that ran it could only skip.
 
 
 # --- B. The readings, by value, and by thread ----------------------------

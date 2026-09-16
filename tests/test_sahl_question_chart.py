@@ -99,8 +99,10 @@ def test_57_moon_connecting_with_jupiter_from_an_opposition(engine, venus):
     # attainment of the sought matter with beseeching, in trouble" (¶57).
     # 17 Virgo applying to 20 Pisces: three degrees from exact.
     row = _aspect_rows(engine, sahl_chart(venus))[frozenset(("Moon", "Jupiter"))]
-    assert (row["Aspect"], row["Motion"], row["Exact Orb Dist"], row["Connected"]) == \
-        ("Opposition", "Applying", "03° 00'", "Yes"), row
+    # Connected Yes is now the state's own name (F10): applying and
+    # connected is Sahl's connection proper, 6's "going straightaway to".
+    assert (row["Aspect"], row["Motion"], row["Exact Orb Dist"], row["Connection"]) == \
+        ("Opposition", "Applying", "03° 00'", "Applying"), row
 
 
 def test_63_mercury_shifts_from_his_house_into_the_house_of_assets(engine, venus):
@@ -157,7 +159,7 @@ def test_venus_control_no_judgment_depends_on_her(engine):
     # NOT involving Venus must be identical under both values, so nobody can
     # later hang an assertion on her without this test noticing.
     def rows_without_venus(v):
-        return {k: (r["Aspect"], r["Motion"], r["Exact Orb Dist"], r["Connected"])
+        return {k: (r["Aspect"], r["Motion"], r["Exact Orb Dist"], r["Connection"])
                 for k, r in _aspect_rows(engine, sahl_chart(v)).items() if "Venus" not in k}
     assert rows_without_venus(VENUS_MS) == rows_without_venus(VENUS_MODERN)
     assert any("Venus" in k for k in _aspect_rows(engine, sahl_chart(VENUS_MS)))   # she is in the chart, just unused

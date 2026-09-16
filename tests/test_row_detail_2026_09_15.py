@@ -27,6 +27,7 @@ is rendered and read here.
 from __future__ import annotations
 
 import ast
+import json
 import re
 import subprocess
 from datetime import date
@@ -34,7 +35,7 @@ from datetime import date
 import pytest
 
 from conftest import (CHARTS, EXECUTABLE_DIR, FLORENCE, LOCAL_TIME, READING_DEPTHS, TABLES_FIXTURE,
-                      assert_no_exception, make_app, ui_source)
+                      assert_no_exception, make_app, ui_source, with_2026_09_16_renames)
 
 # _tick_grid's own regex: the first "(nn" followed by ; , or ) in a label.
 PARAGRAPH = re.compile(r'\((\d{2,3})(?=[;,)])')
@@ -413,7 +414,9 @@ def test_the_panels_captions_name_only_paragraph_numbers_of_the_grid():
 
 def test_the_tables_fixture_is_mains():
     """No panel renders without a selection, so the page's inventory of
-    tables -- and the fixture that pins it -- is what main has."""
+    tables -- and the fixture that pins it -- is what main has, once main's
+    copy is brought through the two column renames of 2026-09-16 (F10).
+    Every other column of every other table still has to match."""
     for ref in ("origin/main", "main"):
         try:
             shown = subprocess.run(["git", "show", f"{ref}:tests/fixtures/tables.json"], cwd=EXECUTABLE_DIR,
@@ -421,6 +424,6 @@ def test_the_tables_fixture_is_mains():
         except (OSError, subprocess.SubprocessError):
             continue
         if shown.returncode == 0:
-            assert TABLES_FIXTURE.read_text() == shown.stdout
+            assert with_2026_09_16_renames(json.loads(shown.stdout)) == json.loads(TABLES_FIXTURE.read_text())
             return
     pytest.skip("main's fixture is not in this checkout")

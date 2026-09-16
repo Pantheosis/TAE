@@ -2975,14 +2975,58 @@ def _body_overlap_label(row):
         return f"{row['light_name']} in {row['heavy_name']}'s body"
     return '–'
 
+def _connection_state(row, connected):
+    """The Connection column's value: the pair's state in the words the two
+    authors use for it, and ONLY the states these two tests actually decide.
+
+    Connected while approaching is the connection proper -- the light
+    planet "going straightaway to" the heavy one (Sahl, The Introduction
+    Ch. 3, 6), Abu Ma'shar's "going towards" the connection (Gr. Intr.
+    VII.5, 9-11): APPLYING.
+
+    Connected while separating is Sahl's post-exact window, where the light
+    one has not yet departed by half of its body (7-10), which he pictures
+    as "the position of two men under a single blanket" (7): UNDER A SINGLE
+    BLANKET.
+
+    Not connected while approaching is the glossary's own phrase under
+    Applying -- planets looked at by sign "but not yet connecting by the
+    relevant degrees, are only 'wanting' to be connected": NOT YET.
+
+    Not connected and past exact is SEPARATED (10; glossary, Separation).
+
+    A pair in aversion is not configured at all and shows a dash, as the
+    other kinetic columns of its row do -- unless Sahl's out-of-sign
+    connection by body holds (20-21), which is a connection without a
+    looking, and which is named by its own motion like any other row.
+
+    NOT A STATE HERE: completion at the exact minute (Sahl 7, "its
+    connection has come to an end"; Gr. Intr. VII.5, 11, "then it has
+    completed its connection"). Neither _is_connected_sahl() nor
+    _is_connected_abu_mashar() branches on exactness. The only deviation ==
+    0 branch in this file is in _pairwise_configurations(), where it settles
+    the MOTION as Applying, and Abu Ma'shar's 1e-9 there is machine
+    tolerance at exactness, not his minute. Printing a Complete state would
+    be this app's distinction, not the texts'.
+
+    Under Abu Ma'shar's profile the separating branch is unreachable -- one
+    minute past exact has already separated (VII.5, 16) -- so his rows run
+    Not yet, Applying, Separated, and every aversion row of his is a dash."""
+    if not connected:
+        if row['aspect_name'] == 'Aversion':
+            return '–'
+        return 'Not yet' if row['motion'] == 'Applying' else 'Separated'
+    return 'Applying' if row.get('motion') == 'Applying' else 'Under a single blanket'
+
 def evaluate_ptolemaic_aspects(planetary_data):
     """Aspects, Aversions & Connections per Sahl (The Introduction Ch.2,
     50-60) and Abu Ma'shar (Gr. Intr. VII.3-4): Sextile/Square/
     Trine/Opposition are fully formed once whole-sign configured (50-56) --
     no degree orb gates them. Union (Assembly) is unconditional same-sign
     co-presence, graded Strong/Partial/Co-present by each planet's own orb
-    (VII.4, 5-8). Connected (Ch.3) is layered on top as a per-pair
-    refinement of how close an applying/separating pair currently is."""
+    (VII.4, 5-8). Connection (Ch.3) is layered on top as a per-pair
+    refinement of how close an applying/separating pair currently is, and
+    its state is named by _connection_state()."""
     rows = _pairwise_configurations(planetary_data)
     aspects = []
 
@@ -3007,13 +3051,13 @@ def evaluate_ptolemaic_aspects(planetary_data):
                 'Light Planet': light_name,
                 'Aspect': 'Aversion',
                 'Heavy Planet': heavy_name,
-                'Applying Planet': '\u2013',
+                'Connecting planet': '\u2013',
                 'Motion': '\u2013',
                 'Orientation': '\u2013',
                 'Exact Orb Dist': '\u2013',
                 'Bodies': _body_overlap_label(row),
                 'Strength': note,
-                'Connected': 'Yes' if _is_connected(row) else 'No',
+                'Connection': _connection_state(row, _is_connected(row)),
                 'Rules differ': _rules_differ(row),
             })
             continue
@@ -3065,7 +3109,7 @@ def evaluate_ptolemaic_aspects(planetary_data):
             # Natural rank above, directed agency here. They coincide for
             # about 96% of configured pairs; the column exists for the rest,
             # where the naturally heavier planet is the one closing.
-            'Applying Planet': (
+            'Connecting planet': (
                 f"{row['applicant']} → {row['receiver']}"
                 + (f" ({row['application_cause']})" if row['applicant_is_heavier'] else '')
             ) if row['applicant'] else '–',
@@ -3077,7 +3121,7 @@ def evaluate_ptolemaic_aspects(planetary_data):
             'Exact Orb Dist': _format_orb(abs(row['deviation'])),
             'Bodies': _body_overlap_label(row),
             'Strength': strength,
-            'Connected': 'Yes' if connected else 'No',
+            'Connection': _connection_state(row, connected),
             'Rules differ': _rules_differ(row),
         })
 
@@ -16125,7 +16169,7 @@ def point_summary(name, chart_data, essential, accidental, aspects, reception_da
     dignities = [{'Dignity': key} for key, value in (essential.get(name) or {}).items() if value is True]
     conditions = [{'Condition': key} for key, value in (accidental.get(name) or {}).items() if value is True]
     connections = [{column: row.get(column) for column in
-                    ('Light Planet', 'Aspect', 'Heavy Planet', 'Applying Planet', 'Motion', 'Exact Orb Dist', 'Connected')}
+                    ('Light Planet', 'Aspect', 'Heavy Planet', 'Connecting planet', 'Motion', 'Exact Orb Dist', 'Connection')}
                    for row in (aspects or []) if name in (row.get('Light Planet'), row.get('Heavy Planet'))]
     receptions = [dict(row) for row in (reception_data or [])
                   if name in (row.get('Receiver'), row.get('Received'))]

@@ -1206,7 +1206,7 @@ def _wide_text_columns(df):
 # holds a planet's name and "Active" holds "yes" (lowercase) or a
 # full sentence, so neither is here despite the family resemblance.
 # Width alone; no CheckboxColumn and no boolean conversion.
-_YES_NO_COLUMNS = {'Connected', 'Match', 'Sees ASC', 'Above horizon',
+_YES_NO_COLUMNS = {'Match', 'Sees ASC', 'Above horizon',
                     "Domain (hayz)", "Of the chart's sect", 'Averse to its place',
                     'Rules differ'}
 
@@ -1214,6 +1214,19 @@ def _yes_no_columns(df):
     """column_config for a table's own Yes/No/"" columns, by name."""
     return {col: st.column_config.TextColumn(width="small")
             for col in df.columns if col in _YES_NO_COLUMNS}
+
+# Columns whose values are a short PHRASE rather than a word, a name or a
+# number: wider than the default, narrower than a prose column. Connection
+# holds "Under a single blanket" (Sahl, The Introduction Ch. 3, 7), which
+# the default width cuts off mid-word -- and the width of a state's name is
+# not a reason to shorten the name the text gives it.
+_MEDIUM_TEXT_COLUMNS = {'Connection'}
+
+
+def _medium_text_columns(df):
+    """column_config for a table's own short-phrase columns, by name."""
+    return {col: st.column_config.TextColumn(width="medium")
+            for col in df.columns if col in _MEDIUM_TEXT_COLUMNS}
 
 # A finding with nothing to report is not given a heading at all --
 # it is collected and named in one line at the foot of its group,
@@ -1223,8 +1236,18 @@ def _yes_no_columns(df):
 # heading is the finding's NAME; the footing and the citation are one
 # caption under it, separated by a middle dot.
 def _finding(bucket, title, citation, data, glance=None, notes=None, columns=None, height=None,
-             standing=None):
+             standing=None, absent=None, column_help=None, caption=None):
     if not data:
+        # absent= is for a finding whose emptiness is the END OF A SEARCH,
+        # not an absence: the search ran, it was bounded, and what it
+        # covered has to be said where the zero rows are (F07). Such a
+        # finding keeps its own heading and says what was looked at,
+        # instead of joining the "Not present in this chart" line, which
+        # claims more than a bounded search can establish.
+        if absent:
+            st.subheader(title, help=glance)
+            st.caption(absent)
+            return
         bucket.append(title)
         return
     st.subheader(title, help=glance)
@@ -1234,9 +1257,20 @@ def _finding(bucket, title, citation, data, glance=None, notes=None, columns=Non
     # row's); height= shows every row of a table meant to be read
     # whole, instead of st.dataframe's ten-row inner scroll.
     _df = pd.DataFrame(data, columns=columns)
+    # column_help= is the one-line definition of a column whose HEADING is
+    # a term of art, carried on the heading itself rather than in the notes
+    # expander, so the word is defined where it is read (F10).
+    _help = {col: st.column_config.TextColumn(
+                 help=text, **({'width': 'medium'} if col in _MEDIUM_TEXT_COLUMNS else {}))
+             for col, text in (column_help or {}).items() if col in _df.columns}
     st.dataframe(_df, hide_index=True, width='stretch',
-                 column_config={**_wide_text_columns(_df), **_yes_no_columns(_df)},
+                 column_config={**_wide_text_columns(_df), **_yes_no_columns(_df),
+                                **_medium_text_columns(_df), **_help},
                  **({'height': height} if height is not None else {}))
+    # caption= sits UNDER the table, for the sentence that explains the
+    # rows themselves rather than the finding's source.
+    if caption:
+        st.caption(caption)
     if notes:
         with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
             st.markdown(notes)
@@ -1301,11 +1335,19 @@ def _chart_strip():
         standard,
         place,
     ))
+    # The qualification travels with the value (F09). Where there is no
+    # sunrise or sunset the hour is not a temporal hour at all, and the
+    # strip is on every page while the Chart page's fuller warning is on
+    # one: an unqualified hour lord elsewhere is the same value said
+    # without the thing that makes it approximate.
+    hour_lord = f"Hour lord {chronocrats['Hour Lord']}"
+    if chronocrats.get('Approximate'):
+        hour_lord += " (equal-hour approximation)"
     read = " · ".join((
         sect,
         f"{lunation} lunation",
         f"Day lord {chronocrats['Day Lord']}",
-        f"Hour lord {chronocrats['Hour Lord']}",
+        hour_lord,
     ))
     # The second line in bold: the first line is the nativity as the
     # reader typed it and they know it already, while these four are
@@ -2026,7 +2068,6 @@ def page_dignities():
                      column_config=_yes_no_columns(pd.DataFrame(sect_rows)))
     st.caption("Sect: Sahl, The Introduction Ch. 3, 85. Domain: Gr. Intr. VII.1, 37 and VII.6, 13 "
                "(or Masha'allah, On Nativities 1.23, 17, per the switch).")
-    st.subheader('Topical Planets in Houses', help="Each planet's whole-sign house placement with BOTH readings for that pairing, good and bad, as the TNAC Reference Guide for the Planets and Places (Dykes, 2023) summarises them: its Rhetorius column from Rhetorius Ch. 57 and Firmicus, Mathesis III (texts not in hand; the Guide's summary is the witness), its PN IV column from Book II's lord of the year in the places, which the Guide applies to natal planets -- a reading of the Guide's, followed here.")
     st.subheader('Topical Planets in Houses', help="Each planet's whole-sign house placement with BOTH readings for that pairing, good and bad, as the TNAC Reference Guide for the Planets and Places (Dykes, 2023) summarises them: its Rhetorius column from Rhetorius Ch. 57 and Firmicus, Mathesis III.2-III.13 (both texts are now in hand; the Guide's summary is still what the table prints, and it has not yet been checked against them), its PN IV column from Book II's lord of the year in the places, which the Guide applies to natal planets -- a reading of the Guide's, followed here.")
     st.caption("Rhetorius & PN IV, as the Reference Guide summarises them; the Guide prints ? for the Moon in the sixth and the eighth, and so does this table.")
     st.dataframe(pd.DataFrame(planets_in_houses_data, columns=['Planet', 'Placed in (WS place)', 'Lean']),
@@ -2130,9 +2171,27 @@ def page_configurations():
     def sahl_aspects():
         _finding(_gap, "Aspects, aversions and connections",
                  f"Sahl, The Introduction Ch. 2, 50-60 and Ch. 3, 6-21 — {CONNECTION_PROFILE} rule in force", aspects,
-                  columns=['Light Planet', 'Aspect', 'Heavy Planet', 'Applying Planet', 'Motion', 'Orientation', 'Exact Orb Dist', 'Bodies', 'Strength', 'Connected', 'Rules differ'], height=_rows_height(len(aspects)),
+                  columns=['Light Planet', 'Aspect', 'Heavy Planet', 'Connecting planet', 'Motion', 'Orientation', 'Exact Orb Dist', 'Bodies', 'Strength', 'Connection', 'Rules differ'], height=_rows_height(len(aspects)),
+                  column_help={
+                      'Connecting planet': "Which planet's own motion is closing the aspect, and the one it closes with: "
+                                           "the light planet \"connects with\" the slower one (Sahl, The Introduction Ch. 3, 6; "
+                                           "Gr. Intr. VII.5, 9). Retrogradation reverses it, and the cause is named in the cell.",
+                      'Motion': "Applying is the approach, \"going straightaway to\" the connection (Sahl, The Introduction "
+                                "Ch. 3, 6); Separating is the recession, the light planet's degree moving away from the heavy "
+                                "one's (22). The kinetic fact alone, not the verdict.",
+                      'Connection': "Applying: connected and still approaching (Sahl, The Introduction Ch. 3, 6; Gr. Intr. "
+                                    "VII.5, 9-11). Under a single blanket: past exact and still connected, the light planet "
+                                    "not yet departed by half of its body (Sahl 7-10). Not yet: configured but not connecting "
+                                    "by the relevant degrees, \"only wanting to be connected\" (Sahl glossary, Applying). "
+                                    "Separated: past the window (Sahl 10; glossary, Separation). A dash: in aversion, so not "
+                                    "configured at all.",
+                      'Orientation': "Dexter, Dykes's right: the ray cast to earlier degrees of the zodiac; sinister, his "
+                                     "left: to later ones (Sahl glossary, Right/left).",
+                  },
+                  caption="A separating pair stays connected inside Sahl's window (The Introduction Ch. 3, 7–10), "
+                          "which is why Connecting planet, Motion and Connection can differ in one row.",
                   glance='Four separate facts about each pair, kept apart rather than collapsed into one verdict. LOOKING is the whole-sign configuration (Union/Sextile/Square/Trine/Opposition, or Aversion if none applies) -- sign to sign.',
-                  notes='MOTION and EXACT ORB DIST are the degree-to-degree approach. BODIES is whether each planet falls inside the other\'s sphere of power, which is asymmetric because the spheres differ in size: Abu Ma\'shar VII.4, 7 notes that Saturn sits inside the Moon\'s body from 12 degrees while she only enters his at a little under 9. CONNECTED is the active author\'s verdict -- switch the Connection rule at the top of this page to see where they disagree; RULES DIFFER marks the pairs where the two tests disagree.\n\nSTRENGTH is two different measures. For an assembly it is the source\'s own: whose body reaches whose (VII.4, 5-8) and whether they share a bound. For an aspect it is marked "(app scale)", because VII.5, 4 grades looking as a continuum with no cutoffs anywhere -- "the strongest thing there is in its looking is the degree related most closely by number to the degree of its own sign, and if the aspect was far from these degrees, its aspect will be weaker." The thirds are this app\'s own scanning aid; the measurement itself is the Exact Orb Dist column.\n\nLIGHT and HEAVY are the standing classes both authors name as nouns (Saturn heaviest through the Moon lightest), not a reading of momentary speed: they are fixed, and a planet slowing toward its station does not thereby become heavy.\n\nAPPLYING PLANET is the separate, directed fact: which one is actually closing the aspect. Normally it is the lighter, and Ch. 3, 6 assumes as much ("a light, quick star GOING STRAIGHTAWAY TO a heavy star ... FEWER IN DEGREES than the heavy one"). Retrogradation reverses it, and both authors say so rather than leaving it to be inferred -- Abu Ma\'shar VII.5, 24 ("the connection of one of them with the other ... will be BY RETROGRADATION"), VII.5, 118 ("the light one IN MORE DEGREES goes retrograde and connects with the heavy one"), and the note on VII.5, 130 (Saturn "could never be received because he is too slow to connect with anyone, UNLESS BY RETROGRADATION"). The cause is named in this column whenever the heavier planet is the one applying, which happens for about 4% of configured pairs. Reception, transfer, collection, returning, revoking, emptiness of course and enclosure all read this column, not the light/heavy one.')
+                  notes='MOTION and EXACT ORB DIST are the degree-to-degree approach. BODIES is whether each planet falls inside the other\'s sphere of power, which is asymmetric because the spheres differ in size: Abu Ma\'shar VII.4, 7 notes that Saturn sits inside the Moon\'s body from 12 degrees while she only enters his at a little under 9. CONNECTION is the active author\'s verdict, named as his own text names the state -- switch the Connection rule at the top of this page to see where they disagree; RULES DIFFER marks the pairs where the two tests disagree.\n\nSTRENGTH is two different measures. For an assembly it is the source\'s own: whose body reaches whose (VII.4, 5-8) and whether they share a bound. For an aspect it is marked "(app scale)", because VII.5, 4 grades looking as a continuum with no cutoffs anywhere -- "the strongest thing there is in its looking is the degree related most closely by number to the degree of its own sign, and if the aspect was far from these degrees, its aspect will be weaker." The thirds are this app\'s own scanning aid; the measurement itself is the Exact Orb Dist column.\n\nLIGHT and HEAVY are the standing classes both authors name as nouns (Saturn heaviest through the Moon lightest), not a reading of momentary speed: they are fixed, and a planet slowing toward its station does not thereby become heavy.\n\nCONNECTING PLANET is the separate, directed fact: which one is actually closing the aspect. Normally it is the lighter, and Ch. 3, 6 assumes as much ("a light, quick star GOING STRAIGHTAWAY TO a heavy star ... FEWER IN DEGREES than the heavy one"). Retrogradation reverses it, and both authors say so rather than leaving it to be inferred -- Abu Ma\'shar VII.5, 24 ("the connection of one of them with the other ... will be BY RETROGRADATION"), VII.5, 118 ("the light one IN MORE DEGREES goes retrograde and connects with the heavy one"), and the note on VII.5, 130 (Saturn "could never be received because he is too slow to connect with anyone, UNLESS BY RETROGRADATION"). The cause is named in this column whenever the heavier planet is the one applying, which happens for about 4% of configured pairs. Reception, transfer, collection, returning, revoking, emptiness of course and enclosure all read this column, not the light/heavy one.')
 
     def sahl_connection_group():
         with st.container(border=True):
@@ -2320,11 +2379,12 @@ def page_configurations():
         st.caption(
             ":orange[**Net and Verdict are this app's heuristic, not Abu Ma'shar's.**] He enumerates these "
             "conditions; he nowhere adds them up, and VII.6 gives no weighting and no tie rule. They are kept "
-            "only because the Rhetorius/PN IV delineations on the Dignities page have to pick one of two readings. Read the four "
-            "counts and the labels themselves in preference to the single number."
+            "beside the Dignities page, which prints both the good and the bad Rhetorius/PN IV reading for each "
+            "placement and chooses neither, showing this Net as a lean; a Net of zero is Indeterminate on both "
+            "pages. Read the four counts and the labels themselves in preference to the single number."
         )
         with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-            st.markdown("The Moon's eleven corruptions (63-74) are shown as their own count rather than folded in with the rest. Sahl's ten (The Introduction Ch. 3, 103-112) are a different list, not a variant reading of this one, and have their own table, Corruption of the Moon, in the Sahl view: Abu Ma'shar has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear here.\n\nThe four counts and the labels are the report. NET and VERDICT are a convenience of this app and NOT Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They exist because the Rhetorius/PN IV delineations in Topical Planets in Houses have to choose between a good and a bad reading.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's eleven corruptions contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once.\n\nEnclosure here is Abu Ma'shar's own (56-62) -- by degree within 7 degrees either side counting rays as well as bodies, by sign in the 2nd and 12th, or separating from one encloser and connecting with the other -- and it can be DISSOLVED: the degree type when the Sun or a fortune casts a ray within 7 degrees of the enclosed planet (60), the sign type by any look from them (61). The standalone Enclosure table in the Connection group of the Sahl view is Sahl's separate version.\n\nThe by-sign type counts an encloser's RAYS as well as its body, which is what 58 says twice. Be aware that this makes it common: it fires on roughly 43% of placements, because a planet's rays reach eight of the twelve signs. A bodies-only variant at about 2% exists in the code (SIGN_ENCLOSURE_BODIES_ONLY) but is this project's own conjecture, not the text, so it is off.")
+            st.markdown("The Moon's eleven corruptions (63-74) are shown as their own count rather than folded in with the rest. Sahl's ten (The Introduction Ch. 3, 103-112) are a different list, not a variant reading of this one, and have their own table, Corruption of the Moon, in the Sahl view: Abu Ma'shar has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear here.\n\nThe four counts and the labels are the report. NET and VERDICT are a convenience of this app and NOT Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They are kept because Topical Planets in Houses on the Dignities page prints both the good and the bad reading for every placement and chooses neither: this Net is shown there as a lean, and a Net of zero is Indeterminate in both places.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's eleven corruptions contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once.\n\nEnclosure here is Abu Ma'shar's own (56-62) -- by degree within 7 degrees either side counting rays as well as bodies, by sign in the 2nd and 12th, or separating from one encloser and connecting with the other -- and it can be DISSOLVED: the degree type when the Sun or a fortune casts a ray within 7 degrees of the enclosed planet (60), the sign type by any look from them (61). The standalone Enclosure table in the Connection group of the Sahl view is Sahl's separate version.\n\nThe by-sign type counts an encloser's RAYS as well as its body, which is what 58 says twice. Be aware that this makes it common: it fires on roughly 43% of placements, because a planet's rays reach eight of the twelve signs. A bodies-only variant at about 2% exists in the code (SIGN_ENCLOSURE_BODIES_ONLY) but is this project's own conjecture, not the text, so it is off.")
 
     def abu_natural():
         _finding(_gap, 'Natural connections', "Gr. Intr. VII.5, 53-77", natural_connections,
@@ -2359,9 +2419,15 @@ def page_configurations():
                   notes='V.22, 1-2: "when planets indicate the native\'s good fortune by means of their positions, and the Moon or the Lot of Fortune is in these degrees, or [these degrees] are exactly on the Ascendant, then they will increase in the native\'s good fortune. And if they indicate downfall, then these will instigate some motion towards high rank and power." V.22, 4: "if the Ascendant was one of these degrees ... or the Sun by day or the Moon by night was in one of them, and they were in an excellent position of the circle, and the planets of the root of the nativity indicated good fortune, then they will make him attain nobility and the houses of kings." Ordinal degrees, as in the wells. Leo 5 and Aquarius 20 are in both tables; Aquarius 17 is a degree of elevation and a well.')
 
     def abu_forward():
-        _finding(_gap, 'Forward-Looking Conditions', 'Revoking, Resistance, Escape — next 200 days', forward_looking_data,
-                  glance='Conditions describing what happens as the chart moves forward in time (up to ~200 days), not the birth moment alone.',
-                  notes='Each chapter prescribes an ORDERED SEQUENCE of events, and a row appears only when every step in that sequence actually occurs against the ephemeris -- the day columns show when. A condition not found inside 200 days is reported as not found, never as a negative finding.\n\nREVOKING (117): "a planet is connecting with a planet, but BEFORE IT REACHES IT, it retrogrades away from it." The window is now birth to the applicant\'s first station: perfection inside it means nothing was revoked.\n\nRESISTANCE (118): a light planet ahead of a heavier one by degree stations retrograde, reaches that heavier one BY RETROGRADATION, goes past it, and a third planet lighter still -- one that wanted the heavy planet -- meets the retrograde one instead. All five steps are required and timed.\n\nESCAPE (119): the planet being applied to leaves its sign first; the applicant then follows across the SAME boundary on its own next crossing, and is captured by a body it meets in the new sign. Dykes\' note on Fig. 139 is the picture: Mercury slips from Virgo into Libra, Venus follows, and Saturn\'s body catches her there.')
+        # The horizon is the simulation's own, not a number retyped here:
+        # every sentence on this finding -- including the one printed when
+        # it has no rows at all (F07) -- says the same number the search
+        # actually ran to.
+        _horizon = int(sim['horizon_days'])
+        _finding(_gap, 'Forward-Looking Conditions', f'Revoking, Resistance, Escape — next {_horizon} days', forward_looking_data,
+                  absent=f"No qualifying event found within {_horizon} days of the chart; later events were not evaluated.",
+                  glance=f'Conditions describing what happens as the chart moves forward in time (up to ~{_horizon} days), not the birth moment alone.',
+                  notes=f'Each chapter prescribes an ORDERED SEQUENCE of events, and a row appears only when every step in that sequence actually occurs against the ephemeris -- the day columns show when. A condition not found inside {_horizon} days is reported as not found, never as a negative finding.\n\nREVOKING (117): "a planet is connecting with a planet, but BEFORE IT REACHES IT, it retrogrades away from it." The window is now birth to the applicant\'s first station: perfection inside it means nothing was revoked.\n\nRESISTANCE (118): a light planet ahead of a heavier one by degree stations retrograde, reaches that heavier one BY RETROGRADATION, goes past it, and a third planet lighter still -- one that wanted the heavy planet -- meets the retrograde one instead. All five steps are required and timed.\n\nESCAPE (119): the planet being applied to leaves its sign first; the applicant then follows across the SAME boundary on its own next crossing, and is captured by a body it meets in the new sign. Dykes\' note on Fig. 139 is the picture: Mercury slips from Virgo into Libra, Venus follows, and Saturn\'s body catches her there.')
 
     def abu_block(parts):
         with st.container(border=True):
@@ -2438,7 +2504,7 @@ def page_lots():
     st.dataframe(pd.DataFrame(classical_rows), hide_index=True, width='stretch', height=_rows_height(len(classical_rows)),
                  column_config=_wide_text_columns(pd.DataFrame(classical_rows)))
     with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-        st.markdown('Fortune and Exaltation are stated in Sahl. Spirit -- the Lot of the Invisible, which Sahl names -- is stated at Gr. Intr. VIII.3, 28-29: by day from the Moon to the Sun, by night the reverse, from the Ascendant. Basis is stated at Gr. Intr. VIII.4, 22-24 as "the Lot of firmness and survival, the Lot of the Ascendant\'s support" (fn 67: the Greek Basis): by day from Fortune to the Invisible, by night the contrary, from the Ascendant -- the same construction as Sahl\'s Lot of passion (7.1, 141) and Abu Ma\'shar\'s Lot of Venus, with which VIII.4, 24 says it coincides. All four carry their provenance in the Topical Lots table below.')
+        st.markdown('Fortune and Exaltation are stated in Sahl. Spirit -- the Lot of the Invisible, which Sahl names -- is stated at Gr. Intr. VIII.3, 28-29: by day from the Moon to the Sun, by night the reverse, from the Ascendant. Basis is stated at Gr. Intr. VIII.4, 22-24 as "the Lot of firmness and survival, the Lot of the Ascendant\'s support" (fn 67: the Greek Basis): by day from Fortune to the Invisible, by night the contrary, from the Ascendant -- the same construction as Sahl\'s Lot of passion (7.1, 141) and Abu Ma\'shar\'s Lot of Venus, with which VIII.4, 24 says it coincides. All four carry their provenance under Provenance and standing per Lot, below the Topical Lots table.')
     st.subheader('Topical Lots (Sahl, On Nativities)' + ("; three rows of Abu Ma'shar's" if READING_DEPTH == READING_DEPTH_OPTIONS[1] else ''), help="Sahl's topical Lots, each with its own provenance. He gives several of them MORE THAN ONCE, with formulas that genuinely conflict, and Dykes's apparatus does not silently reconcile them -- so neither does this table.")
     _reading_radio("House-based Lots measure to the", LOT_HOUSE_CUSP_OPTIONS, "lot_house_cusp", "_lot_house_cusp",
                    help="'The second place', 'the degree of the eighth place', 'the ninth' (On Nativities 2.15, 1; "
@@ -2450,12 +2516,19 @@ def page_lots():
     # A row flagged Supplement (Abu Ma'shar's: a form of a Lot Sahl also
     # gives, or a Lot of his Sahl has not) is shown only under Course text and supplement.
     _lots_supplement = READING_DEPTH == READING_DEPTH_OPTIONS[1]
-    topical_rows = [r for r in topical_lots if r['Lot'] not in ('Lot of Fortune', 'Lot of Spirit', 'Lot of Exaltation', 'Lot of Basis')
+    _classical = ('Lot of Fortune', 'Lot of Spirit', 'Lot of Exaltation', 'Lot of Basis')
+    topical_rows = [r for r in topical_lots if r['Lot'] not in _classical
                     and (_lots_supplement or not r['Supplement'])]
     st.dataframe(pd.DataFrame(topical_rows, columns=['Topic', 'Lot', 'Position', 'WS place', 'Lord', 'Formula', 'Active']),
                  hide_index=True, width='stretch', height=_rows_height(len(topical_rows)))
+    # The four classical Lots keep their POSITIONS out of the table above --
+    # they have their own table at the top of this page -- but their
+    # provenance belongs here, which is where the classical note sends the
+    # reader (F11), and their definitions carry the same three fields every
+    # other Lot's does. Nothing new is written for them.
+    provenance_rows = [r for r in topical_lots if r['Lot'] in _classical] + topical_rows
     with st.expander("Provenance and standing per Lot"):
-        st.table(pd.DataFrame(topical_rows, columns=['Topic', 'Lot', 'Standing', 'Source', 'Editor’s note']),
+        st.table(pd.DataFrame(provenance_rows, columns=['Topic', 'Lot', 'Standing', 'Source', 'Editor’s note']),
                  hide_index=True)
 
     with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
@@ -3631,8 +3704,10 @@ def page_timing():
                    "from the moment of the revolution (fn 161 leaves a \"day\" undefined); the partner already "
                    "in place is looked for behind the degree within its bound, the shape of III.1, 23-25 narrowed "
                    "to the window IX.7, 30 names, since the sentence does not say whether a body ahead in the "
-                   "bound manages from the first day. Only the revolution's Ascendant is directed; IX.7, 31 "
-                   "extends the method to every planet, Lot and house. No worked example of it exists in PN IV.")
+                   "bound manages from the first day. The table below directs the revolution's Ascendant; IX.7, 31 "
+                   "extends the method to every planet, Lot and house, and the selector above carries it out, "
+                   "printing the small days from the point chosen and its profected mighty days beside them. "
+                   "No worked example of it exists in PN IV.")
 
         st.subheader("The mighty days: the terminal degree of the year directed through the revolution",
                      help="IX.7, 23: \"you look in the revolution of the year at the degree of the sign which the "
