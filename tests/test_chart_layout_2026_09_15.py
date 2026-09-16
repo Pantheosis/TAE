@@ -224,7 +224,9 @@ def test_the_layout_is_read_before_the_control_is_drawn():
     which wheel to draw before the radio renders."""
     src = ui_source()
     wheel = src.index('"svg": svg_wide if _picked_wide else svg_code,')
-    control = src.index("                _layout_control()\n")
+    # Eight spaces fewer since the page functions left `if tz_name:`
+    # (2026-09-16, F05); the call and its order are what this pins.
+    control = src.index("        _layout_control()\n")
     read = src.index('wheel_layout = st.session_state.get(')
     assert read < wheel < control
 

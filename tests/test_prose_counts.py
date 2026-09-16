@@ -276,8 +276,11 @@ def test_configurations_chapters_match_the_code():
     own; under the fuller depth his tables join the topics."""
     src = ui_source()
     assert "segmented_control" not in src.split("def page_configurations")[1].split("def page_lots")[0]
+    # The continuation line lost eight spaces when the page functions came
+    # out of `if tz_name:` (2026-09-16, F05); the pinned text is otherwise
+    # the line it always was.
     assert ('_labels = ["Aspects & Connections", "Handing Over & Reception", "Prevented Connections",\n'
-            '                       "Strength & Weakness"] + ([] if supplement else ["Abu Ma\'shar (Supplement)"])') in src
+            '               "Strength & Weakness"] + ([] if supplement else ["Abu Ma\'shar (Supplement)"])') in src
     assert "abu_block([abu_condition, abu_natural, abu_wildness, abu_reflection, abu_favor, abu_rays," in src
 
 
