@@ -41,7 +41,7 @@ st.set_page_config(
 # and their places, the Dignities page -- so a filter by lesson number hid
 # exactly what the lecture was using, and a page a student is not ready
 # for is simply a page not opened. What restrains the pages now is the
-# reading depth on the Sources page, which folds the supplement.
+# Sources shown reading on the Sources page, which folds the supplement.
 
 # The viewer's theme, read once for the pictures. Streamlit 1.62 reports
 # it as st.context.theme.type -- "dark", "light", or None when the browser
@@ -1095,8 +1095,11 @@ WHEEL_DARK_HELP = ("The wheels and the strips are drawn on a white ground unless
                    "the dark palette in the dark theme; in the light theme it changes nothing.")
 WHEEL_DARK = bool(_reading("wheel_dark", "_wheel_dark", False))
 WHEEL_THEME = VIEWER_THEME if WHEEL_DARK else None
-# The reading depth (UI_REVIEW_2026-09-10.md §1 B): the course text alone,
-# or with Abu Ma'shar's supplement laid beside it. Set on the Sources page.
+# Which sources are shown (UI_REVIEW_2026-09-10.md §1 B): the course text
+# alone, or with Abu Ma'shar's supplement laid beside it. Set on the Sources
+# page, where the radio is labelled Sources shown (F12 of the review of
+# 2026-09-16: it selects sources, it does not deepen a reading). The stored
+# VALUES are unchanged -- the radio prints them through a format_func.
 READING_DEPTH = _reading("reading_depth", "_reading_depth", READING_DEPTH_OPTIONS[0])
 
 # Every doctrinal reading, for the Sources page's table of what is in force
@@ -1110,7 +1113,7 @@ READINGS_REGISTRY = (
     ("Domain (hayz)", "domain_rule", "_domain_rule", DOMAIN_RULE_OPTIONS[0], "Dignities and places"),
     ("House-based Lots measure to the", "lot_house_cusp", "_lot_house_cusp", LOT_HOUSE_CUSP_OPTIONS[0], "Lots"),
     ("Monthly profections turn", "pn4_monthly_turn", "_pn4_monthly_turn", PN4_MONTHLY_TURN_OPTIONS[0], "Timing"),
-    ("Reading depth", "reading_depth", "_reading_depth", READING_DEPTH_OPTIONS[0], "Sources and readings"),
+    ("Sources shown", "reading_depth", "_reading_depth", READING_DEPTH_OPTIONS[0], "Sources and readings"),
 )
 
 def _readings_off_default():
@@ -1125,11 +1128,25 @@ def _readings_off_default():
 def _readings_note():
     """One line under a page header when a persisted reading is in force
     that a reader might not remember setting (UI_REVIEW §2's caution)."""
-    off = [(l, v) for l, v in _readings_off_default() if l != "Reading depth"]
+    off = [(l, v) for l, v in _readings_off_default() if l != "Sources shown"]
     if off:
         st.caption("Readings in force that differ from the defaults: "
                    + "; ".join(f"{l} = {v}" for l, v in off)
                    + ". They are remembered between runs; see Sources and readings to reset them.")
+
+
+# One line under the header of every page whose CONTENT the Sources shown
+# reading changes -- F12 of the review of 2026-09-16 found the setting
+# remote from its effect: it is set on Sources, and the pages it adds
+# tables to, moves tabs on and adds rows to said nothing about it. The two
+# sentences are the same on every such page; nothing here is page-specific.
+def _sources_scope_line():
+    """The sources in force, said where their effect is read."""
+    if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
+        st.caption("Sources shown: Sahl's course texts with Abu Ma'shar's supplement.")
+    else:
+        st.caption("Sources shown: Sahl's course texts. Abu Ma'shar's supplement is off; "
+                   "switch it on under Sources and readings.")
 
 
 # --- The committed nativity, or the reason there is none -----------------
@@ -1604,7 +1621,7 @@ def _reading_select(label, options, widget_key, store_key, help=None):
     return _persist(widget_key, store_key, options[0])
 
 def _reading_radio(label, options, widget_key, store_key, help=None,
-                   label_visibility="visible"):
+                   label_visibility="visible", format_func=None):
     # label_visibility is passed through for the one control that
     # stands in a row of checkboxes, where a label above the options
     # puts the radio on a tier of its own. The label string is still
@@ -1615,8 +1632,10 @@ def _reading_radio(label, options, widget_key, store_key, help=None,
     # Seeded, not defaulted by index: the target keys are also written
     # by _restore_chart, and a default beside a seeded key warns.
     st.session_state.setdefault(widget_key, stored if stored in options else options[0])
+    # format_func changes only what the reader sees: the option VALUES are
+    # what is stored, compared and printed in the readings table.
     st.radio(label, options, key=widget_key, horizontal=True, help=help,
-             label_visibility=label_visibility)
+             label_visibility=label_visibility, format_func=format_func or str)
     return _persist(widget_key, store_key, options[0])
 
 # Strength and Weakness as tick grids: one row per planet, one column
@@ -2096,6 +2115,7 @@ def page_findings():
     st.caption("Part 1: the nativity. The delineations the texts read off the chart already cast -- "
                "Sahl's own findings first, then the supplement's -- each under the sentence it applies. "
                "Nothing here is scored; the judgment is the astrologer's.")
+    _sources_scope_line()
     _readings_note()
     _gap = []
     _finding(_gap, "The fetus's stay (Sahl)", "Sahl, On Nativities 1.8-1.9", gestation_data,
@@ -2214,6 +2234,7 @@ def page_dignities():
         return
     st.header("Dignities and places")
     _chart_strip()
+    _sources_scope_line()
     _readings_note()
     st.subheader('Lordship Mapping', help="The domicile, exaltation, triplicity, term (bound), and face ruler of each planet's OWN degree -- the five essential dignities, read at the planet's own position rather than another point.")
     triplicity_key = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
@@ -2336,11 +2357,12 @@ def page_configurations():
         return
     st.header("Configurations")
     _chart_strip()
+    _sources_scope_line()
     _readings_note()
     _gap = []
     # The connection rule and the fitting infortune govern tables on every
     # tab, so they stay above the tabs. The three-way view control went on
-    # 2026-09-10: the reading depth (Sources page) decides where Abu
+    # 2026-09-10: the Sources shown reading (Sources page) decides where Abu
     # Ma'shar's tables sit -- a tab of their own under Course text, or
     # beside Sahl's on the same topic under Course text and supplement.
     rule_col, fit_col = st.columns([1.1, 1.9], vertical_alignment="bottom")
@@ -2687,6 +2709,7 @@ def page_lots():
         return
     st.header("Lots")
     _chart_strip()
+    _sources_scope_line()
     _readings_note()
     st.subheader('Classical Lots', help='Lots: sect-dependent formulas combining two planets or points with the Ascendant to derive a new sensitive degree tied to a specific topic (e.g. Fortune = body/livelihood, Spirit = mind/action).')
     # Formula from the same LOT_DEFINITIONS text the Topical Lots
@@ -2831,6 +2854,7 @@ def page_timing():
                "house-master (ITA VIII.1.3, al-Qabisi IV.4-6) is in hand and stands beside Sahl's in the "
                "Sources page's coverage table, not built. What neither book settles is listed at the foot of "
                "the page rather than filled in.")
+    _sources_scope_line()
 
     # --- The year under examination (2026-09-10) ----------------------
     # The target lives here, where it is used, not in the sidebar with
@@ -4274,12 +4298,19 @@ def page_sources():
     # --- The readings in force (2026-09-10) ----------------------------
     st.subheader("Readings in force",
                  help="Every doctrinal switch, where it is set, what it says now and what the default "
-                      "is. They are remembered between runs. Reset returns all of them to the defaults.")
-    _reading_radio("Reading depth", READING_DEPTH_OPTIONS, "reading_depth", "_reading_depth",
-                   help="Course text: Sahl's Introduction and On Nativities, the course's own texts, with Abu "
-                        "Ma'shar's Great Introduction VII kept apart in its own tab on the Configurations page "
-                        "and behind closed expanders elsewhere. Course text and supplement: his tables laid "
-                        "beside Sahl's on the same topic, and the supplementary expanders open.")
+                      "is. They are remembered between runs. Reset returns all of them to the defaults. "
+                      "Sources shown is stored under the two names the table prints: Course text, which is "
+                      "Sahl's course texts alone, and Course text and supplement, which is those texts with "
+                      "Abu Ma'shar's beside them.")
+    _reading_radio("Sources shown", READING_DEPTH_OPTIONS, "reading_depth", "_reading_depth",
+                   format_func={READING_DEPTH_OPTIONS[0]: "Sahl's course texts",
+                                READING_DEPTH_OPTIONS[1]: "With Abu Ma'shar's supplement"}.get,
+                   help="Sahl's course texts: the tables of Sahl's Introduction and On Nativities alone, with "
+                        "Abu Ma'shar's Great Introduction VII kept apart in its own tab on the Configurations "
+                        "page and behind closed expanders elsewhere. With Abu Ma'shar's supplement: his tables "
+                        "are laid beside Sahl's on the same topic -- further findings, three more topical "
+                        "Lots, a reference table and the supplementary expanders open -- and the Configurations "
+                        "page folds his tab into the topic blocks it belongs to.")
     _rows = [{'Reading': label, 'In force': str(_reading(wk, sk, default)), 'Default': str(default),
               'Set on': page, 'Differs': 'yes' if _reading(wk, sk, default) != default else ''}
              for label, wk, sk, default, page in READINGS_REGISTRY]
@@ -4374,6 +4405,7 @@ def page_reference():
     _chart_strip()
     st.caption("The reference tables, printed from the data this app computes with. Nothing on this "
                "page reads the chart in the sidebar.")
+    _sources_scope_line()
 
     st.subheader("Dignities by sign",
                  help="Domicile, exaltation, the three triplicity lords (day, night, participating) "
