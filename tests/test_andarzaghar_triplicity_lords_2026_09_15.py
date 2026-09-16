@@ -7,7 +7,9 @@ from pathlib import Path
 
 import pytest
 
-ITA = Path("/home/apothic/Desktop/Fifty Aphorism OCR Project/consolidated_texts_final/ita/ita_photographed.md")
+from corpus_paths import corpus_file
+
+ITA = corpus_file("ita/ita_photographed.md")
 SPAN_START = "*[ITA p. 71]*"
 SPAN_END = "*[ITA pp. 77-111 not photographed]*"
 

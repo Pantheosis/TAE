@@ -8,9 +8,9 @@ The 2026-09-08 audit (docs/synthesis/11_abu_mashar_citation_audit.md) found
 "VII.3, 19-20" (VII.3 ends at 11) -- this pin would have caught it -- and
 "VII.5, 120" for the Resistance sentence at 118, which no range pin can.
 
-MAX_PARAGRAPH is vendored from abu_mashar_book_vii.md (derived by script,
-each value checked against the reading); with the corpus on disk a third
-test re-derives it from the file.
+MAX_PARAGRAPH is vendored from the full volume gr_intr/abu_mashar_great_
+introduction.md (derived by script, each value checked against the
+reading); with the corpus on disk a third test re-derives it from the file.
 """
 import os
 import re
@@ -19,6 +19,7 @@ from pathlib import Path
 import pytest
 
 from conftest import app_source
+from corpus_paths import corpus_file
 
 MAX_PARAGRAPH = {
     "VII.1": 39, "VII.2": 75, "VII.3": 11, "VII.4": 109, "VII.5": 142,
@@ -29,9 +30,7 @@ MAX_PARAGRAPH = {
 # The paragraph list stops at the first token that is not a number or range.
 CITE = re.compile(r"VII\.(\d)(?:,\s*((?:\d+(?:-\d+)?)(?:(?:,\s*|\s+and\s+)\d+(?:-\d+)?)*))?")
 
-CORPUS_DIR = Path(os.environ.get(
-    "CORPUS_DIR", Path.home() / "Desktop" / "Fifty Aphorism OCR Project" / "consolidated_texts"))
-CORPUS_FILE = CORPUS_DIR / "abu_mashar_book_vii.md"
+CORPUS_FILE = corpus_file("gr_intr/abu_mashar_great_introduction.md")
 
 
 def vii_citations():
@@ -77,10 +76,16 @@ def corpus_max_paragraphs():
     lines = CORPUS_FILE.read_text(encoding="utf-8").split("\n")
     heads = [(i, m.group(1)) for i, l in enumerate(lines)
              if (m := re.match(r"^### Chapter (VII\.\d)", l))]
-    heads.append((len(lines), "END"))
+    # In the full volume, VII.9 is Book VII's last chapter, so the next
+    # "### Chapter" heading (any book) or the next Book-level heading,
+    # whichever comes first, ends it -- not the end of the file, which
+    # would run the chapter into Book VIII.
+    boundaries = [i for i, l in enumerate(lines)
+                  if re.match(r"^### Chapter ", l) or re.match(r"^#{1,2} ", l)]
     sentence = re.compile(r"(?:^|(?<=[.)\]:;] )|(?<=\*\*))(\d{1,3})(?:\*\*)? (?=[A-Z\[<])")
     out = {}
-    for (a, ch), (b, _) in zip(heads, heads[1:]):
+    for a, ch in heads:
+        b = next((i for i in boundaries if i > a), len(lines))
         nums = []
         for line in lines[a:b]:
             s = re.sub(r"<sup>.*?</sup>", "", line)

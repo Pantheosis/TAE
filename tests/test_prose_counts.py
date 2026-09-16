@@ -13,6 +13,7 @@ import pytest
 
 from conftest import (SWITCHES, app_source, cited_paragraphs, engine_source,
                       function_source, prose_number, ui_source)
+from corpus_paths import CORPUS_DIR
 
 
 # --- Sahl's numbered testimonies -----------------------------------------
@@ -114,9 +115,7 @@ BOOK_CITE = re.compile(r"\b(I{1,3}|IV|VI{0,3}|IX|X)\.\d+")
 PAGE_ABSENCE = re.compile(
     r"not photographed|photo set|page not|begins on (?:a|the following) page"
     r"|not (?:legible|included)|illegible|missing page|not yet (?:photographed|scanned)", re.I)
-CORPUS_DIR = Path(os.environ.get(
-    "CORPUS_DIR", Path.home() / "Desktop" / "Fifty Aphorism OCR Project" / "consolidated_texts"))
-CORPUS_FILES = {"VII": "abu_mashar_book_vii.md"}
+CORPUS_FILES = {"VII": "gr_intr/abu_mashar_great_introduction.md"}
 
 
 def test_coverage_list_entries_are_unique_and_filled(engine):

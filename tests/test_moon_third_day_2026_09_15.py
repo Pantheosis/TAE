@@ -11,7 +11,9 @@ from pathlib import Path
 import pytest
 import swisseph as swe
 
-CORPUS = Path("/home/apothic/Desktop/Fifty Aphorism OCR Project/consolidated_texts_final/on_nativities.md")
+from corpus_paths import corpus_file
+
+CORPUS = corpus_file("on_nativities.md")
 FLORENCE = (43.7792, 11.2463)
 
 
