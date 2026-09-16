@@ -1351,3 +1351,155 @@ After the check (`BUILD_DELIN_A_CHECK_REPORT_2026-09-16.md`: 144 cells verified,
 notes): [12][1] hangs "in its nature" on the planet as 1.36, 96 does, not on the place; [5][10] names
 the children as the ones who meet the hardship from the Sultan (10.2.4, 5); the structural-guard
 comment in `tests/test_base_tables.py` no longer says the lords table is audited against the Guide.
+
+## 2026-09-16: DELIN-TABLES build B -- the PN IV column from Book II
+
+The second of the three DELIN-TABLES builds (plan of 2026-09-16, s.1 and s.3, with s.7's decisions:
+locator in-cell; the Moon's sixth and eighth filled from VII.8, labelled transit). The PN IV halves
+of `PLANETS_IN_HOUSES` ("Topical Planets in Houses", Dignities page) are no longer the Reference
+Guide's wording: all 168 (7 planets x 12 houses x Good/Bad) are re-derived from Abu Ma'shar, On the
+Revolutions of the Years of Nativities, Book II's chapters on the lord of the year in the houses of
+the circle -- Saturn II.6, Jupiter II.9, Mars II.12, the Sun II.15, Venus II.18, Mercury II.21, each
+read whole -- and, for the Moon, VII.8, 1-12. Course text; nothing supplement-gated. The application
+of a lord-of-the-year chapter to natal planets is the Guide's reading and the help says so in so many
+words.
+
+Cell shape. `PLANETS_IN_HOUSES[house][planet]` is `{'Rhetorius': {'Good': {'text','cite'}, 'Bad':
+{...}}, 'PN IV': {'Good': {...}, 'Bad': {...}}}`. The reader keeps the page's two columns, If Well
+Placed and If Badly Placed, and prints in each `Rhetorius: <text> · PN IV: <text> (<locator>)`
+(`planets_in_houses_cell()`); a half with no sentence prints as a dash and no locator. The Rhetorius
+halves' cite is '' in this build -- they still print the Guide's summary exactly as this app had
+carried it, verbatim, with no locator, and the help says so. Twenty-one Rhetorius halves are dashes
+pending build C: the four where the Guide prints "?" (the Moon in the 6th and 8th) and seventeen
+where the app's merged cell had carried only the PN IV reading of the Guide row (Jupiter 1st, 2nd,
+3rd, 6th, 8th, 12th Bad; the Sun 3rd Bad and 12th Good; Venus 3rd Good and Bad, 5th Bad, 12th Good;
+Mars 9th and 11th Bad, 12th Good; Saturn 11th Bad, 12th Good). A first cut of this build had filled
+those seventeen from the Guide's own Rhetorius column in short; that was reversed before the check
+as the wrong direction -- the order's point is to stop reproducing the Guide's wording, and build C
+re-derives every Rhetorius half from Rhetorius Ch. 57 and Mathesis III within days -- so no Guide
+wording is added by this build, and `RHETORIUS_DASHES` in the tests names the twenty-one. The
+export's citation line for the table names both sources as they now stand.
+
+The split. Each Book II chapter states, per house or house-pair, a suitable-condition reading and a
+not-received / made-unfortunate / retrograde reading, and the good/bad halves follow that split
+exactly; every Saturn-Mercury half has its own sentence, so none is a dash. The text's own conditions
+stay inside the cell (in his own house or received; alien, not received; retrograde; eastern; if Mars
+looked at him with a harmful aspect; the lord of the sixth made unfortunate; if the root of his
+nativity indicated children). Grouped houses cite the group's sentence: the four stakes for all six
+planets (Saturn II.6, 1-3; Jupiter II.9, 1-3; Mars II.12, 1-5; the Sun II.15, 1-3; Venus II.18, 1-5;
+Mercury II.21, 1-4), with the per-stake clause each chapter adds kept in that stake's cell (Jupiter's
+"because of" clauses in II.9, 2; Mars's Midheaven, west and fourth in II.12, 2 and 5; the Sun's three
+in II.15, 2; Venus's fourth in II.18, 5; Mercury's "seventh and fourth especially" in II.21, 3); the
+eleventh-or-fifth and the ninth-or-third for all six; the second-or-eighth and the sixth-or-twelfth
+for Jupiter, the Sun, Venus and Mercury, while Saturn and Mars have a sentence for each of those
+four houses on its own. The chapters' extra group sentences are folded into the halves they qualify
+with their locator led inline, since a half has one locator field: Saturn's four falling places
+(II.6, 22-23 into his 2nd, 6th, 8th, 12th Bad; II.6, 24 into their Good), Jupiter's four places not
+looking at the Ascendant (II.9, 15-16 into his 2nd, 6th, 8th, 12th Bad), Venus falling from the
+stakes or what follows them (II.18, 18 into her 3rd, 6th, 9th, 12th Bad), and Mercury's retrograde
+clause (II.21, 4 into his 1st and 10th Bad, inside the 4th and 7th's locator range).
+
+The Moon. II.22 has no per-house list: sentence 13 says to judge her in the houses "in the manner of
+... the rest of the planets", and Dykes's fn 312 sends the reader to VII.8, her transit through the
+twelve houses -- the only such list PN IV has. Her twelve PN IV readings are VII.8, 1-12, one per
+house, each beginning "By transit:" and citing `VII.8, n`. VII.8's sentences carry no condition on
+her state (each is one mixed list of what happens "so long as she is in it"), so no good/bad split is
+made: each reading sits whole in the half its balance belongs to (1st, 3rd, 7th, 9th, 10th, 11th
+Good; 2nd, 4th, 5th, 6th, 8th, 12th Bad -- the 7th opens with the parents' disagreement but is
+otherwise good) and the other half is a dash. The 6th and 8th [UNCERTAIN] markers retire: the Guide's
+"?" there was the absence of a Moon chapter in Book II, not a doubt in the doctrine. (The Guide also
+prints "?" in its PN IV column for the Moon in the 2nd and 10th and leaves the other eight blank; all
+twelve are now VII.8.) Twelve PN IV halves are dashes, all the Moon's; the help states the count.
+
+Mercury in the 9th. The code had kept the Guide's two halves swapped against the Guide's own headings
+(D-16, 2026-09-08: the Guide p. 34 prints "Bad reports and journeys ..." under Good and "Good
+journeys, true visions ..." under Bad). II.21, 8-9 settles it the code's way: sentence 8 -- he travels,
+sees what he loves on the journey, good visions with a true interpretation, good spoken of him for his
+religion -- is the reading with no adverse condition (the sentence states none at all, only "<in the
+two times>"), and sentence 9 -- something detestable and damage on the journey, doubts in religion,
+bad visions, loss in business -- is the "bad condition, made unfortunate, not received" reading. Good
+is 8, Bad is 9, for the 3rd as for the 9th; the Guide's 3rd-house row already had them that way round.
+`test_mercury_in_the_ninth_reads_as_ii21_8_and_9` pins it.
+
+Where the Guide's PN IV half and the text disagree in substance (the Guide's gist first, then the
+text's; the cell follows the text):
+
+1. The Sun in the 1st and the 10th, Good. Guide: "High rank, good with authorities, management,
+   victorious". II.15, 2: in the Ascendant or Midheaven, increase in rank, renowned, a voice among his
+   class, good from the Sultan. "Management" and "victorious over enemies" are the seventh's clause
+   of the same sentence.
+2. The Sun in the 4th, Good and Bad. Guide: "Increase in rank, gain good, commended, especially
+   victory over enemies" / "Little benefit, or harm, in enemies". II.15, 2: in the fourth, good
+   because of real estate, fathers and old men; 3: little benefit, fear of the Sultan. The enemies
+   are the seventh's.
+3. The Sun in the 7th, Good and Bad. Guide: "... especially in land, fathers, ancestors" / "Little
+   benefit, or harm, land, fathers, ancestors". II.15, 2: in the seventh, different managements,
+   victorious over enemies, healthy in body, sees what he loves from women. The land and fathers are
+   the fourth's -- the Guide carries the 4th's and 7th's clauses across each other.
+4. Mars in the 7th, Bad. Guide: "Misfortune from Martial things and especially illnesses and
+   marriage". II.12, 5: in the west, ailments, illnesses, cutting by iron, different distresses, and
+   victorious over his enemies. No marriage in the sentence; the victory over enemies was missing.
+5. Saturn in the 2nd, Bad. Guide: "Corrupted, from abject sources". II.6, 14: the corruption of assets,
+   vegetation and fields, from sinking or water. Flood, not abject sources.
+6. Saturn in the 10th, Bad. Guide: "Manager for others; blamed; low work". II.6, 3: he assumes the
+   responsibility for someone else, blamed and accused; if a corrupting planet looks at him, harm and
+   something detestable. No "low work".
+7. Venus in the 10th, Bad. Guide: "Some spoiling, bad reputation". II.18, 2 puts the spoiling on the
+   retrograde case of the GOOD reading (he gains what was said, from a direction not good, some of it
+   spoiled); the Bad is II.18, 3-4 (disturbed way of life, loss, evil reports, quarrels; Saturn's
+   pains, Mars's burning and theft). The retrograde clause is in the Good half now.
+8. Venus in the 12th, Bad. Guide: "Leisure time and illness; something bad from enemies, the confined,
+   punishment". II.18, 15 for the twelfth is the enemies, the confined, confinement and punishment
+   alone; "leisure time and illness" is the sixth's sentence (14).
+9. The Sun in the 11th, Good. Guide: "delight in friends and brothers". II.15, 4: he sees what he loves
+   from his brothers and delights in children; friends enter only in the Bad (5, friends who have
+   authority undermine him).
+10. Jupiter in the 2nd, Good. Guide: "Leisure, little work". II.9, 10 continues: except that benefits
+    are produced for him without seeking, or because of the dead -- present in the Guide's 8th, dropped
+    from its 2nd. Restored.
+
+Smaller compressions (the Guide's "Sultan/govt", "authorities" for Dykes's "the Sultan"; its
+"underclass" kept, being Dykes's own word) are resolved to Dykes's words without being counted.
+
+VI.3 (the revolution's planets in the natal places, 9-17 for the first) is a revolution chapter and is
+not in this table. The Timing page's indicators caption ("Facts, not judgments: the delineation
+chapters behind these rows ... are not built") gains one clause: VI.3 belongs there with them, not in
+the natal Topical Planets in Houses table, which reads Book II. Nothing else on the Timing page moves.
+
+Page. The table's help says what each half is: the PN IV halves this app's paraphrases of Book II's
+lord-of-the-year chapters applied to natal planets (the Guide's reading, followed and named), the split
+kept only where the chapter makes it, the conditions kept, the locator printed; the Moon from VII.8 by
+transit, one half per house; twelve PN IV dashes, all the Moon's; the Rhetorius halves the Guide's
+summary exactly as carried, without a locator, until re-derived, twenty-one dashes pending that (the
+Guide's four "?" and the seventeen the app never carried); the Guide cited once
+as the arrangement's origin. The caption under the subheader and the export citation say the same in a
+line. No date, file, or process on the page; "the Sultan", "received", "made unfortunate", "eastern",
+"laboring", "quarreling" as Dykes has them.
+
+Tests. `tests/test_prose_tables.py`: the planets half of the Guide transcription (`GUIDE_PAGE`,
+`PLANETS_IN_HOUSES_GUIDE`, `PLANETS_IN_HOUSES_ANCHORS`, the four planets tests including the two that
+required the [UNCERTAIN] markers) deleted; in its place `RHETORIUS_HALVES`, a literal copy of the
+Rhetorius halves only (so build C can retire it in turn), and `PN4_HALVES_SENTENCES`, 168 rows of
+(house, planet, half, cite, anchors) -- the locator and three words the half's text and the cited
+sentence share, or ('', []) for a dash -- and tests that the fixture covers every half once in grid
+order; every PN IV half has text; a cite matches `^(II\.\d+|VII\.8), \d+(-\d+)?$` or is '' with the
+text a dash; anchors in the text; the Moon's twelve cites all `VII.8, n` with exactly one filled half
+per house beginning "By transit:"; no dash outside the Moon's row and the count what the help states
+(12); the Rhetorius dashes exactly the twenty-one named (`RHETORIUS_DASHES`); no [UNCERTAIN] anywhere; Mercury 9th as
+II.21, 8 and 9; the reader's cell format (a formatted half, a dash-dash, a dash on one side, and the
+row function against the formatter). `tests/test_base_tables.py`'s shape guard follows the new nesting.
+Two guards outside the table's own tests had to learn the change: `test_abu_mashar_citations.py`'s
+Book VII paragraph-range scan read "VII.8, 12" as the Great Introduction's VII.8 (which ends at 8) --
+it now skips a citation whose nearest preceding book label on the line is "PN IV"; and the F15 heading
+test's pin on the old help sentence ("both texts are now in hand") is re-pinned on the new help. The
+anchors were checked by script against the corpus sentences (168 rows, none missing on either side)
+before the push; the checker's sentence table (house, planet, half, cite, file line, the sentence's
+first six words) is in the corpus repo's process directory beside the plan and build A's. `tables.json`
+regenerated once: unchanged, since it inventories headings and column names, and neither changed.
+Whole suite 2977 passed, 1 skipped, 6 xfailed (build A: 2806 / 1 / 6).
+
+After the check (`BUILD_DELIN_B_CHECK_REPORT_2026-09-16.md`: 168 PN IV halves verified, one defective,
+three notes): Venus 2nd Bad "practices" (Dykes's spelling); the Moon 3rd keeps VII.8, 3's "some of him
+and his parents" as printed; the Moon 10th says "takes away the same" with fn 106's guess marked as
+his, not stated as the sentence's; the Timing caption's clause about VI.3 now says the II.6-21 rows are
+not built as revolution readings, beside the natal table whose PN IV halves paraphrase Book II.

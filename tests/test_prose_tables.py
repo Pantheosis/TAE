@@ -1,38 +1,47 @@
 """The two prose delineation tables, pinned by content -- 2026-09-08, the
-lords half re-made 2026-09-16.
+lords half re-made 2026-09-16, the planets half's PN IV column the same day.
 
-PLANETS_IN_HOUSES is still a paraphrase of the TNAC Reference Guide for the
-Planets and Places (Dykes 2023): "Planets in the Nth" (pp. 17-40, Rhetorius
-Ch. 57 / PN4 II columns). A shape test let fabricated cells pass, because
-prose of the right shape contradicts no arithmetic. Two pins hold each of
-its cells:
+PLANETS_IN_HOUSES[house][planet] is {'Rhetorius': {'Good', 'Bad'}, 'PN IV':
+{'Good', 'Bad'}}, every half {'text', 'cite'}. Its two sources are pinned
+differently, because they stand differently:
 
-  1. A literal copy of every cell as it stood after the 2026-09-08 re-read of
-     all 84 cells against the Guide pages -- any edit fails on the cell, and
-     must be reconciled against the Guide page cited here.
-  2. Anchor words per cell, taken mechanically from the Guide's own row for
-     that cell (words the paraphrase and the Guide row share). A cell moved
-     to another planet or house keeps its literal but loses its anchors.
+  1. The PN IV halves are this app's paraphrases of Abu Ma'shar's Book II
+     chapters on the lord of the year in the houses (II.6 Saturn, II.9
+     Jupiter, II.12 Mars, II.15 the Sun, II.18 Venus, II.21 Mercury) applied
+     to natal planets, and of VII.8 (the Moon by transit) for the Moon, who
+     has no Book II houses chapter (II.22, 13 fn 312). Their pin is
+     PN4_HALVES_SENTENCES: for every half the locator and three anchor words
+     the half's text and the cited sentence share, or ('', []) for a dash.
+     The corpus is private, so the fixture carries the anchors, not the
+     sentence; the tests hold the cell side (locator well-formed, anchors in
+     the text, the Moon's twelve on VII.8, the dash count the page states,
+     no [UNCERTAIN] marker, the reader's cell format) and the checker
+     verifies the anchors against the sentences.
+  2. The Rhetorius halves still print the Guide's summary (TNAC Reference
+     Guide for the Planets and Places, Dykes 2023, "Planets in the Nth",
+     pp. 17-40, its Rhetorius column) as this app compressed it, with no
+     locator. Their pin is RHETORIUS_HALVES, a literal copy, so that the
+     build which re-derives them from Rhetorius Ch. 57 and Mathesis III can
+     retire it the way the lords table's transcription was retired. The
+     Guide prints "?" for the Moon in the 6th and 8th there, and the app's
+     merged cells had carried no Rhetorius words for seventeen other halves:
+     those twenty-one are dashes (no Guide wording added pending the
+     re-derivation) and the transcription holds None.
 
-Where the Guide prints "?" (the Moon in the 6th and 8th) the cell MUST carry
-the [UNCERTAIN ...] marker; a future fill-in fails here. The one place the code
-does not follow the Guide row is the 9th-house Mercury PN4 halves, which the
-Guide prints against its own column headings (Good: "Bad reports and
-journeys..."; Bad: "Good journeys, true visions..."); the code keeps the
-sensible reading and this file pins it as it is -- an owner's decision.
+The 9th-house Mercury PN IV halves the Guide prints against its own column
+headings are settled by II.21, 8-9 (the good journey and true visions are
+sentence 8, the suitable reading; the damage on the journey, the doubts in
+religion and the bad visions are sentence 9, the bad-condition reading), the
+way the code always kept them.
 
-MASHAALLAH_LORDS is no longer the Guide's wording: every cell is this app's
-paraphrase of Sahl's own sentence for that [placed-in][ruled] pairing (On
-Nativities, the twelve lords-of-places passages), shaped {'text', 'cite'}.
-Its pin is MASHAALLAH_LORDS_SENTENCES below: for every cell the locator and
-three anchor words that the cell text and Sahl's sentence share (words
-specific to the sentence, not "the" or "will"). The corpus is private, so
-the fixture carries the anchors, not the sentence; the tests hold the cell
-side (locator well-formed, anchors present in the text, the illegible cell
-marked by its footnote, no [UNCERTAIN] marker, the count of empty cells the
-page states), and the checker verifies the anchors against the sentences.
-The Guide transcription of the lords table and its page numbers are gone
-from this file with the wording they pinned.
+MASHAALLAH_LORDS is this app's paraphrase of Sahl's own sentence for each
+[placed-in][ruled] pairing (On Nativities, the twelve lords-of-places
+passages), shaped {'text', 'cite'}. Its pin is MASHAALLAH_LORDS_SENTENCES
+below, the same kind of sentence-pin fixture: locator and three anchor words
+per cell; the tests hold the cell side (locator well-formed, anchors present
+in the text, the illegible cell marked by its footnote, no [UNCERTAIN]
+marker, the count of empty cells the page states), and the checker verifies
+the anchors against the sentences.
 """
 from __future__ import annotations
 
@@ -41,218 +50,300 @@ import re
 import pytest
 
 PLANETS = ['Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon']
-GUIDE_PAGE = {1: 17, 2: 19, 3: 21, 4: 24, 5: 26, 6: 28, 7: 30, 8: 32, 9: 34, 10: 36, 11: 38, 12: 40}
 
-PLANETS_IN_HOUSES_GUIDE = {
+# The Rhetorius halves, literal: the Guide's summary of Rhetorius Ch. 57 and
+# Firmicus exactly as this app carried it before the PN IV column was split
+# out (its Rhetorius column, pp. 17-40), {house: {planet: (Good, Bad)}};
+# None where the app's merged cell had no Rhetorius words (seventeen) or the
+# Guide prints "?" (the Moon in the 6th and 8th, four). No Guide wording was
+# added. These halves carry no locator and are to be re-derived from the
+# two texts; when they are, this transcription retires the way the lords
+# table's did.
+RHETORIUS_HALVES = {
     1: {
-        'Saturn': {'Good': 'Eldest sibling; land ownership, building.',
-                  'Bad': 'Sluggish, laborious; blamed.'},
-        'Jupiter': {'Good': 'Glorious, in charge; celebrated, respected.',
-                   'Bad': 'Decrease in assets, worries.'},
-        'Mars': {'Good': 'Military, leader; successful, victorious.',
-                'Bad': 'Unstable, squandering; fugitive, misfortune.'},
-        'Sun': {'Good': 'Noble, lucky; high rank, management.',
-               'Bad': 'Less noble, less benefit.'},
-        'Venus': {'Good': 'Talented, friends of powerful; delight, clothing, sex.',
-                 'Bad': 'Lustful, lower professions; disturbed life, quarrels.'},
-        'Mercury': {'Good': 'Intellectual activities; status, praise.',
-                   'Bad': 'Practical activities; loss in business.'},
-        'Moon': {'Good': 'Increases of fortune, in charge.',
-                'Bad': 'Sailing, poor livelihood.'},
+        'Saturn': ('Eldest sibling.', 'Sluggish, laborious.'),
+        'Jupiter': ('Glorious, in charge.', None),
+        'Mars': ('Military, leader.', 'Unstable, squandering.'),
+        'Sun': ('Noble, lucky.', 'Less noble.'),
+        'Venus': ('Talented, friends of powerful.', 'Lustful, lower professions.'),
+        'Mercury': ('Intellectual activities.', 'Practical activities.'),
+        'Moon': ('Increases of fortune, in charge.', 'Sailing, poor livelihood.'),
     },
     2: {
-        'Saturn': {'Good': 'Slow increase, strong; unexpected source.',
-                  'Bad': 'Loss, lazy, ill; abject sources.'},
-        'Jupiter': {'Good': 'Good all around, inheritances; leisure.',
-                   'Bad': 'Spending without enjoyment; distress.'},
-        'Mars': {'Good': 'Military; enough; benefits from unexpected place.',
-                'Bad': 'Exile, dangers; squandering.'},
-        'Sun': {'Good': 'Dignity, wealth; leisure.',
-               'Bad': 'Private property; negligence.'},
-        'Venus': {'Good': 'Prosperous, pleasing, arts.',
-                 'Bad': 'Disruption, corruption, stagnation.'},
-        'Mercury': {'Good': 'Evening star by night: good at business; benefit from commerce, partnerships.',
-                   'Bad': 'Morning star by night: obscure, bad, poor; evening star by day: good at learning, poor; loss, downturn in business, blame, quarrels.'},
-        'Moon': {'Good': 'Brilliant, conspicuous, extravagant.',
-                'Bad': 'Family/actions dispersed and divided.'},
+        'Saturn': ('Slow increase.', 'Loss, lazy, ill.'),
+        'Jupiter': ('Good all around, inheritances.', None),
+        'Mars': ('Military; enough.', 'Exile, dangers.'),
+        'Sun': ('Dignity, wealth.', 'Private property.'),
+        'Venus': ('Prosperous, pleasing, arts.', 'Disruption.'),
+        'Mercury': ('Evening star by night: good at business.', 'Morning star by night: obscure, bad, poor; evening star by day: good at learning, poor.'),
+        'Moon': ('Brilliant, conspicuous, extravagant.', 'Family/actions dispersed and divided.'),
     },
     3: {
-        'Saturn': {'Good': 'Initiates, religious chiefs; travel for benefit.',
-                  'Bad': 'Recluses, bad religious reputation, confused thinking.'},
-        'Jupiter': {'Good': 'Balanced moderation; good religious reputation, delight in siblings.',
-                   'Bad': 'Distress from siblings, negligence in religion.'},
-        'Mars': {'Good': 'Glory with labor; strong in travel.',
-                'Bad': 'Worse than by night?; evil reports, difficult travels, illness from heat, misfortune from wild animals.'},
-        'Sun': {'Good': 'Bad death for father; serious in counsel, manages public things, religious honors; travel due to Sultan, good reputation from religion, good from relatives and brothers.',
-               'Bad': 'Bad reputation, distress due to travel/relatives.'},
-        'Venus': {'Good': 'Travel with good/status, benefit from brothers.',
-                 'Bad': 'Bad reports/journeys, contention with brothers.'},
-        'Mercury': {'Good': 'Divination, astrologers, good journeys/visions.',
-                   'Bad': 'Priests, magicians; bad travels, religious doubts.'},
-        'Moon': {'Good': 'With Saturn: slow, unsuccessful, sacrilegious (Firmicus).',
-                'Bad': 'Ignoble or infamous mother; sacrilege with Mercury or Mars; but good religious activities if with Jupiter.'},
+        'Saturn': ('Initiates, religious chiefs.', 'Recluses.'),
+        'Jupiter': ('Balanced moderation.', None),
+        'Mars': ('Glory with labor.', 'Worse than by night?'),
+        'Sun': ('Bad death for father; serious in counsel, manages public things, religious honors.', None),
+        'Venus': (None, None),
+        'Mercury': ('Divination, astrologers.', 'Priests, magicians.'),
+        'Moon': ('With Saturn: slow, unsuccessful, sacrilegious (Firmicus).', 'Ignoble or infamous mother; sacrilege with Mercury or Mars; but good religious activities if with Jupiter.'),
     },
     4: {
-        'Saturn': {'Good': 'Lots of wealth; owning property, building.',
-                  'Bad': 'Destroys/threatens parents, illness; blamed.'},
-        'Jupiter': {'Good': 'Commanders, jurists; respected, land/family assets.',
-                   'Bad': 'Middling assets; worries from these topics.'},
-        'Mars': {'Good': 'Generals, soldiers; successful, inspiring awe.',
-                'Bad': 'Sickly, surgery; misfortune for home/land.'},
-        'Sun': {'Good': 'Annoyances and interruptions in life, better in old age; increase in rank, gain good, commended, victory over enemies.',
-               'Bad': 'Destroys native, parents, and livelihood; little benefit, or harm, in enemies.'},
-        'Venus': {'Good': 'Fortunate over time, charming; delight in important people.',
-                 'Bad': 'Loss of patrimony, widowhood; conflict in land/family.'},
-        'Mercury': {'Good': 'Lots of money, initiates; status from Mercurial things/govt.',
-                   'Bad': 'Forbidden mysteries; accusation, family quarrels.'},
-        'Moon': {'Good': 'Honored mother, good living standard.',
-                'Bad': 'Lowborn mother, commerce.'},
+        'Saturn': ('Lots of wealth.', 'Destroys/threatens parents, illness.'),
+        'Jupiter': ('Commanders, jurists.', 'Middling assets.'),
+        'Mars': ('Generals, soldiers.', 'Sickly, surgery.'),
+        'Sun': ('Annoyances and interruptions in life, better in old age.', 'Destroys native, parents, and livelihood.'),
+        'Venus': ('Fortunate over time, charming.', 'Loss of patrimony, widowhood.'),
+        'Mercury': ('Lots of money, initiates.', 'Forbidden mysteries.'),
+        'Moon': ('Honored mother, good living standard.', 'Lowborn mother, commerce.'),
     },
     5: {
-        'Saturn': {'Good': 'Kingships/command over time; delight in friends.',
-                  'Bad': 'Delayed, sluggish; distress from children/siblings.'},
-        'Jupiter': {'Good': 'Fortunate, honored, healthy; blessed by children.',
-                   'Bad': 'Lower-status activities; distressed by children.'},
-        'Mars': {'Good': 'Good possessions, honor; increase in children/rank.',
-                'Bad': 'Harmful travel; distress/accidents in family/children.'},
-        'Sun': {'Good': 'Honored, easy goals; delight/increase in children.',
-               'Bad': 'Moderate fortune, childless; distress due to children.'},
-        'Venus': {'Good': 'Prize-fighters, victors; increase/delight in women/children.',
-                 'Bad': 'Distress from women and children.'},
-        'Mercury': {'Good': 'Wealth, managing money; befriend nobles, profit.',
-                   'Bad': 'Squanders money; hostility, illness/death of children.'},
-        'Moon': {'Good': 'Gracious, leaders, fortunate.',
-                'Bad': 'Foreign travel, parents estranged, orphans.'},
+        'Saturn': ('Kingships/command over time.', 'Delayed, sluggish.'),
+        'Jupiter': ('Fortunate, honored, healthy.', 'Lower-status activities.'),
+        'Mars': ('Good possessions, honor.', 'Harmful travel.'),
+        'Sun': ('Honored, easy goals.', 'Moderate fortune, childless.'),
+        'Venus': ('Prize-fighters, victors.', None),
+        'Mercury': ('Wealth, managing money.', 'Squanders money.'),
+        'Moon': ('Gracious, leaders, fortunate.', 'Foreign travel, parents estranged, orphans.'),
     },
     6: {
-        'Saturn': {'Good': 'Moderate; slaves/animals recover.',
-                  'Bad': 'No inheritance, dangers from slaves, chronic illness.'},
-        'Jupiter': {'Good': 'Exposure, valuable materials; praise from subordinates.',
-                   'Bad': 'Illnesses, distress from enemies/confinement.'},
-        'Mars': {'Good': 'Harms children, uneven life, illness (Firmicus); healthy, victory over enemies.',
-                'Bad': 'Worse than by night?; ailment from heat and moisture, disturbance of blood.'},
-        'Sun': {'Good': 'With Jupiter and Venus, better than by night; mild-temperedness and safety.',
-               'Bad': 'Bad death or condemnation for father if no star in the 10th (with one, good fortune from parents and resources); illness from heat and dryness, pain in eyes and head.'},
-        'Venus': {'Good': 'Sex with low-quality women, treated badly by wives unless a planet is in the 10th, or difficulties in pregnancy; with a planet in the 10th, charm and good fortune through women; benefit from the underclass and medicine.',
-                 'Bad': 'See above; leisure time and illness.'},
-        'Mercury': {'Good': 'Advancement through speech/business.',
-                   'Bad': 'Idle, evil; illness, arrested, confinement.'},
-        'Moon': {'Good': '[UNCERTAIN -- the TNAC Reference Guide (p. 28) prints ? for both the Rhetorius and PN IV cells of the Moon in the 6th; no sourced delineation exists; do not rely on this cell]',
-                'Bad': '[UNCERTAIN -- the TNAC Reference Guide (p. 28) prints ? for both the Rhetorius and PN IV cells of the Moon in the 6th; no sourced delineation exists; do not rely on this cell]'},
+        'Saturn': ('Moderate.', 'No inheritance, dangers from slaves.'),
+        'Jupiter': ('Exposure, valuable materials.', None),
+        'Mars': ('Harms children, uneven life, illness (Firmicus).', 'Worse than by night?'),
+        'Sun': ('With Jupiter and Venus, better than by night.', 'Bad death or condemnation for father if no star in the 10th (with one, good fortune from parents and resources).'),
+        'Venus': ('Sex with low-quality women, treated badly by wives unless a planet is in the 10th, or difficulties in pregnancy; with a planet in the 10th, charm and good fortune through women.', 'See above.'),
+        'Mercury': ('Advancement through speech/business.', 'Idle, evil.'),
+        'Moon': (None, None),
     },
     7: {
-        'Saturn': {'Good': 'Success after delay, long-lived; owning property.',
-                  'Bad': 'Sickly, blamed/harmed.'},
-        'Jupiter': {'Good': 'Long-lived, wealth later; praised, respected.',
-                   'Bad': 'Moderate living; worries.'},
-        'Mars': {'Good': 'Professions from fire/violence; successful, inspiring awe.',
-                'Bad': 'Violent, short-lived; illnesses, spending.'},
-        'Sun': {'Good': 'Increase in rank/land; administrators.',
-               'Bad': 'Lower-status activities; little benefit, or harm, in land, fathers, ancestors.'},
-        'Venus': {'Good': 'Age difference/delay in marriage; delight, increase in rank.',
-                 'Bad': 'Lewdness; distress in sex/marriage.'},
-        'Mercury': {'Good': '(Diurnal) Bad with Venus or Mars: lewd, brothel-keepers, fugitives; status and rank from Mercurial things, serving the Sultan/govt, good reputation.',
-                   'Bad': '(Nocturnal) Managing affairs of women, good fortune from sex, numbers, arts or writings; bad experiences from Mercurial things, accusation, loss in business, quarreling within the family.'},
-        'Moon': {'Good': 'Changes, travel, better resources.',
-                'Bad': 'Foreign travel with dangers.'},
+        'Saturn': ('Success after delay, long-lived.', 'Sickly.'),
+        'Jupiter': ('Long-lived, wealth later.', 'Moderate living.'),
+        'Mars': ('Professions from fire/violence.', 'Violent, short-lived.'),
+        'Sun': ('Administrators.', 'Lower-status activities.'),
+        'Venus': ('Age difference/delay in marriage.', 'Lewdness.'),
+        'Mercury': ('(Diurnal) Bad with Venus or Mars: lewd, brothel-keepers, fugitives.', '(Nocturnal) Managing affairs of women, good fortune from sex, numbers, arts or writings.'),
+        'Moon': ('Changes, travel, better resources.', 'Foreign travel with dangers.'),
     },
     8: {
-        'Saturn': {'Good': 'Assets over time/inheritance; good from dead.',
-                  'Bad': 'Loss, bad death; squandering, distress.'},
-        'Jupiter': {'Good': 'Acquisition, inheritance; leisure.',
-                   'Bad': 'Spending without happiness; distress/fighting due to assets.'},
-        'Mars': {'Good': 'Hot-heads, bright; benefit from dead/inheritance.',
-                'Bad': 'Patrimony spent, dangers; squandered assets.'},
-        'Sun': {'Good': "Father's early death, healing; mild-temperedness.",
-               'Bad': 'See above; leisure but without benefit, poor way of life, negligence or laziness.'},
-        'Venus': {'Good': 'Wealthy, benefit from death of women, easy death; benefit from underclass or base work, much spending.',
-                 'Bad': 'Marry late, lower-quality women, STDs, seizures; negligence in assets, idleness, little benefit, fighting over assets.'},
-        'Mercury': {'Good': 'Money, management, inheritance; praised.',
-                   'Bad': 'Ineffective, lazy; blamed, quarreling due to assets.'},
-        'Moon': {'Good': '[UNCERTAIN -- the TNAC Reference Guide (p. 32) prints ? for both the Rhetorius and PN IV cells of the Moon in the 8th; no sourced delineation exists; do not rely on this cell]',
-                'Bad': '[UNCERTAIN -- the TNAC Reference Guide (p. 32) prints ? for both the Rhetorius and PN IV cells of the Moon in the 8th; no sourced delineation exists; do not rely on this cell]'},
+        'Saturn': ('Assets over time/inheritance.', 'Loss, bad death.'),
+        'Jupiter': ('Acquisition, inheritance.', None),
+        'Mars': ('Hot-heads, bright.', 'Patrimony spent, dangers.'),
+        'Sun': ("Father's early death, healing.", 'See above.'),
+        'Venus': ('Wealthy, benefit from death of women, easy death.', 'Marry late, lower-quality women, STDs, seizures.'),
+        'Mercury': ('Money, management, inheritance.', 'Ineffective, lazy.'),
+        'Moon': (None, None),
     },
     9: {
-        'Saturn': {'Good': 'Initiates, chief priests; travel for benefit.',
-                  'Bad': 'Recluses, anger at gods; confused religious opinions.'},
-        'Jupiter': {'Good': 'Predicting future, priesthood; good religious reputation.',
-                   'Bad': 'Unsteady, false speech; negligence in religion.'},
-        'Mars': {'Good': 'Glory, unpunished; strong in travel.',
-                'Bad': 'Evil reports, difficult travels, illness.'},
-        'Sun': {'Good': 'Building sacred things, religious authority.',
-               'Bad': 'Harm in travels; bad reputation, distress.'},
-        'Venus': {'Good': 'Divine men, gifts from temples; travel with status.',
-                 'Bad': 'Demon-afflicted, illicit sex; bad reports/journeys.'},
-        'Mercury': {'Good': 'Priests, wizards; good journeys, true visions.',
-                   'Bad': 'Seers, sacrificers; defamed in religion, bad assets.'},
-        'Moon': {'Good': 'Living abroad, notable; benefiting from temples.',
-                'Bad': 'Wandering and dangers; temple servants.'},
+        'Saturn': ('Initiates, chief priests.', 'Recluses, anger at gods.'),
+        'Jupiter': ('Predicting future, priesthood.', 'Unsteady, false speech.'),
+        'Mars': ('Glory, unpunished.', None),
+        'Sun': ('Building sacred things, religious authority.', 'Harm in travels.'),
+        'Venus': ('Divine men, gifts from temples.', 'Demon-afflicted, illicit sex.'),
+        'Mercury': ('Priests, wizards.', 'Seers, sacrificers.'),
+        'Moon': ('Living abroad, notable; benefiting from temples.', 'Wandering and dangers; temple servants.'),
     },
     10: {
-        'Saturn': {'Good': 'Leaders, farmers; agriculture, building.',
-                  'Bad': 'Bunglers, sorrow; blamed, low work.'},
-        'Jupiter': {'Good': 'Athletes, famous, trusted; celebrated, respected.',
-                   'Bad': 'Handsome but unstable; decreased assets, worry.'},
-        'Mars': {'Good': 'Unstable, fearsome leaders; successful, favored by Sultan.',
-                'Bad': 'No accomplishments, fugitives; misfortune, violence.'},
-        'Sun': {'Good': 'Rulers, leaders, dignity; increased rank, victorious.',
-               'Bad': 'Success through violence; fear from Sultan.'},
-        'Venus': {'Good': 'Honored, musicians; honored by Sultan, delight.',
-                 'Bad': 'Blamed, burdened, indecent; bad reputation.'},
-        'Mercury': {'Good': 'Admirable, trusted; status from writing.',
-                   'Bad': 'Changes, living abroad; accusation, loss.'},
-        'Moon': {'Good': 'Rulers, successful, trusted.',
-                'Bad': 'Hardship, unsteady, error.'},
+        'Saturn': ('Leaders, farmers.', 'Bunglers, sorrow.'),
+        'Jupiter': ('Athletes, famous, trusted.', 'Handsome but unstable.'),
+        'Mars': ('Unstable, fearsome leaders.', 'No accomplishments, fugitives.'),
+        'Sun': ('Rulers, leaders, dignity.', 'Success through violence.'),
+        'Venus': ('Honored, musicians.', 'Blamed, burdened, indecent.'),
+        'Mercury': ('Admirable, trusted.', 'Changes, living abroad.'),
+        'Moon': ('Rulers, successful, trusted.', 'Hardship, unsteady, error.'),
     },
     11: {
-        'Saturn': {'Good': 'Middling goods over time; delight in friends.',
-                  'Bad': 'Distress from children/siblings.'},
-        'Jupiter': {'Good': 'Fortunate, renowned, authority; good way of life.',
-                   'Bad': 'Diminished effectiveness; worries, distressed by friends.'},
-        'Mars': {'Good': 'Many goods, dignity; increase in children/rank.',
-                'Bad': 'Feuding with friends and brothers.'},
-        'Sun': {'Good': 'Lucky, noble; good condition, delight in friends.',
-               'Bad': 'Harms children; distress due to friends.'},
-        'Venus': {'Good': 'Powerful, trusted; increase/delight in friends.',
-                 'Bad': 'Sterility, unusual sexuality; hostility to friends.'},
-        'Mercury': {'Good': 'Ingenious, accounts; befriend nobles, profit.',
-                   'Bad': 'Spending, agents; hostility from friends, illness of children.'},
-        'Moon': {'Good': 'Rulers, favored, good from parents.',
-                'Bad': 'Living abroad, estrangements, orphanhood.'},
+        'Saturn': ('Middling goods over time.', None),
+        'Jupiter': ('Fortunate, renowned, authority.', 'Diminished effectiveness.'),
+        'Mars': ('Many goods, dignity.', None),
+        'Sun': ('Lucky, noble.', 'Harms children.'),
+        'Venus': ('Powerful, trusted.', 'Sterility, unusual sexuality.'),
+        'Mercury': ('Ingenious, accounts.', 'Spending, agents.'),
+        'Moon': ('Rulers, favored, good from parents.', 'Living abroad, estrangements, orphanhood.'),
     },
     12: {
-        'Saturn': {'Good': 'Victory over enemies.',
-                  'Bad': 'Loss of inheritance, mental disturbance; hardship from prison.'},
-        'Jupiter': {'Good': 'Praise from subordinates; fights against superiors.',
-                   'Bad': 'Illnesses, distress from enemies/confinement.'},
-        'Mars': {'Good': 'Safety from enemies.',
-                'Bad': 'Illness, injury, dangers from slaves, criminals; something detestable from runaways, the confined, enemies.'},
-        'Sun': {'Good': 'Good reputation, safety.',
-               'Bad': 'With infortunes, long illnesses, defects, slavery; confinement, distress due to enemies and the confined; exile.'},
-        'Venus': {'Good': 'Benefit from underclass.',
-                 'Bad': 'Ruined by women; leisure time and illness, punishment.'},
-        'Mercury': {'Good': 'Managing big affairs; benefit from low work.',
-                   'Bad': 'Danger from slaves; arrested unfairly, confinement.'},
-        'Moon': {'Good': 'Luckiness/authority (with fortunes).',
-                'Bad': 'Short life, humble; bad for patrimony/travel.'},
+        'Saturn': (None, 'Loss of inheritance, mental disturbance.'),
+        'Jupiter': ('Fights against superiors.', None),
+        'Mars': (None, 'Illness, injury, dangers from slaves, criminals.'),
+        'Sun': (None, 'With infortunes, long illnesses, defects, slavery.'),
+        'Venus': (None, 'Ruined by women.'),
+        'Mercury': ('Managing big affairs.', 'Danger from slaves.'),
+        'Moon': ('Luckiness/authority (with fortunes).', 'Short life, humble; bad for patrimony/travel.'),
     },
 }
 
-# Words each cell shares with its own Guide row (None where the Guide prints "?").
-PLANETS_IN_HOUSES_ANCHORS = {
-    1: {'Saturn': ['laborious', 'sluggish', 'blamed'], 'Jupiter': ['celebrated', 'respected', 'decrease'], 'Mars': ['squandering', 'misfortune', 'successful'], 'Sun': ['management', 'benefit', 'noble'], 'Venus': ['professions', 'disturbed', 'quarrels'], 'Mercury': ['activities', 'practical', 'business'], 'Moon': ['livelihood', 'increases', 'fortune']},
-    2: {'Saturn': ['sources', 'abject', 'lazy'], 'Jupiter': ['inheritances', 'enjoyment', 'distress'], 'Mars': ['squandering', 'unexpected', 'benefits'], 'Sun': ['negligence', 'property', 'dignity'], 'Venus': ['corruption', 'disruption', 'prosperous'], 'Mercury': ['business', 'downturn', 'learning'], 'Moon': ['conspicuous', 'extravagant', 'brilliant']},
-    3: {'Saturn': ['reputation', 'religious', 'confused'], 'Jupiter': ['moderation', 'negligence', 'balanced'], 'Mars': ['misfortune', 'difficult', 'animals'], 'Sun': ['reputation', 'relatives', 'religious'], 'Venus': ['contention', 'brothers', 'journeys'], 'Mercury': ['magicians', 'religious', 'priests'], 'Moon': ['activities', 'religious', 'sacrilege']},
-    4: {'Saturn': ['threatens', 'destroys', 'parents'], 'Jupiter': ['middling', 'worries', 'assets'], 'Mars': ['misfortune', 'surgery', 'sickly'], 'Sun': ['livelihood', 'destroys', 'increase'], 'Venus': ['patrimony', 'widowhood', 'conflict'], 'Mercury': ['accusation', 'forbidden', 'mercurial'], 'Moon': ['commerce', 'standard', 'honored']},
-    5: {'Saturn': ['children', 'distress', 'siblings'], 'Jupiter': ['activities', 'distressed', 'children'], 'Mars': ['accidents', 'children', 'distress'], 'Sun': ['childless', 'children', 'distress'], 'Venus': ['children', 'distress', 'delight'], 'Mercury': ['hostility', 'squanders', 'children'], 'Moon': ['estranged', 'foreign', 'orphans']},
-    6: {'Saturn': ['inheritance', 'animals', 'chronic'], 'Jupiter': ['confinement', 'illnesses', 'distress'], 'Mars': ['disturbance', 'moisture', 'ailment'], 'Sun': ['resources', 'dryness', 'fortune'], 'Venus': ['difficulties', 'underclass', 'medicine'], 'Mercury': ['confinement', 'arrested', 'illness'], 'Moon': None},
-    7: {'Saturn': ['blamed', 'harmed', 'sickly'], 'Jupiter': ['moderate', 'worries', 'living'], 'Mars': ['illnesses', 'spending', 'violent'], 'Sun': ['administrators', 'activities', 'ancestors'], 'Venus': ['difference', 'distress', 'lewdness'], 'Mercury': ['experiences', 'accusation', 'quarreling'], 'Moon': ['resources', 'changes', 'dangers']},
-    8: {'Saturn': ['inheritance', 'squandering', 'distress'], 'Jupiter': ['acquisition', 'inheritance', 'happiness'], 'Mars': ['squandered', 'patrimony', 'dangers'], 'Sun': ['negligence', 'laziness', 'benefit'], 'Venus': ['negligence', 'fighting', 'idleness'], 'Mercury': ['ineffective', 'inheritance', 'quarreling'], 'Moon': None},
-    9: {'Saturn': ['religious', 'confused', 'opinions'], 'Jupiter': ['negligence', 'religion', 'unsteady'], 'Mars': ['difficult', 'illness', 'reports'], 'Sun': ['reputation', 'authority', 'distress'], 'Venus': ['afflicted', 'journeys', 'illicit'], 'Mercury': ['sacrificers', 'journeys', 'visions'], 'Moon': ['wandering', 'servants', 'dangers']},
-    10: {'Saturn': ['bunglers', 'blamed', 'sorrow'], 'Jupiter': ['celebrated', 'decreased', 'respected'], 'Mars': ['accomplishments', 'misfortune', 'successful'], 'Sun': ['victorious', 'increased', 'violence'], 'Venus': ['reputation', 'musicians', 'burdened'], 'Mercury': ['accusation', 'changes', 'writing'], 'Moon': ['successful', 'hardship', 'unsteady']},
-    11: {'Saturn': ['children', 'distress', 'siblings'], 'Jupiter': ['diminished', 'distressed', 'friends'], 'Mars': ['brothers', 'dignity', 'feuding'], 'Sun': ['children', 'distress', 'delight'], 'Venus': ['hostility', 'sexuality', 'sterility'], 'Mercury': ['hostility', 'children', 'spending'], 'Moon': ['estrangements', 'orphanhood', 'abroad']},
-    12: {'Saturn': ['disturbance', 'inheritance', 'hardship'], 'Jupiter': ['confinement', 'illnesses', 'distress'], 'Mars': ['detestable', 'criminals', 'something'], 'Sun': ['confinement', 'infortunes', 'illnesses'], 'Venus': ['punishment', 'underclass', 'benefit'], 'Mercury': ['confinement', 'arrested', 'unfairly'], 'Moon': ['patrimony', 'travel', 'bad']},
-}
+
+# (house, planet, half, cite, anchors): the PN IV half's locator and three
+# words the half's text shares with the cited sentence(s); ('', []) for a
+# dash. Grid order: house, then planet, Good before Bad.
+PN4_HALVES_SENTENCES = [
+    (1, 'Saturn', 'Good', 'II.6, 1-2', ['villages', 'building', 'rivers']),
+    (1, 'Saturn', 'Bad', 'II.6, 3', ['blamed', 'accused', 'detestable']),
+    (1, 'Jupiter', 'Good', 'II.9, 1-2', ['celebrated', 'respected', 'motives']),
+    (1, 'Jupiter', 'Bad', 'II.9, 3', ['scarcity', 'eagerness', 'worries']),
+    (1, 'Mars', 'Good', 'II.12, 1-2', ['awe', 'wars', 'contends']),
+    (1, 'Mars', 'Bad', 'II.12, 3-5', ['conflagration', 'robbers', 'iron']),
+    (1, 'Sun', 'Good', 'II.15, 1-2', ['renowned', 'voice', 'sultan']),
+    (1, 'Sun', 'Bad', 'II.15, 3', ['detestable', 'benefit', 'fear']),
+    (1, 'Venus', 'Good', 'II.18, 1-2', ['gates', 'kings', 'spoiled']),
+    (1, 'Venus', 'Bad', 'II.18, 3-4', ['paralysis', 'pleurisy', 'stolen']),
+    (1, 'Mercury', 'Good', 'II.21, 1', ['writing', 'sciences', 'preservation']),
+    (1, 'Mercury', 'Bad', 'II.21, 2', ['writers', 'calculation', 'accused']),
+    (1, 'Moon', 'Good', 'VII.8, 1', ['preserved', 'endearing', 'lawsuits']),
+    (1, 'Moon', 'Bad', '', []),
+    (2, 'Saturn', 'Good', 'II.6, 12-13', ['assets', 'hoped', 'sowing']),
+    (2, 'Saturn', 'Bad', 'II.6, 14', ['vegetation', 'fields', 'sinking']),
+    (2, 'Jupiter', 'Good', 'II.9, 10', ['leisure', 'scarcity', 'dead']),
+    (2, 'Jupiter', 'Bad', 'II.9, 11', ['spending', 'cheerfulness', 'contention']),
+    (2, 'Mars', 'Good', 'II.12, 11', ['benefit', 'direction', 'aware']),
+    (2, 'Mars', 'Bad', 'II.12, 12', ['spend', 'money', 'squander']),
+    (2, 'Sun', 'Good', 'II.15, 8', ['temperedness', 'leisure', 'revenue']),
+    (2, 'Sun', 'Bad', 'II.15, 9', ['scarcity', 'negligence', 'laziness']),
+    (2, 'Venus', 'Good', 'II.18, 10', ['underclass', 'base', 'work']),
+    (2, 'Venus', 'Bad', 'II.18, 11', ['negligence', 'idleness', 'stagnation']),
+    (2, 'Mercury', 'Good', 'II.21, 10', ['selling', 'buying', 'praised']),
+    (2, 'Mercury', 'Bad', 'II.21, 11', ['downturn', 'incriminated', 'quarrel']),
+    (2, 'Moon', 'Good', '', []),
+    (2, 'Moon', 'Bad', 'VII.8, 2', ['revenue', 'mountains', 'deserts']),
+    (3, 'Saturn', 'Good', 'II.6, 7-8', ['reward', 'toil', 'foreigners']),
+    (3, 'Saturn', 'Bad', 'II.6, 9-11', ['gossip', 'worship', 'theft']),
+    (3, 'Jupiter', 'Good', 'II.9, 8', ['piety', 'brothers', 'reports']),
+    (3, 'Jupiter', 'Bad', 'II.9, 9', ['negligent', 'doubts', 'brothers']),
+    (3, 'Mars', 'Good', 'II.12, 9', ['travel', 'strong', 'praised']),
+    (3, 'Mars', 'Bad', 'II.12, 10', ['false', 'hardship', 'wild']),
+    (3, 'Sun', 'Good', 'II.15, 6', ['beautiful', 'religion', 'relatives']),
+    (3, 'Sun', 'Bad', 'II.15, 7', ['ugly', 'journey', 'relatives']),
+    (3, 'Venus', 'Good', 'II.18, 8', ['journey', 'dressed', 'kind']),
+    (3, 'Venus', 'Bad', 'II.18, 9', ['defamed', 'distant', 'selling']),
+    (3, 'Mercury', 'Good', 'II.21, 8', ['visions', 'interpretation', 'insight']),
+    (3, 'Mercury', 'Bad', 'II.21, 9', ['damage', 'doubts', 'visions']),
+    (3, 'Moon', 'Good', 'VII.8, 3', ['messengers', 'mock', 'leaders']),
+    (3, 'Moon', 'Bad', '', []),
+    (4, 'Saturn', 'Good', 'II.6, 1-2', ['villages', 'building', 'rivers']),
+    (4, 'Saturn', 'Bad', 'II.6, 3', ['blamed', 'accused', 'detestable']),
+    (4, 'Jupiter', 'Good', 'II.9, 1-2', ['celebrated', 'fathers', 'estate']),
+    (4, 'Jupiter', 'Bad', 'II.9, 3', ['scarcity', 'eagerness', 'worries']),
+    (4, 'Mars', 'Good', 'II.12, 1-2', ['awe', 'wars', 'contends']),
+    (4, 'Mars', 'Bad', 'II.12, 3-5', ['conflagration', 'dwelling', 'rescued']),
+    (4, 'Sun', 'Good', 'II.15, 1-2', ['estate', 'fathers', 'old']),
+    (4, 'Sun', 'Bad', 'II.15, 3', ['detestable', 'benefit', 'fear']),
+    (4, 'Venus', 'Good', 'II.18, 1-2', ['gates', 'kings', 'spoiled']),
+    (4, 'Venus', 'Bad', 'II.18, 3-5', ['paralysis', 'stolen', 'die']),
+    (4, 'Mercury', 'Good', 'II.21, 1', ['writing', 'sciences', 'preservation']),
+    (4, 'Mercury', 'Bad', 'II.21, 2-4', ['calculation', 'accused', 'contention']),
+    (4, 'Moon', 'Good', '', []),
+    (4, 'Moon', 'Bad', 'VII.8, 4', ['nobles', 'interpretation', 'disagreement']),
+    (5, 'Saturn', 'Good', 'II.6, 4', ['friends', 'guarantees', 'building']),
+    (5, 'Saturn', 'Bad', 'II.6, 5-6', ['brothers', 'shortage', 'retrograde']),
+    (5, 'Jupiter', 'Good', 'II.9, 6', ['blessed', 'children', 'root']),
+    (5, 'Jupiter', 'Bad', 'II.9, 7', ['children', 'messengers', 'gifts']),
+    (5, 'Mars', 'Good', 'II.12, 6-7', ['allies', 'fire', 'blood']),
+    (5, 'Mars', 'Bad', 'II.12, 8', ['accidents', 'feuding', 'brothers']),
+    (5, 'Sun', 'Good', 'II.15, 4', ['food', 'clothing', 'crops']),
+    (5, 'Sun', 'Bad', 'II.15, 5', ['undermine', 'contend', 'children']),
+    (5, 'Venus', 'Good', 'II.18, 6', ['friends', 'possessions', 'root']),
+    (5, 'Venus', 'Bad', 'II.18, 7', ['purpose', 'hostile', 'friends']),
+    (5, 'Mercury', 'Good', 'II.21, 5', ['nobles', 'business', 'children']),
+    (5, 'Mercury', 'Bad', 'II.21, 6-7', ['hostile', 'slowness', 'confused']),
+    (5, 'Moon', 'Good', '', []),
+    (5, 'Moon', 'Bad', 'VII.8, 5', ['female', 'slaves', 'conflicting']),
+    (6, 'Saturn', 'Good', 'II.6, 16-18', ['moisture', 'remedies', 'escape']),
+    (6, 'Saturn', 'Bad', 'II.6, 16-18', ['pleurisy', 'chronic', 'ruin']),
+    (6, 'Jupiter', 'Good', 'II.9, 12', ['lowest', 'confined', 'peace']),
+    (6, 'Jupiter', 'Bad', 'II.9, 13', ['windiness', 'enemies', 'confinement']),
+    (6, 'Mars', 'Good', 'II.12, 17', ['body', 'healthy', 'victorious']),
+    (6, 'Mars', 'Bad', 'II.12, 18-19', ['moisture', 'disturbance', 'bile']),
+    (6, 'Sun', 'Good', 'II.15, 10', ['mild', 'temperedness', 'safety']),
+    (6, 'Sun', 'Bad', 'II.15, 11', ['dryness', 'eyes', 'head']),
+    (6, 'Venus', 'Good', 'II.18, 13', ['underclass', 'remedies', 'provisions']),
+    (6, 'Venus', 'Bad', 'II.18, 14', ['essence', 'bile', 'heat']),
+    (6, 'Mercury', 'Good', 'II.21, 12', ['eager', 'business', 'underclass']),
+    (6, 'Mercury', 'Bad', 'II.21, 13', ['windiness', 'seized', 'confinement']),
+    (6, 'Moon', 'Good', '', []),
+    (6, 'Moon', 'Bad', 'VII.8, 6', ['hands', 'hunting', 'slaves']),
+    (7, 'Saturn', 'Good', 'II.6, 1-2', ['villages', 'building', 'rivers']),
+    (7, 'Saturn', 'Bad', 'II.6, 3', ['blamed', 'accused', 'detestable']),
+    (7, 'Jupiter', 'Good', 'II.9, 1-2', ['celebrated', 'women', 'antagonists']),
+    (7, 'Jupiter', 'Bad', 'II.9, 3', ['scarcity', 'eagerness', 'worries']),
+    (7, 'Mars', 'Good', 'II.12, 1-2', ['awe', 'wars', 'contends']),
+    (7, 'Mars', 'Bad', 'II.12, 3-5', ['conflagration', 'cutting', 'victorious']),
+    (7, 'Sun', 'Good', 'II.15, 1-2', ['managements', 'victorious', 'healthy']),
+    (7, 'Sun', 'Bad', 'II.15, 3', ['detestable', 'benefit', 'fear']),
+    (7, 'Venus', 'Good', 'II.18, 1-2', ['gates', 'kings', 'spoiled']),
+    (7, 'Venus', 'Bad', 'II.18, 3-4', ['paralysis', 'pleurisy', 'stolen']),
+    (7, 'Mercury', 'Good', 'II.21, 1', ['writing', 'sciences', 'preservation']),
+    (7, 'Mercury', 'Bad', 'II.21, 2-4', ['calculation', 'accused', 'contention']),
+    (7, 'Moon', 'Good', 'VII.8, 7', ['friendliness', 'maxims', 'worship']),
+    (7, 'Moon', 'Bad', '', []),
+    (8, 'Saturn', 'Good', 'II.6, 15', ['dead', 'received', 'house']),
+    (8, 'Saturn', 'Bad', 'II.6, 15', ['squandering', 'ancestors', 'destruction']),
+    (8, 'Jupiter', 'Good', 'II.9, 10', ['leisure', 'scarcity', 'dead']),
+    (8, 'Jupiter', 'Bad', 'II.9, 11', ['spending', 'cheerfulness', 'contention']),
+    (8, 'Mars', 'Good', 'II.12, 13', ['dead', 'ancestors', 'inheritances']),
+    (8, 'Mars', 'Bad', 'II.12, 14', ['detestable', 'quarrels', 'squandered']),
+    (8, 'Sun', 'Good', 'II.15, 8', ['temperedness', 'leisure', 'revenue']),
+    (8, 'Sun', 'Bad', 'II.15, 9', ['scarcity', 'negligence', 'laziness']),
+    (8, 'Venus', 'Good', 'II.18, 10', ['underclass', 'eighth', 'spending']),
+    (8, 'Venus', 'Bad', 'II.18, 12', ['leisure', 'scarcity', 'contention']),
+    (8, 'Mercury', 'Good', 'II.21, 10', ['selling', 'buying', 'praised']),
+    (8, 'Mercury', 'Bad', 'II.21, 11', ['downturn', 'incriminated', 'quarrel']),
+    (8, 'Moon', 'Good', '', []),
+    (8, 'Moon', 'Bad', 'VII.8, 8', ['humiliation', 'degradation', 'farms']),
+    (9, 'Saturn', 'Good', 'II.6, 7-8', ['reward', 'toil', 'foreigners']),
+    (9, 'Saturn', 'Bad', 'II.6, 9-11', ['gossip', 'worship', 'theft']),
+    (9, 'Jupiter', 'Good', 'II.9, 8', ['piety', 'brothers', 'reports']),
+    (9, 'Jupiter', 'Bad', 'II.9, 9', ['negligent', 'doubts', 'brothers']),
+    (9, 'Mars', 'Good', 'II.12, 9', ['travel', 'strong', 'praised']),
+    (9, 'Mars', 'Bad', 'II.12, 10', ['false', 'hardship', 'wild']),
+    (9, 'Sun', 'Good', 'II.15, 6', ['beautiful', 'religion', 'relatives']),
+    (9, 'Sun', 'Bad', 'II.15, 7', ['ugly', 'journey', 'relatives']),
+    (9, 'Venus', 'Good', 'II.18, 8', ['journey', 'dressed', 'kind']),
+    (9, 'Venus', 'Bad', 'II.18, 9', ['defamed', 'distant', 'selling']),
+    (9, 'Mercury', 'Good', 'II.21, 8', ['visions', 'interpretation', 'insight']),
+    (9, 'Mercury', 'Bad', 'II.21, 9', ['damage', 'doubts', 'visions']),
+    (9, 'Moon', 'Good', 'VII.8, 9', ['banquets', 'maxims', 'joyful']),
+    (9, 'Moon', 'Bad', '', []),
+    (10, 'Saturn', 'Good', 'II.6, 1-2', ['villages', 'building', 'rivers']),
+    (10, 'Saturn', 'Bad', 'II.6, 3', ['blamed', 'accused', 'detestable']),
+    (10, 'Jupiter', 'Good', 'II.9, 1-2', ['celebrated', 'respected', 'importance']),
+    (10, 'Jupiter', 'Bad', 'II.9, 3', ['scarcity', 'eagerness', 'worries']),
+    (10, 'Mars', 'Good', 'II.12, 1-2', ['awe', 'wars', 'midheaven']),
+    (10, 'Mars', 'Bad', 'II.12, 3-5', ['conflagration', 'robbers', 'iron']),
+    (10, 'Sun', 'Good', 'II.15, 1-2', ['renowned', 'voice', 'sultan']),
+    (10, 'Sun', 'Bad', 'II.15, 3', ['detestable', 'benefit', 'fear']),
+    (10, 'Venus', 'Good', 'II.18, 1-2', ['gates', 'kings', 'spoiled']),
+    (10, 'Venus', 'Bad', 'II.18, 3-4', ['paralysis', 'pleurisy', 'stolen']),
+    (10, 'Mercury', 'Good', 'II.21, 1', ['writing', 'sciences', 'preservation']),
+    (10, 'Mercury', 'Bad', 'II.21, 2', ['writers', 'calculation', 'accused']),
+    (10, 'Moon', 'Good', 'VII.8, 10', ['moist', 'gardens', 'lawsuits']),
+    (10, 'Moon', 'Bad', '', []),
+    (11, 'Saturn', 'Good', 'II.6, 4', ['friends', 'guarantees', 'building']),
+    (11, 'Saturn', 'Bad', 'II.6, 5-6', ['brothers', 'shortage', 'retrograde']),
+    (11, 'Jupiter', 'Good', 'II.9, 4', ['commended', 'friends', 'delighted']),
+    (11, 'Jupiter', 'Bad', 'II.9, 5', ['worries', 'hopes', 'wishes']),
+    (11, 'Mars', 'Good', 'II.12, 6-7', ['allies', 'fire', 'blood']),
+    (11, 'Mars', 'Bad', 'II.12, 8', ['accidents', 'feuding', 'brothers']),
+    (11, 'Sun', 'Good', 'II.15, 4', ['food', 'clothing', 'crops']),
+    (11, 'Sun', 'Bad', 'II.15, 5', ['undermine', 'contend', 'children']),
+    (11, 'Venus', 'Good', 'II.18, 6', ['friends', 'possessions', 'root']),
+    (11, 'Venus', 'Bad', 'II.18, 7', ['purpose', 'hostile', 'friends']),
+    (11, 'Mercury', 'Good', 'II.21, 5', ['nobles', 'business', 'children']),
+    (11, 'Mercury', 'Bad', 'II.21, 6-7', ['hostile', 'slowness', 'confused']),
+    (11, 'Moon', 'Good', 'VII.8, 11', ['towns', 'villages', 'debts']),
+    (11, 'Moon', 'Bad', '', []),
+    (12, 'Saturn', 'Good', 'II.6, 19', ['victorious', 'enemies', 'befriend']),
+    (12, 'Saturn', 'Bad', 'II.6, 20-21', ['prison', 'confinement', 'torment']),
+    (12, 'Jupiter', 'Good', 'II.9, 12', ['lowest', 'confined', 'peace']),
+    (12, 'Jupiter', 'Bad', 'II.9, 13', ['windiness', 'enemies', 'confinement']),
+    (12, 'Mars', 'Good', 'II.12, 15', ['runaways', 'confined', 'safe']),
+    (12, 'Mars', 'Bad', 'II.12, 16', ['detestable', 'directions', 'affect']),
+    (12, 'Sun', 'Good', 'II.15, 12', ['beautiful', 'spoken', 'safe']),
+    (12, 'Sun', 'Bad', 'II.15, 13', ['confinement', 'banished', 'country']),
+    (12, 'Venus', 'Good', 'II.18, 13', ['underclass', 'remedies', 'provisions']),
+    (12, 'Venus', 'Bad', 'II.18, 15', ['enemies', 'confined', 'punishment']),
+    (12, 'Mercury', 'Good', 'II.21, 12', ['eager', 'business', 'underclass']),
+    (12, 'Mercury', 'Bad', 'II.21, 13', ['windiness', 'seized', 'confinement']),
+    (12, 'Moon', 'Good', '', []),
+    (12, 'Moon', 'Bad', 'VII.8, 12', ['guarantor', 'collateral', 'victorious']),
+]
 
 
 # (placed_in, ruled, cite, anchors): Sahl's locator for the cell and three
@@ -414,40 +505,125 @@ def _words(text):
     return set(re.findall(r"[a-z]+", text.lower()))
 
 
-@pytest.mark.parametrize("house", range(1, 13))
-def test_planets_in_houses_match_the_guide_page_cell_by_cell(engine, house):
-    for planet in PLANETS:
-        assert engine["PLANETS_IN_HOUSES"][house][planet] == PLANETS_IN_HOUSES_GUIDE[house][planet], \
-            (house, planet, "Reference Guide p.", GUIDE_PAGE[house])
+PN4_CITE = re.compile(r"^(II\.\d+|VII\.8), \d+(-\d+)?$")
+PN4_DASH = {'text': '\u2014', 'cite': ''}
+# What the page help states of the PN IV halves with no sentence: twelve, all
+# the Moon's (VII.8 gives her one reading per house, so the other half is a
+# dash); and of the Rhetorius halves: twenty-one -- the four where the Guide
+# prints "?" (the Moon in the 6th and 8th) and the seventeen where the app's
+# merged cell had carried only the PN IV reading.
+PN4_DASHES_THE_HELP_STATES = 12
+RHETORIUS_DASHES_THE_HELP_STATES = 21
+RHETORIUS_DASHES = {
+    (1, 'Jupiter', 'Bad'), (2, 'Jupiter', 'Bad'), (3, 'Jupiter', 'Bad'), (3, 'Sun', 'Bad'),
+    (3, 'Venus', 'Good'), (3, 'Venus', 'Bad'), (5, 'Venus', 'Bad'), (6, 'Jupiter', 'Bad'),
+    (6, 'Moon', 'Good'), (6, 'Moon', 'Bad'), (8, 'Jupiter', 'Bad'), (8, 'Moon', 'Good'),
+    (8, 'Moon', 'Bad'), (9, 'Mars', 'Bad'), (11, 'Saturn', 'Bad'), (11, 'Mars', 'Bad'),
+    (12, 'Saturn', 'Good'), (12, 'Jupiter', 'Bad'), (12, 'Mars', 'Good'), (12, 'Sun', 'Good'),
+    (12, 'Venus', 'Good'),
+}
+
+
+def test_planets_in_houses_has_the_two_source_shape(engine):
+    ph = engine["PLANETS_IN_HOUSES"]
+    assert set(ph) == set(range(1, 13))
+    for house in ph:
+        assert set(ph[house]) == set(PLANETS)
+        for cell in ph[house].values():
+            assert set(cell) == {'Rhetorius', 'PN IV'}
+            for source in cell.values():
+                assert set(source) == {'Good', 'Bad'}
+                for half in source.values():
+                    assert set(half) == {'text', 'cite'} and half['text'].strip()
+
+
+def test_the_pn4_fixture_covers_every_half_once():
+    keys = [(h, p, x) for h, p, x, _c, _a in PN4_HALVES_SENTENCES]
+    assert keys == [(h, p, x) for h in range(1, 13) for p in PLANETS for x in ('Good', 'Bad')]
+    assert len(keys) == 168
+
+
+@pytest.mark.parametrize("house, planet, half, cite, anchors", PN4_HALVES_SENTENCES,
+                         ids=[f"{p}-in-{h}-{x}" for h, p, x, _c, _a in PN4_HALVES_SENTENCES])
+def test_pn4_half_is_pinned_to_its_sentence(engine, house, planet, half, cite, anchors):
+    cell = engine["PLANETS_IN_HOUSES"][house][planet]['PN IV'][half]
+    assert "[UNCERTAIN" not in cell["text"]
+    if cite == "":
+        assert cell == PN4_DASH and anchors == [], (house, planet, half, cell)
+        return
+    assert cell["cite"] == cite and PN4_CITE.match(cite), (house, planet, half, cell["cite"])
+    assert cell["text"] != PN4_DASH["text"]
+    assert len(anchors) == 3 and set(anchors) <= _words(cell["text"]), (house, planet, half, anchors, cell["text"])
 
 
 @pytest.mark.parametrize("house", range(1, 13))
-def test_planets_in_houses_cells_carry_their_own_guide_row_anchors(engine, house):
+def test_the_moons_pn4_reading_is_vii8_by_transit_one_half_per_house(engine, house):
+    # II.22 has no houses list for the Moon; fn 312 sends the reader to VII.8,
+    # her transit through the twelve houses. One sentence per house, placed
+    # in the half its balance belongs to, the other half a dash.
+    cell = engine["PLANETS_IN_HOUSES"][house]["Moon"]["PN IV"]
+    filled = [x for x in ('Good', 'Bad') if cell[x] != PN4_DASH]
+    assert len(filled) == 1, cell
+    assert cell[filled[0]]["cite"] == f"VII.8, {house}"
+    assert cell[filled[0]]["text"].startswith("By transit:")
+
+
+def test_the_pn4_halves_split_only_where_book_ii_splits(engine):
+    # Every Saturn-Mercury half has its own sentence: no dash outside the
+    # Moon's row.
+    ph = engine["PLANETS_IN_HOUSES"]
+    dashes = [(h, p, x) for h in ph for p in PLANETS for x in ('Good', 'Bad') if ph[h][p]['PN IV'][x] == PN4_DASH]
+    assert all(p == "Moon" for _h, p, _x in dashes), dashes
+    assert len(dashes) == PN4_DASHES_THE_HELP_STATES
+
+
+def test_mercury_in_the_ninth_reads_as_ii21_8_and_9(engine):
+    # The Guide prints these two halves against its own headings; II.21, 8
+    # (the journey he loves, true visions) is the suitable reading and 9 the
+    # bad-condition one, as the code always had them.
+    cell = engine["PLANETS_IN_HOUSES"][9]["Mercury"]["PN IV"]
+    assert cell["Good"]["cite"] == "II.21, 8" and "true interpretation" in cell["Good"]["text"]
+    assert cell["Bad"]["cite"] == "II.21, 9" and "bad visions" in cell["Bad"]["text"]
+
+
+@pytest.mark.parametrize("house", range(1, 13))
+def test_rhetorius_halves_are_the_guide_transcription_verbatim(engine, house):
     for planet in PLANETS:
-        cell = engine["PLANETS_IN_HOUSES"][house][planet]
-        anchors = PLANETS_IN_HOUSES_ANCHORS[house][planet]
-        if anchors is None:
-            continue
-        words = _words(cell["Good"] + " " + cell["Bad"])
-        assert set(anchors) <= words, (house, planet, anchors, "Reference Guide p.", GUIDE_PAGE[house])
+        cell = engine["PLANETS_IN_HOUSES"][house][planet]["Rhetorius"]
+        good, bad = RHETORIUS_HALVES[house][planet]
+        assert cell["Good"] == ({'text': good, 'cite': ''} if good else PN4_DASH), (house, planet, cell["Good"])
+        assert cell["Bad"] == ({'text': bad, 'cite': ''} if bad else PN4_DASH), (house, planet, cell["Bad"])
 
 
-@pytest.mark.parametrize("house", [6, 8])
-def test_moon_cells_the_guide_leaves_blank_stay_marked_uncertain(engine, house):
-    # Reference Guide p. 28 (6th) and p. 32 (8th): the Moon row reads "?" in
-    # both columns. A sourced delineation would be a sourcing decision for the
-    # owner; an unsourced one fails here.
-    cell = engine["PLANETS_IN_HOUSES"][house]["Moon"]
-    assert cell["Good"].startswith("[UNCERTAIN") and cell["Bad"].startswith("[UNCERTAIN"), cell
-    assert "do not rely on this cell" in cell["Good"]
+def test_the_rhetorius_dashes_are_exactly_the_halves_the_app_never_carried(engine):
+    # No Guide wording is added pending the re-derivation: a Rhetorius half
+    # the app's merged cell did not carry is a dash, as are the Guide's "?".
+    ph = engine["PLANETS_IN_HOUSES"]
+    dashes = {(h, p, x) for h in ph for p in PLANETS for x in ('Good', 'Bad') if ph[h][p]['Rhetorius'][x] == PN4_DASH}
+    assert dashes == RHETORIUS_DASHES
+    assert len(dashes) == RHETORIUS_DASHES_THE_HELP_STATES
+    assert not any("[UNCERTAIN" in ph[h][p][s][x]["text"] for h in ph for p in PLANETS
+                   for s in ('Rhetorius', 'PN IV') for x in ('Good', 'Bad'))
 
 
-def test_no_other_cell_is_marked_uncertain(engine):
-    # Negative control: exactly the two Guide-blank cells carry the marker.
-    marked = {(h, p) for h, row in engine["PLANETS_IN_HOUSES"].items()
-              for p, cell in row.items() if cell["Good"].startswith("[UNCERTAIN")}
-    assert marked == {(6, "Moon"), (8, "Moon")}
-
+def test_the_planets_reader_prints_both_halves_with_the_pn4_locator(engine):
+    # One column = "Rhetorius: <text> · PN IV: <text> (<locator>)"; a dash
+    # prints as a dash and carries no locator.
+    fmt = engine["planets_in_houses_cell"]
+    assert fmt(9, "Mercury", "Good") == ("Rhetorius: Priests, wizards. \u00b7 PN IV: "
+                                        + engine["PLANETS_IN_HOUSES"][9]["Mercury"]["PN IV"]["Good"]["text"] + " (II.21, 8)")
+    assert fmt(6, "Moon", "Good") == "Rhetorius: \u2014 \u00b7 PN IV: \u2014"
+    assert fmt(1, "Moon", "Bad") == "Rhetorius: Sailing, poor livelihood. \u00b7 PN IV: \u2014"
+    planets = {p: {'longitude': lon} for p, lon in
+               [('Saturn', 10.0), ('Jupiter', 40.0), ('Mars', 70.0), ('Sun', 100.0),
+                ('Venus', 130.0), ('Mercury', 160.0), ('Moon', 190.0)]}
+    cond = {p: {'Net': 0, 'Condition': 'Good'} for p in planets}
+    rows = engine["evaluate_planets_in_houses"](planets, cond, 0.0)
+    assert len(rows) == 7
+    for row in rows:
+        h = row['Placed in (WS place)']
+        assert row['If Well Placed'] == fmt(h, row['Planet'], 'Good')
+        assert row['If Badly Placed'] == fmt(h, row['Planet'], 'Bad')
 
 
 
