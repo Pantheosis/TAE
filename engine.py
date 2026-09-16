@@ -2123,7 +2123,7 @@ PLANETS_IN_HOUSES = {
                             'Made unfortunate, not received: leisure time but a scarcity of benefit, a bad condition in his way of life, negligence and laziness in what would benefit him', 'II.15, 9')},
         'Venus': {'Rhetorius': _R('Prosperous, pleasing, arts.', 'Disruption.'),
                   'PN IV': _P('Received, not made unfortunate: benefit from the underclass or from base work', 'II.18, 10',
-                              'Made unfortunate, not received: the corruption of his assets, negligence and idleness, and the stagnation of his work if he practises a trade', 'II.18, 11')},
+                              'Made unfortunate, not received: the corruption of his assets, negligence and idleness, and the stagnation of his work if he practices a trade', 'II.18, 11')},
         'Mercury': {'Rhetorius': _R('Evening star by night: good at business.', 'Morning star by night: obscure, bad, poor; evening star by day: good at learning, poor.'),
                     'PN IV': _P('Received, not made unfortunate: benefit and profit from selling and buying, his associations with people praised, a good condition', 'II.21, 10',
                                 'In a bad condition, made unfortunate, not received: loss and a downturn in business, incriminated, blamed in his management, and he will quarrel because of assets', 'II.21, 11')},
@@ -2150,7 +2150,7 @@ PLANETS_IN_HOUSES = {
                     'PN IV': _P('He travels and sees what he loves on his journey, good visions with a true interpretation, good spoken of him for his commitment to religion, increase in reason, good praised management, good for his brothers and acquaintances, praised in his situations, increase in knowledge and insight into things', 'II.21, 8',
                                 'In a bad condition, made unfortunate, not received: he travels, and something detestable and damage afflict him on the journey, doubts in religion and ugly things reported about him because of it, bad visions, loss in buying, selling and business, and what is between him and his brothers and the people of his house corrupted', 'II.21, 9')},
         'Moon': {'Rhetorius': _R('With Saturn: slow, unsuccessful, sacrilegious (Firmicus).', 'Ignoble or infamous mother; sacrilege with Mercury or Mars; but good religious activities if with Jupiter.'),
-                 'PN IV': _P('By transit: devoted to messengers and reports, he will mock the people, associate with leaders and see what he loves from them and from travels, foreigners and earning money; what is taken from him recovered after trouble; handling sales and purchases harms him; he quarrels with some of his brothers and relatives and is elevated above them; something detestable for some of his family and his parents; detestable dreams', 'VII.8, 3', None, '')},
+                 'PN IV': _P('By transit: devoted to messengers and reports, he will mock the people, associate with leaders and see what he loves from them and from travels, foreigners and earning money; what is taken from him recovered after trouble; handling sales and purchases harms him; he quarrels with some of his brothers and relatives and is elevated above them; something detestable for some of him and his parents; detestable dreams', 'VII.8, 3', None, '')},
     },
     4: {
         'Saturn': {'Rhetorius': _R('Lots of wealth.', 'Destroys/threatens parents, illness.'),
@@ -2286,7 +2286,7 @@ PLANETS_IN_HOUSES = {
         'Mercury': {'Rhetorius': _R('Admirable, trusted.', 'Changes, living abroad.'),
                     'PN IV': _P(_MERC_STAKE_GOOD + ' -- stronger in the Ascendant or the Midheaven', 'II.21, 1', _MERC_STAKE_BAD + '; ' + _MERC_RETRO, 'II.21, 2')},
         'Moon': {'Rhetorius': _R('Rulers, successful, trusted.', 'Hardship, unsteady, error.'),
-                 'PN IV': _P('By transit: he increases in his power, and loses some of it too; sex with some of his relatives; devoted to business, waters and moist places; he earns money and goods, plants seedlings, makes use of gardens, builds buildings; good for his children and delight in them; benefit from travel and associating with kings, from buying and selling, lawsuits and their management, and marriage; he associates with the authorities; some of what is taken from him recovered', 'VII.8, 10', None, '')},
+                 'PN IV': _P('By transit: he increases in his power, and takes away the same (fn 106: perhaps also loses some authority); sex with some of his relatives; devoted to business, waters and moist places; he earns money and goods, plants seedlings, makes use of gardens, builds buildings; good for his children and delight in them; benefit from travel and associating with kings, from buying and selling, lawsuits and their management, and marriage; he associates with the authorities; some of what is taken from him recovered', 'VII.8, 10', None, '')},
     },
     11: {
         'Saturn': {'Rhetorius': _R('Middling goods over time.', None),

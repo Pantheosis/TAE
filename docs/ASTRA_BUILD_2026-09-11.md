@@ -1497,3 +1497,9 @@ before the push; the checker's sentence table (house, planet, half, cite, file l
 first six words) is in the corpus repo's process directory beside the plan and build A's. `tables.json`
 regenerated once: unchanged, since it inventories headings and column names, and neither changed.
 Whole suite 2977 passed, 1 skipped, 6 xfailed (build A: 2806 / 1 / 6).
+
+After the check (`BUILD_DELIN_B_CHECK_REPORT_2026-09-16.md`: 168 PN IV halves verified, one defective,
+three notes): Venus 2nd Bad "practices" (Dykes's spelling); the Moon 3rd keeps VII.8, 3's "some of him
+and his parents" as printed; the Moon 10th says "takes away the same" with fn 106's guess marked as
+his, not stated as the sentence's; the Timing caption's clause about VI.3 now says the II.6-21 rows are
+not built as revolution readings, beside the natal table whose PN IV halves paraphrase Book II.

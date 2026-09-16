@@ -3867,8 +3867,8 @@ def page_timing():
                      height=_rows_height(14),
                      column_config=_wide_text_columns(pd.DataFrame(pn4['further_rows'])))
         st.caption("Facts, not judgments: the delineation chapters behind these rows (II.6-21, V.1-8, VI.3-6, "
-                   "VII.9, VIII.1-15) are not built; VI.3, the revolution's planets in the natal places, belongs "
-                   "here with them, not in the natal Topical Planets in Houses table, which reads Book II. #8 grades a transit as V.1, 2-3 does -- the degree, the "
+                   "VII.9, VIII.1-15) are not built as revolution readings; VI.3, the revolution's planets in the natal places, belongs "
+                   "here with them, not in the natal Topical Planets in Houses table, whose PN IV halves paraphrase Book II's sentences as natal readings. #8 grades a transit as V.1, 2-3 does -- the degree, the "
                    "bound, or only the sign. #10 counts each lord from its own Ascendant (fn 128). #14 and #19 "
                    "count from the three places VI.5, 1 names. #12 and #13 read both the terminal sign and the "
                    "revolution's Ascendant, as VI.3-4 do.")
