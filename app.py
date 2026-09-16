@@ -252,6 +252,12 @@ st.sidebar.header("Nativity")
 
 if "saved_charts" not in st.session_state:
     st.session_state["saved_charts"] = load_saved_charts()
+    # F04 of the review of 2026-09-16: a store that cannot be read is copied
+    # beside itself by the loader before anything writes over it, and the
+    # copy's name is left in engine.LAST_STORE_ERROR. Held here so the
+    # sidebar can say so once, below, in the session that read it.
+    if engine.LAST_STORE_ERROR:
+        st.session_state["_store_error_notice"] = engine.LAST_STORE_ERROR
 
 # Preferences: read once per session into the store keys that nothing has
 # set yet (a test's seeded session_state wins), written back through
@@ -277,6 +283,47 @@ def _forget(key):
         del prefs[key]
         write_preferences(prefs)
 
+# The example nativity this app opens on -- Florence, 1240-05-23, 14:30 LMT
+# -- as the sidebar's own widgets default to it, in one place so that the
+# boxes and the reset below cannot come to disagree.
+EXAMPLE_CHART = {
+    "date_input_key": "1240-05-23",
+    "time_input_key": time(14, 30),
+    "time_standard_key": TIME_STANDARD_OPTIONS[0],
+    "utc_offset_key": 0.0,
+    "manual_coords_key": False,
+    "location_input_key": "Florence",
+    "manual_lat_key": 43.7698,
+    "manual_lon_key": 11.2556,
+}
+
+# The keys a new chart drops rather than sets: the target of the Timing page
+# (widget and store alike, so the page's own setdefault seeds them afresh),
+# the label a loaded chart put on its coordinates, the legacy-record flag,
+# and the last date that parsed.
+_NEW_CHART_DROPS = ("target_date", "_target_date", "target_age", "_target_age",
+                    "_target_last_good", "loaded_location",
+                    "_loaded_without_standard", "_date_last_good")
+
+
+def _new_chart_form():
+    """Put the example nativity back in the sidebar's boxes. Selecting
+    '-- New Chart --' is a NEW CHART, not a deselection: the review found it
+    keeping the edited date and place of the record just left, so that the
+    next save wrote one chart under another chart's name (F04).
+
+    The form only. The preferences file is not touched and 'last_chart' is
+    not forgotten, so the next launch still opens on the last chart saved or
+    loaded -- the reading taken of a new chart being an unsaved draft, which
+    has nothing to be opened on."""
+    for key, value in EXAMPLE_CHART.items():
+        st.session_state[key] = value
+    for key in ("target_mode", "_target_mode"):
+        st.session_state[key] = TARGET_MODE_OPTIONS[0]
+    for key in _NEW_CHART_DROPS:
+        st.session_state.pop(key, None)
+
+
 def _apply_selected_chart():
     """on_change callback: runs before the script reruns, so writing into
     these session_state keys here makes the widgets below pick up the
@@ -286,6 +333,8 @@ def _apply_selected_chart():
     if name and name != "-- New Chart --":
         _restore_chart(name)
         _remember('last_chart', name)
+    else:
+        _new_chart_form()
 
 def _restore_chart(name):
     """Write a saved chart's fields into the sidebar widgets' keys."""
@@ -369,16 +418,69 @@ if "_autoload_done" not in st.session_state:
 # Read at the top level on every run, as every other reading is, so that a
 # fragment rerun and a page change see the same number the launch set.
 LAUNCH_COUNT = int(st.session_state.get("_launches", 0) or 0)
+# A selection the script makes rather than the reader -- the record just
+# saved, the picker after a delete -- is left here by the run that makes it
+# and applied by the next one, because a widget's key cannot be assigned
+# once the widget has been drawn (F04, item 1: the picker's options were
+# built before the Save button ran, so a save reported success while the
+# picker and the strip still said the chart was unsaved). The picker's
+# on_change does not fire for a selection made this way, which is right:
+# the fields already hold the values that were just written.
+_selection = st.session_state.pop("_select_after_rerun", None)
+if _selection is not None:
+    st.session_state["chart_picker"] = _selection
+
+# Said once, in the session whose load found the store unreadable (F04,
+# item 6). The bytes are beside the file under the name this names; the
+# store this session writes is a fresh one.
+_saved_flash = st.session_state.pop("_saved_flash", None)
+if _saved_flash:
+    st.sidebar.success(f"Saved '{_saved_flash}'.")
+
+_store_error = st.session_state.pop("_store_error_notice", None)
+if _store_error:
+    st.sidebar.error("Saved charts could not be read. The original file was "
+                     f"kept as {_store_error}.")
+
 load_col, del_col = st.sidebar.columns([3, 1])
 load_col.selectbox("\U0001F4C2 Load saved chart", chart_options, key="chart_picker", on_change=_apply_selected_chart)
+# Filled once the sidebar's validation has run, when the fields have moved
+# away from the record the picker names.
+picker_note = st.sidebar.empty()
 if del_col.button("\U0001F5D1", help="Delete the selected saved chart"):
     picked = st.session_state.get("chart_picker")
     if picked and picked != "-- New Chart --" and picked in st.session_state["saved_charts"]:
-        del st.session_state["saved_charts"][picked]
-        write_saved_charts(st.session_state["saved_charts"])
-        if st.session_state["_prefs"].get('last_chart') == picked:
-            _forget('last_chart')
-        st.rerun()
+        # The bin asks first (F04, item 5): it used to delete the record on
+        # the press, with no confirmation and nothing to undo it with.
+        st.session_state["_delete_pending"] = picked
+        st.session_state.pop("_replace_pending", None)
+        st.session_state.pop("_replace_pending_record", None)
+
+# The question stands here, beside the bin that asked it, in a placeholder
+# of its own so that answering it can clear it without a rerun. A rerun from
+# this height of the sidebar is not available: it abandons the run before
+# the date, time and place widgets are drawn, and Streamlit discards the
+# state of a widget a run did not draw -- the boxes came back holding the
+# example nativity (seen in the browser, 2026-09-16). So Keep clears the
+# placeholder, and Delete leaves the writing to the foot of the sidebar,
+# where every field has been drawn and a rerun costs nothing.
+delete_box = st.sidebar.empty()
+_delete_pending = st.session_state.get("_delete_pending")
+if _delete_pending and _delete_pending not in st.session_state["saved_charts"]:
+    st.session_state.pop("_delete_pending", None)
+    _delete_pending = None
+if _delete_pending:
+    with delete_box.container():
+        st.warning(f"Delete '{_delete_pending}'?")
+        _delete_col, _keep_col = st.columns(2)
+        _delete_clicked = _delete_col.button("Delete", key="_delete_confirm")
+        _keep_clicked = _keep_col.button("Keep", key="_delete_keep")
+    if _keep_clicked:
+        st.session_state.pop("_delete_pending", None)
+        delete_box.empty()
+    elif _delete_clicked:
+        st.session_state["_delete_now"] = _delete_pending
+        delete_box.empty()
 
 # --- Configurable readings: read here, set on the pages ------------------
 # The Connection rule and the five readings the sources leave open are set
@@ -401,7 +503,7 @@ def _reading(widget_key, store_key, default):
 # chart writes these keys before the widgets run, and Streamlit warns when a
 # widget has both a default and a seeded key (the konsole warning of
 # 2026-09-15). The same for every key _restore_chart writes.
-st.session_state.setdefault("date_input_key", "1240-05-23")
+st.session_state.setdefault("date_input_key", EXAMPLE_CHART["date_input_key"])
 date_string = st.sidebar.text_input(
     "Date (YYYY-MM-DD)", key="date_input_key",
     help="The civil date of birth. Before 1582-10-15 the digits are read as a JULIAN-calendar date, "
@@ -424,7 +526,7 @@ _cal_note = ("Julian calendar (before the reform of 1582-10-15)"
              if (input_date.year, input_date.month, input_date.day) < (1582, 10, 15) else "Gregorian calendar")
 
 # To the second: the engine reads seconds, and a rectified time has them.
-st.session_state.setdefault("time_input_key", time(14, 30))
+st.session_state.setdefault("time_input_key", EXAMPLE_CHART["time_input_key"])
 input_time = st.sidebar.time_input("Time", key="time_input_key", step=timedelta(seconds=1))
 
 # The time standard gets a key, so it is saved with the chart (F1 of the
@@ -439,7 +541,7 @@ time_standard = st.sidebar.selectbox(
          "offset the birth record states, east positive (EST is -5, CDT is -5, IST is +5.5).")
 utc_offset_manual = None
 if time_standard == TIME_STANDARD_OPTIONS[2]:
-    st.session_state.setdefault("utc_offset_key", 0.0)
+    st.session_state.setdefault("utc_offset_key", EXAMPLE_CHART["utc_offset_key"])
     utc_offset_manual = st.sidebar.number_input(
         "UTC offset (hours, east positive)", min_value=-14.0, max_value=14.0, step=0.25,
         format="%.2f", key="utc_offset_key")
@@ -495,8 +597,8 @@ manual_coords = st.sidebar.toggle("Enter coordinates directly", key="manual_coor
 # it becomes chart_error below, which the recovery panel prints.
 location_error = None
 if manual_coords:
-    st.session_state.setdefault("manual_lat_key", 43.7698)
-    st.session_state.setdefault("manual_lon_key", 11.2556)
+    st.session_state.setdefault("manual_lat_key", EXAMPLE_CHART["manual_lat_key"])
+    st.session_state.setdefault("manual_lon_key", EXAMPLE_CHART["manual_lon_key"])
     # What the fields hold BEFORE the widgets clamp them to their own
     # min/max: an impossible latitude seeded into the key (the review's own
     # reproduction, E03) is refused below rather than silently pulled to
@@ -523,7 +625,7 @@ if manual_coords:
     else:
         location_query = f"Manual [{lat:.4f}, {lon:.4f}]"
 else:
-    st.session_state.setdefault('location_input_key', 'Florence')
+    st.session_state.setdefault('location_input_key', EXAMPLE_CHART['location_input_key'])
     city_search = st.sidebar.text_input("City, or latitude, longitude", key="location_input_key",
                                         placeholder="Florence  |  45.3733, -84.9553")
     _typed = parse_lat_lon(city_search) if city_search else None
@@ -619,6 +721,83 @@ else:
     target_age = pn4_completed_years(input_date, target_date)
     st.session_state["_target_age"] = target_age
 
+def _chart_record():
+    """The committed input as a record: the fields Save writes, and the
+    fields a saved record is compared with to see whether the nativity in
+    the sidebar is still the one that was saved."""
+    return {
+        "date_string": input_date.isoformat(),
+        "time_string": input_time.strftime("%H:%M:%S"),
+        "time_standard": time_standard,
+        "utc_offset": utc_offset_manual,
+        "location_query": location_query,
+        "lat": lat,
+        "lon": lon,
+        "target_mode": target_mode,
+        "target_date": target_date.isoformat(),
+        "target_age": target_age,
+    }
+
+
+def _records_match(stored, record):
+    """Whether a stored record describes the nativity `record` describes.
+
+    The stored record's OWN fields are what is compared: a field it does not
+    carry cannot have been edited since it was saved, so a record written
+    before the time standard or the target was stored with a chart is not
+    called modified for lacking them. Numbers are compared as floats to four
+    decimals -- the coordinates are written to four places and JSON reads a
+    whole number back as an int."""
+    if not isinstance(stored, dict):
+        return False
+    for field, value in record.items():
+        if field not in stored:
+            continue
+        other = stored[field]
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            try:
+                if round(float(other), 4) != round(float(value), 4):
+                    return False
+            except (TypeError, ValueError):
+                return False
+        elif other != value:
+            return False
+    return True
+
+
+def _store_chart(name, record):
+    """Write the record under `name` and, only if the disk took it, let the
+    session's mapping, the preferences and the picker follow (F04, item 7:
+    the mapping used to be mutated first, so a failed write left the session
+    holding a record the file did not have). True when it was written."""
+    charts = dict(st.session_state["saved_charts"])
+    charts[name] = record
+    if not write_saved_charts(charts):
+        st.sidebar.error("Could not write saved_charts.json to disk.")
+        return False
+    st.session_state["saved_charts"] = charts
+    st.session_state.pop("_loaded_without_standard", None)
+    _remember('last_chart', name)
+    st.session_state["_select_after_rerun"] = name
+    # The success message is carried over the rerun the caller asks for,
+    # so that the reader still sees it beside the picker that now names
+    # the record.
+    st.session_state["_saved_flash"] = name
+    return True
+
+
+def _free_name(name):
+    """The first free '<name> (n)', counting from 2."""
+    n = 2
+    while f"{name} ({n})" in st.session_state["saved_charts"]:
+        n += 1
+    return f"{name} ({n})"
+
+
+# The nativity as it stands, or None when there is nothing to save: the
+# record Save writes, and the record the picker's own is compared with.
+input_record = _chart_record() if (chart_ok and date_is_valid) else None
+
 new_chart_name = st.sidebar.text_input("Chart name (for saving)", value="", placeholder="e.g. Test Chart 1240")
 if st.sidebar.button("\U0001F4BE Save this chart"):
     trimmed_name = new_chart_name.strip()
@@ -633,24 +812,75 @@ if st.sidebar.button("\U0001F4BE Save this chart"):
               and coordinates_in_range(lat, lon)):
         st.sidebar.error("No place is resolved; nothing was saved.")
     else:
-        st.session_state["saved_charts"][trimmed_name] = {
-            "date_string": input_date.isoformat(),
-            "time_string": input_time.strftime("%H:%M:%S"),
-            "time_standard": time_standard,
-            "utc_offset": utc_offset_manual,
-            "location_query": location_query,
-            "lat": lat,
-            "lon": lon,
-            "target_mode": target_mode,
-            "target_date": target_date.isoformat(),
-            "target_age": target_age,
-        }
-        if write_saved_charts(st.session_state["saved_charts"]):
-            st.session_state.pop("_loaded_without_standard", None)
-            _remember('last_chart', trimmed_name)
-            st.sidebar.success(f"Saved '{trimmed_name}'.")
+        _existing = st.session_state["saved_charts"].get(trimmed_name)
+        if _existing is None:
+            if _store_chart(trimmed_name, input_record):
+                # The picker lists and selects it, and the strip names it,
+                # on the rerun this asks for (item 1).
+                st.rerun()
+        elif _records_match(_existing, input_record):
+            # Nothing to write, and nothing to ask about.
+            st.sidebar.info(f"'{trimmed_name}' is already saved as it is.")
         else:
-            st.sidebar.error("Could not write saved_charts.json to disk.")
+            # A name in use and a different nativity: the collision is put
+            # to the reader and NOTHING is written on this press (item 4).
+            st.session_state["_replace_pending"] = trimmed_name
+            st.session_state["_replace_pending_record"] = input_record
+
+# The question stands only while the name and the nativity it was asked
+# about stand: any other change in the sidebar rewrites one or the other
+# and takes the question with it.
+_replace_pending = st.session_state.get("_replace_pending")
+if _replace_pending is not None and (
+        _replace_pending != new_chart_name.strip()
+        or _replace_pending not in st.session_state["saved_charts"]
+        or input_record != st.session_state.get("_replace_pending_record")):
+    st.session_state.pop("_replace_pending", None)
+    st.session_state.pop("_replace_pending_record", None)
+    _replace_pending = None
+if _replace_pending:
+    st.sidebar.warning(f"'{_replace_pending}' exists. Replace it?")
+    _replace_col, _both_col = st.sidebar.columns(2)
+    if _replace_col.button("Replace", key="_replace_now"):
+        if _store_chart(_replace_pending, input_record):
+            st.session_state.pop("_replace_pending", None)
+            st.session_state.pop("_replace_pending_record", None)
+            st.rerun()
+    if _both_col.button("Keep both", key="_keep_both"):
+        if _store_chart(_free_name(_replace_pending), input_record):
+            st.session_state.pop("_replace_pending", None)
+            st.session_state.pop("_replace_pending_record", None)
+            st.rerun()
+
+# The delete the confirmation asked for, done here rather than where it was
+# asked: every sidebar field has been drawn by now, so the rerun below keeps
+# them. The disk first, the session's mapping after (item 7).
+_delete_now = st.session_state.pop("_delete_now", None)
+if _delete_now and _delete_now in st.session_state["saved_charts"]:
+    _remaining = dict(st.session_state["saved_charts"])
+    del _remaining[_delete_now]
+    if write_saved_charts(_remaining):
+        st.session_state["saved_charts"] = _remaining
+        if st.session_state["_prefs"].get('last_chart') == _delete_now:
+            _forget('last_chart')
+        st.session_state.pop("_delete_pending", None)
+        st.session_state["_select_after_rerun"] = "-- New Chart --"
+        st.rerun()
+    else:
+        st.sidebar.error("Could not write saved_charts.json to disk.")
+        st.session_state.pop("_delete_pending", None)
+
+# Modified: the picker names a record and the fields have moved away from
+# it (F04, item 2). The strip says so beside the name; the sidebar says so
+# under the picker.
+_picked_name = st.session_state.get("chart_picker")
+chart_modified = bool(
+    input_record is not None
+    and _picked_name and _picked_name != "-- New Chart --"
+    and _picked_name in st.session_state["saved_charts"]
+    and not _records_match(st.session_state["saved_charts"][_picked_name], input_record))
+if chart_modified:
+    picker_note.caption("Edited since it was saved.")
 
 CONNECTION_PROFILE = _reading("connection_rule", "_connection_rule", "Sahl")
 EASTERN_RULE = _reading("eastern_rule", "_eastern_rule", EASTERN_RULE_OPTIONS[0])
@@ -1028,6 +1258,11 @@ def _chart_strip():
         return
     picked = st.session_state.get("chart_picker")
     name = picked if picked and picked != "-- New Chart --" else "Unsaved chart"
+    # A record whose fields have been edited since it was saved is named as
+    # what it is (F04, item 2): the review found an edited record still
+    # carrying its saved name with nothing to say the two had parted.
+    if chart_modified:
+        name = f"{name} (modified)"
     _sign = "+" if utc_offset_hours >= 0 else "-"
     _tot = int(round(abs(utc_offset_hours) * 3600))
     # LMT resolves to the second, as its box prints it; a named zone

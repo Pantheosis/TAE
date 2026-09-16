@@ -366,15 +366,26 @@ def test_the_page_functions_are_mains_own_one_guard_line_apart():
     assert set(ours) == set(theirs) == set(PAGE_FUNCTIONS)
     for name, title in PAGE_FUNCTIONS.items():
         body = list(ours[name].body)
+        their_body = list(theirs[name].body)
         if title is not None:
             guard = ast.unparse(body.pop(0))
             assert guard == f"if not chart_ok:\n    _recovery_panel({title!r})\n    return", \
                 f"{name}: {guard}"
+            # The branch that wrote this test has since merged, so main's own
+            # copy carries the guard and F17's line too. Dropped and
+            # substituted on both sides, the comparison stays the one this
+            # test was written to make -- the page function's body, and
+            # nothing of the shell -- and it goes on failing the moment a
+            # later branch edits a page.
+            if their_body and ast.unparse(their_body[0]) == guard:
+                their_body.pop(0)
         mine = _body_text(body)
+        theirs_text = _body_text(their_body)
         if name == "page_timing":
             assert mine.count(F17_NOW) == 1
             mine = mine.replace(F17_NOW, F17_ON_MAIN)
-        assert mine == _body_text(theirs[name].body), f"{name} is not main's function dedented"
+            theirs_text = theirs_text.replace(F17_NOW, F17_ON_MAIN)
+        assert mine == theirs_text, f"{name} is not main's function dedented"
     # And they are top-level functions now, not nested in a calculation.
     module = ast.parse((EXECUTABLE_DIR / "app.py").read_text())
     top_level = {node.name for node in module.body if isinstance(node, ast.FunctionDef)}
