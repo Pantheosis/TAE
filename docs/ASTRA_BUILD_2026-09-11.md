@@ -1739,3 +1739,5 @@ the eighth's Bad; Saturn, Mars and Mercury in the eleventh's Bad; Saturn, Mars a
 twelfth's Good). Ninety-three halves changed in all (text, locator or both). The help and caption
 say fifteen dashes and describe the page-range locators; `tables.json` regenerated once, unchanged.
 Whole suite 3136 passed, 1 skipped, 6 xfailed.
+
+Delta pass (the checker on 0b3a5b1): 93 changed halves verified, none defective, ready to merge. One note acted on: Jupiter 9th Bad had gained an attributed editorial aside on Holden's "fond of gold" (his conjecture of oracles); it leaves the rendered cell as the two lacuna asides did.
