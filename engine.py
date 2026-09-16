@@ -1838,28 +1838,194 @@ SIGN_TO_EXALTATION = {sign: planet for planet, signs in EXALTATIONS.items() for 
 # content over columns, to be re-checked if PN4 itself enters the corpus.
 # Masha'allah's delineations for a topical house's lord, keyed by
 # [placed_in_house][lord_of_house] (i.e. outer key = the WSH house the lord
-# is physically placed in, inner key = the topical house it rules).
-# Source of the wording: TNAC Reference Guide for the Planets and Places,
-# "The lords of other places in the Nth (Masha'allah)", pp. 16-39, which
-# cites Sahl, On Nativities 1.36, 2.14, 3.10, 4.11, 5.1, 6.3.4, 7.1, 8.5,
-# 9.4, 10.2.4, 11.1 and 12.1. Cell [8][5] (lord of the 5th in the 8th) was
-# illegible in the OCR of Sahl and carried an [UNCERTAIN] marker from
-# 2026-09-05 to 2026-09-08; the Guide (p. 31) reads it as "Children
-# premature or miscarried." The OCR remains illegible -- the resolution is
-# the course document's, not a re-reading of the scan.
+# is physically placed in, inner key = the topical house it rules). Each
+# cell is {'text': this app's paraphrase of Sahl's own sentence, 'cite':
+# its locator in On Nativities (chapter, sentence; a range where the cell
+# rests on two or three)}; evaluate_house_lords() prints the text with the
+# locator in parentheses. The wording is paraphrased from Sahl's twelve
+# lords-of-places passages -- the lord of the first 1.36, 79-97; the
+# second 2.14, 9-28; the third 3.10, 1-13; the fourth 4.11, 2-23; the
+# fifth 5.1, 78-90; the sixth 6.3.4, 12-23; the seventh 7.1, 205-216; the
+# eighth 8.5, 2-13; the ninth 9.4, 23-34; the tenth 10.2.4, 1-12; the
+# eleventh 11.1, 16-27; the twelfth 12.1, 35-46 -- with Sahl's own
+# conditions (if received, if a fortune or an infortune looked at it) kept
+# in the cell. Every chapter has a sentence for all twelve places, so no
+# cell is empty. The arrangement (those twelve chapters laid out as a
+# 12 x 12 grid) is the TNAC Reference Guide for the Planets and Places
+# (Dykes, 2023); the wording is not the Guide's. Cell [8][5] (the lord of
+# the fifth in the eighth) is 5.1, 85, which Dykes prints with an
+# [illegible] bracket -- manuscript E is smudged there -- and glosses in
+# his fn 47; the cell says so. tests/test_prose_tables.py pins every cell
+# to its sentence by locator and three shared anchor words.
 MASHAALLAH_LORDS = {
-    1: {1: "Respected in family (subject to other conditions)", 2: "Work with own hands, blessed without searching and need", 3: "Good for siblings from native", 4: "Master of his family and their livelihood; charitable to parents", 5: "Blessed with children in youth, happy with children", 6: "Illness of nature of that planet; death of animals and servants", 7: "Good from women, success from them", 8: "Long lifespan (if good condition); frustration in seeking necessities", 9: "Of fine religion, good soul, knowing the Sunnah", 10: "Associate of authorities, proficient in work, Sultan comes to him", 11: "Successful, good livelihood and condition, glad", 12: "Unhappy, enemies multiply and are victorious, tribulation, belligerent"},
-    2: {1: "Will corrupt assets; but if received, gains from sign essence", 2: "Livelihood from known source; if looked at by infortune, ruin", 3: "Siblings compete for assets; they will seek the native", 4: "Prosperous parents; native inherits and is distinguished among siblings", 5: "Children will have good livelihood", 6: "Livelihood from what slaves produce, and animals; lowly benefits", 7: "Corrupts assets due to conflict", 8: "Inheritance; sometimes do work for government/authority", 9: "Assets from foreign country, benefit from travel", 10: "Livelihood from government/authority figure; accumulates assets", 11: "Benefit and assets from friends", 12: "Shameful work, bad character and livelihood, with deception"},
-    3: {1: "Siblings suitable, dependent on native; good/wicked mind based on aspects", 2: "Gain from travels and siblings; religion/gain if a fortune", 3: "Siblings are well known, will protect him, love him", 4: "Parents have hardship from siblings; parents like native better", 5: "Native's children named after his siblings; successful in travels", 6: "Siblings have defects/illness, or do the work of slaves", 7: "Brother marries native's women; hostility; native marries relative", 8: "Siblings have defects, chronic illness, diminished condition", 9: "Siblings marry foreign women; moves to another country", 10: "Few siblings, siblings ruined; many travels", 11: "Well-known siblings, condition good, esp. in youth", 12: "Siblings hostile to native, hardship from them"},
-    4: {1: "Reverent to parents; hardship from ruler; gains from fathers if received", 2: "Livelihood relates to ancestors; thriving childhood home; devotion", 3: "Siblings steal parents' assets; recognized as thieves", 4: "Parents well known, good reputation; short life if harmed", 5: "Native's children are wretches; encounters hardship due to them", 6: "Native is child of slaves or those doing slave work", 7: "Marries someone from own house, spouse is well known and good", 8: "Fathers are foreigners or have defects/illness, short lifespans", 9: "Parents have hidden illnesses, die outside homeland", 10: "Parents known to rulers; hardship from rulers", 11: "Father has chronic illness, short life, diminished condition", 12: "Parents/family hostile to native; native destroys/leaves childhood home"},
-    5: {1: "Happy with children (if unharmed)", 2: "Children have status, will gain good", 3: "Native has siblings abroad who travel and have children", 4: "Prosperous parents see successive generations; good increases", 5: "Native has well-known children who are happy", 6: "Children's upbringing hard, children have defect", 7: "Native marries younger spouse, well-known and virtuous", 8: "Children die early, or have power over others due to Sultan", 9: "Has children in foreign country, delighted; children religious/educated", 10: "Abundance of children; illness/death if harmed; hardship from Sultan", 11: "Delightful children, blessed with good and comfort", 12: "Children debased, sick, from low-status; disobedient/hostile"},
-    6: {1: "Miserable, slave work; illness if received; literal slave if Moon corrupted", 2: "Livelihood from 6th-place things; disaster/hardship if not received", 3: "Siblings are hostile and crave his ruin", 4: "Parents unknown in country; aspecting planet shows good/bad", 5: "Fortunate children, but defects will appear in them", 6: "Native healthy, if lord of Ascendant does not look", 7: "Native associates with slave girls or women with defects", 8: "Calamities in slaves and riding animals; not blessed by them", 9: "Blessed with slaves/animals; travel brings illness or corrupts slaves", 10: "Short lifespan, itinerant, enslaves free people", 11: "Bad condition in livelihood, little good, creating discord", 12: "Saddened by slaves and riding animals, no good in them"},
-    7: {1: "Native very eager; subordinate to spouse", 2: "Lower-status women; gain/lose money in marriage", 3: "Marries a relative; brothers hostile or marry his women", 4: "Marries relative, good rank; father hostile to native", 5: "Younger spouse; children hostile; deluded about women; servant children", 6: "Sick/slave spouse; low-status spouse; bad reputation due to spouse", 7: "Suitable marriage; spouse has rank of maternal relatives; well-known", 8: "Will inherit from spouse; native dies in exile", 9: "Foreign spouse; good character/pious if a fortune", 10: "Esteemed, well-known spouse; higher-status and connected", 11: "Loving, happy spouse; children and benefit from spouse", 12: "Low-status or sick spouse; spouse is hostile"},
-    8: {1: "A wicked soul, much distress, faint-hearted", 2: "Livelihood from inheritance/dead; generous; assets taken if connecting to 8th", 3: "Brother's women will not survive or get inheritance", 4: "Diminishes father's lifespan; fear for native, mother dies in childbirth", 5: "Children premature or miscarried.", 6: "Native healthy if lord of Ascendant does not look", 7: "Consumes inheritance of women; marries foreign woman", 8: "Native is healthy, illness insignificant, death will be light", 9: "Suffers robbery on journeys, eager in accumulating assets", 10: "Authority in youth, a follower who seeks leadership/boasts", 11: "Not well known/descended; does low work like commerce", 12: "Few enemies; many of native's slaves will die"},
-    9: {1: "Remains in foreign land; travel; speaks knowledge; sensible if unharmed", 2: "Livelihood from travel, piety, religion", 3: "Siblings marry foreign women, live abroad", 4: "Unknown fathers who leave, with defects/bad death; bad faith", 5: "Has children abroad; they make native happy", 6: "Excellent intentions; illness while traveling, encounters hardship", 7: "Marries foreign woman given by her brother; native loves her", 8: "Bad thoughts and work; die in exile", 9: "Few journeys; upright in religion of fathers, good intention", 10: "Authority/leadership traveling abroad; offered the good", 11: "Good fortune abroad; happy until end of life", 12: "Siblings/native have hardship from enemies traveling; bad religion"},
-    10: {1: "Interacting with Sultan, known by him, living due to Sultan", 2: "Livelihood from the Sultan", 3: "Death of siblings, jealousy and grudges", 4: "Fathers well known to Sultan", 5: "Defects and illnesses in children", 6: "Encounters hardship from the Sultan", 7: "Marriage to someone related to Sultan, fortunate woman, good from her", 8: "Native's ruin will be due to Sultan", 9: "Siblings marry better women or from Sultan's family; native is pious", 10: "Proficient in work, having influence, livelihood from work", 11: "Authority in friendship, Sultan will not be hostile", 12: "Hostility from Sultan and native's superiors; unhappy"},
-    11: {1: "Good character, many friends, but harsh toward children/few children", 2: "Livelihood relates to friends/commerce; friends need native if Asc lord looks", 3: "Pious siblings known for that; reflects well on native", 4: "Short lifespan for father; bad condition unless received by fortune", 5: "Pleased by children and family; praise for him", 6: "Friends are not well known", 7: "Marries fertile woman, will love her, live in luxury because of her", 8: "Friends diminished; corrupts friendship; dies when condition is good", 9: "Pious friends, shared religious love; siblings marry foreign women", 10: "Friends benefit from native; child inherits assets from Sultan", 11: "Lives comfortable life, imputed with goodness, many friends, culture", 12: "Leaves goodness of friends; friends become enemies, unhappy"},
-    12: {1: "Miserable, bad livelihood, enemies victorious; worse if bad connection", 2: "Life/livelihood from prisons, enemies; distressed and poor in soul", 3: "Hostile siblings; they get his authority and are superior", 4: "Parents are foreigners in exile; aspects show if good/bad for them", 5: "Children have defect/illness, will die; no children if unfortunate", 6: "Hostile to lower-status people; native sickly or ongoing health problems", 7: "Spouse has little esteem; hardship/hostility; secret relationships/cheating", 8: "Killing by enemies feared, or foolish people oppose him", 9: "Wicked intentions; corrupts religion, thinks he is right", 10: "Dispossessed by authorities; griefs; works with large animals/secrets", 11: "Little good, miserable life; few friends, many enemies", 12: "Few enemies, may not manifest; safe from them"}
+    1: {
+        1: {'text': "Respected in his family; if it connects with a planet in the Midheaven, rank from the Sultan by that planet's dignity, or rank through the loss of his religion and honor if the planet is in its fall", 'cite': '1.36, 79-81'},
+        2: {'text': 'Works with his own hands, blessed without searching or need; better if received', 'cite': '2.14, 9'},
+        3: {'text': 'Good for his siblings: they get good from him and are sincere towards him', 'cite': '3.10, 1'},
+        4: {'text': 'Master of his family, their livelihood from him, charitable to his parents and an authority to them; if an infortune looked at it, hardship for the parents over authority', 'cite': '4.11, 2-3'},
+        5: {'text': 'Blessed with children in his youth; his eye pleased, and he happy', 'cite': '5.1, 78'},
+        6: {'text': 'An illness of the essence of that planet; the death of his animals, if he has them, and of his servants', 'cite': '6.3.4, 12'},
+        7: {'text': 'Good from women, and he successful', 'cite': '7.1, 205'},
+        8: {'text': 'If free of the infortunes, a long lifespan, but frustrated and hard put to find his necessities', 'cite': '8.5, 2'},
+        9: {'text': 'Of fine religion and a good soul, endearing, knowing the Sunnah', 'cite': '9.4, 23'},
+        10: {'text': 'An associate of authority, proficient in his work; the Sultan comes to him without his seeking it', 'cite': '10.2.4, 1'},
+        11: {'text': 'Successful, with a good livelihood and condition, and glad', 'cite': '11.1, 16'},
+        12: {'text': 'Unhappy; his enemies multiply and are victorious over him; tribulations, and he belligerent', 'cite': '12.1, 35'},
+    },
+    2: {
+        1: {'text': 'A corruptor of assets; if the lord of its house looked at it and received it, he gains properly, from the essence of the sign the lord of the second is in', 'cite': '1.36, 83'},
+        2: {'text': 'A livelihood from a known source; if the lord of the third looked at it, suffering siblings; if an infortune looked at it, his assets ruined and scattered', 'cite': '2.14, 10-11'},
+        3: {'text': 'His siblings contend with him over his assets; sorrows come upon them, and they seek him out', 'cite': '3.10, 2'},
+        4: {'text': 'Prosperous parents, good in what they leave behind; he inherits their assets and is the most distinguished of his brothers over the parents', 'cite': '4.11, 4'},
+        5: {'text': 'Children blessed with a livelihood under their own authority, and with the Sultan', 'cite': '5.1, 79'},
+        6: {'text': 'A livelihood from what slaves produce and the renting of animals; blessed from a lowly thing', 'cite': '6.3.4, 13'},
+        7: {'text': 'Corrupts his assets because of a contention; his women die, and have defects', 'cite': '7.1, 206'},
+        8: {'text': 'Blessed by inheritance; sometimes in the steady employ of the Sultan', 'cite': '8.5, 3'},
+        9: {'text': 'Assets from a country not his own; blessed in relation to journeys', 'cite': '9.4, 24'},
+        10: {'text': 'A livelihood from the Sultan and because of him; he accumulates assets', 'cite': '10.2.4, 2'},
+        11: {'text': 'Blessed by his friends, getting assets because of them', 'cite': '11.1, 17'},
+        12: {'text': 'A work he is embarrassed about; a bad character and a bad livelihood, with deception in it', 'cite': '12.1, 36'},
+    },
+    3: {
+        1: {'text': 'Siblings suited to him who get good from him; he depends on them and travels much; if a fortune looked at it, good religion, if an infortune, wicked in his mind', 'cite': '1.36, 84-85'},
+        2: {'text': 'Gain from travels and because of siblings; if it is a fortune, religion, and gain by it', 'cite': '2.14, 12'},
+        3: {'text': 'Well-known siblings who go to him and protect him, since he is loved', 'cite': '3.10, 3'},
+        4: {'text': "Siblings from whom the parents meet hardship and hostility; he is better than his siblings in his parents' opinion; if an infortune looked at it, the parents confined in prisons, tribulation and hardship at their death, and the siblings most wretched", 'cite': '4.11, 5-6'},
+        5: {'text': 'Children named with the names of his siblings, successful in travels', 'cite': '5.1, 80'},
+        6: {'text': "Siblings with defects or illness, or doing the work of slaves; it shows the siblings' livelihood", 'cite': '6.3.4, 14'},
+        7: {'text': 'His brother marries a woman of his; he is hostile to his siblings, or marries his relatives, and his marriage is abroad', 'cite': '7.1, 207'},
+        8: {'text': 'Siblings with defects, chronic illness and disease, doing the work of slaves, and diminished', 'cite': '8.5, 4'},
+        9: {'text': 'His siblings marry foreign women; he moves from his own country to another', 'cite': '9.4, 25'},
+        10: {'text': 'Few siblings, and those he has ruined; it multiplies travels', 'cite': '10.2.4, 3'},
+        11: {'text': 'Well-known siblings, their condition good, blessed in their youth', 'cite': '11.1, 18'},
+        12: {'text': 'His siblings hostile towards him; hardship from them, and the badness of their condition', 'cite': '12.1, 37'},
+    },
+    4: {
+        1: {'text': 'Reverent towards his parents, hardship from the Sultan, a livelihood he is pleased with; if received where it stands, good or rank from his fathers', 'cite': '1.36, 86'},
+        2: {'text': "Gain in relation to fathers and ancestors: the fathers' assets good, the house he was born in thriving, and he devoted to his parents", 'cite': '2.14, 13'},
+        3: {'text': "The siblings steal the parents' assets, and the family recognizes them as the thieves", 'cite': '3.10, 4'},
+        4: {'text': "Parents well known among the people, with importance and a reputation; if an infortune looked at it, or the Sun made it unfortunate, the parents' lifespan is short", 'cite': '4.11, 7-8'},
+        5: {'text': 'Children who are wretches; hardship and enmity because of them', 'cite': '5.1, 81'},
+        6: {'text': 'Of the children of slaves, or of those who do the work of slaves', 'cite': '6.3.4, 15'},
+        7: {'text': 'Marries a woman from the people of his own house, well known and virtuous', 'cite': '7.1, 208'},
+        8: {'text': 'The fathers foreigners, or with defects or chronic illness, and their lifespans diminished', 'cite': '8.5, 5'},
+        9: {'text': 'Parents with hidden illnesses, dying outside their homeland', 'cite': '9.4, 26'},
+        10: {'text': 'The parents of the people of the house well known at the doors of the Sultan, and hardship from the Sultan', 'cite': '10.2.4, 4'},
+        11: {'text': "His father with a chronic illness, the parents' lives shortened, and his condition diminished", 'cite': '11.1, 19'},
+        12: {'text': 'The parents and family hostile towards him and quarrelling with him; he destroys the home he was born in and moves from it', 'cite': '12.1, 38'},
+    },
+    5: {
+        1: {'text': 'Happy with children and many friends; if an infortune looked, that is undermined', 'cite': '1.36, 87'},
+        2: {'text': 'Gain in relation to women and his children, or those known at the door of the Sultan; they gain the good, or importance among their class', 'cite': '2.14, 14'},
+        3: {'text': 'Siblings away from the homeland who travel much and are blessed with suitable children', 'cite': '3.10, 5'},
+        4: {'text': 'Prosperous parents who see children and grandchildren and reach a full lifespan, if no infortune looks while the fortunes do; they increase in the good', 'cite': '4.11, 9'},
+        5: {'text': 'Well-known children, and happy', 'cite': '5.1, 82'},
+        6: {'text': 'The upbringing of his children hard, and a defect in them', 'cite': '6.3.4, 16'},
+        7: {'text': 'Marries a woman younger than himself, with compassion and goodness of character', 'cite': '7.1, 209'},
+        8: {'text': 'His children die in their youth, or have more power over the people because of the Sultan', 'cite': '8.5, 6'},
+        9: {'text': 'Children in a country not his own, and he will marry; his eye delights in the children', 'cite': '9.4, 27'},
+        10: {'text': 'His children with a chronic illness or disease, and they die; they meet hardship from the Sultan', 'cite': '10.2.4, 5'},
+        11: {'text': 'Delightful children, blessed with good and comfort from the first of them to the last', 'cite': '11.1, 20'},
+        12: {'text': 'His children disobey him and are hostile towards him; defects in them, and their condition bad', 'cite': '12.1, 39'},
+    },
+    6: {
+        1: {'text': 'Miserable, doing the work of slaves; if received, illnesses instead; if the Moon is also corrupted and connecting with a planet in a corrupt place, a slave', 'cite': '1.36, 88-89'},
+        2: {'text': 'Gain in relation to slaves, riding animals and medications; if received, or the lord of the Ascendant looked at it, gain from medications and the illness of animals and slaves; if not received, or made unfortunate, his animals ruined, disaster in his assets, a livelihood of toil and hardship', 'cite': '2.14, 15-16'},
+        3: {'text': 'His siblings are hostile to him, seek his calamity and crave his ruin', 'cite': '3.10, 6'},
+        4: {'text': "Parents unknown in the country they are in, their condition read from the planets connected with it: if an infortune looked, harm to them by illnesses of the sign's nature; if a fortune looked, good abroad, and at home too if that fortune received it", 'cite': '4.11, 10-12'},
+        5: {'text': 'Fortunate children, but defects appear in them', 'cite': '5.1, 83'},
+        6: {'text': 'Healthy, if the lord of the Ascendant does not look at it', 'cite': '6.3.4, 17'},
+        7: {'text': 'Associates with slave girls or women with defects', 'cite': '7.1, 210'},
+        8: {'text': 'His calamities in slaves and riding animals; no blessing from them', 'cite': '8.5, 7'},
+        9: {'text': 'Blessed with slaves and riding animals; ill on journeys, or if healthy, his slaves corrupted, one of the two without escape', 'cite': '9.4, 28'},
+        10: {'text': 'A short lifespan; he lives by walking about; he enslaves free people and has authority over them', 'cite': '10.2.4, 6'},
+        11: {'text': 'A bad condition in his livelihood, little good, creating discord', 'cite': '11.1, 21'},
+        12: {'text': 'Saddened by his slaves and riding animals, and no good in them', 'cite': '12.1, 40'},
+    },
+    7: {
+        1: {'text': 'Many lawsuits; deceptive; subordinate to women in what they say', 'cite': '1.36, 90'},
+        2: {'text': 'Gain from women and lawsuits; if nothing looks at it, it is not received and the lord of the Ascendant does not look, he gathers assets mostly outside contention, his women die and he marries servant women; if the lord of the Ascendant looked at it and is an infortune, he wastes assets on lawsuits and women', 'cite': '2.14, 17-19'},
+        3: {'text': 'Either his brothers marry some of his women and have children by them, or they are hostile to him', 'cite': '3.10, 7'},
+        4: {'text': 'He marries a woman somewhat above him, from his own family; the fathers held base, and the father hostile to him and contending with him', 'cite': '4.11, 13'},
+        5: {'text': 'His children mostly from his maids and the women of his service; they are hostile to him, and he deceives himself about the women', 'cite': '5.1, 84'},
+        6: {'text': 'Associates with women who have no social esteem, and bad words are said about him', 'cite': '6.3.4, 18'},
+        7: {'text': 'Marries a well-known woman, an equal match for him, whom he loves', 'cite': '7.1, 211'},
+        8: {'text': 'Marries women with inheritances, inherits and gets their assets from them; dies in exile', 'cite': '8.5, 8'},
+        9: {'text': 'Marries a foreign woman of good, pleasing character; if it is a fortune, she is pious', 'cite': '9.4, 29'},
+        10: {'text': "Marries a woman more powerful and significant than himself, from the people of the Sultan's house, sensible and upright", 'cite': '10.2.4, 7'},
+        11: {'text': 'A woman he loves, who is lucky; children by her, and benefit from them', 'cite': '11.1, 22'},
+        12: {'text': 'Mixes with low women with defects in them, and they are hostile towards him', 'cite': '12.1, 41'},
+    },
+    8: {
+        1: {'text': 'A wicked soul, much distress, faint-hearted', 'cite': '1.36, 91'},
+        2: {'text': 'Gain in relation to inheritance and the dead; generous with his gains, careless where they come from and go; if it connects with the lord of the eighth, his assets taken by force and he one who imposes taxes; if the lord of the eighth connects with it, gain from the dead and inheritances', 'cite': '2.14, 20-21'},
+        3: {'text': "His brothers' women do not survive, and they get inheritances in relation to women", 'cite': '3.10, 8'},
+        4: {'text': "Diminishes the fathers' lifespan; fear for the native; the mother dies in childbirth, worse if the Moon is corrupted or connecting with a retrograde planet; if it is the Sun, fear for the father; a fortune looking changes some of this", 'cite': '4.11, 14-15'},
+        5: {'text': "Children who survive but premature or miscarried; the manuscript is smudged here, so read it with the translator's caution: the children suffer or die, and those who survive are premature", 'cite': '5.1, 85 fn 47'},
+        6: {'text': 'Healthy, if the lord of the Ascendant does not look at it', 'cite': '6.3.4, 19'},
+        7: {'text': 'Consumes the inheritance of the women; a foreign woman', 'cite': '7.1, 212'},
+        8: {'text': 'Healthy, his illness insignificant, and his death light', 'cite': '8.5, 9'},
+        9: {'text': 'Highway robbery on journeys; eager in the accumulation of assets', 'cite': '9.4, 30'},
+        10: {'text': 'Authority in his younger years; a follower who seeks the leadership and is boastful', 'cite': '10.2.4, 8'},
+        11: {'text': 'Not well known nor of distinguished descent; low work such as commerce', 'cite': '11.1, 23'},
+        12: {'text': 'Few enemies; many of his slaves die', 'cite': '12.1, 42'},
+    },
+    9: {
+        1: {'text': 'Stays in a land other than his birthplace, travels much, speaks of knowledge; if free of the infortunes, knowledgeable and sensible', 'cite': '1.36, 92'},
+        2: {'text': 'Gain in relation to travels, piety and religion; if the lord of the Ascendant looked at it, a livelihood from travels and absence from home; if a fortune looked at it and received it, from religion and devoutness; if an infortune, or one inimical to it, a master of magic and remedies', 'cite': '2.14, 22-24'},
+        3: {'text': 'His siblings marry foreign women away from the homeland, and live and shelter with them', 'cite': '3.10, 9'},
+        4: {'text': 'The fathers unknown, moving from their homes, with a defect in them, dying a bad death with pains; if the sign is four-footed, one who employs riding animals, a deceiver without piety', 'cite': '4.11, 16-17'},
+        5: {'text': 'Children while absent from his homeland; they make him happy and please his eye', 'cite': '5.1, 86'},
+        6: {'text': 'Excellent intentions; ill while away from home, and hardship met', 'cite': '6.3.4, 20'},
+        7: {'text': 'Marries a foreign woman whom her brother gives in marriage, and he loves her', 'cite': '7.1, 213'},
+        8: {'text': 'Bad thoughts and work; dies in exile', 'cite': '8.5, 10'},
+        9: {'text': 'Few journeys; upright in the religion of his fathers, good in intention', 'cite': '9.4, 31'},
+        10: {'text': 'Authority in traveling abroad, his leadership in it, and the good offered to him', 'cite': '10.2.4, 9'},
+        11: {'text': 'Good fortune and the good when out of the country; happy until the end of his life', 'cite': '11.1, 24'},
+        12: {'text': 'His siblings meet hardship from enemies, and he too if he travels; bad religion', 'cite': '12.1, 43'},
+    },
+    10: {
+        1: {'text': 'At the doors of the Sultan, known to him and making himself known, living by them', 'cite': '1.36, 93'},
+        2: {'text': 'Gain at the doors of the Sultan and because of him', 'cite': '2.14, 25'},
+        3: {'text': 'Death and ruin of the siblings; he is jealous of them, and they hate each other', 'cite': '3.10, 10'},
+        4: {'text': 'The fathers well known in the house of the Sultan, and he grows in knowledge with them, if received; if an infortune looked and it is not received, hardship, tribulation and conflict from the Sultan', 'cite': '4.11, 18-19'},
+        5: {'text': 'Illness and a defect appearing in his children', 'cite': '5.1, 87'},
+        6: {'text': 'He will encounter hardship from the Sultan', 'cite': '6.3.4, 21'},
+        7: {'text': 'Marries one of the family of the house of the Sultan, a fortunate woman, and gets good from her', 'cite': '7.1, 214'},
+        8: {'text': 'His ruin because of the Sultan, and at his hands', 'cite': '8.5, 11'},
+        9: {'text': "His siblings marry women better than themselves, or of the family of the Sultan's house; he is pious", 'cite': '9.4, 32'},
+        10: {'text': 'Proficient in work, with influence in it and informed in it; his livelihood from it', 'cite': '10.2.4, 10'},
+        11: {'text': 'Authority in his friendship; the Sultan of his people not hostile', 'cite': '11.1, 25'},
+        12: {'text': 'The Sultan and those who wield power over him hostile; his sorrow and griefs last a long time', 'cite': '12.1, 44'},
+    },
+    11: {
+        1: {'text': 'A good character and many friends, but harsh towards children, and few of them', 'cite': '1.36, 94'},
+        2: {'text': 'Gain in relation to friends and commerce; if the lord of the Ascendant looked at it, a good condition and livelihood, his friends in need of him; if not, he in need of his friends', 'cite': '2.14, 26-27'},
+        3: {'text': 'Pious siblings renowned for it, and they attribute it to him', 'cite': '3.10, 12'},
+        4: {'text': "The father's lifespan short and the badness of the parents' condition, unless received by the lord of its house, which dissolves that and raises them up; better still if a fortune looked at it", 'cite': '4.11, 20'},
+        5: {'text': 'His eye pleased with his children and the family of his house, and he praised', 'cite': '5.1, 88'},
+        6: {'text': 'Befriends and associates with people who are not well known', 'cite': '6.3.4, 22'},
+        7: {'text': 'Marries a fertile woman, loves her, and lives in luxury because of her', 'cite': '7.1, 215'},
+        8: {'text': 'His friends diminished and what is between them corrupted; he dies when his condition is good', 'cite': '8.5, 12'},
+        9: {'text': 'Pious friends who love him in the religion of God; his siblings marry foreign women', 'cite': '9.4, 33'},
+        10: {'text': 'His friends get good from him; his child inherits assets which he collects from the Sultan', 'cite': '10.2.4, 11'},
+        11: {'text': 'A comfortable life, imputed with goodness, with many friends and much culture', 'cite': '11.1, 26'},
+        12: {'text': 'He leaves the goodness of friends, and they return to enmity; unhappy', 'cite': '12.1, 45'},
+    },
+    12: {
+        1: {'text': 'Miserable, a bad livelihood, many enemies who prevail over him; if it connects with no planet in a stake or an excellent place, the planet in its nature, miserable until ruined; if the planet it connects with is an infortune or harmed, enemies kill him', 'cite': '1.36, 95-97'},
+        2: {'text': 'Gain in relation to prisons and enemies; poor in soul, much distressed', 'cite': '2.14, 28'},
+        3: {'text': 'His siblings are hostile to him, take his authority and are superior to him', 'cite': '3.10, 13'},
+        4: {'text': 'The fathers foreigners who left their own land for the badness of their condition, one of them devout; if a fortune looked at it, good in the exile, if an infortune, tribulation; best if the fortune received it, then good or elevated status in the exile', 'cite': '4.11, 21-23'},
+        5: {'text': 'Children with a defect or chronic illness, dying of that disease; if made unfortunate, no children', 'cite': '5.1, 89-90'},
+        6: {'text': 'Hostile to people who have no social esteem, and they come to harm', 'cite': '6.3.4, 23'},
+        7: {'text': 'Marries a woman with no social esteem; hardship from her, and she hostile to him', 'cite': '7.1, 216'},
+        8: {'text': 'Fear that enemies kill him, or that the foolish fight him', 'cite': '8.5, 13'},
+        9: {'text': 'Wicked in his intention, a corruptor of religion, thinking himself in the right', 'cite': '9.4, 34'},
+        10: {'text': 'Dispossessed by the authorities; griefs and hardship from them', 'cite': '10.2.4, 12'},
+        11: {'text': 'Little good, miserable in his way of living, few friends and many enemies', 'cite': '11.1, 27'},
+        12: {'text': 'Few enemies, who do not appear to him; safe from their evil', 'cite': '12.1, 46'},
+    },
 }
 
 # Delineations for a planet occupying a given Whole Sign House, keyed by
@@ -9415,8 +9581,10 @@ def mashaallah_condition(house_i, lord, planetary_data, ascendant_lon):
 def evaluate_house_lords(planetary_data, ascendant_lon):
     """For each Whole Sign topical house (1-12), find its domicile lord and
     the WSH house that lord is physically placed in, then look up
-    Masha'allah's delineation for that [placed_in][ruled_house] pairing,
-    with his own operating condition (mashaallah_condition) beside it."""
+    Masha'allah's delineation for that [placed_in][ruled_house] pairing --
+    the cell's text with Sahl's locator in parentheses, e.g. "... (1.36,
+    83)" -- with his own operating condition (mashaallah_condition) beside
+    it."""
     asc_idx = int(ascendant_lon // 30)
     results = []
     for house_i in range(1, 13):
@@ -9429,7 +9597,8 @@ def evaluate_house_lords(planetary_data, ascendant_lon):
 
         lord_lon = planetary_data[domicile_lord]['longitude']
         placed_in = get_wsh_house(lord_lon, ascendant_lon)
-        text = MASHAALLAH_LORDS.get(placed_in, {}).get(house_i, '-')
+        cell = MASHAALLAH_LORDS.get(placed_in, {}).get(house_i)
+        text = '-' if cell is None else (f"{cell['text']} ({cell['cite']})" if cell['cite'] else cell['text'])
         status, why = mashaallah_condition(house_i, domicile_lord, planetary_data, ascendant_lon)
 
         results.append({

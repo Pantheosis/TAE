@@ -466,8 +466,10 @@ def test_natural_connection_pairs_match_vii_5(engine):
                                                      ('Sagittarius', 'Capricorn'), ('Pisces', 'Aries'))
 
 
-# --- Structural guards on the two prose tables (their text is audited by
-# hand against the TNAC Reference Guide; see docs/synthesis/08) ---
+# --- Structural guards on the two prose tables (the lords table's cells are
+# pinned to Sahl's sentences in test_prose_tables.py; the planets table's
+# text is audited by hand against the TNAC Reference Guide; see
+# docs/synthesis/08) ---
 def test_prose_tables_have_full_shape(engine):
     ml, ph = engine["MASHAALLAH_LORDS"], engine["PLANETS_IN_HOUSES"]
     assert set(ml) == set(range(1, 13)) and all(set(ml[h]) == set(range(1, 13)) for h in ml)
