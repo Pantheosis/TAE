@@ -47,9 +47,11 @@ def _chart(engine, date_text=DEFAULT_CHART):
 
 
 def _normalise(svg):
-    """Strip the <style> element this branch adds and the embedded family
-    name it prepends to font-family, leaving exactly what main's renderer
-    produced."""
+    """Strip the <style> element the symbol-font branch added and the
+    embedded family name it prepends to font-family, leaving the picture
+    alone. Applied to both sides: main has carried the font since that
+    branch merged, so the comparison is symmetric (the way the clickable
+    wheel's own proof was made symmetric once main carried its handles)."""
     svg = STYLE_BLOCK.sub("", svg)
     svg = svg.replace(f"'{glyph_font.FAMILY}', ", "")
     return svg
@@ -90,8 +92,7 @@ def test_the_normalised_natal_wheel_is_mains(engine, old_engine):
                                          local, "LMT")
     there = old_engine["generate_hybrid_svg"](chart, "Transits", "Florence", FLORENCE[0], FLORENCE[1],
                                               local, "LMT")
-    assert _normalise(here) == there
-    assert here != there, "the embedded font must actually have changed the SVG"
+    assert _normalise(here) == _normalise(there)
     assert "<style>" in here and glyph_font.FAMILY in here
 
 
@@ -100,8 +101,7 @@ def test_the_normalised_revolution_wheel_is_mains(engine, old_engine):
     rings = [{"label": "Nativity", "chart": chart, "when": "birth"}]
     here = engine["generate_multiwheel_svg"](rings, "Transits")
     there = old_engine["generate_multiwheel_svg"](rings, "Transits")
-    assert _normalise(here) == there
-    assert here != there
+    assert _normalise(here) == _normalise(there)
 
 
 def test_the_normalised_distribution_strip_is_mains(engine, old_engine):
@@ -113,8 +113,7 @@ def test_the_normalised_distribution_strip_is_mains(engine, old_engine):
             "The distributions")
     here = engine["generate_distribution_strip_svg"](*args)
     there = old_engine["generate_distribution_strip_svg"](*args)
-    assert _normalise(here) == there
-    assert here != there
+    assert _normalise(here) == _normalise(there)
 
 
 def test_the_normalised_hit_strip_is_mains(engine, old_engine):
@@ -126,8 +125,7 @@ def test_the_normalised_hit_strip_is_mains(engine, old_engine):
             "The house-master directed")
     here = engine["generate_hit_strip_svg"](*args)
     there = old_engine["generate_hit_strip_svg"](*args)
-    assert _normalise(here) == there
-    assert here != there
+    assert _normalise(here) == _normalise(there)
 
 
 def test_sizes_are_reported(engine):
