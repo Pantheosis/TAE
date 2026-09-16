@@ -42,6 +42,13 @@ def vii_citations():
         if "VII." not in line:
             continue
         for m in CITE.finditer(line):
+            # PN IV has a Book VII too (VII.8 is the Moon by transit, cited by
+            # the planets-in-houses table): a citation whose nearest preceding
+            # book label on the line is "PN IV" is Abu Ma'shar's Revolutions,
+            # not the Great Introduction, and is not pinned here.
+            before = line[:m.start()]
+            if before.rfind("PN IV") > before.rfind("Gr. Intr."):
+                continue
             ch = f"VII.{m.group(1)}"
             if not m.group(2):
                 out.append((n, ch, None))

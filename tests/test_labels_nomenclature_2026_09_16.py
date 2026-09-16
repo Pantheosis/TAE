@@ -274,9 +274,10 @@ def test_topical_planets_in_houses_is_headed_once():
     assert_no_exception(at, "dignities")
     headings = [h for h in at.main.subheader if h.value == "Topical Planets in Houses"]
     assert len(headings) == 1, [h.value for h in at.main.subheader]
-    # The surviving sentence is the one that is true: both texts are in the
-    # corpus, and the Guide's summary is still what the table prints.
-    assert "both texts are now in hand" in headings[0].help
+    # The surviving sentence is the one that is true: the PN IV halves are
+    # Book II's own sentences, the Rhetorius halves still the Guide's summary.
+    assert "still print the Guide's summary of Rhetorius" in headings[0].help
+    assert "this app's paraphrases of Abu Ma'shar's Book II" in headings[0].help
     assert "not in hand" not in headings[0].help
 
 

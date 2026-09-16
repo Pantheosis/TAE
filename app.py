@@ -2251,7 +2251,7 @@ def analysis_tables():
          "(or Masha'allah, On Nativities 1.23, 17, per the reading in force).",
          _sect_table_rows()),
         ("Dignities and places", "Topical Planets in Houses",
-         "Rhetorius & PN IV, as the Reference Guide summarises them.",
+         "Rhetorius, as the Reference Guide summarises him; PN IV, Book II paraphrased with its locators, the Moon from VII.8 by transit.",
          planets_in_houses_data),
         ("Dignities and places", "Topical House Lords (Masha'allah)",
          "Sahl, On Nativities, the twelve lords-of-places passages, paraphrased; each cell carries its locator.",
@@ -2969,8 +2969,8 @@ def page_dignities():
                      column_config=_yes_no_columns(pd.DataFrame(sect_rows)))
     st.caption("Sect: Sahl, The Introduction Ch. 3, 85. Domain: Gr. Intr. VII.1, 37 and VII.6, 13 "
                "(or Masha'allah, On Nativities 1.23, 17, per the switch).")
-    st.subheader('Topical Planets in Houses', help="Each planet's whole-sign house placement with BOTH readings for that pairing, good and bad, as the TNAC Reference Guide for the Planets and Places (Dykes, 2023) summarises them: its Rhetorius column from Rhetorius Ch. 57 and Firmicus, Mathesis III.2-III.13 (both texts are now in hand; unlike the Topical House Lords table below, this table still prints the Guide's summary, which has not yet been checked against them), its PN IV column from Book II's lord of the year in the places, which the Guide applies to natal planets -- a reading of the Guide's, followed here.")
-    st.caption("Rhetorius & PN IV, as the Reference Guide summarises them; the Guide prints ? for the Moon in the sixth and the eighth, and so does this table.")
+    st.subheader('Topical Planets in Houses', help="Each planet's whole-sign house placement with BOTH readings for that pairing, good and bad, from two sources, printed side by side in each column as Rhetorius: ... and PN IV: .... The PN IV halves are this app's paraphrases of Abu Ma'shar's Book II chapters on the lord of the year in the houses of the circle (Saturn II.6, Jupiter II.9, Mars II.12, the Sun II.15, Venus II.18, Mercury II.21), applied to natal planets -- that application is the reading of the TNAC Reference Guide for the Planets and Places (Dykes, 2023), and this app follows it and says so. Each chapter gives, per house or pair of houses, a suitable-condition reading and a not-received, made-unfortunate or retrograde reading; the good/bad split is kept only where the chapter makes it, the text's own conditions (received, retrograde, eastern, if Mars looked at him) stay in the cell, a paired house cites the pair's sentence, and the locator is printed after the text. The Moon has no such chapter: II.22, 13 says to judge her in the manner of the rest of the planets, and the translator's note there points to VII.8, her transit through the twelve houses, the only list PN IV has -- so her halves are VII.8, 1-12, each marked By transit; VII.8 makes no good/bad split, so each of her twelve readings sits in the half its balance belongs to and the other half is a dash. Twelve PN IV halves are dashes, all of them the Moon's. The Rhetorius halves still print the Guide's summary of Rhetorius Ch. 57 and Firmicus, Mathesis III.2-III.13, without a locator, until they are re-derived from those texts; the Guide prints ? for the Moon in the sixth and the eighth in that column, so those four halves are dashes. The arrangement -- seven planets in twelve places, two sources, good and bad -- is the Guide's; the PN IV wording is not.")
+    st.caption("Rhetorius, as the Reference Guide summarises him; PN IV, Book II paraphrased with its locators, the Moon from VII.8 by transit.")
     st.dataframe(pd.DataFrame(planets_in_houses_data, columns=['Planet', 'Placed in (WS place)', 'Lean']),
                  hide_index=True, width='content', height=_rows_height(len(planets_in_houses_data)))
     # The readings wrap in st.table; the structural columns stay above.
@@ -3867,7 +3867,8 @@ def page_timing():
                      height=_rows_height(14),
                      column_config=_wide_text_columns(pd.DataFrame(pn4['further_rows'])))
         st.caption("Facts, not judgments: the delineation chapters behind these rows (II.6-21, V.1-8, VI.3-6, "
-                   "VII.9, VIII.1-15) are not built. #8 grades a transit as V.1, 2-3 does -- the degree, the "
+                   "VII.9, VIII.1-15) are not built; VI.3, the revolution's planets in the natal places, belongs "
+                   "here with them, not in the natal Topical Planets in Houses table, which reads Book II. #8 grades a transit as V.1, 2-3 does -- the degree, the "
                    "bound, or only the sign. #10 counts each lord from its own Ascendant (fn 128). #14 and #19 "
                    "count from the three places VI.5, 1 names. #12 and #13 read both the terminal sign and the "
                    "revolution's Ascendant, as VI.3-4 do.")
