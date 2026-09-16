@@ -461,8 +461,8 @@ def test_the_connections_are_the_aspect_rows_naming_it(engine, tables, name):
                 if name in (row["Light Planet"], row["Heavy Planet"])]
     assert len(summary["connections"]) == len(expected) > 0
     for shown, row in zip(summary["connections"], expected):
-        for column in ("Light Planet", "Aspect", "Heavy Planet", "Applying Planet",
-                       "Motion", "Exact Orb Dist", "Connected"):
+        for column in ("Light Planet", "Aspect", "Heavy Planet", "Connecting planet",
+                       "Motion", "Exact Orb Dist", "Connection"):
             assert shown[column] == row[column]
 
 

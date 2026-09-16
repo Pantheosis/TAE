@@ -226,10 +226,19 @@ def test_dignity_caption_restates_the_solar_orbs(engine):
 
 
 def test_forward_horizon_is_quoted_correctly(engine):
+    """The horizon is interpolated from the simulation that ran, not typed
+    on the page: the citation, the glance, the notes and the line printed
+    when the search finds nothing at all (F07) all say the same number, and
+    none of them can drift from the engine's own."""
     import inspect
     horizon = inspect.signature(engine["_simulate_forward"]).parameters["horizon_days"].default
     ui = ui_source()
-    assert f"next {horizon} days" in ui and f"up to ~{horizon} days" in ui and f"inside {horizon} days" in ui
+    assert "_horizon = int(sim['horizon_days'])" in ui
+    for phrase in ("next {_horizon} days", "up to ~{_horizon} days", "inside {_horizon} days",
+                   "within {_horizon} days of the chart"):
+        assert phrase in ui, phrase
+    for typed in (f"next {horizon} days", f"up to ~{horizon} days", f"inside {horizon} days"):
+        assert typed not in ui, typed
 
 
 def test_no_via_combusta_span_is_attributed_anywhere():

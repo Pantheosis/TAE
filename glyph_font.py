@@ -20,7 +20,7 @@ different list from the one supplied:
 
 - The candidate list's right arrow (U+2192) is NOT written by any of the
   four renderers. It is a table cell elsewhere in the file (the aspects
-  page's "Applying Planet" column, `f"{applicant} -> {receiver}"`,
+  page's "Connecting planet" column, `f"{applicant} -> {receiver}"`,
   `st.dataframe` text, not SVG) -- page text, out of this branch's scope
   under "no page text changes at all."
 - Three characters the candidate list omitted ARE written into SVG text by

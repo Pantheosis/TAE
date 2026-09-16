@@ -22,6 +22,7 @@ What it pins:
 """
 import ast
 import copy
+import difflib
 import json
 import os
 import subprocess
@@ -30,7 +31,8 @@ from pathlib import Path
 
 import pytest
 
-from conftest import EXECUTABLE_DIR, assert_no_exception, make_app
+from conftest import (EXECUTABLE_DIR, assert_no_exception, make_app,
+                      with_2026_09_16_renames)
 
 NEW_YORK = (40.71427, -74.00597)
 FLORENCE = (43.7792, 11.2463)
@@ -337,8 +339,8 @@ def _functions(source):
     return found
 
 
-def _body_text(statements):
-    """The statements as code, with docstrings' own whitespace collapsed --
+def _statements(statements):
+    """Each statement as code, with docstrings' own whitespace collapsed --
     the two docstrings that carry a continuation line lost eight spaces of
     indentation with the code around them, and a docstring is not
     behaviour."""
@@ -352,12 +354,44 @@ def _body_text(statements):
                         and isinstance(first.value.value, str)):
                     first.value.value = " ".join(first.value.value.split())
         out.append(ast.unparse(node))
-    return "\n".join(out)
+    return out
+
+
+def _body_text(statements):
+    return "\n".join(_statements(statements))
+
+
+def _differing(mine, theirs):
+    """One entry per run of statements that is not shared: main's side and
+    this branch's side of it, together, so a statement that was replaced and
+    one that was only removed are both readable in their own block."""
+    blocks = []
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(a=theirs, b=mine, autojunk=False).get_opcodes():
+        if tag == "equal":
+            continue
+        blocks.append("\n".join(theirs[i1:i2] + mine[j1:j2]))
+    return blocks
+
+
+# A page function's own statements this branch rewrites, named by the words
+# that identify each one (2026-09-16: F07, F10, F11, F15 of the independent
+# review). Every OTHER statement of every page function still has to be
+# main's own, dedented, which is what F05's proof below was written to make
+# -- a later branch that edits a page adds its own statements here, or the
+# test fails and says which statement moved.
+CHANGED_2026_09_16 = {
+    "page_configurations": ("column_help", "absent=", "chooses neither"),
+    "page_dignities": ("texts not in hand",),
+    "page_lots": ("_classical", "provenance_rows", "All four carry their provenance"),
+    "page_timing": ("the selector above carries it out",),
+}
 
 
 def test_the_page_functions_are_mains_own_one_guard_line_apart():
     """F05's dedent, proved: every page function's body is the body main
-    carries, plus (for the seven that read a chart) the guard line."""
+    carries, plus (for the seven that read a chart) the guard line -- and,
+    for the four functions listed in CHANGED_2026_09_16, the statements
+    this branch rewrites and no others."""
     main_source = _from_main("app.py")
     if main_source is None:
         pytest.skip("main's app.py is not in this checkout (a shallow clone)")
@@ -379,13 +413,24 @@ def test_the_page_functions_are_mains_own_one_guard_line_apart():
             # later branch edits a page.
             if their_body and ast.unparse(their_body[0]) == guard:
                 their_body.pop(0)
-        mine = _body_text(body)
-        theirs_text = _body_text(their_body)
+        mine = _statements(body)
+        theirs_text = _statements(their_body)
         if name == "page_timing":
-            assert mine.count(F17_NOW) == 1
-            mine = mine.replace(F17_NOW, F17_ON_MAIN)
-            theirs_text = theirs_text.replace(F17_NOW, F17_ON_MAIN)
-        assert mine == theirs_text, f"{name} is not main's function dedented"
+            assert "\n".join(mine).count(F17_NOW) == 1
+            mine = [statement.replace(F17_NOW, F17_ON_MAIN) for statement in mine]
+            theirs_text = [statement.replace(F17_NOW, F17_ON_MAIN) for statement in theirs_text]
+        markers = CHANGED_2026_09_16.get(name)
+        if markers is None:
+            assert mine == theirs_text, f"{name} is not main's function dedented"
+            continue
+        # A function this branch does edit: only the statements named above
+        # may differ, and each of those names must actually be used.
+        changed = _differing(mine, theirs_text)
+        assert changed, f"{name} is listed as changed but matches main"
+        for block in changed:
+            assert any(marker in block for marker in markers), f"{name}: {block[:300]}"
+        for marker in markers:
+            assert any(marker in block for block in changed), f"{name}: unused marker {marker!r}"
     # And they are top-level functions now, not nested in a calculation.
     module = ast.parse((EXECUTABLE_DIR / "app.py").read_text())
     top_level = {node.name for node in module.body if isinstance(node, ast.FunctionDef)}
@@ -395,8 +440,11 @@ def test_the_page_functions_are_mains_own_one_guard_line_apart():
 
 
 def test_the_table_fixture_is_the_one_main_carries():
+    """Up to the two columns the 2026-09-16 labels branch renamed (F10):
+    main's copy is brought through the rename and must then match, so the
+    fixture still pins every other column of every other table."""
     shown = _from_main("tests/fixtures/tables.json")
     if shown is None:
         pytest.skip("main's fixture is not in this checkout (a shallow clone)")
-    assert json.loads(shown) == json.loads(
+    assert with_2026_09_16_renames(json.loads(shown)) == json.loads(
         (EXECUTABLE_DIR / "tests" / "fixtures" / "tables.json").read_text())
