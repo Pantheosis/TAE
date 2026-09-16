@@ -468,8 +468,8 @@ def test_natural_connection_pairs_match_vii_5(engine):
 
 # --- Structural guards on the two prose tables (the lords table's cells are
 # pinned to Sahl's sentences in test_prose_tables.py, the planets table's
-# PN IV halves to Book II's and VII.8's, its Rhetorius halves by literal;
-# see docs/synthesis/08) ---
+# PN IV halves to Book II's and VII.8's, its Rhetorius halves to Rhetorius
+# Ch. 57's and Mathesis III's; see docs/synthesis/08) ---
 def test_prose_tables_have_full_shape(engine):
     ml, ph = engine["MASHAALLAH_LORDS"], engine["PLANETS_IN_HOUSES"]
     assert set(ml) == set(range(1, 13)) and all(set(ml[h]) == set(range(1, 13)) for h in ml)

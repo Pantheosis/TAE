@@ -1,32 +1,41 @@
 """The two prose delineation tables, pinned by content -- 2026-09-08, the
-lords half re-made 2026-09-16, the planets half's PN IV column the same day.
+lords half re-made 2026-09-16, the planets half's PN IV column the same
+day, its Rhetorius column the same day.
 
 PLANETS_IN_HOUSES[house][planet] is {'Rhetorius': {'Good', 'Bad'}, 'PN IV':
-{'Good', 'Bad'}}, every half {'text', 'cite'}. Its two sources are pinned
-differently, because they stand differently:
+{'Good', 'Bad'}}, every half {'text', 'cite'}. Both sources are pinned the
+same way, by sentence:
 
-  1. The PN IV halves are this app's paraphrases of Abu Ma'shar's Book II
+  1. The Rhetorius halves are this app's paraphrases of Rhetorius,
+     Astrological Compendium Ch. 57 (Holden), the significations of the
+     twelve houses, and, where Rhetorius is silent on the planet in the
+     place or says only something general, of Firmicus, Mathesis III.2-III.7
+     and III.13 (Dykes), the planets in the twelve places. Their pin is
+     RHETORIUS_HALVES_SENTENCES: for every half the locator -- Rhetorius by
+     chapter, house and Holden's page ("Ch. 57, the sixth, p. 76"), Firmicus
+     by chapter and sentence ("III.2, 8"), both when both are used -- and
+     three anchor words the half's text and the cited passage share (for a
+     Rhetorius cite, in that house's section of Ch. 57; for a Firmicus cite,
+     in that numbered sentence or range; a half citing both takes at least
+     one anchor from each), or ('', []) for a dash. The good/bad halves
+     follow the sentence's own valuation; where the only distinction the
+     text makes is sect, the reading sits whole in the half its balance
+     belongs to, prefixed "By day" / "By night" / "In sect" / "Out of sect",
+     and a planet the texts only condemn in a place has a dash for its good
+     half. Seventeen Rhetorius halves are dashes, where neither text has a
+     reading of that valuation for the planet in that place.
+  2. The PN IV halves are this app's paraphrases of Abu Ma'shar's Book II
      chapters on the lord of the year in the houses (II.6 Saturn, II.9
      Jupiter, II.12 Mars, II.15 the Sun, II.18 Venus, II.21 Mercury) applied
      to natal planets, and of VII.8 (the Moon by transit) for the Moon, who
      has no Book II houses chapter (II.22, 13 fn 312). Their pin is
-     PN4_HALVES_SENTENCES: for every half the locator and three anchor words
-     the half's text and the cited sentence share, or ('', []) for a dash.
-     The corpus is private, so the fixture carries the anchors, not the
-     sentence; the tests hold the cell side (locator well-formed, anchors in
-     the text, the Moon's twelve on VII.8, the dash count the page states,
-     no [UNCERTAIN] marker, the reader's cell format) and the checker
-     verifies the anchors against the sentences.
-  2. The Rhetorius halves still print the Guide's summary (TNAC Reference
-     Guide for the Planets and Places, Dykes 2023, "Planets in the Nth",
-     pp. 17-40, its Rhetorius column) as this app compressed it, with no
-     locator. Their pin is RHETORIUS_HALVES, a literal copy, so that the
-     build which re-derives them from Rhetorius Ch. 57 and Mathesis III can
-     retire it the way the lords table's transcription was retired. The
-     Guide prints "?" for the Moon in the 6th and 8th there, and the app's
-     merged cells had carried no Rhetorius words for seventeen other halves:
-     those twenty-one are dashes (no Guide wording added pending the
-     re-derivation) and the transcription holds None.
+     PN4_HALVES_SENTENCES, the same shape.
+
+The corpus is private, so the fixtures carry the anchors, not the
+sentences; the tests hold the cell side (locator well-formed, anchors in
+the text, the Moon's twelve PN IV halves on VII.8, the dash counts the page
+states, no [UNCERTAIN] marker, the reader's cell format with both locators)
+and the checker verifies the anchors against the sentences.
 
 The 9th-house Mercury PN IV halves the Guide prints against its own column
 headings are settled by II.21, 8-9 (the good journey and true visions are
@@ -51,124 +60,182 @@ import pytest
 
 PLANETS = ['Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon']
 
-# The Rhetorius halves, literal: the Guide's summary of Rhetorius Ch. 57 and
-# Firmicus exactly as this app carried it before the PN IV column was split
-# out (its Rhetorius column, pp. 17-40), {house: {planet: (Good, Bad)}};
-# None where the app's merged cell had no Rhetorius words (seventeen) or the
-# Guide prints "?" (the Moon in the 6th and 8th, four). No Guide wording was
-# added. These halves carry no locator and are to be re-derived from the
-# two texts; when they are, this transcription retires the way the lords
-# table's did.
-RHETORIUS_HALVES = {
-    1: {
-        'Saturn': ('Eldest sibling.', 'Sluggish, laborious.'),
-        'Jupiter': ('Glorious, in charge.', None),
-        'Mars': ('Military, leader.', 'Unstable, squandering.'),
-        'Sun': ('Noble, lucky.', 'Less noble.'),
-        'Venus': ('Talented, friends of powerful.', 'Lustful, lower professions.'),
-        'Mercury': ('Intellectual activities.', 'Practical activities.'),
-        'Moon': ('Increases of fortune, in charge.', 'Sailing, poor livelihood.'),
-    },
-    2: {
-        'Saturn': ('Slow increase.', 'Loss, lazy, ill.'),
-        'Jupiter': ('Good all around, inheritances.', None),
-        'Mars': ('Military; enough.', 'Exile, dangers.'),
-        'Sun': ('Dignity, wealth.', 'Private property.'),
-        'Venus': ('Prosperous, pleasing, arts.', 'Disruption.'),
-        'Mercury': ('Evening star by night: good at business.', 'Morning star by night: obscure, bad, poor; evening star by day: good at learning, poor.'),
-        'Moon': ('Brilliant, conspicuous, extravagant.', 'Family/actions dispersed and divided.'),
-    },
-    3: {
-        'Saturn': ('Initiates, religious chiefs.', 'Recluses.'),
-        'Jupiter': ('Balanced moderation.', None),
-        'Mars': ('Glory with labor.', 'Worse than by night?'),
-        'Sun': ('Bad death for father; serious in counsel, manages public things, religious honors.', None),
-        'Venus': (None, None),
-        'Mercury': ('Divination, astrologers.', 'Priests, magicians.'),
-        'Moon': ('With Saturn: slow, unsuccessful, sacrilegious (Firmicus).', 'Ignoble or infamous mother; sacrilege with Mercury or Mars; but good religious activities if with Jupiter.'),
-    },
-    4: {
-        'Saturn': ('Lots of wealth.', 'Destroys/threatens parents, illness.'),
-        'Jupiter': ('Commanders, jurists.', 'Middling assets.'),
-        'Mars': ('Generals, soldiers.', 'Sickly, surgery.'),
-        'Sun': ('Annoyances and interruptions in life, better in old age.', 'Destroys native, parents, and livelihood.'),
-        'Venus': ('Fortunate over time, charming.', 'Loss of patrimony, widowhood.'),
-        'Mercury': ('Lots of money, initiates.', 'Forbidden mysteries.'),
-        'Moon': ('Honored mother, good living standard.', 'Lowborn mother, commerce.'),
-    },
-    5: {
-        'Saturn': ('Kingships/command over time.', 'Delayed, sluggish.'),
-        'Jupiter': ('Fortunate, honored, healthy.', 'Lower-status activities.'),
-        'Mars': ('Good possessions, honor.', 'Harmful travel.'),
-        'Sun': ('Honored, easy goals.', 'Moderate fortune, childless.'),
-        'Venus': ('Prize-fighters, victors.', None),
-        'Mercury': ('Wealth, managing money.', 'Squanders money.'),
-        'Moon': ('Gracious, leaders, fortunate.', 'Foreign travel, parents estranged, orphans.'),
-    },
-    6: {
-        'Saturn': ('Moderate.', 'No inheritance, dangers from slaves.'),
-        'Jupiter': ('Exposure, valuable materials.', None),
-        'Mars': ('Harms children, uneven life, illness (Firmicus).', 'Worse than by night?'),
-        'Sun': ('With Jupiter and Venus, better than by night.', 'Bad death or condemnation for father if no star in the 10th (with one, good fortune from parents and resources).'),
-        'Venus': ('Sex with low-quality women, treated badly by wives unless a planet is in the 10th, or difficulties in pregnancy; with a planet in the 10th, charm and good fortune through women.', 'See above.'),
-        'Mercury': ('Advancement through speech/business.', 'Idle, evil.'),
-        'Moon': (None, None),
-    },
-    7: {
-        'Saturn': ('Success after delay, long-lived.', 'Sickly.'),
-        'Jupiter': ('Long-lived, wealth later.', 'Moderate living.'),
-        'Mars': ('Professions from fire/violence.', 'Violent, short-lived.'),
-        'Sun': ('Administrators.', 'Lower-status activities.'),
-        'Venus': ('Age difference/delay in marriage.', 'Lewdness.'),
-        'Mercury': ('(Diurnal) Bad with Venus or Mars: lewd, brothel-keepers, fugitives.', '(Nocturnal) Managing affairs of women, good fortune from sex, numbers, arts or writings.'),
-        'Moon': ('Changes, travel, better resources.', 'Foreign travel with dangers.'),
-    },
-    8: {
-        'Saturn': ('Assets over time/inheritance.', 'Loss, bad death.'),
-        'Jupiter': ('Acquisition, inheritance.', None),
-        'Mars': ('Hot-heads, bright.', 'Patrimony spent, dangers.'),
-        'Sun': ("Father's early death, healing.", 'See above.'),
-        'Venus': ('Wealthy, benefit from death of women, easy death.', 'Marry late, lower-quality women, STDs, seizures.'),
-        'Mercury': ('Money, management, inheritance.', 'Ineffective, lazy.'),
-        'Moon': (None, None),
-    },
-    9: {
-        'Saturn': ('Initiates, chief priests.', 'Recluses, anger at gods.'),
-        'Jupiter': ('Predicting future, priesthood.', 'Unsteady, false speech.'),
-        'Mars': ('Glory, unpunished.', None),
-        'Sun': ('Building sacred things, religious authority.', 'Harm in travels.'),
-        'Venus': ('Divine men, gifts from temples.', 'Demon-afflicted, illicit sex.'),
-        'Mercury': ('Priests, wizards.', 'Seers, sacrificers.'),
-        'Moon': ('Living abroad, notable; benefiting from temples.', 'Wandering and dangers; temple servants.'),
-    },
-    10: {
-        'Saturn': ('Leaders, farmers.', 'Bunglers, sorrow.'),
-        'Jupiter': ('Athletes, famous, trusted.', 'Handsome but unstable.'),
-        'Mars': ('Unstable, fearsome leaders.', 'No accomplishments, fugitives.'),
-        'Sun': ('Rulers, leaders, dignity.', 'Success through violence.'),
-        'Venus': ('Honored, musicians.', 'Blamed, burdened, indecent.'),
-        'Mercury': ('Admirable, trusted.', 'Changes, living abroad.'),
-        'Moon': ('Rulers, successful, trusted.', 'Hardship, unsteady, error.'),
-    },
-    11: {
-        'Saturn': ('Middling goods over time.', None),
-        'Jupiter': ('Fortunate, renowned, authority.', 'Diminished effectiveness.'),
-        'Mars': ('Many goods, dignity.', None),
-        'Sun': ('Lucky, noble.', 'Harms children.'),
-        'Venus': ('Powerful, trusted.', 'Sterility, unusual sexuality.'),
-        'Mercury': ('Ingenious, accounts.', 'Spending, agents.'),
-        'Moon': ('Rulers, favored, good from parents.', 'Living abroad, estrangements, orphanhood.'),
-    },
-    12: {
-        'Saturn': (None, 'Loss of inheritance, mental disturbance.'),
-        'Jupiter': ('Fights against superiors.', None),
-        'Mars': (None, 'Illness, injury, dangers from slaves, criminals.'),
-        'Sun': (None, 'With infortunes, long illnesses, defects, slavery.'),
-        'Venus': (None, 'Ruined by women.'),
-        'Mercury': ('Managing big affairs.', 'Danger from slaves.'),
-        'Moon': ('Luckiness/authority (with fortunes).', 'Short life, humble; bad for patrimony/travel.'),
-    },
-}
+# (house, planet, half, cite, anchors): the Rhetorius half's locator --
+# Rhetorius Ch. 57 by house and Holden's page, Firmicus by chapter and
+# sentence, both when both are used -- and three words the half's text
+# shares with the cited passage (at least one from each source when two
+# are cited); ('', []) for a dash. Grid order: house, then planet, Good
+# before Bad.
+RHETORIUS_HALVES_SENTENCES = [
+    (1, 'Saturn', 'Good', 'Ch. 57, the first, p. 51; III.2, 1-3', ['haughty', 'brothers', 'born']),
+    (1, 'Saturn', 'Bad', 'Ch. 57, the first, p. 52; III.2, 4-7', ['opposition', 'sluggishness', 'patrimony']),
+    (1, 'Jupiter', 'Good', 'Ch. 57, the first, p. 52; III.3, 1', ['notable', 'ingenious', 'charming']),
+    (1, 'Jupiter', 'Bad', 'Ch. 57, the first, p. 52; III.3, 3-5', ['reared', 'parents', 'maternal']),
+    (1, 'Mars', 'Good', 'Ch. 57, the first, p. 52; III.4, 1-2', ['soldiers', 'terrible', 'masculine']),
+    (1, 'Mars', 'Bad', 'Ch. 57, the first, p. 52; III.4, 4-6', ['reckless', 'craftsmen', 'squandered']),
+    (1, 'Sun', 'Good', 'Ch. 57, the first, p. 52; III.5, 1-4', ['jealousies', 'triplicity', 'nobility']),
+    (1, 'Sun', 'Bad', 'Ch. 57, the first, p. 53; III.5, 21-23', ['destroyer', 'brothers', 'patrimony']),
+    (1, 'Venus', 'Good', 'Ch. 57, the first, p. 53; III.6, 1-8', ['demigods', 'perfumers', 'foretell']),
+    (1, 'Venus', 'Bad', 'Ch. 57, the first, p. 54; III.6, 9-10', ['reprehensible', 'indecent', 'weavers']),
+    (1, 'Mercury', 'Good', 'Ch. 57, the first, p. 54; III.7, 1-6', ['philosophers', 'disbursements', 'advocates']),
+    (1, 'Mercury', 'Bad', 'Ch. 57, the first, p. 54; III.7, 3-4', ['partile', 'manifold', 'defined']),
+    (1, 'Moon', 'Good', 'Ch. 57, the first, p. 54; III.13, 1', ['magnates', 'rejoices', 'brothers']),
+    (1, 'Moon', 'Bad', 'Ch. 57, the first, p. 55; III.13, 2-4', ['pirates', 'helmsmen', 'sicknesses']),
+    (2, 'Saturn', 'Good', 'Ch. 57, the second, p. 59; III.2, 12-13', ['undistinguished', 'watery', 'unnoticed']),
+    (2, 'Saturn', 'Bad', 'Ch. 57, the second, p. 59; III.2, 8-11', ['disturbances', 'maternal', 'destitute']),
+    (2, 'Jupiter', 'Good', 'Ch. 57, the second, p. 59; III.3, 8', ['inheritances', 'buildings', 'estates']),
+    (2, 'Jupiter', 'Bad', 'III.3, 9', ['changeable', 'poverty', 'riches']),
+    (2, 'Mars', 'Good', 'Ch. 57, the second, p. 60; III.4, 12', ['campaigns', 'combat', 'athletes']),
+    (2, 'Mars', 'Bad', 'Ch. 57, the second, p. 60; III.4, 8-11', ['straitened', 'enslavement', 'captivity']),
+    (2, 'Sun', 'Good', 'Ch. 57, the second, p. 60; III.5, 24-26', ['private', 'pleasant', 'suddenly']),
+    (2, 'Sun', 'Bad', 'Ch. 57, the second, p. 57; III.5, 25-28', ['eyesight', 'listless', 'trembling']),
+    (2, 'Venus', 'Good', 'Ch. 57, the second, p. 60; III.6, 13', ['delightful', 'vespertine', 'overflowing']),
+    (2, 'Venus', 'Bad', 'Ch. 57, the second, p. 60; III.6, 14-16', ['disputes', 'sterile', 'contrarieties']),
+    (2, 'Mercury', 'Good', 'Ch. 57, the second, p. 61; III.7, 8', ['trustees', 'astrology', 'support']),
+    (2, 'Mercury', 'Bad', 'Ch. 57, the second, p. 60; III.7, 7-9', ['devious', 'unlettered', 'straits']),
+    (2, 'Moon', 'Good', 'III.13, 5', ['brilliant', 'extravagant', 'conspicuous']),
+    (2, 'Moon', 'Bad', 'Ch. 57, the second, p. 57; III.13, 6-8', ['cataracts', 'dissolved', 'hemorrhoids']),
+    (3, 'Saturn', 'Good', 'Ch. 57, the third, p. 63', ['revelations', 'mysterious', 'fortune']),
+    (3, 'Saturn', 'Bad', 'III.2, 14-16', ['sacrilegious', 'sycophants', 'stupidity']),
+    (3, 'Jupiter', 'Good', 'Ch. 57, the third, p. 64; III.3, 10', ['moderation', 'unhoped', 'fortune']),
+    (3, 'Jupiter', 'Bad', '', []),
+    (3, 'Mars', 'Good', 'III.4, 14-18', ['riverbanks', 'deputies', 'labor']),
+    (3, 'Mars', 'Bad', 'III.4, 15', ['conscience', 'everyone', 'crime']),
+    (3, 'Sun', 'Good', 'Ch. 57, the third, p. 62; III.5, 29-30', ['counsel', 'treasury', 'abroad']),
+    (3, 'Sun', 'Bad', 'III.5, 29-32', ['perjurers', 'gluttons', 'censures']),
+    (3, 'Venus', 'Good', 'Ch. 57, the third, p. 63; III.6, 17-18', ['favors', 'priestess', 'wardens']),
+    (3, 'Venus', 'Bad', '', []),
+    (3, 'Mercury', 'Good', 'Ch. 57, the third, p. 63; III.7, 12-14', ['revelations', 'magicians', 'mathematicians']),
+    (3, 'Mercury', 'Bad', '', []),
+    (3, 'Moon', 'Good', 'Ch. 57, the third, p. 62; III.13, 10-12', ['soothsayer', 'goddess', 'pigments']),
+    (3, 'Moon', 'Bad', 'Ch. 57, the third, p. 62; III.13, 9-14', ['haruspex', 'blasphemer', 'despoilers']),
+    (4, 'Saturn', 'Good', 'Ch. 57, the fourth, p. 69; III.2, 17', ['treasure', 'greedy', 'silver']),
+    (4, 'Saturn', 'Bad', 'Ch. 57, the fourth, p. 69; III.2, 18-20', ['childlessness', 'stomach', 'humors']),
+    (4, 'Jupiter', 'Good', 'Ch. 57, the fourth, p. 70; III.3, 11-15', ['windfalls', 'jurists', 'messengers']),
+    (4, 'Jupiter', 'Bad', 'Ch. 57, the fourth, p. 70; III.3, 16-18', ['moderate', 'middling', 'separated']),
+    (4, 'Mars', 'Good', 'Ch. 57, the fourth, p. 70; III.4, 19-21', ['toilers', 'desert', 'widowhood']),
+    (4, 'Mars', 'Bad', 'Ch. 57, the fourth, p. 70; III.4, 22-25', ['epileptics', 'ingratitude', 'invalids']),
+    (4, 'Sun', 'Good', 'III.5, 35', ['profits', 'affections', 'unstable']),
+    (4, 'Sun', 'Bad', 'Ch. 57, the fourth, p. 70; III.5, 33-34', ['livelihood', 'interruptions', 'annoyances']),
+    (4, 'Venus', 'Good', 'Ch. 57, the fourth, p. 71; III.6, 21-23', ['magnates', 'aquarius', 'compliant']),
+    (4, 'Venus', 'Bad', 'Ch. 57, the fourth, p. 71; III.6, 19-22', ['widowhoods', 'effeminates', 'confiscation']),
+    (4, 'Mercury', 'Good', 'Ch. 57, the fourth, p. 71; III.7, 15-18', ['wrestlers', 'goldsmiths', 'computation']),
+    (4, 'Mercury', 'Bad', 'Ch. 57, the fourth, p. 71; III.7, 16-17', ['forbidden', 'sorcerers', 'custody']),
+    (4, 'Moon', 'Good', 'Ch. 57, the fourth, p. 71; III.13, 17', ['sovereignty', 'presidency', 'riches']),
+    (4, 'Moon', 'Bad', 'Ch. 57, the fourth, p. 71; III.13, 15-16', ['imprisonment', 'banishment', 'captive']),
+    (5, 'Saturn', 'Good', 'Ch. 57, the fifth, p. 73; III.2, 21-24', ['kingships', 'founders', 'magistrates']),
+    (5, 'Saturn', 'Bad', 'Ch. 57, the fifth, p. 73; III.2, 25', ['sluggish', 'inconsistent', 'wasting']),
+    (5, 'Jupiter', 'Good', 'Ch. 57, the fifth, p. 74; III.3, 19-23', ['authority', 'accountants', 'affluence']),
+    (5, 'Jupiter', 'Bad', 'III.3, 32-41', ['herbalists', 'calamities', 'rivers']),
+    (5, 'Mars', 'Good', 'Ch. 57, the fifth, p. 74; III.4, 26-28', ['dynasts', 'renowned', 'glories']),
+    (5, 'Mars', 'Bad', 'Ch. 57, the fifth, p. 74; III.4, 29-35', ['hurtful', 'seditions', 'testimony']),
+    (5, 'Sun', 'Good', 'Ch. 57, the fifth, p. 72; III.5, 36-37', ['divine', 'lovable', 'vestments']),
+    (5, 'Sun', 'Bad', 'Ch. 57, the fifth, p. 74; III.5, 38-39', ['childless', 'torments', 'perpetual']),
+    (5, 'Venus', 'Good', 'Ch. 57, the fifth, p. 74; III.6, 24-27', ['masterful', 'subsidized', 'engagement']),
+    (5, 'Venus', 'Bad', 'III.6, 26-28', ['infamy', 'suspicions', 'unwavering']),
+    (5, 'Mercury', 'Good', 'Ch. 57, the fifth, p. 74; III.7, 19-20', ['secretaries', 'foresight', 'monies']),
+    (5, 'Mercury', 'Bad', 'Ch. 57, the fifth, p. 74; III.7, 21-25', ['custodian', 'wrestlers', 'lavish']),
+    (5, 'Moon', 'Good', 'Ch. 57, the fifth, p. 75', ['gracious', 'illustrious', 'presidents']),
+    (5, 'Moon', 'Bad', 'Ch. 57, the fifth, p. 75', ['estrangement', 'orphanhood', 'shatter']),
+    (6, 'Saturn', 'Good', '', []),
+    (6, 'Saturn', 'Bad', 'Ch. 57, the sixth, p. 78; III.2, 26-28', ['paralysis', 'consumption', 'dysentery']),
+    (6, 'Jupiter', 'Good', '', []),
+    (6, 'Jupiter', 'Bad', 'Ch. 57, the sixth, p. 78; III.3, 42-45', ['disputes', 'goldsmiths', 'subversion']),
+    (6, 'Mars', 'Good', '', []),
+    (6, 'Mars', 'Bad', 'Ch. 57, the sixth, p. 78; III.4, 36-37', ['uprisings', 'hemorrhage', 'hunchbacks']),
+    (6, 'Sun', 'Good', 'Ch. 57, the sixth, p. 78; III.5, 42-43', ['tenth', 'affluent', 'succession']),
+    (6, 'Sun', 'Bad', 'Ch. 57, the sixth, p. 78; III.5, 40-41', ['condemned', 'superiors', 'lasting']),
+    (6, 'Venus', 'Good', 'Ch. 57, the sixth, p. 79; III.6, 31', ['fascinating', 'graceful', 'compliant']),
+    (6, 'Venus', 'Bad', 'Ch. 57, the sixth, p. 78; III.6, 29-32', ['childbirth', 'cripples', 'doctors']),
+    (6, 'Mercury', 'Good', 'Ch. 57, the sixth, p. 79; III.7, 26-30', ['instructors', 'granaries', 'fishermen']),
+    (6, 'Mercury', 'Bad', 'Ch. 57, the sixth, p. 79; III.7, 28', ['conceited', 'slanderers', 'informants']),
+    (6, 'Moon', 'Good', '', []),
+    (6, 'Moon', 'Bad', 'Ch. 57, the sixth, p. 75', ['spleen', 'epileptics', 'foreigner']),
+    (7, 'Saturn', 'Good', 'Ch. 57, the seventh, p. 82; III.2, 29', ['treasurers', 'fundament', 'threshold']),
+    (7, 'Saturn', 'Bad', 'Ch. 57, the seventh, p. 82; III.2, 30', ['heating', 'fistulas', 'inflammations']),
+    (7, 'Jupiter', 'Good', 'Ch. 57, the seventh, p. 82; III.3, 46', ['windfalls', 'beloved', 'supplied']),
+    (7, 'Jupiter', 'Bad', 'Ch. 57, the seventh, p. 82; III.3, 47', ['troublesome', 'middling', 'increasing']),
+    (7, 'Mars', 'Good', '', []),
+    (7, 'Mars', 'Bad', 'Ch. 57, the seventh, p. 82; III.4, 38-51', ['adulteress', 'obligations', 'executioners']),
+    (7, 'Sun', 'Good', 'Ch. 57, the seventh, p. 81; III.5, 45-47', ['prosperity', 'temperate', 'benevolent']),
+    (7, 'Sun', 'Bad', 'Ch. 57, the seventh, p. 83; III.5, 44-49', ['sickness', 'defects', 'oppressed']),
+    (7, 'Venus', 'Good', 'Ch. 57, the seventh, p. 83; III.6, 33', ['youthful', 'dispositioned', 'lucky']),
+    (7, 'Venus', 'Bad', 'Ch. 57, the seventh, p. 83; III.6, 34-37', ['impedited', 'scaly', 'aries']),
+    (7, 'Mercury', 'Good', 'Ch. 57, the seventh, p. 83; III.7, 34-35', ['meddlesome', 'writings', 'jugglers']),
+    (7, 'Mercury', 'Bad', 'Ch. 57, the seventh, p. 83; III.7, 31-33', ['brothel', 'mediating', 'humbled']),
+    (7, 'Moon', 'Good', 'Ch. 57, the seventh, p. 83', ['hospitable', 'changes', 'increases']),
+    (7, 'Moon', 'Bad', 'Ch. 57, the seventh, p. 83', ['unavoidable', 'effeminate', 'robbers']),
+    (8, 'Saturn', 'Good', 'Ch. 57, the eighth, p. 86; III.2, 31', ['assist', 'acquiring', 'bounds']),
+    (8, 'Saturn', 'Bad', 'Ch. 57, the eighth, p. 86; III.2, 32-35', ['consumptives', 'banished', 'opinion']),
+    (8, 'Jupiter', 'Good', 'Ch. 57, the eighth, p. 86; III.3, 49', ['acquisition', 'accountants', 'announcements']),
+    (8, 'Jupiter', 'Bad', 'III.3, 48', ['seditions', 'backwards', 'insanity']),
+    (8, 'Mars', 'Good', 'III.4, 63-64', ['apoplectic', 'illustrious', 'bright']),
+    (8, 'Mars', 'Bad', 'Ch. 57, the eighth, p. 86; III.4, 52-62', ['disorders', 'forgers', 'gladiators']),
+    (8, 'Sun', 'Good', '', []),
+    (8, 'Sun', 'Bad', 'Ch. 57, the eighth, p. 86; III.5, 67-74', ['madmen', 'elephantiasis', 'incantations']),
+    (8, 'Venus', 'Good', 'Ch. 57, the eighth, p. 86; III.6, 41', ['wealthy', 'torment', 'quick']),
+    (8, 'Venus', 'Bad', 'Ch. 57, the eighth, p. 86; III.6, 38-40', ['gonorrhea', 'shameful', 'unworthy']),
+    (8, 'Mercury', 'Good', 'Ch. 57, the eighth, p. 87; III.7, 38-39', ['windfalls', 'unrelated', 'concealed']),
+    (8, 'Mercury', 'Bad', 'Ch. 57, the eighth, p. 87; III.7, 36-37', ['toilsome', 'illiterate', 'foolishly']),
+    (8, 'Moon', 'Good', 'Ch. 57, the eighth, p. 84', ['inheritances', 'profit', 'adding']),
+    (8, 'Moon', 'Bad', '', []),
+    (9, 'Saturn', 'Good', 'Ch. 57, the ninth, p. 89; III.2, 36-37', ['initiates', 'apothegms', 'haruspices']),
+    (9, 'Saturn', 'Bad', 'III.2, 38-39', ['hatred', 'emperors', 'diminished']),
+    (9, 'Jupiter', 'Good', 'Ch. 57, the ninth, p. 89; III.3, 50-51', ['inalienable', 'portents', 'agitation']),
+    (9, 'Jupiter', 'Bad', 'Ch. 57, the ninth, p. 89; III.3, 52', ['oracular', 'allotments', 'flourishing']),
+    (9, 'Mars', 'Good', 'Ch. 57, the ninth, p. 89; III.4, 67-73', ['unpunished', 'sophists', 'exorcists']),
+    (9, 'Mars', 'Bad', 'Ch. 57, the ninth, p. 88; III.4, 69', ['blasphemers', 'wanderer', 'troubles']),
+    (9, 'Sun', 'Good', 'Ch. 57, the ninth, p. 90; III.5, 77-79', ['inscriptions', 'founders', 'adorners']),
+    (9, 'Sun', 'Bad', 'III.5, 80', ['journeys', 'abroad', 'pain']),
+    (9, 'Venus', 'Good', 'Ch. 57, the ninth, p. 90; III.6, 44-46', ['prophets', 'instructed', 'palaces']),
+    (9, 'Venus', 'Bad', 'Ch. 57, the ninth, p. 90; III.6, 42-43', ['shaggy', 'invasion', 'dirty']),
+    (9, 'Mercury', 'Good', 'Ch. 57, the ninth, p. 90; III.7, 41-44', ['sacrificers', 'astronomers', 'haruspices']),
+    (9, 'Mercury', 'Bad', 'III.7, 40-43', ['dialecticians', 'condemnable', 'sacrilegious']),
+    (9, 'Moon', 'Good', 'Ch. 57, the ninth, p. 90; III.13, 23', ['businessmen', 'notable', 'religions']),
+    (9, 'Moon', 'Bad', 'Ch. 57, the ninth, p. 91; III.13, 24', ['ingloriously', 'wandering', 'shaken']),
+    (10, 'Saturn', 'Good', 'Ch. 57, the tenth, p. 93; III.2, 40-43', ['agriculture', 'farmers', 'swamps']),
+    (10, 'Saturn', 'Bad', 'Ch. 57, the tenth, p. 93; III.2, 44-48', ['bunglers', 'ferrymen', 'provisions']),
+    (10, 'Jupiter', 'Good', 'Ch. 57, the tenth, p. 93; III.3, 53-55', ['athletic', 'directors', 'brilliant']),
+    (10, 'Jupiter', 'Bad', 'Ch. 57, the tenth, p. 94; III.3, 56-57', ['overthrown', 'tricked', 'subverted']),
+    (10, 'Mars', 'Good', 'Ch. 57, the tenth, p. 94; III.4, 74-79', ['districts', 'rulerships', 'tribunes']),
+    (10, 'Mars', 'Bad', 'Ch. 57, the tenth, p. 94; III.4, 80-81', ['fugitives', 'wanderers', 'confiscations']),
+    (10, 'Sun', 'Good', 'Ch. 57, the tenth, p. 92; III.5, 81-88', ['distinguished', 'proconsuls', 'eloquent']),
+    (10, 'Sun', 'Bad', 'III.5, 83-84', ['captive', 'setting', 'violent']),
+    (10, 'Venus', 'Good', 'Ch. 57, the tenth, p. 94; III.6, 50-52', ['negotiators', 'oriental', 'instruments']),
+    (10, 'Venus', 'Bad', 'Ch. 57, the tenth, p. 94; III.6, 53-58', ['reprehensible', 'whorehouses', 'cybele']),
+    (10, 'Mercury', 'Good', 'Ch. 57, the tenth, p. 95; III.7, 45-47', ['discriminating', 'resourceful', 'admirable']),
+    (10, 'Mercury', 'Bad', 'Ch. 57, the tenth, p. 95; III.7, 48-51', ['convictions', 'enterprises', 'offenses']),
+    (10, 'Moon', 'Good', 'Ch. 57, the tenth, p. 95; III.13, 25-30', ['distinguished', 'consulates', 'proconsuls']),
+    (10, 'Moon', 'Bad', 'Ch. 57, the tenth, p. 95; III.13, 27-28', ['drudgery', 'hardships', 'jealousies']),
+    (11, 'Saturn', 'Good', 'III.2, 54', ['thirtieth', 'middling', 'patrimony']),
+    (11, 'Saturn', 'Bad', '', []),
+    (11, 'Jupiter', 'Good', 'III.3, 58', ['fasces', 'proconsular', 'renown']),
+    (11, 'Jupiter', 'Bad', 'III.3, 59-60', ['diminished', 'miseries', 'attack']),
+    (11, 'Mars', 'Good', 'III.4, 82', ['trappings', 'judges', 'capital']),
+    (11, 'Mars', 'Bad', '', []),
+    (11, 'Sun', 'Good', 'Ch. 57, the eleventh, p. 99; III.5, 89-90', ['renowned', 'happiness', 'dignities']),
+    (11, 'Sun', 'Bad', 'III.5, 91', ['perseverance', 'bitter', 'decree']),
+    (11, 'Venus', 'Good', 'Ch. 57, the eleventh, p. 99; III.6, 59-62', ['worldly', 'citizens', 'emperors']),
+    (11, 'Venus', 'Bad', 'Ch. 57, the eleventh, p. 99; III.6, 59', ['sodomites', 'actresses', 'sterile']),
+    (11, 'Mercury', 'Good', 'III.7, 52', ['ingenious', 'indispensable', 'accounts']),
+    (11, 'Mercury', 'Bad', '', []),
+    (11, 'Moon', 'Good', 'Ch. 57, the eleventh, p. 100; III.13, 31', ['gracious', 'unaspected', 'fifth']),
+    (11, 'Moon', 'Bad', 'Ch. 57, the eleventh, p. 100; III.13, 31', ['separations', 'orphanhood', 'fifth']),
+    (12, 'Saturn', 'Good', '', []),
+    (12, 'Saturn', 'Bad', 'Ch. 57, the twelfth, p. 46; III.2, 55-56', ['perverts', 'inconstancy', 'insurrection']),
+    (12, 'Jupiter', 'Good', 'III.3, 65-66', ['goldsmiths', 'mosaic', 'striven']),
+    (12, 'Jupiter', 'Bad', 'Ch. 57, the twelfth, p. 46; III.3, 61-64', ['litigation', 'superiors', 'paupers']),
+    (12, 'Mars', 'Good', '', []),
+    (12, 'Mars', 'Bad', 'Ch. 57, the twelfth, p. 46; III.4, 83-85', ['treacheries', 'condemned', 'anguish']),
+    (12, 'Sun', 'Good', '', []),
+    (12, 'Sun', 'Bad', 'Ch. 57, the twelfth, p. 46; III.5, 92-94', ['captives', 'expelled', 'ignoble']),
+    (12, 'Venus', 'Good', '', []),
+    (12, 'Venus', 'Bad', 'Ch. 57, the twelfth, p. 46; III.6, 63-65', ['pretenses', 'courtesans', 'tormented']),
+    (12, 'Mercury', 'Good', 'Ch. 57, the twelfth, p. 47; III.7, 53-57', ['employees', 'grammarians', 'defenses']),
+    (12, 'Mercury', 'Bad', 'Ch. 57, the twelfth, p. 47; III.7, 54-59', ['busybody', 'malignant', 'poisoners']),
+    (12, 'Moon', 'Good', 'III.13, 32', ['freedom', 'authority', 'luckiness']),
+    (12, 'Moon', 'Bad', 'Ch. 57, the twelfth, p. 43; III.13, 32-35', ['outcast', 'inglorious', 'odor']),
+]
 
 
 # (house, planet, half, cite, anchors): the PN IV half's locator and three
@@ -509,19 +576,12 @@ PN4_CITE = re.compile(r"^(II\.\d+|VII\.8), \d+(-\d+)?$")
 PN4_DASH = {'text': '\u2014', 'cite': ''}
 # What the page help states of the PN IV halves with no sentence: twelve, all
 # the Moon's (VII.8 gives her one reading per house, so the other half is a
-# dash); and of the Rhetorius halves: twenty-one -- the four where the Guide
-# prints "?" (the Moon in the 6th and 8th) and the seventeen where the app's
-# merged cell had carried only the PN IV reading.
+# dash); and of the Rhetorius halves: seventeen, where neither text has a
+# reading of that valuation for the planet in that place.
 PN4_DASHES_THE_HELP_STATES = 12
-RHETORIUS_DASHES_THE_HELP_STATES = 21
-RHETORIUS_DASHES = {
-    (1, 'Jupiter', 'Bad'), (2, 'Jupiter', 'Bad'), (3, 'Jupiter', 'Bad'), (3, 'Sun', 'Bad'),
-    (3, 'Venus', 'Good'), (3, 'Venus', 'Bad'), (5, 'Venus', 'Bad'), (6, 'Jupiter', 'Bad'),
-    (6, 'Moon', 'Good'), (6, 'Moon', 'Bad'), (8, 'Jupiter', 'Bad'), (8, 'Moon', 'Good'),
-    (8, 'Moon', 'Bad'), (9, 'Mars', 'Bad'), (11, 'Saturn', 'Bad'), (11, 'Mars', 'Bad'),
-    (12, 'Saturn', 'Good'), (12, 'Jupiter', 'Bad'), (12, 'Mars', 'Good'), (12, 'Sun', 'Good'),
-    (12, 'Venus', 'Good'),
-}
+RHETORIUS_DASHES_THE_HELP_STATES = 17
+RHETORIUS_CITE = re.compile(r"^Ch\. 57, the [a-z]+, p\. \d+(; III\.\d+, \d+(-\d+)?)?$|^III\.\d+, \d+(-\d+)?$")
+HOUSE_NAMES = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth']
 
 
 def test_planets_in_houses_has_the_two_source_shape(engine):
@@ -586,34 +646,78 @@ def test_mercury_in_the_ninth_reads_as_ii21_8_and_9(engine):
     assert cell["Bad"]["cite"] == "II.21, 9" and "bad visions" in cell["Bad"]["text"]
 
 
-@pytest.mark.parametrize("house", range(1, 13))
-def test_rhetorius_halves_are_the_guide_transcription_verbatim(engine, house):
-    for planet in PLANETS:
-        cell = engine["PLANETS_IN_HOUSES"][house][planet]["Rhetorius"]
-        good, bad = RHETORIUS_HALVES[house][planet]
-        assert cell["Good"] == ({'text': good, 'cite': ''} if good else PN4_DASH), (house, planet, cell["Good"])
-        assert cell["Bad"] == ({'text': bad, 'cite': ''} if bad else PN4_DASH), (house, planet, cell["Bad"])
+def test_the_rhetorius_fixture_covers_every_half_once():
+    keys = [(h, p, x) for h, p, x, _c, _a in RHETORIUS_HALVES_SENTENCES]
+    assert keys == [(h, p, x) for h in range(1, 13) for p in PLANETS for x in ('Good', 'Bad')]
+    assert len(keys) == 168
 
 
-def test_the_rhetorius_dashes_are_exactly_the_halves_the_app_never_carried(engine):
-    # No Guide wording is added pending the re-derivation: a Rhetorius half
-    # the app's merged cell did not carry is a dash, as are the Guide's "?".
+@pytest.mark.parametrize("house, planet, half, cite, anchors", RHETORIUS_HALVES_SENTENCES,
+                         ids=[f"{p}-in-{h}-{x}" for h, p, x, _c, _a in RHETORIUS_HALVES_SENTENCES])
+def test_rhetorius_half_is_pinned_to_its_sentence(engine, house, planet, half, cite, anchors):
+    cell = engine["PLANETS_IN_HOUSES"][house][planet]['Rhetorius'][half]
+    assert "[UNCERTAIN" not in cell["text"]
+    if cite == "":
+        assert cell == PN4_DASH and anchors == [], (house, planet, half, cell)
+        return
+    assert cell["cite"] == cite and RHETORIUS_CITE.match(cite), (house, planet, half, cell["cite"])
+    if cite.startswith("Ch. 57"):
+        # The house named in the locator is the house of the cell.
+        assert cite.split(", ")[1] == f"the {HOUSE_NAMES[house - 1]}", (house, cite)
+    assert cell["text"] != PN4_DASH["text"]
+    assert len(anchors) == 3 and set(anchors) <= _words(cell["text"]), (house, planet, half, anchors, cell["text"])
+
+
+def test_the_rhetorius_dashes_are_where_neither_text_has_a_reading(engine):
+    # A dash is the absence of a reading of that valuation in both texts,
+    # never a Guide summary and never an invented good reading: the count
+    # is what the help states, and the sect-only halves keep their prefix.
     ph = engine["PLANETS_IN_HOUSES"]
     dashes = {(h, p, x) for h in ph for p in PLANETS for x in ('Good', 'Bad') if ph[h][p]['Rhetorius'][x] == PN4_DASH}
-    assert dashes == RHETORIUS_DASHES
+    assert dashes == {(h, p, x) for h, p, x, c, _a in RHETORIUS_HALVES_SENTENCES if c == ''}
     assert len(dashes) == RHETORIUS_DASHES_THE_HELP_STATES
     assert not any("[UNCERTAIN" in ph[h][p][s][x]["text"] for h in ph for p in PLANETS
                    for s in ('Rhetorius', 'PN IV') for x in ('Good', 'Bad'))
+    # Saturn, Jupiter and Mars in the sixth, Mars in the seventh, and Saturn,
+    # Mars, the Sun and Venus in the twelfth have no good reading in either
+    # text; their Bad halves carry the by-day mitigation inside them.
+    for h, p in [(6, 'Saturn'), (6, 'Jupiter'), (6, 'Mars'), (7, 'Mars'), (12, 'Saturn'), (12, 'Mars'), (12, 'Sun'), (12, 'Venus')]:
+        assert ph[h][p]['Rhetorius']['Good'] == PN4_DASH and ph[h][p]['Rhetorius']['Bad'] != PN4_DASH
 
 
-def test_the_planets_reader_prints_both_halves_with_the_pn4_locator(engine):
-    # One column = "Rhetorius: <text> · PN IV: <text> (<locator>)"; a dash
-    # prints as a dash and carries no locator.
+def test_the_sect_only_halves_keep_the_texts_prefix(engine):
+    ph = engine["PLANETS_IN_HOUSES"]
+    assert ph[1]["Jupiter"]["Rhetorius"]["Good"]["text"].startswith("In sect")
+    assert ph[1]["Jupiter"]["Rhetorius"]["Bad"]["text"].startswith("Out of sect")
+    assert ph[2]["Saturn"]["Rhetorius"]["Good"]["text"].startswith("By day")
+    assert ph[2]["Saturn"]["Rhetorius"]["Bad"]["text"].startswith("By night")
+    assert ph[8]["Venus"]["Rhetorius"]["Good"]["text"].startswith("By night")
+    assert ph[8]["Venus"]["Rhetorius"]["Bad"]["text"].startswith("By day")
+
+
+def test_no_guide_wording_survives_in_a_rhetorius_half(engine):
+    # The Guide's compressions the app used to carry, verbatim.
+    ph = engine["PLANETS_IN_HOUSES"]
+    for h, p, x, old in [(1, 'Saturn', 'Good', 'Eldest sibling.'), (3, 'Mars', 'Bad', 'Worse than by night?'),
+                         (6, 'Sun', 'Good', 'With Jupiter and Venus, better than by night.'),
+                         (8, 'Sun', 'Bad', 'See above.'), (9, 'Mercury', 'Good', 'Priests, wizards.')]:
+        assert ph[h][p]['Rhetorius'][x]['text'] != old
+    assert not any('(Firmicus)' in ph[h][p]['Rhetorius'][x]['text'] for h in ph for p in PLANETS for x in ('Good', 'Bad'))
+
+
+def test_the_planets_reader_prints_both_halves_with_both_locators(engine):
+    # One column = "Rhetorius: <text> (<locator>) · PN IV: <text> (<locator>)";
+    # a dash prints as a dash and carries no locator.
     fmt = engine["planets_in_houses_cell"]
-    assert fmt(9, "Mercury", "Good") == ("Rhetorius: Priests, wizards. \u00b7 PN IV: "
-                                        + engine["PLANETS_IN_HOUSES"][9]["Mercury"]["PN IV"]["Good"]["text"] + " (II.21, 8)")
+    ph = engine["PLANETS_IN_HOUSES"]
+    assert fmt(9, "Mercury", "Good") == ("Rhetorius: " + ph[9]["Mercury"]["Rhetorius"]["Good"]["text"]
+                                        + " (Ch. 57, the ninth, p. 90; III.7, 41-44) \u00b7 PN IV: "
+                                        + ph[9]["Mercury"]["PN IV"]["Good"]["text"] + " (II.21, 8)")
     assert fmt(6, "Moon", "Good") == "Rhetorius: \u2014 \u00b7 PN IV: \u2014"
-    assert fmt(1, "Moon", "Bad") == "Rhetorius: Sailing, poor livelihood. \u00b7 PN IV: \u2014"
+    assert fmt(1, "Moon", "Bad") == ("Rhetorius: " + ph[1]["Moon"]["Rhetorius"]["Bad"]["text"]
+                                    + " (Ch. 57, the first, p. 55; III.13, 2-4) \u00b7 PN IV: \u2014")
+    assert fmt(11, "Saturn", "Good") == ("Rhetorius: " + ph[11]["Saturn"]["Rhetorius"]["Good"]["text"]
+                                        + " (III.2, 54) \u00b7 PN IV: " + ph[11]["Saturn"]["PN IV"]["Good"]["text"] + " (II.6, 4)")
     planets = {p: {'longitude': lon} for p, lon in
                [('Saturn', 10.0), ('Jupiter', 40.0), ('Mars', 70.0), ('Sun', 100.0),
                 ('Venus', 130.0), ('Mercury', 160.0), ('Moon', 190.0)]}
