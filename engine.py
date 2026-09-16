@@ -8663,7 +8663,10 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
                 'Positive Score': len(positive),
                 'Negative Score': len(negative) + len(moon_defects),
                 'Net': net,
-                'Condition': 'Good' if net >= 0 else 'Bad',
+                # Owner's ruling (2026-09-16, after Astra's F06): a net of zero is
+                # 'Indeterminate' here as the Dignities page's Lean already says,
+                # not 'Good' -- a tie is not a favourable judgment.
+                'Condition': 'Indeterminate' if net == 0 else ('Good' if net > 0 else 'Bad'),
                 'Positive Labels': positive,
                 'Negative Labels': negative + moon_defects,
             }
