@@ -1,10 +1,13 @@
 # Traditional Astrology Engine
 
 A study companion for traditional natal astrology: cast a chart, then check, table by table,
-what the texts say about it. The rules it applies come from two books in Benjamin Dykes's
-translations — Sahl b. Bishr, *The Astrology of Sahl b. Bishr*, vol. I, and Abū Ma'shar, *On the
-Revolutions of the Years of Nativities* (*Persian Nativities* IV) — with his *Great
-Introduction to the Science of the Judgments of the Stars* as the supplement. Every rule a
+what the texts say about it. The rules it applies come from the course's two books in Benjamin
+Dykes's translations — Sahl b. Bishr, *The Astrology of Sahl b. Bishr*, vol. I, and Abū Ma'shar,
+*On the Revolutions of the Years of Nativities* (*Persian Nativities* IV) — with his *Great
+Introduction to the Science of the Judgments of the Stars* as the supplement, and a handful of
+witness texts (Rhetorius, Firmicus, Dykes's *Introductions*, the other *Persian Nativities*
+volumes, Valens, Morin) where the course texts leave a question open; every one of them, with
+what it supplies and how it is cited, is in [docs/REFERENCES.md](docs/REFERENCES.md). Every rule a
 page applies names the sentence it comes from; where a text leaves something open, the page
 says so and shows the reading it made. The judgment of the chart is the astrologer's.
 
