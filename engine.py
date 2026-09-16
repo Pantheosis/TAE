@@ -68,6 +68,17 @@ def reading(name):
 # ==========================================
 # 0. SAVED CHART PERSISTENCE
 # ==========================================
+# What this app calls itself. Until 2026-09-16 nothing in the code carried a
+# version at all: a record written by one build and an analysis exported from
+# another could not be told apart, which is half of what F08 of the review of
+# that date asked for. It is written into every saved record ("saved_with")
+# and into every exported analysis, it is shown in one place on the pages --
+# the Sources page's citation-key caption, the owner's one exception to the
+# rule that page text carries no build process -- and docs/RELEASING.md sets
+# it before a tag. A release's value is the tag without the 'v' (1.4.0); a
+# '-dev' suffix means a working tree between releases.
+APP_VERSION = "1.4.0-dev"
+
 # Charts are saved as {name: {date_string, time_string, location_query}} in a
 # small JSON file. Only the raw natal inputs are stored -- the full chart is
 # cheaply recomputed on load rather than serialized.
@@ -196,11 +207,82 @@ def _chart_field_is_usable(field, value):
     return True                                    # utc_offset: any number; the range is H5's
 
 
+# --- The readings a record carries (schema 2, 2026-09-16) ----------------
+# F03 of the review of 2026-09-16: a chart saved under Abu Ma'shar's
+# connection rule came back under Sahl, because a record held the nativity
+# and nothing about how it had been read. From this version a record also
+# carries the doctrinal readings in force when it was saved, under
+# "readings" (store key -> value, app.py's READINGS_REGISTRY), and says so
+# in "saved_with": {"app": APP_VERSION, "schema": CHART_RECORD_SCHEMA}.
+#
+# A record written before this carries neither, and is schema 1: it loads
+# exactly as it always did and is told apart by the absence, never by a
+# migration -- nothing is written into an old record until the reader saves
+# it again.
+CHART_RECORD_SCHEMA = 2
+
+# Each stored reading and what it may hold: the NAME of a module-level
+# tuple or mapping of its options, read at call time because most of them
+# are defined further down this file, or bool for a checkbox. The store
+# keys are app.py's READINGS_REGISTRY's, and a test holds the two in step.
+CHART_RECORD_READINGS = (
+    ('_connection_rule', 'CONNECTION_PROFILES'),
+    ('_eastern_rule', 'EASTERN_RULE_OPTIONS'),
+    ('_fitting_infortune', bool),
+    ('_moon_rays_15', bool),
+    ('_mars_west_18', bool),
+    ('_domain_rule', 'DOMAIN_RULE_OPTIONS'),
+    ('_lot_house_cusp', 'LOT_HOUSE_CUSP_OPTIONS'),
+    ('_pn4_monthly_turn', 'PN4_MONTHLY_TURN_OPTIONS'),
+    ('_reading_depth', 'READING_DEPTH_OPTIONS'),
+)
+
+
+def _reading_options(spec):
+    """The values a stored reading may hold. A string spec names a
+    module-level tuple (or a mapping, whose KEYS are the options, which is
+    how the connection rule's profiles are written)."""
+    if spec is bool:
+        return (False, True)
+    values = globals()[spec]
+    return tuple(values.keys() if isinstance(values, dict) else values)
+
+
+def _reading_value_is_usable(store_key, value):
+    for key, spec in CHART_RECORD_READINGS:
+        if key != store_key:
+            continue
+        if spec is bool:
+            return isinstance(value, bool)
+        return value in _reading_options(spec)
+    return True            # a key this app does not know: ignored, not a fault
+
+
+def _readings_fault(readings):
+    """The first stored reading this app cannot set, as (its name for a
+    reader, what it is not), or None.
+
+    A key this app does not know is IGNORED, not refused: a record written
+    by a later build, or by one with a reading since withdrawn, is still
+    this reader's nativity and still loads. What is refused is a value the
+    widget could not take -- 'Ptolemy' for the connection rule, a string
+    for a checkbox -- because seeding one into a widget key raises where the
+    widget reads it, which is H3's lesson about every other field."""
+    if not isinstance(readings, dict):
+        return ('saved readings', 'mapping of readings')
+    for store_key, value in readings.items():
+        if not _reading_value_is_usable(store_key, value):
+            return (store_key.lstrip('_').replace('_', ' '), 'reading this app offers')
+    return None
+
+
 def chart_record_fault(entry):
     """The first field of a saved record the sidebar cannot load, as
     (field's name for a reader, what it is not), or None when the record
     can be loaded. A field the record does not carry, or carries as null,
-    is not a fault: records written before a field existed still load.
+    is not a fault: records written before a field existed still load, and
+    a record carrying no "readings" at all is schema 1 and loads as it
+    always did.
 
     The record is never altered and never dropped -- the caller reports the
     fault and leaves the form as it was, and the file keeps the record
@@ -213,7 +295,34 @@ def chart_record_fault(entry):
             continue
         if not _chart_field_is_usable(field, value):
             return (label, expected)
+    if entry.get('readings') is not None:
+        fault = _readings_fault(entry['readings'])
+        if fault is not None:
+            return fault
     return None
+
+
+def chart_record_schema(entry):
+    """Which schema a stored record is written in: 2 when it carries the
+    readings that were in force, 1 when it was written before this app
+    stored them. What the number is READ FOR is the load: a schema-1 record
+    has nothing to restore and gets a sentence saying so, while a schema-2
+    record's readings are offered. A record that merely says it is schema 2
+    without carrying readings is read by what it holds, not by what it
+    claims."""
+    if not isinstance(entry, dict) or not isinstance(entry.get('readings'), dict):
+        return 1
+    return CHART_RECORD_SCHEMA
+
+
+def chart_record_readings(entry):
+    """The readings a record was saved under, as {store key: value}, or {}
+    when it carries none. Only the keys this app knows are returned -- the
+    rest are kept in the file and not acted on."""
+    if chart_record_schema(entry) == 1:
+        return {}
+    known = {key for key, _spec in CHART_RECORD_READINGS}
+    return {key: value for key, value in entry['readings'].items() if key in known}
 
 
 # The offset a manual time standard can be cast at, east positive. The

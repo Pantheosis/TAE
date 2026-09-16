@@ -21,7 +21,11 @@ PR required, the `pytest` check required, no bypass). Merge when the check is gr
    `-macOS`), kept three days, no release made. GitHub wraps an artifact in its own zip on
    download, so the Windows one unzips to `TraditionalAstrologyEngine-windows.zip`; unzip
    again. The build is byte-for-byte what the tag would produce from the same commit.
-2. **Release.** On `main`, at the commit you tested:
+2. **Set the version.** `APP_VERSION` in `engine.py` (section 0) is the tag without its `v`
+   and without `-dev` — set it to `1.4.0` and merge that before tagging `v1.4.0`, then put it
+   back to `<next>-dev`. It is written into every saved record and every exported analysis, and
+   it is printed on the Sources page's citation-key line — the one place a page carries it.
+3. **Release.** On `main`, at the commit you tested:
 
    ```bash
    git tag -a v1.2.0 -m "Traditional Astrology Engine v1.2.0"
@@ -31,10 +35,10 @@ PR required, the `pytest` check required, no bypass). Merge when the check is gr
    The workflow builds both platforms and creates the GitHub release `v1.2.0` with the two zips
    attached and auto-generated notes; edit the notes on the release page. A push to `main`
    builds nothing — only a `v*` tag or a manual run does.
-3. **Version numbers.** v0.8-beta (this repo) and v1.0.0 / v1.1.0 (the retired repo, deleted)
+4. **Version numbers.** v0.8-beta (this repo) and v1.0.0 / v1.1.0 (the retired repo, deleted)
    are spent even where deleted: people downloaded them. Next is v1.2.0; a minor bump for new
    rules and wording, a major one when what the app computes on every chart changes.
-4. **Undoing a release.** `gh release delete v1.2.0 --yes && git push origin :refs/tags/v1.2.0`
+5. **Undoing a release.** `gh release delete v1.2.0 --yes && git push origin :refs/tags/v1.2.0`
    removes the release, its assets and the tag; the source commit stays.
 
 ## The suite in CI

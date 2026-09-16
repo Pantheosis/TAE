@@ -5,9 +5,12 @@ The engine itself is engine.py, beside this file, and arrives whole through
 the star import below. Run this file, not that one: ``streamlit run app.py``.
 """
 
+import hashlib
+import json
+import platform
 import re
 import sqlite3
-from datetime import datetime, time, timedelta
+from datetime import datetime, time, timedelta, timezone
 from math import isfinite
 from pathlib import Path
 from xml.sax.saxutils import escape
@@ -297,6 +300,62 @@ EXAMPLE_CHART = {
     "manual_lon_key": 11.2556,
 }
 
+# --- The readings, named before the picker ------------------------------
+# A reading is READ at the top level (further down, where the engine's
+# per-run values are pinned) because the evaluators read these globals at
+# call time. The registry and the reader itself stand HERE, above the
+# saved-chart picker, because from 2026-09-16 a saved record carries the
+# readings it was saved under (F03 of the review of that date) -- so the
+# record cannot be built, compared or restored without them.
+def _reading(widget_key, store_key, default):
+    """This run's value for a reading. The widget key is preferred when
+    present: on the rerun a change triggers, the widget already carries the
+    new value while the store still holds the old one."""
+    return st.session_state.get(widget_key, st.session_state.get(store_key, default))
+
+
+# Every doctrinal reading, for the Sources page's table of what is in force
+# and its reset, for the readings a record is saved with, and for the
+# analysis export. (label, widget key, store key, default, page it is set on)
+READINGS_REGISTRY = (
+    ("Connection test used in the shared tables", "connection_rule", "_connection_rule", "Sahl", "Configurations"),
+    ("VII.6, 27/45 eastern/western relative to the Sun", "eastern_rule", "_eastern_rule", EASTERN_RULE_OPTIONS[0], "Configurations"),
+    ("Fitting infortune (Choices Ch. 1, 12)", "fitting_infortune", "_fitting_infortune", False, "Configurations"),
+    ("Moon under the rays to 15 degrees", "moon_rays_15", "_moon_rays_15", False, "Chart"),
+    ("Mars under the rays to 18 degrees west", "mars_west_18", "_mars_west_18", False, "Chart"),
+    ("Domain (hayz)", "domain_rule", "_domain_rule", DOMAIN_RULE_OPTIONS[0], "Dignities and places"),
+    ("House-based Lots measure to the", "lot_house_cusp", "_lot_house_cusp", LOT_HOUSE_CUSP_OPTIONS[0], "Lots"),
+    ("Monthly profections turn", "pn4_monthly_turn", "_pn4_monthly_turn", PN4_MONTHLY_TURN_OPTIONS[0], "Timing"),
+    ("Sources shown", "reading_depth", "_reading_depth", READING_DEPTH_OPTIONS[0], "Sources and readings"),
+)
+
+
+def _current_readings():
+    """The doctrinal readings in force, as a record writes them:
+    {store key: value}, exactly what the top level reads a moment later."""
+    return {store_key: _reading(widget_key, store_key, default)
+            for _label, widget_key, store_key, default, _page in READINGS_REGISTRY}
+
+
+def _readings_differ_from(saved):
+    """The stored readings that are not the ones in force, as
+    {store key: the value the record was saved under}. Only the keys the
+    record carries are looked at, and only the ones this app knows."""
+    return {sk: saved[sk]
+            for _label, wk, sk, default, _page in READINGS_REGISTRY
+            if sk in saved and saved[sk] != _reading(wk, sk, default)}
+
+
+def _set_reading(widget_key, store_key, value):
+    """Put one reading in force as though its own control had been moved:
+    the store key the top level reads, the widget key the control will be
+    drawn from, and the preferences file, which is what _persist() does
+    when a reader moves the control themselves."""
+    st.session_state[store_key] = value
+    st.session_state[widget_key] = value
+    _remember(store_key, value)
+
+
 # The picker's first option, which is not a chart but the act of starting
 # one. M3 of the hostile pass of 2026-09-16: a chart could be SAVED under
 # this very string, after which the picker listed it twice and the record
@@ -324,7 +383,10 @@ _NEW_CHART_DROPS = ("target_date", "_target_date", "target_age", "_target_age",
                     "_loaded_without_standard", "_date_last_good",
                     # what the last record loaded said about itself (H3, H5):
                     # a new chart is not that record
-                    "_record_notice")
+                    "_record_notice",
+                    # nor is it the record whose readings were put to the
+                    # reader, or the old one that had none to put (F03)
+                    "_readings_pending", "_readings_legacy")
 
 
 def _new_chart_form():
@@ -454,6 +516,18 @@ def _restore_chart(name):
             # free-text/resolved-label value this field used to hold.
             st.session_state["manual_coords_key"] = False
             st.session_state["location_input_key"] = entry["location_query"]
+    # The readings the record was saved under (F03). NOTHING is set here:
+    # the load restores a nativity, and which readings it is to be read
+    # under is the reader's to say. What is left behind is the question --
+    # or, for a record written before this app stored them, the one
+    # sentence that says there is no question to ask.
+    st.session_state.pop("_readings_pending", None)
+    st.session_state.pop("_readings_legacy", None)
+    saved_readings = chart_record_readings(entry)
+    if not saved_readings:
+        st.session_state["_readings_legacy"] = name
+    elif _readings_differ_from(saved_readings):
+        st.session_state["_readings_pending"] = name
     return True
 
 chart_options = [NEW_CHART_SENTINEL] + sorted(st.session_state["saved_charts"].keys())
@@ -523,6 +597,46 @@ load_col.selectbox("\U0001F4C2 Load saved chart", chart_options, key="chart_pick
 # Filled once the sidebar's validation has run, when the fields have moved
 # away from the record the picker names.
 picker_note = st.sidebar.empty()
+
+# The readings a loaded record was saved under, put to the reader (F03 of
+# the review of 2026-09-16: a chart saved under Abu Ma'shar's connection
+# rule came back under Sahl, with nothing said). The load has changed
+# nothing: this is where the app says which it is about to do, and neither
+# branch is taken for the reader.
+readings_box = st.sidebar.empty()
+_readings_pending = st.session_state.get("_readings_pending")
+if _readings_pending and _readings_pending not in st.session_state["saved_charts"]:
+    st.session_state.pop("_readings_pending", None)
+    _readings_pending = None
+if _readings_pending:
+    with readings_box.container():
+        st.info(f"'{_readings_pending}' was saved under other readings.")
+        _open_col, _keep_col = st.columns(2)
+        _open_readings = _open_col.button("Open saved readings", key="_readings_open")
+        _keep_readings = _keep_col.button("Keep current readings", key="_readings_keep")
+    if _keep_readings:
+        # Nothing to write: the readings in force are already the ones in
+        # force. The chart stays (modified) by its readings, which is the
+        # truth of it, and the caption under the picker says so.
+        st.session_state.pop("_readings_pending", None)
+        readings_box.empty()
+    elif _open_readings:
+        # Recorded, not done: the writing and the rerun happen at the foot
+        # of the sidebar, where every field has been drawn. A rerun from
+        # this height abandons the run before the date, time and place
+        # widgets are drawn and Streamlit discards their state -- the
+        # lesson the delete confirmation learned in the browser.
+        st.session_state["_readings_open_now"] = _readings_pending
+        readings_box.empty()
+
+# A record written before this app stored the readings with a chart. There
+# is no question to ask of it -- it has nothing to restore -- so it gets one
+# sentence, once, on the load that found it.
+_readings_legacy = st.session_state.pop("_readings_legacy", None)
+if _readings_legacy:
+    st.sidebar.caption("Saved before readings were stored with a chart; "
+                       "results use the current readings.")
+
 if del_col.button("\U0001F5D1", help="Delete the selected saved chart"):
     picked = st.session_state.get("chart_picker")
     if picked and picked != "-- New Chart --" and picked in st.session_state["saved_charts"]:
@@ -567,9 +681,8 @@ if _delete_pending:
 # these globals at call time. The widget key is preferred when present: on
 # the rerun a change triggers, the widget already carries the new value
 # while the store still holds the old one. The target of the Timing page
-# (2026-09-10) is read the same way, further down.
-def _reading(widget_key, store_key, default):
-    return st.session_state.get(widget_key, st.session_state.get(store_key, default))
+# (2026-09-10) is read the same way, further down. _reading() itself is
+# defined above the picker, where a record's own readings are first needed.
 
 # The date is typed, not picked (UI evaluation 2026-09-10, A.1): a calendar
 # popup is the wrong control for 1240, and the harness sets this key as a
@@ -886,7 +999,13 @@ target_range_note = (f"The target is beyond this app's ephemeris ({EPHEMERIS_LAS
 def _chart_record():
     """The committed input as a record: the fields Save writes, and the
     fields a saved record is compared with to see whether the nativity in
-    the sidebar is still the one that was saved."""
+    the sidebar is still the one that was saved.
+
+    From 2026-09-16 (F03) the record also carries the doctrinal readings in
+    force at the save, under "readings", and says which app wrote it and in
+    which schema, under "saved_with". The readings are the record's HISTORY,
+    not a second copy of the reader's preferences: nothing reads them until
+    the record is loaded, and then only to offer them."""
     return {
         "date_string": input_date.isoformat(),
         "time_string": input_time.strftime("%H:%M:%S"),
@@ -898,10 +1017,19 @@ def _chart_record():
         "target_mode": target_mode,
         "target_date": target_date.isoformat(),
         "target_age": target_age,
+        "readings": _current_readings(),
+        "saved_with": {"app": APP_VERSION, "schema": CHART_RECORD_SCHEMA},
     }
 
 
-def _records_match(stored, record):
+# The record's two keys that are not the nativity: the readings, compared
+# on their own so that the sidebar can say WHICH side has moved, and the
+# stamp, compared never -- a record saved by an earlier build of this app
+# has not been "edited since it was saved" for having been saved by it.
+_RECORD_NOT_INPUT = ("readings", "saved_with")
+
+
+def _record_inputs_match(stored, record):
     """Whether a stored record describes the nativity `record` describes.
 
     The stored record's OWN fields are what is compared: a field it does not
@@ -913,7 +1041,7 @@ def _records_match(stored, record):
     if not isinstance(stored, dict):
         return False
     for field, value in record.items():
-        if field not in stored:
+        if field in _RECORD_NOT_INPUT or field not in stored:
             continue
         other = stored[field]
         if isinstance(value, (int, float)) and not isinstance(value, bool):
@@ -925,6 +1053,28 @@ def _records_match(stored, record):
         elif other != value:
             return False
     return True
+
+
+def _record_readings_match(stored, record):
+    """Whether the readings a record was saved under are the ones in force.
+
+    Read on the same principle as every other field: only what the STORED
+    record carries is compared. A schema-1 record carries no readings and so
+    cannot disagree with any -- it was saved before this app kept them, and
+    saying it was "saved with other readings" would be an accusation the
+    file does not support."""
+    saved = chart_record_readings(stored) if isinstance(stored, dict) else {}
+    if not saved:
+        return True
+    current = record.get("readings") or {}
+    return all(value == current.get(key) for key, value in saved.items())
+
+
+def _records_match(stored, record):
+    """Whether a stored record is the chart in hand, input and readings
+    alike. The two halves are compared apart above, because the caption
+    under the picker names the side that has moved."""
+    return _record_inputs_match(stored, record) and _record_readings_match(stored, record)
 
 
 def _store_chart(name, record):
@@ -944,6 +1094,10 @@ def _store_chart(name, record):
     # over with the one the box holds, so the sentence that reported it is
     # no longer true of the record.
     st.session_state.pop("_record_notice", None)
+    # The record now holds the readings in force, so there is nothing to
+    # ask about it and nothing about it to call old (F03).
+    st.session_state.pop("_readings_pending", None)
+    st.session_state.pop("_readings_legacy", None)
     _remember('last_chart', name)
     st.session_state["_select_after_rerun"] = name
     # The success message is carried over the rerun the caller asks for,
@@ -1024,6 +1178,29 @@ if _replace_pending:
             st.session_state.pop("_replace_pending_record", None)
             st.rerun()
 
+# Where the Export analysis buttons stand: under Save, and filled far below,
+# once the chart has been cast and the pages' own row lists can be asked for
+# (F08). A container holds the PLACE while the script goes on -- the export
+# cannot be built here, where nothing has been computed yet, and a button
+# written later without one would land below everything else here.
+export_box = st.sidebar.container()
+
+# The readings the prompt asked about, put in force here rather than where
+# they were asked about, for the same reason the delete is: every sidebar
+# field has been drawn by now, so the rerun below keeps them. Each reading
+# goes in by the path its own control uses -- store key, widget key and the
+# preferences file -- so that the controls on the pages show it and the next
+# session opens under it.
+_readings_open_now = st.session_state.pop("_readings_open_now", None)
+if _readings_open_now:
+    _saved_readings = chart_record_readings(
+        st.session_state["saved_charts"].get(_readings_open_now, {}))
+    for _label, _wk, _sk, _default, _page in READINGS_REGISTRY:
+        if _sk in _saved_readings:
+            _set_reading(_wk, _sk, _saved_readings[_sk])
+    st.session_state.pop("_readings_pending", None)
+    st.rerun()
+
 # The delete the confirmation asked for, done here rather than where it was
 # asked: every sidebar field has been drawn by now, so the rerun below keeps
 # them. The disk first, the session's mapping after (item 7).
@@ -1052,12 +1229,25 @@ _picked_record = (st.session_state["saved_charts"].get(_picked_name)
                   if _picked_name and _picked_name != NEW_CHART_SENTINEL else None)
 # Whether the record the picker names is the one the boxes are holding.
 _picked_loaded = _picked_record is not None and chart_record_fault(_picked_record) is None
-chart_modified = bool(
+# Which side has moved. From 2026-09-16 a record carries its readings too
+# (F03), so there are two ways for the chart in hand to have parted from
+# the record the picker names -- the nativity edited, or the readings
+# changed under it -- and the caption says which, both lines when both.
+_inputs_edited = bool(
     input_record is not None
     and _picked_loaded
-    and not _records_match(_picked_record, input_record))
+    and not _record_inputs_match(_picked_record, input_record))
+_readings_changed = bool(
+    input_record is not None
+    and _picked_loaded
+    and not _record_readings_match(_picked_record, input_record))
+chart_modified = _inputs_edited or _readings_changed
 if chart_modified:
-    picker_note.caption("Edited since it was saved.")
+    with picker_note.container():
+        if _inputs_edited:
+            st.caption("Edited since it was saved.")
+        if _readings_changed:
+            st.caption("Saved with other readings.")
 
 CONNECTION_PROFILE = _reading("connection_rule", "_connection_rule", "Sahl")
 EASTERN_RULE = _reading("eastern_rule", "_eastern_rule", EASTERN_RULE_OPTIONS[0])
@@ -1102,19 +1292,10 @@ WHEEL_THEME = VIEWER_THEME if WHEEL_DARK else None
 # VALUES are unchanged -- the radio prints them through a format_func.
 READING_DEPTH = _reading("reading_depth", "_reading_depth", READING_DEPTH_OPTIONS[0])
 
-# Every doctrinal reading, for the Sources page's table of what is in force
-# and its reset. (label, widget key, store key, default, page it is set on)
-READINGS_REGISTRY = (
-    ("Connection test used in the shared tables", "connection_rule", "_connection_rule", "Sahl", "Configurations"),
-    ("VII.6, 27/45 eastern/western relative to the Sun", "eastern_rule", "_eastern_rule", EASTERN_RULE_OPTIONS[0], "Configurations"),
-    ("Fitting infortune (Choices Ch. 1, 12)", "fitting_infortune", "_fitting_infortune", False, "Configurations"),
-    ("Moon under the rays to 15 degrees", "moon_rays_15", "_moon_rays_15", False, "Chart"),
-    ("Mars under the rays to 18 degrees west", "mars_west_18", "_mars_west_18", False, "Chart"),
-    ("Domain (hayz)", "domain_rule", "_domain_rule", DOMAIN_RULE_OPTIONS[0], "Dignities and places"),
-    ("House-based Lots measure to the", "lot_house_cusp", "_lot_house_cusp", LOT_HOUSE_CUSP_OPTIONS[0], "Lots"),
-    ("Monthly profections turn", "pn4_monthly_turn", "_pn4_monthly_turn", PN4_MONTHLY_TURN_OPTIONS[0], "Timing"),
-    ("Sources shown", "reading_depth", "_reading_depth", READING_DEPTH_OPTIONS[0], "Sources and readings"),
-)
+# READINGS_REGISTRY and _reading() are defined at the head of the sidebar,
+# above the saved-chart picker: a saved record carries the readings it was
+# saved under (F03), so the registry has to exist before a record is built
+# or compared.
 
 def _readings_off_default():
     """The doctrinal readings not at their course default, as (label, value)."""
@@ -1739,6 +1920,568 @@ def _dms(degrees):
     return f"{total // 3600}° {(total % 3600) // 60:02d}' {total % 60:02d}\""
 
 
+# --- The rows a page draws, and the export writes down --------------------
+# F08 of the review of 2026-09-16 asks that an exported analysis carry the
+# results the pages show -- the SAME results, not a second computation of
+# them. Most of them already stand at the top level, where every evaluator
+# runs once a run (aspects, receptions, strength, weakness, the victors,
+# the whole timing bundle). These nine were built inside a page function,
+# so they are built here instead and the page calls them: one list, drawn
+# by the page and written down by the export, which cannot drift from what
+# the reader saw because it IS what the reader saw.
+#
+# Each reads the top-level names the page read (chart_data, p_data,
+# essential, accidental, ...), so each is called only when chart_ok.
+
+def _positions_rows():
+    """Planetary Positions (Chart page)."""
+    rows = []
+    for p, d in p_data.items():
+        if p == 'North Node':
+            continue
+        lon_p = d['longitude']
+        q = get_effective_house(lon_p, chart_data['houses'])
+        phase, side, elong = solar_phase(p, lon_p, p_data['Sun']['longitude'], p_data[p].get('speed_in_lon'))
+        acc_p = accidental[p]
+        ws_place = get_wsh_house(lon_p, chart_data['ascendant'])
+        rows.append({
+            "Planet": p,
+            "Position": get_degree_string(lon_p),
+            "Absolute": f"{lon_p:.4f}°",
+            "WS place": ws_place,
+            "Sees ASC": "No (averse)" if ws_place in (2, 6, 8, 12) else "Yes",
+            # Sahl's sense (Ch.3, 4-5: stake or succedent vs. falling), not
+            # Abu Ma'shar's quadrant term of VI.26, 3. Cited in the caption.
+            "Quadrant": f"{q}, {'advancing' if q in ANGLE_HOUSES | SUCCEDENT_HOUSES else 'retreating'}",
+            "Motion": ('Retrograde' if acc_p['Retrograde']
+                       else 'Stationary' if acc_p['Stationary'] else 'Direct'),
+            "Solar phase": (f"{phase}, {side}" if phase and side else (phase or '–')),
+        })
+    return rows
+
+
+def _calculated_point_rows():
+    """Calculated Points (Chart page): the four angles, the Nodes, Fortune."""
+    north_node_lon = p_data['North Node']['longitude']
+    points = {
+        'Ascendant': chart_data['ascendant'],
+        'Midheaven': chart_data['mc'],
+        'Descendant': chart_data['descendant'],
+        'Imum Coeli': chart_data['ic'],
+        'North Node': north_node_lon,
+        'South Node': (north_node_lon + 180.0) % 360.0,
+        'Lot of Fortune': chart_data['lot_of_fortune'],
+    }
+    return [{"Point": name, "Position": get_degree_string(lon_val)} for name, lon_val in points.items()]
+
+
+def _house_cusp_rows():
+    """Quadrant divisions (Alchabitius) (Chart page)."""
+    return [{"House": i + 1, "Cusp": get_degree_string(chart_data['houses'][i])} for i in range(12)]
+
+
+def _lordship_rows():
+    """Lordship Mapping (Dignities page)."""
+    triplicity_key = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
+    rows = []
+    for p, data in p_data.items():
+        if p == 'North Node':
+            continue
+        rulers = get_essential_rulers(data['longitude'])
+        # The planet's own claim at its position, from the labels the
+        # dignity evaluation already computed, without the app's
+        # point weights ("Domicile (+5)" -> "Domicile").
+        own = [re.sub(r'\s*\([+-]\d+\)', '', lbl) for lbl in essential[p]['Essential Labels']]
+        rows.append({
+            "Planet": p,
+            "Position": get_degree_string(data['longitude']),
+            "Sign Dispositor": rulers['domicile'],
+            "Exaltation Lord": rulers['exaltation'],
+            "Triplicity lord": rulers[triplicity_key],
+            "Bound lord": rulers['term'],
+            "Face lord": rulers['face'],
+            "Own dignity here": ", ".join(own) if own else ("Peregrine" if essential[p]['Peregrine'] else "-"),
+        })
+    return rows
+
+
+def _sect_table_rows():
+    """Sect (Dignities page), under the Domain rule in force."""
+    rows = []
+    for p, data in p_data.items():
+        if p == 'North Node':
+            continue
+        own_diurnal = planet_sect_is_diurnal(p, data['longitude'], p_data['Sun']['longitude'])
+        above = (data['longitude'] - chart_data['ascendant']) % 360 > 180.0
+        rows.append({
+            "Planet": p,
+            "Planet's sect": 'Diurnal' if own_diurnal else 'Nocturnal',
+            "Above horizon": 'Yes' if above else 'No',
+            "Of the chart's sect": 'Yes' if own_diurnal == (sect == 'Diurnal') else 'No',
+            "Domain (hayz)": 'Yes' if accidental[p]['Hayz'] else 'No',
+        })
+    return rows
+
+
+def _house_lord_rows():
+    """Topical House Lords (Dignities page). Averse: the lord sits in the
+    2nd, 6th, 8th or 12th sign from the house it rules, so it does not see
+    its own place."""
+    return [{**{k: v for k, v in r.items() if k != "Masha'allah Signification"},
+             'Averse to its place': 'Yes' if (r['Placed in (WS place)'] - r['Topical House']) % 12 in (1, 5, 7, 11) else 'No'}
+            for r in house_lords_data]
+
+
+# The four Lots that have their own table at the top of the Lots page, and
+# so are kept out of the topical table below it.
+CLASSICAL_LOT_NAMES = ('Lot of Fortune', 'Lot of Spirit', 'Lot of Exaltation', 'Lot of Basis')
+
+
+def _classical_lot_rows():
+    """Classical Lots (Lots page). The Formula comes from the same
+    LOT_DEFINITIONS text the Topical Lots table carries (through
+    calculate_topical_lots), so the two cannot differ."""
+    formula_by_lot = {r['Lot']: r['Formula'] for r in topical_lots}
+    rows = []
+    for r in classical_lots:
+        row = {k: v for k, v in r.items() if k != 'Standing'}
+        row['Formula'] = formula_by_lot[r['Lot Name']]
+        row['Standing'] = r['Standing']
+        rows.append(row)
+    return rows
+
+
+def _topical_lot_rows():
+    """Topical Lots (Lots page). A row flagged Supplement -- Abu Ma'shar's
+    form of a Lot Sahl also gives, or a Lot of his Sahl has not -- is shown
+    only under Course text and supplement, so the Sources shown reading
+    decides the length of this list."""
+    supplement = READING_DEPTH == READING_DEPTH_OPTIONS[1]
+    return [r for r in topical_lots
+            if r['Lot'] not in CLASSICAL_LOT_NAMES and (supplement or not r['Supplement'])]
+
+
+def _syzygy_rows():
+    """Prenatal Lunation (Syzygy) (Lunation and victors page)."""
+    r = syzygy['rulers']
+    triplicity_str = (
+        f"{syzygy['active_triplicity_lord']}★ ({syzygy['active_triplicity_label']}) · "
+        f"Day: {r['triplicity_day']} · Night: {r['triplicity_night']} · Part: {r['triplicity_participating']}"
+    )
+    return [
+        {"Metric": "Event Type", "Value": syzygy['event_label']},
+        {"Metric": "Position", "Value": get_degree_string(syzygy['syzygy_longitude'])},
+        {"Metric": "Natal House", "Value": f"House {syzygy['natal_house']}"},
+        {"Metric": "Domicile Lord", "Value": r['domicile']},
+        {"Metric": "Exaltation Lord", "Value": r['exaltation']},
+        {"Metric": "Triplicity Lords", "Value": triplicity_str},
+        {"Metric": "Term Lord", "Value": r['term']},
+        {"Metric": "Face Lord", "Value": r['face']},
+        {"Metric": "Governor of the syzygy degree (Sahl, On Nativities 1.7, 3-7)",
+         "Value": f"{syzygy_governor['governor']} -- {syzygy_governor['how']}"},
+        {"Metric": "This app's approximation of 1.7 (one point a listed condition)",
+         "Value": syzygy_governor['model_how']},
+        {"Metric": "Almuten by 5/4/3/2/1 points (al-Qabisi's weights, ITA I.18; a technique not in Sahl)",
+         "Value": f"{syzygy['almuten']} (Score: {syzygy['almuten_score']})"},
+    ]
+
+
+# ==========================================
+# THE ANALYSIS EXPORT
+# ==========================================
+# F08 of the review of 2026-09-16: "There is no portable, versioned research
+# record". The app could download a wheel and save a nativity; nothing bound
+# what was entered to what was in force, what was computed and what computed
+# it, so a result on a screen could not be reproduced by another machine or
+# compared with the same chart cast a month later.
+#
+# Two files, one content: a JSON record for a machine and a Markdown report
+# for a reader. Both carry the same header -- the app's identity, the
+# committed input, the readings in force, the target -- and both are built
+# from the row lists the pages themselves draw, never from a second
+# calculation. No source text beyond the citations and notes the pages
+# already print: the translations are copyrighted and stay out of it.
+
+ANALYSIS_SCHEMA = 1
+
+# The forward-looking conditions (revoking, resistance, escape, cutting) are
+# searched this many days past the chart. Read from the engine's own default
+# rather than written down again, so the export cannot quote a horizon the
+# search does not use.
+FORWARD_SEARCH_DAYS = _simulate_forward.__defaults__[0]
+
+_ENGINE_SHA = {}
+
+
+def engine_file_sha256():
+    """The sha256 of engine.py's bytes as this process is running them.
+
+    Path(engine.__file__) is asked rather than a path built from __file__:
+    in the frozen build engine.py is a BUNDLED DATA FILE (build.spec's
+    datas), extracted beside the executable's other data, and that is the
+    file the import actually read. Computed once per process -- the file
+    cannot change under a running app -- and an unreadable one is reported
+    as such rather than guessed at."""
+    if 'sha' not in _ENGINE_SHA:
+        try:
+            _ENGINE_SHA['sha'] = hashlib.sha256(Path(engine.__file__).read_bytes()).hexdigest()
+        except OSError:
+            _ENGINE_SHA['sha'] = "unavailable"
+    return _ENGINE_SHA['sha']
+
+
+def _pyswisseph_version():
+    """The Python wrapper's version where the metadata is there to read it
+    (a frozen build has no distribution metadata), else the Swiss Ephemeris
+    library version the extension reports."""
+    try:
+        from importlib.metadata import version
+        return version("pyswisseph")
+    except Exception:
+        return str(getattr(swe, 'version', 'unknown'))
+
+
+def app_identity():
+    """What computed this: the app, the libraries under it, the ephemeris it
+    reads, and the exact bytes of the engine."""
+    return {
+        "version": APP_VERSION,
+        "streamlit": st.__version__,
+        "python": platform.python_version(),
+        "pyswisseph": _pyswisseph_version(),
+        "ephemeris": "Moshier (built in)",
+        "engine_file_sha256": engine_file_sha256(),
+    }
+
+
+# --- What the export writes down -----------------------------------------
+# (page, heading, citation the page prints for it, rows). The heading is the
+# subheader or expander label the reader sees, so that a row in the file can
+# be found on the screen; table_inventory() in the harness reads the same
+# strings off a rendered page, which is how the two are held together.
+#
+# The rows are the page's OWN lists: the nine factored above, and the
+# evaluator results that already stand at the top level. Nothing here calls
+# an evaluator.
+
+def _timing_bundle_tables():
+    """The timing bundle's tables, under the Timing page's own subheaders.
+    Several headings carry more than one table, which is why a heading maps
+    to a LIST of tables throughout the export."""
+    ii3, gov_rows = pn4['ii3'], pn4['governor'][0]
+    rel, father = pn4['releaser'], pn4['father_lot']
+    day_rows, day_month, day_ninth = pn4['day_methods']
+    image_rows = pn4['image'][0]
+    out = [
+        ("The revolution of the year", None, pn4['revolution_rows']),
+        ("The image of the revolution of the year: its points (I.6, 3-8)", None, image_rows),
+        ("The image of the revolution of the year: its points (I.6, 3-8)", None, pn4['fixed_stars']['rows']),
+        ("The image of the revolution of the year: its points (I.6, 3-8)", None, pn4['fixed_stars_revolution']['rows']),
+        ("The reading checklist (I.7, 1-26)", None, pn4['i7_ascendant']),
+        ("The reading checklist (I.7, 1-26)", None, pn4['i7_planets']),
+        ("Indicators of the year, in Abu Ma'shar's order", None, pn4['year_rows']),
+        ("The sign of the terminal point and its lord, examined (II.3, 2-19)", None, ii3['root_rows']),
+        ("The sign of the terminal point and its lord, examined (II.3, 2-19)", None, ii3['revolution_rows']),
+        ("The sign of the terminal point and its lord, examined (II.3, 2-19)", None, ii3['lord_rows']),
+        ("The sign of the terminal point and its lord, examined (II.3, 2-19)", None, ii3['refinement_rows']),
+        ("The sign of the terminal point and its lord, examined (II.3, 2-19)", None, ii3['figure_55']),
+        ("Indicators 6-19: the fact each one reads", None, pn4['further_rows']),
+        ("The lord of the orb (VI.1)", None, pn4['orb_rows']),
+        ("The governor (IX.9, 1-10; IX.2, 4-7)", None, gov_rows),
+        ("The governor (IX.9, 1-10; IX.2, 4-7)", None, pn4['governor_condition']),
+        ("The governor (IX.9, 1-10; IX.2, 4-7)", None, pn4['first_month_governor'][0]),
+        ("The Moon's connections in her sign, and the portions of the year (II.22)", None, pn4['moon_rows']),
+        ("The Moon's connections in her sign, and the portions of the year (II.22)", None, pn4['portion_rows']),
+        ("When a luminary is lord of the year: the proxies (II.13, 1; II.14, 1; II.22, 1-5)", None, pn4['proxies']),
+        ("The turning of the houses of the root (VI.2)", None, pn4['turning_rows']),
+        ("The turning of the houses of the root (VI.2)", None, pn4['turning_triplicity_rows']),
+        ("The distribution from the Ascendant (the *jar bakhtar*)", None, pn4['distribution_rows']),
+    ]
+    if pn4['iii2_type'] is not None:
+        # The page draws the III.2 checklist only when there IS a current
+        # distribution to analyse; where there is none it says so in a
+        # sentence and draws nothing, and the export follows it.
+        out += [("The distribution analysed (III.2)", None, pn4['iii2_checklist']),
+                ("The distribution analysed (III.2)", None, pn4['iii2_transitions'])]
+    out.append(("The distribution analysed (III.2)", None, pn4['bound_transits']))
+    for _point, _rows in pn4['meridian_rows'].items():
+        out.append(("The distribution from the Midheaven and the fourth", _point, _rows))
+    for _ap in pn4['angle_planets']:
+        out.append(("The planets, each with its measure under III.1, 12", _ap.get('planet'), _ap['rows']))
+        out.append(("The planets, each with its measure under III.1, 12", _ap.get('planet'), _ap['terms']))
+    _releaser = "The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)"
+    out += [
+        (_releaser, None, rel['candidates']),
+        (_releaser, None, rel['ranking']),
+        (_releaser, None, pn4['short_life']['rows']),
+        (_releaser, None, pn4['standin_moon']),
+        (_releaser, None, pn4['releaser_rows']),
+        ("The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", None, pn4['hm_direction']),
+        ("The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", None, pn4['hm_revolution']),
+        ("The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", None, pn4['hm_turning']),
+        ("The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", None, father['harmers']),
+        ("The small days: the revolution's Ascendant distributed round the year", None, pn4['small_days_rows']),
+        ("The mighty days: the terminal degree of the year directed through the revolution", None, pn4['mighty_days_rows']),
+        ("The nine methods for the days and hours (IX.7, 1-72)", None, day_rows),
+        ("The nine methods for the days and hours (IX.7, 1-72)", None, day_month),
+        ("The nine methods for the days and hours (IX.7, 1-72)", None, day_ninth),
+        ("The seven indicators of the month", None, pn4['monthly_rows']),
+        ("The lords of the triplicity of the sect light, over the life", None, pn4['life_lords_rows']),
+        ("The lords of the triplicity of the sect light, over the life", None, pn4['life_lords_ascendant_rows']),
+        ("The *fardar*", None, pn4['fardar_rows']),
+        ("When a natal indication comes out (III.7, 32-42)", None, pn4['activation_rows']),
+        ("The Ages of Man", None, pn4['age_rows']),
+    ]
+    return out
+
+
+def analysis_tables():
+    """Every result table the export carries, as
+    (page, heading, citation or None, rows), in the pages' own order."""
+    tables = [
+        ("Chart", "Planetary Positions",
+         "Quadrant column: Alchabitius house, advancing or retreating in Sahl's sense "
+         "(The Introduction Ch. 3, 4-5). Sees ASC: whole-sign aversion to the first place.",
+         _positions_rows()),
+        ("Chart", "Calculated Points", None, _calculated_point_rows()),
+        ("Chart", "Quadrant divisions (Alchabitius)", None, _house_cusp_rows()),
+        ("Dignities and places", "Lordship Mapping", None, _lordship_rows()),
+        ("Dignities and places", "Sect",
+         "Sect: Sahl, The Introduction Ch. 3, 85. Domain: Gr. Intr. VII.1, 37 and VII.6, 13 "
+         "(or Masha'allah, On Nativities 1.23, 17, per the reading in force).",
+         _sect_table_rows()),
+        ("Dignities and places", "Topical Planets in Houses",
+         "Rhetorius & PN IV, as the Reference Guide summarises them.",
+         planets_in_houses_data),
+        ("Dignities and places", "Topical House Lords (Masha'allah)",
+         "Masha'allah's lords-of-places chapters, as the Reference Guide summarises them.",
+         _house_lord_rows()),
+        ("Configurations", "Aspects, aversions and connections",
+         f"Connection test in force: {CONNECTION_PROFILE}.", aspects),
+        ("Configurations", f"Reception \u2014 {CONNECTION_PROFILE} rule", None, reception_data),
+        ("Configurations", "Strength of the Planets",
+         "Sahl, The Introduction Ch. 3, 78-88.", strength_data),
+        ("Configurations", "Weakness of the Planets",
+         "Sahl, The Introduction Ch. 3, 91-100.", weakness_data),
+        ("Lots", "Classical Lots", None, _classical_lot_rows()),
+        ("Lots", "Topical Lots (Sahl, On Nativities)", None, _topical_lot_rows()),
+        ("Lunation and victors", "Prenatal Lunation (Syzygy)",
+         "Sahl, On Nativities 1.7, 3-7.", _syzygy_rows()),
+    ]
+    for _scheme, _res in victors_data.items():
+        tables.append(("Lunation and victors", "Victor of the Chart", _scheme, _res['grid']))
+    for heading, citation, rows in _timing_bundle_tables():
+        tables.append(("Timing", heading, citation, rows))
+    # A table with no rows is a table the pages do not draw: _finding()
+    # prints its "nothing found" sentence instead of a grid, and the timing
+    # page skips a bundle entry that came back None or empty. The export
+    # carries what the reader saw, so an empty one is not written down --
+    # it would claim a grid stood where a sentence did.
+    return [entry for entry in tables if entry[3]]
+
+
+def _jsonable(value):
+    """A value as JSON holds it. The engine's rows are strings, numbers,
+    bools and lists of those; a tuple becomes a list, a set a sorted list,
+    and anything else is written as the text it prints as rather than
+    dropped -- an export that silently loses a field is worse than one that
+    quotes it."""
+    if value is None or isinstance(value, (str, bool, int)):
+        return value
+    if isinstance(value, float):
+        return value if isfinite(value) else str(value)
+    if isinstance(value, dict):
+        return {str(k): _jsonable(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_jsonable(v) for v in value]
+    if isinstance(value, set):
+        return sorted(str(v) for v in value)
+    return str(value)
+
+
+def analysis_export(*, name, entered, committed, readings, display, target,
+                    tables, status, app, exported):
+    """The analysis as one mapping, ready for json.dumps.
+
+    Pure: every value it writes is passed in. `entered` is the record
+    _chart_record() builds (what was entered), `committed` the resolved
+    moment and place the chart was actually cast at, `readings` the
+    doctrinal readings in force with their defaults, `display` the
+    preferences that change what is DRAWN and not what is computed,
+    `tables` the (page, heading, citation, rows) list above, and `status`
+    what the app knows about its own answer. Numbers are the engine's own,
+    at full precision; the display strings the pages show are the Markdown
+    report's business, and both files say so."""
+    results = {}
+    for page, heading, citation, rows in tables:
+        entry = {"rows": _jsonable(list(rows))}
+        entry["columns"] = sorted({str(k) for row in rows for k in row}) if rows else []
+        if citation:
+            entry["citation"] = citation
+        results.setdefault(page, {}).setdefault(heading, []).append(entry)
+    return {
+        "schema": ANALYSIS_SCHEMA,
+        "exported": exported,
+        "app": dict(app),
+        "chart": name,
+        "input": _jsonable(committed),
+        "entered": _jsonable(entered),
+        "readings": _jsonable(readings),
+        "display": _jsonable(display),
+        "target": _jsonable(target),
+        "results": results,
+        "status": _jsonable(status),
+        "precision": ("Values are the engine's own, at the precision it holds them. The "
+                      "Markdown report carries the display strings the pages show; where a "
+                      "page rounds, the JSON does not."),
+    }
+
+
+def _markdown_table(rows):
+    """A list of dicts as a Markdown table, in the rows' own key order."""
+    if not rows:
+        return "_No rows._\n"
+    columns = list(dict.fromkeys(k for row in rows for k in row))
+    def cell(value):
+        if isinstance(value, (list, tuple)):
+            value = "; ".join(str(v) for v in value)
+        return str(value).replace("|", "\\|").replace("\n", " ")
+    out = ["| " + " | ".join(cell(c) for c in columns) + " |",
+           "|" + "|".join("---" for _ in columns) + "|"]
+    for row in rows:
+        out.append("| " + " | ".join(cell(row.get(c, "")) for c in columns) + " |")
+    return "\n".join(out) + "\n"
+
+
+def analysis_markdown(analysis):
+    """The same analysis as a report a reader can read: the same header
+    block, the same sections and the same tables. Nothing is added that the
+    JSON does not carry, and no source text beyond the citations the pages
+    already print."""
+    app = analysis["app"]
+    out = [f"# Analysis: {analysis['chart']}", ""]
+    out.append(f"Exported {analysis['exported']} by this app {app['version']}.")
+    out.append("")
+    out.append("## What computed this")
+    out.append("")
+    out.append(_markdown_table([{"Item": k, "Value": v} for k, v in app.items()]))
+    out.append("## What was entered")
+    out.append("")
+    out.append(_markdown_table([{"Field": k, "Value": v} for k, v in analysis["entered"].items()
+                                if k not in ("readings", "saved_with")]))
+    out.append("## The moment and place the chart was cast at")
+    out.append("")
+    out.append(_markdown_table([{"Field": k, "Value": v} for k, v in analysis["input"].items()]))
+    out.append("## The readings in force")
+    out.append("")
+    out.append(_markdown_table([{"Reading": r["label"], "In force": r["value"],
+                                 "Default": r["default"], "Set on": r["set_on"]}
+                                for r in analysis["readings"]]))
+    out.append("## Display preferences")
+    out.append("")
+    out.append(_markdown_table([{"Preference": k, "Value": v} for k, v in analysis["display"].items()]))
+    out.append("## The target")
+    out.append("")
+    out.append(_markdown_table([{"Field": k, "Value": v} for k, v in analysis["target"].items()]))
+    out.append("## Status")
+    out.append("")
+    out.append(_markdown_table([{"Field": k, "Value": v} for k, v in analysis["status"].items()]))
+    out.append("## Results")
+    out.append("")
+    for page, headings in analysis["results"].items():
+        out.append(f"### {page}")
+        out.append("")
+        for heading, entries in headings.items():
+            out.append(f"#### {heading}")
+            out.append("")
+            for entry in entries:
+                if entry.get("citation"):
+                    out.append(f"*{entry['citation']}*")
+                    out.append("")
+                out.append(_markdown_table(entry["rows"]))
+    out.append("## Precision")
+    out.append("")
+    out.append(analysis["precision"])
+    out.append("")
+    return "\n".join(out)
+
+
+# --- The two buttons, in the place reserved under Save -------------------
+# Built HERE, at the foot of the script, because the export is made of the
+# pages' own row lists and those need the chart. st.download_button must
+# hold the bytes at render time, so there is no deferring the build behind
+# the click itself; what the cost is, and why it is paid on every rerun, is
+# in docs/SAVED_READINGS_EXPORT_2026-09-16.md.
+with export_box:
+    if not chart_ok:
+        # Disabled rather than absent: the action exists, and the reason it
+        # cannot run is the same one the box above already gives.
+        st.download_button("Export analysis (JSON)", data=b"", file_name="analysis.json",
+                           mime="application/json", disabled=True, key="_export_json")
+        st.download_button("Export analysis (Markdown)", data=b"", file_name="analysis.md",
+                           mime="text/markdown", disabled=True, key="_export_md")
+        st.caption("There is no chart to export; the input above says why.")
+    else:
+        _export_name = chart_name
+        _analysis = analysis_export(
+            name=_export_name,
+            entered=_chart_record() if input_record is None else input_record,
+            committed={
+                "date": input_date.isoformat(),
+                "time": input_time.strftime("%H:%M:%S"),
+                "time_standard": time_standard,
+                "utc_offset_hours": utc_offset_hours,
+                "timezone": tz_name,
+                "place": location_query,
+                "latitude": lat,
+                "longitude": lon,
+                "julian_day_ut": jd_ut,
+                "calendar": _cal_note,
+            },
+            readings=[{"label": _label, "store_key": _sk,
+                       "value": _reading(_wk, _sk, _default), "default": _default,
+                       "set_on": _page}
+                      for _label, _wk, _sk, _default, _page in READINGS_REGISTRY],
+            display={
+                # What is DRAWN, not what is computed: the bounds ring, the
+                # dark wheels, the wheel's shape. Kept apart from the
+                # readings above for exactly that reason.
+                "chart_bounds": CHART_BOUNDS,
+                "wheel_dark": WHEEL_DARK,
+                "wheel_layout": _reading("wheel_layout", "_wheel_layout", WHEEL_LAYOUT_OPTIONS[0]),
+            },
+            target={"mode": target_mode, "date": target_date.isoformat(), "age": target_age},
+            tables=analysis_tables(),
+            status={
+                "chart_ok": chart_ok,
+                "chart_error": chart_error,
+                # The planetary hour where the Sun neither rises nor sets:
+                # an equal hour stands in for a temporal one, and the strip
+                # says so beside the hour lord.
+                "equal_hour_approximation": bool(chronocrats.get('Approximate')),
+                "forward_search_days": FORWARD_SEARCH_DAYS,
+                # The draft date does not parse: the tables are the last
+                # valid chart's and have not moved (F01d).
+                "stale": not date_is_valid,
+                "target_out_of_reach": bool(target_out_of_reach),
+            },
+            app=app_identity(),
+            exported=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        )
+        _stem = re.sub(r"[^\w.-]+", "-", _export_name).strip("-") or "unsaved"
+        _stamp = f"analysis_{_stem}_{input_date:%Y-%m-%d}"
+        # The harness cannot read a download button's bytes, so the object
+        # the two buttons carry is left here to be asserted on directly.
+        _report = analysis_markdown(_analysis)
+        st.session_state["_analysis_export"] = _analysis
+        st.session_state["_analysis_markdown"] = _report
+        st.download_button("Export analysis (JSON)",
+                           data=json.dumps(_analysis, indent=1, ensure_ascii=False).encode("utf-8"),
+                           file_name=f"{_stamp}.json", mime="application/json", key="_export_json")
+        st.download_button("Export analysis (Markdown)", data=_report.encode("utf-8"),
+                           file_name=f"{_stamp}.md", mime="text/markdown", key="_export_md")
+
+
 def page_chart():
     if not chart_ok:
         _recovery_panel("Chart")
@@ -2031,28 +2774,7 @@ def page_chart():
     # reason, and Lesson 15's standing instruction -- does the planet
     # see the Ascendant, i.e. is it out of the 2nd, 6th, 8th and 12th
     # -- is the "Sees ASC" column.
-    pos_list = []
-    for p, d in p_data.items():
-        if p == 'North Node':
-            continue
-        lon_p = d['longitude']
-        q = get_effective_house(lon_p, chart_data['houses'])
-        phase, side, elong = solar_phase(p, lon_p, p_data['Sun']['longitude'], p_data[p].get('speed_in_lon'))
-        acc_p = accidental[p]
-        ws_place = get_wsh_house(lon_p, chart_data['ascendant'])
-        pos_list.append({
-            "Planet": p,
-            "Position": get_degree_string(lon_p),
-            "Absolute": f"{lon_p:.4f}°",
-            "WS place": ws_place,
-            "Sees ASC": "No (averse)" if ws_place in (2, 6, 8, 12) else "Yes",
-            # Sahl's sense (Ch.3, 4-5: stake or succedent vs. falling), not
-            # Abu Ma'shar's quadrant term of VI.26, 3. Cited in the caption.
-            "Quadrant": f"{q}, {'advancing' if q in ANGLE_HOUSES | SUCCEDENT_HOUSES else 'retreating'}",
-            "Motion": ('Retrograde' if acc_p['Retrograde']
-                       else 'Stationary' if acc_p['Stationary'] else 'Direct'),
-            "Solar phase": (f"{phase}, {side}" if phase and side else (phase or '–')),
-        })
+    pos_list = _positions_rows()
     st.dataframe(pd.DataFrame(pos_list), hide_index=True, width='stretch',
                  column_config=_yes_no_columns(pd.DataFrame(pos_list)))
     st.caption("Quadrant column: Alchabitius house, advancing or retreating in Sahl's sense "
@@ -2061,22 +2783,11 @@ def page_chart():
     points_col, cusps_col = st.columns(2)
     with points_col:
         st.subheader('Calculated Points', help="Non-planetary chart points: the four angles (Ascendant, Midheaven, Descendant, Imum Coeli), the Moon's Nodes, and the Lot of Fortune (a sect-dependent formula combining the Sun, Moon, and Ascendant).")
-        north_node_lon = p_data['North Node']['longitude']
-        south_node_lon = (north_node_lon + 180.0) % 360.0
-        calculated_points = {
-            'Ascendant': chart_data['ascendant'],
-            'Midheaven': chart_data['mc'],
-            'Descendant': chart_data['descendant'],
-            'Imum Coeli': chart_data['ic'],
-            'North Node': north_node_lon,
-            'South Node': south_node_lon,
-            'Lot of Fortune': chart_data['lot_of_fortune'],
-        }
-        calc_list = [{"Point": name, "Position": get_degree_string(lon_val)} for name, lon_val in calculated_points.items()]
+        calc_list = _calculated_point_rows()
         st.dataframe(pd.DataFrame(calc_list), hide_index=True, width='content')
     with cusps_col:
         st.subheader('Quadrant divisions (Alchabitius)', help='The twelve quadrant house cusps computed by the Alchabitius (semi-arc) system -- the app\'s other unit beside the whole-sign places: whole signs where the texts speak of a topic, these divisions where they speak of a planet\'s strength (the five-degree allowance at the four axial degrees).')
-        house_list = [{"House": i+1, "Cusp": get_degree_string(chart_data['houses'][i])} for i in range(12)]
+        house_list = _house_cusp_rows()
         st.dataframe(pd.DataFrame(house_list), hide_index=True, width='content', height=_rows_height(12))
     _finding(_gap, 'Special Degrees & Conditions', None, special_degrees,
               glance='Flags planets in Sahl\'s dark signs (Libra, Capricorn), in the two signs of his burned place ("the end of Libra and the beginning of Scorpio" -- he gives no degrees; Abu Ma\'shar\'s 19 Libra-3 Scorpio is applied in his own Planetary Condition table and, borrowed and labelled, in Sahl\'s condition 110), in a welled degree of their sign (Abu Ma\'shar, Gr. Intr. V.21, Fig. 62), or in one of Sahl\'s two sign-boundary conditions.',
@@ -2237,25 +2948,7 @@ def page_dignities():
     _sources_scope_line()
     _readings_note()
     st.subheader('Lordship Mapping', help="The domicile, exaltation, triplicity, term (bound), and face ruler of each planet's OWN degree -- the five essential dignities, read at the planet's own position rather than another point.")
-    triplicity_key = 'triplicity_day' if sect == 'Diurnal' else 'triplicity_night'
-    lordship_list = []
-    for p, data in p_data.items():
-        if p == 'North Node': continue
-        rulers = get_essential_rulers(data['longitude'])
-        # The planet's own claim at its position, from the labels the
-        # dignity evaluation already computed, without the app's
-        # point weights ("Domicile (+5)" -> "Domicile").
-        own = [re.sub(r'\s*\([+-]\d+\)', '', lbl) for lbl in essential[p]['Essential Labels']]
-        lordship_list.append({
-            "Planet": p,
-            "Position": get_degree_string(data['longitude']),
-            "Sign Dispositor": rulers['domicile'],
-            "Exaltation Lord": rulers['exaltation'],
-            "Triplicity lord": rulers[triplicity_key],
-            "Bound lord": rulers['term'],
-            "Face lord": rulers['face'],
-            "Own dignity here": ", ".join(own) if own else ("Peregrine" if essential[p]['Peregrine'] else "-"),
-        })
+    lordship_list = _lordship_rows()
     st.dataframe(pd.DataFrame(lordship_list), hide_index=True, width='stretch')
     # ---- Sect (Lesson 10) ----------------------------------------
     # The planet's own sect (85's test), its hemisphere, whether it is
@@ -2271,18 +2964,7 @@ def page_dignities():
                             "Affects: this Sect table, Dignity Evaluation below, and Planetary Condition "
                             "(13) on the Configurations page. Full text on the Sources page.")
     with sect_col:
-        sect_rows = []
-        for p, data in p_data.items():
-            if p == 'North Node': continue
-            own_diurnal = planet_sect_is_diurnal(p, data['longitude'], p_data['Sun']['longitude'])
-            above = (data['longitude'] - chart_data['ascendant']) % 360 > 180.0
-            sect_rows.append({
-                "Planet": p,
-                "Planet's sect": 'Diurnal' if own_diurnal else 'Nocturnal',
-                "Above horizon": 'Yes' if above else 'No',
-                "Of the chart's sect": 'Yes' if own_diurnal == (sect == 'Diurnal') else 'No',
-                "Domain (hayz)": 'Yes' if accidental[p]['Hayz'] else 'No',
-            })
+        sect_rows = _sect_table_rows()
         st.dataframe(pd.DataFrame(sect_rows), hide_index=True, width='stretch', height=_rows_height(len(sect_rows)),
                      column_config=_yes_no_columns(pd.DataFrame(sect_rows)))
     st.caption("Sect: Sahl, The Introduction Ch. 3, 85. Domain: Gr. Intr. VII.1, 37 and VII.6, 13 "
@@ -2301,9 +2983,7 @@ def page_dignities():
     st.subheader("Topical House Lords (Masha'allah)", help='For each of the twelve topical houses, its domicile lord\'s own whole-sign placement, and Masha\'allah\'s delineation for that [placed-in, rules] pairing, as the TNAC Reference Guide for the Planets and Places (Dykes, 2023) summarises Sahl, On Nativities\' lords-of-places chapters (1.36, 78-97; 2.14; 3.10; 4.11; 5.1; 6.3.4, 12-24; 7.1; 8.5; 9.4; 10.2.4; 11.1; 12.1) -- the classical way of reading what a house\'s ruler is "doing" elsewhere in the chart.')
     # Averse: the lord sits in the 2nd, 6th, 8th or 12th sign from the
     # house it rules, so it does not see its own place.
-    lords_rows = [{**{k: v for k, v in r.items() if k != "Masha'allah Signification"},
-                   'Averse to its place': 'Yes' if (r['Placed in (WS place)'] - r['Topical House']) % 12 in (1, 5, 7, 11) else 'No'}
-                  for r in house_lords_data]
+    lords_rows = _house_lord_rows()
     st.dataframe(pd.DataFrame(lords_rows), hide_index=True, width='content', height=_rows_height(len(lords_rows)),
                  column_config=_yes_no_columns(pd.DataFrame(lords_rows)))
     st.caption("Masha'allah's condition is his own, stated at the end of every lord-of-the-Nth section: \"Work in this chapter "
@@ -2715,13 +3395,7 @@ def page_lots():
     # Formula from the same LOT_DEFINITIONS text the Topical Lots
     # table carries (via calculate_topical_lots), so the two cannot
     # differ; Basis has no definition row and says so.
-    formula_by_lot = {r['Lot']: r['Formula'] for r in topical_lots}
-    classical_rows = []
-    for r in classical_lots:
-        row = {k: v for k, v in r.items() if k != 'Standing'}
-        row['Formula'] = formula_by_lot[r['Lot Name']]
-        row['Standing'] = r['Standing']
-        classical_rows.append(row)
+    classical_rows = _classical_lot_rows()
     st.dataframe(pd.DataFrame(classical_rows), hide_index=True, width='stretch', height=_rows_height(len(classical_rows)),
                  column_config=_wide_text_columns(pd.DataFrame(classical_rows)))
     with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
@@ -2736,10 +3410,7 @@ def page_lots():
     # expander so the table itself is the worksheet.
     # A row flagged Supplement (Abu Ma'shar's: a form of a Lot Sahl also
     # gives, or a Lot of his Sahl has not) is shown only under Course text and supplement.
-    _lots_supplement = READING_DEPTH == READING_DEPTH_OPTIONS[1]
-    _classical = ('Lot of Fortune', 'Lot of Spirit', 'Lot of Exaltation', 'Lot of Basis')
-    topical_rows = [r for r in topical_lots if r['Lot'] not in _classical
-                    and (_lots_supplement or not r['Supplement'])]
+    topical_rows = _topical_lot_rows()
     st.dataframe(pd.DataFrame(topical_rows, columns=['Topic', 'Lot', 'Position', 'WS place', 'Lord', 'Formula', 'Active']),
                  hide_index=True, width='stretch', height=_rows_height(len(topical_rows)))
     # The four classical Lots keep their POSITIONS out of the table above --
@@ -2747,7 +3418,7 @@ def page_lots():
     # provenance belongs here, which is where the classical note sends the
     # reader (F11), and their definitions carry the same three fields every
     # other Lot's does. Nothing new is written for them.
-    provenance_rows = [r for r in topical_lots if r['Lot'] in _classical] + topical_rows
+    provenance_rows = [r for r in topical_lots if r['Lot'] in CLASSICAL_LOT_NAMES] + topical_rows
     with st.expander("Provenance and standing per Lot"):
         st.table(pd.DataFrame(provenance_rows, columns=['Topic', 'Lot', 'Standing', 'Source', 'Editor’s note']),
                  hide_index=True)
@@ -2761,27 +3432,7 @@ def page_victors():
     st.header("Lunation and victors")
     _chart_strip()
     st.subheader('Prenatal Lunation (Syzygy)', help='The New or Full Moon before birth: its degree, its natal place, the five lords of the degree and the governor among them (Sahl, On Nativities 1.7, 3-7), with this app\'s approximation and the almuten beside it.')
-    r = syzygy['rulers']
-    triplicity_str = (
-        f"{syzygy['active_triplicity_lord']}\u2605 ({syzygy['active_triplicity_label']}) \u00b7 "
-        f"Day: {r['triplicity_day']} \u00b7 Night: {r['triplicity_night']} \u00b7 Part: {r['triplicity_participating']}"
-    )
-    syzygy_rows = [
-        {"Metric": "Event Type", "Value": syzygy['event_label']},
-        {"Metric": "Position", "Value": get_degree_string(syzygy['syzygy_longitude'])},
-        {"Metric": "Natal House", "Value": f"House {syzygy['natal_house']}"},
-        {"Metric": "Domicile Lord", "Value": r['domicile']},
-        {"Metric": "Exaltation Lord", "Value": r['exaltation']},
-        {"Metric": "Triplicity Lords", "Value": triplicity_str},
-        {"Metric": "Term Lord", "Value": r['term']},
-        {"Metric": "Face Lord", "Value": r['face']},
-        {"Metric": "Governor of the syzygy degree (Sahl, On Nativities 1.7, 3-7)",
-         "Value": f"{syzygy_governor['governor']} -- {syzygy_governor['how']}"},
-        {"Metric": "This app's approximation of 1.7 (one point a listed condition)",
-         "Value": syzygy_governor['model_how']},
-        {"Metric": "Almuten by 5/4/3/2/1 points (al-Qabisi's weights, ITA I.18; a technique not in Sahl)",
-         "Value": f"{syzygy['almuten']} (Score: {syzygy['almuten_score']})"},
-    ]
+    syzygy_rows = _syzygy_rows()
     st.dataframe(pd.DataFrame(syzygy_rows), hide_index=True, width='stretch',
                  column_config=_wide_text_columns(pd.DataFrame(syzygy_rows)))
     with st.expander("Governor of the syzygy degree: the five lords under 1.7, 3-7"):
@@ -4283,7 +4934,12 @@ def page_timing():
 def page_sources():
     st.header("Sources and readings")
     _chart_strip()
-    st.caption("What the app reads from, how it can be read, and what it does not cover.  \n"
+    # The one place a version is printed on a page. Everywhere else the rule
+    # holds that page text carries no build process; here it is the identity
+    # an exported analysis is signed with, and a reader holding an older
+    # export needs to be able to read the current one off the app itself.
+    st.caption(f"This app {APP_VERSION}. "
+               "What the app reads from, how it can be read, and what it does not cover.  \n"
                "**How citations are written.** A locator names its volume, never the author alone: "
                "*Sahl, The Introduction Ch. 3, 85* and *Sahl, On Nativities 1.22, 9*; *Gr. Intr. VII.6, 27* "
                "is Abu Ma'shar's Great Introduction (Dykes); *PN IV IX.1, 26* is his On the Revolutions of "
@@ -4311,7 +4967,15 @@ def page_sources():
                         "are laid beside Sahl's on the same topic -- further findings, three more topical "
                         "Lots, a reference table and the supplementary expanders open -- and the Configurations "
                         "page folds his tab into the topic blocks it belongs to.")
-    _rows = [{'Reading': label, 'In force': str(_reading(wk, sk, default)), 'Default': str(default),
+    # What the chart the picker names was saved under, beside what is in
+    # force (F03). A dash where there is nothing to show: no record
+    # selected, or one written before this app stored the readings with a
+    # chart. Nothing here sets anything -- the choice is offered on the
+    # load, beside the picker, and this is the reading of the two together.
+    _saved_readings = chart_record_readings(_picked_record or {})
+    _rows = [{'Reading': label, 'In force': str(_reading(wk, sk, default)),
+              'Saved with this chart': str(_saved_readings[sk]) if sk in _saved_readings else '–',
+              'Default': str(default),
               'Set on': page, 'Differs': 'yes' if _reading(wk, sk, default) != default else ''}
              for label, wk, sk, default, page in READINGS_REGISTRY]
     st.dataframe(pd.DataFrame(_rows), hide_index=True, width='stretch', height=_rows_height(len(_rows)),
