@@ -8933,7 +8933,11 @@ def evaluate_abu_mashar_condition(planetary_data, natal_houses, sect, essential,
                 # Owner's ruling (2026-09-16, after Astra's F06): a net of zero is
                 # 'Indeterminate' here as the Dignities page's Lean already says,
                 # not 'Good' -- a tie is not a favourable judgment.
-                'Condition': 'Indeterminate' if net == 0 else ('Good' if net > 0 else 'Bad'),
+                # ... and (the owner's second ruling, 2026-09-16, after the hostile
+                # pass's M1) inside a margin of one as well, the width of a single
+                # testimony -- the Dignities page's Lean's own margin, so the two
+                # pages name one Net one way.
+                'Condition': 'Indeterminate' if abs(net) <= 1 else ('Good' if net > 0 else 'Bad'),
                 'Positive Labels': positive,
                 'Negative Labels': negative + moon_defects,
             }

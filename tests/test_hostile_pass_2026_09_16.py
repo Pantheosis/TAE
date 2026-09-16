@@ -177,9 +177,6 @@ def test_an_out_of_range_saved_offset_is_refused_not_silently_clamped(tmp_path, 
 
 # --- M1: Verdict and Lean read one Net and disagree at |Net| == 1 ------------
 
-@pytest.mark.xfail(strict=True, reason="M1: at |Net| == 1 the Configurations "
-                   "Verdict says Good/Bad while the Dignities Lean says "
-                   "Indeterminate -- the same number, two words (owner ruling)")
 def test_verdict_and_lean_agree_on_the_same_net(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
     cfg = make_app(date="1982-11-19", page="configurations").run()

@@ -1,6 +1,7 @@
 """Owner's ruling of 2026-09-16 on the Planetary Condition table's app
 heuristic: a net of zero is 'Indeterminate', as the Dignities page's Lean
-already says, not 'Good'. A tie is not a favourable judgment."""
+already says, not 'Good'. A tie is not a favourable judgment. The second ruling of
+the same day widened it to the Lean's margin of one testimony either way."""
 import pytest
 
 from conftest import FLORENCE, LOCAL_TIME
@@ -27,14 +28,14 @@ def test_a_net_of_zero_is_indeterminate_and_the_signs_keep_good_and_bad(engine):
     for day in ("1240-05-23", "1240-05-25", "1240-05-26", "1240-09-18", "1240-10-05", "1240-01-04"):
         for planet, row in _condition_table(engine, day).items():
             net = row["Net"]
-            expected = "Indeterminate" if net == 0 else ("Good" if net > 0 else "Bad")
+            expected = "Indeterminate" if abs(net) <= 1 else ("Good" if net > 0 else "Bad")
             assert row["Condition"] == expected, (day, planet, net, row["Condition"])
             seen.add(expected)
     assert seen == {"Indeterminate", "Good", "Bad"}, seen
 
 
-def test_the_default_chart_has_a_tie_and_it_reads_indeterminate(engine):
+def test_the_default_chart_has_a_tie_or_a_one_and_it_reads_indeterminate(engine):
     table = _condition_table(engine, "1240-05-23")
-    ties = [p for p, r in table.items() if r["Net"] == 0]
+    ties = [p for p, r in table.items() if abs(r["Net"]) <= 1]
     assert ties, {p: r["Net"] for p, r in table.items()}
     assert all(table[p]["Condition"] == "Indeterminate" for p in ties), ties
