@@ -25,7 +25,7 @@ import pytest
 # skip without it (same convention as test_abu_mashar_citations.py).
 from corpus_paths import corpus_file
 
-BOOK_VII = corpus_file("abu_mashar_book_vii.md")
+BOOK_VII = corpus_file("gr_intr/abu_mashar_great_introduction.md")
 
 SIGNS = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
          'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces']
