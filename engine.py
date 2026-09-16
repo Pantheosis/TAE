@@ -97,13 +97,135 @@ def _validate_chart_mapping(charts):
     enough: '[]' parsed fine and then crashed the sidebar at .keys(). Only
     the shape the UI actually indexes is checked -- a mapping of string
     names to mapping entries -- so an older entry missing a field still
-    loads."""
+    loads.
+
+    The SHAPE only, deliberately: one entry whose fields are the wrong type
+    must not condemn the whole file, which is what raising here would do
+    (the loader would copy the file aside and open with an empty picker).
+    An entry's own fields are checked, one entry at a time and without
+    raising, by chart_record_fault() below -- a record that fails it stays
+    in the mapping and in the file, and is refused only at the point where
+    the sidebar would otherwise hand it to a widget."""
     if not isinstance(charts, dict):
         raise ValueError(f"saved charts root must be a mapping, got {type(charts).__name__}")
     for name, entry in charts.items():
         if not isinstance(name, str) or not isinstance(entry, dict):
             raise ValueError(f"saved chart {name!r} is not a name -> mapping entry")
     return charts
+
+
+def _is_real_number(value):
+    """A finite int or float -- and not a bool, which is an int in Python
+    and is never a coordinate, an offset or an age."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    return math.isfinite(value)
+
+
+def record_number(value):
+    """A stored field as the number it means, or None when it means no
+    number. A number WRITTEN AS TEXT counts: '43.7792' is that latitude,
+    and _records_match already reads it as that latitude when it decides
+    whether a record has been edited -- so a loader that refused it would
+    have the app calling one record two things at once. What does not
+    count is text that is not a number, a bool, or an infinity."""
+    if _is_real_number(value):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            number = float(value.strip())
+        except ValueError:
+            return None
+        return number if math.isfinite(number) else None
+    return None
+
+
+def _is_clock_string(value):
+    """'HH:MM:SS' (the form _chart_record writes), as a real time."""
+    if not isinstance(value, str):
+        return False
+    m = re.fullmatch(r"(\d{1,2}):(\d{2}):(\d{2})", value.strip())
+    if not m:
+        return False
+    h, mi, s = (int(part) for part in m.groups())
+    return h < 24 and mi < 60 and s < 60
+
+
+# Each field of a saved record, and what the sidebar needs it to be before
+# it can be written into a widget key. The check is by TYPE and, for the
+# numbers, by RANGE: a type the sidebar cannot consume raises where it is
+# consumed (an int time_string has no .split, a str latitude will not
+# compare with a float), and that took the whole script down on load and at
+# launch. A wrong VALUE inside the right type is left to the draft rules
+# that already handle one -- a date_string of "not-a-date" goes into the
+# date box and gets the box's own error, a target_date that will not parse
+# keeps the last target that did, a time_standard the app no longer offers
+# raises the "saved before the time standard was stored" flag. The one
+# exception is a number out of range, which the widgets would silently pull
+# to a bound: it is a fault here, so that no chart is cast on it.
+# (utc_offset out of +-14 is its own case, reported by the loader rather
+# than refused, so that the record still loads and says what it holds.)
+CHART_RECORD_FIELDS = (
+    ('date_string', 'date', 'date, written down as text'),
+    ('time_string', 'time', 'time of day as HH:MM:SS'),
+    ('time_standard', 'time standard', 'time standard, written down as text'),
+    ('utc_offset', 'UTC offset', 'number of hours'),
+    ('lat', 'latitude', 'number between -90 and 90'),
+    ('lon', 'longitude', 'number between -180 and 180'),
+    ('location_query', 'place', 'place, written down as text'),
+    ('target_mode', 'target', 'target, written down as text'),
+    ('target_date', 'target date', 'date, written down as text'),
+    ('target_age', 'target age', 'whole number of years, zero or more'),
+)
+
+
+def _chart_field_is_usable(field, value):
+    if field in ('date_string', 'time_standard', 'location_query', 'target_mode', 'target_date'):
+        return isinstance(value, str)
+    if field == 'time_string':
+        return _is_clock_string(value)
+    number = record_number(value)
+    if number is None:
+        return False
+    if field == 'lat':
+        return -90.0 <= number <= 90.0
+    if field == 'lon':
+        return -180.0 <= number <= 180.0
+    if field == 'target_age':
+        return number >= 0 and number.is_integer()
+    return True                                    # utc_offset: any number; the range is H5's
+
+
+def chart_record_fault(entry):
+    """The first field of a saved record the sidebar cannot load, as
+    (field's name for a reader, what it is not), or None when the record
+    can be loaded. A field the record does not carry, or carries as null,
+    is not a fault: records written before a field existed still load.
+
+    The record is never altered and never dropped -- the caller reports the
+    fault and leaves the form as it was, and the file keeps the record
+    exactly as it found it."""
+    if not isinstance(entry, dict):
+        return ('record', 'mapping of fields')
+    for field, label, expected in CHART_RECORD_FIELDS:
+        value = entry.get(field)
+        if field not in entry or value is None:
+            continue
+        if not _chart_field_is_usable(field, value):
+            return (label, expected)
+    return None
+
+
+# The offset a manual time standard can be cast at, east positive. The
+# widget's own bounds, kept here so the loader can read a stored offset
+# against them BEFORE the widget silently pulls an out-of-range one to a
+# bound -- and to the wrong bound: a stored 99 came back as -14.
+UTC_OFFSET_LIMIT = 14.0
+
+
+def utc_offset_in_range(value):
+    number = record_number(value)
+    return number is not None and -UTC_OFFSET_LIMIT <= number <= UTC_OFFSET_LIMIT
 
 def _read_chart_mapping(path):
     """The validated mapping in `path`, or None if it is unreadable,
@@ -218,13 +340,64 @@ PREFERENCE_RENAMES = (
     ('_wheel_order', "Revolution inside (Abu Ma'shar, I.6)", "Revolution inside (Abu Ma'shar's order, PN IV I.6)"),
 )
 
+# What each preference must BE. The app writes this file itself, so it is
+# normally well formed; a hand-edit, a downgrade or a half-written file is
+# not, and the launch block does int() on '_launches' and indexes the saved
+# charts by 'last_chart' -- so a string where an int belongs used to stop
+# the app from opening at all, on every page. Every key is checked against
+# the type or the option tuple its own widget expects, and an entry that
+# fails is dropped to its default. Silently: preferences are silent by
+# design (nothing announces that a reading was restored either), and
+# nothing is written back until the next _persist / _remember does it.
+PREFERENCE_BOOL_KEYS = ('_moon_rays_15', '_mars_west_18', '_fitting_infortune', '_chart_bounds',
+                        '_timing_bounds', '_timing_lots', '_timing_rays', '_timing_twelfths',
+                        '_wheel_dark')
+
+
+def _preference_option_tuples():
+    """Each preference whose value is one of a named set, and that set --
+    the very tuple its widget is built from, read at call time because most
+    of them are defined further down this file."""
+    return {
+        '_connection_rule': tuple(CONNECTION_PROFILES),
+        '_eastern_rule': EASTERN_RULE_OPTIONS,
+        '_domain_rule': DOMAIN_RULE_OPTIONS,
+        '_lot_house_cusp': LOT_HOUSE_CUSP_OPTIONS,
+        '_pn4_monthly_turn': PN4_MONTHLY_TURN_OPTIONS,
+        '_reading_depth': READING_DEPTH_OPTIONS,
+        '_wheel_layout': WHEEL_LAYOUT_OPTIONS,
+        '_wheel_order': WHEEL_ORDER_OPTIONS,
+        '_timing_wheel_view': WHEEL_VIEW_OPTIONS,
+        '_target_mode': TARGET_MODE_OPTIONS,
+    }
+
+
+def preference_is_valid(key, value):
+    """Whether `value` is a value the widget behind `key` could hold."""
+    if key == '_launches':
+        return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+    if key == 'last_chart':
+        return isinstance(value, str)
+    if key in PREFERENCE_BOOL_KEYS:
+        return isinstance(value, bool)
+    options = _preference_option_tuples().get(key)
+    if options is not None:
+        return value in options
+    return False
+
+
 def preferences_enabled():
     return os.environ.get("ALMUTEN_NO_PREFERENCES") != "1"
 
 def load_preferences():
     """The stored preferences as a dict, keys limited to PREFERENCE_KEYS and
-    'last_chart'; an empty dict when there is no file, or it is unreadable,
-    or the harness has switched preferences off."""
+    'last_chart', values limited to what the widget behind each key can
+    hold; an empty dict when there is no file, or it is unreadable, or the
+    harness has switched preferences off.
+
+    An entry whose value is the wrong type or not one of its options is
+    dropped, so the reading falls to its default -- the app opens, and the
+    file is left as it is until the next reading is set."""
     if not preferences_enabled() or not PREFERENCES_PATH.exists():
         return {}
     try:
@@ -240,7 +413,9 @@ def load_preferences():
     for key, old_value, new_value in PREFERENCE_RENAMES:
         if prefs.get(key) == old_value:
             prefs[key] = new_value
-    return prefs
+    # The renames run first: a value written under the old name is a valid
+    # value once it has been brought forward.
+    return {k: v for k, v in prefs.items() if preference_is_valid(k, v)}
 
 def write_preferences(prefs):
     if not preferences_enabled():

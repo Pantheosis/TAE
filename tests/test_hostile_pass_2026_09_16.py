@@ -74,9 +74,6 @@ def _fresh_launch(page="chart"):
 
 # --- H1: a valid birth date the ephemeris cannot reach kills the shell -------
 
-@pytest.mark.xfail(strict=True, reason="H1: year > ~3001 raises an uncaught "
-                   "swisseph error at module level; the shell should show the "
-                   "recovery panel instead")
 def test_a_birth_year_past_the_ephemeris_keeps_the_shell(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
     at = make_app(date="3100-06-01", page="chart").run()
@@ -84,9 +81,6 @@ def test_a_birth_year_past_the_ephemeris_keeps_the_shell(tmp_path, monkeypatch):
     assert len(at.main.header) == 1
 
 
-@pytest.mark.xfail(strict=True, reason="H1: Reference reads no chart, but the "
-                   "module-level crash stops st.navigation().run() from ever "
-                   "running, so Reference cannot render either")
 def test_reference_survives_a_birth_year_past_the_ephemeris(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
     at = make_app(date="3100-06-01", page="reference").run()
@@ -96,9 +90,6 @@ def test_reference_survives_a_birth_year_past_the_ephemeris(tmp_path, monkeypatc
 
 # --- H2: the Timing target reaches the same limit ----------------------------
 
-@pytest.mark.xfail(strict=True, reason="H2: the Age widget has no upper bound; "
-                   "a large age drives the solar-revolution JD past the "
-                   "ephemeris and raises at module level")
 def test_a_large_timing_age_keeps_the_shell(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
     at = make_app(date="1240-05-23", page="timing")
@@ -108,7 +99,6 @@ def test_a_large_timing_age_keeps_the_shell(tmp_path, monkeypatch):
     assert_no_exception(at, "timing age 2000 on the 1240 chart")
 
 
-@pytest.mark.xfail(strict=True, reason="H2: a far target date crashes the same way")
 def test_a_far_timing_date_keeps_the_shell(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
     at = make_app(date="1982-11-19", page="timing")
@@ -127,9 +117,6 @@ def test_a_far_timing_date_keeps_the_shell(tmp_path, monkeypatch):
     ("utc_offset", "abc"),
     ("target_age", "abc"),
 ])
-@pytest.mark.xfail(strict=True, reason="H3: a type-wrong field in a saved "
-                   "record reaches the engine and raises; loading should be "
-                   "guarded the way the sidebar guards its own draft")
 def test_a_type_wrong_saved_field_keeps_the_shell(tmp_path, monkeypatch, field, value):
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
     entry = {**PETOSKEY, field: value}
@@ -145,8 +132,6 @@ def test_a_type_wrong_saved_field_keeps_the_shell(tmp_path, monkeypatch, field, 
     assert_no_exception(at, f"loading a record whose {field} is {value!r}")
 
 
-@pytest.mark.xfail(strict=True, reason="H3: a corrupt last_chart makes the app "
-                   "dead-on-open with a raw traceback")
 def test_a_corrupt_last_chart_does_not_kill_the_launch(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
     monkeypatch.delenv("ALMUTEN_NO_PREFERENCES", raising=False)
@@ -164,8 +149,6 @@ def test_a_corrupt_last_chart_does_not_kill_the_launch(tmp_path, monkeypatch):
     {"_launches": "many"},
     {"last_chart": ["a"]},
 ])
-@pytest.mark.xfail(strict=True, reason="H4: a non-int _launches or non-str "
-                   "last_chart raises during the launch block")
 def test_corrupt_preferences_do_not_kill_the_launch(tmp_path, monkeypatch, prefs):
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
     monkeypatch.delenv("ALMUTEN_NO_PREFERENCES", raising=False)
@@ -179,9 +162,6 @@ def test_corrupt_preferences_do_not_kill_the_launch(tmp_path, monkeypatch, prefs
 
 # --- H5: an out-of-range saved offset is pulled to the wrong bound -----------
 
-@pytest.mark.xfail(strict=True, reason="H5: a seeded utc_offset of 99 is "
-                   "silently clamped to -14 (the min), the F02 seeded-clamp "
-                   "class, and the chart casts at UTC-14:00 with no warning")
 def test_an_out_of_range_saved_offset_is_refused_not_silently_clamped(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
     entry = {**PETOSKEY, "time_standard": "Manual UTC offset", "utc_offset": 99}
