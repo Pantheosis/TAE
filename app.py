@@ -297,13 +297,34 @@ EXAMPLE_CHART = {
     "manual_lon_key": 11.2556,
 }
 
+# The picker's first option, which is not a chart but the act of starting
+# one. M3 of the hostile pass of 2026-09-16: a chart could be SAVED under
+# this very string, after which the picker listed it twice and the record
+# could be neither selected nor deleted -- the option that means "new
+# chart" cannot also mean "that chart". Named here so that the save can
+# refuse it.
+NEW_CHART_SENTINEL = "-- New Chart --"
+
+
+def _is_reserved_name(name):
+    """Whether a chart name would collide with the picker's own first
+    option. Case and spacing do not save it: '--new chart--' and
+    '-- NEW CHART --' read as the same option in the list."""
+    def _flat(text):
+        return re.sub(r"\s+", "", str(text)).casefold()
+    return _flat(name) == _flat(NEW_CHART_SENTINEL)
+
+
 # The keys a new chart drops rather than sets: the target of the Timing page
 # (widget and store alike, so the page's own setdefault seeds them afresh),
 # the label a loaded chart put on its coordinates, the legacy-record flag,
 # and the last date that parsed.
 _NEW_CHART_DROPS = ("target_date", "_target_date", "target_age", "_target_age",
                     "_target_last_good", "loaded_location",
-                    "_loaded_without_standard", "_date_last_good")
+                    "_loaded_without_standard", "_date_last_good",
+                    # what the last record loaded said about itself (H3, H5):
+                    # a new chart is not that record
+                    "_record_notice")
 
 
 def _new_chart_form():
@@ -330,16 +351,37 @@ def _apply_selected_chart():
     loaded values on this same rerun. The chart loaded becomes the one the
     app opens on next time (preference 'last_chart', 2026-09-10)."""
     name = st.session_state.get("chart_picker")
-    if name and name != "-- New Chart --":
-        _restore_chart(name)
-        _remember('last_chart', name)
+    if name and name != NEW_CHART_SENTINEL:
+        # A record the sidebar cannot load is not the chart the app opens
+        # on next time either: the fields have not moved, and nothing has
+        # been loaded to remember.
+        if _restore_chart(name):
+            _remember('last_chart', name)
     else:
         _new_chart_form()
 
 def _restore_chart(name):
-    """Write a saved chart's fields into the sidebar widgets' keys."""
+    """Write a saved chart's fields into the sidebar widgets' keys. True
+    when the record was loaded, False when it was refused.
+
+    H3 of the hostile pass of 2026-09-16: the fields were written into the
+    widget keys unread, so a record whose fields are the wrong TYPE -- an
+    int time_string, a str latitude, an "abc" target_age, from a hand-edit
+    or an import -- raised where the value was consumed and took the whole
+    script down: on the selection, and at launch when it was the last
+    chart, which made the app dead-on-open. The record is read first
+    (chart_record_fault, engine): a fault leaves every widget exactly as it
+    was, leaves the record in the file untouched, and leaves one sentence
+    in _record_notice for the sidebar to show beside the picker."""
+    entry = st.session_state["saved_charts"].get(name, {})
+    fault = chart_record_fault(entry)
+    if fault is not None:
+        field, expected = fault
+        st.session_state["_record_notice"] = (
+            f"'{name}' could not be loaded: its {field} is not a {expected}.")
+        return False
+    st.session_state.pop("_record_notice", None)
     if True:
-        entry = st.session_state["saved_charts"].get(name, {})
         if "date_string" in entry:
             st.session_state["date_input_key"] = entry["date_string"]
         if "time_string" in entry:
@@ -356,8 +398,22 @@ def _restore_chart(name):
             st.session_state.pop("_loaded_without_standard", None)
         else:
             st.session_state["_loaded_without_standard"] = name
+        # H5: an offset outside +-14 is NOT written to the widget. Streamlit
+        # pulls a seeded value out of a number_input's bounds to a bound --
+        # and to the wrong one: a stored 99 came back as -14, and the chart
+        # was cast at UTC-14:00 with nothing said, while a re-save wrote the
+        # clamp into the record. The record keeps its 99, the box keeps the
+        # offset a chart is cast at by default, the sidebar says what was
+        # stored, and the strip reads (modified) because the two differ --
+        # which is the truth of it.
         if entry.get("utc_offset") is not None:
-            st.session_state["utc_offset_key"] = float(entry["utc_offset"])
+            if utc_offset_in_range(entry["utc_offset"]):
+                st.session_state["utc_offset_key"] = record_number(entry["utc_offset"])
+            else:
+                st.session_state["utc_offset_key"] = EXAMPLE_CHART["utc_offset_key"]
+                st.session_state["_record_notice"] = (
+                    f"'{name}' was saved with a UTC offset of {entry['utc_offset']}, "
+                    "outside ±14; check the time standard.")
         # The target of the Timing page, both the store the engine reads
         # and the page widgets, so the page shows what was loaded.
         if entry.get("target_mode") in TARGET_MODE_OPTIONS:
@@ -368,7 +424,7 @@ def _restore_chart(name):
                     st.session_state[key] = entry["target_date"]
             if entry.get("target_age") is not None:
                 for key in ("target_age", "_target_age"):
-                    st.session_state[key] = int(entry["target_age"])
+                    st.session_state[key] = int(record_number(entry["target_age"]))
         if entry.get("lat") is not None and entry.get("lon") is not None:
             # Restore via Manual Coordinate Entry, using the saved lat/lon
             # directly, rather than re-running a City Search text query --
@@ -379,12 +435,17 @@ def _restore_chart(name):
             # charts that were originally entered via Manual Coordinate
             # Entry in the first place, which a location_query of
             # "Manual [lat, lon]" could never do by re-searching either.
+            # As NUMBERS: a record can hold a coordinate written as text
+            # ('43.7792'), which the comparison already reads as that
+            # coordinate, and a string in a number_input's key raised
+            # where the widget compared it with its own bounds (H3).
+            _lat, _lon = record_number(entry["lat"]), record_number(entry["lon"])
             st.session_state["manual_coords_key"] = True
-            st.session_state["manual_lat_key"] = entry["lat"]
-            st.session_state["manual_lon_key"] = entry["lon"]
+            st.session_state["manual_lat_key"] = _lat
+            st.session_state["manual_lon_key"] = _lon
             st.session_state["loaded_location"] = {
-                "lat": entry["lat"],
-                "lon": entry["lon"],
+                "lat": _lat,
+                "lon": _lon,
                 "label": entry.get("location_query", ""),
             }
         elif "location_query" in entry:
@@ -393,8 +454,9 @@ def _restore_chart(name):
             # free-text/resolved-label value this field used to hold.
             st.session_state["manual_coords_key"] = False
             st.session_state["location_input_key"] = entry["location_query"]
+    return True
 
-chart_options = ["-- New Chart --"] + sorted(st.session_state["saved_charts"].keys())
+chart_options = [NEW_CHART_SENTINEL] + sorted(st.session_state["saved_charts"].keys())
 # The app opens on the chart it was last working on (owner's decision
 # 2026-09-10), unless something has already seeded the sidebar -- the
 # harness does, and a fresh session has not.
@@ -413,8 +475,13 @@ if "_autoload_done" not in st.session_state:
         _remember('_launches', st.session_state["_launches"])
     _last = st.session_state["_prefs"].get('last_chart')
     if _last in st.session_state["saved_charts"] and "date_input_key" not in st.session_state:
-        st.session_state["chart_picker"] = _last
-        _restore_chart(_last)
+        # H3: the launch survives a last chart it cannot load -- the app
+        # opens on no chart at all, with the sentence beside the picker,
+        # where it used to open on a traceback and nothing else. The picker
+        # is only pointed at the record when the record was loaded, so that
+        # it never names a chart the boxes do not hold.
+        if _restore_chart(_last):
+            st.session_state["chart_picker"] = _last
 # Read at the top level on every run, as every other reading is, so that a
 # fragment rerun and a page change see the same number the launch set.
 LAUNCH_COUNT = int(st.session_state.get("_launches", 0) or 0)
@@ -441,6 +508,15 @@ _store_error = st.session_state.pop("_store_error_notice", None)
 if _store_error:
     st.sidebar.error("Saved charts could not be read. The original file was "
                      f"kept as {_store_error}.")
+
+# What a record said about itself when it was loaded, or refused to be: the
+# fields the sidebar could not read (H3), or an offset outside the bounds a
+# chart can be cast at (H5). It stands beside the picker for as long as
+# that record is the one in hand -- until another is loaded, a new chart is
+# begun, or one is saved -- because it describes the record, not the click.
+_record_notice = st.session_state.get("_record_notice")
+if _record_notice:
+    st.sidebar.warning(_record_notice)
 
 load_col, del_col = st.sidebar.columns([3, 1])
 load_col.selectbox("\U0001F4C2 Load saved chart", chart_options, key="chart_picker", on_change=_apply_selected_chart)
@@ -524,6 +600,71 @@ else:
     st.session_state["_date_last_good"] = input_date
 _cal_note = ("Julian calendar (before the reform of 1582-10-15)"
              if (input_date.year, input_date.month, input_date.day) < (1582, 10, 15) else "Gregorian calendar")
+
+# --- What the ephemeris can reach ----------------------------------------
+# H1/H2 of the hostile pass of 2026-09-16. The date box takes any year from
+# 1 to 9999 and a chart was cast from it without asking whether the
+# ephemeris shipped with this app has a position for it: outside its span
+# swe.calc_ut RAISES, and the calculation runs at module level, above
+# st.navigation(...).run(), so a reachable-looking date took the whole
+# shell down -- no page, no recovery panel, an inert navigation bar.
+#
+# The span the built-in (Moshier) ephemeris answers to, measured rather
+# than assumed: swe.calc_ut is answered from Julian Day 625000.5
+# (swe.revjul: -3001 February, i.e. 3002 BC) up to but not including
+# 2818000.5 (3003 April).
+EPHEMERIS_JD_MIN = 625000.5
+EPHEMERIS_JD_MAX = 2818000.5
+# A chart is never one position: every date this app is given is SEARCHED
+# forward from, and the search must land inside the ephemeris too. The
+# furthest of them, measured: the Timing page's fifteenth indicator
+# simulates the revolution's lord forward for as long as Saturn takes to
+# leave a sign -- 900 days past the revolution of the year (the horizons in
+# pn4_further_indicators) -- and the natal page's gestation Moons reach
+# about 380 past the birth. So a usable date is one with a search's room
+# left above it, which is what a date inside the RAW span need not have: a
+# birth in 3002 is answered by swe.calc_ut and then raises in the gestation
+# search.
+EPHEMERIS_SEARCH_DAYS = 950.0
+# The app's own last moment: the end of 3000 AD, which is what the sidebar
+# states, or the last moment with a search's room above it, whichever comes
+# first. It is the second, by some four months -- the sentence names the
+# round span, as a limit stated to a reader should be, and the refusal
+# falls just inside it rather than just outside.
+EPHEMERIS_JD_LAST = min(civil_to_jd(3001, 1, 1, 0.0),
+                        EPHEMERIS_JD_MAX - EPHEMERIS_SEARCH_DAYS)
+EPHEMERIS_DATE_MESSAGE = ("This app's ephemeris covers 3000 BC to 3000 AD; "
+                          "the date is outside it.")
+EPHEMERIS_LAST_YEAR = 3000
+
+
+def jd_in_ephemeris(jd):
+    """Whether a Julian Day is one this app can compute a chart for, with
+    room left over for the searches that run forward from it."""
+    try:
+        jd = float(jd)
+    except (TypeError, ValueError):
+        return False
+    return EPHEMERIS_JD_MIN <= jd < EPHEMERIS_JD_LAST
+
+
+def date_in_ephemeris(date):
+    """The same question of a civil DATE, asked at noon: the offset can move
+    a moment by at most 14 hours and the limit is a whole year inside the
+    ephemeris, so the hour cannot decide this."""
+    return jd_in_ephemeris(civil_to_jd(date.year, date.month, date.day, 12.0))
+
+
+def max_target_age(birth_date):
+    """The greatest age whose birthday this app can still analyse -- the
+    Age box's own upper bound, so that the limit cannot be crossed by
+    counting years instead of typing a date. Counted down from the last
+    year covered, because the limit falls inside that year and a birthday
+    late in it is past the limit while an earlier one is not."""
+    age = EPHEMERIS_LAST_YEAR - int(birth_date.year)
+    while age > 0 and not date_in_ephemeris(pn4_birthday(birth_date, age)):
+        age -= 1
+    return max(0, age)
 
 # To the second: the engine reads seconds, and a rectified time has them.
 st.session_state.setdefault("time_input_key", EXAMPLE_CHART["time_input_key"])
@@ -707,19 +848,40 @@ target_mode = _reading("target_mode", "_target_mode", TARGET_MODE_OPTIONS[0])
 # It keeps the last target that did parse instead -- the same rule the birth
 # date follows -- and only a session that has never had one falls to today.
 st.session_state.setdefault("_target_last_good", _today.isoformat())
+# H2 of the hostile pass of 2026-09-16: a target the ephemeris cannot reach
+# -- typed as a date, or counted as an age, the Age box having had no upper
+# bound at all -- raised inside the timing bundle at module level and took
+# the shell with it. A target out of reach is treated exactly as a target
+# that will not parse (F17): the last valid one stands, and the Timing page
+# says so in the target's own row. `target_range_note` is that sentence, or
+# None; it is read by the page, which is where the target is set.
 _target_parsed = parse_iso_date(_reading("target_date", "_target_date", _today.isoformat()))
-if _target_parsed is not None:
+_target_reachable = _target_parsed is not None and date_in_ephemeris(_target_parsed)
+if _target_reachable:
     st.session_state["_target_last_good"] = _target_parsed.isoformat()
-_date_target = _target_parsed or parse_iso_date(st.session_state["_target_last_good"]) or _today
+_target_kept = parse_iso_date(st.session_state["_target_last_good"]) or _today
+_date_target = _target_parsed if _target_reachable else _target_kept
+target_out_of_reach = False
 if target_mode == TARGET_MODE_OPTIONS[1]:
-    target_age = max(0, int(_reading("target_age", "_target_age", pn4_completed_years(input_date, _date_target))))
-    target_date = pn4_birthday(input_date, target_age)
+    _asked_age = max(0, int(_reading("target_age", "_target_age", pn4_completed_years(input_date, _date_target))))
+    _asked_date = pn4_birthday(input_date, _asked_age)
+    if date_in_ephemeris(_asked_date):
+        target_age, target_date = _asked_age, _asked_date
+        st.session_state["_target_last_good"] = target_date.isoformat()
+    else:
+        target_out_of_reach = True
+        target_date = _target_kept
+        target_age = pn4_completed_years(input_date, target_date)
+        st.session_state["_target_age"] = target_age
     # The other reading follows, so switching the mode carries the target over.
     st.session_state["_target_date"] = target_date.isoformat()
 else:
+    target_out_of_reach = _target_parsed is not None and not _target_reachable
     target_date = _date_target
     target_age = pn4_completed_years(input_date, target_date)
     st.session_state["_target_age"] = target_age
+target_range_note = (f"The target is beyond this app's ephemeris ({EPHEMERIS_LAST_YEAR} AD); "
+                     f"keeping {target_date:%Y-%m-%d}." if target_out_of_reach else None)
 
 def _chart_record():
     """The committed input as a record: the fields Save writes, and the
@@ -777,6 +939,11 @@ def _store_chart(name, record):
         return False
     st.session_state["saved_charts"] = charts
     st.session_state.pop("_loaded_without_standard", None)
+    # The record under this name is now the one the boxes hold, whatever it
+    # was before: an offset outside the bounds (H5) has just been written
+    # over with the one the box holds, so the sentence that reported it is
+    # no longer true of the record.
+    st.session_state.pop("_record_notice", None)
     _remember('last_chart', name)
     st.session_state["_select_after_rerun"] = name
     # The success message is carried over the rerun the caller asks for,
@@ -806,6 +973,11 @@ if st.sidebar.button("\U0001F4BE Save this chart"):
     # session with no last good date behind it, as the 1240 default.
     if not trimmed_name:
         st.sidebar.warning("Enter a name before saving.")
+    elif _is_reserved_name(trimmed_name):
+        # M3: the picker's first option is not a chart. A record saved under
+        # that name was listed twice and could then be neither selected nor
+        # deleted, since picking it is picking "new chart".
+        st.sidebar.error("That name is reserved; choose another.")
     elif not date_is_valid:
         st.sidebar.error("The date is not valid; nothing was saved.")
     elif not (lat is not None and lon is not None and location_query
@@ -872,13 +1044,18 @@ if _delete_now and _delete_now in st.session_state["saved_charts"]:
 
 # Modified: the picker names a record and the fields have moved away from
 # it (F04, item 2). The strip says so beside the name; the sidebar says so
-# under the picker.
+# under the picker. A record the sidebar could not load is not compared at
+# all (H3): the fields never held it, so they cannot have been edited away
+# from it, and the sentence beside the picker already says why.
 _picked_name = st.session_state.get("chart_picker")
+_picked_record = (st.session_state["saved_charts"].get(_picked_name)
+                  if _picked_name and _picked_name != NEW_CHART_SENTINEL else None)
+# Whether the record the picker names is the one the boxes are holding.
+_picked_loaded = _picked_record is not None and chart_record_fault(_picked_record) is None
 chart_modified = bool(
     input_record is not None
-    and _picked_name and _picked_name != "-- New Chart --"
-    and _picked_name in st.session_state["saved_charts"]
-    and not _records_match(st.session_state["saved_charts"][_picked_name], input_record))
+    and _picked_loaded
+    and not _records_match(_picked_record, input_record))
 if chart_modified:
     picker_note.caption("Edited since it was saved.")
 
@@ -1068,6 +1245,19 @@ if chart_ok and not tz_name:
     st.sidebar.error(chart_error)
     chart_ok = False
 
+# H1: the moment is in UT by now, offset and all, so this is where to ask
+# whether the ephemeris has anything to say about it -- and it is asked
+# BEFORE the calculation, and answered like any other invalid input: one
+# sentence in the sidebar and chart_ok False. The shell, the top
+# navigation, Reference and Sources all stay, and every page that reads the
+# chart opens with the recovery panel. The box the branch above filled is
+# overwritten rather than left announcing the UT of a chart that is not
+# going to be cast.
+if chart_ok and not jd_in_ephemeris(jd_ut):
+    chart_error = EPHEMERIS_DATE_MESSAGE
+    time_standard_box.error(chart_error)
+    chart_ok = False
+
 if chart_ok:
     chart_data = calculate_traditional_chart_jd(jd_ut, lat, lon)
     p_data = chart_data['planetary_data']
@@ -1167,8 +1357,12 @@ if chart_ok:
     # download button were the only two consumers -- so the top-level
     # build is gone rather than kept beside the fragment's, and the eight
     # pages that never draw a natal wheel no longer generate two of them.
-    _picked = st.session_state.get("chart_picker")
-    chart_name = (_picked if _picked and _picked != "-- New Chart --"
+    # A record the sidebar could not load does not name the chart either
+    # (H3): the boxes hold what they held before it was picked, so titling
+    # the strip with it would name a nativity that is not on the screen.
+    # The picker still shows the name the reader clicked, and the sentence
+    # beside it says why nothing was loaded.
+    chart_name = (_picked_name if _picked_loaded
                   else new_chart_name.strip() or "Transits")
 
 # The app's name is the browser title (st.set_page_config) and the
@@ -1290,8 +1484,12 @@ def _chart_strip():
     # No chart, no strip: a recovery page has nothing to name (F05).
     if not chart_ok:
         return
-    picked = st.session_state.get("chart_picker")
-    name = picked if picked and picked != "-- New Chart --" else "Unsaved chart"
+    # A record the sidebar could not load does not name the chart either
+    # (H3): the boxes hold what they held before it was picked, so naming
+    # the strip after it would name a nativity that is not on the screen.
+    # The picker still shows the name the reader clicked, and the sentence
+    # beside it says why nothing was loaded.
+    name = _picked_name if _picked_loaded else "Unsaved chart"
     # A record whose fields have been edited since it was saved is named as
     # what it is (F04, item 2): the review found an edited record still
     # carrying its saved name with nothing to say the two had parted.
@@ -2651,10 +2849,15 @@ def page_timing():
                             "Date: any civil date; its completed years are shown beside it.")
     with t_value:
         if target_mode == TARGET_MODE_OPTIONS[1]:
-            # No upper bound: the default chart is 1240, and "past the
-            # table" is a state the page reports, not an error.
+            # "Past the table" is a state the page reports, not an error, so
+            # the ages run as far as the ephemeris does -- and no further
+            # (H2): the box had no upper bound at all, and an age that
+            # carried the birthday past the ephemeris raised before any page
+            # was drawn. The bound is this chart's own, counted from its
+            # birth year.
             st.session_state.setdefault("target_age", int(target_age))
-            st.number_input("Age (completed years)", min_value=0, step=1, key="target_age")
+            st.number_input("Age (completed years)", min_value=0, max_value=max_target_age(input_date),
+                            step=1, key="target_age")
             _persist("target_age", "_target_age", target_age)
         else:
             st.session_state.setdefault("target_date", target_date.isoformat())
@@ -2662,6 +2865,10 @@ def page_timing():
             _persist("target_date", "_target_date", target_date.isoformat())
             if parse_iso_date(st.session_state.get("target_date", target_date.isoformat())) is None:
                 st.error(f"Not a YYYY-MM-DD date; keeping {target_date:%Y-%m-%d}.")
+        # A target the ephemeris cannot reach, from either box: the last
+        # valid one stands and this says so, where the target is set.
+        if target_range_note:
+            st.error(target_range_note)
     with t_read:
         _sr_dt = pn4_datetime_from_jd(pn4['jd_sr'])
         st.markdown(
@@ -3653,8 +3860,15 @@ def page_timing():
             _day_points[f"the revolution's {_lr['Lot']}"] = (lot_by_id(next(d['id'] for d in LOT_DEFINITIONS if d['name'] == _lr['Lot']),
                                                                       _sr_pd, _sr_ch['ascendant'], _sr_ch['houses'], _sr_ch['sect']),
                                                             f"the revolution's {_lr['Lot']}")
-        _day_choice = st.selectbox("Also direct, for the small days (IX.7, 31) and the mighty days (IX.7, 27), from",
-                                   list(_day_points), key="pn4_day_point",
+        # Through the store, like the View, Wheel layout and Inner wheel
+        # controls beside it (M4 of the hostile pass of 2026-09-16): a plain
+        # key is dropped by Streamlit the moment the page is not rendered,
+        # so this one choice reset itself on every walk to another page and
+        # back. The options are this revolution's own, so a stored choice
+        # the current chart does not offer falls to the first option, which
+        # is what _reading_select does with one.
+        _day_choice = _reading_select("Also direct, for the small days (IX.7, 31) and the mighty days (IX.7, 27), from",
+                                   list(_day_points), "pn4_day_point", "_pn4_day_point",
                                    help="IX.7, 31: \"you work like that with everything of the planets, Lots, and houses\". "
                                         "A READING: the \"houses\" are offered as the revolution's Alchabitius cusps, "
                                         "the degree this app computes for each house -- IX.7, 31 says \"houses\" and "
