@@ -113,6 +113,45 @@ def _read_chart_mapping(path):
     except (json.JSONDecodeError, OSError, ValueError):
         return None
 
+# The name of the recovery copy the last load made, or None. Read by the
+# sidebar, which says so once per session (F04 of the review of 2026-09-16:
+# a malformed store showed an empty picker and the next save overwrote the
+# only copy of the bytes). A module-level name rather than a second return
+# value, because load_saved_charts() is called for its mapping in the app
+# and in the tests alike and that signature stays as it is.
+LAST_STORE_ERROR = None
+
+
+def _preserve_unreadable_store(path):
+    """Copy an unreadable store beside itself, once per content, as
+    ``saved_charts.json.unreadable-<YYYYMMDD-HHMMSS>``; the copy's file name,
+    or None if the bytes could not be read or written. The same bytes are
+    not copied twice: a session that opens the app repeatedly against one
+    broken file leaves one recovery copy, not one per launch."""
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return None
+    for previous in sorted(path.parent.glob(path.name + ".unreadable-*")):
+        try:
+            if previous.read_bytes() == data:
+                return previous.name
+        except OSError:
+            continue
+    stem = f"{path.name}.unreadable-{datetime.now():%Y%m%d-%H%M%S}"
+    copy = path.with_name(stem)
+    # Two different wrecks within one second: the second keeps its own copy
+    # rather than writing over the first one's bytes.
+    suffix = 2
+    while copy.exists():
+        copy = path.with_name(f"{stem}-{suffix}")
+        suffix += 1
+    try:
+        copy.write_bytes(data)
+    except OSError:
+        return None
+    return copy.name
+
 def _write_text_atomically(path, text):
     """Write to a sibling temp file and os.replace() it over the target, so
     a crash or full disk mid-write leaves the previous file intact rather
@@ -122,6 +161,8 @@ def _write_text_atomically(path, text):
     os.replace(tmp, path)
 
 def load_saved_charts():
+    global LAST_STORE_ERROR
+    LAST_STORE_ERROR = None
     if not SAVED_CHARTS_PATH.exists() and _LEGACY_SAVED_CHARTS_PATH.exists():
         legacy = _read_chart_mapping(_LEGACY_SAVED_CHARTS_PATH)
         if legacy is not None:
@@ -131,7 +172,14 @@ def load_saved_charts():
                 pass
     if SAVED_CHARTS_PATH.exists():
         charts = _read_chart_mapping(SAVED_CHARTS_PATH)
-        return {} if charts is None else charts
+        if charts is None:
+            # Malformed JSON, or valid JSON of the wrong shape. The bytes are
+            # kept beside the file before anything is allowed to write over
+            # them, and the name of the copy is left where the sidebar can
+            # name it.
+            LAST_STORE_ERROR = _preserve_unreadable_store(SAVED_CHARTS_PATH)
+            return {}
+        return charts
     return {}
 
 def write_saved_charts(charts):

@@ -88,8 +88,12 @@ def test_the_last_chart_loaded_is_the_chart_a_fresh_session_opens_on(prefs_on):
     calc = [df.value for df in fresh.main.dataframe if "Quantity" in df.value.columns][0]
     assert "1982-11-19 16:44:00" in str(calc[calc["Quantity"].str.startswith("Universal time")].iloc[0]["Value"])
 
-    # Deleting the chart forgets it.
+    # Deleting the chart forgets it. Since 2026-09-16 (F04 of the UI review)
+    # the bin asks first: it is the confirmation's own Delete button that
+    # removes the record, and this test's subject is what the preferences
+    # file does when it is gone.
     [b for b in fresh.sidebar.button if b.help and "Delete" in b.help][0].click().run()
+    [b for b in fresh.sidebar.button if b.label == "Delete"][0].click().run()
     assert "last_chart" not in json.loads(_prefs_path().read_text())
 
 
