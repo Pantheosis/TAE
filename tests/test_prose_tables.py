@@ -23,8 +23,10 @@ differently, because they stand differently:
      locator. Their pin is RHETORIUS_HALVES, a literal copy, so that the
      build which re-derives them from Rhetorius Ch. 57 and Mathesis III can
      retire it the way the lords table's transcription was retired. The
-     Guide prints "?" for the Moon in the 6th and 8th there: those four
-     halves are dashes and the transcription holds None.
+     Guide prints "?" for the Moon in the 6th and 8th there, and the app's
+     merged cells had carried no Rhetorius words for seventeen other halves:
+     those twenty-one are dashes (no Guide wording added pending the
+     re-derivation) and the transcription holds None.
 
 The 9th-house Mercury PN IV halves the Guide prints against its own column
 headings are settled by II.21, 8-9 (the good journey and true visions are
@@ -50,14 +52,17 @@ import pytest
 PLANETS = ['Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon']
 
 # The Rhetorius halves, literal: the Guide's summary of Rhetorius Ch. 57 and
-# Firmicus as this app compressed it (its Rhetorius column, pp. 17-40),
-# {house: {planet: (Good, Bad)}}; None where the Guide prints "?". These
-# halves carry no locator and are to be re-derived from the two texts; when
-# they are, this transcription retires the way the lords table's did.
+# Firmicus exactly as this app carried it before the PN IV column was split
+# out (its Rhetorius column, pp. 17-40), {house: {planet: (Good, Bad)}};
+# None where the app's merged cell had no Rhetorius words (seventeen) or the
+# Guide prints "?" (the Moon in the 6th and 8th, four). No Guide wording was
+# added. These halves carry no locator and are to be re-derived from the
+# two texts; when they are, this transcription retires the way the lords
+# table's did.
 RHETORIUS_HALVES = {
     1: {
         'Saturn': ('Eldest sibling.', 'Sluggish, laborious.'),
-        'Jupiter': ('Glorious, in charge.', 'Eldest, well nourished, parents lucky.'),
+        'Jupiter': ('Glorious, in charge.', None),
         'Mars': ('Military, leader.', 'Unstable, squandering.'),
         'Sun': ('Noble, lucky.', 'Less noble.'),
         'Venus': ('Talented, friends of powerful.', 'Lustful, lower professions.'),
@@ -66,7 +71,7 @@ RHETORIUS_HALVES = {
     },
     2: {
         'Saturn': ('Slow increase.', 'Loss, lazy, ill.'),
-        'Jupiter': ('Good all around, inheritances.', 'Pretty good, more ups and downs.'),
+        'Jupiter': ('Good all around, inheritances.', None),
         'Mars': ('Military; enough.', 'Exile, dangers.'),
         'Sun': ('Dignity, wealth.', 'Private property.'),
         'Venus': ('Prosperous, pleasing, arts.', 'Disruption.'),
@@ -75,10 +80,10 @@ RHETORIUS_HALVES = {
     },
     3: {
         'Saturn': ('Initiates, religious chiefs.', 'Recluses.'),
-        'Jupiter': ('Balanced moderation.', 'Balanced moderation in gaining and spending.'),
+        'Jupiter': ('Balanced moderation.', None),
         'Mars': ('Glory with labor.', 'Worse than by night?'),
-        'Sun': ('Bad death for father; serious in counsel, manages public things, religious honors.', 'Lower services in temples, spend time in dirty places, irreligious, full of worry.'),
-        'Venus': ('Good for marriage and being religious, especially with Jupiter.', 'See above.'),
+        'Sun': ('Bad death for father; serious in counsel, manages public things, religious honors.', None),
+        'Venus': (None, None),
         'Mercury': ('Divination, astrologers.', 'Priests, magicians.'),
         'Moon': ('With Saturn: slow, unsuccessful, sacrilegious (Firmicus).', 'Ignoble or infamous mother; sacrilege with Mercury or Mars; but good religious activities if with Jupiter.'),
     },
@@ -96,13 +101,13 @@ RHETORIUS_HALVES = {
         'Jupiter': ('Fortunate, honored, healthy.', 'Lower-status activities.'),
         'Mars': ('Good possessions, honor.', 'Harmful travel.'),
         'Sun': ('Honored, easy goals.', 'Moderate fortune, childless.'),
-        'Venus': ('Prize-fighters, victors.', 'Worse than by day?'),
+        'Venus': ('Prize-fighters, victors.', None),
         'Mercury': ('Wealth, managing money.', 'Squanders money.'),
         'Moon': ('Gracious, leaders, fortunate.', 'Foreign travel, parents estranged, orphans.'),
     },
     6: {
         'Saturn': ('Moderate.', 'No inheritance, dangers from slaves.'),
-        'Jupiter': ('Exposure, valuable materials.', 'Worse than by day.'),
+        'Jupiter': ('Exposure, valuable materials.', None),
         'Mars': ('Harms children, uneven life, illness (Firmicus).', 'Worse than by night?'),
         'Sun': ('With Jupiter and Venus, better than by night.', 'Bad death or condemnation for father if no star in the 10th (with one, good fortune from parents and resources).'),
         'Venus': ('Sex with low-quality women, treated badly by wives unless a planet is in the 10th, or difficulties in pregnancy; with a planet in the 10th, charm and good fortune through women.', 'See above.'),
@@ -120,7 +125,7 @@ RHETORIUS_HALVES = {
     },
     8: {
         'Saturn': ('Assets over time/inheritance.', 'Loss, bad death.'),
-        'Jupiter': ('Acquisition, inheritance.', 'Acquisition, inheritance, over time.'),
+        'Jupiter': ('Acquisition, inheritance.', None),
         'Mars': ('Hot-heads, bright.', 'Patrimony spent, dangers.'),
         'Sun': ("Father's early death, healing.", 'See above.'),
         'Venus': ('Wealthy, benefit from death of women, easy death.', 'Marry late, lower-quality women, STDs, seizures.'),
@@ -130,7 +135,7 @@ RHETORIUS_HALVES = {
     9: {
         'Saturn': ('Initiates, chief priests.', 'Recluses, anger at gods.'),
         'Jupiter': ('Predicting future, priesthood.', 'Unsteady, false speech.'),
-        'Mars': ('Glory, unpunished.', 'Worse than by night?'),
+        'Mars': ('Glory, unpunished.', None),
         'Sun': ('Building sacred things, religious authority.', 'Harm in travels.'),
         'Venus': ('Divine men, gifts from temples.', 'Demon-afflicted, illicit sex.'),
         'Mercury': ('Priests, wizards.', 'Seers, sacrificers.'),
@@ -146,20 +151,20 @@ RHETORIUS_HALVES = {
         'Moon': ('Rulers, successful, trusted.', 'Hardship, unsteady, error.'),
     },
     11: {
-        'Saturn': ('Middling goods over time.', 'Probably worse than by day.'),
+        'Saturn': ('Middling goods over time.', None),
         'Jupiter': ('Fortunate, renowned, authority.', 'Diminished effectiveness.'),
-        'Mars': ('Many goods, dignity.', 'Same as when well placed.'),
+        'Mars': ('Many goods, dignity.', None),
         'Sun': ('Lucky, noble.', 'Harms children.'),
         'Venus': ('Powerful, trusted.', 'Sterility, unusual sexuality.'),
         'Mercury': ('Ingenious, accounts.', 'Spending, agents.'),
         'Moon': ('Rulers, favored, good from parents.', 'Living abroad, estrangements, orphanhood.'),
     },
     12: {
-        'Saturn': ('More moderate than by night.', 'Loss of inheritance, mental disturbance.'),
-        'Jupiter': ('Fights against superiors.', 'Worse than by day.'),
-        'Mars': ('Better than by day.', 'Illness, injury, dangers from slaves, criminals.'),
-        'Sun': ('Parents lowborn or slaves or captives; injuries and illness.', 'With infortunes, long illnesses, defects, slavery.'),
-        'Venus': ('Distressed by women; if harmed, erotic derangement; low-status wives.', 'Ruined by women.'),
+        'Saturn': (None, 'Loss of inheritance, mental disturbance.'),
+        'Jupiter': ('Fights against superiors.', None),
+        'Mars': (None, 'Illness, injury, dangers from slaves, criminals.'),
+        'Sun': (None, 'With infortunes, long illnesses, defects, slavery.'),
+        'Venus': (None, 'Ruined by women.'),
         'Mercury': ('Managing big affairs.', 'Danger from slaves.'),
         'Moon': ('Luckiness/authority (with fortunes).', 'Short life, humble; bad for patrimony/travel.'),
     },
@@ -504,10 +509,19 @@ PN4_CITE = re.compile(r"^(II\.\d+|VII\.8), \d+(-\d+)?$")
 PN4_DASH = {'text': '\u2014', 'cite': ''}
 # What the page help states of the PN IV halves with no sentence: twelve, all
 # the Moon's (VII.8 gives her one reading per house, so the other half is a
-# dash); and of the Rhetorius halves: four, the Moon in the 6th and 8th,
-# where the Guide prints "?".
+# dash); and of the Rhetorius halves: twenty-one -- the four where the Guide
+# prints "?" (the Moon in the 6th and 8th) and the seventeen where the app's
+# merged cell had carried only the PN IV reading.
 PN4_DASHES_THE_HELP_STATES = 12
-RHETORIUS_DASHES_THE_HELP_STATES = 4
+RHETORIUS_DASHES_THE_HELP_STATES = 21
+RHETORIUS_DASHES = {
+    (1, 'Jupiter', 'Bad'), (2, 'Jupiter', 'Bad'), (3, 'Jupiter', 'Bad'), (3, 'Sun', 'Bad'),
+    (3, 'Venus', 'Good'), (3, 'Venus', 'Bad'), (5, 'Venus', 'Bad'), (6, 'Jupiter', 'Bad'),
+    (6, 'Moon', 'Good'), (6, 'Moon', 'Bad'), (8, 'Jupiter', 'Bad'), (8, 'Moon', 'Good'),
+    (8, 'Moon', 'Bad'), (9, 'Mars', 'Bad'), (11, 'Saturn', 'Bad'), (11, 'Mars', 'Bad'),
+    (12, 'Saturn', 'Good'), (12, 'Jupiter', 'Bad'), (12, 'Mars', 'Good'), (12, 'Sun', 'Good'),
+    (12, 'Venus', 'Good'),
+}
 
 
 def test_planets_in_houses_has_the_two_source_shape(engine):
@@ -581,10 +595,12 @@ def test_rhetorius_halves_are_the_guide_transcription_verbatim(engine, house):
         assert cell["Bad"] == ({'text': bad, 'cite': ''} if bad else PN4_DASH), (house, planet, cell["Bad"])
 
 
-def test_the_rhetorius_dashes_are_the_guides_question_marks(engine):
+def test_the_rhetorius_dashes_are_exactly_the_halves_the_app_never_carried(engine):
+    # No Guide wording is added pending the re-derivation: a Rhetorius half
+    # the app's merged cell did not carry is a dash, as are the Guide's "?".
     ph = engine["PLANETS_IN_HOUSES"]
     dashes = {(h, p, x) for h in ph for p in PLANETS for x in ('Good', 'Bad') if ph[h][p]['Rhetorius'][x] == PN4_DASH}
-    assert dashes == {(6, "Moon", "Good"), (6, "Moon", "Bad"), (8, "Moon", "Good"), (8, "Moon", "Bad")}
+    assert dashes == RHETORIUS_DASHES
     assert len(dashes) == RHETORIUS_DASHES_THE_HELP_STATES
     assert not any("[UNCERTAIN" in ph[h][p][s][x]["text"] for h in ph for p in PLANETS
                    for s in ('Rhetorius', 'PN IV') for x in ('Good', 'Bad'))

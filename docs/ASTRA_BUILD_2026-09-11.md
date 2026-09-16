@@ -1368,13 +1368,17 @@ Cell shape. `PLANETS_IN_HOUSES[house][planet]` is `{'Rhetorius': {'Good': {'text
 {...}}, 'PN IV': {'Good': {...}, 'Bad': {...}}}`. The reader keeps the page's two columns, If Well
 Placed and If Badly Placed, and prints in each `Rhetorius: <text> · PN IV: <text> (<locator>)`
 (`planets_in_houses_cell()`); a half with no sentence prints as a dash and no locator. The Rhetorius
-halves' cite is '' in this build -- they still print the Guide's summary as this app had compressed
-it, verbatim, with no locator, and the help says so; where the compression had kept only the PN IV
-reading of a Guide row, the Rhetorius half is the Guide's Rhetorius column in short (seventeen halves:
-Jupiter 1st/2nd/3rd/6th/8th/12th Bad, the Sun 3rd Bad and 12th Good, Venus 3rd Good and Bad, 5th Bad
-and 12th Good, Mars 9th and 11th Bad and 12th Good, Saturn 11th Bad and 12th Good); the Guide prints
-"?" in that column for the Moon in the 6th and 8th, so those four halves are dashes. Build C rebuilds
-the column. The export's citation line for the table names both sources as they now stand.
+halves' cite is '' in this build -- they still print the Guide's summary exactly as this app had
+carried it, verbatim, with no locator, and the help says so. Twenty-one Rhetorius halves are dashes
+pending build C: the four where the Guide prints "?" (the Moon in the 6th and 8th) and seventeen
+where the app's merged cell had carried only the PN IV reading of the Guide row (Jupiter 1st, 2nd,
+3rd, 6th, 8th, 12th Bad; the Sun 3rd Bad and 12th Good; Venus 3rd Good and Bad, 5th Bad, 12th Good;
+Mars 9th and 11th Bad, 12th Good; Saturn 11th Bad, 12th Good). A first cut of this build had filled
+those seventeen from the Guide's own Rhetorius column in short; that was reversed before the check
+as the wrong direction -- the order's point is to stop reproducing the Guide's wording, and build C
+re-derives every Rhetorius half from Rhetorius Ch. 57 and Mathesis III within days -- so no Guide
+wording is added by this build, and `RHETORIUS_DASHES` in the tests names the twenty-one. The
+export's citation line for the table names both sources as they now stand.
 
 The split. Each Book II chapter states, per house or house-pair, a suitable-condition reading and a
 not-received / made-unfortunate / retrograde reading, and the good/bad halves follow that split
@@ -1466,7 +1470,8 @@ Page. The table's help says what each half is: the PN IV halves this app's parap
 lord-of-the-year chapters applied to natal planets (the Guide's reading, followed and named), the split
 kept only where the chapter makes it, the conditions kept, the locator printed; the Moon from VII.8 by
 transit, one half per house; twelve PN IV dashes, all the Moon's; the Rhetorius halves the Guide's
-summary without a locator until re-derived, four dashes where the Guide prints "?"; the Guide cited once
+summary exactly as carried, without a locator, until re-derived, twenty-one dashes pending that (the
+Guide's four "?" and the seventeen the app never carried); the Guide cited once
 as the arrangement's origin. The caption under the subheader and the export citation say the same in a
 line. No date, file, or process on the page; "the Sultan", "received", "made unfortunate", "eastern",
 "laboring", "quarreling" as Dykes has them.
@@ -1480,7 +1485,7 @@ sentence share, or ('', []) for a dash -- and tests that the fixture covers ever
 order; every PN IV half has text; a cite matches `^(II\.\d+|VII\.8), \d+(-\d+)?$` or is '' with the
 text a dash; anchors in the text; the Moon's twelve cites all `VII.8, n` with exactly one filled half
 per house beginning "By transit:"; no dash outside the Moon's row and the count what the help states
-(12); the Rhetorius dashes exactly the Guide's four "?"; no [UNCERTAIN] anywhere; Mercury 9th as
+(12); the Rhetorius dashes exactly the twenty-one named (`RHETORIUS_DASHES`); no [UNCERTAIN] anywhere; Mercury 9th as
 II.21, 8 and 9; the reader's cell format (a formatted half, a dash-dash, a dash on one side, and the
 row function against the formatter). `tests/test_base_tables.py`'s shape guard follows the new nesting.
 Two guards outside the table's own tests had to learn the change: `test_abu_mashar_citations.py`'s

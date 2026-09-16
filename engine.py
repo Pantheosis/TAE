@@ -2051,11 +2051,12 @@ MASHAALLAH_LORDS = {
 # PN IV halves are dashes, all the Moon's.
 #
 # The Rhetorius halves still print the Guide's summary of Rhetorius Ch. 57
-# and Firmicus, Mathesis III, as this app compressed it, with no locator;
-# where the compression had kept only the PN IV reading of a Guide row, the
-# Rhetorius half is the Guide's Rhetorius column in short. The Guide prints
-# "?" for the Moon in the sixth and eighth in that column, so those four
-# halves are dashes. They are to be re-derived from the two texts.
+# and Firmicus, Mathesis III, exactly as this app carried it, with no
+# locator; no Guide wording is added. Where the app's merged cell had kept
+# only the PN IV reading of a Guide row, the Rhetorius half is a dash
+# (seventeen halves), as are the four where the Guide prints "?" (the Moon
+# in the sixth and eighth): twenty-one Rhetorius dashes, pending their
+# re-derivation from the two texts.
 #
 # The arrangement (a 12 x 7 grid, two sources, good and bad) is the Guide's;
 # tests/test_prose_tables.py pins every PN IV half to its sentence by
@@ -2094,7 +2095,7 @@ PLANETS_IN_HOUSES = {
     1: {
         'Saturn': {'Rhetorius': _R('Eldest sibling.', 'Sluggish, laborious.'),
                    'PN IV': _P(_SAT_STAKE_GOOD, 'II.6, 1-2', _SAT_STAKE_BAD, 'II.6, 3')},
-        'Jupiter': {'Rhetorius': _R('Glorious, in charge.', 'Eldest, well nourished, parents lucky.'),
+        'Jupiter': {'Rhetorius': _R('Glorious, in charge.', None),
                     'PN IV': _P(_JUP_STAKE_GOOD + ' -- in the Ascendant, in relation to his own motives and the work he does', 'II.9, 1-2', _JUP_STAKE_BAD, 'II.9, 3')},
         'Mars': {'Rhetorius': _R('Military, leader.', 'Unstable, squandering.'),
                  'PN IV': _P(_MARS_STAKE_GOOD + '; in the other stakes, according to the indication of that stake', 'II.12, 1-2', _MARS_STAKE_BAD + '; harsher by day in the Ascendant or the Midheaven', 'II.12, 3-5')},
@@ -2111,7 +2112,7 @@ PLANETS_IN_HOUSES = {
         'Saturn': {'Rhetorius': _R('Slow increase.', 'Loss, lazy, ill.'),
                    'PN IV': _P('In a suitable condition, in his own house or received: his situation in his assets set right and increased; in an alien sign but received, increase in assets from a direction he had not hoped for or been aware of, and blessed by sowing; ' + _SAT_FALL_GOOD, 'II.6, 12-13',
                                'In a corrupt condition, not received: the corruption of assets, vegetation and fields, from sinking or water; ' + _SAT_FALL_BAD, 'II.6, 14')},
-        'Jupiter': {'Rhetorius': _R('Good all around, inheritances.', 'Pretty good, more ups and downs.'),
+        'Jupiter': {'Rhetorius': _R('Good all around, inheritances.', None),
                     'PN IV': _P('Received, in a suitable condition: leisure and a scarcity of work, except that benefits are produced for him without seeking them, or because of the dead', 'II.9, 10',
                                 'Made unfortunate, not received: an abundance of spending without cheerfulness, distresses, and contention because of assets; ' + _JUP_FALL_BAD, 'II.9, 11')},
         'Mars': {'Rhetorius': _R('Military; enough.', 'Exile, dangers.'),
@@ -2133,16 +2134,16 @@ PLANETS_IN_HOUSES = {
         'Saturn': {'Rhetorius': _R('Initiates, religious chiefs.', 'Recluses.'),
                    'PN IV': _P('In his own house or received, in a suitable condition: works in which he hopes for recompense and reward by God, benefit from some of the people, the management of a building for himself or someone in his care, a journey to a place he knows or toil multiplied for a hoped-for benefit, devoted to the conditions of relatives, brothers and foreigners; alien but received, the same, except that he goes on a distant journey and finds the benefit in it', 'II.6, 7-8',
                                'Alien, not received: evil gossip about him because of religion and worship, evil ideas get the better of his motives, something detestable abroad, contention with family and relatives; retrograde, his opinions mixed up, doubts in his religion, a work attributed to corruption in religion; Mars looking at him harmfully adds something detestable from theft and fire', 'II.6, 9-11')},
-        'Jupiter': {'Rhetorius': _R('Balanced moderation.', 'Balanced moderation in gaining and spending.'),
+        'Jupiter': {'Rhetorius': _R('Balanced moderation.', None),
                     'PN IV': _P('Received, in a suitable condition: good things reported about him in his religion, a journey for the sake of piety, religion and good deeds, praised, delighting in brothers and reports', 'II.9, 8',
                                 'In a bad condition, or made unfortunate, not received: reports that distress him, harms and distresses in relation to brothers, negligent in his religion and with doubts about it, something detestable if he travels', 'II.9, 9')},
         'Mars': {'Rhetorius': _R('Glory with labor.', 'Worse than by night?'),
                  'PN IV': _P('Received, not made unfortunate: he travels and gains good in it, strong and praised in his travel', 'II.12, 9',
                              'In a bad condition, made unfortunate, not received: evil things reported about him, some true and some false; he travels, with loss and hardship, an illness from heat, fear, and misfortune from wild animals, especially in Leo or Scorpio', 'II.12, 10')},
-        'Sun': {'Rhetorius': _R('Bad death for father; serious in counsel, manages public things, religious honors.', 'Lower services in temples, spend time in dirty places, irreligious, full of worry.'),
+        'Sun': {'Rhetorius': _R('Bad death for father; serious in counsel, manages public things, religious honors.', None),
                 'PN IV': _P('Received, not made unfortunate: he travels because of the Sultan, beautiful things said about him because of religion, good from brothers and relatives, and theirs from him', 'II.15, 6',
                             'Made unfortunate, not received: ugly things reported about him because of religion, a journey without benefit and something detestable in it, distressed because of travelers, brothers and relatives', 'II.15, 7')},
-        'Venus': {'Rhetorius': _R('Good for marriage and being religious, especially with Jupiter.', 'See above.'),
+        'Venus': {'Rhetorius': _R(None, None),
                   'PN IV': _P('Received, not made unfortunate: he travels, with status, rank and good on the journey, good social relationships with friends, well commended, benefit from brothers, the family and relatives, some of his women travel, well dressed, he prays and is kind to the people', 'II.18, 8',
                               'Made unfortunate, not received: reports that distress him, a distant journey on which something detestable happens, defamed in his religion, contending with his brothers, assets ruined, something detestable from buying and selling; ' + _VEN_FALL_BAD, 'II.18, 9')},
         'Mercury': {'Rhetorius': _R('Divination, astrologers.', 'Priests, magicians.'),
@@ -2180,7 +2181,7 @@ PLANETS_IN_HOUSES = {
         'Sun': {'Rhetorius': _R('Honored, easy goals.', 'Moderate fortune, childless.'),
                 'PN IV': _P('Received, not made unfortunate: a suitable condition in his food and clothing, he sees what he loves from his brothers, delights in children and increases in them and in his crops and revenue, devoted to gifts and messengers', 'II.15, 4',
                             'Made unfortunate, not received: distressed because of friends who have authority, who undermine him, and he will contend with them, and distressed because of children', 'II.15, 5')},
-        'Venus': {'Rhetorius': _R('Prize-fighters, victors.', 'Worse than by day?'),
+        'Venus': {'Rhetorius': _R('Prize-fighters, victors.', None),
                   'PN IV': _P('Received, not made unfortunate: increase in his friends, women and possessions, delighting in children and increasing in them, if the root of his nativity indicated that', 'II.18, 6',
                               'Made unfortunate, not received: distresses for no purpose, generally because of women and children (if he had them), and hostile to his friends', 'II.18, 7')},
         'Mercury': {'Rhetorius': _R('Wealth, managing money.', 'Squanders money.'),
@@ -2193,7 +2194,7 @@ PLANETS_IN_HOUSES = {
         'Saturn': {'Rhetorius': _R('Moderate.', 'No inheritance, dangers from slaves.'),
                    'PN IV': _P('In a suitable condition: few pains, from cold and moisture, and benefit from being treated for them; received and made fortunate, he recovers, the days of his illnesses few, benefiting from remedies; the lord of the sixth received and in a suitable condition, an ailment afflicts his slaves and riding animals but they escape it; ' + _SAT_FALL_GOOD, 'II.6, 16-18',
                                'In a bad condition: pleurisy and chronic illnesses; the lord of the sixth made unfortunate as well, the ruin of his slaves and riding animals; ' + _SAT_FALL_BAD, 'II.6, 16-18')},
-        'Jupiter': {'Rhetorius': _R('Exposure, valuable materials.', 'Worse than by day.'),
+        'Jupiter': {'Rhetorius': _R('Exposure, valuable materials.', None),
                     'PN IV': _P('Received, in a suitable condition: the lowest people praise him, benefit from those who are confined, and enemies make peace with him', 'II.9, 12',
                                 'Not received, or made unfortunate: illnesses from windiness and other things, and distresses from enemies or confinement; ' + _JUP_FALL_BAD, 'II.9, 13')},
         'Mars': {'Rhetorius': _R('Harms children, uneven life, illness (Firmicus).', 'Worse than by night?'),
@@ -2231,7 +2232,7 @@ PLANETS_IN_HOUSES = {
         'Saturn': {'Rhetorius': _R('Assets over time/inheritance.', 'Loss, bad death.'),
                    'PN IV': _P('In his own house or received: good from the dead; ' + _SAT_FALL_GOOD, 'II.6, 15',
                                'Not received, or retrograde: the decrease of his assets and their squandering, and distresses because of ancestors and destruction; ' + _SAT_FALL_BAD, 'II.6, 15')},
-        'Jupiter': {'Rhetorius': _R('Acquisition, inheritance.', 'Acquisition, inheritance, over time.'),
+        'Jupiter': {'Rhetorius': _R('Acquisition, inheritance.', None),
                     'PN IV': _P('Received, in a suitable condition: leisure and a scarcity of work, except that benefits are produced for him without seeking them, or because of the dead', 'II.9, 10',
                                 'Made unfortunate, not received: an abundance of spending without cheerfulness, distresses, and contention because of assets; ' + _JUP_FALL_BAD, 'II.9, 11')},
         'Mars': {'Rhetorius': _R('Hot-heads, bright.', 'Patrimony spent, dangers.'),
@@ -2256,7 +2257,7 @@ PLANETS_IN_HOUSES = {
         'Jupiter': {'Rhetorius': _R('Predicting future, priesthood.', 'Unsteady, false speech.'),
                     'PN IV': _P('Received, in a suitable condition: good things reported about him in his religion, a journey for the sake of piety, religion and good deeds, praised, delighting in brothers and reports', 'II.9, 8',
                                 'In a bad condition, or made unfortunate, not received: reports that distress him, harms and distresses in relation to brothers, negligent in his religion and with doubts about it, something detestable if he travels', 'II.9, 9')},
-        'Mars': {'Rhetorius': _R('Glory, unpunished.', 'Worse than by night?'),
+        'Mars': {'Rhetorius': _R('Glory, unpunished.', None),
                  'PN IV': _P('Received, not made unfortunate: he travels and gains good in it, strong and praised in his travel', 'II.12, 9',
                              'In a bad condition, made unfortunate, not received: evil things reported about him, some true and some false; he travels, with loss and hardship, an illness from heat, fear, and misfortune from wild animals, especially in Leo or Scorpio', 'II.12, 10')},
         'Sun': {'Rhetorius': _R('Building sacred things, religious authority.', 'Harm in travels.'),
@@ -2288,13 +2289,13 @@ PLANETS_IN_HOUSES = {
                  'PN IV': _P('By transit: he increases in his power, and loses some of it too; sex with some of his relatives; devoted to business, waters and moist places; he earns money and goods, plants seedlings, makes use of gardens, builds buildings; good for his children and delight in them; benefit from travel and associating with kings, from buying and selling, lawsuits and their management, and marriage; he associates with the authorities; some of what is taken from him recovered', 'VII.8, 10', None, '')},
     },
     11: {
-        'Saturn': {'Rhetorius': _R('Middling goods over time.', 'Probably worse than by day.'),
+        'Saturn': {'Rhetorius': _R('Middling goods over time.', None),
                    'PN IV': _P('In his own house or received, in a suitable condition: he delights in friends, devoted to guarantees, building and expenditure on lands and things whose benefit he hopes for, and praised in that', 'II.6, 4',
                                'Alien, not received: distressed because of children and brothers, blamed, with a shortage in his possessions; retrograde as well, some of his dwellings or real estate destroyed, a loss in his assets, some crops and revenues corrupted; Mars looking at him harmfully adds damage in assets, the corruption of friends and distress over children', 'II.6, 5-6')},
         'Jupiter': {'Rhetorius': _R('Fortunate, renowned, authority.', 'Diminished effectiveness.'),
                     'PN IV': _P('Received, not made unfortunate: a good way of life, delighted, well commended, and his friends have good from him', 'II.9, 4',
                                 'In a bad condition, not received, or made unfortunate: many worries, bad thoughts, no work prepared for him in which there is benefit, distressed because of friends, hopes and wishes', 'II.9, 5')},
-        'Mars': {'Rhetorius': _R('Many goods, dignity.', 'Same as when well placed.'),
+        'Mars': {'Rhetorius': _R('Many goods, dignity.', None),
                  'PN IV': _P('Received, not made unfortunate: delighting in the people, an increase in children, and rank and status from friends and brothers, generally from the masters of allies, wars and authorities, benefits from the working of fire and blood; time after time he plans to travel, though perhaps it is not prepared for him; if already away from his country, he returns to it', 'II.12, 6-7',
                              'Made unfortunate, not received: distress and accidents in the family and children, and feuding with friends and brothers', 'II.12, 8')},
         'Sun': {'Rhetorius': _R('Lucky, noble.', 'Harms children.'),
@@ -2310,19 +2311,19 @@ PLANETS_IN_HOUSES = {
                  'PN IV': _P("By transit: assets and goods come to him, a position of authority over his family's assets and those of his parents, benefit from travel and going out to towns and villages and from handling buying and selling, he takes on debts, property taken from him not found, often conflicting dreams", 'VII.8, 11', None, '')},
     },
     12: {
-        'Saturn': {'Rhetorius': _R('More moderate than by night.', 'Loss of inheritance, mental disturbance.'),
+        'Saturn': {'Rhetorius': _R(None, 'Loss of inheritance, mental disturbance.'),
                    'PN IV': _P('In his own house or received: victorious over his enemies, who befriend him and praise him well, but little occupied in works that would benefit him; ' + _SAT_FALL_GOOD, 'II.6, 19',
                                'Alien and not received, or retrograde: hardship from prison, confinement and enemies; alien and in a bad condition besides, or Mars looking at him with an aspect of corruption, torment and beating; ' + _SAT_FALL_BAD, 'II.6, 20-21')},
-        'Jupiter': {'Rhetorius': _R('Fights against superiors.', 'Worse than by day.'),
+        'Jupiter': {'Rhetorius': _R('Fights against superiors.', None),
                     'PN IV': _P('Received, in a suitable condition: the lowest people praise him, benefit from those who are confined, and enemies make peace with him', 'II.9, 12',
                                 'Not received, or made unfortunate: illnesses from windiness and other things, and distresses from enemies or confinement; ' + _JUP_FALL_BAD, 'II.9, 13')},
-        'Mars': {'Rhetorius': _R('Better than by day.', 'Illness, injury, dangers from slaves, criminals.'),
+        'Mars': {'Rhetorius': _R(None, 'Illness, injury, dangers from slaves, criminals.'),
                  'PN IV': _P('Received, not made unfortunate: little occupied in what would benefit him, he sees what he loves with respect to runaways and those who are confined, and is safe from his enemies', 'II.12, 15',
                              'Made unfortunate, not received: something detestable will affect him from those directions -- runaways, the confined, enemies', 'II.12, 16')},
-        'Sun': {'Rhetorius': _R('Parents lowborn or slaves or captives; injuries and illness.', 'With infortunes, long illnesses, defects, slavery.'),
+        'Sun': {'Rhetorius': _R(None, 'With infortunes, long illnesses, defects, slavery.'),
                 'PN IV': _P('Received, not made unfortunate: beautiful things spoken about him, and safe from enemies', 'II.15, 12',
                             'Made unfortunate, not received: confinement, distresses because of confined people and enemies, or banished from his country', 'II.15, 13')},
-        'Venus': {'Rhetorius': _R('Distressed by women; if harmed, erotic derangement; low-status wives.', 'Ruined by women.'),
+        'Venus': {'Rhetorius': _R(None, 'Ruined by women.'),
                   'PN IV': _P('Received, not made unfortunate: benefit because of the underclass, remedies, drugs, food and provisions', 'II.18, 13',
                               'Made unfortunate, not received: something detestable and distresses in relation to enemies, the confined, confinement and punishment; ' + _VEN_FALL_BAD, 'II.18, 15')},
         'Mercury': {'Rhetorius': _R('Managing big affairs.', 'Danger from slaves.'),
