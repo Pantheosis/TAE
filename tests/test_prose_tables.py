@@ -1,15 +1,15 @@
-"""The two prose delineation tables, pinned by content -- 2026-09-08.
+"""The two prose delineation tables, pinned by content -- 2026-09-08, the
+lords half re-made 2026-09-16.
 
-PLANETS_IN_HOUSES and MASHAALLAH_LORDS are paraphrases of the TNAC Reference
-Guide for the Planets and Places (Dykes 2023): "Planets in the Nth" (pp. 17-40,
-Rhetorius Ch. 57 / PN4 II columns) and "The lords of other places in the Nth
-(Masha'allah)" (pp. 16-39, citing Sahl On Nativities). A shape test let
-fabricated cells pass, because prose of the right shape contradicts no
-arithmetic. Two pins now hold each cell:
+PLANETS_IN_HOUSES is still a paraphrase of the TNAC Reference Guide for the
+Planets and Places (Dykes 2023): "Planets in the Nth" (pp. 17-40, Rhetorius
+Ch. 57 / PN4 II columns). A shape test let fabricated cells pass, because
+prose of the right shape contradicts no arithmetic. Two pins hold each of
+its cells:
 
   1. A literal copy of every cell as it stood after the 2026-09-08 re-read of
-     all 84 + 144 cells against the Guide pages -- any edit fails on the cell,
-     and must be reconciled against the Guide page cited here.
+     all 84 cells against the Guide pages -- any edit fails on the cell, and
+     must be reconciled against the Guide page cited here.
   2. Anchor words per cell, taken mechanically from the Guide's own row for
      that cell (words the paraphrase and the Guide row share). A cell moved
      to another planet or house keeps its literal but loses its anchors.
@@ -20,14 +20,28 @@ does not follow the Guide row is the 9th-house Mercury PN4 halves, which the
 Guide prints against its own column headings (Good: "Bad reports and
 journeys..."; Bad: "Good journeys, true visions..."); the code keeps the
 sensible reading and this file pins it as it is -- an owner's decision.
+
+MASHAALLAH_LORDS is no longer the Guide's wording: every cell is this app's
+paraphrase of Sahl's own sentence for that [placed-in][ruled] pairing (On
+Nativities, the twelve lords-of-places passages), shaped {'text', 'cite'}.
+Its pin is MASHAALLAH_LORDS_SENTENCES below: for every cell the locator and
+three anchor words that the cell text and Sahl's sentence share (words
+specific to the sentence, not "the" or "will"). The corpus is private, so
+the fixture carries the anchors, not the sentence; the tests hold the cell
+side (locator well-formed, anchors present in the text, the illegible cell
+marked by its footnote, no [UNCERTAIN] marker, the count of empty cells the
+page states), and the checker verifies the anchors against the sentences.
+The Guide transcription of the lords table and its page numbers are gone
+from this file with the wording they pinned.
 """
 from __future__ import annotations
+
+import re
 
 import pytest
 
 PLANETS = ['Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon']
 GUIDE_PAGE = {1: 17, 2: 19, 3: 21, 4: 24, 5: 26, 6: 28, 7: 30, 8: 32, 9: 34, 10: 36, 11: 38, 12: 40}
-LORDS_PAGE = {1: 16, 2: 18, 3: 20, 4: 23, 5: 25, 6: 27, 7: 29, 8: 31, 9: 33, 10: 35, 11: 37, 12: 39}
 
 PLANETS_IN_HOUSES_GUIDE = {
     1: {
@@ -240,191 +254,159 @@ PLANETS_IN_HOUSES_ANCHORS = {
     12: {'Saturn': ['disturbance', 'inheritance', 'hardship'], 'Jupiter': ['confinement', 'illnesses', 'distress'], 'Mars': ['detestable', 'criminals', 'something'], 'Sun': ['confinement', 'infortunes', 'illnesses'], 'Venus': ['punishment', 'underclass', 'benefit'], 'Mercury': ['confinement', 'arrested', 'unfairly'], 'Moon': ['patrimony', 'travel', 'bad']},
 }
 
-MASHAALLAH_LORDS_GUIDE = {
-    1: {
-        1: 'Respected in family (subject to other conditions)',
-        2: 'Work with own hands, blessed without searching and need',
-        3: 'Good for siblings from native',
-        4: 'Master of his family and their livelihood; charitable to parents',
-        5: 'Blessed with children in youth, happy with children',
-        6: 'Illness of nature of that planet; death of animals and servants',
-        7: 'Good from women, success from them',
-        8: 'Long lifespan (if good condition); frustration in seeking necessities',
-        9: 'Of fine religion, good soul, knowing the Sunnah',
-        10: 'Associate of authorities, proficient in work, Sultan comes to him',
-        11: 'Successful, good livelihood and condition, glad',
-        12: 'Unhappy, enemies multiply and are victorious, tribulation, belligerent',
-    },
-    2: {
-        1: 'Will corrupt assets; but if received, gains from sign essence',
-        2: 'Livelihood from known source; if looked at by infortune, ruin',
-        3: 'Siblings compete for assets; they will seek the native',
-        4: 'Prosperous parents; native inherits and is distinguished among siblings',
-        5: 'Children will have good livelihood',
-        6: 'Livelihood from what slaves produce, and animals; lowly benefits',
-        7: 'Corrupts assets due to conflict',
-        8: 'Inheritance; sometimes do work for government/authority',
-        9: 'Assets from foreign country, benefit from travel',
-        10: 'Livelihood from government/authority figure; accumulates assets',
-        11: 'Benefit and assets from friends',
-        12: 'Shameful work, bad character and livelihood, with deception',
-    },
-    3: {
-        1: 'Siblings suitable, dependent on native; good/wicked mind based on aspects',
-        2: 'Gain from travels and siblings; religion/gain if a fortune',
-        3: 'Siblings are well known, will protect him, love him',
-        4: 'Parents have hardship from siblings; parents like native better',
-        5: "Native's children named after his siblings; successful in travels",
-        6: 'Siblings have defects/illness, or do the work of slaves',
-        7: "Brother marries native's women; hostility; native marries relative",
-        8: 'Siblings have defects, chronic illness, diminished condition',
-        9: 'Siblings marry foreign women; moves to another country',
-        10: 'Few siblings, siblings ruined; many travels',
-        11: 'Well-known siblings, condition good, esp. in youth',
-        12: 'Siblings hostile to native, hardship from them',
-    },
-    4: {
-        1: 'Reverent to parents; hardship from ruler; gains from fathers if received',
-        2: 'Livelihood relates to ancestors; thriving childhood home; devotion',
-        3: "Siblings steal parents' assets; recognized as thieves",
-        4: 'Parents well known, good reputation; short life if harmed',
-        5: "Native's children are wretches; encounters hardship due to them",
-        6: 'Native is child of slaves or those doing slave work',
-        7: 'Marries someone from own house, spouse is well known and good',
-        8: 'Fathers are foreigners or have defects/illness, short lifespans',
-        9: 'Parents have hidden illnesses, die outside homeland',
-        10: 'Parents known to rulers; hardship from rulers',
-        11: 'Father has chronic illness, short life, diminished condition',
-        12: 'Parents/family hostile to native; native destroys/leaves childhood home',
-    },
-    5: {
-        1: 'Happy with children (if unharmed)',
-        2: 'Children have status, will gain good',
-        3: 'Native has siblings abroad who travel and have children',
-        4: 'Prosperous parents see successive generations; good increases',
-        5: 'Native has well-known children who are happy',
-        6: "Children's upbringing hard, children have defect",
-        7: 'Native marries younger spouse, well-known and virtuous',
-        8: 'Children die early, or have power over others due to Sultan',
-        9: 'Has children in foreign country, delighted; children religious/educated',
-        10: 'Abundance of children; illness/death if harmed; hardship from Sultan',
-        11: 'Delightful children, blessed with good and comfort',
-        12: 'Children debased, sick, from low-status; disobedient/hostile',
-    },
-    6: {
-        1: 'Miserable, slave work; illness if received; literal slave if Moon corrupted',
-        2: 'Livelihood from 6th-place things; disaster/hardship if not received',
-        3: 'Siblings are hostile and crave his ruin',
-        4: 'Parents unknown in country; aspecting planet shows good/bad',
-        5: 'Fortunate children, but defects will appear in them',
-        6: 'Native healthy, if lord of Ascendant does not look',
-        7: 'Native associates with slave girls or women with defects',
-        8: 'Calamities in slaves and riding animals; not blessed by them',
-        9: 'Blessed with slaves/animals; travel brings illness or corrupts slaves',
-        10: 'Short lifespan, itinerant, enslaves free people',
-        11: 'Bad condition in livelihood, little good, creating discord',
-        12: 'Saddened by slaves and riding animals, no good in them',
-    },
-    7: {
-        1: 'Native very eager; subordinate to spouse',
-        2: 'Lower-status women; gain/lose money in marriage',
-        3: 'Marries a relative; brothers hostile or marry his women',
-        4: 'Marries relative, good rank; father hostile to native',
-        5: 'Younger spouse; children hostile; deluded about women; servant children',
-        6: 'Sick/slave spouse; low-status spouse; bad reputation due to spouse',
-        7: 'Suitable marriage; spouse has rank of maternal relatives; well-known',
-        8: 'Will inherit from spouse; native dies in exile',
-        9: 'Foreign spouse; good character/pious if a fortune',
-        10: 'Esteemed, well-known spouse; higher-status and connected',
-        11: 'Loving, happy spouse; children and benefit from spouse',
-        12: 'Low-status or sick spouse; spouse is hostile',
-    },
-    8: {
-        1: 'A wicked soul, much distress, faint-hearted',
-        2: 'Livelihood from inheritance/dead; generous; assets taken if connecting to 8th',
-        3: "Brother's women will not survive or get inheritance",
-        4: "Diminishes father's lifespan; fear for native, mother dies in childbirth",
-        5: 'Children premature or miscarried.',
-        6: 'Native healthy if lord of Ascendant does not look',
-        7: 'Consumes inheritance of women; marries foreign woman',
-        8: 'Native is healthy, illness insignificant, death will be light',
-        9: 'Suffers robbery on journeys, eager in accumulating assets',
-        10: 'Authority in youth, a follower who seeks leadership/boasts',
-        11: 'Not well known/descended; does low work like commerce',
-        12: "Few enemies; many of native's slaves will die",
-    },
-    9: {
-        1: 'Remains in foreign land; travel; speaks knowledge; sensible if unharmed',
-        2: 'Livelihood from travel, piety, religion',
-        3: 'Siblings marry foreign women, live abroad',
-        4: 'Unknown fathers who leave, with defects/bad death; bad faith',
-        5: 'Has children abroad; they make native happy',
-        6: 'Excellent intentions; illness while traveling, encounters hardship',
-        7: 'Marries foreign woman given by her brother; native loves her',
-        8: 'Bad thoughts and work; die in exile',
-        9: 'Few journeys; upright in religion of fathers, good intention',
-        10: 'Authority/leadership traveling abroad; offered the good',
-        11: 'Good fortune abroad; happy until end of life',
-        12: 'Siblings/native have hardship from enemies traveling; bad religion',
-    },
-    10: {
-        1: 'Interacting with Sultan, known by him, living due to Sultan',
-        2: 'Livelihood from the Sultan',
-        3: 'Death of siblings, jealousy and grudges',
-        4: 'Fathers well known to Sultan',
-        5: 'Defects and illnesses in children',
-        6: 'Encounters hardship from the Sultan',
-        7: 'Marriage to someone related to Sultan, fortunate woman, good from her',
-        8: "Native's ruin will be due to Sultan",
-        9: "Siblings marry better women or from Sultan's family; native is pious",
-        10: 'Proficient in work, having influence, livelihood from work',
-        11: 'Authority in friendship, Sultan will not be hostile',
-        12: "Hostility from Sultan and native's superiors; unhappy",
-    },
-    11: {
-        1: 'Good character, many friends, but harsh toward children/few children',
-        2: 'Livelihood relates to friends/commerce; friends need native if Asc lord looks',
-        3: 'Pious siblings known for that; reflects well on native',
-        4: 'Short lifespan for father; bad condition unless received by fortune',
-        5: 'Pleased by children and family; praise for him',
-        6: 'Friends are not well known',
-        7: 'Marries fertile woman, will love her, live in luxury because of her',
-        8: 'Friends diminished; corrupts friendship; dies when condition is good',
-        9: 'Pious friends, shared religious love; siblings marry foreign women',
-        10: 'Friends benefit from native; child inherits assets from Sultan',
-        11: 'Lives comfortable life, imputed with goodness, many friends, culture',
-        12: 'Leaves goodness of friends; friends become enemies, unhappy',
-    },
-    12: {
-        1: 'Miserable, bad livelihood, enemies victorious; worse if bad connection',
-        2: 'Life/livelihood from prisons, enemies; distressed and poor in soul',
-        3: 'Hostile siblings; they get his authority and are superior',
-        4: 'Parents are foreigners in exile; aspects show if good/bad for them',
-        5: 'Children have defect/illness, will die; no children if unfortunate',
-        6: 'Hostile to lower-status people; native sickly or ongoing health problems',
-        7: 'Spouse has little esteem; hardship/hostility; secret relationships/cheating',
-        8: 'Killing by enemies feared, or foolish people oppose him',
-        9: 'Wicked intentions; corrupts religion, thinks he is right',
-        10: 'Dispossessed by authorities; griefs; works with large animals/secrets',
-        11: 'Little good, miserable life; few friends, many enemies',
-        12: 'Few enemies, may not manifest; safe from them',
-    },
-}
 
-MASHAALLAH_LORDS_ANCHORS = {
-    1: {1: ['conditions', 'respected', 'subject'], 2: ['searching', 'blessed', 'without'], 3: ['siblings', 'native', 'good'], 4: ['charitable', 'livelihood', 'parents'], 5: ['children', 'blessed', 'happy'], 6: ['servants', 'animals', 'illness'], 7: ['success', 'women', 'good'], 8: ['frustration', 'necessities', 'condition'], 9: ['religion', 'knowing', 'sunnah'], 10: ['authorities', 'proficient', 'associate'], 11: ['livelihood', 'successful', 'condition'], 12: ['belligerent', 'tribulation', 'victorious']},
-    2: {1: ['received', 'corrupt', 'essence'], 2: ['livelihood', 'infortune', 'looked'], 3: ['siblings', 'compete', 'assets'], 4: ['distinguished', 'prosperous', 'siblings'], 5: ['livelihood', 'children', 'good'], 6: ['livelihood', 'animals', 'produce'], 7: ['conflict', 'corrupts', 'assets'], 8: ['inheritance', 'government', 'authority'], 9: ['benefit', 'country', 'foreign'], 10: ['accumulates', 'government', 'livelihood'], 11: ['benefit', 'friends', 'assets'], 12: ['livelihood', 'character', 'deception']},
-    3: {1: ['dependent', 'siblings', 'suitable'], 2: ['religion', 'siblings', 'fortune'], 3: ['siblings', 'protect', 'known'], 4: ['hardship', 'siblings', 'parents'], 5: ['successful', 'children', 'siblings'], 6: ['siblings', 'defects', 'illness'], 7: ['hostility', 'brother', 'marries'], 8: ['diminished', 'condition', 'siblings'], 9: ['siblings', 'another', 'country'], 10: ['siblings', 'travels', 'ruined'], 11: ['condition', 'siblings', 'known'], 12: ['hardship', 'siblings', 'hostile']},
-    4: {1: ['hardship', 'received', 'reverent'], 2: ['livelihood', 'ancestors', 'childhood'], 3: ['siblings', 'parents', 'thieves'], 4: ['reputation', 'parents', 'known'], 5: ['encounters', 'children', 'hardship'], 6: ['native', 'slaves', 'child'], 7: ['marries', 'someone', 'spouse'], 8: ['foreigners', 'lifespans', 'defects'], 9: ['illnesses', 'homeland', 'outside'], 10: ['hardship', 'parents', 'rulers'], 11: ['diminished', 'condition', 'chronic'], 12: ['childhood', 'hostile', 'parents']},
-    5: {1: ['children', 'unharmed', 'happy'], 2: ['children', 'status', 'gain'], 3: ['children', 'siblings', 'native'], 4: ['generations', 'prosperous', 'successive'], 5: ['children', 'native', 'happy'], 6: ['upbringing', 'children', 'defect'], 7: ['virtuous', 'marries', 'younger'], 8: ['children', 'others', 'sultan'], 9: ['delighted', 'religious', 'children'], 10: ['abundance', 'children', 'hardship'], 11: ['delightful', 'children', 'blessed'], 12: ['disobedient', 'children', 'debased']},
-    6: {1: ['corrupted', 'miserable', 'received'], 2: ['disaster', 'hardship', 'things'], 3: ['siblings', 'hostile', 'crave'], 4: ['aspecting', 'country', 'parents'], 5: ['fortunate', 'children', 'defects'], 6: ['ascendant', 'healthy', 'native'], 7: ['associates', 'defects', 'native'], 8: ['calamities', 'animals', 'blessed'], 9: ['corrupts', 'animals', 'blessed'], 10: ['itinerant', 'lifespan', 'people'], 11: ['livelihood', 'condition', 'creating'], 12: ['saddened', 'animals', 'riding']},
-    7: {1: ['subordinate', 'native', 'spouse'], 2: ['marriage', 'status', 'lower'], 3: ['brothers', 'relative', 'hostile'], 4: ['relative', 'hostile', 'marries'], 5: ['children', 'deluded', 'hostile'], 6: ['reputation', 'spouse', 'status'], 7: ['relatives', 'marriage', 'maternal'], 8: ['inherit', 'native', 'spouse'], 9: ['character', 'foreign', 'fortune'], 10: ['connected', 'esteemed', 'higher'], 11: ['children', 'benefit', 'loving'], 12: ['hostile', 'spouse', 'status']},
-    8: {1: ['distress', 'hearted', 'wicked'], 2: ['inheritance', 'connecting', 'assets'], 3: ['inheritance', 'brother', 'survive'], 4: ['childbirth', 'diminishes', 'lifespan'], 5: ['miscarried', 'premature', 'children'], 6: ['ascendant', 'healthy', 'native'], 7: ['inheritance', 'consumes', 'foreign'], 8: ['insignificant', 'healthy', 'illness'], 9: ['accumulating', 'journeys', 'robbery'], 10: ['leadership', 'authority', 'follower'], 11: ['commerce', 'known', 'well'], 12: ['enemies', 'native', 'slaves']},
-    9: {1: ['knowledge', 'sensible', 'foreign'], 2: ['livelihood', 'religion', 'travel'], 3: ['siblings', 'foreign', 'abroad'], 4: ['defects', 'fathers', 'unknown'], 5: ['children', 'native', 'happy'], 6: ['intentions', 'excellent', 'traveling'], 7: ['brother', 'foreign', 'marries'], 8: ['thoughts', 'exile', 'work'], 9: ['intention', 'journeys', 'religion'], 10: ['leadership', 'authority', 'traveling'], 11: ['fortune', 'abroad', 'happy'], 12: ['traveling', 'hardship', 'religion']},
-    10: {1: ['interacting', 'living', 'sultan'], 2: ['livelihood', 'sultan'], 3: ['jealousy', 'siblings', 'grudges'], 4: ['fathers', 'sultan', 'known'], 5: ['illnesses', 'children', 'defects'], 6: ['encounters', 'hardship', 'sultan'], 7: ['fortunate', 'marriage', 'related'], 8: ['native', 'sultan', 'ruin'], 9: ['siblings', 'better', 'family'], 10: ['livelihood', 'proficient', 'influence'], 11: ['friendship', 'authority', 'hostile'], 12: ['hostility', 'superiors', 'unhappy']},
-    11: {1: ['character', 'children', 'friends'], 2: ['livelihood', 'commerce', 'friends'], 3: ['siblings', 'native', 'known'], 4: ['condition', 'lifespan', 'received'], 5: ['children', 'pleased', 'family'], 6: ['friends', 'known', 'well'], 7: ['because', 'fertile', 'marries'], 8: ['diminished', 'friendship', 'condition'], 9: ['religious', 'siblings', 'foreign'], 10: ['inherits', 'benefit', 'friends'], 11: ['comfortable', 'goodness', 'culture'], 12: ['goodness', 'enemies', 'friends']},
-    12: {1: ['connection', 'livelihood', 'victorious'], 2: ['distressed', 'livelihood', 'enemies'], 3: ['authority', 'siblings', 'superior'], 4: ['foreigners', 'parents', 'exile'], 5: ['unfortunate', 'children', 'illness'], 6: ['problems', 'ongoing', 'health'], 7: ['relationships', 'cheating', 'hardship'], 8: ['enemies', 'foolish', 'killing'], 9: ['intentions', 'corrupts', 'religion'], 10: ['animals', 'large', 'works'], 11: ['miserable', 'enemies', 'friends'], 12: ['manifest', 'enemies', 'safe']},
-}
+# (placed_in, ruled, cite, anchors): Sahl's locator for the cell and three
+# words the cell text shares with his sentence, in grid order. The six cells
+# the fourth check spot-checked against the Guide (BUILD_PR3 check,
+# 2026-09-12, s.6) are the first regression set, named in REGRESSION_SET.
+REGRESSION_SET = [(1, 2), (6, 3), (6, 10), (10, 1), (7, 3), (8, 4)]
+MASHAALLAH_LORDS_SENTENCES = [
+    (1, 1, '1.36, 79-81', ['respected', 'family', 'midheaven']),
+    (1, 2, '2.14, 9', ['hands', 'blessed', 'searching']),
+    (1, 3, '3.10, 1', ['siblings', 'good', 'sincere']),
+    (1, 4, '4.11, 2-3', ['master', 'charitable', 'authority']),
+    (1, 5, '5.1, 78', ['blessed', 'youth', 'pleased']),
+    (1, 6, '6.3.4, 12', ['illness', 'essence', 'servants']),
+    (1, 7, '7.1, 205', ['good', 'women', 'successful']),
+    (1, 8, '8.5, 2', ['lifespan', 'frustrated', 'necessities']),
+    (1, 9, '9.4, 23', ['religion', 'endearing', 'sunnah']),
+    (1, 10, '10.2.4, 1', ['associate', 'proficient', 'seeking']),
+    (1, 11, '11.1, 16', ['successful', 'livelihood', 'glad']),
+    (1, 12, '12.1, 35', ['unhappy', 'victorious', 'belligerent']),
+    (2, 1, '1.36, 83', ['corruptor', 'assets', 'essence']),
+    (2, 2, '2.14, 10-11', ['livelihood', 'suffering', 'siblings']),
+    (2, 3, '3.10, 2', ['siblings', 'contend', 'sorrows']),
+    (2, 4, '4.11, 4', ['prosperous', 'assets', 'distinguished']),
+    (2, 5, '5.1, 79', ['blessed', 'livelihood', 'authority']),
+    (2, 6, '6.3.4, 13', ['produce', 'renting', 'lowly']),
+    (2, 7, '7.1, 206', ['corrupts', 'contention', 'defects']),
+    (2, 8, '8.5, 3', ['inheritance', 'steady', 'employ']),
+    (2, 9, '9.4, 24', ['assets', 'country', 'journeys']),
+    (2, 10, '10.2.4, 2', ['livelihood', 'sultan', 'assets']),
+    (2, 11, '11.1, 17', ['blessed', 'friends', 'assets']),
+    (2, 12, '12.1, 36', ['embarrassed', 'livelihood', 'deception']),
+    (3, 1, '1.36, 84-85', ['siblings', 'religion', 'wicked']),
+    (3, 2, '2.14, 12', ['travels', 'siblings', 'religion']),
+    (3, 3, '3.10, 3', ['siblings', 'protect', 'loved']),
+    (3, 4, '4.11, 5-6', ['hardship', 'prisons', 'wretched']),
+    (3, 5, '5.1, 80', ['named', 'siblings', 'successful']),
+    (3, 6, '6.3.4, 14', ['siblings', 'defects', 'livelihood']),
+    (3, 7, '7.1, 207', ['brother', 'relatives', 'abroad']),
+    (3, 8, '8.5, 4', ['defects', 'chronic', 'slaves']),
+    (3, 9, '9.4, 25', ['siblings', 'foreign', 'country']),
+    (3, 10, '10.2.4, 3', ['siblings', 'ruined', 'multiplies']),
+    (3, 11, '11.1, 18', ['siblings', 'blessed', 'youth']),
+    (3, 12, '12.1, 37', ['siblings', 'hostile', 'badness']),
+    (4, 1, '1.36, 86', ['reverent', 'hardship', 'livelihood']),
+    (4, 2, '2.14, 13', ['ancestors', 'thriving', 'devoted']),
+    (4, 3, '3.10, 4', ['steal', 'assets', 'family']),
+    (4, 4, '4.11, 7-8', ['importance', 'reputation', 'lifespan']),
+    (4, 5, '5.1, 81', ['wretches', 'hardship', 'enmity']),
+    (4, 6, '6.3.4, 15', ['children', 'slaves', 'work']),
+    (4, 7, '7.1, 208', ['house', 'known', 'virtuous']),
+    (4, 8, '8.5, 5', ['foreigners', 'chronic', 'lifespans']),
+    (4, 9, '9.4, 26', ['hidden', 'illnesses', 'homeland']),
+    (4, 10, '10.2.4, 4', ['parents', 'doors', 'hardship']),
+    (4, 11, '11.1, 19', ['chronic', 'shortened', 'condition']),
+    (4, 12, '12.1, 38', ['parents', 'family', 'home']),
+    (5, 1, '1.36, 87', ['happy', 'children', 'friends']),
+    (5, 2, '2.14, 14', ['women', 'children', 'importance']),
+    (5, 3, '3.10, 5', ['homeland', 'travel', 'suitable']),
+    (5, 4, '4.11, 9', ['prosperous', 'lifespan', 'increase']),
+    (5, 5, '5.1, 82', ['well', 'known', 'happy']),
+    (5, 6, '6.3.4, 16', ['upbringing', 'hard', 'defect']),
+    (5, 7, '7.1, 209', ['younger', 'compassion', 'character']),
+    (5, 8, '8.5, 6', ['youth', 'power', 'sultan']),
+    (5, 9, '9.4, 27', ['children', 'country', 'marry']),
+    (5, 10, '10.2.4, 5', ['chronic', 'disease', 'hardship']),
+    (5, 11, '11.1, 20', ['delightful', 'comfort', 'last']),
+    (5, 12, '12.1, 39', ['disobey', 'hostile', 'defects']),
+    (6, 1, '1.36, 88-89', ['miserable', 'slaves', 'corrupted']),
+    (6, 2, '2.14, 15-16', ['medications', 'disaster', 'toil']),
+    (6, 3, '3.10, 6', ['hostile', 'calamity', 'crave']),
+    (6, 4, '4.11, 10-12', ['unknown', 'country', 'illnesses']),
+    (6, 5, '5.1, 83', ['fortunate', 'defects', 'appear']),
+    (6, 6, '6.3.4, 17', ['healthy', 'ascendant', 'look']),
+    (6, 7, '7.1, 210', ['slave', 'girls', 'defects']),
+    (6, 8, '8.5, 7', ['calamities', 'riding', 'animals']),
+    (6, 9, '9.4, 28', ['riding', 'journeys', 'escape']),
+    (6, 10, '10.2.4, 6', ['lifespan', 'walking', 'free']),
+    (6, 11, '11.1, 21', ['livelihood', 'creating', 'discord']),
+    (6, 12, '12.1, 40', ['saddened', 'riding', 'animals']),
+    (7, 1, '1.36, 90', ['lawsuits', 'deceptive', 'subordinate']),
+    (7, 2, '2.14, 17-19', ['lawsuits', 'contention', 'servant']),
+    (7, 3, '3.10, 7', ['brothers', 'marry', 'hostile']),
+    (7, 4, '4.11, 13', ['family', 'base', 'hostile']),
+    (7, 5, '5.1, 84', ['maids', 'service', 'hostile']),
+    (7, 6, '6.3.4, 18', ['esteem', 'words', 'said']),
+    (7, 7, '7.1, 211', ['known', 'equal', 'match']),
+    (7, 8, '8.5, 8', ['inheritances', 'assets', 'exile']),
+    (7, 9, '9.4, 29', ['foreign', 'pleasing', 'pious']),
+    (7, 10, '10.2.4, 7', ['powerful', 'significant', 'upright']),
+    (7, 11, '11.1, 22', ['loves', 'lucky', 'benefit']),
+    (7, 12, '12.1, 41', ['women', 'low', 'defects']),
+    (8, 1, '1.36, 91', ['wicked', 'soul', 'distress']),
+    (8, 2, '2.14, 20-21', ['inheritance', 'generous', 'taxes']),
+    (8, 3, '3.10, 8', ['brothers', 'survive', 'inheritances']),
+    (8, 4, '4.11, 14-15', ['diminishes', 'childbirth', 'retrograde']),
+    (8, 5, '5.1, 85 fn 47', ['survive', 'miscarried', 'premature']),
+    (8, 6, '6.3.4, 19', ['healthy', 'ascendant', 'look']),
+    (8, 7, '7.1, 212', ['consumes', 'inheritance', 'foreign']),
+    (8, 8, '8.5, 9', ['healthy', 'insignificant', 'light']),
+    (8, 9, '9.4, 30', ['highway', 'robbery', 'accumulation']),
+    (8, 10, '10.2.4, 8', ['younger', 'follower', 'boastful']),
+    (8, 11, '11.1, 23', ['distinguished', 'descent', 'commerce']),
+    (8, 12, '12.1, 42', ['few', 'enemies', 'slaves']),
+    (9, 1, '1.36, 92', ['land', 'knowledge', 'sensible']),
+    (9, 2, '2.14, 22-24', ['piety', 'devoutness', 'magic']),
+    (9, 3, '3.10, 9', ['foreign', 'homeland', 'shelter']),
+    (9, 4, '4.11, 16-17', ['unknown', 'defect', 'deceiver']),
+    (9, 5, '5.1, 86', ['absent', 'homeland', 'happy']),
+    (9, 6, '6.3.4, 20', ['excellent', 'intentions', 'hardship']),
+    (9, 7, '7.1, 213', ['foreign', 'brother', 'marriage']),
+    (9, 8, '8.5, 10', ['thoughts', 'work', 'exile']),
+    (9, 9, '9.4, 31', ['journeys', 'upright', 'intention']),
+    (9, 10, '10.2.4, 9', ['traveling', 'leadership', 'offered']),
+    (9, 11, '11.1, 24', ['fortune', 'country', 'happy']),
+    (9, 12, '12.1, 43', ['siblings', 'travels', 'religion']),
+    (10, 1, '1.36, 93', ['doors', 'sultan', 'known']),
+    (10, 2, '2.14, 25', ['doors', 'sultan', 'because']),
+    (10, 3, '3.10, 10', ['death', 'ruin', 'jealous']),
+    (10, 4, '4.11, 18-19', ['knowledge', 'tribulation', 'conflict']),
+    (10, 5, '5.1, 87', ['illness', 'appearing', 'defect']),
+    (10, 6, '6.3.4, 21', ['encounter', 'hardship', 'sultan']),
+    (10, 7, '7.1, 214', ['family', 'sultan', 'fortunate']),
+    (10, 8, '8.5, 11', ['ruin', 'sultan', 'hands']),
+    (10, 9, '9.4, 32', ['siblings', 'better', 'pious']),
+    (10, 10, '10.2.4, 10', ['proficient', 'influence', 'informed']),
+    (10, 11, '11.1, 25', ['authority', 'friendship', 'hostile']),
+    (10, 12, '12.1, 44', ['wield', 'sorrow', 'griefs']),
+    (11, 1, '1.36, 94', ['character', 'friends', 'harsh']),
+    (11, 2, '2.14, 26-27', ['friends', 'commerce', 'need']),
+    (11, 3, '3.10, 12', ['pious', 'renowned', 'attribute']),
+    (11, 4, '4.11, 20', ['lifespan', 'badness', 'dissolves']),
+    (11, 5, '5.1, 88', ['pleased', 'family', 'praised']),
+    (11, 6, '6.3.4, 22', ['people', 'well', 'known']),
+    (11, 7, '7.1, 215', ['fertile', 'luxury', 'woman']),
+    (11, 8, '8.5, 12', ['friends', 'diminished', 'condition']),
+    (11, 9, '9.4, 33', ['friends', 'religion', 'foreign']),
+    (11, 10, '10.2.4, 11', ['friends', 'child', 'assets']),
+    (11, 11, '11.1, 26', ['comfortable', 'imputed', 'culture']),
+    (11, 12, '12.1, 45', ['goodness', 'enmity', 'unhappy']),
+    (12, 1, '1.36, 95-97', ['miserable', 'livelihood', 'enemies']),
+    (12, 2, '2.14, 28', ['prisons', 'enemies', 'distressed']),
+    (12, 3, '3.10, 13', ['hostile', 'authority', 'superior']),
+    (12, 4, '4.11, 21-23', ['foreigners', 'badness', 'exile']),
+    (12, 5, '5.1, 89-90', ['chronic', 'disease', 'unfortunate']),
+    (12, 6, '6.3.4, 23', ['hostile', 'esteem', 'harm']),
+    (12, 7, '7.1, 216', ['esteem', 'hardship', 'hostile']),
+    (12, 8, '8.5, 13', ['enemies', 'kill', 'foolish']),
+    (12, 9, '9.4, 34', ['wicked', 'corruptor', 'religion']),
+    (12, 10, '10.2.4, 12', ['dispossessed', 'authorities', 'griefs']),
+    (12, 11, '11.1, 27', ['miserable', 'living', 'enemies']),
+    (12, 12, '12.1, 46', ['enemies', 'appear', 'safe']),
+]
+
 
 
 def _words(text):
@@ -467,17 +449,69 @@ def test_no_other_cell_is_marked_uncertain(engine):
     assert marked == {(6, "Moon"), (8, "Moon")}
 
 
-@pytest.mark.parametrize("house", range(1, 13))
-def test_mashaallah_lords_match_the_guide_page_cell_by_cell(engine, house):
-    for lord in range(1, 13):
-        assert engine["MASHAALLAH_LORDS"][house][lord] == MASHAALLAH_LORDS_GUIDE[house][lord], \
-            (house, lord, "Reference Guide p.", LORDS_PAGE[house])
-        assert set(MASHAALLAH_LORDS_ANCHORS[house][lord]) <= _words(engine["MASHAALLAH_LORDS"][house][lord])
 
 
-def test_lord_of_the_fifth_in_the_eighth_is_resolved_from_the_guide(engine):
-    # p. 31, row 5th: "Children premature or miscarried." -- the OCR of Sahl
-    # 8.5 is illegible here; the Guide settles the reading. No cell may carry
-    # the old placeholder.
-    assert engine["MASHAALLAH_LORDS"][8][5] == "Children premature or miscarried."
-    assert not any("[UNCERTAIN" in v for row in engine["MASHAALLAH_LORDS"].values() for v in row.values())
+CITE = re.compile(r"^\d+(\.\d+)*, \d+(-\d+)?( fn \d+)?$")
+DASH = {'text': '\u2014', 'cite': ''}
+# What the page help states of empty cells: Sahl has a sentence for every one
+# of the 144 pairings, so none.
+DASH_CELLS_THE_HELP_STATES = 0
+
+
+def test_the_sentence_fixture_covers_every_cell_once():
+    keys = [(p, r) for p, r, _c, _a in MASHAALLAH_LORDS_SENTENCES]
+    assert sorted(keys) == [(p, r) for p in range(1, 13) for r in range(1, 13)]
+    assert len(keys) == len(set(keys)) == 144
+
+
+@pytest.mark.parametrize("placed_in, ruled, cite, anchors", MASHAALLAH_LORDS_SENTENCES,
+                         ids=[f"lord-of-{r}-in-{p}" for p, r, _c, _a in MASHAALLAH_LORDS_SENTENCES])
+def test_mashaallah_lords_cell_is_pinned_to_sahls_sentence(engine, placed_in, ruled, cite, anchors):
+    cell = engine["MASHAALLAH_LORDS"][placed_in][ruled]
+    assert set(cell) == {"text", "cite"}
+    if cell == DASH:
+        assert cite == "" and anchors == []
+        return
+    assert cell["text"].strip() and cell["cite"] == cite
+    assert CITE.match(cell["cite"]), cell["cite"]
+    assert len(anchors) == 3 and set(anchors) <= _words(cell["text"]), (placed_in, ruled, anchors, cell["text"])
+    assert "[UNCERTAIN" not in cell["text"]
+
+
+@pytest.mark.parametrize("placed_in, ruled", REGRESSION_SET)
+def test_the_fourth_checks_six_cells_now_rest_on_sahls_sentence(engine, placed_in, ruled):
+    # Spot-checked against the Guide on 2026-09-12; re-derived from Sahl here.
+    # [7][3] is the one of the six whose Guide wording ("Marries a relative")
+    # Sahl's sentence (3.10, 7) does not carry.
+    cite = next(c for p, r, c, _a in MASHAALLAH_LORDS_SENTENCES if (p, r) == (placed_in, ruled))
+    cell = engine["MASHAALLAH_LORDS"][placed_in][ruled]
+    assert cell["cite"] == cite and cell != DASH
+    if (placed_in, ruled) == (7, 3):
+        assert "relative" not in cell["text"]
+
+
+def test_lord_of_the_fifth_in_the_eighth_carries_the_translators_footnote(engine):
+    # 5.1, 85 is printed with an [illegible] bracket by the translator himself
+    # (manuscript E smudged); his fn 47 gives the sense. The cell says so.
+    cell = engine["MASHAALLAH_LORDS"][8][5]
+    assert cell["cite"] == "5.1, 85 fn 47"
+    assert "smudged" in cell["text"] and "premature" in cell["text"] and "miscarried" in cell["text"]
+
+
+def test_the_count_of_empty_cells_is_what_the_help_states(engine):
+    dashes = [(p, r) for p, row in engine["MASHAALLAH_LORDS"].items() for r, c in row.items() if c == DASH]
+    assert len(dashes) == DASH_CELLS_THE_HELP_STATES, dashes
+    assert not any("[UNCERTAIN" in c["text"] for row in engine["MASHAALLAH_LORDS"].values() for c in row.values())
+
+
+def test_the_reader_prints_the_text_with_its_locator(engine):
+    # A chart with every lord in a known place: the Signification column is
+    # the cell's text followed by its locator in parentheses.
+    planets = {p: {'longitude': lon} for p, lon in
+               [('Saturn', 10.0), ('Jupiter', 40.0), ('Mars', 70.0), ('Sun', 100.0),
+                ('Venus', 130.0), ('Mercury', 160.0), ('Moon', 190.0)]}
+    rows = engine["evaluate_house_lords"](planets, 0.0)
+    assert len(rows) == 12
+    for row in rows:
+        cell = engine["MASHAALLAH_LORDS"][row['Placed in (WS place)']][row['Topical House']]
+        assert row["Masha'allah Signification"] == f"{cell['text']} ({cell['cite']})"

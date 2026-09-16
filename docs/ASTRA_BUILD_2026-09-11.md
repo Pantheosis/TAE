@@ -1228,3 +1228,121 @@ Albinus; III.14, 17-19)", the birth hour kept; the "this app's reading of the ho
 witness; Sahl's sentences stay the rule. New test `tests/test_third_day_albinus_2026_09_15.py` (Albinus's
 JD -> the third-day Moon in Leo within 3 degrees of Mars's opposition, one day short and three days past,
 the constant 2); `tests/test_moon_third_day_2026_09_15.py` repinned to + 2.0 and the new string.
+
+## 2026-09-16: DELIN-TABLES build A -- the Masha'allah table from Sahl
+
+The first of the three DELIN-TABLES builds (plan of 2026-09-16, s.1-2 and s.7): the 144 cells of
+`MASHAALLAH_LORDS` ("Topical House Lords (Masha'allah)", Dignities page) are no longer the Reference
+Guide's wording. Every cell is this app's paraphrase of Sahl's own sentence for that [placed-in][ruled]
+pairing, read whole from On Nativities' twelve lords-of-places passages -- the lord of the first 1.36,
+79-97; the second 2.14, 9-28; the third 3.10, 1-13; the fourth 4.11, 2-23; the fifth 5.1, 78-90; the
+sixth 6.3.4, 12-23; the seventh 7.1, 205-216; the eighth 8.5, 2-13; the ninth 9.4, 23-34; the tenth
+10.2.4, 1-12; the eleventh 11.1, 16-27; the twelfth 12.1, 35-46 (the sentence ranges confirmed
+chapter by chapter; the Guide's "1.36, 78-97" and "6.3.4, 12-24" include the lead-in and the
+application sentence). Course text; nothing supplement-gated.
+
+Cell shape. `{'text': <paraphrase>, 'cite': <locator>}`, the locator "chapter, sentence" and a range
+where the cell rests on two or three sentences ("1.36, 88-89"; "2.14, 17-19"). `evaluate_house_lords()`
+prints the text with the locator in parentheses in the same cell ("... (1.36, 83)"), so the page's
+column count is unchanged; the export's citation line for the table names Sahl's passages. Sahl's own
+conditions stay inside the cell wherever his sentence has one -- if received, if a fortune or an
+infortune looked at it, if the lord of the Ascendant looked at it, if the Moon is corrupted -- and
+the Guide's compressions had dropped most of them (restored in some twenty cells: [1][2], [2][2],
+[3][1], [3][4], [4][4], [5][4], [6][2], [6][4], [7][2], [8][4], [9][2], [10][4], [11][2], [12][4],
+[1][4], [1][8], [7][9], [12][1], [12][5] among them). Dykes's forms throughout: the Sultan, received,
+looked at it.
+
+Empty cells: none. Every one of the twelve passages has a sentence for all twelve places, so no cell
+is a dash; the help says so, and `test_the_count_of_empty_cells_is_what_the_help_states` pins the
+count at zero.
+
+Cell [8][5], the lord of the fifth in the eighth: Sahl 5.1, 85, which Dykes prints as "[illegible]
+they will survive and will be miscarried" -- the bracket is the translator's (manuscript E smudged
+and a line across the photograph, his fn 47), not this project's. The cell says the children survive
+but premature or miscarried, that the manuscript is smudged there, and gives fn 47's sense (the
+children suffer or die, the survivors premature); its locator is "5.1, 85 fn 47". No [UNCERTAIN]
+marker anywhere in the table.
+
+The application sentences. The caption's quotation of 3.10, 14 ("Work in this chapter if the lord
+of the third and the third [itself] were free of the infortunes, and the fortunes do not witness")
+is verbatim; the seven "likewise" locators (4.11, 24; 6.3.4, 24; 7.1, 217; 9.4, 35; 10.2.4, 13;
+11.1, 28; 12.1, 47) each resolve to that chapter's closing condition. The caption said the condition
+is "stated at the end of every lord-of-the-Nth section"; it is not -- 1.36, 2.14 and 8.5 have none,
+and 5.1, 91 is a variant Dykes cannot assign (fn 49) -- so it now says "eight of the twelve", the
+locators unchanged.
+
+Where Sahl's sentence and the Guide's cell disagreed in substance (the Guide's gist first, then
+Sahl's; the cell follows Sahl):
+
+1. [7][1] the lord of the first in the seventh. Guide: "very eager; subordinate to spouse". Sahl
+   1.36, 90: many lawsuits, deceptive, subordinate to women in their speech. "Very eager" has no
+   source in the sentence; lawsuits and deception were missing.
+2. [7][3] the lord of the third in the seventh. Guide: "Marries a relative; brothers hostile or
+   marry his women". Sahl 3.10, 7: his brothers marry some of his women and have children by them,
+   or else are hostile. "Marries a relative" is 7.1, 207 (the lord of the SEVENTH in the THIRD),
+   carried across the diagonal. One of the fourth check's six spot-checked cells; the check found
+   it matched the Guide, which it did.
+3. [7][5] the lord of the fifth in the seventh. Guide: "Younger spouse; children hostile; deluded
+   about women; servant children". Sahl 5.1, 84: children mostly from his maids and serving-women,
+   hostile to him, and he deceives himself about the women. "Younger spouse" is 7.1, 209 (the lord
+   of the seventh in the fifth), the same diagonal carry.
+4. [7][6] the lord of the sixth in the seventh. Guide: "Sick/slave spouse; low-status spouse; bad
+   reputation due to spouse". Sahl 6.3.4, 18: associates with women of no social esteem, and bad
+   words are said of him. "Sick/slave" is 7.1, 210 (the lord of the seventh in the sixth).
+5. [7][7] the lord of the seventh in the seventh. Guide: "spouse has rank of maternal relatives".
+   Sahl 7.1, 211: a well-known woman, an equal match, whom he loves (fn 132: "well-known" read with
+   al-Rijal for two uncertain words). No maternal relatives.
+6. [12][6] the lord of the sixth in the twelfth. Guide: "native sickly or ongoing health problems".
+   Sahl 6.3.4, 23: hostile to people of no social esteem, and they come to harm. No illness of the
+   native.
+7. [5][9] the lord of the ninth in the fifth. Guide: "children religious/educated". Sahl 9.4, 27:
+   children in a country not his own, and he will marry; his eye delights in them. Nothing of
+   religion or education.
+8. [5][10] the lord of the tenth in the fifth. Guide: "Abundance of children; illness/death if
+   harmed". Sahl 10.2.4, 5: the children have a chronic illness or disease and die, and hardship
+   from the Sultan -- unconditional, and no abundance.
+9. [12][10] the lord of the tenth in the twelfth. Guide: "works with large animals/secrets". Sahl
+   10.2.4, 12: dispossessed by the authorities, griefs and hardship from them. No animals, no
+   secrets.
+10. [7][12] the lord of the twelfth in the seventh. Guide: "secret relationships/cheating". Sahl
+    12.1, 41: mixes with low women with defects, and they are hostile. No cheating.
+11. [11][4] the lord of the fourth in the eleventh. Guide: "bad condition unless received by
+    fortune". Sahl 4.11, 20: unless received by the lord of its house; a fortune looking is a
+    further improvement, not the condition.
+12. [8][2] the lord of the second in the eighth. Guide: "assets taken if connecting to 8th". Sahl
+    2.14, 21 distinguishes the direction: if IT connects with the lord of the eighth, assets taken
+    by force and he a tax-gatherer; if the lord of the eighth connects with IT, gain from the dead
+    and inheritances. Both halves now in the cell.
+13. [8][3] the lord of the third in the eighth. Guide: "will not survive OR get inheritance". Sahl
+    3.10, 8: the brothers' women do not survive AND they get inheritances in relation to women
+    (fn 115 on the tense). Conjunction, not alternative.
+14. [1][1] the lord of the first in the first. Guide: "(subject to other conditions)". Sahl 1.36,
+    79-81 states them: connecting with a planet in the Midheaven, rank from the Sultan by that
+    planet's dignity, or through the loss of religion and honor if it is in its fall. Now in the
+    cell.
+
+Smaller wording differences (the Guide's "ruler"/"government/authority" for Sahl's "the Sultan";
+"steady employ of the Sultan" for "work for government"; "lives by walking" for "itinerant") are
+resolved to Dykes's words without being counted here.
+
+Page. The table's help names Sahl's twelve passages as the source of every cell's wording, says the
+conditions are kept and the locator printed, states the count of empty cells (none) and the
+illegible cell, and cites the TNAC Reference Guide for the Planets and Places (Dykes, 2023) once,
+as the origin of the arrangement (the twelve chapters as a grid), not of the wording. The "Topical
+Planets in Houses" help gains one clause: unlike the lords table, it still prints the Guide's
+summary (builds B and C). No date, file, or process on the page.
+
+Tests. `tests/test_prose_tables.py`: the lords half of the Guide transcription (`LORDS_PAGE`,
+`MASHAALLAH_LORDS_GUIDE`, `MASHAALLAH_LORDS_ANCHORS`, the two lords tests) deleted; in its place
+`MASHAALLAH_LORDS_SENTENCES`, 144 rows of (placed_in, ruled, cite, anchors) -- the locator and three
+words the cell text and Sahl's sentence share, exact-word on both sides -- and tests that the
+fixture covers every cell once; every cell is {'text','cite'} with non-empty text, its cite equal
+to the fixture's and matching `^\d+(\.\d+)*, \d+(-\d+)?( fn \d+)?$`, its anchors in its text, no
+[UNCERTAIN]; the fourth check's six spot-checked cells as a named regression set ([7][3] must not
+say "relative"); [8][5]'s cite carries "fn 47" and its text "smudged"; the count of dash cells is
+what the help states (0); the reader prints text + " (cite)". The planets-in-houses half of the
+file is untouched. The docstring rewritten to say what the file now pins. The corpus is private, so
+the anchors are all the app repo carries; the checker's sentence table (all 144: placed-in, ruled,
+cite, file line, the sentence's first six words) is in the corpus repo's process directory beside
+the plan. `tables.json` regenerated once: unchanged, since it inventories headings and column
+names, and neither changed. Whole suite 2806 passed, 1 skipped, 6 xfailed (main: 2665 / 1 / 6).

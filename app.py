@@ -2254,7 +2254,7 @@ def analysis_tables():
          "Rhetorius & PN IV, as the Reference Guide summarises them.",
          planets_in_houses_data),
         ("Dignities and places", "Topical House Lords (Masha'allah)",
-         "Masha'allah's lords-of-places chapters, as the Reference Guide summarises them.",
+         "Sahl, On Nativities, the twelve lords-of-places passages, paraphrased; each cell carries its locator.",
          _house_lord_rows()),
         ("Configurations", "Aspects, aversions and connections",
          f"Connection test in force: {CONNECTION_PROFILE}.", aspects),
@@ -2969,7 +2969,7 @@ def page_dignities():
                      column_config=_yes_no_columns(pd.DataFrame(sect_rows)))
     st.caption("Sect: Sahl, The Introduction Ch. 3, 85. Domain: Gr. Intr. VII.1, 37 and VII.6, 13 "
                "(or Masha'allah, On Nativities 1.23, 17, per the switch).")
-    st.subheader('Topical Planets in Houses', help="Each planet's whole-sign house placement with BOTH readings for that pairing, good and bad, as the TNAC Reference Guide for the Planets and Places (Dykes, 2023) summarises them: its Rhetorius column from Rhetorius Ch. 57 and Firmicus, Mathesis III.2-III.13 (both texts are now in hand; the Guide's summary is still what the table prints, and it has not yet been checked against them), its PN IV column from Book II's lord of the year in the places, which the Guide applies to natal planets -- a reading of the Guide's, followed here.")
+    st.subheader('Topical Planets in Houses', help="Each planet's whole-sign house placement with BOTH readings for that pairing, good and bad, as the TNAC Reference Guide for the Planets and Places (Dykes, 2023) summarises them: its Rhetorius column from Rhetorius Ch. 57 and Firmicus, Mathesis III.2-III.13 (both texts are now in hand; unlike the Topical House Lords table below, this table still prints the Guide's summary, which has not yet been checked against them), its PN IV column from Book II's lord of the year in the places, which the Guide applies to natal planets -- a reading of the Guide's, followed here.")
     st.caption("Rhetorius & PN IV, as the Reference Guide summarises them; the Guide prints ? for the Moon in the sixth and the eighth, and so does this table.")
     st.dataframe(pd.DataFrame(planets_in_houses_data, columns=['Planet', 'Placed in (WS place)', 'Lean']),
                  hide_index=True, width='content', height=_rows_height(len(planets_in_houses_data)))
@@ -2980,13 +2980,13 @@ def page_dignities():
                  hide_index=True)
     with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
         st.markdown("Neither is chosen for you. The only thing available to choose with is the Net from the Planetary Condition table, and that number is this app's own arithmetic -- Abu Ma'shar enumerates the VII.6 conditions, never totals them, gives no weighting and no tie rule. An invented score silently picking one of two classical delineations turns a convenience into a verdict.\n\nThe Net is shown as a LEAN instead, and reads Indeterminate within a margin of one, which is the width of a single testimony: those charts sit one label away from the opposite reading, and should be judged on the condition counts and the labels rather than on the number.")
-    st.subheader("Topical House Lords (Masha'allah)", help='For each of the twelve topical houses, its domicile lord\'s own whole-sign placement, and Masha\'allah\'s delineation for that [placed-in, rules] pairing, as the TNAC Reference Guide for the Planets and Places (Dykes, 2023) summarises Sahl, On Nativities\' lords-of-places chapters (1.36, 78-97; 2.14; 3.10; 4.11; 5.1; 6.3.4, 12-24; 7.1; 8.5; 9.4; 10.2.4; 11.1; 12.1) -- the classical way of reading what a house\'s ruler is "doing" elsewhere in the chart.')
+    st.subheader("Topical House Lords (Masha'allah)", help='For each of the twelve topical houses, its domicile lord\'s own whole-sign placement, and Masha\'allah\'s delineation for that [placed-in, rules] pairing -- the classical way of reading what a house\'s ruler is "doing" elsewhere in the chart. Every cell\'s wording is this app\'s paraphrase of Sahl\'s own sentence for that pairing, from his twelve lords-of-places passages in On Nativities (the lord of the first 1.36, 79-97; the second 2.14, 9-28; the third 3.10, 1-13; the fourth 4.11, 2-23; the fifth 5.1, 78-90; the sixth 6.3.4, 12-23; the seventh 7.1, 205-216; the eighth 8.5, 2-13; the ninth 9.4, 23-34; the tenth 10.2.4, 1-12; the eleventh 11.1, 16-27; the twelfth 12.1, 35-46), with Sahl\'s own conditions kept (if received, if a fortune or an infortune looked at it) and his locator in parentheses after the text. Sahl has a sentence for every one of the 144 pairings, so no cell is empty; the one his translator brackets as illegible (the lord of the fifth in the eighth, 5.1, 85) says so and carries the sense of his footnote. The arrangement -- those twelve chapters laid out as a grid of the lord of each place in each place -- follows the TNAC Reference Guide for the Planets and Places (Dykes, 2023); the wording does not.')
     # Averse: the lord sits in the 2nd, 6th, 8th or 12th sign from the
     # house it rules, so it does not see its own place.
     lords_rows = _house_lord_rows()
     st.dataframe(pd.DataFrame(lords_rows), hide_index=True, width='content', height=_rows_height(len(lords_rows)),
                  column_config=_yes_no_columns(pd.DataFrame(lords_rows)))
-    st.caption("Masha'allah's condition is his own, stated at the end of every lord-of-the-Nth section: \"Work in this chapter "
+    st.caption("Masha'allah's condition is his own, stated at the end of eight of the twelve lord-of-the-Nth sections: \"Work in this chapter "
                "if the lord of the third and the third [itself] were free of the infortunes, and the fortunes do not witness\" "
                "(On Nativities 3.10, 14; likewise 4.11, 24; 6.3.4, 24; 7.1, 217; 9.4, 35; 10.2.4, 13; 11.1, 28; 12.1, 47). "
                "Whole-sign: an infortune with, square or opposite the house or its lord; a fortune in any aspect or assembly. "
