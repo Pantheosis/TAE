@@ -215,7 +215,7 @@ def test_the_timing_pages_copy_of_the_radio_keeps_its_label():
 def test_reading_radio_passes_label_visibility_through_and_defaults_to_visible():
     src = ui_source()
     assert 'def _reading_radio(label, options, widget_key, store_key, help=None,\n' in src
-    assert 'label_visibility="visible")' in src
+    assert 'label_visibility="visible", format_func=None)' in src
     assert "label_visibility=label_visibility" in src
 
 

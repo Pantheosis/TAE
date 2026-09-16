@@ -38,9 +38,12 @@ LAYOUTS = ["Square", "Wide"]
 
 # The Chart page's fragment is main's third child (header, strip, readings
 # note, then the wheel block); the Timing page's is the third child of the
-# first tab, after that tab's own subheader and table.
+# first tab, after that tab's own subheader and table. The Timing page's
+# tabs moved from main's sixth child to its seventh when the Sources shown
+# scope line joined the header block (2026-09-16); the path into the tab is
+# unchanged.
 CHART_FRAGMENT = (2,)
-TIMING_FRAGMENT = (5, 0, 2)
+TIMING_FRAGMENT = (6, 0, 2)
 
 
 def _at(page, layout=None, view=None, **state):
@@ -376,7 +379,7 @@ def test_the_planetary_years_heading_carries_no_metadata():
 
 def test_the_planetary_years_caption_follows_its_heading():
     at = _at("timing")
-    tab = _node(at, (5, 5))
+    tab = _node(at, (6, 5))
     kids = list(tab.children.values())
     at_heading = next(i for i, k in enumerate(kids)
                       if type(k).__name__ == "Subheader" and k.value == "Planetary years")

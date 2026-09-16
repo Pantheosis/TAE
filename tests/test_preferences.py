@@ -105,7 +105,7 @@ def test_sources_lists_the_readings_in_force_and_reset_restores_the_defaults(pre
     assert rows["Connection test used in the shared tables"]["In force"] == "Abu Ma'shar"
     assert rows["Connection test used in the shared tables"]["Differs"] == "yes"
     assert rows["Domain (hayz)"]["Differs"] == "yes"
-    assert rows["Reading depth"]["In force"] == "Course text"
+    assert rows["Sources shown"]["In force"] == "Course text"
     assert len(rows) == 9          # ten until 2026-09-11, when the five-degree all-cusps reading was retired (owner's ruling)
     assert "Five-degree" not in " ".join(rows)
     # _persist has been through the radios? Not on this page -- seed the file the way a session would.
@@ -122,7 +122,7 @@ def test_sources_lists_the_readings_in_force_and_reset_restores_the_defaults(pre
 
 def test_the_reading_depth_is_a_reading_on_the_sources_page(prefs_on):
     at = make_app(page="sources").run()
-    find_page_widget(at, "radio", "Reading depth").set_value("Course text and supplement").run()
+    find_page_widget(at, "radio", "Sources shown").set_value("Course text and supplement").run()
     assert at.session_state["_reading_depth"] == "Course text and supplement"
     assert json.loads(_prefs_path().read_text())["_reading_depth"] == "Course text and supplement"
 
