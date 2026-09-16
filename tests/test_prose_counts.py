@@ -416,6 +416,12 @@ BUILD_PROCESS_MARKERS = re.compile(
 COURSE_CITATIONS_ALLOWED = ("Lesson 3, A Chart Tour, §4-5; the Course Glossary s.v. Advancement",
                             "the course's reading, Lesson 3 §4-5, adopted here")
 COURSE_MARKERS = re.compile(r"\bLessons? \d|Course Glossary|A Chart Tour")
+# ".md" is in the markers to catch a page naming one of this project's own
+# documents. The Markdown report the Export analysis action hands the reader
+# (F08, 2026-09-16) has to be called something, and these two strings are the
+# file's NAME in a save dialog -- never text on a page. Exactly these two, so
+# that a page saying "see SOURCES.md" still fails.
+DOWNLOAD_FILE_SUFFIXES = (".md", "analysis.md")
 
 
 def test_page_strings_carry_no_build_process():
@@ -438,6 +444,8 @@ def test_page_strings_carry_no_build_process():
             for m in BUILD_PROCESS_MARKERS.finditer(node.value):
                 if m.group(0).lower() == "the owner" and "the owner of the revolution" in node.value:
                     continue                                                  # II.3, 5's own words
+                if m.group(0) == ".md" and node.value in DOWNLOAD_FILE_SUFFIXES:
+                    continue                          # a downloaded report's own file name
                 offenders.append((node.lineno, m.group(0), node.value[max(0, m.start() - 40):m.end() + 40]))
             for m in COURSE_MARKERS.finditer(node.value):
                 if any(allowed in node.value for allowed in COURSE_CITATIONS_ALLOWED):
