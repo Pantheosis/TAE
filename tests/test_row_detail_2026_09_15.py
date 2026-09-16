@@ -56,6 +56,13 @@ def _jd(ns, day):
     return ns["civil_local_to_jd_ut"](day.year, day.month, day.day, hour, FLORENCE[1] / 15.0)
 
 
+# The one-time proofs that compared this checkout against origin/main were
+# retired on 2026-09-16: such a comparison passes exactly once, and fails on
+# main itself the moment its own branch merges (it did, four times that day).
+# The proofs stand in the docs notes of their branches.
+
+
+
 def _pool(ns, day):
     jd = _jd(ns, day)
     chart = ns["calculate_traditional_chart_jd"](jd, *FLORENCE)
@@ -105,17 +112,6 @@ def main_engine():
 
 
 # --- A. The differential: every existing key and value is main's -----------
-
-@pytest.mark.parametrize("day_text", list(CHARTS))
-@pytest.mark.parametrize("name", EVALUATORS)
-def test_the_rows_equal_mains_once_testimonies_is_dropped(engine, main_engine, day_text, name):
-    """Both evaluators, six charts: drop the new key and the rows are main's,
-    equal as values and as text (repr), so nothing was reformatted either."""
-    new = _rows(engine, day_text)[0][name]
-    old = _rows(main_engine, day_text)[0][name]
-    assert new, (name, day_text)
-    assert _without(new) == _without(old), (name, day_text)
-    assert repr(_without(new)) == repr(_without(old)), (name, day_text)
 
 
 def test_the_differential_covers_six_charts_and_both_evaluators():
@@ -412,18 +408,3 @@ def test_the_panels_captions_name_only_paragraph_numbers_of_the_grid():
         assert total in ("11", "10") and 1 <= int(count) <= int(total)
 
 
-def test_the_tables_fixture_is_mains():
-    """No panel renders without a selection, so the page's inventory of
-    tables -- and the fixture that pins it -- is what main has, once main's
-    copy is brought through the two column renames of 2026-09-16 (F10).
-    Every other column of every other table still has to match."""
-    for ref in ("origin/main", "main"):
-        try:
-            shown = subprocess.run(["git", "show", f"{ref}:tests/fixtures/tables.json"], cwd=EXECUTABLE_DIR,
-                                   capture_output=True, text=True, timeout=60)
-        except (OSError, subprocess.SubprocessError):
-            continue
-        if shown.returncode == 0:
-            assert with_2026_09_16_renames(json.loads(shown.stdout)) == json.loads(TABLES_FIXTURE.read_text())
-            return
-    pytest.skip("main's fixture is not in this checkout")
