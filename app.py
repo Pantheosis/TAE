@@ -3468,13 +3468,24 @@ def page_configurations():
             _absent(_gap)
 
     def abu_condition():
-        st.subheader('Planetary Condition', help="Each planet checked against Abu Ma'shar's conditions in Gr. Intr. VII.6, kept in his own four groups: good fortune (1-20), strength (21-29), weakness (30-46), misfortune (47-62), plus, for the Moon only, HIS OWN eleven corruptions (63-74).")
+        st.subheader('Planetary Condition', help="Each planet checked against Abu Ma'shar's conditions in Gr. Intr. VII.6, kept in his own four groups: good fortune (1-20), strength (21-29), weakness (30-46), misfortune (47-62), plus, for the Moon only, his own eleven corruptions (63-74).")
         st.caption("Gr. Intr. VII.6")
         _reading_radio("VII.6, 27/45 'eastern/western relative to the Sun'", EASTERN_RULE_OPTIONS,
                        "eastern_rule", "_eastern_rule",
                        help="'hemisphere': the whole half, excluding the rays (VII.2, 2; VII.6, 34). "
                             "'VII.2 band': only the easternizing and westernizing bands (VII.2, 14-31). "
                             "Affects: Planetary Condition (27, 45). Full text on the Sources page.")
+        # The qualification the table cannot be read without, above it.
+        # Net's Indeterminate band is the engine's abs(net) <= 1, the same
+        # margin the Dignities page's Lean reads (copy correction 9a).
+        with _prose():
+            st.markdown(
+                ":orange[**Net and Verdict are this app's heuristic, not Abu Ma'shar's.**] He enumerates these "
+                "conditions; he nowhere adds them up, and VII.6 gives no weighting and no tie rule. They are kept "
+                "beside the Dignities page, which prints both the good and the bad Rhetorius/PN IV reading for each "
+                "placement and chooses neither, showing this Net as a lean; a Net of −1, 0 or +1 is Indeterminate on both "
+                "pages. Read the four counts and the labels themselves in preference to the single number."
+            )
         condition_list = []
         for p, cond in abu_mashar_condition.items():
             condition_list.append({
@@ -3490,22 +3501,37 @@ def page_configurations():
                 "Moon Defects": str(cond['Moon Defects']) if cond['Moon Defects'] else '',
                 "Good Fortune / Strength": ", ".join(cond['Positive Labels']) if cond['Positive Labels'] else "-",
                 "Weakness / Misfortune": ", ".join(cond['Negative Labels']) if cond['Negative Labels'] else "-",
-                # Last, and labelled app arithmetic in the caption:
-                # VII.6 never totals its conditions.
+                # Last, and labelled app arithmetic in the qualification
+                # above: VII.6 never totals its conditions.
                 "Net": cond['Net'],
                 "Verdict": cond['Condition'],
             })
         df_condition = pd.DataFrame(condition_list).sort_values(by="Net", ascending=False)
         st.dataframe(df_condition, hide_index=True, width='stretch', height=_rows_height(len(df_condition)))
-        st.caption(
-            ":orange[**Net and Verdict are this app's heuristic, not Abu Ma'shar's.**] He enumerates these "
-            "conditions; he nowhere adds them up, and VII.6 gives no weighting and no tie rule. They are kept "
-            "beside the Dignities page, which prints both the good and the bad Rhetorius/PN IV reading for each "
-            "placement and chooses neither, showing this Net as a lean; a Net of zero is Indeterminate on both "
-            "pages. Read the four counts and the labels themselves in preference to the single number."
-        )
-        with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-            st.markdown("The Moon's eleven corruptions (63-74) are shown as their own count rather than folded in with the rest. Sahl's ten (The Introduction Ch. 3, 103-112) are a different list, not a variant reading of this one, and have their own table, Corruption of the Moon, in the Sahl view: Abu Ma'shar has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear here.\n\nThe four counts and the labels are the report. NET and VERDICT are a convenience of this app and NOT Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They are kept because Topical Planets in Houses on the Dignities page prints both the good and the bad reading for every placement and chooses neither: this Net is shown there as a lean, and a Net of zero is Indeterminate in both places.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's eleven corruptions contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once.\n\nEnclosure here is Abu Ma'shar's own (56-62) -- by degree within 7 degrees either side counting rays as well as bodies, by sign in the 2nd and 12th, or separating from one encloser and connecting with the other -- and it can be DISSOLVED: the degree type when the Sun or a fortune casts a ray within 7 degrees of the enclosed planet (60), the sign type by any look from them (61). The standalone Enclosure table in the Connection group of the Sahl view is Sahl's separate version.\n\nThe by-sign type counts an encloser's RAYS as well as its body, which is what 58 says twice. Be aware that this makes it common: it fires on roughly 43% of placements, because a planet's rays reach eight of the twelve signs. A bodies-only variant at about 2% exists in the code (SIGN_ENCLOSURE_BODIES_ONLY) but is this project's own conjecture, not the text, so it is off.")
+        # One planet's row in words: the four counts (and the Moon's own),
+        # Net and Verdict on one line, then the evaluator's own label lists
+        # as bullets under the table's two label headings -- the arrays as
+        # the engine holds them, never the joined cell split on its commas.
+        def _condition_detail(row):
+            cond = abu_mashar_condition[row['Planet']]
+            counts = (f"Good Fortune {row['Good Fortune']} · Strength {row['Strength']} · Weakness {row['Weakness']} · "
+                      f"Misfortune {row['Misfortune']}"
+                      + (f" · Moon Defects {row['Moon Defects']}" if row['Moon Defects'] else "")
+                      + f" · Net {row['Net']} · Verdict {row['Verdict']}")
+            st.markdown(f"**{row['Planet']}.** {counts}")
+            for heading, labels in (("Good Fortune / Strength", cond['Positive Labels']),
+                                    ("Weakness / Misfortune", cond['Negative Labels'])):
+                st.markdown(f"**{heading}**\n\n" + ("\n".join(f"- {label}" for label in labels) if labels else "-"))
+        _detail_selector('Planetary Condition', condition_list, 'Planet', _condition_detail,
+                         "Select a planet to read its conditions in words")
+        _notes_expander(NOTES_TITLE, [
+            ("The two Moon checklists.",
+             "The Moon's eleven corruptions (63-74) are shown as their own count rather than folded in with the rest. Sahl's ten (The Introduction Ch. 3, 103-112) are a different list, not a variant reading of this one, and have their own table, Corruption of the Moon, in the Sahl view: Abu Ma'shar has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear here."),
+            ("How this app's count is formed.",
+             "The four counts and the labels are the report. **Net** and **Verdict** are a convenience of this app and **not** Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They are kept because Topical Planets in Houses on the Dignities page prints both the good and the bad reading for every placement and chooses neither: this Net is shown there as a lean, and a Net of −1, 0 or +1 is Indeterminate in both places.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's eleven corruptions contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once."),
+            ("Enclosure under this source.",
+             "Enclosure here is Abu Ma'shar's own (56-62) -- by degree within 7 degrees either side counting rays as well as bodies, by sign in the 2nd and 12th, or separating from one encloser and connecting with the other -- and it can be **dissolved**: the degree type when the Sun or a fortune casts a ray within 7 degrees of the enclosed planet (60), the sign type by any look from them (61). The standalone Enclosure table in the Connection group of the Sahl view is Sahl's separate version.\n\nThe by-sign type counts an encloser's **rays** as well as its body, which is what 58 says twice. Be aware that this makes it common: it fires on roughly 43% of placements, because a planet's rays reach eight of the twelve signs. A bodies-only variant at about 2% exists in the code (SIGN_ENCLOSURE_BODIES_ONLY) but is this project's own conjecture, not the text, so it is off."),
+        ])
 
     def abu_natural():
         _finding(_gap, 'Natural connections', "Gr. Intr. VII.5, 53-77", natural_connections,

@@ -455,3 +455,82 @@ def test_every_registry_reading_has_its_section_with_the_value_in_force():
         any("Masha'allah" in c and "Dignities and places" in c for c in captions)
     # No second set of controls: the one radio on the page is Sources shown.
     assert [r.label for r in at.main.radio] == ["Sources shown"]
+
+
+# --- 2.6 Configurations: Planetary Condition and correction 9a --------------
+
+CONDITION_KEY = "planetary_condition_detail"
+NET_BAND = "a Net of −1, 0 or +1 is Indeterminate"
+
+
+def _configurations(**switches):
+    at = make_app(page="configurations", switches=switches or None)
+    at.session_state["_reading_depth"] = READING_DEPTHS[1]
+    at.run()
+    assert_no_exception(at, "configurations, supplement")
+    return at
+
+
+def test_the_condition_qualification_stands_above_the_table_and_the_panel_lists_the_labels(engine):
+    at = _configurations()
+    block = _between(at, "Planetary Condition")
+    assert block[0] == ("caption", "Gr. Intr. VII.6")
+    markdown = [text for kind, text in block if kind == "markdown"]
+    assert markdown[0].startswith(":orange[**Net and Verdict are this app's heuristic, not Abu Ma'shar's.**] He enumerates these conditions")
+    assert f"{NET_BAND} on both pages" in markdown[0]
+    kinds = [k for k, _ in block]
+    assert kinds.index("markdown") < kinds.index("dataframe") < kinds.index("selectbox")
+    table = [df.value for df in at.main.dataframe if "Verdict" in df.value.columns and "Moon Defects" in df.value.columns][0]
+    box = [s for s in at.main.selectbox if s.key == CONDITION_KEY][0]
+    assert box.value is None and box.placeholder == "Select a planet to read its conditions in words"
+    assert box.options == ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"]
+    for planet in ("Moon", "Saturn"):
+        at2 = _configurations()
+        [s for s in at2.main.selectbox if s.key == CONDITION_KEY][0].select(planet)
+        at2.run()
+        assert_no_exception(at2, planet)
+        lines = [m.value for m in at2.main.markdown]
+        row = table[table["Planet"] == planet].iloc[0]
+        head = [l for l in lines if l.startswith(f"**{planet}.** Good Fortune ")][0]
+        expected = (f"**{planet}.** Good Fortune {row['Good Fortune']} · Strength {row['Strength']} · Weakness {row['Weakness']} · "
+                    f"Misfortune {row['Misfortune']}" + (f" · Moon Defects {row['Moon Defects']}" if row['Moon Defects'] else "")
+                    + f" · Net {row['Net']} · Verdict {row['Verdict']}")
+        assert head == expected
+        positive = [l for l in lines if l.startswith("**Good Fortune / Strength**")][0]
+        negative = [l for l in lines if l.startswith("**Weakness / Misfortune**")][0]
+        # The bullets are the engine's arrays, not the joined cell split on commas.
+        bullets = lambda text: [b[2:] for b in text.split("\n") if b.startswith("- ")]
+        joined = lambda labels: ", ".join(labels) if labels else "-"
+        assert joined(bullets(positive)) == row["Good Fortune / Strength"]
+        assert joined(bullets(negative)) == row["Weakness / Misfortune"]
+        if planet == "Moon":
+            assert row["Moon Defects"] != "" and " · Moon Defects " in head
+    notes = _expander_text(at, "Sources and editorial notes", "The two Moon checklists")
+    for section in ("**The two Moon checklists.**", "**How this app's count is formed.**", "**Enclosure under this source.**"):
+        assert section in notes, section
+    assert "Sahl's ten (The Introduction Ch. 3, 103-112) are a different list" in notes
+    assert "it fires on roughly 43% of placements" in notes
+
+
+def test_correction_9a_the_indeterminate_band_is_minus_one_to_plus_one_on_both_pages(engine):
+    """The engine's abs(net) <= 1 for the Condition verdict and for the
+    Dignities Lean; the Configurations copy says so in the qualification
+    and in the notes, and the Dignities page's own words agree."""
+    import inspect
+    assert "abs(net) <= 1" in inspect.getsource(engine["evaluate_planets_in_houses"])
+    assert "abs(net) <= 1" in engine_source_of("evaluate_abu_mashar_condition")
+    at = _configurations()
+    texts = [m.value for m in at.main.markdown]
+    assert any(f"{NET_BAND} on both pages" in t for t in texts)
+    assert any(f"{NET_BAND} in both places" in t for t in texts)
+    assert not any("a Net of zero" in t for t in texts + [c.value for c in at.main.caption])
+    dignities = make_app(page="dignities").run()
+    assert any("reads Indeterminate within a margin of one, which is the width of a single testimony" in m.value
+               for m in dignities.main.markdown)
+    heading = [h for h in at.main.subheader if h.value == "Planetary Condition"][0]
+    assert "for the Moon only, his own eleven corruptions (63-74)" in heading.help
+
+
+def engine_source_of(name):
+    from conftest import function_source
+    return function_source(name)

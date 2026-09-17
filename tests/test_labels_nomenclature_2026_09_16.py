@@ -274,8 +274,10 @@ def test_topical_planets_in_houses_is_headed_once():
 
 
 def test_the_condition_caption_says_what_the_dignities_page_does(configurations):
-    caption = [c.value for c in configurations.main.caption
-               if "Net and Verdict are this app's heuristic" in c.value]
+    # The qualification stands above the table as body text since
+    # readability branch A (2026-09-17); the sentences are the caption's.
+    caption = [m.value for m in configurations.main.markdown
+               if "Net and Verdict are this app's heuristic" in m.value]
     assert len(caption) == 1, caption
     text = caption[0]
     assert "chooses neither" in text and "Indeterminate on both" in text

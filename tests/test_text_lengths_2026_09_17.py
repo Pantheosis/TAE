@@ -108,7 +108,6 @@ ALLOWED_LONG = (
     '⚠️ **The Lord of the Hour here is not a temporal',
     "Masha'allah's condition is his own, stated at th",
     "The point weights are this app's own ranking con",
-    ":orange[**Net and Verdict are this app's heurist",
     'The releaser and the house-master PN IV leaves t',
     "PN IV's own conventions, read from its figures: ",
     'A table, not the wheel of I.6, 1: every point by',
