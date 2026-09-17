@@ -3,7 +3,9 @@
 Branch `readability-h-2026-09-17` off `main` at `93f7bbd`. Branch H of
 `UI_READABILITY_PLAN_2026-09-17_rev2.md` §3: tests only. `app.py` and
 `engine.py` are byte-identical to `main`; `tests/fixtures/tables.json` is
-byte-identical to `main`. Three commits, one per task, in the order below.
+byte-identical to `main`. Three commits, one per task, in the order below,
+and a fourth after the adversarial pass (`H_ADVERSARIAL_REPORT_2026-09-17.md`
+on the Desktop) with the three tightenings it asked for, marked below.
 
 ## What was asked
 
@@ -79,13 +81,25 @@ next subheader, will see it keyed under that label.
 `tests/test_text_lengths_2026_09_17.py`. The scan measures only what the AST
 states as text: a string constant; an f-string's constant parts, the
 interpolations uncounted; a `+` chain of those; a `.format(...)` call as its
-receiver. Anything else measures 0 and is ignored (26 of the 195 collected
-strings, all built from names). The measured text is the constant parts
-concatenated in order; the key is its first 48 characters, exact.
+receiver; and, since the adversarial pass, a bare name that `app.py` assigns
+exactly once at module level to something the scan can measure, measured as
+that value, so a tooltip lifted to a module constant does not leave the
+guard. Names that come from `engine.py` through the star import stay
+unmeasured by design: the engine's note constants are branch C's business
+under plan §1.6, and the test does not read `engine.py` (the two long
+captions that print engine notes on the Timing and Reference pages are
+therefore invisible to it, as the report says). Anything else measures 0
+and is ignored: 24 of the 195 collected strings, down from 26 before the
+name resolution, which measures the wheel's dark-theme help at its two
+sites (162 characters, under the ceiling) and finds no other app.py
+constant at a measured site; the rest are locals, conditionals, joins and
+subscripts. The measured text is the constant parts concatenated in order;
+the key is its first 48 characters, exact.
 
 On `main` the scan collects 85 `help=`, 35 `glance=` and 75 caption
 strings, totalling 35,384, 11,690 and 38,876 characters. **Offenders: 42
-help, 16 glance, 32 caption — 90 in all, every key distinct.** (The plan's
+help, 16 glance, 32 caption — 90 in all, every key distinct; unchanged by
+the name resolution.** (The plan's
 own AST count was 56 help calls at 30,100 characters and 75 captions at
 39,800; this scan also takes `help=` on `column_config` calls and on
 `st.subheader`, hence more help calls.) The file passes on `main`: two
@@ -138,8 +152,17 @@ a miss may print a fragment. Locators are the citation forms the three
 citation-scan tests recognise, their patterns copied into the script with a
 comment naming the source files; every token matched in the base corpus
 must be a substring of the branch corpus. Output: `SENTENCE: ...` or
-`LOCATOR: ...` per miss, nothing on success; exit 1 on any miss.
-`--summary` prints base sentences, base locators and misses to stderr.
+`LOCATOR: ...` per miss, nothing on success; exit 1 on any miss. After
+those, since the adversarial pass, an informational `LOCATOR-COUNT: <token>
+base <n> -> branch <m>` line for every locator token that occurs fewer times
+in the branch corpus than in the base corpus but still occurs (occurrences
+counted over the normalised string corpus, not sites; a token gone
+altogether is a `LOCATOR:` miss and is not repeated). It never sets the exit
+status. It exists because the presence check is satisfied by any one copy of
+a duplicated locator: the same chapter-and-sentence range stands in several
+labels and notes, and a copy mistyped to another valid number passed the
+script and the citation-scan tests alike. `--summary` prints base
+sentences, base locators, misses and count drops to stderr.
 
 Self-check on this branch: `main` gives 1,262 sentences and 114 locators
 from `app.py`, 3,448 and 193 with `--engine`, zero misses, exit 0. Two
@@ -148,14 +171,38 @@ one caption sentence on the Chart page reported exactly that sentence and
 exited 1; altering the range in a short source label (under 25 characters,
 so no sentence covers it) reported exactly that locator token, the two
 copies of the token in `engine.py` being a docstring and a comment, which
-the extraction rightly ignores.
+the extraction rightly ignores. After the tightening: `main` still prints
+nothing (every count equal on an unchanged tree, exit 0); shortening one of
+the two copies of a duplicated third-chapter range in a short finding label
+printed exactly one `LOCATOR-COUNT` line, `base 2 -> branch 1`, and exited
+0 (non-committed, reverted). That label's sentence check was silent, since
+the sentence rule splits after the chapter abbreviation and leaves the
+changed range in a fragment under 25 characters: the count line is what
+sees a mistyped copy in a short label.
 
-**How misses are classified on N, A, B and C.** Every line the script
-prints is listed in that branch's docs note under exactly one of the five
-headings in plan §3: *consolidated duplicate of <sentence>*, *copy
-correction 9a/9b*, *cross-reference reworded (N)*, *ALL CAPS to bold
-(test_prose_counts edited)*, *heading shortened*. A miss that fits none is a
-loss and blocks the branch.
+**How misses are classified on N, A, B and C.** Every `SENTENCE:` or
+`LOCATOR:` line the script prints is listed in that branch's docs note under
+exactly one of six headings: the five in plan §3, *consolidated duplicate of
+<sentence>*, *copy correction 9a/9b*, *cross-reference reworded (N)*, *ALL
+CAPS to bold (test_prose_counts edited)*, *heading shortened*, and a sixth,
+*rebuilt into the table <heading> from <sentence>*, for a sentence whose
+substance now stands as a row of a comparison table: the per-table
+source-sentence list that plan rule 1.4 already requires is that list, under
+the table's heading, and the sentence named there is the one the row was
+built from. A miss that fits none is a loss and blocks the branch.
+
+Two things the script's matching implies for a builder. A sentence moved
+verbatim into a Markdown table cell is silent, because the match is
+substring; only a rewritten row is a miss, and it goes under the sixth
+heading. A sentence split across two string constants joined by `+`, or
+given an f-string interpolation mid-sentence, reads as a miss, because the
+branch corpus joins constants with newlines: migrated prose stays in
+adjacent string literals, which is `app.py`'s style everywhere.
+
+A `LOCATOR-COUNT` line is classified under *consolidated duplicate* when
+the surviving copy is the same locator in the same sentence as the one that
+went; otherwise it is checked by eye against the source before the branch is
+called done. It never blocks on its own.
 
 ## What the tests showed
 

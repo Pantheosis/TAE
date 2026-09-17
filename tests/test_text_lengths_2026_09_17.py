@@ -13,9 +13,15 @@ here are ceilings, not the aim: help and glance at 300, caption at 400.
 The scan is by AST over app.py, so it sees only what the source states
 as text: a string constant; an f-string's constant parts (the
 interpolations count for nothing); a ``+`` chain of those; a
-``.format(...)`` call measured as its receiver. Anything else measures 0
-and is ignored, so a caption built from a variable is not this test's
-business. The measured text is the constant parts concatenated in order.
+``.format(...)`` call measured as its receiver; a bare name, when app.py
+assigns it exactly once at module level to something the scan can
+measure, measured as that value, so a tooltip lifted to a module constant
+does not leave the guard. Names app.py takes from engine.py through its
+star import stay unmeasured by design: the engine's note constants are
+the last readability branch's (C) business, and this test does not read
+engine.py. Anything else measures 0 and is ignored, so a caption built at
+run time from a local is not this test's business. The measured text is
+the constant parts concatenated in order.
 
 ALLOWED_LONG freezes the first 48 characters of every string over its
 ceiling as the app stood when the tuple was generated. Three tests: no
@@ -141,19 +147,35 @@ ALLOWED_LONG = (
 )
 
 
-def _constant_parts(node):
+def _module_constants(tree):
+    """name -> value expression, for every name app.py assigns exactly
+    once at module level with a single plain target."""
+    counts, values = {}, {}
+    for node in tree.body:
+        if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)):
+            name = node.targets[0].id
+            counts[name] = counts.get(name, 0) + 1
+            values[name] = node.value
+    return {name: values[name] for name, n in counts.items() if n == 1}
+
+
+def _constant_parts(node, constants=None):
     """The string constants an expression states, in order; [] where the
-    AST cannot see text."""
+    AST cannot see text. `constants` is the module-level table a bare
+    name is resolved through, one hop only."""
     if isinstance(node, ast.Constant) and isinstance(node.value, str):
         return [node.value]
     if isinstance(node, ast.JoinedStr):
         return [v.value for v in node.values
                 if isinstance(v, ast.Constant) and isinstance(v.value, str)]
     if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
-        return _constant_parts(node.left) + _constant_parts(node.right)
+        return _constant_parts(node.left, constants) + _constant_parts(node.right, constants)
     if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
             and node.func.attr == "format"):
-        return _constant_parts(node.func.value)
+        return _constant_parts(node.func.value, constants)
+    if isinstance(node, ast.Name) and constants and node.id in constants:
+        return _constant_parts(constants[node.id])
     return []
 
 
@@ -161,18 +183,20 @@ def measured_texts(source=None):
     """Every (kind, line, text) the scan measures: kind is "help" or
     "glance" for those keyword arguments on any call, "caption" for the
     first positional argument of any ``.caption(...)`` call, whatever the
-    receiver."""
+    receiver; a bare name resolved through the module-level constants."""
     tree = ast.parse(APP_PATH.read_text() if source is None else source)
+    constants = _module_constants(tree)
     found = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
         for kw in node.keywords:
             if kw.arg in ("help", "glance"):
-                found.append((kw.arg, node.lineno, "".join(_constant_parts(kw.value))))
+                found.append((kw.arg, node.lineno, "".join(_constant_parts(kw.value, constants))))
         if (isinstance(node.func, ast.Attribute) and node.func.attr == "caption"
                 and node.args):
-            found.append(("caption", node.lineno, "".join(_constant_parts(node.args[0]))))
+            found.append(("caption", node.lineno,
+                          "".join(_constant_parts(node.args[0], constants))))
     return sorted(found, key=lambda t: t[1])
 
 

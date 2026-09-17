@@ -26,7 +26,14 @@ their patterns are copied below. Every token they match in the base
 corpus must occur in the branch corpus.
 
 Output: one line per miss, ``SENTENCE: <sentence>`` or ``LOCATOR:
-<token>``, nothing on success; exit status 1 on any miss, else 0.
+<token>``, nothing on success; exit status 1 on any miss, else 0. After
+those, one informational line ``LOCATOR-COUNT: <token> base <n> ->
+branch <m>`` for every locator token that occurs fewer times in the
+branch corpus than in the base corpus but still occurs (occurrences
+counted over the normalised string corpus, not sites; a token gone
+altogether is a LOCATOR miss and is not repeated here). It never sets the
+exit status: it says a duplicated locator lost a copy, which may be a
+consolidation or a mistyped copy, and the reader decides which.
 ``--summary`` prints the counts to stderr. This file is a script, not a
 test: pytest does not collect it.
 """
@@ -139,8 +146,9 @@ def main(argv=None) -> int:
             if sentence not in seen:
                 seen.add(sentence)
                 base_sentences.append(sentence)
+    base_text = "\n".join(normalise(s) for s in base_strings)
     base_locators, seen = [], set()
-    for token in locators_of("\n".join(normalise(s) for s in base_strings)):
+    for token in locators_of(base_text):
         if token not in seen:
             seen.add(token)
             base_locators.append(token)
@@ -154,9 +162,15 @@ def main(argv=None) -> int:
         if token not in branch_text:
             print(f"LOCATOR: {token}")
             misses += 1
+    drops = 0
+    for token in base_locators:
+        before, after = base_text.count(token), branch_text.count(token)
+        if 0 < after < before:
+            print(f"LOCATOR-COUNT: {token} base {before} -> branch {after}")
+            drops += 1
     if args.summary:
         print(f"base sentences: {len(base_sentences)}; base locators: {len(base_locators)}; "
-              f"misses: {misses}", file=sys.stderr)
+              f"misses: {misses}; locator count drops: {drops}", file=sys.stderr)
     return 1 if misses else 0
 
 
