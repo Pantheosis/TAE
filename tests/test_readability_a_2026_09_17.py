@@ -121,3 +121,81 @@ def test_a_garbage_prosperity_selection_renders_nothing_and_raises_nothing():
     at.run()
     assert_no_exception(at, "findings, garbage selection")
     assert not [m for m in at.main.markdown if m.value.startswith("**Ground.**")]
+
+
+# --- 2.2 Dignities: Topical Planets in Houses ------------------------------
+
+PLANETS_KEY = "topical_planets_in_houses_detail"
+PLANETS_GRID = "topical_planets_in_houses_grid"
+
+
+def _planet_lines(at):
+    return [m.value for m in at.main.markdown if re.match(r"^\*\*\w+ in the \d+\w\w place\.\*\* Lean: ", m.value)]
+
+
+def test_the_planets_panel_is_reached_by_the_selectbox_and_by_a_row_click_through_one_key():
+    # Keyboard path: the selectbox alone.
+    at = make_app(page="dignities").run()
+    assert_no_exception(at, "dignities")
+    box = [s for s in at.main.selectbox if s.key == PLANETS_KEY][0]
+    assert box.value is None and box.options == ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"]
+    assert box.placeholder == "Select a planet to read its complete entries and sources"
+    assert not _planet_lines(at)
+    box.select("Venus")
+    at.run()
+    assert_no_exception(at, "dignities, Venus chosen")
+    assert [l.startswith("**Venus in the ") for l in _planet_lines(at)] == [True]
+    assert at.session_state[PLANETS_KEY] == "Venus"
+    # Pointer path: a grid row selected writes the same key before the
+    # selectbox is drawn, so the selectbox shows the planet and the panel
+    # is the same panel.
+    at = make_app(page="dignities")
+    at.session_state[PLANETS_GRID] = {"selection": {"rows": [4], "columns": []}}
+    at.run()
+    assert_no_exception(at, "dignities, row 4 clicked")
+    assert at.session_state[PLANETS_KEY] == "Mars"
+    assert [s for s in at.main.selectbox if s.key == PLANETS_KEY][0].value == "Mars"
+    assert [l.startswith("**Mars in the ") for l in _planet_lines(at)] == [True]
+    # The grid's selection standing, the selectbox then moved: the
+    # selectbox is the state and the panel follows it.
+    [s for s in at.main.selectbox if s.key == PLANETS_KEY][0].select("Jupiter")
+    at.run()
+    assert_no_exception(at, "dignities, Jupiter after Mars")
+    assert [l.startswith("**Jupiter in the ") for l in _planet_lines(at)] == [True]
+    # A second click on a different row moves it again.
+    at.session_state[PLANETS_GRID] = {"selection": {"rows": [0], "columns": []}}
+    at.run()
+    assert_no_exception(at, "dignities, row 0 clicked")
+    assert [l.startswith("**Sun in the ") for l in _planet_lines(at)] == [True]
+
+
+def test_the_planets_panel_prints_whole_conditional_entries_and_the_deferred_count_leads_to_them(engine):
+    at = make_app(page="dignities").run()
+    grid = [df.value for df in at.main.dataframe if list(df.value.columns) == ['Planet', 'Placed in (WS place)', 'Lean']][0]
+    readings = [t.value for t in at.main if getattr(t, "type", None) == "table"
+                and 'Rhetorius and Firmicus, as the texts state it' in t.value.columns][0]
+    for _, g in grid.iterrows():
+        planet, house = g['Planet'], int(g['Placed in (WS place)'])
+        entries = engine["PLANETS_IN_HOUSES"][house][planet]['Rhetorius']
+        cell = readings[readings['Planet'] == planet].iloc[0]['Rhetorius and Firmicus, as the texts state it']
+        deferred = re.search(r"(\d+) conditional entr(?:y|ies) in the row's detail", cell)
+        at2 = make_app(page="dignities")
+        at2.session_state[PLANETS_KEY] = planet
+        at2.run()
+        assert_no_exception(at2, planet)
+        printed = [m.value for m in at2.main.markdown if m.value.startswith(("Rhetorius", "Firmicus"))]
+        assert printed == [engine["rhetorius_entry_text"](e) for e in entries], planet
+        if deferred:
+            assert len(entries) - len(printed) == 0 and int(deferred.group(1)) == sum(e['conditional'] for e in entries), planet
+        # every conditional entry is printed whole, never cut before its condition
+        for e, text in zip(entries, printed):
+            assert e['text'] in text, (planet, e['cite'])
+
+
+def test_a_garbage_planet_selection_renders_no_panel():
+    at = make_app(page="dignities")
+    at.session_state[PLANETS_KEY] = "Pluto"
+    at.run()
+    assert_no_exception(at, "dignities, garbage")
+    assert not _planet_lines(at)
+    assert [s for s in at.main.selectbox if s.key == PLANETS_KEY][0].value is None

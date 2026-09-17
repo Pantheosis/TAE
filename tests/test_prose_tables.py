@@ -1178,27 +1178,49 @@ def test_the_planets_reader_prints_the_halves_the_entries_and_the_moon_pointer(e
     assert [r['Natal Moon here'] for r in engine["evaluate_moon_in_houses"]({}, 0.0)] == [''] * 12
 
 
+def _planets_notes(at):
+    """The text of the Topical Planets in Houses notes expander: the headed
+    sections that took the old heading tooltip's sentences (readability
+    branch A, 2026-09-17)."""
+    for node in at.main:
+        if getattr(node, "type", None) == "status" and node.label == "Sources and editorial notes":
+            text = "\n".join(m.value for m in node.markdown)
+            if "Which sources each column represents" in text:
+                return text
+    raise LookupError("the planets notes expander")
+
+
 def test_the_help_and_caption_state_what_the_table_is(engine):
-    # The counts in the help are the table's; the caption is the visible
-    # adaptation statement; the headings are the condition ones; the Moon's
-    # table stands under the main one with its own help.
+    # The counts are in the notes (the old tooltip's sentences, under
+    # headings); the tooltip is one sentence; the adaptation statement is
+    # visible body text above the grid; the Moon's table stands under the
+    # main one with its own help.
     at = make_app(page="dignities").run()
     assert_no_exception(at, "dignities")
     heading = [h for h in at.main.subheader if h.value == "Topical Planets in Houses"][0]
+    assert heading.help == ("Each planet's whole-sign house placement with the readings for that pairing from two "
+                            "traditions, in three text columns, every entry with its locator.")
+    notes = _planets_notes(at)
     counts = ENTRY_COUNTS_THE_HELP_STATES
     assert (f"{sum(counts.values())} entries: {counts['Rhetorius']} by Rhetorius, {counts['Firmicus']} by Firmicus and "
-            f"{counts['Rhetorius, as summarized by Dykes']} by Dykes's summary; no cell is without one") in heading.help
+            f"{counts['Rhetorius, as summarized by Dykes']} by Dykes's summary; no cell is without one") in notes
     for phrase in ("Rhetorius and Firmicus, as the texts state it", "If in a suitable condition and If in a bad condition",
                    "the absence of testimony, not a neutral reading", "general malefic or general benefic testimony",
                    "Every PN IV half has text", "the TNAC Reference Guide for the Planets and Places (Dykes, 2023)",
                    "about sixty words", "condition not explicitly stated"):
-        assert phrase in heading.help, phrase
-    assert heading.help.count("TNAC Reference Guide") == 1
-    captions = [c.value for c in at.main.caption]
-    adaptation = ("The Book II entries adapt PN IV's annual rules for planets serving as lord of the year to natal house positions. "
+        assert phrase in notes, phrase
+    assert notes.count("TNAC Reference Guide") == 1
+    for section in ("**Which sources each column represents.**", "**How conditional entries are included.**",
+                    "**Misplaced, missing and supplemented passages.**", "**How PN IV is adapted to natal placements.**",
+                    "**Why both condition readings remain visible.**"):
+        assert section in notes, section
+    adaptation = ("**Natal adaptation.** "
+                  "The Book II entries adapt PN IV's annual rules for planets serving as lord of the year to natal house positions. "
                   "The source evaluates the root and revolution together; the natal lookup does not establish those annual prerequisites. "
                   "The columns summarize suitable and adverse conditions, with the qualifications shown in each entry.")
-    assert any(c.startswith(adaptation) for c in captions)
+    assert adaptation in [m.value for m in at.main.markdown]
+    captions = [c.value for c in at.main.caption]
+    assert any(c.startswith("The third column is Rhetorius Ch. 57 and Firmicus, Mathesis III, as the texts state it") for c in captions)
     assert not any("If Well Placed" in c or "Fifteen Rhetorius halves" in c for c in captions)
     moon = [h for h in at.main.subheader if h.value == "The Moon in the houses — PN IV VII.8, by her transit"]
     assert len(moon) == 1 and "supplies no condition split" in moon[0].help and "natal analogy" in moon[0].help
@@ -1210,21 +1232,54 @@ def test_the_help_and_caption_state_what_the_table_is(engine):
                                          'Rhetorius and Firmicus, as the texts state it'] for t in tables)
 
 
+def _planet_panel(at):
+    """The detail panel's lines: the placement line, the two PN IV halves,
+    the entries heading, and the entries (readability branch A: the panel
+    is bold-led body text under the "Read details for" selectbox, no
+    longer a subheader with the entries alone)."""
+    lines = [m.value for m in at.main.markdown]
+    heads = [l for l in lines if re.match(r"^\*\*\w+ in the \d+\w\w place\.\*\* Lean: ", l)]
+    return heads, lines
+
+
 def test_selecting_a_planets_row_prints_every_entry_of_its_list(engine):
     at = make_app(page="dignities")
     at.session_state["topical_planets_in_houses_grid"] = {"selection": {"rows": [0], "columns": []}}
     at.run()
     assert_no_exception(at, "dignities")
-    heads = [h.value for h in at.main.subheader if " place: " in h.value]
+    heads, lines = _planet_panel(at)
     assert len(heads) == 1
-    planet = heads[0].split(" in the ")[0]
+    planet = heads[0][2:].split(" in the ")[0]
     house = int(re.search(r" in the (\d+)", heads[0]).group(1))
+    row = _planets_row(at, planet)
+    assert row['Placed in (WS place)'] == house
+    assert heads[0] == f"**{planet} in the {engine['HOUSE_ORDINAL'][house]} place.** Lean: {row['Lean']} (Net {row['Net']}; {row['Standing']})."
     entries = engine["PLANETS_IN_HOUSES"][house][planet]['Rhetorius']
-    assert heads[0].endswith(f"{len(entries)} {'entry' if len(entries) == 1 else 'entries'}")
-    printed = [m.value for m in at.main.markdown if m.value.startswith(("Rhetorius", "Firmicus"))]
+    assert f"**Rhetorius and Firmicus, as the texts state it: {len(entries)} {'entry' if len(entries) == 1 else 'entries'}.**" in lines
+    assert f"**If in a suitable condition (PN IV).** {row['If in a suitable condition']}" in lines
+    assert f"**If in a bad condition (PN IV).** {row['If in a bad condition']}" in lines
+    printed = [l for l in lines if l.startswith(("Rhetorius", "Firmicus"))]
     assert printed == [engine["rhetorius_entry_text"](e) for e in entries]
+    # The row click wrote the selectbox's key: the selectbox is the state.
+    box = [s for s in at.main.selectbox if s.key == "topical_planets_in_houses_detail"][0]
+    assert box.value == planet
     bare = make_app(page="dignities").run()
-    assert not [h.value for h in bare.main.subheader if " place: " in h.value]
+    assert not _planet_panel(bare)[0]
+    assert [s for s in bare.main.selectbox if s.key == "topical_planets_in_houses_detail"][0].value is None
+
+
+def _planets_row(at, planet):
+    """The page's own row for one planet, read back from the two tables it
+    prints: the selectable grid (Planet, Placed in, Lean) and the readings
+    table in the expander (Net, Standing, the two PN IV halves)."""
+    grid = [df.value for df in at.main.dataframe if list(df.value.columns) == ['Planet', 'Placed in (WS place)', 'Lean']][0]
+    readings = [t.value for t in at.main if getattr(t, "type", None) == "table"
+                and 'If in a suitable condition' in t.value.columns][0]
+    g = grid[grid['Planet'] == planet].iloc[0]
+    r = readings[readings['Planet'] == planet].iloc[0]
+    return {'Placed in (WS place)': int(g['Placed in (WS place)']), 'Lean': g['Lean'], 'Net': int(r['Net']),
+            'Standing': r['Standing'], 'If in a suitable condition': r['If in a suitable condition'],
+            'If in a bad condition': r['If in a bad condition']}
 
 
 CITE = re.compile(r"^\d+(\.\d+)*, \d+(-\d+)?( fn \d+)?$")

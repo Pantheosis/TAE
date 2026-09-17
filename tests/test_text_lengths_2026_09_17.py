@@ -55,7 +55,6 @@ ALLOWED_LONG = (
     'LMT (local mean time) for charts before standard',
     "Dykes's table for Sahl (the chapter head of On N",
     'Abu Bakr, On Nativities II.1.0: Mars in his own ',
-    "Each planet's whole-sign house placement with th",
     "A natal analogy: VII.8 reads the Moon's transit ",
     'For each of the twelve topical houses, its domic',
     'Sahl, Choices Ch. 1, 12: "that infortune was goo',
@@ -112,7 +111,6 @@ ALLOWED_LONG = (
     'What each planet joined to the house-master or l',
     # caption
     '⚠️ **The Lord of the Hour here is not a temporal',
-    "The Book II entries adapt PN IV's annual rules f",
     "Masha'allah's condition is his own, stated at th",
     "The point weights are this app's own ranking con",
     ":orange[**Net and Verdict are this app's heurist",
