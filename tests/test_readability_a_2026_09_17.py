@@ -573,14 +573,15 @@ def test_the_tabs_keep_their_place_whatever_the_readings_say(page):
     index_changed, before_changed = _tabs_index(changed)
     assert index == index_changed, (before, before_changed)
     # The reserved slots are filled, not added: on Configurations the note
-    # and the fitting-infortune line are captions where the plain run had
-    # empties, at the same positions.
+    # (three readings off default here, so a container with the count and the
+    # list since readability branch B, 2026-09-17) and the fitting-infortune
+    # line stand where the plain run had empties, at the same positions.
     if page == "configurations":
-        assert any(c.value.startswith("Readings in force that differ from the defaults") for c in changed.main.caption)
+        assert any(c.value.startswith("3 readings differ from defaults") for c in changed.main.caption)
         assert any(c.value.startswith("Fitting infortune") for c in changed.main.caption)
-        assert not any(c.value.startswith("Readings in force that differ") for c in plain.main.caption)
+        assert not any(c.value.startswith(("Readings in force that differ", "3 readings differ")) for c in plain.main.caption)
         empties = [i for i, k in enumerate(before) if k == "empty"]
-        assert len(empties) >= 2 and all(before_changed[i] in ("empty", "caption") for i in empties)
+        assert len(empties) >= 2 and all(before_changed[i] in ("empty", "caption", "flex_container") for i in empties)
     # Every fixed slot is drawn by the app's own helpers, never as a bare
     # conditional element: by source, the three sites use st.empty().
     src = ui_source()

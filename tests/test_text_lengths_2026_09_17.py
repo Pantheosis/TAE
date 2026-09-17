@@ -53,11 +53,6 @@ KEY_LENGTH = 48
 ALLOWED_LONG = (
     # help
     'LMT (local mean time) for charts before standard',
-    "Dykes's table for Sahl (the chapter head of On N",
-    'Abu Bakr, On Nativities II.1.0: Mars in his own ',
-    "A natal analogy: VII.8 reads the Moon's transit ",
-    'For each of the twelve topical houses, its domic',
-    'Sahl, Choices Ch. 1, 12: "that infortune was goo',
     'I.2, 1: a revolution is the moment the Sun comes',
     'Year: the revolution alone (Figures 4, 26). Year',
     'Dykes: "Abu Ma\'shar seems to prefer that the SR ',
@@ -90,24 +85,7 @@ ALLOWED_LONG = (
     'Two rows: the lord of the year by annual profect',
     'The lesser, middle, greater and mighty years and',
     # glance
-    "Flags planets in Sahl's dark signs (Libra, Capri",
-    'What 1.8 and 1.9 let this app state of the fetus',
-    'The Moon on the third day -- two days after the ',
-    'The "degrees of chronic illness in the signs" --',
-    "Valens's eleven phases of the Moon, the chart's ",
-    "Rhetorius's definitions of a planet's being harm",
-    'Each trine, sextile, square or opposition that a',
-    'Who receives whom, on what dignity, which way ro',
-    'Five named ways a connection is refused rather t',
-    '2.13, 48: "if the first lord of the triplicity o',
-    '2.5, 2: a pair in square or sextile, both in the',
-    '10: the planets "formed an honor-guard for [the ',
-    '"Another type of connection and separation [even',
-    'Two degree tables from Book V that no condition ',
     # caption
-    '⚠️ **The Lord of the Hour here is not a temporal',
-    "Masha'allah's condition is his own, stated at th",
-    "The point weights are this app's own ranking con",
     'The releaser and the house-master PN IV leaves t',
     "PN IV's own conventions, read from its figures: ",
     'A table, not the wheel of I.6, 1: every point by',
@@ -129,9 +107,6 @@ ALLOWED_LONG = (
     'The three cases do not stand alike. The **Ascend',
     "The three lords of the sect light's triplicity (",
     '**All three grades are shown and none is chosen.',
-    'Sources: Sahl, The Introduction Ch. 1; the exalt',
-    'Gr. Intr. VII.8, Figure 146; the fardar periods ',
-    "Sahl's figure prints bare degrees, read here as ",
 )
 
 

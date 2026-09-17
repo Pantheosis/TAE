@@ -7,7 +7,8 @@ every page carries.
 
 These tests read the rendered page's element order, not only its source, so
 the arrangement itself is pinned: the wheel block, then the controls block,
-then the four captions.
+then the four sentences (body text at reading width in one container since
+readability branch B, 2026-09-17; captions before that).
 """
 import pytest
 
@@ -233,24 +234,36 @@ def test_the_layout_is_read_before_the_control_is_drawn():
     assert read < wheel < control
 
 
-# --- The three sentences, under the controls -----------------------------
+# --- The four sentences, under the controls ------------------------------
+
+def _intro_block(at):
+    """The four sentences' container: main's fifth child (after the header,
+    the strip, the readings note's fixed slot and the wheel fragment), a
+    _prose() container holding four markdown paragraphs."""
+    block = _kids(at)[4]
+    assert type(block).__name__ == "Block", type(block).__name__
+    return block
+
 
 @pytest.mark.parametrize("layout", LAYOUTS)
-def test_the_four_captions_follow_the_controls_in_order(layout):
+def test_the_four_sentences_follow_the_controls_in_order_at_reading_width(layout):
     at = _chart(layout=layout)
     kids = _kids(at)
     # kids[2] is the readings note's fixed slot (empty on the default chart)
-    # since 2026-09-17, so the captions stand one child later.
-    assert [type(k).__name__ for k in kids[4:8]] == ["Caption"] * 4
-    assert [k.value for k in kids[4:8]] == list(INTRO)
+    # since 2026-09-17; the four sentences stand in one container after the
+    # fragment, as body text (readability branch B).
+    block = _intro_block(at)
+    assert _kinds(block) == ["Markdown"] * 4
+    assert [k.value for k in block.children.values()] == list(INTRO)
+    assert block.proto.width_config.pixel_width == 680          # PROSE_WIDTH
     # And the Calculation section is what follows them, as before.
-    assert kids[8].value == "Calculation"
+    assert kids[5].value == "Calculation"
 
 
-def test_both_layouts_print_the_same_four_captions_and_not_one_joined():
+def test_both_layouts_print_the_same_four_sentences_and_not_one_joined():
     """Wide used to join the three with hard breaks in a single caption."""
-    square = [k.value for k in _kids(_chart(layout="Square"))[4:8]]
-    wide = [k.value for k in _kids(_chart(layout="Wide"))[4:8]]
+    square = [k.value for k in _intro_block(_chart(layout="Square")).children.values()]
+    wide = [k.value for k in _intro_block(_chart(layout="Wide")).children.values()]
     assert square == wide == list(INTRO)
     assert '"  \\n".join(_intro)' not in ui_source()
 
@@ -271,10 +284,24 @@ def test_the_circumpolar_caption_is_absent_on_the_default_chart():
 
 
 def test_the_circumpolar_caption_stands_directly_under_the_controls_row():
-    """A chart with no sunrise or sunset: the warning is the first thing
-    under the controls, before the three sentences."""
+    """A chart with no sunrise or sunset: the notice is the first thing
+    under the controls, its notes expander next, then the four sentences.
+    The notice keeps saying what is shown is an approximation and that the
+    day lord is exact; the reason stands whole in the notes (readability
+    branch B, 2026-09-17)."""
     at = _chart(manual_lat_key=78.2, manual_lon_key=15.6)
     kids = _kids(at)
     assert type(kids[4]).__name__ == "Caption"
-    assert "not a temporal hour" in kids[4].value, kids[4].value
-    assert [k.value for k in kids[5:9]] == list(INTRO)
+    assert kids[4].value == ("⚠️ **The Lord of the Hour here is not a temporal hour.** What is shown is an explicitly modern "
+                             "approximation: the civil day divided into 24 equal hours, continuing the same Chaldean cycle. "
+                             "The Lord of the Day is still exact.")
+    assert kids[5].type == "status" and kids[5].label == "Why the hour lord is approximate here"
+    assert kids[5].icon == ":material/menu_book:"
+    notes = [m.value for m in kids[5].markdown]
+    assert notes == ["**No temporal hour exists for this date at this location.**",
+                     "No sunrise or sunset exists for this date at this location (circumpolar day or night), and the "
+                     "temporal hour is *defined* by the interval between them — so it has no value at all, and no "
+                     "source in hand contemplates the case."]
+    assert type(kids[6]).__name__ == "Block"
+    assert [k.value for k in kids[6].children.values()] == list(INTRO)
+    assert kids[7].value == "Calculation"
