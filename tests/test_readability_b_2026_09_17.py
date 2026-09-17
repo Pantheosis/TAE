@@ -363,3 +363,166 @@ def test_the_standings_note_labels_its_four_cases_and_keeps_the_lot_of_death_apa
     for caps in ("MORE THAN ONCE", "STANDING column", "SAHL HIMSELF RULES", "DYKES NAMES HIS CHOICE",
                  "DYKES MARKS ONE STANDARD", "DYKES ONLY TABULATES", "STATED by"):
         assert caps not in lots, caps
+
+
+# --- Configurations --------------------------------------------------------
+
+def _configurations(date="1240-09-18", **switches):
+    at = make_app(date=date, page="configurations", switches=switches or None)
+    at.session_state["_reading_depth"] = WITH_SUPPLEMENT
+    at.run()
+    assert_no_exception(at, f"configurations, {date}")
+    return at
+
+
+def test_the_aspects_notes_open_with_a_column_meaning_key_and_keep_every_sentence_under_a_heading():
+    at = _configurations()
+    title = "Aspects, aversions and connections"
+    assert _heading(at, title).help == "Four separate facts about each pair, kept apart rather than collapsed into one verdict."
+    block = _between(at, title)
+    assert [k for k, _ in block][:3] == ["caption", "markdown", "dataframe"], block
+    assert block[1][1] == ("**Looking** is the whole-sign configuration (Union/Sextile/Square/Trine/Opposition, or Aversion if none "
+                           "applies) -- sign to sign.")
+    md = _markdown(at)
+    key = [m for m in md if m.startswith("| Column | Meaning |")][0]
+    rows = re.findall(r"^\| ([^|]+?) \| ([^|]+?) \|$", key, re.M)[1:]
+    assert [c for c, _ in rows] == ["Motion, Exact Orb Dist", "Bodies", "Connection", "Rules differ", "Strength",
+                                    "Light, Heavy", "Connecting planet"]
+    meaning = dict(rows)
+    assert meaning["Light, Heavy"].startswith("The standing classes both authors name as nouns")
+    assert meaning["Connecting planet"] == "The separate, directed fact: which one is actually closing the aspect"
+    for section in ("**The columns, and what each one measures.**", "**Motion, orb and bodies.**",
+                    "**Connection, and where the rules differ.**", "**Strength: two measures.**",
+                    "**Light and heavy: the standing classes.**", "**The connecting planet, and retrogradation.**"):
+        assert section in md, section
+    text = "\n".join(md)
+    for sentence in ("**Motion** and **Exact Orb Dist** are the degree-to-degree approach.",
+                     "**Light** and **heavy** are the standing classes both authors name as nouns (Saturn heaviest through the Moon lightest), "
+                     "not a reading of momentary speed: they are fixed, and a planet slowing toward its station does not thereby become heavy.",
+                     "Abu Ma'shar, Gr. Intr. VII.5, 24 (\"the connection of one of them with the other ... will be BY RETROGRADATION\")",
+                     "which happens for about 4% of configured pairs"):
+        assert sentence in text, sentence
+
+
+def test_the_fitting_infortune_tooltip_is_short_and_the_in_force_line_says_what_the_reading_changes():
+    at = _configurations(fitting=True)
+    box = [c for c in at.main.checkbox if c.label.startswith("Fitting infortune")][0]
+    assert box.help.endswith("-- against his own 1, 16-17, so off by default. Full text on the Sources page.")
+    line = [c.value for c in at.main.caption if c.value.startswith("Fitting infortune in force:")]
+    assert len(line) == 1
+    assert line[0].startswith("Fitting infortune in force: Saturn rules the Ascendant and is not counted as an infortune. When on, that malefic drops out of every 'afflicted by an infortune' test in these tables (Sahl's enclosure")
+    assert line[0].endswith("the Moon's 67-68 and 106).")
+    off = _configurations()
+    assert not [c for c in off.main.caption if c.value.startswith("Fitting infortune")]
+
+
+def test_reception_shows_its_qualifications_above_the_table_and_its_comparison_in_a_sibling_disclosure():
+    at = _configurations()
+    title = "Reception — Sahl rule"
+    assert _heading(at, title).help == "Who receives whom, on what dignity, which way round, and how strongly."
+    block = _between(at, title, "Non-reception")
+    kinds = [k for k, _ in block]
+    assert kinds[:5] == ["markdown", "markdown", "markdown", "dataframe", "status"], kinds
+    assert block[0][1] == "The two authors differ on every one of those, so the Connection rule at the top of this page governs here too."
+    assert block[1][1].startswith("**Under Sahl's rule.** Under Sahl's rule a pair refused by non-reception Kind II")
+    assert block[2][1] == ("**An empty table.** An empty table is **not** non-reception -- that is a separate set of hostile "
+                           "configurations, in the table below.")
+    assert block[4][1] == "Sahl and Abu Ma'shar on reception"
+    assert [i for l, i in _statuses(at) if l == "Sahl and Abu Ma'shar on reception"] == [NOTES_EXPANDER_ICON]
+    md = _markdown(at)
+    table = [m for m in md if m.startswith("| Question | Sahl (Ch. 3, 49-55) | Abu Ma'shar (VII.5, 129-133) |")][0]
+    rows = re.findall(r"^\| ([^|]+?) \| ([^|]+?) \| ([^|]+?) \|$", table, re.M)[1:]
+    assert [q for q, _, _ in rows] == ["Direction", "Dignities that count", "Connection required"]
+    assert rows[2][1] == "Always" and rows[2][2] == "Reception can hold by looking with no connection at all (133)"
+    for section in ("**Sahl's reception (Ch. 3, 49-55).**", "**Abu Ma'shar's reception (VII.5, 129-133).**",
+                    "**Dignity quality: the local basis.**", "**Overall class: 136-142.**",
+                    "**Sahl's reception at one remove (56).**", "**Sahl's reception after the sign change (57).**"):
+        assert section in md, section
+    text = "\n".join(md)
+    assert "56, **reception at one remove**:\n\n> \"if the Moon was connecting with a planet" in text
+    assert "it is JUST LIKE RECEPTION; and if she connected with a planet OTHER than [that], IT UNDERMINES HER.\"" in text
+    assert "both are true, and they are different questions." in text
+
+
+def test_an_absent_reception_finding_draws_no_sibling_disclosure():
+    at = _configurations(date="1240-05-23")
+    assert not [h for h in at.main.subheader if h.value.startswith("Reception")]
+    assert "Sahl and Abu Ma'shar on reception" not in [l for l, _ in _statuses(at)]
+    assert any("Reception — Sahl rule" in c.value for c in at.main.caption if c.value.startswith("Not present in this chart"))
+
+
+def test_non_reception_lists_its_five_kinds_and_the_strength_grids_carry_headed_notes():
+    at = _configurations()
+    assert _heading(at, "Non-reception").help.endswith("a distinct finding from simply lacking reception.")
+    block = _between(at, "Non-reception", "Returning")
+    assert [k for k, _ in block][:4] == ["caption", "markdown", "markdown", "dataframe"], block
+    assert block[2][1].startswith("**Under Sahl's rule.** Under Sahl's rule Kind II overrides any reception for the same pair")
+    md = _markdown(at)
+    kinds = [m for m in md if m.startswith("- **Kind I (58):**")][0].split("\n")
+    assert [k.split(":**")[0] for k in kinds] == ["- **Kind I (58)", "- **Kind II (59-60)", "- **Kind III (61)", "- **Kind IV (62)", "- **Kind V (62)"]
+    assert "A is in its **own** fall" in kinds[2]
+    for section in ("**Sahl's A -> B model.**", "**The five kinds.**", "**Testimonies 78 and 83: two measurements.**",
+                    "**Sahl's five-degree rule.**", "**Distinct from Planetary Condition.**", "**The ten, in words.**"):
+        assert section in md, section
+    text = "\n".join(md)
+    assert "83 also carries Sahl's **five-degree rule**:\n\n> \"the planet will not be falling from the stake" in text
+    assert "the course's reading, Lesson 3 §4-5, adopted here." in text
+
+
+def test_the_display_only_findings_and_the_supplement_findings_show_their_summaries_and_headed_notes():
+    at = _configurations()
+    md = _markdown(at)
+    text = "\n".join(md)
+    triplicity = "The sect light's first triplicity lord by ascensional band -- and the app's generalisation"
+    assert _heading(at, triplicity).help == ("Stated for **one** planet, the sect light's first triplicity lord (fn 190), and applied "
+                                             "to it in the last column.")
+    summary = [m for m in md if m.startswith("2.13, 48: \"if the first lord of the triplicity of the glowing one")][0]
+    assert "Stated for **one** planet, the sect light's first triplicity lord (fn 190), and applied to it in the last column" in summary
+    assert "**Aphorism 45 as printed:**\n\n> \"every planet which is [distant] from the stake" in text
+    assert "**Conventions, this app's:** the stake a planet **follows**" in text
+    assert _heading(at, 'Right-sidedness, "the spear-bearing of the planets"').help.endswith("-- \"a strong right-sidedness\".")
+    assert _heading(at, 'The honor-guard, "and it is spear-bearing"').help.endswith("and western from the Moon)\".")
+    assert sum(1 for m in md if m.startswith("Readings, this app's:")) == 2
+    assert _heading(at, "Natural connections").help.startswith("A relation of its own, not an aspect and not a dignity")
+    assert _heading(at, "Book V degrees").help == ("Two degree tables from Book V that no condition in VII.6 reads. Shown when a "
+                                                    "named point falls in one; never scored.")
+    assert _heading(at, "Enclosure").help.endswith("with neither leg intercepted by a third planet's rays.") if \
+        [h for h in at.main.subheader if h.value == "Enclosure"] else True
+    for section in ("**This app's generalisation, an ordinal preference and no score.**",
+                    "**Aphorism 45 as printed, and the editor's correction.**", "**Conventions, this app's.**",
+                    "**Readings, this app's.**", "**A second definition, and the witnesses.**",
+                    "**Equal ascensions (56), and equal daylight (67-75).**", "**Degrees, and the motion read from both speeds.**",
+                    "**Affinity (76-77).**", "**The same pairs in the Reception table.**",
+                    "**V.22, 1-2 and 4, the sentences.**", "**Ordinal degrees, and the degrees in both tables.**"):
+        assert section in md, section
+    assert "**Sahl's own table of the second rule.** Sahl states the second rule with a table of his own" in text
+    assert "V.22, 1-2:\n\n> \"when planets indicate the native's good fortune" in text
+    # The forward-looking search finds nothing within its horizon on 1240-09-18
+    # (its bounded caption stands alone); the default chart has rows and notes.
+    found = _configurations(date="1240-05-23")
+    found_md = _markdown(found)
+    for section in ("**An ordered sequence, against the ephemeris.**", "**Revoking (117).**", "**Resistance (118).**", "**Escape (119).**"):
+        assert section in found_md, section
+    assert any(m.startswith("**Revoking** (117): \"a planet is connecting with a planet, but BEFORE IT REACHES IT") for m in found_md)
+
+
+def test_the_condition_block_names_the_dignities_and_places_page_and_the_page_says_the_app_only_in_its_one_title():
+    import ast
+    src = ui_source()
+    page = src[src.index("def page_configurations():"):src.index("def page_lots():")]
+    tree = ast.parse(page)
+    strings = [n.value for n in ast.walk(tree) if isinstance(n, ast.Constant) and isinstance(n.value, str)]
+    text = "\n".join(strings)
+    assert text.count("Dignities and places page") == 2
+    assert "the Dignities page" not in text
+    # The one "the app" left in a page string is the triplicity finding's
+    # title, a fixture key (comments may say what they like).
+    assert [s for s in strings if re.search(r"\bthe app\b", s)] == [
+        "The sect light's first triplicity lord by ascensional band -- and the app's generalisation"]
+    for caps in ("LOOKING is", "MOTION and EXACT", "RULES DIFFER marks", "STRENGTH is", "LIGHT and HEAVY", "CONNECTING PLANET is",
+                 "SAHL (Ch", "ABU MA'SHAR (VII", "DIGNITY QUALITY", "OVERALL CLASS", "RECEPTION AT ONE REMOVE", "AFTER THE SIGN CHANGE",
+                 "is NOT non-reception", "its OWN fall", "about CONNECTIONS", "FIVE-DEGREE RULE", "is DYNAMIC", "that LOOK at",
+                 "THE APP'S ANGULAR", "APHORISM 45 AS PRINTED", "CONVENTIONS, this", "Readings, the app's", "EQUAL ASCENSIONS",
+                 "EQUAL DAYLIGHT", "DEGREES:", "AFFINITY:", "ORDERED SEQUENCE", "REVOKING (117)", "RESISTANCE (118)", "ESCAPE (119)",
+                 "candidate NEAREST", "more DISTANT"):
+        assert caps not in page, caps

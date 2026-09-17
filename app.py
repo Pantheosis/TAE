@@ -3396,12 +3396,14 @@ def page_configurations():
                           "fitting_infortune", "_fitting_infortune",
                           help="Sahl, Choices Ch. 1, 12: \"that infortune was good for him, because the infortunes are "
                                "perhaps more fitting for him, since [one] may be the lord of the original Ascendant\" -- "
-                               "against his own 1, 16-17, so off by default. When on, that malefic drops out of every "
-                               "'afflicted by an infortune' test in these tables (Sahl's enclosure, strength and weakness "
-                               "94-95; Abu Ma'shar's 3, 47-50 and enclosure; the Moon's 67-68 and 106).")
+                               "against his own 1, 16-17, so off by default. Full text on the Sources page.")
     _fitting_slot = st.empty()  # a fixed slot before the tabs (see _readings_note)
+    # The sentence that says which tests the reading changes stands where the
+    # reading shows, on the in-force line, rather than in the tooltip.
     if FITTING_INFORTUNE:
-        _fitting_slot.caption(f"Fitting infortune in force: {SOFTENED_INFORTUNE} rules the Ascendant and is not counted as an infortune."
+        _fitting_slot.caption(f"Fitting infortune in force: {SOFTENED_INFORTUNE} rules the Ascendant and is not counted as an infortune. "
+                              "When on, that malefic drops out of every 'afflicted by an infortune' test in these tables (Sahl's enclosure, "
+                              "strength and weakness 94-95; Abu Ma'shar's 3, 47-50 and enclosure; the Moon's 67-68 and 106)."
                               if SOFTENED_INFORTUNE else "Fitting infortune switched on, but no malefic rules this Ascendant -- nothing changes.")
     supplement = READING_DEPTH == READING_DEPTH_OPTIONS[1]
 
@@ -3427,8 +3429,30 @@ def page_configurations():
                   },
                   caption="A separating pair stays connected inside Sahl's window (The Introduction Ch. 3, 7–10), "
                           "which is why Connecting planet, Motion and Connection can differ in one row.",
-                  glance='Four separate facts about each pair, kept apart rather than collapsed into one verdict. LOOKING is the whole-sign configuration (Union/Sextile/Square/Trine/Opposition, or Aversion if none applies) -- sign to sign.',
-                  notes='MOTION and EXACT ORB DIST are the degree-to-degree approach. BODIES is whether each planet falls inside the other\'s sphere of power, which is asymmetric because the spheres differ in size: Abu Ma\'shar VII.4, 7 notes that Saturn sits inside the Moon\'s body from 12 degrees while she only enters his at a little under 9. CONNECTION is the active author\'s verdict, named as his own text names the state -- switch the Connection rule at the top of this page to see where they disagree; RULES DIFFER marks the pairs where the two tests disagree.\n\nSTRENGTH is two different measures. For an assembly it is the source\'s own: whose body reaches whose (VII.4, 5-8) and whether they share a bound. For an aspect it is marked "(app scale)", because VII.5, 4 grades looking as a continuum with no cutoffs anywhere -- "the strongest thing there is in its looking is the degree related most closely by number to the degree of its own sign, and if the aspect was far from these degrees, its aspect will be weaker." The thirds are this app\'s own scanning aid; the measurement itself is the Exact Orb Dist column.\n\nLIGHT and HEAVY are the standing classes both authors name as nouns (Saturn heaviest through the Moon lightest), not a reading of momentary speed: they are fixed, and a planet slowing toward its station does not thereby become heavy.\n\nCONNECTING PLANET is the separate, directed fact: which one is actually closing the aspect. Normally it is the lighter, and Ch. 3, 6 assumes as much ("a light, quick star GOING STRAIGHTAWAY TO a heavy star ... FEWER IN DEGREES than the heavy one"). Retrogradation reverses it, and both authors say so rather than leaving it to be inferred -- Abu Ma\'shar VII.5, 24 ("the connection of one of them with the other ... will be BY RETROGRADATION"), VII.5, 118 ("the light one IN MORE DEGREES goes retrograde and connects with the heavy one"), and the note on VII.5, 130 (Saturn "could never be received because he is too slow to connect with anyone, UNLESS BY RETROGRADATION"). The cause is named in this column whenever the heavier planet is the one applying, which happens for about 4% of configured pairs. Reception, transfer, collection, returning, revoking, emptiness of course and enclosure all read this column, not the light/heavy one.')
+                  glance='Four separate facts about each pair, kept apart rather than collapsed into one verdict.',
+                  summary='**Looking** is the whole-sign configuration (Union/Sextile/Square/Trine/Opposition, or Aversion if none applies) -- sign to sign.',
+                  note_sections=[
+                      ("The columns, and what each one measures.",
+                       "| Column | Meaning |\n"
+                       "|---|---|\n"
+                       "| Motion, Exact Orb Dist | The degree-to-degree approach |\n"
+                       "| Bodies | Whether each planet falls inside the other's sphere of power, which is asymmetric because the spheres differ in size |\n"
+                       "| Connection | The active author's verdict, named as his own text names the state |\n"
+                       "| Rules differ | The pairs where the two tests disagree |\n"
+                       "| Strength | Two different measures: for an assembly the source's own, whose body reaches whose (VII.4, 5-8) and whether they share a bound; for an aspect \"(app scale)\", this app's own scanning aid |\n"
+                       "| Light, Heavy | The standing classes both authors name as nouns (Saturn heaviest through the Moon lightest), not a reading of momentary speed |\n"
+                       "| Connecting planet | The separate, directed fact: which one is actually closing the aspect |"),
+                      ("Motion, orb and bodies.",
+                       "**Motion** and **Exact Orb Dist** are the degree-to-degree approach. **Bodies** is whether each planet falls inside the other's sphere of power, which is asymmetric because the spheres differ in size: Abu Ma'shar, Gr. Intr. VII.4, 7 notes that Saturn sits inside the Moon's body from 12 degrees while she only enters his at a little under 9."),
+                      ("Connection, and where the rules differ.",
+                       "**Connection** is the active author's verdict, named as his own text names the state -- switch the Connection rule at the top of this page to see where they disagree; **Rules differ** marks the pairs where the two tests disagree."),
+                      ("Strength: two measures.",
+                       "**Strength** is two different measures. For an assembly it is the source's own: whose body reaches whose (VII.4, 5-8) and whether they share a bound. For an aspect it is marked \"(app scale)\", because VII.5, 4 grades looking as a continuum with no cutoffs anywhere -- \"the strongest thing there is in its looking is the degree related most closely by number to the degree of its own sign, and if the aspect was far from these degrees, its aspect will be weaker.\" The thirds are this app's own scanning aid; the measurement itself is the Exact Orb Dist column."),
+                      ("Light and heavy: the standing classes.",
+                       "**Light** and **heavy** are the standing classes both authors name as nouns (Saturn heaviest through the Moon lightest), not a reading of momentary speed: they are fixed, and a planet slowing toward its station does not thereby become heavy."),
+                      ("The connecting planet, and retrogradation.",
+                       "**Connecting planet** is the separate, directed fact: which one is actually closing the aspect. Normally it is the lighter, and Ch. 3, 6 assumes as much (\"a light, quick star GOING STRAIGHTAWAY TO a heavy star ... FEWER IN DEGREES than the heavy one\"). Retrogradation reverses it, and both authors say so rather than leaving it to be inferred -- Abu Ma'shar, Gr. Intr. VII.5, 24 (\"the connection of one of them with the other ... will be BY RETROGRADATION\"), VII.5, 118 (\"the light one IN MORE DEGREES goes retrograde and connects with the heavy one\"), and the note on VII.5, 130 (Saturn \"could never be received because he is too slow to connect with anyone, UNLESS BY RETROGRADATION\"). The cause is named in this column whenever the heavier planet is the one applying, which happens for about 4% of configured pairs. Reception, transfer, collection, returning, revoking, emptiness of course and enclosure all read this column, not the light/heavy one."),
+                  ])
 
     def sahl_connection_group():
         with st.container(border=True):
@@ -3438,7 +3462,8 @@ def page_configurations():
             _finding(_gap, 'Collection of Light', 'Sahl, The Introduction Ch. 3, 28-30', collections,
                       glance='Two planets not connected to each other both connect with a single heavier planet, which "collects" their combined power -- often read as a third party or authority resolving/mediating between two unconnected significators.')
             _finding(_gap, 'Enclosure', 'Sahl, The Introduction Ch. 3, 119-123', enclosure_data,
-                      glance='A planet separating from one of the two infortunes (or, per Abu Ma\'shar\'s extension, fortunes) and connecting with the other, with neither leg intercepted by a third planet\'s rays -- graded "more powerful/unfortunate" when both legs are within 7 degrees of exact.')
+                      glance='A planet separating from one of the two infortunes (or, per Abu Ma\'shar\'s extension, fortunes) and connecting with the other, with neither leg intercepted by a third planet\'s rays.',
+                      summary='A planet separating from one of the two infortunes (or, per Abu Ma\'shar\'s extension, fortunes) and connecting with the other, with neither leg intercepted by a third planet\'s rays -- graded "more powerful/unfortunate" when both legs are within 7 degrees of exact.')
             _absent(_gap)
 
     def sahl_handing_over():
@@ -3447,11 +3472,48 @@ def page_configurations():
             _finding(_gap, 'Handing Over', 'Sahl, The Introduction Ch. 3, 70-76', handing_over_data,
                       glance='Three grades of one phenomenon, per connected pair: Management is the baseline (any connection at all); Power is added when the giving planet is itself in its own house, exaltation, or triplicity; Nature is added when the planet it connects with is the ruler')
             _finding(_gap, f"Reception — {CONNECTION_PROFILE} rule", None, reception_data,
-                      glance='Who receives whom, on what dignity, which way round, and how strongly. The two authors differ on every one of those, so the Connection rule at the top of this page governs here too. Under Sahl\'s rule a pair refused by non-reception Kind II (the connection made from the receiver\'s fall) is not also listed as received -- refusal wins, as on Sahl\'s own chart (Questions Ch. 1, 63 with 40-41) -- and a pair of Kind IV (the receiver in its own fall) keeps its row marked brought down, which is 62\'s own word.',
-                      notes='SAHL (Ch. 3, 49-55) runs one way only -- the connecting planet stands in a dignity of the planet it connects with, and so is received by it (52: the Moon in Aries connecting with Mars, "he receives her because Aries is his house"). House or exaltation is perfect reception; triplicity alone is expressly ranked below it (50); bound counts only paired with triplicity, which Sahl credits to Masha\'allah (54-55). Face never appears, and a connection is always required.\n\nABU MA\'SHAR (VII.5, 129-133) is wider on every axis: all five dignities count (129), reception also runs in REVERSE where the accepting planet sits in the connector\'s dignity (130, which exists because Saturn is otherwise too slow to ever be received), house/exaltation is strongest (131), a lone minor dignity is weak unless two of bound/triplicity/face combine into a complete reception (132), and reception can hold by looking with no connection at all (133).\n\nHe then classes reception a SECOND way, and under his rule the table shows both. DIGNITY QUALITY is 129-133, the local basis. OVERALL CLASS is 136-142: "a [2] middling reception is the planets\' reception of each other from the house, exaltation, bound, triplicity, or face" (140) -- house and exaltation included -- while "if two met [together] from this, or each one of them received its associate, it is a strong reception" (141); the natural acceptances of 134-135 are "[3] below that" (142); the Moon received by the Sun (137) and a planet received by Mercury from Virgo (139) are his named strong forms, and the Sun receiving the Moon from the opposition keeps his own word, "detestable" (137). A lone domicile reception is therefore the strongest basis AND globally middling: both are true, and they are different questions.\n\nSahl has two further forms, both under his profile only. 56, RECEPTION AT ONE REMOVE: "if the Moon was connecting with a planet and that planet was connecting with the lord of the house of the Moon or its exaltation, then the Moon is received" -- the note there calls it "like a transfer of light which indirectly allows for reception." Both legs are read in Sahl\'s directed sense of connecting (6: "going straightaway to ... going towards"), since separating is his separate term at 22.\n\n57, AFTER THE SIGN CHANGE: "if the Moon was empty in course, and then she passed over into the next sign and connected with the lord of her first sign, it is JUST LIKE RECEPTION; and if she connected with a planet OTHER than [that], IT UNDERMINES HER." Both halves appear -- the undermining is a finding, not a blank.\n\nAn empty table is NOT non-reception -- that is a separate set of hostile configurations, in the table below.')
+                      glance='Who receives whom, on what dignity, which way round, and how strongly.',
+                      summary='The two authors differ on every one of those, so the Connection rule at the top of this page governs here too.',
+                      qualifications=['**Under Sahl\'s rule.** Under Sahl\'s rule a pair refused by non-reception Kind II (the connection made from the receiver\'s fall) is not also listed as received -- refusal wins, as on Sahl\'s own chart (Questions Ch. 1, 63 with 40-41) -- and a pair of Kind IV (the receiver in its own fall) keeps its row marked brought down, which is 62\'s own word.',
+                                      '**An empty table.** An empty table is **not** non-reception -- that is a separate set of hostile configurations, in the table below.'])
+            # The notes as a sibling disclosure, so that the source comparison
+            # can stand at the page's width (three columns) before the
+            # sections at reading width; nothing when the finding is absent.
+            if reception_data:
+                with st.expander("Sahl and Abu Ma'shar on reception", icon=NOTES_ICON):
+                    st.markdown(
+                        "| Question | Sahl (Ch. 3, 49-55) | Abu Ma'shar (VII.5, 129-133) |\n"
+                        "|---|---|---|\n"
+                        "| Direction | One way only: the connecting planet stands in a dignity of the planet it connects with, and so is received by it | Also in reverse, where the accepting planet sits in the connector's dignity (130) |\n"
+                        "| Dignities that count | House or exaltation is perfect reception; triplicity alone ranked below it (50); bound only paired with triplicity (54-55); face never appears | All five dignities count (129); house/exaltation strongest (131); a lone minor dignity weak unless two of bound/triplicity/face combine (132) |\n"
+                        "| Connection required | Always | Reception can hold by looking with no connection at all (133) |")
+                    _note_sections([
+                        ("Sahl's reception (Ch. 3, 49-55).",
+                         '**Sahl** (Ch. 3, 49-55) runs one way only -- the connecting planet stands in a dignity of the planet it connects with, and so is received by it (52: the Moon in Aries connecting with Mars, "he receives her because Aries is his house"). House or exaltation is perfect reception; triplicity alone is expressly ranked below it (50); bound counts only paired with triplicity, which Sahl credits to Masha\'allah (54-55). Face never appears, and a connection is always required.'),
+                        ("Abu Ma'shar's reception (VII.5, 129-133).",
+                         '**Abu Ma\'shar** (VII.5, 129-133) is wider on every axis: all five dignities count (129), reception also runs in **reverse** where the accepting planet sits in the connector\'s dignity (130, which exists because Saturn is otherwise too slow to ever be received), house/exaltation is strongest (131), a lone minor dignity is weak unless two of bound/triplicity/face combine into a complete reception (132), and reception can hold by looking with no connection at all (133).'),
+                        ("Dignity quality: the local basis.",
+                         'He then classes reception a **second** way, and under his rule the table shows both. **Dignity quality** is 129-133, the local basis.'),
+                        ("Overall class: 136-142.",
+                         '**Overall class** is 136-142: "a [2] middling reception is the planets\' reception of each other from the house, exaltation, bound, triplicity, or face" (140) -- house and exaltation included -- while "if two met [together] from this, or each one of them received its associate, it is a strong reception" (141); the natural acceptances of 134-135 are "[3] below that" (142); the Moon received by the Sun (137) and a planet received by Mercury from Virgo (139) are his named strong forms, and the Sun receiving the Moon from the opposition keeps his own word, "detestable" (137). A lone domicile reception is therefore the strongest basis **and** globally middling: both are true, and they are different questions.'),
+                        ("Sahl's reception at one remove (56).",
+                         'Sahl has two further forms, both under his profile only. 56, **reception at one remove**:\n\n> "if the Moon was connecting with a planet and that planet was connecting with the lord of the house of the Moon or its exaltation, then the Moon is received"\n\n-- the note there calls it "like a transfer of light which indirectly allows for reception." Both legs are read in Sahl\'s directed sense of connecting (6: "going straightaway to ... going towards"), since separating is his separate term at 22.'),
+                        ("Sahl's reception after the sign change (57).",
+                         '57, **after the sign change**:\n\n> "if the Moon was empty in course, and then she passed over into the next sign and connected with the lord of her first sign, it is JUST LIKE RECEPTION; and if she connected with a planet OTHER than [that], IT UNDERMINES HER."\n\nBoth halves appear -- the undermining is a finding, not a blank.'),
+                    ])
             _finding(_gap, 'Non-reception', 'Sahl, The Introduction Ch. 3, 58-62', non_reception_data,
-                      glance="Five named ways a connection is refused rather than received (Sahl, The Introduction Ch. 3, 58-62), a distinct finding from simply lacking reception; the Kind column numbers them and the notes spell each one out. Under Sahl's rule Kind II overrides any reception for the same pair (only a minor one is possible there; Questions Ch. 1, 63 with 40-41), and Kind IV marks the pair's reception brought down without removing it (62).",
-                      notes="Sahl's A -> B model: A is the connecting (applying) planet, B the planet it connects with.\n\nKind I (58): B holds no essential dignity at all at A's position -- B is alien in A's sign, so A is not recognised.\n\nKind II (59-60): A stands in B's own sign of fall, \"like one who comes to it from the house of its enemies.\"\n\nKind III (61): A is in its OWN fall and B has no house or exaltation there to rescue it -- \"as though the one asking is offering defeat.\"\n\nKind IV (62): B is in its own fall, which brings the connection down whatever A's condition.\n\nKind V (62): B sits in A's own sign of fall.")
+                      glance="Five named ways a connection is refused rather than received (Sahl, The Introduction Ch. 3, 58-62), a distinct finding from simply lacking reception.",
+                      summary="Five named ways a connection is refused rather than received (Sahl, The Introduction Ch. 3, 58-62), a distinct finding from simply lacking reception; the Kind column numbers them and the notes spell each one out.",
+                      qualifications=["**Under Sahl's rule.** Under Sahl's rule Kind II overrides any reception for the same pair (only a minor one is possible there; Questions Ch. 1, 63 with 40-41), and Kind IV marks the pair's reception brought down without removing it (62)."],
+                      note_sections=[
+                          ("Sahl's A -> B model.", "Sahl's A -> B model: A is the connecting (applying) planet, B the planet it connects with."),
+                          ("The five kinds.",
+                           "- **Kind I (58):** B holds no essential dignity at all at A's position -- B is alien in A's sign, so A is not recognised.\n"
+                           "- **Kind II (59-60):** A stands in B's own sign of fall, \"like one who comes to it from the house of its enemies.\"\n"
+                           "- **Kind III (61):** A is in its **own** fall and B has no house or exaltation there to rescue it -- \"as though the one asking is offering defeat.\"\n"
+                           "- **Kind IV (62):** B is in its own fall, which brings the connection down whatever A's condition.\n"
+                           "- **Kind V (62):** B sits in A's own sign of fall."),
+                      ])
             _finding(_gap, 'Returning', 'Sahl, The Introduction Ch. 3, 65-69', returning_data,
                       glance='Manner I: a planet connects with a retrograde planet or one under the rays -- it "returns to it what it accepted," corrupting the question.',
                       notes='Manner II: an angular (faster) planet hands over to a cadent (slower) one -- the matter has a beginning but no end.')
@@ -3494,7 +3556,7 @@ def page_configurations():
                      glance="Ways of stopping a connection before it completes, in one table: Sahl's intervention, nullification and cutting, plus Abu Ma'shar's two further cuttings (VII.5, 121-124), which Sahl does not have. His revoking, resistance and escape are in his own section.")
             _finding(_gap, 'Banished', 'Sahl, The Introduction Ch. 3, 64', banishment_data,
                       glance='"The banished planet is the planet which none of the planets connects to" (64) -- a planet outside every live connection, whatever the signs are doing. Each row shows the nearest configured planet and why that is not a connection.',
-                      notes='Sahl\'s definition is about CONNECTIONS (6-21), not signs: a planet can be in trine by sign with everyone and still be banished if no planet is inside a live connection with it, and it can hold an out-of-sign body connection (20-21) and not be banished at all. Abu Ma\'shar\'s later "wildness" (VII.5, 79-82) is a different, whole-sign test -- aversion to every planet -- and has its own table in his view. Dykes\' note on 64 calls Sahl\'s the earlier, less precise form; the two are kept apart rather than one served under both names.')
+                      notes='Sahl\'s definition is about **connections** (6-21), not signs: a planet can be in trine by sign with everyone and still be banished if no planet is inside a live connection with it, and it can hold an out-of-sign body connection (20-21) and not be banished at all. Abu Ma\'shar\'s later "wildness" (VII.5, 79-82) is a different, whole-sign test -- aversion to every planet -- and has its own table in his view. Dykes\' note on 64 calls Sahl\'s the earlier, less precise form; the two are kept apart rather than one served under both names.')
             _absent(_gap)
 
     def sahl_strength():
@@ -3511,14 +3573,24 @@ def page_configurations():
                 _tick_grid(_gap, 'Strength of the Planets', 'Sahl, The Introduction Ch. 3, 78-88', strength_data,
                            'Strength Testimonies', STRENGTH_COLUMNS,
                            glance="The eleven testimonies of a planet's strength at the time of judgment (Sahl, The Introduction Ch. 3, 78-88), one column per testimony; the answer key under the grid spells each one out in words.",
-                           notes='Testimonies 78 and 83 look similar but are different measurements. 78 is whole-sign, narrowed to the six places that LOOK at the Ascendant. 83, advancing, is DYNAMIC -- read against the Alchabitius quadrant cusps, since the note on 83 says the word means "dynamically angular or succeedent, i.e. by primary motion with respect to the angular axes, and not by whole sign." A planet leaving an angle is withdrawing even while its whole sign is still angular, so the two disagree for about a third of placements.\n\n83 also carries Sahl\'s FIVE-DEGREE RULE: "the planet will not be falling from the stake unless it was 5 degrees distant from its rear -- I mean, if the stake was 10 degrees of Aries, then every planet which has less than 5 degrees between it and the stake is truly counted as being in the stake" (Fifty Aphorisms #44, 88), which he states again in On Nativities Ch. 1.22, 9. A planet a few degrees short of an angle is therefore angular, not cadent; the row says so when that is why it qualifies. It moves about 5% of placements, all of them cadent-to-angular. Sahl states the rule twice for the stakes and once for every house (On Nativities 1.18, 19: "and likewise in all of the houses"); this app reads that as the four stakes only, the course\'s reading, Lesson 3 §4-5, adopted here.\n\nDistinct from the Abu Ma\'shar-based Planetary Condition table, which scores a broader, later scheme.')
+                           note_sections=[
+                               ("Testimonies 78 and 83: two measurements.",
+                                'Testimonies 78 and 83 look similar but are different measurements. 78 is whole-sign, narrowed to the six places that **look** at the Ascendant. 83, advancing, is **dynamic** -- read against the Alchabitius quadrant cusps, since the note on 83 says the word means "dynamically angular or succeedent, i.e. by primary motion with respect to the angular axes, and not by whole sign." A planet leaving an angle is withdrawing even while its whole sign is still angular, so the two disagree for about a third of placements.'),
+                               ("Sahl's five-degree rule.",
+                                '83 also carries Sahl\'s **five-degree rule**:\n\n> "the planet will not be falling from the stake unless it was 5 degrees distant from its rear -- I mean, if the stake was 10 degrees of Aries, then every planet which has less than 5 degrees between it and the stake is truly counted as being in the stake"\n\n(Fifty Aphorisms #44, 88), which he states again in On Nativities Ch. 1.22, 9. A planet a few degrees short of an angle is therefore angular, not cadent; the row says so when that is why it qualifies. It moves about 5% of placements, all of them cadent-to-angular. Sahl states the rule twice for the stakes and once for every house (On Nativities 1.18, 19: "and likewise in all of the houses"); this app reads that as the four stakes only, the course\'s reading, Lesson 3 §4-5, adopted here.'),
+                               ("Distinct from Planetary Condition.",
+                                'Distinct from the Abu Ma\'shar-based Planetary Condition table, which scores a broader, later scheme.'),
+                           ])
 
             @st.fragment
             def _weakness_grid_block():
                 _tick_grid(_gap, 'Weakness of the Planets', 'Sahl, The Introduction Ch. 3, 91-100', weakness_data,
                            'Weakness Testimonies', WEAKNESS_COLUMNS,
                            glance="The ten testimonies of a planet's weakness at the time of judgment (Sahl, The Introduction Ch. 3, 91-100), one column per testimony; the answer key under the grid spells each one out in words.",
-                           notes="The ten (91-100): falling and averse to the Ascendant (the 6th or 12th), retrograde, under the rays, connecting with an infortune by assembly, square or opposition, enclosed between both infortunes, in its own fall, connecting with a falling planet or separating from a would-be receiver, alien (no house, exaltation or triplicity where it sits), with the Node and no latitude, or inverted (in detriment). Distinct from the Abu Ma'shar-based Planetary Condition table in his view, which scores a broader, later scheme.")
+                           note_sections=[
+                               ("The ten, in words.",
+                                "The ten (91-100): falling and averse to the Ascendant (the 6th or 12th), retrograde, under the rays, connecting with an infortune by assembly, square or opposition, enclosed between both infortunes, in its own fall, connecting with a falling planet or separating from a would-be receiver, alien (no house, exaltation or triplicity where it sits), with the Node and no latitude, or inverted (in detriment). Distinct from the Abu Ma'shar-based Planetary Condition table in his view, which scores a broader, later scheme."),
+                           ])
 
             _strength_grid_block()
             _weakness_grid_block()
@@ -3526,58 +3598,77 @@ def page_configurations():
             _finding(_gap, "The sect light's first triplicity lord by ascensional band -- and the app's generalisation",
                      "Sahl, On Nativities 2.13, 48-51 (fn 189: Carmen I.28, 1-6); Fifty Aphorisms #45, 90-92 with fn 57, as printed and not applied",
                      _ab['rows'] or [{'Refused': _ab['refused']}],
-                     glance=("2.13, 48: \"if the first lord of the triplicity of the glowing one is in a stake or what follows it, "
-                             "and that is the 15 degrees which follows it, by degrees of ascensions ... it indicates praise and good "
-                             "fortune (and what is less [than that] in degrees is preferable)\"; 49 the second 15, \"below the "
-                             "first\"; 50 the third, \"the middle of assets\"; 51 \"what is after that in degrees, up to the next "
-                             "stake, is of the nativities of the poor\". Stated for ONE planet, the sect light's first triplicity "
-                             "lord (fn 190), and applied to it in the last column"
-                             + (f" -- here {_ab['first_lord']}: {_ab['judged']['judgment']}" if _ab['judged'] else '') + "."),
-                     notes=("THE APP'S ANGULAR-PROXIMITY GRADE, GENERALISED FROM SAHL, ON NATIVITIES 2.13, 48-51: the per-planet column "
-                            "applies 2.13's distances to every planet, which no text does -- an ordinal preference, no score; "
-                            "Aphorism #45 with fn 57 is credited for the universal-band analogy and Carmen I.28 for \"the more that it "
-                            "is closer to the degree of the stake, the more elevated\". APHORISM 45 AS PRINTED: \"every planet which "
-                            "is [distant] from the stake in what follows it, by 15 degrees, is in the situation of one who is in the "
-                            "stake; and if it increases [beyond that], then it does not have strength\" (90-92; the example 10 to 25 "
-                            "Aries). Dykes, fn 57: \"misstated here\" -- the source (Carmen I.28, 1-7; 2.13, 48-51 \"repeated "
-                            "correctly\") measures ascensions. Shown as printed in its own column, not applied; a different rule from "
-                            "2.13 (every planet, angular strength, one band) and not harmonised with it; the editor's ascensional "
-                            "correction of the aphorism is not applied. CONVENTIONS, "
-                            "this app's: the stake a planet FOLLOWS (zodiacally behind it: 2.13 \"what follows it\", Introduction "
-                            "2, 33 \"rising up to them\"); oblique ascension at the horizon (the setting degree by the oblique "
-                            "descension) and right ascension at the meridian, a split Carmen's single rising instruction does not "
-                            "state; the ecliptic degree, latitude ignored; bands end-inclusive at 15, 30 and 45, truncated by the "
-                            "next actual stake; the five-degree allowance (Aphorism #44) lies on the other side of the stake and is "
-                            "not inherited. Refused where the ascension has no inverse (above the polar circle). The printed Carmen I.28, 3-6 "
-                            "(p. 108) has the same four parts band for band; Sahl says \"the first lord\", Carmen \"the lord\"."))
+                     glance="Stated for **one** planet, the sect light's first triplicity lord (fn 190), and applied to it in the last column.",
+                     summary=("2.13, 48: \"if the first lord of the triplicity of the glowing one is in a stake or what follows it, "
+                              "and that is the 15 degrees which follows it, by degrees of ascensions ... it indicates praise and good "
+                              "fortune (and what is less [than that] in degrees is preferable)\"; 49 the second 15, \"below the "
+                              "first\"; 50 the third, \"the middle of assets\"; 51 \"what is after that in degrees, up to the next "
+                              "stake, is of the nativities of the poor\". Stated for **one** planet, the sect light's first triplicity "
+                              "lord (fn 190), and applied to it in the last column"
+                              + (f" -- here {_ab['first_lord']}: {_ab['judged']['judgment']}" if _ab['judged'] else '') + "."),
+                     note_sections=[
+                         ("This app's generalisation, an ordinal preference and no score.",
+                          "**This app's angular-proximity grade, generalised from Sahl, On Nativities 2.13, 48-51:** the per-planet column "
+                          "applies 2.13's distances to every planet, which no text does -- an ordinal preference, no score; "
+                          "Aphorism #45 with fn 57 is credited for the universal-band analogy and Carmen I.28 for \"the more that it "
+                          "is closer to the degree of the stake, the more elevated\"."),
+                         ("Aphorism 45 as printed, and the editor's correction.",
+                          "**Aphorism 45 as printed:**\n\n> \"every planet which "
+                          "is [distant] from the stake in what follows it, by 15 degrees, is in the situation of one who is in the "
+                          "stake; and if it increases [beyond that], then it does not have strength\"\n\n(90-92; the example 10 to 25 "
+                          "Aries). Dykes, fn 57: \"misstated here\" -- the source (Carmen I.28, 1-7; 2.13, 48-51 \"repeated "
+                          "correctly\") measures ascensions. Shown as printed in its own column, not applied; a different rule from "
+                          "2.13 (every planet, angular strength, one band) and not harmonised with it; the editor's ascensional "
+                          "correction of the aphorism is not applied."),
+                         ("Conventions, this app's.",
+                          "**Conventions, this app's:** the stake a planet **follows** (zodiacally behind it: 2.13 \"what follows it\", Introduction "
+                          "2, 33 \"rising up to them\"); oblique ascension at the horizon (the setting degree by the oblique "
+                          "descension) and right ascension at the meridian, a split Carmen's single rising instruction does not "
+                          "state; the ecliptic degree, latitude ignored; bands end-inclusive at 15, 30 and 45, truncated by the "
+                          "next actual stake; the five-degree allowance (Aphorism #44) lies on the other side of the stake and is "
+                          "not inherited. Refused where the ascension has no inverse (above the polar circle). The printed Carmen I.28, 3-6 "
+                          "(p. 108) has the same four parts band for band; Sahl says \"the first lord\", Carmen \"the lord\"."),
+                     ])
             _finding(_gap, 'Right-sidedness, "the spear-bearing of the planets"',
                      'Sahl, On Nativities 2.5, 1-3: a finding table, no score', right_sidedness,
                      standing="Display only",
                      glance=("2.5, 2: a pair in square or sextile, both in their exaltations or houses (or one in each, or one of "
-                             "them in one of its shares), each casting rays upon the other -- \"a strong right-sidedness\"; 3: "
-                             "not in their houses or exaltations but both of one sect -- \"also called right-sidedness (though it "
-                             "is below [the first version])\"; 1: especially the diurnal planets by day and the nocturnal by night."),
-                     notes=("Readings, the app's: \"casting rays upon its companion\" = the pair is Connected under the "
-                            "Configurations page's connection rule; \"one of its shares\" = a triplicity, bound or face held by "
-                            "the partner of a planet in its house or exaltation; \"of the sect of the day or ... night\" = both "
-                            "planets of one sect, Mercury not counted. A second stated definition, the honor-guard of 10.2.1, "
-                            "10-15, is the next table; no text in hand arbitrates between the two definitions, so both are "
-                            "shown and neither enters a score. Rhetorius Chs. 23-25 (the doryphory in three kinds: an "
-                            "angular planet in its house or exaltation looked at by another in its own; a planet of the "
-                            "sect in another's house looking at an angular luminary, before the Sun and after the Moon; "
-                            "the out-of-sect kind; the trine and square stronger than the sextile) and Ch. 53 (what each "
-                            "planet's doryphory of the Sun gives) are witnesses to the doctrine and arbitrate neither."))
+                             "them in one of its shares), each casting rays upon the other -- \"a strong right-sidedness\"."),
+                     summary=("2.5, 2: a pair in square or sextile, both in their exaltations or houses (or one in each, or one of "
+                              "them in one of its shares), each casting rays upon the other -- \"a strong right-sidedness\"; 3: "
+                              "not in their houses or exaltations but both of one sect -- \"also called right-sidedness (though it "
+                              "is below [the first version])\"; 1: especially the diurnal planets by day and the nocturnal by night."),
+                     note_sections=[
+                         ("Readings, this app's.",
+                          "Readings, this app's: \"casting rays upon its companion\" = the pair is Connected under the "
+                          "Configurations page's connection rule; \"one of its shares\" = a triplicity, bound or face held by "
+                          "the partner of a planet in its house or exaltation; \"of the sect of the day or ... night\" = both "
+                          "planets of one sect, Mercury not counted."),
+                         ("A second definition, and the witnesses.",
+                          "A second stated definition, the honor-guard of 10.2.1, "
+                          "10-15, is the next table; no text in hand arbitrates between the two definitions, so both are "
+                          "shown and neither enters a score. Rhetorius Chs. 23-25 (the doryphory in three kinds: an "
+                          "angular planet in its house or exaltation looked at by another in its own; a planet of the "
+                          "sect in another's house looking at an angular luminary, before the Sun and after the Moon; "
+                          "the out-of-sect kind; the trine and square stronger than the sextile) and Ch. 53 (what each "
+                          "planet's doryphory of the Sun gives) are witnesses to the doctrine and arbitrate neither."),
+                     ])
             _finding(_gap, 'The honor-guard, "and it is spear-bearing"',
                      'Ptolemy in Sahl, On Nativities 10.2.1, 10-15: a finding table, no score', honor_guard,
                      standing="Display only",
                      glance=("10: the planets \"formed an honor-guard for [the luminaries] (and that is if the planets were eastern "
-                             "from the Sun and western from the Moon)\"; 10-15 read the luminaries' signs (male or female), their "
-                             "stakes, the guards' stakes and whether they look at the luminaries, into ranks from \"an elevated "
-                             "king\" to \"weak with toil\" -- the delineation is not pronounced here, the facts are shown."),
-                     notes=("Readings, the app's: \"eastern from the Sun\" = rising before him (the solar phase's side); "
-                            "\"western from the Moon\" = rising after her, by the shorter arc; \"in the stakes\" = the whole-sign "
-                            "places 1, 4, 7, 10 (rank is a topic, so the sign-places); \"look at\" = the whole-sign aspect. "
-                            "Examples in 10.2.7 are not reproduced."))
+                             "from the Sun and western from the Moon)\"."),
+                     summary=("10: the planets \"formed an honor-guard for [the luminaries] (and that is if the planets were eastern "
+                              "from the Sun and western from the Moon)\"; 10-15 read the luminaries' signs (male or female), their "
+                              "stakes, the guards' stakes and whether they look at the luminaries, into ranks from \"an elevated "
+                              "king\" to \"weak with toil\" -- the delineation is not pronounced here, the facts are shown."),
+                     note_sections=[
+                         ("Readings, this app's.",
+                          "Readings, this app's: \"eastern from the Sun\" = rising before him (the solar phase's side); "
+                          "\"western from the Moon\" = rising after her, by the shorter arc; \"in the stakes\" = the whole-sign "
+                          "places 1, 4, 7, 10 (rank is a topic, so the sign-places); \"look at\" = the whole-sign aspect. "
+                          "Examples in 10.2.7 are not reproduced."),
+                     ])
             _finding(_gap, 'Corruption of the Moon', 'Sahl, The Introduction Ch. 3, 103-112', moon_corruption_data,
                       glance="Sahl's own ten defects of the Moon, item [16] of his sixteen -- a different list from Abu Ma'shar's eleven corruptions in the Planetary Condition table.",
                       notes="Sahl's ten (103-112): burned within 12 degrees of the Sun; in her own fall or connecting with a planet in its own fall; approaching the Sun's opposition within 12 degrees; assembled with, square or opposed by an infortune, or enclosed between the two; with the Head or Tail in one sign under 12 degrees; in Gemini or in the sign's last bound; falling from the stakes or connecting with a planet that is; in the burned path, the end of Libra and beginning of Scorpio; wild, empty of course; slow, or waning in light.\n\nAbu Ma'shar's eleven (VII.6, 63-74) are not a variant of this list. He has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear there. His list is scored in the Planetary Condition table, this one is not scored anywhere.")
@@ -3598,7 +3689,7 @@ def page_configurations():
             st.markdown(
                 ":orange[**Net and Verdict are this app's heuristic, not Abu Ma'shar's.**] He enumerates these "
                 "conditions; he nowhere adds them up, and VII.6 gives no weighting and no tie rule. They are kept "
-                "beside the Dignities page, which prints both the good and the bad Rhetorius/PN IV reading for each "
+                "beside the Dignities and places page, which prints both the good and the bad Rhetorius/PN IV reading for each "
                 "placement and chooses neither, showing this Net as a lean; a Net of −1, 0 or +1 is Indeterminate on both "
                 "pages. Read the four counts and the labels themselves in preference to the single number."
             )
@@ -3648,7 +3739,7 @@ def page_configurations():
             ("The two Moon checklists.",
              "The Moon's eleven corruptions (63-74) are shown as their own count rather than folded in with the rest. Sahl's ten (The Introduction Ch. 3, 103-112) are a different list, not a variant reading of this one, and have their own table, Corruption of the Moon, in the Sahl view: Abu Ma'shar has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear here."),
             ("How this app's count is formed.",
-             "The four counts and the labels are the report. **Net** and **Verdict** are a convenience of this app and **not** Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They are kept because Topical Planets in Houses on the Dignities page prints both the good and the bad reading for every placement and chooses neither: this Net is shown there as a lean, and a Net of −1, 0 or +1 is Indeterminate in both places.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's eleven corruptions contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once."),
+             "The four counts and the labels are the report. **Net** and **Verdict** are a convenience of this app and **not** Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They are kept because Topical Planets in Houses on the Dignities and places page prints both the good and the bad reading for every placement and chooses neither: this Net is shown there as a lean, and a Net of −1, 0 or +1 is Indeterminate in both places.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's eleven corruptions contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once."),
             ("Enclosure under this source.",
              "Enclosure here is Abu Ma'shar's own (56-62) -- by degree within 7 degrees either side counting rays as well as bodies, by sign in the 2nd and 12th, or separating from one encloser and connecting with the other -- and it can be **dissolved**: the degree type when the Sun or a fortune casts a ray within 7 degrees of the enclosed planet (60), the sign type by any look from them (61). The standalone Enclosure table in the Connection group of the Sahl view is Sahl's separate version.\n\nThe by-sign type counts an encloser's **rays** as well as its body, which is what 58 says twice. Be aware that this makes it common: it fires on roughly 43% of placements, because a planet's rays reach eight of the twelve signs. A bodies-only variant at about 2% exists in the code (SIGN_ENCLOSURE_BODIES_ONLY) but is this project's own conjecture, not the text, so it is off."),
         ])
@@ -3656,8 +3747,18 @@ def page_configurations():
     def abu_natural():
         _finding(_gap, 'Natural connections', "Gr. Intr. VII.5, 53-77", natural_connections,
                   columns=['Pair', 'Family', 'Degrees', 'From exact', 'Motion', 'Affinity (76-77)', 'Ordinary aspect', 'Standing'],
-                  glance='"Another type of connection and separation [even] without the planets\' looking at each other" (53): pairs standing in signs of equal ascensions (56) or of equal daylight (67-75), whose degrees correspond as complements within the sign -- 12 Gemini to 18 Capricorn (62). A relation of its own, not an aspect and not a dignity: the Ordinary aspect column keeps saying Aversion where that is what the signs are.',
-                  notes='EQUAL ASCENSIONS (56): "Aries and Pisces, Taurus and Aquarius, Gemini and Capricorn, Cancer and Sagittarius, Leo and Scorpio, and Virgo and Libra." EQUAL DAYLIGHT (67-75), the antiscia: Gemini-Cancer, Taurus-Leo, Aries-Virgo, Libra-Pisces, Sagittarius-Capricorn, exactly as he lists them -- Aquarius-Scorpio completes the standard scheme but is not enumerated here and is not added (see the coverage note on the Sources page).\n\nDEGREES: "when a planet is in the first degree of Aries, then it is in the nature of a planet which is at the last degree of Pisces" (57); "the planet which is in 12° of Gemini is in the nature of the degree of the planet which is in 18° of Capricorn: so when it passes beyond 12° of Gemini, then it has separated from it" (62). So the counterpart degree runs backwards as the planet runs forwards, and MOTION is read from both speeds together. He gives no orb: every planet in Aries is in the nature of some degree of Pisces, so every pair in a listed sign pair is shown with its distance from exact.\n\nAFFINITY: 76-77 single out four pairs of each family as bridging an ordinary aversion -- Gemini-Capricorn, Sagittarius-Cancer, Aries-Virgo, Libra-Pisces "is called a natural connection by opposition" (76); Gemini-Cancer, Virgo-Libra, Sagittarius-Capricorn, Pisces-Aries "the natural connection by sextile" (77). The notes there record that he omits Aries-Scorpio, Taurus-Libra and Aquarius-Capricorn; they are not added.\n\nThe same sign pairs are one of 134\'s four bases of acceptance, in the Reception table under his rule.')
+                  glance='A relation of its own, not an aspect and not a dignity: the Ordinary aspect column keeps saying Aversion where that is what the signs are.',
+                  summary='"Another type of connection and separation [even] without the planets\' looking at each other" (53): pairs standing in signs of equal ascensions (56) or of equal daylight (67-75), whose degrees correspond as complements within the sign -- 12 Gemini to 18 Capricorn (62). A relation of its own, not an aspect and not a dignity: the Ordinary aspect column keeps saying Aversion where that is what the signs are.',
+                  note_sections=[
+                      ("Equal ascensions (56), and equal daylight (67-75).",
+                       '**Equal ascensions** (56): "Aries and Pisces, Taurus and Aquarius, Gemini and Capricorn, Cancer and Sagittarius, Leo and Scorpio, and Virgo and Libra." **Equal daylight** (67-75), the antiscia: Gemini-Cancer, Taurus-Leo, Aries-Virgo, Libra-Pisces, Sagittarius-Capricorn, exactly as he lists them -- Aquarius-Scorpio completes the standard scheme but is not enumerated here and is not added (see the coverage note on the Sources page).'),
+                      ("Degrees, and the motion read from both speeds.",
+                       '**Degrees**: "when a planet is in the first degree of Aries, then it is in the nature of a planet which is at the last degree of Pisces" (57); "the planet which is in 12° of Gemini is in the nature of the degree of the planet which is in 18° of Capricorn: so when it passes beyond 12° of Gemini, then it has separated from it" (62). So the counterpart degree runs backwards as the planet runs forwards, and **motion** is read from both speeds together. He gives no orb: every planet in Aries is in the nature of some degree of Pisces, so every pair in a listed sign pair is shown with its distance from exact.'),
+                      ("Affinity (76-77).",
+                       '**Affinity**: 76-77 single out four pairs of each family as bridging an ordinary aversion -- Gemini-Capricorn, Sagittarius-Cancer, Aries-Virgo, Libra-Pisces "is called a natural connection by opposition" (76); Gemini-Cancer, Virgo-Libra, Sagittarius-Capricorn, Pisces-Aries "the natural connection by sextile" (77). The notes there record that he omits Aries-Scorpio, Taurus-Libra and Aquarius-Capricorn; they are not added.'),
+                      ("The same pairs in the Reception table.",
+                       'The same sign pairs are one of 134\'s four bases of acceptance, in the Reception table under his rule.'),
+                  ])
 
     def abu_wildness():
         _finding(_gap, 'Wildness', "Gr. Intr. VII.5, 79-82", wildness_data,
@@ -3676,14 +3777,21 @@ def page_configurations():
         _finding(_gap, "Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, Gr. Intr. VII.7)",
                   "Gr. Intr. VII.7, 1-22", rays_by_ascension_data,
                   glance="Where each planet's sextile, square and trine rays fall once the ascensions of this latitude are taken into account, beside the zodiacal aspect the rest of these tables use. A static quantity of the chart, not a direction; VII.7, 1-2 attributes the method to Ptolemy. Nothing else reads it yet.",
-                  notes="VII.7, 3-13: the planet's distance from the nearest stake in seasonal hours, from the right ascensions and the hourly times of its degree (or of the opposite degree on the nocturnal side). 14-15: two candidate ray positions, one from the right ascensions, one from the ascensions of the city (fn 252: the oblique ascensions). 16-19: when they differ, a sixth of the excess for every hour of distance is added to the candidate NEAREST the planet (left rays); 20-21: for right rays the same, to the more DISTANT candidate. The nearest/distant flip is in the text and unexplained; the function takes it as written and can be asked for either reading. 22: \"as for the opposition, [a planet] casts its ray into the opposition of its sign, in the same degree and minute.\" The tables the chapter presupposes (fn 250-251) are computed from the obliquity and the latitude.",
+                  notes="VII.7, 3-13: the planet's distance from the nearest stake in seasonal hours, from the right ascensions and the hourly times of its degree (or of the opposite degree on the nocturnal side). 14-15: two candidate ray positions, one from the right ascensions, one from the ascensions of the city (fn 252: the oblique ascensions). 16-19: when they differ, a sixth of the excess for every hour of distance is added to the candidate **nearest** the planet (left rays); 20-21: for right rays the same, to the more **distant** candidate. The nearest/distant flip is in the text and unexplained; the function takes it as written and can be asked for either reading. 22: \"as for the opposition, [a planet] casts its ray into the opposition of its sign, in the same degree and minute.\" The tables the chapter presupposes (fn 250-251) are computed from the obliquity and the latitude.",
                   height=_rows_height(len(rays_by_ascension_data)))
 
     def abu_book_v():
         _finding(_gap, 'Book V degrees', "Gr. Intr. V.22, Figs. 63-64", book_v_degrees_data,
                   standing="Supplement · display only",
-                  glance='Two degree tables from Book V that no condition in VII.6 reads: the seven "degrees increasing in good fortune" (for the Moon, the Lot of Fortune and the Ascendant) and the thirty-one "degrees of elevation and power" (for the Ascendant and the luminary of the sect). Shown when a named point falls in one; never scored. Sahl states the second rule with a table of his own (On Nativities 1.38, 39-41, Figure 57), eight signs to Figure 64\'s twelve, six of the eight disagreeing; his is on the Chart page, and both are on the Reference tables page.',
-                  notes='V.22, 1-2: "when planets indicate the native\'s good fortune by means of their positions, and the Moon or the Lot of Fortune is in these degrees, or [these degrees] are exactly on the Ascendant, then they will increase in the native\'s good fortune. And if they indicate downfall, then these will instigate some motion towards high rank and power." V.22, 4: "if the Ascendant was one of these degrees ... or the Sun by day or the Moon by night was in one of them, and they were in an excellent position of the circle, and the planets of the root of the nativity indicated good fortune, then they will make him attain nobility and the houses of kings." Ordinal degrees, as in the wells. Leo 5 and Aquarius 20 are in both tables; Aquarius 17 is a degree of elevation and a well.')
+                  glance='Two degree tables from Book V that no condition in VII.6 reads. Shown when a named point falls in one; never scored.',
+                  summary='Two degree tables from Book V that no condition in VII.6 reads: the seven "degrees increasing in good fortune" (for the Moon, the Lot of Fortune and the Ascendant) and the thirty-one "degrees of elevation and power" (for the Ascendant and the luminary of the sect). Shown when a named point falls in one; never scored.',
+                  qualifications=['**Sahl\'s own table of the second rule.** Sahl states the second rule with a table of his own (On Nativities 1.38, 39-41, Figure 57), eight signs to Figure 64\'s twelve, six of the eight disagreeing; his is on the Chart page, and both are on the Reference tables page.'],
+                  note_sections=[
+                      ("V.22, 1-2 and 4, the sentences.",
+                       'V.22, 1-2:\n\n> "when planets indicate the native\'s good fortune by means of their positions, and the Moon or the Lot of Fortune is in these degrees, or [these degrees] are exactly on the Ascendant, then they will increase in the native\'s good fortune. And if they indicate downfall, then these will instigate some motion towards high rank and power."\n\nV.22, 4:\n\n> "if the Ascendant was one of these degrees ... or the Sun by day or the Moon by night was in one of them, and they were in an excellent position of the circle, and the planets of the root of the nativity indicated good fortune, then they will make him attain nobility and the houses of kings."'),
+                      ("Ordinal degrees, and the degrees in both tables.",
+                       'Ordinal degrees, as in the wells. Leo 5 and Aquarius 20 are in both tables; Aquarius 17 is a degree of elevation and a well.'),
+                  ])
 
     def abu_forward():
         # The horizon is the simulation's own, not a number retyped here:
@@ -3694,7 +3802,16 @@ def page_configurations():
         _finding(_gap, 'Forward-Looking Conditions', f'Revoking, Resistance, Escape — next {_horizon} days', forward_looking_data,
                   absent=f"No qualifying event found within {_horizon} days of the chart; later events were not evaluated.",
                   glance=f'Conditions describing what happens as the chart moves forward in time (up to ~{_horizon} days), not the birth moment alone.',
-                  notes=f'Each chapter prescribes an ORDERED SEQUENCE of events, and a row appears only when every step in that sequence actually occurs against the ephemeris -- the day columns show when. A condition not found inside {_horizon} days is reported as not found, never as a negative finding.\n\nREVOKING (117): "a planet is connecting with a planet, but BEFORE IT REACHES IT, it retrogrades away from it." The window is now birth to the applicant\'s first station: perfection inside it means nothing was revoked.\n\nRESISTANCE (118): a light planet ahead of a heavier one by degree stations retrograde, reaches that heavier one BY RETROGRADATION, goes past it, and a third planet lighter still -- one that wanted the heavy planet -- meets the retrograde one instead. All five steps are required and timed.\n\nESCAPE (119): the planet being applied to leaves its sign first; the applicant then follows across the SAME boundary on its own next crossing, and is captured by a body it meets in the new sign. Dykes\' note on Fig. 139 is the picture: Mercury slips from Virgo into Libra, Venus follows, and Saturn\'s body catches her there.')
+                  note_sections=[
+                      ("An ordered sequence, against the ephemeris.",
+                       f'Each chapter prescribes an **ordered sequence** of events, and a row appears only when every step in that sequence actually occurs against the ephemeris -- the day columns show when. A condition not found inside {_horizon} days is reported as not found, never as a negative finding.'),
+                      ("Revoking (117).",
+                       '**Revoking** (117): "a planet is connecting with a planet, but BEFORE IT REACHES IT, it retrogrades away from it." The window is now birth to the applicant\'s first station: perfection inside it means nothing was revoked.'),
+                      ("Resistance (118).",
+                       '**Resistance** (118): a light planet ahead of a heavier one by degree stations retrograde, reaches that heavier one **by retrogradation**, goes past it, and a third planet lighter still -- one that wanted the heavy planet -- meets the retrograde one instead. All five steps are required and timed.'),
+                      ("Escape (119).",
+                       '**Escape** (119): the planet being applied to leaves its sign first; the applicant then follows across the **same** boundary on its own next crossing, and is captured by a body it meets in the new sign. Dykes\' note on Fig. 139 is the picture: Mercury slips from Virgo into Libra, Venus follows, and Saturn\'s body catches her there.'),
+                  ])
 
     def abu_block(parts):
         with st.container(border=True):

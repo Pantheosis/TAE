@@ -54,7 +54,6 @@ ALLOWED_LONG = (
     # help
     'LMT (local mean time) for charts before standard',
     "Dykes's table for Sahl (the chapter head of On N",
-    'Sahl, Choices Ch. 1, 12: "that infortune was goo',
     'I.2, 1: a revolution is the moment the Sun comes',
     'Year: the revolution alone (Figures 4, 26). Year',
     'Dykes: "Abu Ma\'shar seems to prefer that the SR ',
@@ -88,13 +87,6 @@ ALLOWED_LONG = (
     'The lesser, middle, greater and mighty years and',
     # glance
     "Flags planets in Sahl's dark signs (Libra, Capri",
-    'Who receives whom, on what dignity, which way ro',
-    'Five named ways a connection is refused rather t',
-    '2.13, 48: "if the first lord of the triplicity o',
-    '2.5, 2: a pair in square or sextile, both in the',
-    '10: the planets "formed an honor-guard for [the ',
-    '"Another type of connection and separation [even',
-    'Two degree tables from Book V that no condition ',
     # caption
     '⚠️ **The Lord of the Hour here is not a temporal',
     'The releaser and the house-master PN IV leaves t',
