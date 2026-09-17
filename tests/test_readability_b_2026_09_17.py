@@ -643,3 +643,58 @@ def test_the_circumpolar_notes_stand_only_on_a_chart_without_sunrise_or_sunset()
     notice = [c.value for c in polar.main.caption if "not a temporal hour" in c.value]
     assert len(notice) == 1 and "explicitly modern approximation" in notice[0] and notice[0].endswith("The Lord of the Day is still exact.")
     assert len(notice[0]) <= 400
+
+
+# --- The active-readings line ------------------------------------------------
+
+def _slot(at, page):
+    """The readings note's fixed st.empty() slot: main's fourth child on the
+    pages that draw the sources scope line before it, third on Chart (no
+    scope line), fifth on Findings (its own caption before the scope line)."""
+    kids = list(at.main.children.values())
+    index = {"chart": 2, "findings": 4}.get(page, 3)
+    return kids[index], kids
+
+
+def test_one_reading_off_default_keeps_the_single_sentence():
+    at = make_app(page="dignities", switches={"domain": "Masha'allah"}).run()
+    assert_no_exception(at, "dignities")
+    slot, _ = _slot(at, "dignities")
+    assert slot.type == "caption"
+    assert slot.value == ("Readings in force that differ from the defaults: Domain (hayz) = Masha'allah. They are remembered "
+                          "between runs; see Sources and readings to reset them.")
+
+
+@pytest.mark.parametrize("page", ["dignities", "chart", "configurations", "lots", "findings"])
+def test_several_readings_off_default_give_a_count_and_a_list_in_one_element(page):
+    switches = {"domain": "Masha'allah", "moon_rays": True, "fitting": True}
+    at = make_app(page=page, switches=switches).run()
+    assert_no_exception(at, page)
+    slot, kids = _slot(at, page)
+    assert slot.type == "flex_container", [getattr(k, "type", None) for k in kids[:5]]
+    inside = list(slot.children.values())
+    assert [c.type for c in inside] == ["caption", "caption"]
+    assert inside[0].value == ("3 readings differ from defaults. They are remembered between runs; see Sources and readings "
+                               "to reset them.")
+    lines = inside[1].value.split("\n")
+    assert len(lines) == 3 and all(l.startswith("- ") and " = " in l for l in lines)
+    assert "- Domain (hayz) = Masha'allah" in lines
+    assert "- Moon under the rays to 15 degrees = True" in lines
+    assert any(l.startswith("- Fitting infortune") and l.endswith("= True") for l in lines)
+    assert not any("Sources shown" in l for l in lines)
+    # the note filled its slot and added no element: main has as many
+    # direct children as on the default chart, where the slot stays empty
+    plain = make_app(page=page).run()
+    plain_slot, plain_kids = _slot(plain, page)
+    assert plain_slot.type == "empty"
+    assert len(kids) == len(plain_kids), "the note took more than its one slot"
+
+
+def test_the_configurations_tabs_keep_their_place_with_several_readings_off_default():
+    plain = make_app(page="configurations").run()
+    changed = make_app(page="configurations", switches={"domain": "Masha'allah", "moon_rays": True, "connection": "Abu Ma'shar"}).run()
+    for at in (plain, changed):
+        assert_no_exception(at, "configurations")
+    kinds = lambda at: [getattr(c, "type", None) for c in at.main.children.values()]
+    assert kinds(plain).index("tab_container") == kinds(changed).index("tab_container")
+    assert kinds(changed)[3] == "flex_container" and kinds(plain)[3] == "empty"

@@ -1331,13 +1331,20 @@ def _readings_off_default():
 # container do not move the main block's indices.)
 def _readings_note():
     """One line under a page header when a persisted reading is in force
-    that a reader might not remember setting (UI_REVIEW §2's caution)."""
+    that a reader might not remember setting (UI_REVIEW §2's caution); with
+    several in force, a count and a list of their names and values, still
+    one element in the slot (a container holding two captions)."""
     slot = st.empty()
     off = [(l, v) for l, v in _readings_off_default() if l != "Sources shown"]
-    if off:
+    if len(off) == 1:
         slot.caption("Readings in force that differ from the defaults: "
                      + "; ".join(f"{l} = {v}" for l, v in off)
                      + ". They are remembered between runs; see Sources and readings to reset them.")
+    elif off:
+        with slot.container():
+            st.caption(f"{len(off)} readings differ from defaults. "
+                       "They are remembered between runs; see Sources and readings to reset them.")
+            st.caption("\n".join(f"- {l} = {v}" for l, v in off))
 
 
 # One line under the header of every page whose CONTENT the Sources shown
