@@ -54,7 +54,6 @@ ALLOWED_LONG = (
     # help
     'LMT (local mean time) for charts before standard',
     "Dykes's table for Sahl (the chapter head of On N",
-    'Abu Bakr, On Nativities II.1.0: Mars in his own ',
     "A natal analogy: VII.8 reads the Moon's transit ",
     'For each of the twelve topical houses, its domic',
     'Sahl, Choices Ch. 1, 12: "that infortune was goo',
@@ -91,12 +90,6 @@ ALLOWED_LONG = (
     'The lesser, middle, greater and mighty years and',
     # glance
     "Flags planets in Sahl's dark signs (Libra, Capri",
-    'What 1.8 and 1.9 let this app state of the fetus',
-    'The Moon on the third day -- two days after the ',
-    'The "degrees of chronic illness in the signs" --',
-    "Valens's eleven phases of the Moon, the chart's ",
-    "Rhetorius's definitions of a planet's being harm",
-    'Each trine, sextile, square or opposition that a',
     'Who receives whom, on what dignity, which way ro',
     'Five named ways a connection is refused rather t',
     '2.13, 48: "if the first lord of the triplicity o',
