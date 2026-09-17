@@ -13,9 +13,16 @@ charts (Figures 10-15, 17) put every planet at 0 of its sign for the whole-
 sign place alone, and nothing that depends on that 0 is asserted of them --
 no burning or rays, no application or separation, no degree-angularity, no
 ascensional grade, and no Lot of Fortune, since a Lot computed from unprinted
-degrees could stand in either of two signs; those charts carry no Lot. A
-planet printed with its sign only in a degree chart (Figure 21's Mars) is at
-0 for the same reason. Six of the twelve are internally inconsistent by
+degrees could stand in any one of three signs (the Ascendant, the Moon and
+the Sun each anywhere in its sign, the sum ranges over ninety degrees); those
+charts carry no Lot. A sign-only lord printed in the Sun's sign is not judged
+for the rays at all: at 0 with him the app reads it in his heart, at any real
+separation under the orb under the rays, and the printed sign cannot tell --
+so Figure 10's Venus, Figure 11's Mercury, Figure 17's Mercury and Saturn,
+Figure 14's Mercury and Saturn and Figure 15's Moon are asserted by place
+alone, and Figure 11 pins no synthesis, the 0 deciding it. A planet printed
+with its sign only in a degree chart (Figure 21's Mars) is at 0 for the same
+reason. Six of the twelve are internally inconsistent by
 Dykes's own notes or by the printed signs against Abu 'Ali's words (Figures
 14, 15, 16, 18, 21; Figure 20's rise rests on grounds Sahl does not state,
 and fn 60 warns of calculation errors in its Lot): those six are textual
@@ -123,9 +130,10 @@ def test_example_1_figure_10_a_pauper(engine):
                                         Moon='Scorpio', Mars='Aquarius', Jupiter='Taurus', Mercury='Virgo'))
     lords = _row(rows, 'lords')['Ground']
     assert 'First: Mars in Aquarius, the 9th, falling from the stakes' in lords
+    # Venus is printed in the Sun's sign: her place and falling by place only, nothing on the rays
     assert 'Second: Venus in Leo, the 3rd, falling from the stakes' in lords
-    assert key == 'low'
-    assert 'both lords weak -- Mars falling (2.11, 3); Venus falling (2.11, 3)' in rows[0]['Ground'] and '2.11, 3' in rows[0]['Sahl']
+    assert key == 'low'                                   # both falling by place, whatever the rays
+    assert 'both lords weak -- Mars falling (2.11, 3)' in rows[0]['Ground'] and '2.11, 3' in rows[0]['Sahl']
     assert 'the Lot step (2.3, 6), Mars and Venus made unfortunate: no Lot of Fortune in hand' in rows[0]['Ground']
     third = _row(rows, 'third')['Ground']
     assert third.startswith('Third: Moon in Scorpio, the 6th, falling from the stakes') and 'brings [them] down' in third
@@ -137,15 +145,14 @@ def test_example_2_figure_11_a_most_elegant_affair(engine):
     text reads the Sun's lords and the Sun stands in the eleventh): Saturn
     in Scorpio, the eighth, Mercury in Aquarius, the eleventh, "both in
     succeedents of the angles ... signifying prosperity and riches"."""
-    key, rows = _verdict(engine, _chart(engine, 'Diurnal', 'Aries', Sun='Aquarius', Mercury='Aquarius', Moon='Sagittarius',
-                                        Saturn='Scorpio', Mars='Scorpio', Jupiter='Cancer', Venus='Capricorn'))
+    _key, rows = _verdict(engine, _chart(engine, 'Diurnal', 'Aries', Sun='Aquarius', Mercury='Aquarius', Moon='Sagittarius',
+                                         Saturn='Scorpio', Mars='Scorpio', Jupiter='Cancer', Venus='Capricorn'))
     lords = _row(rows, 'lords')['Ground']
     assert 'First: Saturn in Scorpio, the 8th, what follows a stake' in lords
-    assert 'Second: Mercury in Aquarius, the 11th, what follows a stake; infortunes on it: Saturn by square, Mars by square' in lords
-    assert key == 'high'
-    # the succedent pair rests on 2.11, 1 alone; 2.3, 18 wants the stake by degrees and is its own row
-    assert 'both lords strong, in a stake and what follows one, or both in what follows' in rows[0]['Ground']
-    assert '2.11, 1' in rows[0]['Sahl'] and '2.3, 18' not in rows[0]['Sahl']
+    # Mercury is printed in the Sun's sign: his place only, and no synthesis -- the 0 would decide it
+    assert 'Second: Mercury in Aquarius, the 11th, what follows a stake' in lords and 'Saturn by square, Mars by square' in lords
+    # 2.3, 18 wants the stake by degrees and is its own row; no cusps, so none
+    assert '2.3, 18' not in rows[0]['Sahl'] and not [r for r in rows if r['key'] == 'by degree']
     assert _row(rows, 'third')['Ground'].startswith('Third: Jupiter in Cancer, the 4th, a stake') and 'supports them both' in _row(rows, 'third')['Ground']
     # a lord with an infortune on it is made unfortunate for 2.3, 6; the chart carries no Lot to turn to
     assert 'the Lot step (2.3, 6), Saturn and Mercury made unfortunate: no Lot of Fortune in hand' in rows[0]['Ground']
@@ -191,10 +198,11 @@ def test_example_8_figure_17_poor_fortune(engine):
     key, rows = _verdict(engine, _chart(engine, 'Nocturnal', 'Virgo', Moon='Gemini', Saturn='Aquarius', Sun='Aquarius',
                                         Mercury='Aquarius', Mars='Capricorn', Venus='Sagittarius', Jupiter='Virgo'))
     lords = _row(rows, 'lords')['Ground']
+    # both lords are printed in the Sun's sign: their places and falling by place only, nothing on the rays
     assert 'First: Mercury in Aquarius, the 6th, falling from the stakes' in lords
     assert 'Second: Saturn in Aquarius, the 6th, falling from the stakes' in lords
-    assert key == 'low'
-    assert 'both lords weak -- Mercury falling (2.11, 3); Saturn falling (2.11, 3)' in rows[0]['Ground']
+    assert key == 'low'                                   # both falling by place, whatever the rays
+    assert 'both lords weak' in rows[0]['Ground'] and '2.11, 3' in rows[0]['Sahl']
     assert _row(rows, 'third')['Ground'].startswith('Third: Jupiter in Virgo, the 1st, a stake') and 'supports them both' in _row(rows, 'third')['Ground']
 
 
@@ -299,8 +307,8 @@ def test_example_9_figure_18_labor_and_want(engine):
     assert 'Second: Sun in Sagittarius, the 7th, a stake' in lords
     assert 'the Lot of Fortune in Aquarius, the 9th, falling from the stakes; its lord Saturn in Pisces, the 10th, western, not looking at the Lot' in rows[0]['Ground']
     assert key != 'low', (
-        'Dykes, PN I fn 56 to Figure 18: "The delineation text states that both Jupiter and the Sun are cadent \\"in '
-        'the sign of the 6th,\\" but both Masha\'allah\'s and Abu \'Ali\'s charts have the Sun in the seventh sign. '
+        'Dykes, PN I fn 56 to Figure 18: "The delineation text states that both Jupiter and the Sun are in cadent "in '
+        'the sign of the 6th," but both Masha\'allah\'s and Abu \'Ali\'s charts have the Sun in the seventh sign. '
         'Because Masha\'allah\'s chart has a much later Ascendant degree, his Sun is cadent by standard quadrant '
         'houses." By whole sign the Sun, the second lord, stands in the seventh, a stake: the printed signs do not '
         'carry the labor and want he states.')
@@ -356,7 +364,7 @@ def test_example_12_figure_21_fortune_from_the_middle_of_life(engine):
     assert 'the Lot of Fortune in Capricorn, the 7th, a stake' in rows[0]['Ground']
     assert key != 'low to high', (
         'Dykes, PN I fn 62 to Figure 21: "According to the positions given, this is not true (she is in the eleventh '
-        'from the Lot). But the Lot cannot be in the given position anyway; it should rather be at 16 Capricorn, in '
+        'from the Lot). But the Lot cannot be in the given position anyway; it should rather be at 16° Capricorn, in '
         'which case the Moon would be in its Midheaven, but the Lot would no longer be joined to Jupiter." The Lot '
         'computed from his positions falls in Capricorn; the Sun (the tenth) is strong and Jupiter (the sixth) falls, '
         'the partnering Saturn in the fourth supports (2.11, 4) with no class step, and the printed positions do not '

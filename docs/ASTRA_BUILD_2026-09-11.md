@@ -2128,3 +2128,25 @@ forty Sahl sentences and their pins, the BA/JN parallels and the display-only st
 
 Left as found, outside this finding: `LIFE_LORDS_TIMES['third']` still cites 2.17, 5 for the third lord
 in the seventh (the sentence is 2.19, 5; the check of 2026-09-15 noted it, finding 17).
+
+After the check (`BUILD_PROSPERITY_AMEND_CHECK_REPORT_2026-09-17.md`, on e8413a9 after the mechanic's rebase
+onto cc88a95): three defects and the notes acted on. (14) Figures 10, 11 and 17 have a lord printed in the
+Sun's sign, which the 0° convention puts in his heart -- cazimi, not under the rays -- so their weakness
+strings, and Figure 11's synthesis, rested on the synthetic degree through `solar_phase`: those three
+now assert the Sun's-sign lords by place and falling-by-place only (Figure 10's Venus, Figure 17's
+Mercury and Saturn; their `key == 'low'` stands on the places alone), Figure 11 pins no synthesis and
+asserts Mercury's place and the infortunes on him; the docstring says a sign-only lord in the Sun's sign
+is not judged for the rays at all and names the five charts it touches (14 and 15 included). (12) fn 56
+quoted as printed, "are in cadent" (the message's literal backslashes before its inner quotes dropped
+too), fn 62 with its degree sign, "16° Capricorn"; every quoted phrase in the twelve figure tests
+re-verified against pp. 243-256 by script (36 phrases, diacritics dropped, the em dash as the repo's
+" -- ", ordinal superscripts flattened): all found. (9) The note's 2.20, 1 reading now names the other
+reading of "it" -- fn 255 (one manuscript omits the Lot phrase, so there "it" is the lord) and BA III.2.5
+[5.1], the row's parallel, which has the lords themselves in the sixth or twelfth -- and that this app
+reads the Lot; "powerful in misfortune" said not tested. (13) The no-Lot reason: one of three signs, the
+sum ranging over ninety degrees. (5) The gate's disclosure completed: Sahl's own "made unfortunate" is
+affliction by the infortunes (2.17, 2; 2.20, 1's gloss; 2.11, 14 keeping "falling" and "made unfortunate"
+apart), the wider gate resting on 2.3, 2's "cleansed of the infortunes and of defects" and being this
+app's. (17) The note's schematic "supports / brings down" is no longer in quotation marks as if the row's
+words. The help's "in Sahl's chapter" (1) stays; `LIFE_LORDS_TIMES` (18) untouched, a follow-up.
+`tables.json` regenerated once, unchanged. Suite on the rebased branch: fully green.
