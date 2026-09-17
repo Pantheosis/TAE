@@ -4170,7 +4170,7 @@ def page_timing():
                           "to its semi-arc, is carried to the promittor's semi-arc, and what the promittor has "
                           "still to travel is the arc -- PromMD - (SigMD / SigSA) * PromSA -- a degree of it a year "
                           "(III.1, 13). Here the planet's DEGREE is the significator (latitude 0, as the two other "
-                          "cases direct degrees and as al-Qabisi's tables probably did (fn 27), Appendix E fn 27), the bound starts, "
+                          "cases direct degrees and as al-Qabisi's tables probably did (Appendix E fn 27), the bound starts, "
                           "bodies and rays the promittors, the distributor and partner as in every distribution "
                           "(III.1, 10-11, 15-16). The meridian distance is signed, positive before the meridian in "
                           "primary motion; the meridian and the semi-arcs are those of the significator's side of "

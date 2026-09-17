@@ -212,7 +212,7 @@ def test_example_10_figure_19_prosperity_after_labor(engine):
                                         '"Errors in calculation must be Abu \'Ali\'s, as the positions in Nativities yield a correct Lot of '
                                         'Fortune." Both lords fall and the class is the sixth.')
 def test_example_11_figure_20_good_condition_at_the_end(engine):
-    key, _rows = _verdict(engine, _chart(engine, 'Nocturnal', ('Libra', 2.5), Moon=('Cancer', 5.07), Saturn=('Gemini', 2.0),
+    key, _rows = _verdict(engine, _chart(engine, 'Nocturnal', ('Libra', 2.5), Moon=('Cancer', 8.07), Saturn=('Gemini', 2.0),
                                          Jupiter=('Sagittarius', 15.0), Sun=('Aquarius', 10.0), Mars=('Sagittarius', 15.0),
                                          Venus=('Pisces', 25.0), Mercury=('Aquarius', 15.0)))
     assert key == 'low to high'
