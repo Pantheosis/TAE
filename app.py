@@ -251,6 +251,16 @@ export default function (component) {
 
 NATAL_WHEEL = st.components.v2.component("natal_wheel", css=NATAL_WHEEL_CSS, js=NATAL_WHEEL_JS)
 
+# The sidebar's first row, above the Nativity header (the owner's ruling on
+# the preview): the "Here & Now" button on the left and the home place's
+# popover on the right, each drawn INTO its column further down the script
+# -- the button once the preferences are read, the popover once the
+# Birthplace block has resolved this run's place -- so that the row stands
+# at the top of the sidebar while the controls in it are drawn from state
+# that exists only lower down. The home's controls live in the popover, out
+# of sight until wanted, so the nativity's own boxes are not crowded.
+_here_now_slot, _home_slot = st.sidebar.columns([3, 2])
+
 st.sidebar.header("Nativity")
 
 if "saved_charts" not in st.session_state:
@@ -584,6 +594,117 @@ _selection = st.session_state.pop("_select_after_rerun", None)
 if _selection is not None:
     st.session_state["chart_picker"] = _selection
 
+
+# --- Here & Now: a chart for the home place at this moment -----------------
+# "Here" is a STORED home place (the owner's ruling): the reader sets it
+# from the birthplace the sidebar has already resolved, with the button in
+# the "Home" popover of the sidebar's first row, and it is kept in the
+# preferences file as 'home_place' -- not browser geolocation, not a
+# lookup; this app is desktop only and offline. "Now" is this computer's
+# clock, read through engine.now_utc() so that a test can freeze it.
+def _home_place():
+    """The home place in force, or None: the session's copy of the
+    preference (the launch copies the file's; "Set as home" writes both),
+    read through the same validator the loader uses so that a seeded shape
+    the file would have refused is refused here too."""
+    home = st.session_state.get("home_place")
+    return home if home_place_is_valid(home) else None
+
+
+def _forget_home_place():
+    """on_click of "Forget home": the session's copy and the file's."""
+    st.session_state.pop("home_place", None)
+    _forget("home_place")
+
+
+def _here_and_now():
+    """on_click of "Here & Now": the sidebar's boxes are written with the
+    home place and this moment, exactly as _restore_chart writes them for a
+    saved record -- a callback runs BEFORE the widgets of the rerun it
+    triggers, so the keys written here are what the widgets are drawn from.
+
+    The instant is read ONCE, in UTC. When the home falls inside a named
+    zone the instant is converted to that zone's clock and the standard is
+    Standard time, so the sidebar's own zone branch resolves the same
+    offset from the same name; when TimezoneFinder has no zone for the
+    point the instant is converted to this computer's own clock and the
+    standard is Manual with that clock's offset, so the instant is right
+    either way (the timezonefinder this app ships answers an ocean zone,
+    Etc/GMT+2 and the like, at sea, so the second path is a guard for a
+    None the sidebar's own branch also provides for rather than a path a
+    chart is expected to take). One more case falls to Manual: the
+    repeated hour of a zone's fall-back, which the Standard branch refuses
+    as ambiguous (it is), so the offset the instant actually has is
+    written instead.
+
+    The date box's calendar rule and the ephemeris span need no handling
+    here: now is Gregorian and inside the span. The picker is left as it
+    is -- a loaded record then reads (modified) in the strip, which is the
+    truth -- and the Prediction target keys are not touched: a chart cast
+    now is at age 0 on those pages, which is correct. Nothing is saved."""
+    home = _home_place()
+    if home is None:
+        return
+    lat, lon = home["lat"], home["lon"]
+    instant = engine.now_utc()
+    zone_name = TimezoneFinder().timezone_at(lng=lon, lat=lat)
+    if zone_name:
+        zone = pytz.timezone(zone_name)
+        local = instant.astimezone(zone)
+        try:
+            zone.localize(local.replace(tzinfo=None), is_dst=None)
+        except pytz.exceptions.AmbiguousTimeError:
+            standard = TIME_STANDARD_OPTIONS[2]     # the repeated hour
+        else:
+            standard = TIME_STANDARD_OPTIONS[1]
+    else:
+        local = engine.local_clock(instant)
+        standard = TIME_STANDARD_OPTIONS[2]
+    offset_hours = None
+    if standard == TIME_STANDARD_OPTIONS[2]:
+        offset_hours = local.utcoffset().total_seconds() / 3600.0
+        # Never an offset outside the number_input's bounds (H5). A clock
+        # cannot give one short of a broken TZ string, but when it does the
+        # cast is REFUSED, before anything is written: a Manual standard
+        # with the old offset left underneath would cast a wrong chart
+        # with nothing said. The sentence stands in the notice slot beside
+        # the picker until the next load, new chart or save clears it.
+        if not utc_offset_in_range(offset_hours):
+            st.session_state["_record_notice"] = (
+                "This computer's clock has an offset outside ±14 hours, "
+                "so Here & Now cast nothing.")
+            return
+    st.session_state["time_standard_key"] = standard
+    if offset_hours is not None:
+        st.session_state["utc_offset_key"] = float(offset_hours)     # quarter-hours stand
+    st.session_state["date_input_key"] = f"{local.year:04d}-{local.month:02d}-{local.day:02d}"
+    st.session_state["time_input_key"] = time(local.hour, local.minute, local.second)
+    st.session_state["manual_coords_key"] = True
+    st.session_state["manual_lat_key"] = float(lat)
+    st.session_state["manual_lon_key"] = float(lon)
+    # The coordinate fields show the home's name rather than a bare pair
+    # (the loaded-label rule under the fields).
+    st.session_state["loaded_location"] = {"label": home["label"], "lat": float(lat), "lon": float(lon)}
+    # What the record loaded said about itself is popped where the cast
+    # makes it false or answers it: the H3/H5 notice describes fields the
+    # boxes no longer hold, and "saved before the time standard was stored
+    # ... check it" is answered by the standard written above. The readings
+    # question (_readings_pending, "'X' was saved under other readings")
+    # is LEFT standing: it is neither -- X was saved under other readings
+    # still, the picker still names X, and which readings the chart is
+    # read under is the reader's to say, which the cast does not say. An
+    # edit of the date keeps the question too.
+    st.session_state.pop("_loaded_without_standard", None)
+    st.session_state.pop("_record_notice", None)
+
+
+_home_in_force = _home_place()
+_here_now_slot.button(
+    "\U0001F4CD Here & Now", key="_here_and_now", on_click=_here_and_now,
+    disabled=_home_in_force is None, width="stretch",
+    help=("Cast a chart for the home place at this moment, by this computer's clock."
+          if _home_in_force else "Set a home place under Birthplace first."))
+
 # Said once, in the session whose load found the store unreadable (F04,
 # item 6). The bytes are beside the file under the name this names; the
 # store this session writes is a fresh one.
@@ -830,18 +951,8 @@ st.sidebar.header("Birthplace")
 
 COORDINATE_RANGE_MESSAGE = ("Latitude must be between -90 and 90 and longitude "
                             "between -180 and 180.")
-
-
-def coordinates_in_range(lat, lon):
-    """A pair the engine can be asked about at all: both finite, latitude
-    within [-90, 90] and longitude within [-180, 180]. Polar is valid."""
-    try:
-        lat, lon = float(lat), float(lon)
-    except (TypeError, ValueError):
-        return False
-    if not (isfinite(lat) and isfinite(lon)):
-        return False
-    return -90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0
+# coordinates_in_range, the one rule for a pair, stands in engine.py since
+# the home place preference is validated there against the same rule.
 
 # One control in effect (evaluation A.3): the search box also accepts a
 # typed "latitude, longitude" pair; the toggle exposes the coordinate
@@ -968,6 +1079,38 @@ else:
     # they are switched on (F02a).
     st.session_state["_resolved_lat"] = float(lat)
     st.session_state["_resolved_lon"] = float(lon)
+
+# --- The home place's popover, in the sidebar's first row -----------------
+# Drawn HERE, after the Birthplace block, into the slot reserved at the top
+# of the sidebar: "Set as home" must write THIS run's lat, lon and
+# location_query -- the place the resolved box shows -- and those exist only
+# once the block above has run. The natural gesture, a city typed over and
+# the button clicked without Enter, delivers the edit and the click in one
+# run, and an on_click callback reading _resolved_* from the run before
+# wrote the previous place (Madrid in the box, Berlin written; the
+# adversarial pass) -- so the press is handled inline, from this run's
+# values. The "Here & Now" button and this popover's label were drawn or
+# chosen before the press was seen, so when the home changes the run is
+# repeated from the sidebar's foot, where every field has been drawn, as
+# the delete confirmation does. The button is enabled only while this run
+# resolved a place in range, which is what chart_ok says at this height.
+_home_now = _home_place()
+with _home_slot.popover("Home" if _home_now else "Set home", width="stretch"):
+    if _home_now:
+        st.caption(f"Home: {escape(_home_now['label'])} · "
+                   f"{_home_now['lat']:.4f}, {_home_now['lon']:.4f}")
+    else:
+        st.caption("Resolve a place under Birthplace, then set it as home.")
+    if st.button("Set as home", key="_set_home", disabled=not chart_ok, width="stretch",
+                 help="Keep the place resolved under Birthplace as the home that Here & Now casts a chart for."):
+        _home_set = {"label": str(location_query), "lat": float(lat), "lon": float(lon)}
+        if home_place_is_valid(_home_set) and _home_set != st.session_state.get("home_place"):
+            st.session_state["home_place"] = _home_set
+            _remember("home_place", _home_set)
+            st.session_state["_home_changed"] = True
+    if _home_now:
+        st.button("Forget home", key="_forget_home", on_click=_forget_home_place, width="stretch",
+                  help="Remove the home place; Here & Now is then disabled.")
 
 # --- The target of the Timing page: an age or a date -----------------------
 # Set on the Timing page, where it is used (the owner's instinct, 2026-09-10),
@@ -1220,6 +1363,13 @@ if _readings_open_now:
         if _sk in _saved_readings:
             _set_reading(_wk, _sk, _saved_readings[_sk])
     st.session_state.pop("_readings_pending", None)
+    st.rerun()
+
+# A home set on this run: the "Here & Now" button at the top of the sidebar
+# was drawn disabled, and the popover's label chosen, before the press was
+# seen, so the run is repeated from here, where every field has been drawn
+# and a rerun costs nothing. Once: the flag is popped.
+if st.session_state.pop("_home_changed", None):
     st.rerun()
 
 # The delete the confirmation asked for, done here rather than where it was

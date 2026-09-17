@@ -442,6 +442,10 @@ PREFERENCE_KEYS = (
     # how many times the app has been opened, counted so that the Chart
     # page's introduction can fold itself once it has been read
     '_launches',
+    # the reader's home place, set from the birthplace the sidebar has
+    # resolved, for the "Here & Now" button to cast a chart at: {"label",
+    # "lat", "lon"} -- validated by home_place_is_valid below
+    'home_place',
 )
 
 PREFERENCE_RENAMES = (
@@ -481,12 +485,49 @@ def _preference_option_tuples():
     }
 
 
+def coordinates_in_range(lat, lon):
+    """A pair the engine can be asked about at all: both finite, latitude
+    within [-90, 90] and longitude within [-180, 180]. Polar is valid.
+    The sidebar's one validation of a place (it stood in app.py until the
+    home place needed it here, for the preferences file)."""
+    try:
+        lat, lon = float(lat), float(lon)
+    except (TypeError, ValueError):
+        return False
+    if not (math.isfinite(lat) and math.isfinite(lon)):
+        return False
+    return -90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0
+
+
+HOME_PLACE_FIELDS = frozenset(("label", "lat", "lon"))
+
+
+def home_place_is_valid(value):
+    """Whether `value` is a home place the sidebar can cast a chart at:
+    exactly the three fields, the label a non-empty string, the
+    coordinates floats (an int is not one -- the app writes floats and a
+    hand-edit that wrote 43 is refused with the rest), finite and in range.
+    A bool, a NaN, a 91, a missing field and an extra field are all
+    refused, so a hand-edited preferences.json cannot take the app down:
+    the loader drops the entry and the button stands disabled."""
+    if not isinstance(value, dict) or set(value) != HOME_PLACE_FIELDS:
+        return False
+    label, lat, lon = value["label"], value["lat"], value["lon"]
+    if not isinstance(label, str) or not label.strip():
+        return False
+    if not (isinstance(lat, float) and isinstance(lon, float)):
+        return False
+    return coordinates_in_range(lat, lon)
+
+
 def preference_is_valid(key, value):
     """Whether `value` is a value the widget behind `key` could hold."""
     if key == '_launches':
         return isinstance(value, int) and not isinstance(value, bool) and value >= 0
     if key == 'last_chart':
         return isinstance(value, str)
+    if key == 'home_place':
+        return home_place_is_valid(value)
     if key in PREFERENCE_BOOL_KEYS:
         return isinstance(value, bool)
     options = _preference_option_tuples().get(key)
@@ -534,6 +575,23 @@ def write_preferences(prefs):
         return True
     except OSError:
         return False
+
+# --- The clock ----------------------------------------------------------
+# The two readings of this computer's clock the "Here & Now" button makes,
+# each one small function so that a test can monkeypatch it on this module
+# and no test depends on the wall clock. The button's callback reads them
+# through `engine.` at call time, so a patch on the module object holds
+# whether the app took the names through its star import or not.
+
+def now_utc():
+    """This moment, aware, in UTC."""
+    return datetime.now(timezone.utc)
+
+
+def local_clock(instant):
+    """`instant` as this computer's own clock shows it: the same moment
+    in the zone the operating system is set to, offset and all."""
+    return instant.astimezone()
 
 # ==========================================
 # 1. CORE CALCULATION ENGINE
