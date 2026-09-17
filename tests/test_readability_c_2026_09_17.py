@@ -133,15 +133,18 @@ def _paragraph_sites():
                 and node.args and isinstance(node.args[0], ast.Name)):
             leads = [a.value for a in node.args[1:]]
             assert all(isinstance(lead, str) for lead in leads)
-            sites.append((node.args[0].id, tuple(leads)))
+            # _sahl_1_20_readings_sections takes the constant as its
+            # argument `text` (it reaches the page through hm_years).
+            name = "SAHL_1_20_READINGS" if node.args[0].id == "text" else node.args[0].id
+            sites.append((name, tuple(leads)))
     return sites
 
 
 def test_every_paragraphs_site_rejoins_to_its_constant(engine):
     paragraphs = _app_function("_paragraphs")
     sites = _paragraph_sites()
-    assert {name for name, _leads in sites} == {"JN_YEARS_NOTE", "JN_CH4_ADDITIONS_NOTE",
-                                                "SEVEN_PLACE_RANKING_NOTE", "PN4_YEAR_INDICATOR_SCOPE_NOTE"}
+    assert {name for name, _leads in sites} == {"JN_YEARS_NOTE", "JN_CH4_ADDITIONS_NOTE", "SEVEN_PLACE_RANKING_NOTE",
+                                                "PN4_YEAR_INDICATOR_SCOPE_NOTE", "SAHL_1_20_READINGS"}
     for name, leads in sites:
         constant = engine[name]
         parts = paragraphs(constant, *leads)
@@ -830,3 +833,31 @@ def test_the_wheel_pick_panel_names_pages_as_the_bar_names_them():
     assert "The Reference page carries" not in panel and "The Dignities page carries" not in panel
     assert panel.count("Reference tables page carries") == 3
     assert panel.count("Dignities and places page carries") == 2
+
+
+# --- Sahl 1.20's readings, the caption every net missed --------------------
+
+def test_the_1_20_readings_are_headed_sections_not_a_caption(engine):
+    at = _page("releaser")
+    assert not [c for c in at.main.caption if c.value.startswith("Readings of 1.20 made here")]
+    exp = _expander(at, "How 1.20 is read here")
+    assert exp.icon == NOTES_EXPANDER_ICON
+    assert _headings_in(exp) == ["**The placement: the division, and a power judgment.**", "**The vocabulary.**",
+                                 "**The sentences, as read.**", "**On Times 4, 7, and 1.23, 53 and 61.**",
+                                 "**The test-chart figures.**"]
+    md = _markdowns(exp)
+    assert md[1].startswith("Readings of 1.20 made here: the house-master is placed by the Alchabitius DIVISION")
+    vocabulary = [ln for ln in md[3].split("\n") if ln.startswith("- ")]
+    assert [ln[:11] for ln in vocabulary] == ['- "enhanced', '- "a share"', '- "eastern"', '- "under th', '- "alien" =']
+    readings = [ln for ln in md[5].split("\n") if ln.startswith("- ")]
+    assert [ln[:9] for ln in readings] == ["- 10 and ", '- "under ', "- 12 is s", "- 13 is i", "- 14-15 a", "- 19 and ",
+                                            "- where a", "- Placeme"]
+    assert md[7].startswith("On Times 4, 7 is a rule") and "\n\n1.23, 53 and 61:" in md[7]
+    assert md[9].startswith("On 406 test charts")
+    bodies = "\n".join(m for m in md if not re.fullmatch(r"\*\*.+\*\*", m))
+    shown = re.sub(r"(^|\n)- ", r"\1", bodies)
+    assert re.sub(r"\s+", " ", shown).strip() == re.sub(r"\s+", " ", engine["SAHL_1_20_READINGS"]).strip()
+    # The three paragraphs and the flags stand above it as before.
+    shown_md = _visible_markdowns(at)
+    years = next(m for m in shown_md if m.startswith("**The house-master's years**"))
+    assert "\n\nPlaced by division" in years and "(the **power** unit).\n\nThese are the years" in years

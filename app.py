@@ -4159,6 +4159,23 @@ def _jn_ch4_note_sections():
             ("The luminaries.", p[5]),
             ("Conventions of this display.", p[6] + "\n\n" + p[7])]
 
+# Sahl 1.20's readings (SAHL_1_20_READINGS, reaching the page through
+# the hm_years dict's 'readings'), the engine's one long sentence under
+# headings this page places: the placement, the vocabulary as a list, the
+# sentence readings as a list, On Times and 1.23, the test-chart figures.
+# DIVISION and POWER are the engine's own capitals and stand, as BY SCOPE
+# does in the scope note: the constant is not edited for display.
+def _sahl_1_20_readings_sections(text):
+    p = _paragraphs(text, "\"enhanced\" (7-9) =", "\"a share\" =", "\"eastern\" and", "\"under the rays\" =",
+                    "\"alien\" =", "10 and 20 as fn 158", "\"under the earth\" (11)", "12 is subsumed by 10",
+                    "13 is illegible", "14-15 are printed", "19 and 22 (alien", "where a sentence names months",
+                    "Placements no sentence reaches", "On Times 4, 7 is a rule", "1.23, 53 and 61:", "On 406 test charts")
+    return [("The placement: the division, and a power judgment.", p[0]),
+            ("The vocabulary.", "\n".join(f"- {s}" for s in p[1:6])),
+            ("The sentences, as read.", "\n".join(f"- {s}" for s in p[6:14])),
+            ("On Times 4, 7, and 1.23, 53 and 61.", p[14] + "\n\n" + p[15]),
+            ("The test-chart figures.", p[16])]
+
 def _additions_detail(row):
     """One planet of the additions table, its cells whole under the
     column headings the table carries."""
@@ -5134,7 +5151,7 @@ def page_releaser():
                     f"the lifespan which his indicator in the root had already pointed out\").")
         for _f in _y['flags']:
             st.markdown(f"- {_f}")
-        st.caption(_y['readings'])
+        _notes_expander("How 1.20 is read here", _sahl_1_20_readings_sections(_y['readings']))
         if _y['grade'] is None and pn4['hm_years_jn'] and READING_DEPTH == READING_DEPTH_OPTIONS[1]:
             _j = pn4['hm_years_jn']
             st.markdown(f"**Where 1.20 is silent, the supplement's ladder** ({_j['citation']}): **{_j['text']}**. "
