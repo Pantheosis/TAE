@@ -206,7 +206,7 @@ on `main` and did not move relative to its neighbour, and stands.
 **Harness.** `PAGES = [..., "timing", "releaser", "days", "fardar",
 "reference", "sources"]`. The fixture was regenerated once, serially
 (`UPDATE_TABLE_FIXTURE=1 python -m pytest tests/test_pages_render.py`,
-84 passed). The multiset proof, a scratch script run against
+85 passed). The multiset proof, a scratch script run against
 `git show main:tests/fixtures/tables.json`:
 
 ```
@@ -262,7 +262,13 @@ moved):
   one page, which the split makes impossible, so the gathering is the one
   change and the assertion is the same. The export's Timing section, its
   name and its headings, is unchanged (`analysis_markdown` reads the
-  bundle), and every other test in that file passes untouched.
+  bundle), and every other test in that file passes untouched. The export
+  is not otherwise unaffected: `analysis_markdown`'s readings-in-force
+  table, and the JSON export's `set_on`, now print "Days and months" for
+  the monthly profections turn where `main` printed "Timing", because
+  `READINGS_REGISTRY`'s page name for that reading moved with the tab its
+  radio stands on. Headings and every result are identical; the saved
+  record carries no page name, so the saved-record schema is untouched.
 - `test_record_lifecycle_2026_09_16.py::test_new_chart_clears_the_form_to_the_example_nativity`:
   pins `_target_mode` (departure 2 above).
 
@@ -355,5 +361,13 @@ from this branch on; the four page functions are `page_timing`,
 `page_releaser`, `page_days` and `page_fardar`, and the year block is
 `_year_under_examination()` above them. The two expanders at the foot of
 Fardar and ages are where "What Persian Nativities IV does not settle" and
-the Sources and editorial notes now live. The repo has no `CLAUDE.md`; the
+the Sources and editorial notes now live. `_carry()` must stay before each
+of the year block's three widgets is created, and the block must not be
+moved inside a fragment (a fragment rerun would skip `_carry`), whatever A
+or C wraps in `_prose()` on the Prediction pages. "the app" occurs 33 times
+in the UI half (help, glance and notes strings of Calculation, Quadrant
+divisions, Morin's rays, the sect-light triplicity finding, the fixed-star
+caption, the revolution's facts caption, the releaser page's fullness note,
+and more); rule 4 says "this app", none of them is N's, and each falls to
+whichever of A, B or C touches its block. The repo has no `CLAUDE.md`; the
 brief lists one to read.
