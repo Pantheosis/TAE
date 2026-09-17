@@ -13905,10 +13905,11 @@ def evaluate_andarzaghar_triplicity_lords(asc_lon, sect):
 # 1-3): no replacement, no threshold by the number of weak lords, no
 # priority -- he gives an order of investigation (2.3, 6; 2.3, 10), not a
 # precedence among verdicts. So the synthesis carries both judgments with
-# their sentences: a level beside the mixed pair's timing pattern is mixed
-# by design (no single class); the same level twice is concordant; opposed
-# levels, or the Lot's own sentences at two levels, are unresolved, both
-# judgments kept. Three measures are kept apart:
+# their sentences: a middling or high level beside the mixed pair's timing
+# pattern is mixed by design (no single class); the same level twice is
+# concordant; opposed levels -- 2.20's lifelong misery beside the pattern's
+# benefit period among them -- or the Lot's own sentences at two levels,
+# are unresolved, both judgments kept. Three measures are kept apart:
 # the whole-sign place (the spine), 2.3, 17-18's by-sign / by-degree cases
 # (their own rows, from the quadrant cusps), and the 15 degrees by
 # ascensions (2.13, 48-51; 2.3, 4-5; 2.16, 3), a grade row never folded
@@ -14439,7 +14440,11 @@ def evaluate_prosperity(chart_data):
         else:
             level = levels[0]
             word = level_word[level] if level != 'high' else ('very high rank' if any('2.3, 7' in c for _l, c in lot_judgments) else 'happiness')
-            if lords_key in ('high to low', 'low to high'):
+            if lords_key in ('high to low', 'low to high') and level != 'low':
+                # a middling or high level beside the timing pattern: mixed by
+                # design (2.16, 5 couples a middling condition with variation);
+                # 2.20's misery "from the day he is born up to the day he dies"
+                # admits no time of benefit, so that pairing is a conflict below
                 key = 'mixed'
                 class_field = f"{word} by the Lot; class {class_n}'s pattern by the lords"
                 ground += (f". Synthesis: {lot_clause}; {two_lord} -- {word} by the Lot; class {class_n}'s pattern by the "

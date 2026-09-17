@@ -2180,3 +2180,15 @@ the both-falling-with-2.3, 7 test and the all-four-looking test now read unresol
 judgments; the misery test reads concordant class 6; a new test has 2.3, 9 and 2.16, 4 co-holding
 (the Lot at 0 Virgo, its lord Mercury in the fifth not looking, all four looking) -- unresolved from
 the Lot's own sentences. `tables.json` regenerated once, unchanged. Suite fully green.
+
+Delta check (`BUILD_PROSPERITY_LOT_CHECK_REPORT_2026-09-17.md`, on 39f78b9 after the mechanic's rebase onto
+1e27e76): policy (iv) held; one small defect (finding 4) fixed -- the 'mixed' branch fired for any Lot
+level beside the one-strong pair, so 2.20, 1's misery "from the day he is born up to the day he dies"
+printed as "misery by the Lot; class 5's pattern by the lords", mixed by design. Row c's mixture rests on
+2.16, 5 (a middling condition with variation); lifelong misery admits no benefit period, so the Lot's
+level 'low' (2.20, 1-2) beside the mixed pair now takes the conflict path ("conflicting status
+indications -- the Lot indicates misery from birth to death (2.20, 1); the two triplicity lords indicate
+benefit in the first lord's time and hardship in the second's (2.11, 2) -- unresolved"), 'mixed' kept
+for the middling and high levels; one line in the note says why. Test added (the Sun strong in the
+tenth, Jupiter falling in the twelfth, the Lot at 0 Sagittarius with Mars by day, its lord squared by
+Saturn -> unresolved; the same with both lords strong -> unresolved against 2.11, 1). Suite fully green.

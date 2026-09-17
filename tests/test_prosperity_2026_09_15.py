@@ -621,6 +621,34 @@ def test_the_lot_s_own_sentences_at_two_levels_are_unresolved(engine):
     assert all(engine['PROSPERITY_SAHL'][r] in rows[0]['Sahl'] for r in ('2.3, 9', '2.16, 4', '2.11, 2', '2.3, 6'))
 
 
+def test_misery_beside_the_mixed_pair_is_a_conflict_not_a_mixture(engine):
+    """Diurnal, Cancer rising, the Sun at 10 Aries (the tenth, strong),
+    Jupiter in Gemini (the twelfth, falling, Saturn in Virgo square him):
+    the Lot (the Moon at 10 Virgo) at 0 Sagittarius, the sixth, with Mars
+    by day, its lord Jupiter made unfortunate -- 2.20, 1. Lifelong misery
+    admits no time of benefit, so beside 2.11, 2's pattern it is
+    unresolved, not mixed (2.16, 5 licenses variation within middling;
+    nothing licenses a benefit period within 2.20's misery). Jupiter moved
+    to Libra with Saturn in Capricorn (both lords strong, Jupiter squared)
+    is the same conflict against 2.11, 1."""
+    chart = _chart(engine, 'Diurnal', 'Cancer', lot=True, Sun=('Aries', 10.0), Moon=('Virgo', 10.0), Jupiter='Gemini',
+                   Saturn='Virgo', Mars='Sagittarius', Venus='Taurus', Mercury='Aries')
+    assert engine['get_zodiac_sign'](chart['lot_of_fortune']) == 'Sagittarius'
+    key, rows = _verdict(engine, chart)
+    assert key == 'unresolved' and rows[0]['Class'] == 'Synthesis (this app): unresolved'
+    assert [r['key'] for r in rows if r['key'].startswith('lot ')] == ['lot low']
+    assert ("Synthesis: conflicting status indications -- the Lot indicates misery from birth to death (2.20, 1); the two "
+            "triplicity lords indicate benefit in the first lord's time and hardship in the second's (2.11, 2) -- unresolved: "
+            "this app installs no priority between them") in rows[0]['Ground']
+    assert 'mixed' not in rows[0]['Class'] and "'s pattern by the lords" not in rows[0]['Class']
+    assert engine['PROSPERITY_SAHL']['2.20, 1'] in rows[0]['Sahl'] and engine['PROSPERITY_SAHL']['2.11, 2'] in rows[0]['Sahl']
+    chart['planetary_data']['Jupiter']['longitude'], chart['planetary_data']['Saturn']['longitude'] = 180.0, 270.0
+    key2, rows2 = _verdict(engine, chart)
+    assert key2 == 'unresolved'
+    assert ("conflicting status indications -- the Lot indicates misery from birth to death (2.20, 1); the two strong "
+            "triplicity lords indicate high rank from the beginning of his life to its end (2.11, 1) -- unresolved") in rows2[0]['Ground']
+
+
 def test_the_chart_page_renders_the_finding_with_its_four_columns():
     from conftest import make_app, assert_no_exception, table_inventory
     at = make_app(page="findings").run()
