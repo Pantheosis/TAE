@@ -66,6 +66,7 @@ FINDINGS = {
          "**This app's reading of the year.** This app takes the year as the calendar anniversary"],
         ["The meeting before the birth and its Ascendant (1.8, 5-6).",
          "The three divisions of 1.8, not computed.",
+         "The seven-month native and the four-footed nativities (1.8, 1).",
          "The three Moons of 1.9, 1, and the year.",
          "The aspects of 1.9, 2-10.",
          "The conception and the stay by the day and hour, not computed (1.9, 11-14)."]),
@@ -144,7 +145,7 @@ def test_the_findings_quotations_are_blockquotes_under_their_locators():
                          "Abu Bakr, On Nativities II.7.3 (p. 238):\n\n> \"",
                          "Abu Bakr, On Nativities II.1.0, the paragraph whole:\n\n> \"", "Dykes's fn 652, on \"unsound\":\n\n> \"",
                          "Valens lists the phases so:\n\n> \"1. New moon;", "as Riley has it:\n\n> \"We will append",
-                         "Rhetorius Ch. 27 (Holden):\n\n> \"", "**Rhetorius Ch. 41 (Holden):**\n\n> \"",
+                         "**Rhetorius Ch. 27 (Holden):**\n\n> \"", "**Rhetorius Ch. 41 (Holden):**\n\n> \"",
                          "**Rhetorius Ch. 34 (Holden), where Ch. 27's note sends the word:**\n\n> \"",
                          "The four governing sentences, whole:\n\n> \"The distinction", "(ITA IV.4.1 fn 43):\n\n> \"That is,"):
         assert locator_line in text, locator_line
@@ -290,6 +291,7 @@ def test_the_dignity_thresholds_table_follows_the_constants_and_the_readings(eng
     assert rows["Saturn"] == (f"{b['Saturn'][0]:.0f}°", "15°") and rows["Venus"] == ("7°", "12° east / 15° west")
     assert rows["Moon"] == (f"{b['Moon'][0]:.0f}°", f"{moon:.0f}°")
     assert rows["Mars"] == (f"{b['Mars'][0]:.0f}°", f"18° east / {mars_west:.0f}° west" if mars_west != 18.0 else "18°")
+    assert "The figures shown are those in force under the current readings." in [c.value for c in at.main.caption]
     heart = [m for m in md if m.startswith("In the heart: within 16' (VII.2, 7-9, from the Sun's own apparent diameter).")]
     assert len(heart) == 1 and "Sahl elsewhere says one whole degree for the heart" in heart[0]
     assert any(m.startswith("**Domain/hayz** follows the Domain switch beside the Sect table above, currently ") for m in md)
@@ -414,6 +416,12 @@ def test_the_fitting_infortune_tooltip_is_short_and_the_in_force_line_says_what_
     assert line[0].endswith("the Moon's 67-68 and 106).")
     off = _configurations()
     assert not [c for c in off.main.caption if c.value.startswith("Fitting infortune")]
+    # Readable with the reading off too: the same sentence stands on the
+    # Sources page under the reading's entry (a copy).
+    sources = make_app(page="sources").run()
+    assert_no_exception(sources, "sources")
+    tests_sentence = line[0].split(". ", 1)[1]
+    assert tests_sentence.startswith("When on, that malefic drops out") and tests_sentence in _markdown(sources)
 
 
 def test_reception_shows_its_qualifications_above_the_table_and_its_comparison_in_a_sibling_disclosure():
@@ -423,7 +431,8 @@ def test_reception_shows_its_qualifications_above_the_table_and_its_comparison_i
     block = _between(at, title, "Non-reception")
     kinds = [k for k, _ in block]
     assert kinds[:5] == ["markdown", "markdown", "markdown", "dataframe", "status"], kinds
-    assert block[0][1] == "The two authors differ on every one of those, so the Connection rule at the top of this page governs here too."
+    assert block[0][1] == ("Who receives whom, on what dignity, which way round, and how strongly. The two authors differ on every "
+                           "one of those, so the Connection rule at the top of this page governs here too.")
     assert block[1][1].startswith("**Under Sahl's rule.** Under Sahl's rule a pair refused by non-reception Kind II")
     assert block[2][1] == ("**An empty table.** An empty table is **not** non-reception -- that is a separate set of hostile "
                            "configurations, in the table below.")

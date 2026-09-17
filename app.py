@@ -3004,7 +3004,9 @@ def page_findings():
                   ("The meeting before the birth and its Ascendant (1.8, 5-6).",
                    'On Nativities 1.8, 5-6:\n\n> "' + SAHL_1_8_5 + ' ' + SAHL_1_8_6 + '"\n\n-- the meeting is the last New Moon before the birth; Dykes\'s fn 40 ("' + SAHL_1_8_FN40 + '") allows the lunation generally, so the opposition is shown beside it when that was the lunation nearer the birth. The Ascendant is erected for the hour of the meeting at the birthplace.'),
                   ("The three divisions of 1.8, not computed.",
-                   '1.8, 3-4:\n\n> "' + SAHL_1_8_3 + ' ' + SAHL_1_8_4 + '"\n\nFn 38 on "the degree of the Ascendant":\n\n> "' + SAHL_1_8_FN38 + '"\n\nDykes\'s comment:\n\n> "' + SAHL_1_8_COMMENT + '".\n\nThe sentence does not name the chart whose Ascendant frames the divisions; the pre-conception lunation is not found by any sentence of 1.8 (the conception is the matter of 1.10); so this app lays out no divisions and does not read 7-13. Dykes also notes that 7-9 disagree with Hephaistion (fnn 41-42) and that 10-13 give three of the six permutations.\n\n1.8, 1:\n\n> "' + SAHL_1_8_1 + '"'),
+                   '1.8, 3-4:\n\n> "' + SAHL_1_8_3 + ' ' + SAHL_1_8_4 + '"\n\nFn 38 on "the degree of the Ascendant":\n\n> "' + SAHL_1_8_FN38 + '"\n\nDykes\'s comment:\n\n> "' + SAHL_1_8_COMMENT + '".\n\nThe sentence does not name the chart whose Ascendant frames the divisions; the pre-conception lunation is not found by any sentence of 1.8 (the conception is the matter of 1.10); so this app lays out no divisions and does not read 7-13. Dykes also notes that 7-9 disagree with Hephaistion (fnn 41-42) and that 10-13 give three of the six permutations.'),
+                  ("The seven-month native and the four-footed nativities (1.8, 1).",
+                   '1.8, 1:\n\n> "' + SAHL_1_8_1 + '"'),
                   ("The three Moons of 1.9, 1, and the year.",
                    '1.9, 1:\n\n> "' + SAHL_1_9_1 + '"\n\nFn 45:\n\n> "' + SAHL_1_9_FN45 + '"\n\nThis app takes the year as the calendar anniversary at the birth hour (a Julian year of 365.25 days only where the anniversary\'s digits name no day), its own reading, and the aspects of the past and renewed Moons to the Moon of the nativity by whole sign; a sentence of 2-10 whose condition holds is a row, and where none holds the row says so.'),
                   ("The aspects of 1.9, 2-10.",
@@ -3190,7 +3192,7 @@ def page_findings():
                        "\n".join(f"- **{c['key']}** ({c['chapter']}), \"{c['text']}\": {c.get('reading') or c['untested']}"
                                  for c in RHETORIUS_AFFLICTION_CONDITIONS)),
                       ("Rhetorius's chapters, as Holden has them.",
-                       'Rhetorius Ch. 27 (Holden):\n\n> "' + RHETORIUS_CH27 + '"\n\n**Rhetorius Ch. 41 (Holden):**\n\n> "' + RHETORIUS_CH41 + '"\n\n'
+                       '**Rhetorius Ch. 27 (Holden):**\n\n> "' + RHETORIUS_CH27 + '"\n\n**Rhetorius Ch. 41 (Holden):**\n\n> "' + RHETORIUS_CH41 + '"\n\n'
                        '**Rhetorius Ch. 42 (Holden):**\n\n> "' + RHETORIUS_CH42 + '"\n\n**Rhetorius Ch. 28 (Holden):**\n\n> "' + RHETORIUS_CH28 + '"\n\n'
                        'Holden\'s notes name them: the fifth house and the ninth; the eleventh house.\n\n**Rhetorius Ch. 26 (Holden):**\n\n> "' + RHETORIUS_CH26 + '"\n\n'
                        '**Rhetorius Ch. 34 (Holden), where Ch. 27\'s note sends the word:**\n\n> "' + RHETORIUS_CH34 + '"'),
@@ -3384,6 +3386,7 @@ def page_dignities():
                         "1.22 and al-Biruni give the under-the-rays figures independently (Sahl states no burn "
                         "boundary, and his Mars westernizes at 18°, not 15°):")
         st.markdown("| Planet | Burned within | Under the rays within |\n|---|---|---|\n" + _phase_rows)
+        st.caption("The figures shown are those in force under the current readings.")
         with _prose():
             st.markdown(f"In the heart: within {round(CAZIMI_ORB * 60)}' (VII.2, 7-9, from the Sun's own apparent diameter). "
                         "Sahl elsewhere says one whole "
@@ -3504,7 +3507,7 @@ def page_configurations():
                       glance='Three grades of one phenomenon, per connected pair: Management is the baseline (any connection at all); Power is added when the giving planet is itself in its own house, exaltation, or triplicity; Nature is added when the planet it connects with is the ruler')
             _finding(_gap, f"Reception — {CONNECTION_PROFILE} rule", None, reception_data,
                       glance='Who receives whom, on what dignity, which way round, and how strongly.',
-                      summary='The two authors differ on every one of those, so the Connection rule at the top of this page governs here too.',
+                      summary='Who receives whom, on what dignity, which way round, and how strongly. The two authors differ on every one of those, so the Connection rule at the top of this page governs here too.',
                       qualifications=['**Under Sahl\'s rule.** Under Sahl\'s rule a pair refused by non-reception Kind II (the connection made from the receiver\'s fall) is not also listed as received -- refusal wins, as on Sahl\'s own chart (Questions Ch. 1, 63 with 40-41) -- and a pair of Kind IV (the receiver in its own fall) keeps its row marked brought down, which is 62\'s own word.',
                                       '**An empty table.** An empty table is **not** non-reception -- that is a separate set of hostile configurations, in the table below.'])
             # The notes as a sibling disclosure, so that the source comparison
@@ -5768,7 +5771,8 @@ def page_sources():
             "\"the infortunes are perhaps more fitting for him, since [one] may be the lord of the original Ascendant\"; "
             "off by default because 1, 16-17 says the opposite. When on, the malefic ruling the Ascendant is not an "
             "infortune for any affliction test; it keeps its nature where that is what is meant.",
-            None),
+            "When on, that malefic drops out of every 'afflicted by an infortune' test in these tables (Sahl's enclosure, "
+            "strength and weakness 94-95; Abu Ma'shar's 3, 47-50 and enclosure; the Moon's 67-68 and 106)."),
         "_domain_rule": (
             "**Domain (hayz)** (Dignities and places page, Sect table) -- "
             "Gr. Intr. VII.1, 37 / VII.6, 13: sign gender fixed to the planet's own. Masha'allah, "
