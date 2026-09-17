@@ -53,8 +53,6 @@ KEY_LENGTH = 48
 ALLOWED_LONG = (
     # help
     'LMT (local mean time) for charts before standard',
-    'Masha\'allah: "look at the position of the govern',
-    '31: "if the nativity was by day, the infortunes ',
     'IX.7, 29: "you look at the degree of the Ascenda',
     'IX.7, 23: "you look in the revolution of the yea',
     '"The days and hours have nine indicators" (IX.7,',
@@ -69,9 +67,6 @@ ALLOWED_LONG = (
     'The lesser, middle, greater and mighty years and',
     # glance
     # caption
-    'The releaser and the house-master PN IV leaves t',
-    '**** turned a year a sign from its natal sign (w',
-    'Readings: "the degree of burning" is the Sun\'s n',
     'Zodiacal, by the sentence: 59\' 08" a day round t',
     'The rate. IX.7, 25 prints "12 days, <4 hours>, 1',
     'A "day" is a whole 24-hour period from the birth',

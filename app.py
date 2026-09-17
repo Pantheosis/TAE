@@ -5076,13 +5076,8 @@ def page_releaser():
         return
     st.header("The releaser")
     _chart_strip()
-    st.caption("The releaser and the house-master PN IV leaves to another book of Abu Ma'shar's: "
-               "\"the book which we worked on concerning nativities\" (IX.8, 123), his *Book of the "
-               "Judgments of Nativities* (Bodleian Hunt. 546, fn 315), not in hand, and not the *Great "
-               "Introduction*, which has only the Lot of the releaser. They are taken from Sahl, *On "
-               "Nativities* (cited on this page by that book's chapter and sentence). Al-Qabisi's own "
-               "account of the releaser and the house-master (ITA VIII.1.3, al-Qabisi IV.4-6) is in hand "
-               "and stands beside Sahl's in the Sources page's coverage table, not built. What neither "
+    st.caption("They are taken from Sahl, *On "
+               "Nativities* (cited on this page by that book's chapter and sentence). What neither "
                "book settles is listed at the foot of the Fardar and ages page rather than filled in.")
     _sources_scope_line()
     _year_under_examination()
@@ -5095,6 +5090,10 @@ def page_releaser():
     # below states in full; then the one qualification every result here
     # carries. The three notes after the results hold the readings whole.
     with _prose():
+        st.markdown("The releaser and the house-master PN IV leaves to another book of Abu Ma'shar's: "
+                    "\"the book which we worked on concerning nativities\" (IX.8, 123), his *Book of the "
+                    "Judgments of Nativities* (Bodleian Hunt. 546, fn 315), not in hand, and not the *Great "
+                    "Introduction*, which has only the Lot of the releaser.")
         st.markdown("Nawbakht's procedure in Sahl, On Nativities 1.15: by day the Sun, then the meeting, then the "
                     "Ascendant; by night the Moon, then the fullness, then the Lot of Fortune, then the Ascendant. "
                     "The places: \"a stake or what follows a stake\" (1.15, 6-16) is read as a test of the planet's power and "
@@ -5327,21 +5326,17 @@ def page_releaser():
         ("Other procedures in these texts, not built.",
          "On Times 4, 2-5's shorter list (victor by testimony, "
          "seven candidates) and Masha'allah's ray in the Ascendant (1.23, 46-50) are the other two "
-         "procedures in these texts, not built. No worked example exists in Sahl."),
+         "procedures in these texts, not built. No worked example exists in Sahl. Al-Qabisi's own "
+         "account of the releaser and the house-master (ITA VIII.1.3, al-Qabisi IV.4-6) is in hand "
+         "and stands beside Sahl's in the Sources page's coverage table, not built."),
     ])
 
     st.subheader("The house-master directed (Sahl, *On Nativities* 1.23, 1-11)",
-                 help="Masha'allah: \"look at the position of the governor [fn 181: the house-master] relative "
-                      "to the Ascendant and its lord, and its position relative to burning and the infortunes; "
-                      "then direct it to the conjunction of the infortunes and the degree of burning, and its "
-                      "opposition and its square, a year for every degree of ascensions. Then calculate for "
-                      "the revolution of that year in which the governor of the native corresponds to the "
-                      "degree of the infortune ... for if your calculation of this and the revolution both "
-                      "indicate burning, and then the governor is burned at the revolution, the native will "
-                      "be destroyed; and if it is not burned at the revolution but it is burned in one of the "
-                      "stakes of the Ascendant of the year, it indicates that as well; and it is worse for that "
-                      "in the Ascendant itself\" (1.23, 2-4). This is the technique that needs no grant of "
+                 help="This is the technique that needs no grant of "
                       "years -- Masha'allah's alternative, absent from PN IV and present in Sahl.")
+    with _prose():
+        st.markdown("**Facts, not judgment:** "
+                    "1.23, 4's verdict is quoted in the notes and not pronounced.")
     if not pn4['house_master']:
         st.markdown("No house-master to direct (see the section above).")
     else:
@@ -5375,46 +5370,66 @@ def page_releaser():
             st.dataframe(pd.DataFrame(pn4['hm_revolution']), hide_index=True, width='stretch',
                          height=_rows_height(len(pn4['hm_revolution'])),
                          column_config=_wide_text_columns(pd.DataFrame(pn4['hm_revolution'])))
-        st.markdown(
-            "**The join, and the denial beside it.** The house-master directed here is selected by NAWBAKHT'S "
-            "rule (1.15, 13: the dignity lord looking at the releaser) and directed by MASHA'ALLAH'S operation "
-            "(1.23, 2, \"direct it\" -- the governor); 1.23, 40 and 43 call Masha'allah's governor \"the "
-            "house-master\" in Sahl's own words, but his governor is found by reception (1.23, 1), and the two "
-            "rules name different planets in about a third of charts. The join is this app's; no sentence "
-            "states it. Abu Ma'shar denies the direction: \"the indicator of the lifespan alone is turned in "
-            "the signs, sign-by-sign, and is not directed degree-by-degree\" (PN IV IX.8, 32; fn 129: \"Some "
-            "texts say that one can also distribute the house-master itself, but to me that seems like a "
-            "misunderstanding\"). Shown as Sahl's, with the denial beside it. "
-            "Two limits of the denial: IX.8, 32 restricts the "
-            "ROLE -- the planet may still be directed in another capacity, since \"all of the planets and Lots "
-            "are [also] directed\" (III.1, 5); and 1.16, 4 (direct the luminary \"even if a house-master is "
-            "not looking\") is a provision the 1.16 exception built above does not cover. IX.8, 30's turning, "
-            "the one operation Abu Ma'shar licenses for the indicator, follows as PN IV's:")
+        with _prose():
+            st.markdown(
+                "**The join, and the denial beside it.** The house-master directed here is selected by **Nawbakht's** "
+                "rule (1.15, 13: the dignity lord looking at the releaser) and directed by **Masha'allah's** operation "
+                "(1.23, 2, \"direct it\" -- the governor); 1.23, 40 and 43 call Masha'allah's governor \"the "
+                "house-master\" in Sahl's own words, but his governor is found by reception (1.23, 1), and the two "
+                "rules name different planets in about a third of charts. The join is this app's; no sentence "
+                "states it. Abu Ma'shar denies the direction: \"the indicator of the lifespan alone is turned in "
+                "the signs, sign-by-sign, and is not directed degree-by-degree\" (PN IV IX.8, 32; fn 129: \"Some "
+                "texts say that one can also distribute the house-master itself, but to me that seems like a "
+                "misunderstanding\"). Shown as Sahl's, with the denial beside it.")
+        st.markdown("IX.8, 30's turning, "
+                    "the one operation Abu Ma'shar licenses for the indicator, follows as PN IV's:")
         if pn4['hm_turning']:
             st.dataframe(pd.DataFrame(pn4['hm_turning']), hide_index=True, width='stretch',
                          height=_rows_height(min(len(pn4['hm_turning']), 12)),
                          column_config=_wide_text_columns(pd.DataFrame(pn4['hm_turning'])))
         else:
             st.markdown("The turned sign reaches no cutter's body, opposition or square within the span.")
-        st.caption(f"**{pn4['house_master']}** turned a year a sign from its natal sign (whole signs, as VI.2, 1), "
-                   "the years in which the sign reaches a cutter's body, opposition or square: \"if the turning of "
-                   "the years from any of the five releasers (or from the indicator of the lifespan) reached their "
-                   "bodies, oppositions, or squares, then they also kill\" (PN IV IX.8, 30); \"the rest of the "
-                   "rays' direction ... is a weak testimony\" (31) and is not shown. Read: \"their\" as Saturn's "
+        with _prose():
+            st.markdown(f"**{pn4['house_master']}** turned a year a sign from its natal sign (whole signs, as VI.2, 1), "
+                        "the years in which the sign reaches a cutter's body, opposition or square: \"if the turning of "
+                        "the years from any of the five releasers (or from the indicator of the lifespan) reached their "
+                        "bodies, oppositions, or squares, then they also kill\" (PN IV IX.8, 30); \"the rest of the "
+                        "rays' direction ... is a weak testimony\" (31) and is not shown.")
+        st.caption("Read: \"their\" as Saturn's "
                    "and Mars's, the cutters the direction table targets.")
-    st.caption("Readings: \"the degree of burning\" is the Sun's natal degree; \"a year for every degree of "
-               "ascensions\" is the oblique ascension of the birth latitude applied to the house-master's own "
-               "degree, as 1.15, 17, 1.16, 4 and 1.18, 21 apply \"the ascensions of that city\" to the "
-               "luminaries and the Ascendant alike, not PN IV III.1, 12's third case, the proportional "
-               "semi-arcs, which is Abu Ma'shar's assignment and not Sahl's); \"in the year of age\" is the "
-               "completed year the arc falls in. Facts, not judgment: "
-               "1.23, 4's verdict is quoted in the help and not pronounced. Not applied: 4.12, 6 (a retrograde "
-               "planet's rays directed conversely); 1.23, 5-11's further witnesses (the lord of the "
-               "revolution's Ascendant, the lord of the year, the profection reaching an infortune's sign), "
-               "which are the II.3 examination and the indicators in that chapter; 1.23, 13-14's redirection to the "
-               "lord of the Ascendant when the house-master is unsuitable is APPLIED below when a 1.23, 12 flag "
-               "fires; not applied: 1.23, 6; 1.23, 53-60's increase and "
-               "decrease of years; and the 1.21 additions. No worked example exists in Sahl.")
+    _notes_expander("How the house-master is directed", [
+        ("Masha'allah's operation, 1.23, 2-4.",
+         "Masha'allah:\n\n> \"look at the position of the governor [fn 181: the house-master] relative "
+         "to the Ascendant and its lord, and its position relative to burning and the infortunes; "
+         "then direct it to the conjunction of the infortunes and the degree of burning, and its "
+         "opposition and its square, a year for every degree of ascensions. Then calculate for "
+         "the revolution of that year in which the governor of the native corresponds to the "
+         "degree of the infortune ... for if your calculation of this and the revolution both "
+         "indicate burning, and then the governor is burned at the revolution, the native will "
+         "be destroyed; and if it is not burned at the revolution but it is burned in one of the "
+         "stakes of the Ascendant of the year, it indicates that as well; and it is worse for that "
+         "in the Ascendant itself\" (1.23, 2-4)."),
+        ("Current direction: the readings.",
+         "Readings: \"the degree of burning\" is the Sun's natal degree; \"a year for every degree of "
+         "ascensions\" is the oblique ascension of the birth latitude applied to the house-master's own "
+         "degree, as 1.15, 17, 1.16, 4 and 1.18, 21 apply \"the ascensions of that city\" to the "
+         "luminaries and the Ascendant alike, not PN IV III.1, 12's third case, the proportional "
+         "semi-arcs, which is Abu Ma'shar's assignment and not Sahl's); \"in the year of age\" is the "
+         "completed year the arc falls in."),
+        ("Limitations: two limits of the denial.",
+         "Two limits of the denial: IX.8, 32 restricts the "
+         "**role** -- the planet may still be directed in another capacity, since \"all of the planets and Lots "
+         "are [also] directed\" (III.1, 5); and 1.16, 4 (direct the luminary \"even if a house-master is "
+         "not looking\") is a provision the 1.16 exception built above does not cover."),
+        ("Not applied, and the redirection applied.",
+         "Not applied: 4.12, 6 (a retrograde "
+         "planet's rays directed conversely); 1.23, 5-11's further witnesses (the lord of the "
+         "revolution's Ascendant, the lord of the year, the profection reaching an infortune's sign), "
+         "which are the II.3 examination and the indicators in that chapter; 1.23, 13-14's redirection to the "
+         "lord of the Ascendant when the house-master is unsuitable is **applied** below when a 1.23, 12 flag "
+         "fires; not applied: 1.23, 6; 1.23, 53-60's increase and "
+         "decrease of years; and the 1.21 additions. No worked example exists in Sahl."),
+    ])
     if pn4['hm_redirect']:
         _rd = pn4['hm_redirect']
         st.markdown(f"**1.23, 13-14, the redirection** -- a 1.23, 12 flag stands on the house-master, so \"look at the "
@@ -5437,17 +5452,13 @@ def page_releaser():
     if pn4['father_lot']:
         _fl = pn4['father_lot']
         st.subheader("The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)",
-                     help="31: \"if the nativity was by day, the infortunes which harm his Lot are Mars and Saturn (and "
-                          "Mercury, if he was unfortunate); and if it was by night, the infortunes which harm them are Mars "
-                          "and Mercury (if he was unfortunate)\". 32: \"direct the degree of the Lot of the father and the "
-                          "Sun by day, and by night the Lot and Saturn\". 33: \"if you found an infortune casting its rays "
-                          "upon the Sun and upon the Lot ... it will kill the father when the direction reaches the "
-                          "infortune which casts the rays\"; 34-35 rank two infortunes by enmity and power; 36: Saturn "
-                          "\"from hostility\" is \"more harmful for some of the injuries\".")
-        st.markdown(f"The Lot of the father stands at **{get_degree_string(_fl['lot'])}** (4.14, 1); the second point "
-                    f"directed is **the {_fl['second']}** (32). fn 288 -- Dykes: Mars the main malefic in both sects, "
-                    f"Saturn barred by night because he indicates the father, Mercury when made unfortunate -- is the "
-                    f"editor's reading and is quoted, not applied; 31 is applied as printed.")
+                     help="32: \"direct the degree of the Lot of the father and the "
+                          "Sun by day, and by night the Lot and Saturn\".")
+        with _prose():
+            st.markdown(f"The Lot of the father stands at **{get_degree_string(_fl['lot'])}** (4.14, 1); the second point "
+                        f"directed is **the {_fl['second']}** (32). fn 288 -- Dykes: Mars the main malefic in both sects, "
+                        f"Saturn barred by night because he indicates the father, Mercury when made unfortunate -- is the "
+                        f"editor's reading and is quoted, not applied; 31 is applied as printed.")
         st.dataframe(pd.DataFrame(_fl['harmers']), hide_index=True, width='stretch', height=_rows_height(len(_fl['harmers'])),
                      column_config=_wide_text_columns(pd.DataFrame(_fl['harmers'])))
         for _lab, _tab in (("From the degree of the Lot of the father (32), to the harmers' bodies, squares and oppositions", _fl['from_lot']),
@@ -5460,9 +5471,24 @@ def page_releaser():
                              column_config=_wide_text_columns(pd.DataFrame(_tab)))
             else:
                 st.markdown("No target within the span.")
-        st.caption("Readings: \"casting its rays\" is met by the direction's targets, the harmers' bodies, squares and "
-                   "oppositions (the same set as the house-master's direction; sextiles and trines are not directed); "
-                   "the Sun is not a target here (4.20, 32 directs him). 33-35's choice between two infortunes is not made.")
+        _notes_expander("The harmers, the points directed, and the readings", [
+            ("Harmers, 4.20, 31.",
+             "31: \"if the nativity was by day, the infortunes which harm his Lot are Mars and Saturn (and "
+             "Mercury, if he was unfortunate); and if it was by night, the infortunes which harm them are Mars "
+             "and Mercury (if he was unfortunate)\"."),
+            ("Points directed, 4.20, 32.",
+             "32: \"direct the degree of the Lot of the father and the "
+             "Sun by day, and by night the Lot and Saturn\"."),
+            ("The direction's verdict, and the ranking of two infortunes, 4.20, 33-36.",
+             "33: \"if you found an infortune casting its rays "
+             "upon the Sun and upon the Lot ... it will kill the father when the direction reaches the "
+             "infortune which casts the rays\"; 34-35 rank two infortunes by enmity and power; 36: Saturn "
+             "\"from hostility\" is \"more harmful for some of the injuries\"."),
+            ("Interpretive choices.",
+             "Readings: \"casting its rays\" is met by the direction's targets, the harmers' bodies, squares and "
+             "oppositions (the same set as the house-master's direction; sextiles and trines are not directed); "
+             "the Sun is not a target here (4.20, 32 directs him). 33-35's choice between two infortunes is not made."),
+        ])
 
 
 def page_days():

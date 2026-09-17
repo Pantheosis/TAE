@@ -478,3 +478,81 @@ def test_the_refused_distribution_keeps_its_notes_and_qualifications():
     shown = _visible_markdowns(at)
     assert any(m.startswith("No current distribution to analyse") for m in shown)
     assert any(m.startswith("**Facts and classification, not judgment:**") for m in shown)
+
+
+# --- The releaser ----------------------------------------------------------
+
+@pytest.fixture(scope="module")
+def releaser_page():
+    return _page("releaser")
+
+
+def test_the_releaser_caption_is_two_sentences_and_the_exception_clause_leads_the_method(releaser_page):
+    at = releaser_page
+    caption = next(c.value for c in at.main.caption if c.value.startswith("They are taken from Sahl"))
+    assert caption == ("They are taken from Sahl, *On Nativities* (cited on this page by that book's chapter and "
+                       "sentence). What neither book settles is listed at the foot of the Fardar and ages page rather "
+                       "than filled in.")
+    shown = _visible_markdowns(at)
+    lead = next(m for m in shown if m.startswith("The releaser and the house-master PN IV leaves to another book"))
+    assert lead.endswith("not the *Great Introduction*, which has only the Lot of the releaser.")
+    assert shown.index(lead) + 1 == shown.index(next(m for m in shown if m.startswith("Nawbakht's procedure")))
+    exp = _expander(at, "Years granted and alternative procedures")
+    text = " ".join(_markdowns(exp))
+    assert ("Al-Qabisi's own account of the releaser and the house-master (ITA VIII.1.3, al-Qabisi IV.4-6) is in "
+            "hand and stands beside Sahl's in the Sources page's coverage table, not built.") in text
+
+
+def test_the_house_master_direction_shows_the_join_and_denial_and_heads_its_notes(releaser_page):
+    at = releaser_page
+    assert _heading(at, "The house-master directed (Sahl, *On Nativities* 1.23, 1-11)").help == (
+        "This is the technique that needs no grant of years -- Masha'allah's alternative, absent from PN IV and "
+        "present in Sahl.")
+    shown = _visible_markdowns(at)
+    assert any(m == "**Facts, not judgment:** 1.23, 4's verdict is quoted in the notes and not pronounced."
+               for m in shown)
+    join = next(m for m in shown if m.startswith("**The join, and the denial beside it.**"))
+    assert "selected by **Nawbakht's** rule" in join and "directed by **Masha'allah's** operation" in join
+    assert join.endswith("Shown as Sahl's, with the denial beside it.")
+    assert "Two limits of the denial" not in join
+    assert any(m.startswith("IX.8, 30's turning, the one operation") for m in shown)
+    turned = next(m for m in shown if "turned a year a sign from its natal sign (whole signs, as VI.2, 1)" in m)
+    assert turned.endswith("(31) and is not shown.")
+    assert any(c.value == "Read: \"their\" as Saturn's and Mars's, the cutters the direction table targets."
+               for c in at.main.caption)
+    exp = _expander(at, "How the house-master is directed")
+    assert exp.icon == NOTES_EXPANDER_ICON
+    assert _headings_in(exp) == ["**Masha'allah's operation, 1.23, 2-4.**", "**Current direction: the readings.**",
+                                 "**Limitations: two limits of the denial.**",
+                                 "**Not applied, and the redirection applied.**"]
+    md = _markdowns(exp)
+    assert md[1].startswith("Masha'allah:\n\n> \"look at the position of the governor") and md[1].endswith("(1.23, 2-4).")
+    assert "IX.8, 32 restricts the **role**" in md[5]
+    assert "is **applied** below when a 1.23, 12 flag fires" in md[7]
+
+
+def test_the_fathers_lot_has_its_summary_visible_and_four_headed_notes(releaser_page):
+    at = releaser_page
+    title = "The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)"
+    assert _heading(at, title).help == ("32: \"direct the degree of the Lot of the father and the Sun by day, and by "
+                                        "night the Lot and Saturn\".")
+    shown = _visible_markdowns(at)
+    assert any(m.startswith("The Lot of the father stands at") and m.endswith("31 is applied as printed.") for m in shown)
+    exp = _expander(at, "The harmers, the points directed, and the readings")
+    assert exp.icon == NOTES_EXPANDER_ICON
+    assert _headings_in(exp) == ["**Harmers, 4.20, 31.**", "**Points directed, 4.20, 32.**",
+                                 "**The direction's verdict, and the ranking of two infortunes, 4.20, 33-36.**",
+                                 "**Interpretive choices.**"]
+    md = _markdowns(exp)
+    assert md[1].startswith("31: \"if the nativity was by day") and md[7].startswith("Readings: \"casting its rays\"")
+    assert md[7].endswith("33-35's choice between two infortunes is not made.")
+
+
+def test_the_releaser_page_has_no_text_over_its_ceiling():
+    from test_text_lengths_2026_09_17 import offenders
+    src = ui_source()
+    start = src.index("def page_releaser():")
+    end = src.index("def page_days():")
+    first_line = src[:start].count("\n") + 1
+    last_line = src[:end].count("\n") + 1
+    assert not [o for o in offenders() if first_line <= o[1] <= last_line]
