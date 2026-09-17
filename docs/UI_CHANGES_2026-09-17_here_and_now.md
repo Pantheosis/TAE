@@ -2,7 +2,10 @@
 
 Branch `here-and-now-2026-09-17` off `main` at `bd8fdd9` (the merge of
 PR #77, readability C). Brief: `HERE_NOW_BRIEF_2026-09-17.md` on the
-Desktop. Two commits: the feature with its tests, then this note.
+Desktop. Two commits: the feature with its tests, then this note; then,
+after the adversarial pass (`HERE_NOW_ADVERSARIAL_REPORT_2026-09-17.md` on
+the Desktop), one fix commit and this note's update — see "The fix round"
+at the end.
 
 ## What was asked
 
@@ -54,28 +57,32 @@ pops the session's copy and calls `_forget`.
 Under Birthplace, directly after the resolved-place box
 (`location_box`), inside the `else` arm of the one validation of the
 coordinates — so the button is drawn only when a place is resolved and in
-range, which is where `_resolved_lat`/`_resolved_lon` are written. A new
-`_resolved_label` is written at the same site under the same condition:
-the label the box shows (`location_query`: an atlas label such as
-"Florence, 16 (IT)", or "Manual [43.7792, 11.2463]", or a loaded record's
-own label). The callback `_set_home_place` reads the three `_resolved_*`
-keys — the values of the run the button was drawn in, which are the
-values the box beside it showed — builds the dict with `float()`
-coordinates, checks it with `home_place_is_valid`, and remembers it.
+range, which is where `_resolved_lat`/`_resolved_lon` are written. The
+press is handled at the button's own site, on the run in which
+`st.button` returns True, from **that run's** `lat`, `lon` and
+`location_query` — the values the box beside the button shows (an atlas
+label such as "Florence, 16 (IT)", or "Manual [43.7792, 11.2463]", or a
+loaded record's own label) — built into the dict with `float()`
+coordinates, checked with `home_place_is_valid`, compared with the home
+in force, and remembered when it differs. (The first commit did this in
+an `on_click` callback reading `_resolved_*` from the previous run; the
+fix round replaced it — see below.)
 
 Then, whenever a valid home is in force: the caption
 `Home: <label> · <lat:.4f>, <lon:.4f>` (for example
 "Home: Florence, 16 (IT) · 43.7792, 11.2463"; the label goes through
 `escape` as the resolved box's does) and the "Forget home" button.
 
-All three buttons carry `key`s and `on_click` callbacks. A callback runs
-before the widgets of the rerun it triggers, which is what makes the top
-of the sidebar right on the same run: after "Forget home" the "Here & Now"
-button, drawn far above, is drawn disabled at once, and after "Set as
-home" it is enabled at once. Processing the press inline where the button
-stands would have left the top button one run stale, and a rerun from
-sidebar height is not available (the delete confirmation learned that: it
-abandons the run before the date, time and place widgets are drawn).
+All three buttons carry `key`s. "Forget home" and "Here & Now" have
+`on_click` callbacks, which run before the widgets of the rerun they
+trigger — so after "Forget home" the "Here & Now" button, drawn far
+above, is drawn disabled at once. "Set as home" is handled inline, which
+leaves the top button one run stale on its own; so when the home has
+changed the site sets `_home_changed` and the run is repeated from the
+sidebar's foot (beside `_delete_now`, where every field has been drawn
+and a rerun costs nothing; the flag is popped, so once). A rerun from
+sidebar height is not available (the delete confirmation learned that:
+it abandons the run before the date, time and place widgets are drawn).
 
 ### "Here & Now"
 
@@ -107,9 +114,16 @@ The callback `_here_and_now`:
    moment of the year.
 4. **No zone**: `engine.local_clock(instant)` — the instant as this
    computer's clock shows it — and Manual with that clock's offset in
-   hours (quarter-hours preserved: 5.5, 5.75), written to `utc_offset_key`
-   only when `utc_offset_in_range` admits it (H5: never an offset outside
-   the number_input's bounds; a clock cannot give one).
+   hours (quarter-hours preserved: 5.5, 5.75). The offset is checked with
+   `utc_offset_in_range` **before anything is written** (H5: never an
+   offset outside the number_input's bounds; a clock cannot give one
+   short of a broken `TZ` string): outside it the cast is refused — the
+   callback returns with every box as it was and one sentence in the
+   notice slot beside the picker, "This computer's clock has an offset
+   outside ±14 hours, so Here & Now cast nothing.", which the next load,
+   new chart, save or cast clears. (The first commit wrote Manual and the
+   wall time and skipped only the offset, a wrong chart cast silently;
+   the fix round made it refuse.)
 5. **The moment**: `date_input_key` = `YYYY-MM-DD` of the local clock,
    `time_input_key` = `time(h, m, s)`.
 6. **The place**: `manual_coords_key` = True, `manual_lat_key` /
@@ -117,8 +131,16 @@ The callback `_here_and_now`:
    `{"label", "lat", "lon"}` so the coordinate fields show the home's name
    under the loaded-label rule rather than "Manual [lat, lon]".
 7. **State**: `_loaded_without_standard` and `_record_notice` popped —
-   both describe the record that was loaded, and the boxes no longer hold
-   it. The picker and `last_chart` are left as they are: a loaded record
+   the first is answered by the standard just written, the second
+   describes fields the boxes no longer hold. `_readings_pending`, the
+   "'X' was saved under other readings" question with its Open/Keep
+   buttons, is **left standing**, by finding rather than by symmetry:
+   the cast makes it neither false nor answered — X was saved under other
+   readings still, the picker still names X, and which readings the chart
+   is read under is the reader's to say, which the cast does not say. An
+   edit of the date keeps the question on main too. The picker's caption
+   then reads both "Edited since it was saved." and "Saved with other
+   readings.", which is the truth. The picker and `last_chart` are left as they are: a loaded record
    then reads "(modified)" in the strip with "Edited since it was saved."
    under the picker, which is the truth. The Prediction target keys
    (`_target_mode`, `_target_date`, `_target_age`) are not touched: a
@@ -167,7 +189,7 @@ saved."
 
 ## Tests
 
-`tests/test_here_and_now_2026_09_17.py`, 42 tests, AppTest, preferences
+`tests/test_here_and_now_2026_09_17.py`, 45 tests, AppTest, preferences
 switched on against a `tmp_path` `XDG_DATA_HOME` as `test_preferences.py`
 does. A button drawn disabled takes no click under AppTest (nor in a
 browser), so tests that seed a home in `session_state` do it before the
@@ -181,6 +203,12 @@ first run.
   help; the same press again leaves the file's bytes and mtime unchanged;
   "Forget home" removes it from the file and the session and disables the
   button on that run.
+- The edit-and-click gesture (fix round): the city text set to "Paris"
+  and the button clicked before one `run()` writes Paris's atlas label
+  and coordinates, the caption names it and the top button is enabled on
+  that run; a latitude set to 10.0 and clicked in one run writes
+  `Manual [10.0000, …]`. Both fail on the first commit's `app.py`
+  (Florence written for Paris).
 - A home in the file is carried into a fresh session; the manual pair is a
   home too; nothing is written under the harness guard.
 - The validator: the good shape and a polar pair admitted; nineteen
@@ -201,6 +229,16 @@ first run.
   zone (patched) with a +05:30 clock: 18:04:56, Manual, 5.5, then 5.75,
   then a -10 clock giving 2026-09-16 16:00:00. The repeated hour: Manual
   +2.0, no error, UT as taken.
+- The out-of-bounds clock (fix round): `timezone_at` patched to None and
+  `local_clock` to +15 — every box as it was, no `utc_offset_key`, no
+  `loaded_location`, exactly the one warning, the strip still the example
+  chart; a +14 clock then casts (2026-09-18, 14.0) with the warning gone.
+  Fails on the first commit's `app.py` (a cast at 2026-09-18).
+- The readings question (fix round): a record saved under Abu Ma'shar's
+  connection rule loaded, the question standing, then Here & Now — the
+  question and "Open saved readings" still drawn, `_readings_pending`
+  still the record, both picker captions, the strip "Other (modified) ·
+  2026-09-17 14:34:56"; "Keep current readings" answers it as before.
 - The target keys untouched on the Timing page; the picker still "-- New
   Chart --" when nothing was loaded.
 - A loaded record ("Before", 1983-11-19) then Here & Now with a Petoskey
@@ -236,8 +274,8 @@ test changed.
   home"; the cast chart on the Chart page and the strip; "Forget home"
   disabling the button on the same run. The clone's home was forgotten
   and its launch count put back to 99 before the preview was stopped.
-- Full suite `-n auto`: 3731 passed, 1 skipped (main: 3688 passed,
-  1 skipped).
+- Full suite `-n auto`: 3731 passed, 1 skipped at the first commit; 3734
+  passed, 1 skipped after the fix round (main: 3688 passed, 1 skipped).
 
 ## What was left
 
@@ -247,3 +285,57 @@ Manual path exists and is tested with the finder patched); and the
 repeated hour of a fall-back takes Manual with the true offset, which the
 brief did not ask for and which keeps the button from being refused one
 hour a year.
+
+## The fix round
+
+From `HERE_NOW_ADVERSARIAL_REPORT_2026-09-17.md` (36 instants across DST
+gaps and repeats, 25 hand-edited file shapes, the lifecycle, the live
+gesture). One must-change and two cheap items, one commit.
+
+1. **"Set as home" wrote the previous run's place.** Type a city (or a
+   coordinate) and click the button without Enter: the mouse-down blurs
+   the box, the blur commits the text and requests a rerun, the click
+   requests another, and an `on_click` callback ran with `_resolved_*`
+   from the run before the edit — live on the clone, Madrid in the box,
+   "Home: Berlin" written. Now the press is handled at the button's site
+   from this run's `lat`, `lon`, `location_query`, with the foot rerun
+   described above keeping the top button right on the same run;
+   `_resolved_label` is gone. Verified live on the clone at port 8531:
+   Berlin resolved, "Madrid" typed over it with no Enter, "Set as home"
+   clicked with the pane's mouse — the box "Madrid, 29 (ES)", the caption
+   "Home: Madrid, 29 (ES) · 40.4165, -3.7026", the top button enabled on
+   that run. Pinned by the edit-and-click tests above.
+2. **The H5 guard refuses instead of casting wrong** (step 4 above).
+3. **`_readings_pending` left standing**, with the reasoning in step 7
+   above and the callback's own comment; tested.
+
+### Seen in passing (main's, not this branch's)
+
+The same staleness as item 1 exists on `main` in F02's toggle callback,
+`_manual_coords_switched`: it reads `_resolved_lat`/`_resolved_lon` from
+the previous run, so a city typed over and the coordinate toggle clicked
+without Enter starts the fields at the previous place. Not touched here;
+the "Set as home" fix — handle at the site from this run's values, rerun
+from the foot — is the model if the owner wants it closed.
+
+### Design consequences for the owner
+
+- **Sidebar height.** The "Here & Now" block is 56 px (40 + 16) and so is
+  "Set as home", so the sidebar is about 112 px taller than main's with no
+  home; the caption (38 px, two lines at 300 px) and "Forget home" (56)
+  make it about 206 px taller with one. On the owner's chart Save was
+  already below a 900 px fold on main (about y 1136–1197) and stands at
+  about 1309 with no home and 1403 with one. Nothing scrolls sideways.
+- After Here & Now the coordinate toggle behaves as for a loaded record
+  (F02's rule): switching it off shows the city box's last text and casts
+  that place at the cast time.
+- A Manual offset in force before the press stays in `utc_offset_key`
+  underneath a Standard cast and returns if Manual is chosen again — the
+  same as loading a Standard record over a Manual box.
+- An int coordinate in a hand-edited file is refused (deliberate); a
+  hand-edited label is shown whole, escaped as the resolved box escapes.
+- The refusal sentence of item 2 stands in `_record_notice`, the slot
+  whose comment says it describes the record, not the click; it is the
+  one sentence slot the sidebar has beside the picker, and the sentence
+  is cleared by everything that clears that slot. If the owner would
+  rather it had a slot of its own, that is a one-key change.
