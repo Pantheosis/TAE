@@ -199,3 +199,107 @@ def test_a_garbage_planet_selection_renders_no_panel():
     assert_no_exception(at, "dignities, garbage")
     assert not _planet_lines(at)
     assert [s for s in at.main.selectbox if s.key == PLANETS_KEY][0].value is None
+
+
+# --- 2.3 The releaser ------------------------------------------------------
+
+RELEASER = "The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)"
+RELEASER_NOTES = ("Place tests and candidate selection", "Lunations, looking, and the house-master",
+                  "Years granted and alternative procedures")
+
+
+def _expander_text(at, label, containing=""):
+    """The markdown of the first book-icon expander with this label (and,
+    when given, holding this text)."""
+    for node in at.main:
+        if getattr(node, "type", None) == "status" and node.label == label:
+            text = "\n".join(m.value for m in node.markdown)
+            if containing in text:
+                return text
+    raise LookupError(label)
+
+
+@pytest.mark.parametrize("depth", READING_DEPTHS)
+def test_the_releaser_shows_its_method_and_qualification_then_three_sibling_disclosures(depth):
+    at = make_app(page="releaser")
+    at.session_state["_reading_depth"] = depth
+    at.run()
+    assert_no_exception(at, "releaser")
+    heading = [h for h in at.main.subheader if h.value == RELEASER][0]
+    assert heading.help == ("Not PN IV: Abu Ma'shar lists the five candidates (III.3, 1) and sends the reader to "
+                            "another book for the choice (IX.8, 123).")
+    block = _between(at, RELEASER)
+    assert block[0][0] == "markdown" and block[0][1].startswith("Nawbakht's procedure in Sahl, On Nativities 1.15: by day the Sun")
+    assert "is read as a test of the planet's power and counted by the Alchabitius divisions with the five-degree allowance at the four axial degrees only" in block[0][1]
+    assert "the Lot of Fortune (a candidate by night, 1.15, 14) has no dynamic angularity and is tested by its whole-sign place" in block[0][1]
+    assert "the years the house-master grants are granted from On Nativities 1.20, 7-34 read in full" in block[0][1]
+    assert block[1] == ("markdown", "**Readings made here, each one Sahl leaves open.**")
+    labels = [label for label, icon in _statuses(at) if icon == NOTES_EXPANDER_ICON]
+    assert [l for l in labels if l in RELEASER_NOTES] == list(RELEASER_NOTES)
+    # No caption of the old readings survives on the page.
+    assert not [c for c in at.main.caption if c.value.startswith("Readings made here")]
+
+
+def test_the_releaser_disclosures_carry_the_two_tables_and_every_reading():
+    at = make_app(page="releaser").run()
+    assert_no_exception(at, "releaser")
+    places = _expander_text(at, RELEASER_NOTES[0])
+    rows = re.findall(r"^\| (.+?) \| (.+?) \|$", places, re.M)
+    assert ("The places: \"a stake or what follows a stake\" (1.15, 6-16)",
+            "A test of the planet's power, counted by the Alchabitius divisions with the five-degree allowance at the four axial degrees only") in rows
+    assert ("The Lot of Fortune (a candidate by night, 1.15, 14)", "Its whole-sign place; it has no dynamic angularity") in rows
+    assert ("The meeting's and the fullness's degrees (1.15, 6-8, 12)", "The division, an open reading; they are neither planet nor Lot") in rows
+    assert ("\"In good places\" for the Ascendant's lord (1.15, 16)",
+            "Sahl's seven praised places, counted by whole-sign place; the identification is an interpretation") in rows
+    assert ("Day", "the Sun, the meeting, then the Ascendant") in rows
+    assert ("Night", "the Moon, the fullness, the Lot of Fortune, then the Ascendant") in rows
+    # The five-degree allowance keeps its direction, unit and extent.
+    assert ("a planet 0-5 degrees past the Ascendant, Midheaven, setting degree or fourth into the cadent division keeps "
+            "the stake's power, measured from the axial degree, in longitude") in places
+    assert "here the five degrees stay at the four stakes and the places are Sahl's" in places
+    # The order table is followed by the sentence that every candidate needs its place and a looking lord.
+    assert places.index("| Night |") < places.index("Each needs its place -- by day")
+    assert "1.15, 15 lists all five before the Ascendant and is read as the summary of the two lists" in places
+    assert re.search(r"^- 1\.16, 4 \(", places, re.M) and re.search(r"^- 1\.18, 8-10 \(", places, re.M) and re.search(r"^- 1\.15, 5 \(", places, re.M)
+    lunations = _expander_text(at, RELEASER_NOTES[1])
+    for phrase in ("The meeting is the last New Moon and the fullness the last Full Moon before birth",
+                   "when both or neither is above the earth this app takes the Moon's degree",
+                   "The Moon default is Valens's; the sages' tie rule is named here and not adopted",
+                   "\"Looking\" is the whole-sign aspect, and a lord in the candidate's own sign counts as looking (1.20, 4).",
+                   "A candidate is not its own house-master except in 1.16's four signs.",
+                   "1.16: the Sun in Aries or Leo, the Moon in Taurus or Cancer, is both.",
+                   "The triplicity lord is the lord of the sect.",
+                   "1.20, 2-4 rank the lords: bound, house, exaltation, triplicity, image; two shares beat one",
+                   "\"In good places\" for the Ascendant's lord (1.15, 16): Sahl's seven praised places"):
+        assert phrase in lunations, phrase
+    years = _expander_text(at, RELEASER_NOTES[2])
+    assert "The **years** the house-master grants are granted from On Nativities 1.20, 7-34 read in full, above" in years
+    assert "the Fardar and ages page's Planetary years table shows 1.20's grade for every planet" in years
+    assert "On Times 4, 2-5's shorter list (victor by testimony, seven candidates)" in years
+    assert "No worked example exists in Sahl." in years
+    assert "the app " not in places + lunations + years
+
+
+def test_the_house_masters_years_and_abu_alis_additions_keep_their_flags_and_display_only_status():
+    at = make_app(page="releaser")
+    at.session_state["_reading_depth"] = READING_DEPTHS[1]
+    at.run()
+    assert_no_exception(at, "releaser, supplement")
+    years = [m.value for m in at.main.markdown if m.value.startswith("**The house-master's years**")]
+    assert len(years) == 1
+    assert "\n\nPlaced by division " in years[0] and "(the **power** unit).\n\nThese are the years the infortunes may cut off (1.23, 53 and 61)" in years[0]
+    additions = [h for h in at.main.subheader if h.value.startswith("Additions and subtractions to the house-master's years")]
+    assert len(additions) == 1
+    assert additions[0].help == ("What each planet joined to the house-master or looking at it would add to or subtract "
+                                 "from its years by Abu 'Ali's chapter.")
+    block = _between(at, additions[0].value)
+    assert block[0][0] == "caption" and block[0][1].startswith("Supplement · display only · ")
+    assert block[1][0] == "markdown" and block[1][1].startswith("What each planet joined to the house-master or looking at it would add to or subtract from its years by Abu 'Ali's chapter: a fortune joined, trine or sextile adds its lesser years")
+    assert block[2] == ("markdown", "**Display only:** no sum is formed, and Sahl's grant above is not changed.")
+    assert block[3][0] == "dataframe"
+    notes = _expander_text(at, "Sources and editorial notes", "Abu 'Ali's chapter, whole")
+    for section in ("**Abu 'Ali's chapter, whole.**", "**What the rows state, and the conventions of this display.**",
+                    "**Abu Bakr, a witness beside Abu 'Ali.**", "**'Umar al-Tabari, a witness.**"):
+        assert section in notes, section
+    assert "Display only: no total is formed and these rows do not change the Sahl-based grant of the years above" in notes
+    assert "> \"" in notes

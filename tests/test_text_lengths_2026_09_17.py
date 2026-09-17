@@ -76,7 +76,6 @@ ALLOWED_LONG = (
     'III.2, 4-9: a checklist of questions about the b',
     'III.1, 12: "what is in the Midheaven or the four',
     'III.1, 12: "the Ascendant and the things in it a',
-    "Not PN IV: Abu Ma'shar lists the five candidates",
     'Masha\'allah: "look at the position of the govern',
     '31: "if the nativity was by day, the infortunes ',
     'IX.7, 29: "you look at the degree of the Ascenda',
@@ -108,7 +107,6 @@ ALLOWED_LONG = (
     '10: the planets "formed an honor-guard for [the ',
     '"Another type of connection and separation [even',
     'Two degree tables from Book V that no condition ',
-    'What each planet joined to the house-master or l',
     # caption
     '⚠️ **The Lord of the Hour here is not a temporal',
     "Masha'allah's condition is his own, stated at th",
@@ -128,7 +126,6 @@ ALLOWED_LONG = (
     'The direction "a year for every degree" is propo',
     'Facts and classification, not judgment: the cond',
     'What PN IV does not supply here, stated rather t',
-    'Readings made here, each one Sahl leaves open. (',
     '**** turned a year a sign from its natal sign (w',
     'Readings: "the degree of burning" is the Sun\'s n',
     'Zodiacal, by the sentence: 59\' 08" a day round t',
