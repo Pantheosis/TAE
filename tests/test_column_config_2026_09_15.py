@@ -12,27 +12,11 @@ import json
 
 import pytest
 
-from conftest import PAGES, READING_DEPTHS, assert_no_exception, make_app
+from conftest import PAGES, READING_DEPTHS, assert_no_exception, find_table, make_app
 
 
 def _column_config(dataframe_element):
     return json.loads(dataframe_element.proto.columns)
-
-
-def _find_table(at, heading):
-    """The first st.dataframe element under exactly this heading (the
-    nearest preceding subheader or expander label), as table_inventory()
-    in conftest.py reads headings."""
-    current = None
-    for node in at.main:
-        kind = getattr(node, "type", None)
-        if kind == "subheader":
-            current = node.value
-        elif kind == "expander" and node.label != "Sources and editorial notes":
-            current = node.label
-        elif kind == "dataframe" and current == heading:
-            return node
-    raise LookupError(f"no dataframe found under heading {heading!r}")
 
 
 # --- Every page still renders, at both reading depths ---------------------
@@ -52,7 +36,7 @@ def test_strength_grid_moves_the_sentence_number_into_the_tooltip():
     at = make_app(page="configurations")
     at.run()
     assert_no_exception(at, "configurations")
-    config = _column_config(_find_table(at, "Strength of the Planets"))
+    config = _column_config(find_table(at, "Strength of the Planets"))
     assert config["78 excellent place"]["label"] == "excellent place"
     assert config["78 excellent place"]["help"] == "Sahl, The Introduction Ch. 3, 78"
     assert config["78 excellent place"]["width"] == "small"
@@ -66,7 +50,7 @@ def test_weakness_grid_moves_the_sentence_number_into_the_tooltip():
     at = make_app(page="configurations")
     at.run()
     assert_no_exception(at, "configurations")
-    config = _column_config(_find_table(at, "Weakness of the Planets"))
+    config = _column_config(find_table(at, "Weakness of the Planets"))
     assert config["91 falling, averse ASC"]["label"] == "falling, averse ASC"
     assert config["91 falling, averse ASC"]["help"] == "Sahl, The Introduction Ch. 3, 91"
     assert config["91 falling, averse ASC"]["width"] == "small"
@@ -80,7 +64,7 @@ def test_a_finding_s_value_and_text_columns_are_wide():
     at = make_app(page="findings")
     at.run()
     assert_no_exception(at, "findings")
-    config = _column_config(_find_table(at, "The Moon on the third day (Sahl)"))
+    config = _column_config(find_table(at, "The Moon on the third day (Sahl)"))
     assert config["Value"]["width"] == "large"
     assert config["Text"]["width"] == "large"
     assert config["Value"]["type_config"]["type"] == "text"
@@ -92,7 +76,7 @@ def test_a_direct_table_s_source_column_is_wide():
     at = make_app(page="timing")
     at.run()
     assert_no_exception(at, "timing")
-    config = _column_config(_find_table(at, "The revolution of the year"))
+    config = _column_config(find_table(at, "The revolution of the year"))
     assert config["Value"]["width"] == "large"
     assert config["Source"]["width"] == "large"
 
@@ -103,7 +87,7 @@ def test_a_yes_no_column_is_narrow_text_not_a_checkbox():
     at = make_app(page="dignities")
     at.run()
     assert_no_exception(at, "dignities")
-    node = _find_table(at, "Sect")
+    node = find_table(at, "Sect")
     config = _column_config(node)
     for col in ("Above horizon", "Domain (hayz)", "Of the chart's sect"):
         assert config[col]["width"] == "small"
