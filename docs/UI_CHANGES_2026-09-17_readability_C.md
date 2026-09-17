@@ -8,8 +8,9 @@ Reference page's seven-place table); one commit per page in the brief's order
 the allowlist (with the sidebar's time-standard tooltip and the Chart page's
 pick-panel cross-references); this note, and an eighth after the two gates (`C_ADVERSARIAL_REPORT_2026-09-17.md`,
 `C_BLIND_TEXT_REPORT_2026-09-17.md`, nothing under Must change; the paragraphs
-below read as the branch stands after it), and a ninth for the caption the
-owner's preview found that no net had caught (see "Missed by every net"). **`engine.py` is byte-identical to
+below read as the branch stands after it), a ninth for the caption the
+owner's preview found that no net had caught (see "Missed by every net"),
+and an eleventh folding the join on the owner's ruling. **`engine.py` is byte-identical to
 `main`** (`git diff main -- engine.py` and `git diff -w main -- engine.py` are
 both empty — see "The engine constants" for why that is stricter than the
 brief asked and what was done instead). `tests/fixtures/tables.json` is
@@ -353,18 +354,25 @@ finding are as A left them but for commit 1's sections and detail.
   no grant of years -- Masha'allah's alternative, absent from PN IV and
   present in Sahl." Visible: "**Facts, not judgment:** 1.23, 4's verdict is
   quoted in the notes and not pronounced." ("in the help" → "in the notes");
-  the join and the denial as one paragraph at reading width ("**The join,
-  and the denial beside it.** … selected by **Nawbakht's** rule … directed
-  by **Masha'allah's** operation … Shown as Sahl's, with the denial beside
-  it."); "IX.8, 30's turning, the one operation Abu Ma'shar licenses for the
+  the join, folded on the owner's ruling from the preview of PR #77 (commit
+  `ddbece6`; the brief had kept it visible): one sentence at reading width
+  composed of the paragraph's own clauses — "The house-master directed here
+  is selected by **Nawbakht's** rule (1.15, 13: …) and directed by
+  **Masha'allah's** operation (1.23, 2, "direct it" -- the governor). The
+  join is this app's; no sentence states it." — and the paragraph's
+  sentences whole in the disclosure below under *The join.* (its first two
+  sentences) and *The denial.* (Abu Ma'shar's IX.8, 32 sentence as one
+  blockquote under "Abu Ma'shar denies the direction:", its locator and fn
+  129 inside the sentence as main has them so that the sentence stays
+  whole, then "Shown as Sahl's, with the denial beside it."); "IX.8, 30's turning, the one operation Abu Ma'shar licenses for the
   indicator, follows as PN IV's:" before the turning table; under it the
   planet-turned sentence with its IX.8, 30-31 quotations as body text at
   reading width, and its Read sentence as the caption. Expander "How the
   house-master is directed": *Masha'allah's operation, 1.23, 2-4.* (the
   quotation as a blockquote under "Masha'allah:", its locator after it as
-  on main) · *Current direction: the readings.* · *Limitations: two limits
-  of the denial.* (ROLE to bold) · *Not applied, and the redirection
-  applied.* (APPLIED to bold). The conditional redirection block (1.23,
+  on main) · *The join.* · *The denial.* · *Limitations: two limits of the
+  denial.* (ROLE to bold) · *Current direction: the readings.* · *Not
+  applied, and the redirection applied.* (APPLIED to bold). The conditional redirection block (1.23,
   13-14) is as it was.
 - **The father's Lot.** Tooltip: 32's sentence. Visible at reading width:
   the conditional-method summary (the Lot's degree, the second point, fn 288
@@ -653,8 +661,8 @@ reset to desktop and the preview stopped.
 ## Nothing-lost, forward
 
 `python tests/tools/prose_preserved.py main --engine --summary`: 3,626 base
-sentences, 193 base locators, **44 misses, 0 locator misses, 0 locator
-count drops**, exit 1. Every miss, under one heading; the text of each
+sentences, 193 base locators, **45 misses, 0 locator misses, 0 locator
+count drops**, exit 1 (44 before the join was folded). Every miss, under one heading; the text of each
 stands on the page verbatim but for what the heading names (a second
 change in the same sentence is in parentheses).
 
@@ -703,7 +711,8 @@ capitals inside quotation marks stand, as on main)* — 23:
 *Copy correction 9b* — 1:
 - "Both are stated in those texts, not built here; the choice stays Sahl's." → "Al-Qabisi's choice is stated in that text, not built here; Abu 'Ali's additions and subtractions are displayed, row by row, and not applied to Sahl's grant; the choice stays Sahl's."
 
-*Heading shortened, or split from its paragraph* — 2:
+*Heading shortened, or split from its paragraph* — 3:
+- "The join, and the denial beside it." → the sections "The join." and "The denial." (the bold lead of the folded paragraph; its sentences stand whole under them)
 - "What the rows state, and the conventions of this display." → the sections "What the rows state." and "Conventions of this display." (three more between them)
 - "Where the greater years are granted. *On Nativities* 1.20, 7-34 is the one natal grant in these texts -- …" → the run-in bold lead is its own heading line and the paragraph follows verbatim (the script joined the two because "*On" does not open a sentence)
 
@@ -728,7 +737,7 @@ Nothing else is a miss: no locator token is missing and none lost a copy.
 
 `python tests/tools/prose_preserved.py readability-c-2026-09-17 --engine
 --tree <a detached worktree at main>` from this tree: **158 branch sentences
-not on main** (156 before commit 9), plus five `LOCATOR-COUNT` lines that in this direction say
+not on main** (156 before commit 9, 158 before the join was folded), plus five `LOCATOR-COUNT` lines that in this direction say
 the branch holds more copies of a token than main (Nativities 1.20 9 → 8,
 Nativities 2.1 9 → 8, Nativities 2.11 3 → 2, Ch. 4 43 → 40, Ch. 2 29 → 28:
 copies made by section headings, the scope index's rows and the seven-place
@@ -780,7 +789,12 @@ grades, reading and witnesses"; "Abu Ma'shar's rule is in the notes under
 the table." (the radio tooltip's pointer); "; if middling in strength:" (the
 detail renderer's column labels between the row's cells).
 
-*Composed tooltips (clauses of the old sentences)* — 5: the time-standard
+*Composed sentences (clauses of the old sentences)* — 6: the join's visible
+sentence, "The house-master directed here is selected by Nawbakht's rule
+(1.15, 13: …) and directed by Masha'allah's operation (1.23, 2, "direct it"
+-- the governor). The join is this app's; no sentence states it." (the
+paragraph's opening clause truncated at its semicolon, with its third
+sentence; the paragraph whole in the notes); the time-standard
 line; "IX.9, 1-9 name eight testimonies and IX.9, 10 the rule; IX.2, 4 gives
 a second, sign-level governor for the first month."; "VI.1, 4: … and on
 past twelve." (truncated at its dash); "Every other planet is the third
