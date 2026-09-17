@@ -89,8 +89,6 @@ ALLOWED_LONG = (
     "I.8, 10-26 and Figure 53 (PN IV): Ptolemy's seve",
     'Two rows: the lord of the year by annual profect',
     'The lesser, middle, greater and mighty years and',
-    'Every doctrinal switch, where it is set, what it',
-    "Sahl's course texts: the tables of Sahl's Introd",
     # glance
     "Flags planets in Sahl's dark signs (Libra, Capri",
     'What 1.8 and 1.9 let this app state of the fetus',
@@ -132,7 +130,6 @@ ALLOWED_LONG = (
     'The three cases do not stand alike. The **Ascend',
     "The three lords of the sect light's triplicity (",
     '**All three grades are shown and none is chosen.',
-    'This app . What the app reads from, how it can b',
     'Sources: Sahl, The Introduction Ch. 1; the exalt',
     'Gr. Intr. VII.8, Figure 146; the fardar periods ',
     "Sahl's figure prints bare degrees, read here as ",

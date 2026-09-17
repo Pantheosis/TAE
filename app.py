@@ -5314,34 +5314,17 @@ def page_sources():
     # an exported analysis is signed with, and a reader holding an older
     # export needs to be able to read the current one off the app itself.
     st.caption(f"This app {APP_VERSION}. "
-               "What the app reads from, how it can be read, and what it does not cover.  \n"
-               "**How citations are written.** A locator names its volume, never the author alone: "
-               "*Sahl, The Introduction Ch. 3, 85* and *Sahl, On Nativities 1.22, 9*; *Gr. Intr. VII.6, 27* "
-               "is Abu Ma'shar's Great Introduction (Dykes); *PN IV IX.1, 26* is his On the Revolutions of "
-               "the Years of Nativities, Persian Nativities IV (Dykes) -- and on the Prediction pages other than The releaser, whose rules "
-               "all come from that book, its locators are bare Book.chapter, sentence. Both of Abu Ma'shar's "
-               "volumes have a Book VII, which is why his name alone no longer locates anything. *ITA I.22 "
-               "(al-Qabisi)* is Dykes's Introductions to Traditional Astrology, its section and the author excerpted "
-               "there (al-Qabisi's own numbering, *al-Qabisi IV.4*, where it is given); *Abu Bakr, On Nativities "
-               "II.5.14*, *'Umar al-Tabari, Book of Nativities I.4.3*, *Masha'allah, Book of Aristotle III.1.8* and "
-               "*Abu 'Ali al-Khayyat, Judgments of Nativities Ch. 4* are the four nativity treatises of Persian "
-               "Nativities I and II (Dykes); *Abbr. II.27* is Abu Ma'shar's Abbreviation as ITA prints it.")
+               "What this app reads from, how it can be read, and what it does not cover.")
     # --- The readings in force (2026-09-10) ----------------------------
     st.subheader("Readings in force",
                  help="Every doctrinal switch, where it is set, what it says now and what the default "
-                      "is. They are remembered between runs. Reset returns all of them to the defaults. "
-                      "Sources shown is stored under the two names the table prints: Course text, which is "
-                      "Sahl's course texts alone, and Course text and supplement, which is those texts with "
-                      "Abu Ma'shar's beside them.")
+                      "is. They are remembered between runs. Reset returns all of them to the defaults.")
     _reading_radio("Sources shown", READING_DEPTH_OPTIONS, "reading_depth", "_reading_depth",
                    format_func={READING_DEPTH_OPTIONS[0]: "Sahl's course texts",
                                 READING_DEPTH_OPTIONS[1]: "With Abu Ma'shar's supplement"}.get,
-                   help="Sahl's course texts: the tables of Sahl's Introduction and On Nativities alone, with "
-                        "Abu Ma'shar's Great Introduction VII kept apart in its own tab on the Configurations "
-                        "page and behind closed expanders elsewhere. With Abu Ma'shar's supplement: his tables "
-                        "are laid beside Sahl's on the same topic -- further findings, three more topical "
-                        "Lots, a reference table and the supplementary expanders open -- and the Configurations "
-                        "page folds his tab into the topic blocks it belongs to.")
+                   help="Sahl's course texts: the tables of Sahl's Introduction and On Nativities alone. "
+                        "With Abu Ma'shar's supplement: his tables are laid beside Sahl's on the same topic. "
+                        "Full text under Configurable readings below.")
     # What the chart the picker names was saved under, beside what is in
     # force (F03). A dash where there is nothing to show: no record
     # selected, or one written before this app stored the readings with a
@@ -5361,71 +5344,130 @@ def page_sources():
             st.session_state.pop(sk, None)
             _forget(sk)
         st.rerun()
+    # --- How citations are written: the key, below the controls --------
+    st.subheader("How citations are written")
+    with _prose():
+        st.markdown("A locator names its volume, never the author alone.\n\n"
+                    "| Abbreviation | Work | Example |\n"
+                    "|---|---|---|\n"
+                    "| Sahl, The Introduction | Sahl's *The Introduction* | Sahl, The Introduction Ch. 3, 85 |\n"
+                    "| Sahl, On Nativities | Sahl's *On Nativities* | Sahl, On Nativities 1.22, 9 |\n"
+                    "| Gr. Intr. | Abu Ma'shar's Great Introduction (Dykes) | Gr. Intr. VII.6, 27 |\n"
+                    "| PN IV | Abu Ma'shar's On the Revolutions of the Years of Nativities, Persian Nativities IV (Dykes) | PN IV IX.1, 26 |\n"
+                    "| ITA | Dykes's Introductions to Traditional Astrology, its section and the author excerpted there (al-Qabisi's own numbering, al-Qabisi IV.4, where it is given) | ITA I.22 (al-Qabisi) |\n"
+                    "| Abu Bakr, On Nativities | one of the four nativity treatises of Persian Nativities I and II (Dykes) | Abu Bakr, On Nativities II.5.14 |\n"
+                    "| 'Umar al-Tabari, Book of Nativities | one of the four nativity treatises of Persian Nativities I and II (Dykes) | 'Umar al-Tabari, Book of Nativities I.4.3 |\n"
+                    "| Masha'allah, Book of Aristotle | one of the four nativity treatises of Persian Nativities I and II (Dykes) | Masha'allah, Book of Aristotle III.1.8 |\n"
+                    "| Abu 'Ali al-Khayyat, Judgments of Nativities | one of the four nativity treatises of Persian Nativities I and II (Dykes) | Abu 'Ali al-Khayyat, Judgments of Nativities Ch. 4 |\n"
+                    "| Abbr. | Abu Ma'shar's Abbreviation as ITA prints it | Abbr. II.27 |\n\n"
+                    "Both of Abu Ma'shar's volumes have a Book VII, which is why his name alone no longer locates anything. "
+                    "On the Prediction pages other than The releaser, whose rules all come from PN IV, its locators "
+                    "are bare Book.chapter, sentence.")
     # The full comparison of the two connection tests. It was the
     # Connection rule radio's tooltip; the radio (Configurations page)
     # now carries a one-line help and points here.
     st.subheader("Connection rule: Sahl and Abu Ma'shar")
-    st.markdown(
-        "Which author's rule decides whether a pair counts as Connected. The two agree that "
-        "looking is sign-to-sign and connecting is degree-to-degree, but they part company at "
-        "the sign boundary and on what activates a connection.\n\n"
-        "**Sahl** (The Introduction Ch. 3, 6-21): the applying planet's OWN light governs "
-        "(15/12/9/8/7 by planet), so the test is asymmetric. A planet at the end of a sign that "
-        "is not connecting with anything, whose light strikes into the next sign, IS connected "
-        "to the first planet there by body (20-21) -- even though the two do not see each other.\n\n"
-        "A DISSENTING READING is recorded in the code but not implemented. Sahl 13 says that with "
-        "15 degrees between THE SUN and a planet 'he has already shone his light, and he is connected "
-        "with [the planet]' -- and the Sun is the HEAVIER body there -- while 18 closes the list of "
-        "lights with 'they are connected ONE TO THE OTHER'. Against that, 19 states the test itself in "
-        "terms of the mover ('it already struck WITH ITS OWN LIGHT'), and Abu Ma'shar, using the same "
-        "orb table, needs the asymmetry: with Saturn and the Moon within 12 degrees 'Saturn is in the "
-        "power of the Moon's body while the Moon is NOT YET in the power of Saturn's' (VII.4, 7). The "
-        "asymmetric reading is kept; the reciprocal one would move about 5% of applying pairs, and only "
-        "half of those involve the Sun.\n\n"
-        "**Abu Ma'shar** (Gr. Intr. VII.4-5): two flat distances instead -- assembly "
-        "within 15 degrees in one sign (VII.4, 3), aspects within 12 degrees of exact (VII.5, 27, "
-        "since aspect rays have no bodies of their own). No out-of-sign connection at all: across "
-        "a boundary the bodies merely 'mix their natures in a weak way' (VII.5, 14).\n\n"
-        "This governs only the tables that deliberately present BOTH authors -- the aspect grid, "
-        "reception, blocking, cutting. Each author's own tables are computed under "
-        "that author's rule whatever this is set to; the Configurations page has its own "
-        "control for which author you want to SEE."
-    )
-    # The five readings the sources leave open. Each control sits on
-    # the page and table it changes with a one-line help; the full
-    # text of each, as it stood in the sidebar, is here.
+    with _prose():
+        st.markdown(
+            "Which author's rule decides whether a pair counts as Connected. The two agree that "
+            "looking is sign-to-sign and connecting is degree-to-degree, but they part company at "
+            "the sign boundary and on what activates a connection.\n\n"
+            "| Question | Sahl, as implemented | Abu Ma'shar, as implemented |\n"
+            "|---|---|---|\n"
+            "| Which distance governs? | The applying planet's own light (15/12/9/8/7 by planet), so the test is asymmetric | Two flat distances: assembly within 15 degrees in one sign (VII.4, 3), aspects within 12 degrees of exact (VII.5, 27) |\n"
+            "| What happens at a sign boundary? | A planet at the end of a sign that is not connecting with anything, whose light strikes into the next sign, is connected to the first planet there by body (20-21) | No out-of-sign connection at all: across a boundary the bodies merely 'mix their natures in a weak way' (VII.5, 14) |\n"
+            "| Source | The Introduction Ch. 3, 6-21 | Gr. Intr. VII.4-5 |\n\n"
+            "This governs only the tables that deliberately present **both** authors -- the aspect grid, "
+            "reception, blocking, cutting. Each author's own tables are computed under "
+            "that author's rule whatever this is set to; the Configurations page has its own "
+            "control for which author you want to **see**."
+        )
+    _notes_expander("The two rules in full, and the alternative reading", [
+        ("Sahl's rule.",
+         "**Sahl** (The Introduction Ch. 3, 6-21): the applying planet's **own** light governs "
+         "(15/12/9/8/7 by planet), so the test is asymmetric. A planet at the end of a sign that "
+         "is not connecting with anything, whose light strikes into the next sign, **is** connected "
+         "to the first planet there by body (20-21) -- even though the two do not see each other."),
+        ("Abu Ma'shar's rule.",
+         "**Abu Ma'shar** (Gr. Intr. VII.4-5): two flat distances instead -- assembly "
+         "within 15 degrees in one sign (VII.4, 3), aspects within 12 degrees of exact (VII.5, 27, "
+         "since aspect rays have no bodies of their own). No out-of-sign connection at all: across "
+         "a boundary the bodies merely 'mix their natures in a weak way' (VII.5, 14)."),
+        ("Alternative reading: reciprocal light, not implemented.",
+         "A **dissenting reading** is recorded in the code but not implemented. Sahl 13 says that with "
+         "15 degrees between **the Sun** and a planet 'he has already shone his light, and he is connected "
+         "with [the planet]' -- and the Sun is the **heavier** body there -- while 18 closes the list of "
+         "lights with 'they are connected **one to the other**'. Against that, 19 states the test itself in "
+         "terms of the mover ('it already struck **with its own light**'), and Abu Ma'shar, using the same "
+         "orb table, needs the asymmetry: with Saturn and the Moon within 12 degrees 'Saturn is in the "
+         "power of the Moon's body while the Moon is **not yet** in the power of Saturn's' (VII.4, 7). The "
+         "asymmetric reading is kept; the reciprocal one would move about 5% of applying pairs, and only "
+         "half of those involve the Sun."),
+    ])
+    # The readings the sources leave open, one section each, in the
+    # registry's order: the reading's own paragraph (its bold lead, its
+    # source and alternatives, the views it affects), then the value in
+    # force, the default and the page its control stands on, read from the
+    # same state the table above prints. Each control sits on the page and
+    # table it changes with a one-line help; the full text is here.
     st.subheader("Configurable readings")
-    st.markdown(
-        "**VII.6, 27/45 'eastern/western relative to the Sun'** (Configurations page, Planetary Condition) -- "
-        "'hemisphere': the whole half, excluding the rays (VII.2, 2; VII.6, 34). 'VII.2 band': only "
-        "the easternizing band 15/18 to 90 degrees (VII.2, 14-21) and the westernizing band 90 down to "
-        "15 degrees (VII.2, 29-31). Superiors: 52% vs 25% of placements. "
-        "Affects: Planetary Condition (27, 45).\n\n"
-        "**Moon under the rays to 15 degrees (Sahl, On Nativities 1.19, 6)** (Chart page, Planetary Positions) -- "
-        "Gr. Intr. VII.2, 61 and 72-73 give 12; Sahl gives 15 for the Moon's fitness as releaser. "
-        "Affects: the Solar phase column of Planetary Positions; on the Configurations page, "
-        "Weakness of the Planets (93), Planetary Condition and Corruption of the Moon.\n\n"
-        "**Mars under the rays to 18 degrees west (Dykes's table in On Nativities 1.22, fn 175)** (Chart page, Planetary Positions) -- "
-        "Gr. Intr. VII.2, 31 has Mars under the rays at 15 on the western side; Dykes's chapter-head table for "
-        "Sahl, with fn 175 reading VII.2, 30's westernizing boundary into 18, has him at 18; Sahl's own sentences "
-        "are silent on Mars west. Both agree on 18 east. Affects: the Solar phase column and every test that "
-        "reads it; a 3-degree band on one planet.\n\n"
-        "**Fitting infortune (Sahl, Choices Ch. 1, 12)** (Configurations page, beside the Connection test) -- "
-        "\"the infortunes are perhaps more fitting for him, since [one] may be the lord of the original Ascendant\"; "
-        "off by default because 1, 16-17 says the opposite. When on, the malefic ruling the Ascendant is not an "
-        "infortune for any affliction test; it keeps its nature where that is what is meant.\n\n"
-        "**Domain (hayz)** (Dignities page, Sect table) -- "
-        "Gr. Intr. VII.1, 37 / VII.6, 13: sign gender fixed to the planet's own. Masha'allah, "
-        "On Nativities 1.23, 17: a male planet by day above the earth in a male sign, by night under "
-        "the earth in a FEMALE sign; feminine planets by hemisphere only. "
-        "Affects: the Sect table and Dignity Evaluation on the Dignities page, and Planetary Condition (13) "
-        "on the Configurations page.\n\n"
-        "**House-based Lots measure to the** (Lots page, Topical Lots) -- "
-        "'The second place', 'the degree of the eighth place', 'the ninth' (On Nativities 2.15, 1; "
-        "8.6, 1; Ch. 9, 9). Whole-sign: the Ascendant's degree carried into that sign. Quadrant: the "
-        "Alchabitius cusp. "
-        "Affects: Topical Lots."
-    )
+    _reading_text = {
+        "_eastern_rule": (
+            "**VII.6, 27/45 'eastern/western relative to the Sun'** (Configurations page, Planetary Condition) -- "
+            "'hemisphere': the whole half, excluding the rays (VII.2, 2; VII.6, 34). 'VII.2 band': only "
+            "the easternizing band 15/18 to 90 degrees (VII.2, 14-21) and the westernizing band 90 down to "
+            "15 degrees (VII.2, 29-31). Superiors: 52% vs 25% of placements.",
+            "Affects: Planetary Condition (27, 45)."),
+        "_moon_rays_15": (
+            "**Moon under the rays to 15 degrees (Sahl, On Nativities 1.19, 6)** (Chart page, Planetary Positions) -- "
+            "Gr. Intr. VII.2, 61 and 72-73 give 12; Sahl gives 15 for the Moon's fitness as releaser.",
+            "Affects: the Solar phase column of Planetary Positions; on the Configurations page, "
+            "Weakness of the Planets (93), Planetary Condition and Corruption of the Moon."),
+        "_mars_west_18": (
+            "**Mars under the rays to 18 degrees west (Dykes's table in On Nativities 1.22, fn 175)** (Chart page, Planetary Positions) -- "
+            "Gr. Intr. VII.2, 31 has Mars under the rays at 15 on the western side; Dykes's chapter-head table for "
+            "Sahl, with fn 175 reading VII.2, 30's westernizing boundary into 18, has him at 18; Sahl's own sentences "
+            "are silent on Mars west. Both agree on 18 east.",
+            "Affects: the Solar phase column and every test that "
+            "reads it; a 3-degree band on one planet."),
+        "_fitting_infortune": (
+            "**Fitting infortune (Sahl, Choices Ch. 1, 12)** (Configurations page, beside the Connection test) -- "
+            "\"the infortunes are perhaps more fitting for him, since [one] may be the lord of the original Ascendant\"; "
+            "off by default because 1, 16-17 says the opposite. When on, the malefic ruling the Ascendant is not an "
+            "infortune for any affliction test; it keeps its nature where that is what is meant.",
+            None),
+        "_domain_rule": (
+            "**Domain (hayz)** (Dignities page, Sect table) -- "
+            "Gr. Intr. VII.1, 37 / VII.6, 13: sign gender fixed to the planet's own. Masha'allah, "
+            "On Nativities 1.23, 17: a male planet by day above the earth in a male sign, by night under "
+            "the earth in a **female** sign; feminine planets by hemisphere only.",
+            "Affects: the Sect table and Dignity Evaluation on the Dignities page, and Planetary Condition (13) "
+            "on the Configurations page."),
+        "_lot_house_cusp": (
+            "**House-based Lots measure to the** (Lots page, Topical Lots) -- "
+            "'The second place', 'the degree of the eighth place', 'the ninth' (On Nativities 2.15, 1; "
+            "8.6, 1; Ch. 9, 9). Whole-sign: the Ascendant's degree carried into that sign. Quadrant: the "
+            "Alchabitius cusp.",
+            "Affects: Topical Lots."),
+        "_reading_depth": (
+            "**Sources shown** (this page) -- Sahl's course texts: the tables of Sahl's Introduction and On Nativities alone, with "
+            "Abu Ma'shar's Great Introduction VII kept apart in its own tab on the Configurations "
+            "page and behind closed expanders elsewhere. With Abu Ma'shar's supplement: his tables "
+            "are laid beside Sahl's on the same topic -- further findings, three more topical "
+            "Lots, a reference table and the supplementary expanders open -- and the Configurations "
+            "page folds his tab into the topic blocks it belongs to. "
+            "Sources shown is stored under the two names the table prints: Course text, which is "
+            "Sahl's course texts alone, and Course text and supplement, which is those texts with "
+            "Abu Ma'shar's beside them.",
+            None),
+    }
+    with _prose():
+        for _label, _wk, _sk, _default, _page in READINGS_REGISTRY:
+            _paragraph, _affects = _reading_text.get(_sk, (f"**{_label}**", None))
+            st.markdown(_paragraph)
+            if _affects:
+                st.markdown(_affects)
+            st.caption(f"In force: {_reading(_wk, _sk, _default)} · default: {_default} · set on the {_page} page")
     with st.expander("Coverage: what these sources contain that this app does not", expanded=False):
         st.caption(
             "Named explicitly so the absence is a stated scope limit rather than an "

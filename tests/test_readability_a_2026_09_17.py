@@ -381,3 +381,77 @@ def test_the_victor_worksheet_shows_three_steps_and_the_two_by_two_of_the_four_c
         assert section in notes, section
     assert "The seven planets are the columns." in notes and "ITA I.18 fn 211" in notes
     assert "so it is not implemented rather than guessed" in notes
+
+
+# --- 2.5 Sources and readings ---------------------------------------------
+
+def _registry():
+    """READINGS_REGISTRY as the UI half states it: (label, widget key, store
+    key, default expression, page)."""
+    src = ui_source()
+    body = src[src.index("READINGS_REGISTRY = ("):src.index(")\n", src.index("READINGS_REGISTRY = ("))]
+    return re.findall(r'\("([^"]+)", "(\w+)", "(\w+)", ([^,]+), "([^"]+)"\)', body)
+
+
+def test_the_sources_page_runs_in_the_new_order_with_the_citation_key_and_the_connection_table():
+    at = make_app(page="sources").run()
+    assert_no_exception(at, "sources")
+    heads = [h.value for h in at.main.subheader]
+    assert heads == ["Readings in force", "How citations are written", "Connection rule: Sahl and Abu Ma'shar", "Configurable readings"]
+    caption = [c.value for c in at.main.caption if c.value.startswith("This app ")][0]
+    assert caption.endswith("What this app reads from, how it can be read, and what it does not cover.")
+    key = _between(at, "How citations are written", "Connection rule: Sahl and Abu Ma'shar")[0][1]
+    assert key.startswith("A locator names its volume, never the author alone.")
+    rows = re.findall(r"^\| (.+?) \| (.+?) \| (.+?) \|$", key, re.M)
+    abbreviations = [a for a, _w, _e in rows]
+    for wanted in ("Gr. Intr.", "PN IV", "ITA", "Abbr.", "Abu Bakr, On Nativities", "'Umar al-Tabari, Book of Nativities",
+                   "Masha'allah, Book of Aristotle", "Abu 'Ali al-Khayyat, Judgments of Nativities",
+                   "Sahl, The Introduction", "Sahl, On Nativities"):
+        assert wanted in abbreviations, wanted
+    examples = {a: e for a, _w, e in rows}
+    assert examples["Gr. Intr."] == "Gr. Intr. VII.6, 27" and examples["PN IV"] == "PN IV IX.1, 26"
+    assert examples["ITA"] == "ITA I.22 (al-Qabisi)" and examples["Abbr."] == "Abbr. II.27"
+    assert "Both of Abu Ma'shar's volumes have a Book VII, which is why his name alone no longer locates anything." in key
+    assert "On the Prediction pages other than The releaser, whose rules all come from PN IV, its locators are bare Book.chapter, sentence." in key
+    connection = _between(at, "Connection rule: Sahl and Abu Ma'shar", "Configurable readings")
+    text = connection[0][1]
+    assert text.startswith("Which author's rule decides whether a pair counts as Connected.")
+    rows = re.findall(r"^\| (.+?) \| (.+?) \| (.+?) \|$", text, re.M)
+    assert rows[0] == ("Question", "Sahl, as implemented", "Abu Ma'shar, as implemented")
+    assert rows[1][0] == "Which distance governs?" and "15/12/9/8/7 by planet" in rows[1][1] and "VII.4, 3" in rows[1][2] and "VII.5, 27" in rows[1][2]
+    assert rows[2][0] == "What happens at a sign boundary?" and "(20-21)" in rows[2][1] and "(VII.5, 14)" in rows[2][2]
+    assert rows[3] == ("Source", "The Introduction Ch. 3, 6-21", "Gr. Intr. VII.4-5")
+    assert text.endswith("the Configurations page has its own control for which author you want to **see**.")
+    alternative = _expander_text(at, "The two rules in full, and the alternative reading")
+    assert "**Alternative reading: reciprocal light, not implemented.**" in alternative
+    assert "A **dissenting reading** is recorded in the code but not implemented." in alternative
+    assert "the reciprocal one would move about 5% of applying pairs, and only half of those involve the Sun." in alternative
+    assert "**Sahl's rule.**" in alternative and "**Abu Ma'shar's rule.**" in alternative
+
+
+def test_every_registry_reading_has_its_section_with_the_value_in_force():
+    at = make_app(page="sources", switches={"domain": "Masha'allah"}).run()
+    assert_no_exception(at, "sources")
+    registry = _registry()
+    assert len(registry) == 9
+    block = _between(at, "Configurable readings")
+    captions = [text for kind, text in block if kind == "caption" and text.startswith("In force: ")]
+    assert len(captions) == len(registry)
+    table = [df.value for df in at.main.dataframe if "In force" in df.value.columns][0]
+    for (label, _wk, _sk, _default, page), caption, (_, row) in zip(registry, captions, table.iterrows()):
+        assert row["Reading"] == label
+        assert caption == f"In force: {row['In force']} · default: {row['Default']} · set on the {page} page", caption
+    leads = [text for kind, text in block if kind == "markdown" and text.startswith("**")]
+    assert [l.split("**")[1] for l in leads] == [
+        "Connection test used in the shared tables",
+        "VII.6, 27/45 'eastern/western relative to the Sun'",
+        "Fitting infortune (Sahl, Choices Ch. 1, 12)",
+        "Moon under the rays to 15 degrees (Sahl, On Nativities 1.19, 6)",
+        "Mars under the rays to 18 degrees west (Dykes's table in On Nativities 1.22, fn 175)",
+        "Domain (hayz)", "House-based Lots measure to the", "Monthly profections turn", "Sources shown"]
+    affects = [text for kind, text in block if kind == "markdown" and text.startswith("Affects: ")]
+    assert len(affects) == 5
+    assert "In force: Masha'allah · default: Gr. Intr. · set on the Dignities and places page" in captions or \
+        any("Masha'allah" in c and "Dignities and places" in c for c in captions)
+    # No second set of controls: the one radio on the page is Sources shown.
+    assert [r.label for r in at.main.radio] == ["Sources shown"]
