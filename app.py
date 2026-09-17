@@ -3508,6 +3508,10 @@ def page_configurations():
             })
         df_condition = pd.DataFrame(condition_list).sort_values(by="Net", ascending=False)
         st.dataframe(df_condition, hide_index=True, width='stretch', height=_rows_height(len(df_condition)))
+        # The rows in the order the table displays them (its index after the
+        # sort is the row list's positions), so the selectbox lists the
+        # planets as the table does.
+        condition_shown = [condition_list[i] for i in df_condition.index]
         # One planet's row in words: the four counts (and the Moon's own),
         # Net and Verdict on one line, then the evaluator's own label lists
         # as bullets under the table's two label headings -- the arrays as
@@ -3522,7 +3526,7 @@ def page_configurations():
             for heading, labels in (("Good Fortune / Strength", cond['Positive Labels']),
                                     ("Weakness / Misfortune", cond['Negative Labels'])):
                 st.markdown(f"**{heading}**\n\n" + ("\n".join(f"- {label}" for label in labels) if labels else "-"))
-        _detail_selector('Planetary Condition', condition_list, 'Planet', _condition_detail,
+        _detail_selector('Planetary Condition', condition_shown, 'Planet', _condition_detail,
                          "Select a planet to read its conditions in words")
         _notes_expander(NOTES_TITLE, [
             ("The two Moon checklists.",
@@ -4530,7 +4534,7 @@ def page_releaser():
     with _prose():
         st.markdown("Nawbakht's procedure in Sahl, On Nativities 1.15: by day the Sun, then the meeting, then the "
                     "Ascendant; by night the Moon, then the fullness, then the Lot of Fortune, then the Ascendant. "
-                    "\"A stake or what follows a stake\" (1.15, 6-16) is read as a test of the planet's power and "
+                    "The places: \"a stake or what follows a stake\" (1.15, 6-16) is read as a test of the planet's power and "
                     "counted by the Alchabitius divisions with the five-degree allowance at the four axial degrees "
                     "only; the Lot of Fortune (a candidate by night, 1.15, 14) has no dynamic angularity and is "
                     "tested by its whole-sign place; the years the house-master grants are granted from On "
@@ -4664,7 +4668,7 @@ def page_releaser():
          "| The Lot of Fortune (a candidate by night, 1.15, 14) | Its whole-sign place; it has no dynamic angularity |\n"
          "| The meeting's and the fullness's degrees (1.15, 6-8, 12) | The division, an open reading; they are neither planet nor Lot |\n"
          "| \"In good places\" for the Ascendant's lord (1.15, 16) | Sahl's seven praised places, counted by whole-sign place; the identification is an interpretation |\n\n"
-         "\"A stake or what follows a stake\" "
+         "The places: \"a stake or what follows a stake\" "
          "(1.15, 6-16) is read as a test of the planet's **power** and counted by the Alchabitius divisions with the "
          "five-degree allowance at the four axial degrees only -- a planet 0-5 degrees past the Ascendant, "
          "Midheaven, setting degree or fourth into the cadent division keeps the stake's power, measured from "
@@ -4731,7 +4735,7 @@ def page_releaser():
          "signs. 1.16: the Sun in Aries or Leo, the Moon in Taurus or Cancer, is both."),
         ("The triplicity lord.",
          "The triplicity lord is the lord of the sect."),
-        ("The lords ranked, and the house-master among them.",
+        ("The lords ranked.",
          "1.20, 2-4 rank the lords: bound, house, exaltation, triplicity, image; two shares beat one; the "
          "bound lord in the Ascendant with the releaser beats all."),
         ("\"In good places\" for the Ascendant's lord.",
@@ -5376,7 +5380,7 @@ def page_sources():
     # tables do; the sentences around it stand at reading width.
     with _prose():
         st.markdown("A locator names its volume, never the author alone.")
-    st.markdown("| Abbreviation | Work | Example |\n"
+    st.markdown("| Citation form | Work | Example |\n"
                 "|---|---|---|\n"
                 "| Sahl, The Introduction | Sahl's *The Introduction* | Sahl, The Introduction Ch. 3, 85 |\n"
                 "| Sahl, On Nativities | Sahl's *On Nativities* | Sahl, On Nativities 1.22, 9 |\n"
@@ -5429,10 +5433,10 @@ def page_sources():
          "A **dissenting reading** is recorded in the code but not implemented. Sahl 13 says that with "
          "15 degrees between **the Sun** and a planet 'he has already shone his light, and he is connected "
          "with [the planet]' -- and the Sun is the **heavier** body there -- while 18 closes the list of "
-         "lights with 'they are connected **one to the other**'. Against that, 19 states the test itself in "
-         "terms of the mover ('it already struck **with its own light**'), and Abu Ma'shar, using the same "
+         "lights with 'they are connected ONE TO THE OTHER'. Against that, 19 states the test itself in "
+         "terms of the mover ('it already struck WITH ITS OWN LIGHT'), and Abu Ma'shar, using the same "
          "orb table, needs the asymmetry: with Saturn and the Moon within 12 degrees 'Saturn is in the "
-         "power of the Moon's body while the Moon is **not yet** in the power of Saturn's' (VII.4, 7). The "
+         "power of the Moon's body while the Moon is NOT YET in the power of Saturn's' (VII.4, 7). The "
          "asymmetric reading is kept; the reciprocal one would move about 5% of applying pairs, and only "
          "half of those involve the Sun."),
     ])
@@ -5469,11 +5473,11 @@ def page_sources():
             "infortune for any affliction test; it keeps its nature where that is what is meant.",
             None),
         "_domain_rule": (
-            "**Domain (hayz)** (Dignities page, Sect table) -- "
+            "**Domain (hayz)** (Dignities and places page, Sect table) -- "
             "Gr. Intr. VII.1, 37 / VII.6, 13: sign gender fixed to the planet's own. Masha'allah, "
             "On Nativities 1.23, 17: a male planet by day above the earth in a male sign, by night under "
             "the earth in a **female** sign; feminine planets by hemisphere only.",
-            "Affects: the Sect table and Dignity Evaluation on the Dignities page, and Planetary Condition (13) "
+            "Affects: the Sect table and Dignity Evaluation on the Dignities and places page, and Planetary Condition (13) "
             "on the Configurations page."),
         "_lot_house_cusp": (
             "**House-based Lots measure to the** (Lots page, Topical Lots) -- "

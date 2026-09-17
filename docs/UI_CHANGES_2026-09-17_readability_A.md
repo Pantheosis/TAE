@@ -176,10 +176,12 @@ Tooltip: the old tooltip's first sentence. Visible, at reading width, a
 method paragraph composed of clauses the block already stated: "Nawbakht's
 procedure in Sahl, On Nativities 1.15: by day the Sun, then the meeting, then
 the Ascendant; by night the Moon, then the fullness, then the Lot of Fortune,
-then the Ascendant." (the old tooltip, verbatim) · ""A stake or what follows
-a stake" (1.15, 6-16) is read as a test of the planet's power and counted by
-the Alchabitius divisions with the five-degree allowance at the four axial
-degrees only" (the readings caption's (1), its opening clause) · "the Lot of
+then the Ascendant." (the old tooltip, verbatim) · "The places: "a stake or
+what follows a stake" (1.15, 6-16) is read as a test of the planet's power
+and counted by the Alchabitius divisions with the five-degree allowance at
+the four axial degrees only" (the readings caption's (1), its opening clause,
+THE PLACES in sentence case, the quotation lower-case as Sahl's phrase is
+quoted on main) · "the Lot of
 Fortune (a candidate by night, 1.15, 14) has no dynamic angularity and is
 tested by its whole-sign place" (verbatim) · "the years the house-master
 grants are granted from On Nativities 1.20, 7-34 read in full" (the YEARS
@@ -196,16 +198,17 @@ inline in its parenthesis). The 5,479-character readings caption became three
 sibling disclosures after the results:
 
 - **Place tests and candidate selection** — *The placement convention.* (the
-  table below, then the whole (1) paragraph with THE PLACES to the heading and
-  POWER and SIGNS to bold) · *The order of candidates by sect.* (the table
+  table below, then the whole (1) paragraph opening "The places: "a stake or
+  what follows a stake" …", THE PLACES in sentence case and POWER and SIGNS to
+  bold) · *The order of candidates by sect.* (the table
   below, then the old tooltip's "Each needs its place …" sentence, then (7)'s
   sentences) · *Not applied, and named.* (the `SAHL_RELEASER_NOT_APPLIED`
   clauses as a Markdown list).
 - **Lunations, looking, and the house-master** — *The meeting and the
   fullness, and the fullness's degree.* ((5)) · *Looking.* ((2)) · *A
   candidate as its own house-master.* ((3) and the old tooltip's 1.16
-  sentence) · *The triplicity lord.* ((4)) · *The lords ranked, and the
-  house-master among them.* (the old tooltip's 1.20, 2-4 sentence) · *"In
+  sentence) · *The triplicity lord.* ((4)) · *The lords ranked.* (the old
+  tooltip's 1.20, 2-4 sentence) · *"In
   good places" for the Ascendant's lord.* ((6)).
 - **Years granted and alternative procedures** — *The natal grant.* (the
   YEARS sentence, YEARS to bold) · *Other procedures in these texts, not
@@ -303,7 +306,8 @@ Configurable readings below." — two clauses of its old sentences and a
 pointer in the app's own "Full text on the Sources page" form), the table,
 the reset button; "How citations are written" (a subheader; "A locator names
 its volume, never the author alone." at reading width; the key as a
-three-column Markdown table at the page's width; then, at reading width,
+three-column Markdown table, Citation form / Work / Example, at the page's
+width; then, at reading width,
 "Both of Abu Ma'shar's volumes have a Book VII, which is why his name alone
 no longer locates anything." and "On the Prediction pages other than The
 releaser, whose rules all come from PN IV, its locators are bare
@@ -314,11 +318,16 @@ the scope sentences at reading width, BOTH and SEE to bold; a sibling
 expander "The two rules in full, and the alternative reading" with *Sahl's
 rule.* and *Abu Ma'shar's rule.* (the two old paragraphs, OWN and IS to bold)
 and *Alternative reading: reciprocal light, not implemented.* (the DISSENTING
-READING paragraph, its capitals to bold, the 5% sentence in place));
+READING paragraph, its editorial capitals outside the quotation marks to
+bold, the capitals inside its three quotations standing as on main, the 5%
+sentence in place));
 "Configurable readings" as one section per `READINGS_REGISTRY` entry in the
 registry's order, at reading width: the reading's own paragraph as the page
 carried it (its bold lead with the locator, its source and alternatives,
-FEMALE to bold), its "Affects: …" sentence as its own paragraph, and a
+FEMALE to bold; the parentheticals naming the page a control stands on say
+the page's title as the bar shows it, so "Dignities page" is "Dignities and
+places page" twice, listed under cross-references below), its "Affects: …"
+sentence as its own paragraph, and a
 caption "In force: <value> · default: <default> · set on the <page> page"
 read from the same `_reading()` the table prints. The connection test and
 the monthly turn, for which the page had no paragraph, show their label and
@@ -327,7 +336,7 @@ sentences and the readings-in-force tooltip's sentence on the two stored
 names. Widget keys, values and persistence untouched; the one radio is the
 one control; the Coverage expander closes the page.
 
-**Table "How citations are written" (Abbreviation / Work / Example)**, ten
+**Table "How citations are written" (Citation form / Work / Example)**, ten
 rows, built from: "A locator names its volume, never the author alone: *Sahl,
 The Introduction Ch. 3, 85* and *Sahl, On Nativities 1.22, 9*; *Gr. Intr.
 VII.6, 27* is Abu Ma'shar's Great Introduction (Dykes); *PN IV IX.1, 26* is
@@ -362,7 +371,10 @@ The caption's qualification stands above the table at reading width,
 ":orange[**Net and Verdict are this app's heuristic, not Abu Ma'shar's.**] He
 enumerates these conditions; …", verbatim but for correction 9a. A "Read
 details for" selectbox (`planetary_condition_detail`, "Select a planet to
-read its conditions in words") prints the planet's four counts, the Moon
+read its conditions in words", the planets in the order the table displays
+them -- the rows re-ordered by `df_condition`'s index after its sort by Net,
+since the contract promises the table's order) prints the planet's four
+counts, the Moon
 Defects count where the row has one, Net and Verdict on one line, then the
 evaluator's own `Positive Labels` and `Negative Labels` arrays as bullet
 lists under the table's two label headings (the arrays, never the joined cell
@@ -482,19 +494,19 @@ colour scheme to dark.
 ## Nothing-lost
 
 `python tests/tools/prose_preserved.py main --summary`: 1,263 base
-sentences, 114 base locators, **40 misses, 0 locator misses, 0 locator count
-drops**, exit 1. `analysis_markdown` for the default chart in Age and Date
+sentences, 114 base locators, **41 misses, 0 locator misses, 0 locator count
+drops**, exit 1 (21 + 2 + 8 + 3 + 6 + 2, less the one sentence that is both
+a "the app" and a marker case). `analysis_markdown` for the default chart in Age and Date
 mode is byte-identical to `main`'s but for the export timestamp (a scratch
 worktree at `main`, since removed). Every miss, under its heading; the text
 of each stands on the page verbatim but for what the heading names.
 
-*ALL CAPS to bold (test_prose_counts edited for the one phrase it pins)* —
-21:
+*ALL CAPS to bold (test_prose_counts edited for the one phrase it pins);
+capitals inside quotation marks stand, as on main* — 21:
 - "3, 6-21): the applying planet's OWN light governs …" (OWN)
 - "A planet at the end of a sign … IS connected to the first planet there by body (20-21) …" (IS)
 - "A DISSENTING READING is recorded in the code but not implemented." (DISSENTING READING)
-- "Sahl 13 says that with 15 degrees between THE SUN and a planet … the HEAVIER body there … 'they are connected ONE TO THE OTHER'." (THE SUN, HEAVIER, ONE TO THE OTHER)
-- "Against that, 19 states … ('it already struck WITH ITS OWN LIGHT') … 'the Moon is NOT YET in the power of Saturn's' (VII.4, 7)." (WITH ITS OWN LIGHT, NOT YET)
+- "Sahl 13 says that with 15 degrees between THE SUN and a planet … the HEAVIER body there … 'they are connected ONE TO THE OTHER'." (THE SUN, HEAVIER; ONE TO THE OTHER stands inside its quotation; the sentence "Against that, 19 states … ('it already struck WITH ITS OWN LIGHT') … 'the Moon is NOT YET in the power of Saturn's'" has its capitals inside quotations only and is verbatim)
 - "This governs only the tables that deliberately present BOTH authors …" (BOTH)
 - "Each author's own tables … which author you want to SEE." (SEE)
 - "Masha'allah, On Nativities 1.23, 17: … in a FEMALE sign; …" (FEMALE)
@@ -507,7 +519,7 @@ of each stands on the page verbatim but for what the heading names.
 - "NET and VERDICT are a convenience of this app and NOT Abu Ma'shar's: …" (NET, VERDICT, NOT)
 - "Enclosure here is Abu Ma'shar's own (56-62) … and it can be DISSOLVED: …" (DISSOLVED)
 - "The by-sign type counts an encloser's RAYS as well as its body, …" (RAYS)
-- "(1) THE PLACES: "a stake or what follows a stake" (1.15, 6-16) is read as a test of the planet's POWER …" (THE PLACES to the heading "The placement convention.", POWER; and the list marker below)
+- "(1) THE PLACES: "a stake or what follows a stake" (1.15, 6-16) is read as a test of the planet's POWER …" (THE PLACES to "The places:", POWER; and the list marker below)
 - "These texts' own vocabulary counts SIGNS -- …" (SIGNS)
 - "READINGS: "in a stake" is read by the DIVISION (…) … (The Introduction Ch." (READINGS to the heading "Interpretive choices.", DIVISION)
 - "VII.2, 4 names her right and left, … every condition is read in the NATAL chart, …" (NATAL)
@@ -522,10 +534,11 @@ of each stands on the page verbatim but for what the heading names.
 - "How citations are written." → the subheader "How citations are written" (the run-in heading's period dropped).
 - "A locator names its volume, never the author alone: *Sahl, The Introduction Ch." · "3, 85* and *Sahl, On Nativities 1.22, 9*; *Gr." · "VII.6, 27* is Abu Ma'shar's Great Introduction (Dykes); *PN IV IX.1, 26* is his … -- and on the Prediction pages other than The releaser, whose rules all come from that book, its locators are bare Book.chapter, sentence." · "Both of Abu Ma'shar's volumes have a Book VII, … *ITA I.22 (al-Qabisi)* is Dykes's Introductions … *Abu 'Ali al-Khayyat, Judgments of Nativities Ch." · "4* are the four nativity treatises of Persian Nativities I and II (Dykes); *Abbr." · "II.27* is Abu Ma'shar's Abbreviation as ITA prints it." → the table "How citations are written" (the six fragments of the two old sentences; "A locator names its volume, never the author alone." and "Both of Abu Ma'shar's volumes have a Book VII, which is why his name alone no longer locates anything." stand verbatim around the table, and the Prediction-pages clause stands as its own sentence with "that book" read as PN IV).
 
-*Cross-reference reworded (N's rule; one sentence, counted once above under
-ALL CAPS)*: "the Chart page's Planetary years table shows 1.20's grade for
-every planet" → "the Fardar and ages page's Planetary years table …", where
-the table has stood since N; the same sentence carries YEARS to bold.
+*Cross-reference reworded (N's rule: a page named as the bar names it)* —
+2, and a third counted above under ALL CAPS:
+- "Domain (hayz) (Dignities page, Sect table) -- Gr." → "(Dignities and places page, Sect table)" (the Sources page's Domain section)
+- "Affects: the Sect table and Dignity Evaluation on the Dignities page, and Planetary Condition (13) on the Configurations page." → "on the Dignities and places page" (the same section)
+- "the Chart page's Planetary years table shows 1.20's grade for every planet" → "the Fardar and ages page's Planetary years table …", where the table has stood since N; the same sentence carries YEARS to bold (counted there).
 
 *"the app" → "this app" (brief 2(e))* — 3 (two counted once more below):
 - "What the app reads from, how it can be read, and what it does not cover."
@@ -574,6 +587,14 @@ locator token is missing and none lost a copy.
 - A detail selectbox inside a fragment stays inside it (the planets block);
   the pointer path writes the selectbox's key before the selectbox is drawn
   and remembers the last grid selection in a plain session key.
+- The reverse check (nothing added) runs with the script's new `--tree`
+  argument: `python tests/tools/prose_preserved.py readability-a-2026-09-17
+  --tree <a worktree at main>` from this tree lists every sentence the
+  branch holds that `main` does not (the headings, the placeholders, the
+  in-force caption, the table rows and the reworded sentences above);
+  without `--tree` the script reads its own tree on both sides.
+- The contract test's synthetic findings cite "Source A, passage n", not a
+  locator-shaped placeholder: tooling under `tests/` carries no locator.
 - "the app" occurs 31 times in the UI half by N's count (33 on `main`,
   comments included), 16 of them in page strings (19 on `main`), none in
   the six blocks.

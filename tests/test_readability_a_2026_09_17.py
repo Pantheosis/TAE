@@ -138,7 +138,8 @@ def test_the_planets_panel_is_reached_by_the_selectbox_and_by_a_row_click_throug
     at = make_app(page="dignities").run()
     assert_no_exception(at, "dignities")
     box = [s for s in at.main.selectbox if s.key == PLANETS_KEY][0]
-    assert box.value is None and box.options == ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"]
+    grid = [df.value for df in at.main.dataframe if list(df.value.columns) == ['Planet', 'Placed in (WS place)', 'Lean']][0]
+    assert box.value is None and box.options == list(grid["Planet"]) == ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"]
     assert box.placeholder == "Select a planet to read its complete entries and sources"
     assert not _planet_lines(at)
     box.select("Venus")
@@ -486,7 +487,10 @@ def test_the_condition_qualification_stands_above_the_table_and_the_panel_lists_
     table = [df.value for df in at.main.dataframe if "Verdict" in df.value.columns and "Moon Defects" in df.value.columns][0]
     box = [s for s in at.main.selectbox if s.key == CONDITION_KEY][0]
     assert box.value is None and box.placeholder == "Select a planet to read its conditions in words"
-    assert box.options == ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"]
+    # The options are the displayed table's first column, in its order (the
+    # table is sorted by Net, so this is not the evaluator's planet order).
+    assert box.options == list(table["Planet"])
+    assert box.options != ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"]
     for planet in ("Moon", "Saturn"):
         at2 = _configurations()
         [s for s in at2.main.selectbox if s.key == CONDITION_KEY][0].select(planet)

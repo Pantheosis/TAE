@@ -55,7 +55,7 @@ def _detail(row):
     st.markdown("Detail for " + row["Name"] + ": " + row["Ground"])
 
 gap = []
-_finding(gap, "A full finding", "Sahl, On Nativities 1.1, 1", ROWS,
+_finding(gap, "A full finding", "Source A, passage 1", ROWS,
          glance="The glance.",
          summary="The summary sentence.",
          qualifications=["**First qualification.** Its statement.", "**Second qualification.** Its statement."],
@@ -63,11 +63,11 @@ _finding(gap, "A full finding", "Sahl, On Nativities 1.1, 1", ROWS,
          detail=_detail, detail_key="Name",
          notes="The one-string notes.",
          note_sections=[("First heading", "First body."), ("Second heading", "| a | b |\\n|---|---|\\n| 1 | 2 |")])
-_finding(gap, "An empty finding", "Sahl, On Nativities 1.1, 2", [], glance="Empty.")
-_finding(gap, "A bounded search", "Sahl, On Nativities 1.1, 3", [], absent="Nothing within the bound.")
+_finding(gap, "An empty finding", "Source A, passage 2", [], glance="Empty.")
+_finding(gap, "A bounded search", "Source A, passage 3", [], absent="Nothing within the bound.")
 _absent(gap)
 _notes_expander("A sibling topic", [("Sibling heading", "Sibling body.")])
-_finding(gap, "A titled notes finding", "Sahl, On Nativities 1.1, 4", ROWS[:1],
+_finding(gap, "A titled notes finding", "Source A, passage 4", ROWS[:1],
          notes_title="Grounds and passages", note_sections=[("Only heading", "Only body.")])
 '''
 
@@ -162,7 +162,7 @@ def test_every_layer_renders_in_the_contracts_order(script):
     end = kinds.index(("subheader", "A titled notes finding"))
     layers = kinds[start:end]
     expected_head = [("subheader", "A full finding"),
-                     ("caption", "Sahl, On Nativities 1.1, 1"),
+                     ("caption", "Source A, passage 1"),
                      ("markdown", "The summary sentence."),
                      ("markdown", "**First qualification.** Its statement."),
                      ("markdown", "**Second qualification.** Its statement."),
@@ -187,7 +187,7 @@ def test_every_layer_renders_in_the_contracts_order(script):
                     ("markdown", "**Sibling heading**"),
                     ("markdown", "Sibling body.")], rest
     assert kinds[end:] == [("subheader", "A titled notes finding"),
-                           ("caption", "Sahl, On Nativities 1.1, 4"),
+                           ("caption", "Source A, passage 4"),
                            ("dataframe", ""),
                            ("status", "Grounds and passages"),
                            ("markdown", "**Only heading**"),

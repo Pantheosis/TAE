@@ -135,6 +135,7 @@ Run from the repository root:
 
     /home/apothic/almuten_engine/Executable/.venv/bin/python tests/tools/prose_preserved.py main
     /home/apothic/almuten_engine/Executable/.venv/bin/python tests/tools/prose_preserved.py main --engine --summary
+    /home/apothic/almuten_engine/Executable/.venv/bin/python tests/tools/prose_preserved.py <branch> --tree <a worktree at main>   # the reverse check: what the branch holds that main does not (nothing added)
 
 The base corpus is `git show <base-ref>:app.py` (and `engine.py` with
 `--engine`); the branch corpus is the working tree's `app.py` and `engine.py`,

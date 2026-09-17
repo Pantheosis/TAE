@@ -4,11 +4,14 @@ the working tree's page text.
 
 Usage, from the repository root:
 
-    python tests/tools/prose_preserved.py <base-ref> [--engine] [--summary]
+    python tests/tools/prose_preserved.py <base-ref> [--engine] [--summary] [--tree PATH]
 
 The base corpus is ``git show <base-ref>:app.py`` (and ``engine.py`` too
 with ``--engine``); the branch corpus is the working tree's app.py and
-engine.py, always both. On each side every string constant the AST holds
+engine.py, always both -- the tree the script lives in, unless ``--tree``
+names another checkout, which is how the reverse check runs (base = the
+branch's ref, tree = a worktree at main: every sentence the branch holds
+must be on main, or be listed as added). On each side every string constant the AST holds
 is taken -- plain constants and the constant parts of f-strings --
 except docstrings, which are not page text. Every string is normalised:
 whitespace runs to one space, bold markers removed, blockquote markers
@@ -129,6 +132,9 @@ def main(argv=None) -> int:
                         help="take the base corpus from engine.py as well as app.py")
     parser.add_argument("--summary", action="store_true",
                         help="print counts (base sentences, base locators, misses) to stderr")
+    parser.add_argument("--tree", type=Path, default=ROOT,
+                        help="the checkout whose working-tree app.py and engine.py are the branch corpus "
+                             "(default: the tree this script lives in)")
     args = parser.parse_args(argv)
 
     base_files = ["app.py"] + (["engine.py"] if args.engine else [])
@@ -137,7 +143,7 @@ def main(argv=None) -> int:
         base_strings.extend(strings_of(base_source(args.base_ref, name)))
     branch_strings = []
     for name in ("app.py", "engine.py"):
-        branch_strings.extend(strings_of((ROOT / name).read_text()))
+        branch_strings.extend(strings_of((args.tree / name).read_text()))
     branch_text = "\n".join(normalise(s) for s in branch_strings)
 
     base_sentences, seen = [], set()
