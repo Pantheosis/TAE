@@ -584,6 +584,114 @@ _selection = st.session_state.pop("_select_after_rerun", None)
 if _selection is not None:
     st.session_state["chart_picker"] = _selection
 
+
+# --- Here & Now: a chart for the home place at this moment -----------------
+# "Here" is a STORED home place (the owner's ruling): the reader sets it
+# from the birthplace the sidebar has already resolved, with the button
+# under the resolved-place box further down, and it is kept in the
+# preferences file as 'home_place' -- not browser geolocation, not a
+# lookup; this app is desktop only and offline. "Now" is this computer's
+# clock, read through engine.now_utc() so that a test can freeze it.
+def _home_place():
+    """The home place in force, or None: the session's copy of the
+    preference (the launch copies the file's; "Set as home" writes both),
+    read through the same validator the loader uses so that a seeded shape
+    the file would have refused is refused here too."""
+    home = st.session_state.get("home_place")
+    return home if home_place_is_valid(home) else None
+
+
+def _set_home_place():
+    """on_click of "Set as home": the place the sidebar resolved on the run
+    the button was drawn in -- the coordinates and the label the resolved
+    box showed, kept in _resolved_* only while the place is valid, which is
+    the only time the button is drawn. _remember compares first, so setting
+    the same place again writes nothing."""
+    lat = st.session_state.get("_resolved_lat")
+    lon = st.session_state.get("_resolved_lon")
+    label = st.session_state.get("_resolved_label")
+    home = {"label": str(label or ""), "lat": float(lat), "lon": float(lon)} \
+        if lat is not None and lon is not None else None
+    if home_place_is_valid(home):
+        st.session_state["home_place"] = home
+        _remember("home_place", home)
+
+
+def _forget_home_place():
+    """on_click of "Forget home": the session's copy and the file's."""
+    st.session_state.pop("home_place", None)
+    _forget("home_place")
+
+
+def _here_and_now():
+    """on_click of "Here & Now": the sidebar's boxes are written with the
+    home place and this moment, exactly as _restore_chart writes them for a
+    saved record -- a callback runs BEFORE the widgets of the rerun it
+    triggers, so the keys written here are what the widgets are drawn from.
+
+    The instant is read ONCE, in UTC. When the home falls inside a named
+    zone the instant is converted to that zone's clock and the standard is
+    Standard time, so the sidebar's own zone branch resolves the same
+    offset from the same name; when TimezoneFinder has no zone for the
+    point the instant is converted to this computer's own clock and the
+    standard is Manual with that clock's offset, so the instant is right
+    either way (the timezonefinder this app ships answers an ocean zone,
+    Etc/GMT+2 and the like, at sea, so the second path is a guard for a
+    None the sidebar's own branch also provides for rather than a path a
+    chart is expected to take). One more case falls to Manual: the
+    repeated hour of a zone's fall-back, which the Standard branch refuses
+    as ambiguous (it is), so the offset the instant actually has is
+    written instead.
+
+    The date box's calendar rule and the ephemeris span need no handling
+    here: now is Gregorian and inside the span. The picker is left as it
+    is -- a loaded record then reads (modified) in the strip, which is the
+    truth -- and the Prediction target keys are not touched: a chart cast
+    now is at age 0 on those pages, which is correct. Nothing is saved."""
+    home = _home_place()
+    if home is None:
+        return
+    lat, lon = home["lat"], home["lon"]
+    instant = engine.now_utc()
+    zone_name = TimezoneFinder().timezone_at(lng=lon, lat=lat)
+    if zone_name:
+        zone = pytz.timezone(zone_name)
+        local = instant.astimezone(zone)
+        try:
+            zone.localize(local.replace(tzinfo=None), is_dst=None)
+        except pytz.exceptions.AmbiguousTimeError:
+            standard = TIME_STANDARD_OPTIONS[2]     # the repeated hour
+        else:
+            standard = TIME_STANDARD_OPTIONS[1]
+    else:
+        local = engine.local_clock(instant)
+        standard = TIME_STANDARD_OPTIONS[2]
+    st.session_state["time_standard_key"] = standard
+    if standard == TIME_STANDARD_OPTIONS[2]:
+        offset_hours = local.utcoffset().total_seconds() / 3600.0
+        # Never an offset outside the number_input's bounds (H5), which a
+        # clock cannot give anyway; quarter-hours stand as they are.
+        if utc_offset_in_range(offset_hours):
+            st.session_state["utc_offset_key"] = float(offset_hours)
+    st.session_state["date_input_key"] = f"{local.year:04d}-{local.month:02d}-{local.day:02d}"
+    st.session_state["time_input_key"] = time(local.hour, local.minute, local.second)
+    st.session_state["manual_coords_key"] = True
+    st.session_state["manual_lat_key"] = float(lat)
+    st.session_state["manual_lon_key"] = float(lon)
+    # The coordinate fields show the home's name rather than a bare pair
+    # (the loaded-label rule under the fields).
+    st.session_state["loaded_location"] = {"label": home["label"], "lat": float(lat), "lon": float(lon)}
+    st.session_state.pop("_loaded_without_standard", None)
+    st.session_state.pop("_record_notice", None)
+
+
+_home_in_force = _home_place()
+st.sidebar.button(
+    "\U0001F4CD Here & Now", key="_here_and_now", on_click=_here_and_now,
+    disabled=_home_in_force is None,
+    help=("Cast a chart for the home place at this moment, by this computer's clock."
+          if _home_in_force else "Set a home place under Birthplace first."))
+
 # Said once, in the session whose load found the store unreadable (F04,
 # item 6). The bytes are beside the file under the name this names; the
 # store this session writes is a fresh one.
@@ -830,18 +938,8 @@ st.sidebar.header("Birthplace")
 
 COORDINATE_RANGE_MESSAGE = ("Latitude must be between -90 and 90 and longitude "
                             "between -180 and 180.")
-
-
-def coordinates_in_range(lat, lon):
-    """A pair the engine can be asked about at all: both finite, latitude
-    within [-90, 90] and longitude within [-180, 180]. Polar is valid."""
-    try:
-        lat, lon = float(lat), float(lon)
-    except (TypeError, ValueError):
-        return False
-    if not (isfinite(lat) and isfinite(lon)):
-        return False
-    return -90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0
+# coordinates_in_range, the one rule for a pair, stands in engine.py since
+# the home place preference is validated there against the same rule.
 
 # One control in effect (evaluation A.3): the search box also accepts a
 # typed "latitude, longitude" pair; the toggle exposes the coordinate
@@ -968,6 +1066,19 @@ else:
     # they are switched on (F02a).
     st.session_state["_resolved_lat"] = float(lat)
     st.session_state["_resolved_lon"] = float(lon)
+    st.session_state["_resolved_label"] = str(location_query)
+    # "Set as home", under the resolved-place box, only while a place is
+    # resolved and in range: it keeps this place as the home the
+    # "Here & Now" button casts at. Its callback reads _resolved_*, written
+    # just above on the run the button was drawn in.
+    st.sidebar.button("Set as home", key="_set_home", on_click=_set_home_place,
+                      help="Keep this place as the home that Here & Now casts a chart for.")
+_home_now = _home_place()
+if _home_now:
+    st.sidebar.caption(f"Home: {escape(_home_now['label'])} · "
+                       f"{_home_now['lat']:.4f}, {_home_now['lon']:.4f}")
+    st.sidebar.button("Forget home", key="_forget_home", on_click=_forget_home_place,
+                      help="Remove the home place; Here & Now is then disabled.")
 
 # --- The target of the Timing page: an age or a date -----------------------
 # Set on the Timing page, where it is used (the owner's instinct, 2026-09-10),

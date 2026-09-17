@@ -301,6 +301,8 @@ def _valid_preference(key):
         return 3
     if key == 'last_chart':
         return "Rec"
+    if key == 'home_place':
+        return {"label": "Florence, 16 (IT)", "lat": 43.7792, "lon": 11.2463}
     if key in engine.PREFERENCE_BOOL_KEYS:
         return True
     return engine._preference_option_tuples()[key][-1]
@@ -311,6 +313,8 @@ def _invalid_preference(key):
         return "many"
     if key == 'last_chart':
         return ["a"]
+    if key == 'home_place':
+        return {"label": "Florence, 16 (IT)", "lat": 91.0, "lon": 11.2463}
     if key in engine.PREFERENCE_BOOL_KEYS:
         return "yes"
     return "no such option"
