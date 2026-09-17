@@ -3450,7 +3450,7 @@ def test_turning_triplicity_lords_for_assets_and_siblings(engine):
     assert assets[0]["Revolution condition"].startswith("Libra") and sibs[0]["Revolution condition"].startswith("Aries")
 
 
-# --- F-4: the three lords of the sect light's triplicity over the life (Sahl 2.11; 2.13, 39; 2.17, 5) ---
+# --- F-4: the three lords of the sect light's triplicity over the life (Sahl 2.11; 2.13, 39; 2.19, 5) ---
 
 def test_triplicity_lords_of_life_follow_the_sect_light_in_sect_order(engine):
     """Day chart, Sun in Cancer: water's day, night, partner -- Venus, Mars,

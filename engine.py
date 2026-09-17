@@ -13730,7 +13730,7 @@ def _triplicity_lords_in_sect_order(sign, sect):
     return [trip['Night'], trip['Day'], trip['Participating']]
 
 
-LIFE_LORDS_SOURCE = ("Sahl, On Nativities 2.11, 1-4 (Theophilus; fn 148: Carmen I.24, 1-8); 2.13, 39; 2.17, 5; "
+LIFE_LORDS_SOURCE = ("Sahl, On Nativities 2.11, 1-4 (Theophilus; fn 148: Carmen I.24, 1-8); 2.13, 39; 2.19, 5; "
                      "PN IV VI.2, 4 with fn 13")
 LIFE_LORDS_ASCENDANT_SOURCE = ("not prescribed in any text in hand -- the Ascendant's triplicity lords are the lords of "
                                "upbringing (Sahl, On Nativities 1.29, 2-5); shown only for comparison")
@@ -13738,7 +13738,7 @@ LIFE_LORDS_TIMES = {
     'first': "the beginning of his life (2.13, 39); his benefit in its time, if it is the strong one (2.11, 2)",
     'second': "the time of the second lord (2.11, 2); fn 14 to VI.2, 4: \"if the native was older\"",
     'third': "the partner: \"supports them both\" (2.11, 4); good fortune at the end of his lifespan if in the seventh "
-             "(2.17, 5); fn 14 to VI.2, 4: the third lord for the older native \"for many Persian- and Arabic-language "
+             "(2.19, 5); fn 14 to VI.2, 4: the third lord for the older native \"for many Persian- and Arabic-language "
              "astrologers\"",
 }
 
@@ -13751,7 +13751,7 @@ def triplicity_lords_of_life(chart_data, point='sect light'):
     end. And if one of the two was strong and the other weak, his benefit
     will be in the time of the strong one of them"; 4: "the partnering lord
     of the triplicity supports them both". 2.13, 39: "the first lord of the
-    triplicity indicates ... the beginning of the native's life". 2.17, 5:
+    triplicity indicates ... the beginning of the native's life". 2.19, 5:
     "if the third lord of the triplicity was in the house of marriage, he
     will gain good fortune at the end of his lifespan". PN IV VI.2, 4 names
     the same lords "at that time of his lifespan". No text in hand assigns
