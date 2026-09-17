@@ -176,12 +176,12 @@ inside the three moved bodies):
 | 4 | Timing, VI.2 turning caption | "directed as the planets are in The distribution chapter (" | "directed as the planets are in the Distributions tab (" |
 | 5 | Timing, the distribution analysed caption | "reaches an infortune, in The releaser chapter. No worked example" | "reaches an infortune, on The releaser page. No worked example" |
 | 6 | Timing, the wheel caption | "(the Lot of Fortune's profection is in the month's indicators below)." | "(the Lot of Fortune's profection is in the month's indicators on the Days and months page)." |
-| 7 | The releaser, the stand-in | "The Ascendant's distribution in the tab \"from the Ascendant\" is \"the first of them\" (13)" | "The Ascendant's distribution on the Timing page, \"from the Ascendant\", is \"the first of them\" (13)" |
-| 8 | The releaser, the releaser distributed | "as the Ascendant is in the Distributions chapter" | "as the Ascendant is on the Timing page's Distributions tab" |
-| 9 | The releaser, the Now line | "the luminary proxies in the Indicators of the year chapter." | "the luminary proxies on the Timing page's Indicators of the Year tab." |
-| 10 | Days and months, small days help | "the Ascendant's distribution above runs across the years." | "the Ascendant's distribution on the Timing page runs across the years." |
-| 11 | Fardar and ages, the measure caption | "The **Ascendant** and the **meridian** are the distributions above, each applied" | "The **Ascendant** and the **meridian** are the distributions on the Timing page, each applied" |
-| 12 | Fardar and ages, Chronocrator Matrix help | "The ascensional method he prefers is the jar bakhtar table above." | "The ascensional method he prefers is the jar bakhtar table on the Timing page." |
+| 7 | The releaser, the stand-in | "The Ascendant's distribution in the tab \"from the Ascendant\" is \"the first of them\" (13)" | "The Ascendant's distribution on the Revolutions page, \"from the Ascendant\", is \"the first of them\" (13)" |
+| 8 | The releaser, the releaser distributed | "as the Ascendant is in the Distributions chapter" | "as the Ascendant is on the Revolutions page's Distributions tab" |
+| 9 | The releaser, the Now line | "the luminary proxies in the Indicators of the year chapter." | "the luminary proxies on the Revolutions page's Indicators of the Year tab." |
+| 10 | Days and months, small days help | "the Ascendant's distribution above runs across the years." | "the Ascendant's distribution on the Revolutions page runs across the years." |
+| 11 | Fardar and ages, the measure caption | "The **Ascendant** and the **meridian** are the distributions above, each applied" | "The **Ascendant** and the **meridian** are the distributions on the Revolutions page, each applied" |
+| 12 | Fardar and ages, Chronocrator Matrix help | "The ascensional method he prefers is the jar bakhtar table above." | "The ascensional method he prefers is the jar bakhtar table on the Revolutions page." |
 | 13 | Fardar and ages, Planetary years help | "the house-master the Timing page names from On Nativities 1.15" | "the house-master The releaser page names from On Nativities 1.15" |
 | 14 | Fardar and ages, "does not settle" expander | "The Timing page leaves these items open." | "The Prediction pages leave these items open." |
 | 15 | same expander | "per 1.23, 2 (Masha'allah), in the chapter named The releaser, with every reading" | "per 1.23, 2 (Masha'allah), on The releaser page, with every reading" |
@@ -262,13 +262,19 @@ moved):
   one page, which the split makes impossible, so the gathering is the one
   change and the assertion is the same. The export's Timing section, its
   name and its headings, is unchanged (`analysis_markdown` reads the
-  bundle), and every other test in that file passes untouched. The export
-  is not otherwise unaffected: `analysis_markdown`'s readings-in-force
-  table, and the JSON export's `set_on`, now print "Days and months" for
-  the monthly profections turn where `main` printed "Timing", because
-  `READINGS_REGISTRY`'s page name for that reading moved with the tab its
-  radio stands on. Headings and every result are identical; the saved
-  record carries no page name, so the saved-record schema is untouched.
+  bundle), and every other test in that file passes untouched. What the
+  export does change, after the owner's two rulings on the preview: the
+  section label for the timing bundle is "Prediction" (was "Timing"; it
+  spans all four Prediction pages -- `_timing_bundle_tables`'s docstring
+  and the `tables.append` label in the analysis builder, from which both
+  `analysis_markdown`'s section heading and the JSON export's `results`
+  key derive), and the readings-in-force table and the JSON export's
+  `set_on` print "Revolutions" and "Days and months" where `main` printed
+  "Timing", since `READINGS_REGISTRY`'s page names follow the pages the
+  radios stand on. Headings within the section, every result and the
+  saved-record schema are unchanged; the two export tests that carried the
+  label (`test_the_results_are_keyed_by_page_and_heading` and the heading
+  check above) pin "Prediction".
 - `test_record_lifecycle_2026_09_16.py::test_new_chart_clears_the_form_to_the_example_nativity`:
   pins `_target_mode` (departure 2 above).
 
@@ -296,6 +302,30 @@ Days and months reaches Fardar and ages and Timing through Findings, and
 switching the mode there reads the date's completed years into the age box;
 (c) the year block's subheader, radio and read-back stand exactly once on
 each of the four pages, and on none of Chart, Findings, Reference or Sources.
+
+### Renamed after the owner's preview
+
+The page titled "Timing" is "Revolutions" (owner's ruling on the preview of
+this branch; "Timing" above names the page as it stood through the first
+three commits). Changed: the `st.Page` title, `st.header("Revolutions")`,
+`_recovery_panel("Revolutions")`, and the six sentences that named the page
+-- rows 7 to 12 of the table above, whose "after" column is as it now
+reads ("on the Revolutions page", "on the Revolutions page's Distributions
+tab", "on the Revolutions page's Indicators of the Year tab") -- with the
+two test maps that pin the page's header (`SCOPED_PAGES` in
+`test_sources_shown_2026_09_16.py`, `PAGE_FUNCTIONS` in
+`test_input_state_2026_09_16.py`, and `PREDICTION_PAGES` in the new file).
+The tab names stay The Revolution, Indicators of the Year, Distributions.
+`READINGS_REGISTRY` had no reading left on the page (the monthly turn's
+went to "Days and months" with its radio), so the readings table prints
+"Revolutions" nowhere today. Not changed: `url_path="timing"`,
+`page_timing`, `_timing_wheel_view` and every other identifier, the
+`timing` fixture slot and `PAGES` entry, the test file names, the
+timing-bundle variable names. The export's own section label was ruled on
+separately and is "Prediction" (the export paragraph above). The
+nothing-lost script's misses are the same 27: the six renamed sentences
+were already reworded cross-references in the list above; no `ALLOWED_LONG`
+prefix changed.
 
 ## Nothing-lost
 

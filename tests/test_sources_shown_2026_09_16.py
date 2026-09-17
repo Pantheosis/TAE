@@ -27,7 +27,7 @@ SCOPED_PAGES = {
     "dignities": "Dignities and places",
     "configurations": "Configurations",
     "lots": "Lots",
-    "timing": "Timing",
+    "timing": "Revolutions",
     "releaser": "The releaser",
     "days": "Days and months",
     "fardar": "Fardar and ages",

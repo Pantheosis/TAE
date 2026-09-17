@@ -315,7 +315,7 @@ PAGE_FUNCTIONS = {
     "page_configurations": "Configurations",
     "page_lots": "Lots",
     "page_victors": "Lunation and victors",
-    "page_timing": "Timing",
+    "page_timing": "Revolutions",
     "page_sources": None,          # no chart to guard
     "page_reference": None,
 }

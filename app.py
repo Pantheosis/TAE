@@ -2179,7 +2179,9 @@ def app_identity():
 # an evaluator.
 
 def _timing_bundle_tables():
-    """The timing bundle's tables, under the Timing page's own subheaders.
+    """The timing bundle's tables, under the Prediction pages' own subheaders
+    (the export's section label is "Prediction": the bundle spans the four
+    pages Revolutions, The releaser, Days and months and Fardar and ages).
     Several headings carry more than one table, which is why a heading maps
     to a LIST of tables throughout the export."""
     ii3, gov_rows = pn4['ii3'], pn4['governor'][0]
@@ -2288,7 +2290,7 @@ def analysis_tables():
     for _scheme, _res in victors_data.items():
         tables.append(("Lunation and victors", "Victor of the Chart", _scheme, _res['grid']))
     for heading, citation, rows in _timing_bundle_tables():
-        tables.append(("Timing", heading, citation, rows))
+        tables.append(("Prediction", heading, citation, rows))
     # A table with no rows is a table the pages do not draw: _finding()
     # prints its "nothing found" sentence instead of a grid, and the timing
     # page skips a bundle entry that came back None or empty. The export
@@ -3602,9 +3604,9 @@ def _year_under_examination():
 
 def page_timing():
     if not chart_ok:
-        _recovery_panel("Timing")
+        _recovery_panel("Revolutions")
         return
-    st.header("Timing")
+    st.header("Revolutions")
     _chart_strip()
     st.caption("Every rule on this page comes from Abu Ma'shar, "
                "*On the Revolutions of the Years of Nativities* (*Persian Nativities* IV), "
@@ -4358,7 +4360,7 @@ def page_releaser():
                             f"modifier: \"{TBN_I44_ADDITIONS['sun']}\" \"{TBN_I44_ADDITIONS['sun_reception']}\""))
     if rel['releaser'] is None:
         st.markdown("**The stand-in (Sahl, *On Nativities* 1.32, 11-14, al-Andarzaghar).** The Ascendant's "
-                    "distribution on the Timing page, \"from the Ascendant\", is \"the first of them\" (13); the Moon, "
+                    "distribution on the Revolutions page, \"from the Ascendant\", is \"the first of them\" (13); the Moon, "
                     "\"then the Moon\", directed from her natal degree to the infortunes and to burning by the "
                     "operation of 1.23, 2 (1.32, 12: \"if you directed the Sun or Moon in their courses to the "
                     "infortunes ... it kills, whichever of these four connects first with the infortune\"; 14: "
@@ -4378,7 +4380,7 @@ def page_releaser():
     if rel['longitude'] is not None:
         st.markdown(f"**The releaser distributed** (1.15, 22; 1.18, 20-21): {rel['releaser']} at "
                     f"{get_degree_string(rel['longitude'])} directed through the bounds by the ascensions of the "
-                    f"birth latitude, as the Ascendant is on the Timing page's Distributions tab"
+                    f"birth latitude, as the Ascendant is on the Revolutions page's Distributions tab"
                     + (" -- and here the releaser IS the Ascendant, so this is that distribution again." if rel['releaser'] == 'the Ascendant' else '.'))
         if pn4['releaser_segments'] is None:
             st.warning("Refused at this latitude, as the Ascendant's distribution is: the ascension has no unique inverse there.")
@@ -4395,7 +4397,7 @@ def page_releaser():
                     f"**Now** (age {pn4['age']}): distributor **{rcur['distributor']}**, partner "
                     f"**{rcur['partner'] or 'none -- the distributor acts alone'}**, the direction standing in "
                     f"**{pn4['releaser_stand']['sign']}** (lord {pn4['releaser_stand']['lord']}) -- this feeds the "
-                    f"governor's testimony #3 and the luminary proxies on the Timing page's Indicators of the Year tab.")
+                    f"governor's testimony #3 and the luminary proxies on the Revolutions page's Indicators of the Year tab.")
             else:
                 st.markdown(f"Age {pn4['age']} is past the {PN4_DISTRIBUTION_SPAN_YEARS:g}-year table.")
             st.dataframe(pd.DataFrame(pn4['releaser_rows']), hide_index=True, width='stretch',
@@ -4616,7 +4618,7 @@ def page_days():
                       "year.\" IX.7, 30: a body or ray already in the bound of that degree manages until "
                       "another meets it; otherwise the bound lords, until a planet or ray is reached. IX.7, 31 "
                       "names it the small days. A second distribution, running inside the year at its own "
-                      "rate; the Ascendant's distribution on the Timing page runs across the years.")
+                      "rate; the Ascendant's distribution on the Revolutions page runs across the years.")
     # IX.7, 31 / 27: the same two directions from any planet, house or Lot (order PN4R-4c-4)
     _sr_pd, _sr_ch = pn4['sr']['planetary_data'], pn4['sr']
     _day_points = {'the revolution\'s Ascendant (the table below)': None}
@@ -4809,7 +4811,7 @@ def page_fardar():
         st.markdown("**III.1, 12 -- the measure, by position**")
         st.dataframe(pd.DataFrame(PN4_ASCENSION_ROWS), hide_index=True, width='stretch')
         st.caption("The three cases do not stand alike. The **Ascendant** and the **meridian** are the "
-                   "distributions on the Timing page, each applied to the degree of its point and to a planet standing on "
+                   "distributions on the Revolutions page, each applied to the degree of its point and to a planet standing on "
                    "that degree itself (a numerical tolerance, no orb). The **third case** -- everything not on "
                    "one of the three degrees -- has no method in PN IV: III.1, 12 sends the reader to \"what we "
                    "stated in our book [on that topic]\", and Dykes's fn 16 (with VI.2, 21 fn 33) identifies it as "
@@ -4944,7 +4946,7 @@ def page_fardar():
                "refuses to subdivide an age into sevenths the way a *fardar* is subdivided, so there is no "
                "sub-lord here (I.8, 34-35).")
 
-    st.subheader('Chronocrator Matrix', help='Two rows: the lord of the year by annual profection, and the Egyptian bound lord of the Ascendant directed symbolically at one degree per year -- which is not a distribution, as its label says. Abu Ma\'shar names the shortcut himself and grades it: "there is an approximation in it, but the correct [approach] is that this way of directing is like the direction of the Sun every day" (IX.7, 32). The ascensional method he prefers is the jar bakhtar table on the Timing page.')
+    st.subheader('Chronocrator Matrix', help='Two rows: the lord of the year by annual profection, and the Egyptian bound lord of the Ascendant directed symbolically at one degree per year -- which is not a distribution, as its label says. Abu Ma\'shar names the shortcut himself and grades it: "there is an approximation in it, but the correct [approach] is that this way of directing is like the direction of the Sun every day" (IX.7, 32). The ascensional method he prefers is the jar bakhtar table on the Revolutions page.')
     st.dataframe(pd.DataFrame(time_lords_data), hide_index=True, width='stretch')
     # The one heading the short-headings branch left carrying its
     # own metadata: the citation and the standing move to a
@@ -5302,7 +5304,7 @@ pages = {
         st.Page(page_victors, url_path="victors", title="Lunation and victors", icon=":material/trophy:"),
     ],
     "**Prediction**": [
-        st.Page(page_timing, url_path="timing", title="Timing", icon=":material/schedule:"),
+        st.Page(page_timing, url_path="timing", title="Revolutions", icon=":material/schedule:"),
         st.Page(page_releaser, url_path="releaser", title="The releaser", icon=":material/route:"),
         st.Page(page_days, url_path="days", title="Days and months", icon=":material/calendar_month:"),
         st.Page(page_fardar, url_path="fardar", title="Fardar and ages", icon=":material/timeline:"),

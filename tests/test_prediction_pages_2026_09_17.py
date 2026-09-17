@@ -27,7 +27,7 @@ def _read_back(at):
             if "completed" in m.value and "The revolution of the year fell on" in m.value]
 
 PREDICTION_PAGES = {
-    "timing": "Timing",
+    "timing": "Revolutions",
     "releaser": "The releaser",
     "days": "Days and months",
     "fardar": "Fardar and ages",
