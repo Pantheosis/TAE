@@ -44,7 +44,7 @@
   "findings": [
    ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
    ["The Moon on the third day (Sahl)", ["Item", "Value", "Text"]],
-   ["Fortune and livelihood: the seven classes (Sahl)", ["Class", "Ground", "Sahl", "Also"]]
+   ["Sahl: indications of fortune and livelihood", ["Class", "Ground", "Sahl", "Also"]]
   ],
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
@@ -175,7 +175,7 @@
   "findings": [
    ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
    ["The Moon on the third day (Sahl)", ["Item", "Value", "Text"]],
-   ["Fortune and livelihood: the seven classes (Sahl)", ["Class", "Ground", "Sahl", "Also"]]
+   ["Sahl: indications of fortune and livelihood", ["Class", "Ground", "Sahl", "Also"]]
   ],
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
@@ -315,7 +315,7 @@
   "findings": [
    ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
    ["The Moon on the third day (Sahl)", ["Item", "Value", "Text"]],
-   ["Fortune and livelihood: the seven classes (Sahl)", ["Class", "Ground", "Sahl", "Also"]]
+   ["Sahl: indications of fortune and livelihood", ["Class", "Ground", "Sahl", "Also"]]
   ],
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
@@ -451,7 +451,7 @@
   "findings": [
    ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
    ["The Moon on the third day (Sahl)", ["Item", "Value", "Text"]],
-   ["Fortune and livelihood: the seven classes (Sahl)", ["Class", "Ground", "Sahl", "Also"]]
+   ["Sahl: indications of fortune and livelihood", ["Class", "Ground", "Sahl", "Also"]]
   ],
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
@@ -588,7 +588,7 @@
   "findings": [
    ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
    ["The Moon on the third day (Sahl)", ["Item", "Value", "Text"]],
-   ["Fortune and livelihood: the seven classes (Sahl)", ["Class", "Ground", "Sahl", "Also"]]
+   ["Sahl: indications of fortune and livelihood", ["Class", "Ground", "Sahl", "Also"]]
   ],
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
@@ -728,7 +728,7 @@
   "findings": [
    ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
    ["The Moon on the third day (Sahl)", ["Item", "Value", "Text"]],
-   ["Fortune and livelihood: the seven classes (Sahl)", ["Class", "Ground", "Sahl", "Also"]]
+   ["Sahl: indications of fortune and livelihood", ["Class", "Ground", "Sahl", "Also"]]
   ],
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
