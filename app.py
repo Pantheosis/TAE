@@ -5517,11 +5517,11 @@ def page_days():
     # The method in one line -- start, rate, time origin -- from the
     # sentences the notes hold whole.
     with _prose():
-        st.markdown("| Method | |\n"
+        st.markdown("| Method | As applied |\n"
                     "|---|---|\n"
                     "| Start | the degree of the Ascendant of the revolution of the year (IX.7, 29) |\n"
                     "| Rate | 59' 08\" a day round the zodiac, returning to the degree in 365.28 days |\n"
-                    "| Time origin | the days count from the moment of the revolution (fn 161 leaves a \"day\" undefined) |")
+                    "| Time origin | the days count from the moment of the revolution (fn 161 leaves a \"day\" undefined) -- read into the sentence rather than stated by it |")
     # IX.7, 31 / 27: the same two directions from any planet, house or Lot (order PN4R-4c-4)
     _sr_pd, _sr_ch = pn4['sr']['planetary_data'], pn4['sr']
     _day_points = {'the revolution\'s Ascendant (the table below)': None}
@@ -5544,7 +5544,7 @@ def page_days():
     _day_choice = _reading_select("Also direct, for the small days (IX.7, 31) and the mighty days (IX.7, 27), from",
                                list(_day_points), "pn4_day_point", "_pn4_day_point",
                                help="IX.7, 31: \"you work like that with everything of the planets, Lots, and houses\". "
-                                    "A **reading**: the \"houses\" are offered as the revolution's Alchabitius cusps, "
+                                    "**A reading:** the \"houses\" are offered as the revolution's Alchabitius cusps, "
                                     "the degree this app computes for each house -- IX.7, 31 says \"houses\" and "
                                     "names no degree.")
     _extra = _day_points[_day_choice]
@@ -5745,7 +5745,7 @@ def page_days():
                f"({pn4['ninth']['ninth_part_sign']}, lord {pn4['ninth']['lord']}); Abu Ma'shar himself "
                "ignores it through most of Book IX (fn 15).")
     _notes_expander("The turning rule the radio chooses between", [
-        ("Abu Ma'shar's rule, IX.1, 26-32.",
+        ("Abu Ma'shar's rule, IX.1, 26-34.",
          "IX.1, 26-34: Abu Ma'shar turns the monthly indicators **backwards** when the sign is convertible, "
          "and for a double-bodied sign forwards below 15°00' and backwards from it, because the first "
          "half of a common sign is of the nature of the fixed sign before it and the second half of the "
@@ -5839,7 +5839,7 @@ def page_fardar():
          "PN IV VI.2, 4 names the same "
          "lords \"at that time of his lifespan\"."),
         ("The Ascendant's triplicity lords, for comparison.",
-         "No "
+         "Some software divides the life by the lords of the Ascendant's triplicity. No "
          "text in hand does: the Ascendant's triplicity lords are the lords of upbringing "
          "(Sahl, On Nativities 1.29, 2-5; Appendix A, 9 fn 7), and every passage that "
          "gives a lord a time of the life keys it to the luminary."),
@@ -6039,7 +6039,7 @@ def page_fardar():
              "PN IV keys the unit to the "
              "level of the chart (III.1, 6) and answers a different question from the one the two authors' "
              "disagreements ask; it is not evidence on either side of them."),
-            ("The Indian rule for the lord of the year.",
+            ("The Indian rule, reported and not adopted.",
              "The Indian rule for the lord of the year -- the lord of the first ninth-part of the sign of "
              "the year (III.10, 1-5), which would restrict the lord of the year to Mars, Venus, Saturn and the "
              "Moon. PN IV reports it without adopting it, so it is used here only as monthly indicator #2, "

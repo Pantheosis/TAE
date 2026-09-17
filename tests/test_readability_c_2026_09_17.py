@@ -108,13 +108,14 @@ ENGINE_NOTES = ("JN_YEARS_NOTE", "JN_CH4_ADDITIONS_NOTE", "SAHL_1_7_UNMODELLED",
                 "SEVEN_PLACE_RANKING_NOTE", "PN4_YEAR_INDICATOR_SCOPE_NOTE")
 
 
-def test_engine_py_is_byte_identical_to_main_on_this_branch():
+def test_the_six_note_constants_carry_no_newline_escape():
     """The six constants are runs of adjacent literals, where a blank
     source line puts no break into the value; the paragraph breaks are a
-    display representation in app.py (_paragraphs), and engine.py stays
-    as main has it. The check here is what a tree can see of that: every
-    constant is one parenthesised run of plain literals with no newline
-    escape in it."""
+    display representation in app.py (_paragraphs), and engine.py was
+    byte-identical to main when the branch was built (the docs note holds
+    that proof; a tree cannot after the merge). The check here is what a
+    tree can see: every constant is one parenthesised run of plain
+    literals with no newline escape in it."""
     src = engine_source()
     for name in ENGINE_NOTES:
         start = src.index(f"\n{name} = (") + 1
@@ -569,7 +570,7 @@ DAYS_BLOCKS = {
     "The small days: the revolution's Ascendant distributed round the year": (
         "A second distribution, running inside the year at its own rate; the Ascendant's distribution on the "
         "Revolutions page runs across the years.",
-        ["| Method | |"],
+        ["| Method | As applied |"],
         "How the small days are read",
         ["The sentences, IX.7, 29-31.", "Zodiacal, by the sentence.", "Source and approximation.",
          "Read into the sentence.", "The selector, and the worked example."]),
@@ -592,7 +593,7 @@ DAYS_BLOCKS = {
         "and two are not, being cast fresh from each monthly revolution.",
         ["They decrease in universality in the order given (IX.1, 39). The sign of the year is itself month 1"],
         "The turning rule the radio chooses between",
-        ["Abu Ma'shar's rule, IX.1, 26-32.", "Dykes's reading, the default."]),
+        ["Abu Ma'shar's rule, IX.1, 26-34.", "Dykes's reading, the default."]),
 }
 
 
@@ -611,12 +612,14 @@ def test_each_days_block_has_its_tooltip_visible_text_and_headed_notes(days_page
 
 
 def test_the_small_days_method_line_names_start_rate_and_time_origin(days_page):
-    method = next(m for m in _visible_markdowns(days_page) if m.startswith("| Method | |"))
+    method = next(m for m in _visible_markdowns(days_page) if m.startswith("| Method | As applied |"))
+    assert method.startswith("| Method | As applied |")
     assert "| Start | the degree of the Ascendant of the revolution of the year (IX.7, 29) |" in method
     assert "| Rate | 59' 08\" a day round the zodiac, returning to the degree in 365.28 days |" in method
-    assert "| Time origin | the days count from the moment of the revolution (fn 161 leaves a \"day\" undefined) |" in method
+    assert ("| Time origin | the days count from the moment of the revolution (fn 161 leaves a \"day\" undefined) "
+            "-- read into the sentence rather than stated by it |") in method
     box = next(b for b in days_page.main.selectbox if b.key == "pn4_day_point")
-    assert "A **reading**: the \"houses\" are offered" in box.help
+    assert "**A reading:** the \"houses\" are offered" in box.help
 
 
 def test_the_mighty_days_rate_is_the_engines_constant_and_the_three_readings_are_compared(days_page, engine):
@@ -771,7 +774,7 @@ def test_the_scope_index_names_each_items_state_with_correction_9b(fardar_page):
                         "**Directing anything that is not the Ascendant or the meridian.**",
                         "**Revolutions of the day and the hour.**",
                         "**The unit of a directed degree by sign type, strength or planet.**",
-                        "**The Indian rule for the lord of the year.**"]
+                        "**The Indian rule, reported and not adopted.**"]
     text = "\n".join(md)
     # Correction 9b: Abu 'Ali's modifiers are displayed and not applied, never "not built here".
     assert ("Al-Qabisi's choice is stated in that text, not built here; Abu 'Ali's additions and subtractions are "
