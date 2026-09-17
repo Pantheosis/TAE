@@ -3656,43 +3656,76 @@ def page_victors():
     syzygy_rows = _syzygy_rows()
     st.dataframe(pd.DataFrame(syzygy_rows), hide_index=True, width='stretch',
                  column_config=_wide_text_columns(pd.DataFrame(syzygy_rows)))
+    with _prose():
+        st.markdown("**The verdict** names a planet only where the text's clear subcases decide, and otherwise says "
+                    "\"unresolved\" with each candidate's profile.")
+    # The governor's own table stands in this expander, which is its
+    # heading for the table walker (no book icon here, so the table keeps
+    # its key); the notes follow the table inside it as headed sections.
     with st.expander("Governor of the syzygy degree: the five lords under 1.7, 3-7"):
         st.dataframe(pd.DataFrame(syzygy_governor['rows']), hide_index=True, width='stretch',
                      height=_rows_height(len(syzygy_governor['rows'])))
-        st.caption("Sahl, On Nativities 1.7, 3: \"you will know the one in charge of that portion from five things: the "
-                   "lord of the house, triplicity, exaltation, bound, and image, and the eastern one of them -- if [one] had "
-                   "superior claims over the rest of them\"; 4: \"Then see which of them is stronger in its [own] place, and "
-                   "is direct in course, looking at the sign of the meeting or opposition\"; 7: \"if they were both in power "
-                   "equally, [then] whichever of them was in a stake or in its own house, triplicity, bound, or exaltation, "
-                   "and had superiority over its associate in this respect, that is the governor.\" [Sahl I p. 265]. "
-                   "THE VERDICT names a planet only where the text's clear subcases decide, and otherwise says "
-                   "\"unresolved\" with each candidate's profile: the five lords of the degree (the sect's triplicity lord) "
-                   "are the candidates; a retrograde one, or one not looking at the syzygy's sign (the same sign or a "
-                   "whole-sign aspect), is not eligible (4, read as eligibility); 3's \"the eastern one\" is a preference "
-                   "among the claim-holders, not a veto -- a western candidate is set aside only by an eastern one with at "
-                   "least as many claims on the degree; the SUN is a claim-holder whose side relative to himself is not "
-                   "applicable, so 3 neither prefers nor sets him aside, and a contest that only easternness would decide "
-                   "against him is left unresolved; 7 is kept as a profile, not a score -- a candidate with a listed "
-                   "advantage (a stake; own house, exaltation, triplicity or bound; the image is not in 7's list) beats one "
-                   "with none, and two that each hold one are left unresolved, the text stating no ranking among them and "
-                   "1.20, 2-4's ranking of the lords being stated for the house-master, not borrowed here. NOT MODELLED: "
-                   + SAHL_1_7_UNMODELLED + ". READINGS: \"in a stake\" is read by the DIVISION (Alchabitius, the five "
-                   "degrees at the four axial degrees), the convention Dykes proposes for strength language (ITA "
-                   "Introduction §6, quadrant divisions for power; Alchabitius this app's choice among them) -- the text's own word "
-                   "for the stakes is the counted sign, \"the sign of the Ascendant, the fourth, the seventh, and the "
-                   "tenth\" (The Introduction Ch. 2, 31); the Moon's side is the same rising-before-the-Sun rule as the "
-                   "planets', the texts not defining her easternness for this procedure (Gr. Intr. VII.2, 4 names her right "
-                   "and left, not \"eastern\"; al-Qabisi bridges the two words, the superiors from the Sun's rays to his "
-                   "opposition being called eastern and right, ITA II.10.1, al-Qabisi III.8); the target degree is the "
-                   "lunation's and every condition is read in the "
-                   "NATAL chart, extending the natal context of Dykes's comment to 3-7, whose moment the text does not "
-                   "state. THE APPROXIMATION row is " + SAHL_1_7_MODEL_DISCLOSURE + "; the almuten row is the 5/4/3/2/1 "
-                   "weighting al-Qabisi states (ITA I.18: the lord of the domicile five strengths, of the exaltation "
-                   "four, of the triplicity three, of the bound two, of the face one; Dykes's fn 210 there, only the "
-                   "primary triplicity lord scoring), a technique not in Sahl. Where the three differ, the difference "
-                   "is the finding.")
-    st.subheader('Victor of the Chart', help="Ibn Ezra's victor worksheet (his book is not in hand), reproduced cell for cell so it can be checked against a hand-filled sheet. The weights and the five places are al-Qabisi's -- ITA I.18, the five dignities' points, and ITA VIII.1.4 (al-Qabisi IV.7), the victor over the native from the Ascendant, the two luminaries, the Lot of Fortune and the prenatal syzygy; the worksheet's Day, Hour and Places rows are ibn Ezra's. Dykes's standing critique of the weighting (ITA I.18 fn 211): with the Dorothean triplicities and the Egyptian bounds, and only the primary triplicity lord scoring, the victor is always the domicile or the exaltation lord but for a few degrees of Pisces (Mars) and of Cancer (Venus). The seven planets are the columns.")
+        _note_sections([
+            ("How the governor is decided.",
+             "**The verdict** names a planet only where the text's clear subcases decide, and otherwise says "
+             "\"unresolved\" with each candidate's profile: the five lords of the degree (the sect's triplicity lord) "
+             "are the candidates; a retrograde one, or one not looking at the syzygy's sign (the same sign or a "
+             "whole-sign aspect), is not eligible (4, read as eligibility); 3's \"the eastern one\" is a preference "
+             "among the claim-holders, not a veto -- a western candidate is set aside only by an eastern one with at "
+             "least as many claims on the degree; the **Sun** is a claim-holder whose side relative to himself is not "
+             "applicable, so 3 neither prefers nor sets him aside, and a contest that only easternness would decide "
+             "against him is left unresolved; 7 is kept as a profile, not a score -- a candidate with a listed "
+             "advantage (a stake; own house, exaltation, triplicity or bound; the image is not in 7's list) beats one "
+             "with none, and two that each hold one are left unresolved, the text stating no ranking among them and "
+             "1.20, 2-4's ranking of the lords being stated for the house-master, not borrowed here."),
+            ("Interpretive choices.",
+             "| Choice | Reading made here |\n"
+             "|---|---|\n"
+             "| \"In a stake\" | Read by the division (Alchabitius, the five degrees at the four axial degrees), the convention Dykes proposes for strength language; the text's own word for the stakes is the counted sign |\n"
+             "| The Moon's side | The same rising-before-the-Sun rule as the planets', the texts not defining her easternness for this procedure |\n"
+             "| The Sun's side | A claim-holder whose side relative to himself is not applicable, so 3 neither prefers nor sets him aside |\n"
+             "| The chart the conditions are read in | The natal chart, the target degree being the lunation's; the natal context of Dykes's comment extended to 3-7, whose moment the text does not state |\n\n"
+             "\"in a stake\" is read by the **division** (Alchabitius, the five "
+             "degrees at the four axial degrees), the convention Dykes proposes for strength language (ITA "
+             "Introduction §6, quadrant divisions for power; Alchabitius this app's choice among them) -- the text's own word "
+             "for the stakes is the counted sign, \"the sign of the Ascendant, the fourth, the seventh, and the "
+             "tenth\" (The Introduction Ch. 2, 31); the Moon's side is the same rising-before-the-Sun rule as the "
+             "planets', the texts not defining her easternness for this procedure (Gr. Intr. VII.2, 4 names her right "
+             "and left, not \"eastern\"; al-Qabisi bridges the two words, the superiors from the Sun's rays to his "
+             "opposition being called eastern and right, ITA II.10.1, al-Qabisi III.8); the target degree is the "
+             "lunation's and every condition is read in the "
+             "**natal** chart, extending the natal context of Dykes's comment to 3-7, whose moment the text does not "
+             "state."),
+            ("The three results compared.",
+             "The **approximation** row is " + SAHL_1_7_MODEL_DISCLOSURE + "; the almuten row is the 5/4/3/2/1 "
+             "weighting al-Qabisi states (ITA I.18: the lord of the domicile five strengths, of the exaltation "
+             "four, of the triplicity three, of the bound two, of the face one; Dykes's fn 210 there, only the "
+             "primary triplicity lord scoring), a technique not in Sahl. Where the three differ, the difference "
+             "is the finding."),
+            ("Source passages, and what is not modelled.",
+             "Sahl, On Nativities 1.7, 3:\n\n> \"you will know the one in charge of that portion from five things: the "
+             "lord of the house, triplicity, exaltation, bound, and image, and the eastern one of them -- if [one] had "
+             "superior claims over the rest of them\";\n\n4:\n\n> \"Then see which of them is stronger in its [own] place, and "
+             "is direct in course, looking at the sign of the meeting or opposition\";\n\n7:\n\n> \"if they were both in power "
+             "equally, [then] whichever of them was in a stake or in its own house, triplicity, bound, or exaltation, "
+             "and had superiority over its associate in this respect, that is the governor.\"\n\n[Sahl I p. 265]. "
+             "Not modelled: " + SAHL_1_7_UNMODELLED + "."),
+        ])
+    st.subheader('Victor of the Chart', help="Ibn Ezra's victor worksheet (his book is not in hand), reproduced cell for cell so it can be checked against a hand-filled sheet.")
     st.caption("ibn Ezra's victor #1, 1485/1537")
+    with _prose():
+        st.markdown("1. The first five rows score each planet's essential-dignity claim **at that point's** degree -- Sun, Moon, Ascendant, Lot of Fortune, and the prenatal New/Full Moon.\n"
+                    "2. Then Lord of the Day (+7), Lord of the Hour (+6) and Places are added **once** each, not per point; Places is keyed the other way round, by the candidate planet's own whole-sign house.\n"
+                    "3. Every column is summed into Totals, and the single highest total is the chart's victor.")
+        # The four computed combinations, read off the results: the two
+        # weightings against the two Places wheels, each cell the scheme's
+        # own victor, total and preset status.
+        def _victor_cell(weights, places):
+            res = victors_data[f"{weights} weights + {places} places" + (" (matched preset)" if weights == places else "")]
+            return (f"**{res['victor']}** ({res['total']})" + (", tied at the top" if res['tied'] else "")
+                    + (", matched preset" if weights == places else ""))
+        st.markdown("| Dignity weights | Older places | Newer places |\n|---|---|---|\n"
+                    + "\n".join(f"| {w} | {_victor_cell(w, 'Older')} | {_victor_cell(w, 'Newer')} |" for w in ("Older", "Newer")))
     # The two same-tradition pairings are the grids a student fills
     # in; the two off-diagonal pairings are the cross-check.
     def _victor_grid(scheme_name, res):
@@ -3707,8 +3740,18 @@ def page_victors():
             if 'matched preset' not in scheme_name:
                 _victor_grid(scheme_name, res)
 
-    with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-        st.markdown('The first five rows score each planet\'s essential-dignity claim AT THAT POINT\'S degree -- Sun, Moon, Ascendant, Lot of Fortune, and the prenatal New/Full Moon. Then Lord of the Day (+7), Lord of the Hour (+6) and Places are added ONCE each, not per point; Places is keyed the other way round, by the candidate planet\'s own whole-sign house. Every column is summed into Totals, and the single highest total is the chart\'s victor.\n\nTWO INDEPENDENT AXES, and all four combinations are shown. The dignity weights are Older (al-Tabari/Masha\'allah, Bound 3 > Triplicity 2) or Newer (al-Qabisi/Abu Ma\'shar, Triplicity 3 > Bound 2); the Places wheel is ibn Ezra\'s own or Masha\'allah\'s. The "Older" attribution is kept as its source prints it; the one passage in these texts that gives \'Umar\'s weights -- Abu Bakr, On Nativities II.5.14, through al-\'Anbas -- has triplicity 3 and bound 2, the "Newer" order; al-Qabisi knows the other order without naming its authors ("certain people put the bound before the triplicity", Introduction I.22), so only the attribution is unwitnessed here. Nothing in the source says which wheel goes with which weighting, so pairing each with the wheel of its own named tradition is a reading, not a fact -- those two are labelled "matched preset" and the two off-diagonal combinations, previously not computed at all, are shown beside them. Where all four agree the victor is robust; where they part, the disagreement is the finding. Ibn Ezra\'s later victor #2 (1507) replaces the two chronocrator rows with a Superiors row scored only for Saturn, Jupiter and Mars; its weight is stated in no text in hand, so it is not implemented rather than guessed.')
+    _notes_expander(NOTES_TITLE, [
+        ("The weights and the places.",
+         "The weights and the five places are al-Qabisi's -- ITA I.18, the five dignities' points, and ITA VIII.1.4 (al-Qabisi IV.7), the victor over the native from the Ascendant, the two luminaries, the Lot of Fortune and the prenatal syzygy; the worksheet's Day, Hour and Places rows are ibn Ezra's. The seven planets are the columns."),
+        ("Two independent axes.",
+         "**Two independent axes**, and all four combinations are shown. The dignity weights are Older (al-Tabari/Masha'allah, Bound 3 > Triplicity 2) or Newer (al-Qabisi/Abu Ma'shar, Triplicity 3 > Bound 2); the Places wheel is ibn Ezra's own or Masha'allah's. Nothing in the source says which wheel goes with which weighting, so pairing each with the wheel of its own named tradition is a reading, not a fact -- those two are labelled \"matched preset\" and the two off-diagonal combinations, previously not computed at all, are shown beside them. Where all four agree the victor is robust; where they part, the disagreement is the finding."),
+        ("The \"Older\" attribution.",
+         "The \"Older\" attribution is kept as its source prints it; the one passage in these texts that gives 'Umar's weights -- Abu Bakr, On Nativities II.5.14, through al-'Anbas -- has triplicity 3 and bound 2, the \"Newer\" order; al-Qabisi knows the other order without naming its authors (\"certain people put the bound before the triplicity\", Introduction I.22), so only the attribution is unwitnessed here."),
+        ("Dykes's critique of the weighting.",
+         "Dykes's standing critique of the weighting (ITA I.18 fn 211): with the Dorothean triplicities and the Egyptian bounds, and only the primary triplicity lord scoring, the victor is always the domicile or the exaltation lord but for a few degrees of Pisces (Mars) and of Cancer (Venus)."),
+        ("Ibn Ezra's later victor, not implemented.",
+         "Ibn Ezra's later victor #2 (1507) replaces the two chronocrator rows with a Superiors row scored only for Saturn, Jupiter and Mars; its weight is stated in no text in hand, so it is not implemented rather than guessed."),
+    ])
 # --- The year under examination (2026-09-10; a block of its own
 # 2026-09-17) ----------------------------------------------------
 # The target lives on the Prediction pages, where it is used, not in

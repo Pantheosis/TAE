@@ -303,3 +303,81 @@ def test_the_house_masters_years_and_abu_alis_additions_keep_their_flags_and_dis
         assert section in notes, section
     assert "Display only: no total is formed and these rows do not change the Sahl-based grant of the years above" in notes
     assert "> \"" in notes
+
+
+# --- 2.4 Victors: the governor and the worksheet ---------------------------
+
+GOVERNOR = "Governor of the syzygy degree: the five lords under 1.7, 3-7"
+
+
+def test_the_governor_disclosure_keeps_its_table_and_holds_the_four_headed_sections(engine):
+    at = make_app(page="victors").run()
+    assert_no_exception(at, "victors")
+    # The core sentence is visible under the syzygy table, before the expander.
+    block = _between(at, "Prenatal Lunation (Syzygy)", "Victor of the Chart")
+    assert block[0][0] == "dataframe"
+    assert block[1] == ("markdown", "**The verdict** names a planet only where the text's clear subcases decide, and "
+                                    "otherwise says \"unresolved\" with each candidate's profile.")
+    # The expander is not a notes expander (no icon): the walker keys its table under its label.
+    expanders = [(n.label, n.icon) for n in at.main if getattr(n, "type", None) in ("expander", "status")]
+    assert (GOVERNOR, "") in expanders
+    assert (GOVERNOR, [c for c in table_inventory(at) if c[0] == GOVERNOR][0][1]) in table_inventory(at)
+    governor = [n for n in at.main if getattr(n, "type", None) == "expander" and n.label == GOVERNOR][0]
+    text = "\n".join(m.value for m in governor.markdown)
+    for section in ("**How the governor is decided.**", "**Interpretive choices.**", "**The three results compared.**",
+                    "**Source passages, and what is not modelled.**"):
+        assert section in text, section
+    assert text.index("**How the governor is decided.**") < text.index("**Interpretive choices.**") < \
+        text.index("**The three results compared.**") < text.index("**Source passages, and what is not modelled.**")
+    rows = dict(re.findall(r"^\| (.+?) \| (.+?) \|$", text, re.M))
+    assert rows["\"In a stake\""].startswith("Read by the division (Alchabitius, the five degrees at the four axial degrees)")
+    assert rows["The Moon's side"] == "The same rising-before-the-Sun rule as the planets', the texts not defining her easternness for this procedure"
+    assert rows["The Sun's side"] == "A claim-holder whose side relative to himself is not applicable, so 3 neither prefers nor sets him aside"
+    assert rows["The chart the conditions are read in"].startswith("The natal chart, the target degree being the lunation's")
+    assert engine["SAHL_1_7_UNMODELLED"] in text and engine["SAHL_1_7_MODEL_DISCLOSURE"] in text
+    assert "> \"you will know the one in charge of that portion from five things" in text
+    assert "[Sahl I p. 265]" in text
+    assert "Where the three differ, the difference is the finding." in text
+    assert not [c for c in governor.caption]
+
+
+def test_the_victor_worksheet_shows_three_steps_and_the_two_by_two_of_the_four_computed_combinations(engine):
+    at = make_app(page="victors").run()
+    assert_no_exception(at, "victors")
+    heading = [h for h in at.main.subheader if h.value == "Victor of the Chart"][0]
+    assert heading.help == ("Ibn Ezra's victor worksheet (his book is not in hand), reproduced cell for cell so it can be "
+                            "checked against a hand-filled sheet.")
+    block = _between(at, "Victor of the Chart")
+    assert block[0] == ("caption", "ibn Ezra's victor #1, 1485/1537")
+    steps = block[1][1]
+    assert steps.startswith("1. The first five rows score each planet's essential-dignity claim **at that point's** degree")
+    assert "\n2. Then Lord of the Day (+7), Lord of the Hour (+6) and Places are added **once** each, not per point" in steps
+    assert "\n3. Every column is summed into Totals, and the single highest total is the chart's victor." in steps
+    grid = block[2][1]
+    # Each cell is the scheme's own result, read off the page's own grids.
+    results = {}
+    for m in at.main.markdown:
+        hit = re.match(r"^\*\*(.+?)\*\* — victor: \*\*(.+?)\*\* \((\d+)\)", m.value)
+        if hit:
+            results[hit.group(1)] = (hit.group(2), hit.group(3), "Tied at the top" in m.value)
+    assert len(results) == 4
+    lines = grid.split("\n")
+    assert lines[0] == "| Dignity weights | Older places | Newer places |"
+    for line, w in ((lines[2], "Older"), (lines[3], "Newer")):
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        assert cells[0] == w
+        for cell, p in ((cells[1], "Older"), (cells[2], "Newer")):
+            scheme = f"{w} weights + {p} places" + (" (matched preset)" if w == p else "")
+            victor, total, tied = results[scheme]
+            assert cell.startswith(f"**{victor}** ({total})"), (scheme, cell)
+            assert (", matched preset" in cell) == (w == p), (scheme, cell)
+            assert (", tied at the top" in cell) == tied, (scheme, cell)
+    # The full worksheets stay as detail: two matched grids, two in the cross-check expander.
+    assert len([n for n in at.main if getattr(n, "type", None) == "expander"
+                and n.label == "Cross-check: the two unmatched weight/place pairings"]) == 1
+    notes = _expander_text(at, "Sources and editorial notes", "Two independent axes")
+    for section in ("**The weights and the places.**", "**Two independent axes.**", "**The \"Older\" attribution.**",
+                    "**Dykes's critique of the weighting.**", "**Ibn Ezra's later victor, not implemented.**"):
+        assert section in notes, section
+    assert "The seven planets are the columns." in notes and "ITA I.18 fn 211" in notes
+    assert "so it is not implemented rather than guessed" in notes
