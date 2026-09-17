@@ -161,7 +161,8 @@ def test_mercurys_four_cases_as_ruled(engine):
     far = dict(Jupiter=345.0, Saturn=345.0, Mars=345.0, Venus=345.0)     # Pisces: averse to Aries and to Libra
     r, w = _mercury(engine, Sun=135.0, Mercury=220.0, Venus=230.0, Jupiter=75.0, Saturn=75.0, Mars=75.0)  # Gemini: averse to Scorpio
     assert (r['aspect'], r['effect'], r['literal']) == ('square', 'not decided', 'adds')
-    assert w['Reading'] == "not decided under fn 28: this pairing is unstated · Abu 'Ali's sentence read literally: adds 20 years"
+    assert w['Reading'] == ("not decided under fn 28: this pairing is unstated · Abu 'Ali's sentence read literally: adds 20 years "
+                            "(if the fortune is one 'which add[s]')")
     r, w = _mercury(engine, Sun=135.0, Mercury=10.0, **{**far, 'Saturn': 20.0})
     assert (r['aspect'], r['effect'], r['literal']) == ('trine', 'not decided', 'subtracts')
     assert w['Reading'] == "not decided under fn 28: this pairing is unstated · Abu 'Ali's sentence read literally: subtracts 20 years"
@@ -177,7 +178,7 @@ def test_mercurys_four_cases_as_ruled(engine):
     assert w['Grade'] == "-" and w['Its own lesser years'] == "-"
     r, w = _mercury(engine, Sun=135.0, Mercury=140.0, **{**far, 'Venus': 145.0})
     assert (r['aspect'], r['effect'], r['literal']) == ('joined', 'not decided', 'adds')
-    assert w['Reading'].startswith("not decided under fn 28")
+    assert w['Reading'].startswith("not decided under fn 28") and w['Reading'].endswith("(if the fortune is one 'which add[s]')")
 
 
 def test_the_zero_rows_print_the_explicit_zero_and_the_witnesses(engine):
@@ -293,7 +294,8 @@ def test_no_house_master_no_rows_and_the_luminaries_always_have_theirs(engine):
 def test_the_note_declares_the_conjecture_and_the_conventions(engine):
     note = engine["JN_CH4_ADDITIONS_NOTE"]
     for phrase in ("conjectural", "implementation conventions", "explicitly contribute zero", "none defaults to years",
-                   "no explicit numerical lunar modifier", "gate no row of Abu 'Ali's", "or were with it in one sign"):
+                   "no explicit numerical lunar modifier", "gate no row of Abu 'Ali's", "or were with it in one sign",
+                   "in one sign or in any whole-sign aspect, as fn 28 has \"with or in aspect to\""):
         assert phrase in note, phrase
     assert "\u201c" not in note and "\u201d" not in note and "\u2019" not in note
     for s in list(engine["JN_CH4_WITNESSES"].values()) + [engine["JN_CH4_ZERO"], engine["JN_CH4_NO_LUMINARY"], engine["JN_CH4_FN28_LABEL"]]:

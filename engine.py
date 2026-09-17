@@ -12166,7 +12166,8 @@ JN_CH4_ADDITIONS_NOTE = (
     "bodily-conjunction definition used by this display are declared implementation conventions except where a "
     "cited clause expressly specifies sharing a sign ('Umar's \"or were with it in one sign\"): \"joined\" is read by "
     "whole sign, as this app's other readings of Abu 'Ali are, and Mercury \"with\" a fortune or a bad one is this "
-    "app's convention, whole sign, the house-master itself not counted as his company. The fortunes are Jupiter and "
+    "app's convention, whole sign -- in one sign or in any whole-sign aspect, as fn 28 has \"with or in aspect to\" -- "
+    "the house-master itself not counted as his company. The fortunes are Jupiter and "
     "Venus, the bad ones Saturn and Mars; the lesser years are Ch. 4's own column, which this app's table matches.")
 
 
@@ -12259,8 +12260,9 @@ def evaluate_jn_years_additions(house_master, planetary_data):
                 effect, reading = 'not specified', "not specified; not an explicit zero"
             else:
                 effect, literal = 'not decided', ('adds' if good else 'subtracts')
+                # The literal +20 hangs on the sentence's "(which add)": the fortune must itself be one that adds.
                 reading = (f"not decided under fn 28: this pairing is unstated · Abu 'Ali's sentence read literally: "
-                           f"{literal} {lesser:g} years")
+                           f"{literal} {lesser:g} years" + (" (if the fortune is one 'which add[s]')" if literal == 'adds' else ""))
         grades = None
         if effect == 'adds' and planet != 'Mercury':
             grades = tuple((text, lesser, unit) for text, unit in JN_CH4_GRADES)

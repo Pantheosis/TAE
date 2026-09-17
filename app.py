@@ -4254,9 +4254,7 @@ def page_timing():
                 _add = pn4['hm_years_additions']
                 _finding([], "Additions and subtractions to the house-master's years (Abu 'Ali)",
                          JN_CH4_ADDITIONS_CITATION,
-                         _add or [{'Planet': '-', 'Looks at the house-master': f"none of Saturn, Jupiter, Mars, Venus or Mercury is joined to {rel['house_master']} or looks at it by whole sign",
-                                   'Ch. 4': '-', 'Its own lesser years': '-', 'If middling in strength': '-',
-                                   'If more unsound': '-', 'Grade': '-', 'Reading': '-', 'Witnesses': '-'}],
+                         _add,      # never empty under a house-master: a luminary row is always present
                          standing="Supplement · display only",
                          glance="What each planet joined to the house-master or looking at it would add to or subtract "
                                 "from its years by Abu 'Ali's chapter: a fortune joined, trine or sextile adds its "

@@ -1812,3 +1812,12 @@ quotes; no witness condition in the five-planet loop's source; the Releaser tab 
 phrases. `tables.json` regenerated once without -n: unchanged (the finding renders at the supplement depth only).
 Pre-existing on main 579316f against the current corpus and left for the mechanic: `test_years_ladder_2026_09_15.py`
 (pins the pre-repair "43 $1\frac{1}{2}$") and `test_andarzaghar_triplicity_lords_2026_09_15.py` (a split ITA marker).
+
+After the blind check (corpus `process/astra_2026-09-11/BUILD_JNCH4_AMEND_CHECK_REPORT_2026-09-17.md`: 0 defects,
+5 notes), three notes applied: (6) Mercury's literal-reading cell qualifies the +20 as Astra's case mapping asks --
+"read literally: adds 20 years (if the fortune is one 'which add[s]')"; the -20 cell is unqualified, the sentence
+having no condition for the bad ones; (7) the note's "with" convention now reads "whole sign -- in one sign or in any
+whole-sign aspect, as fn 28 has "with or in aspect to" -- the house-master itself not counted as his company", which
+is what `_prosperity_looks` does; (19) the unreachable "none of Saturn, Jupiter, Mars, Venus or Mercury ... looks at
+it" fallback row dropped from app.py (a luminary row is always present under a house-master). Tests pin the two
+strings. Rebased onto main after #67 and #68; `tables.json` regenerated once without -n.
