@@ -466,20 +466,26 @@ def test_natural_connection_pairs_match_vii_5(engine):
                                                      ('Sagittarius', 'Capricorn'), ('Pisces', 'Aries'))
 
 
-# --- Structural guards on the two prose tables (the lords table's cells are
+# --- Structural guards on the prose tables (the lords table's cells are
 # pinned to Sahl's sentences in test_prose_tables.py, the planets table's
-# PN IV halves to Book II's and VII.8's, its Rhetorius halves to Rhetorius
-# Ch. 57's and Mathesis III's; see docs/synthesis/08) ---
+# PN IV halves to Book II's, its Rhetorius list -- one entry per testimony,
+# each under its author and the author's own axis -- to Rhetorius Ch. 57's
+# and Mathesis III's passages, the Moon's VII.8 table to its sentences; see
+# docs/synthesis/08) ---
 def test_prose_tables_have_full_shape(engine):
-    ml, ph = engine["MASHAALLAH_LORDS"], engine["PLANETS_IN_HOUSES"]
+    ml, ph, moon = engine["MASHAALLAH_LORDS"], engine["PLANETS_IN_HOUSES"], engine["MOON_IN_HOUSES_VII8"]
     assert set(ml) == set(range(1, 13)) and all(set(ml[h]) == set(range(1, 13)) for h in ml)
     assert set(ph) == set(range(1, 13))
+    entry_keys = {'author', 'cite', 'axis', 'text', 'portional', 'conditional'}
     for h in ph:
         assert set(ph[h]) == set(PLANETS)
         for cell in ph[h].values():
             assert set(cell) == {'Rhetorius', 'PN IV'}
-            assert all(set(src) == {'Good', 'Bad'} and all(set(half) == {'text', 'cite'} for half in src.values())
-                       for src in cell.values())
+            assert isinstance(cell['Rhetorius'], list)
+            assert all(set(entry) == entry_keys and entry['author'] in engine["RHETORIUS_AUTHORS"]
+                       and entry['axis'] in engine["RHETORIUS_AXES"] for entry in cell['Rhetorius'])
+            assert set(cell['PN IV']) == {'Good', 'Bad'} and all(set(half) == {'text', 'cite'} for half in cell['PN IV'].values())
+    assert set(moon) == set(range(1, 13)) and all(set(moon[h]) == {'text', 'cite'} for h in moon)
 
 
 # --- Twelfth-parts: Gr. Intr. V.18, 1-3, Figure 57 (order PN4R-4n-2) ---------

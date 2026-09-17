@@ -111,12 +111,14 @@ def test_the_picture_block_is_a_fragment(name):
     assert name in _fragment_defs(), sorted(_fragment_defs())
 
 
-def test_these_four_are_the_only_fragments_in_the_app():
+def test_these_five_are_the_only_fragments_in_the_app():
     """So that another cannot appear without this file being read: a
     fragment that draws outside its own body is a runtime error, not a test
     failure, and the harness cannot see a partial rerun at all. The two grid
-    blocks are item 12's (test_row_detail_2026_09_15.py)."""
-    assert sorted(_fragment_defs()) == ["_strength_grid_block", "_timing_wheel_block",
+    blocks are item 12's (test_row_detail_2026_09_15.py); the planets block
+    is the Topical Planets in Houses table with its row detail
+    (test_prose_tables.py)."""
+    assert sorted(_fragment_defs()) == ["_planets_in_houses_block", "_strength_grid_block", "_timing_wheel_block",
                                         "_weakness_grid_block", "_wheel_block"]
 
 
