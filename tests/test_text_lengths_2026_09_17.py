@@ -98,7 +98,6 @@ ALLOWED_LONG = (
     "Flags planets in Sahl's dark signs (Libra, Capri",
     'What 1.8 and 1.9 let this app state of the fetus',
     'The Moon on the third day -- two days after the ',
-    "Sahl's indications of fortune and livelihood. Th",
     'The "degrees of chronic illness in the signs" --',
     "Valens's eleven phases of the Moon, the chart's ",
     "Rhetorius's definitions of a planet's being harm",
