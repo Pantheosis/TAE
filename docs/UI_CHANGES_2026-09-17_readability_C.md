@@ -6,7 +6,9 @@ branch B). Branch C of `UI_READABILITY_PLAN_2026-09-17_rev2.md` §2, built to
 Reference page's seven-place table); one commit per page in the brief's order
 (Revolutions, The releaser, Days and months, Fardar and ages); the closing of
 the allowlist (with the sidebar's time-standard tooltip and the Chart page's
-pick-panel cross-references); this note. **`engine.py` is byte-identical to
+pick-panel cross-references); this note, and an eighth after the two gates (`C_ADVERSARIAL_REPORT_2026-09-17.md`,
+`C_BLIND_TEXT_REPORT_2026-09-17.md`, nothing under Must change; the paragraphs
+below read as the branch stands after it). **`engine.py` is byte-identical to
 `main`** (`git diff main -- engine.py` and `git diff -w main -- engine.py` are
 both empty — see "The engine constants" for why that is stricter than the
 brief asked and what was done instead). `tests/fixtures/tables.json` is
@@ -328,7 +330,10 @@ Eight `ALLOWED_LONG` entries deleted.
   selector's tooltip has A READING as bold. Expander "How the small days are
   read": *The sentences, IX.7, 29-31.* · *Zodiacal, by the sentence.* ·
   *Source and approximation.* · *Read into the sentence.* · *The selector,
-  and the worked example.*
+  and the worked example.* The table's columns are Method / As applied, and
+  its Time origin row carries main's qualifier in the cell ("-- read into
+  the sentence rather than stated by it"), since the sentence it is built
+  from marks it so (the fix round).
 - **The mighty days.** Tooltip: "The profected thirty degrees treated as a
   year, walked degree by degree." Visible: "**Applied rate: 12.175 days per
   degree** -- the author's parenthetical (IX.7, 25); the three figures that
@@ -351,10 +356,10 @@ Eight `ALLOWED_LONG` entries deleted.
   … months run from the revolution dates, not the calendar." The radio's
   tooltip: Dykes's reading (the default) and a pointer to the notes.
   Expander "The turning rule the radio chooses between": *Abu Ma'shar's
-  rule, IX.1, 26-32.* (BACKWARDS and OWN to bold) · *Dykes's reading, the
-  default.*
+  rule, IX.1, 26-34.* (the section's own locator; BACKWARDS and OWN to bold)
+  · *Dykes's reading, the default.*
 
-**Table "Method" (the small days; Method / —)**, three rows, built from:
+**Table "Method" (the small days; Method / As applied)**, three rows, built from:
 "IX.7, 29: "you look at the degree of the Ascendant of the revolution of the
 year, so that you direct from it (for the knowledge of the conditions of the
 days), a day for every 59' 08", until it returns to the degree of the
@@ -395,7 +400,8 @@ Ten `ALLOWED_LONG` entries deleted.
   first and last sentences (ASCENDANT to bold). Expander "The source
   testimony on the lords over the life": *Sahl, On Nativities 2.11, 1-2 and
   4.* · *2.13, 39 and 2.19, 5.* · *PN IV VI.2, 4.* · *The Ascendant's
-  triplicity lords, for comparison.* (the checkbox tooltip's middle
+  triplicity lords, for comparison.* (the checkbox tooltip's first sentence
+  as a copy, so "No text in hand does" has its subject, then its middle
   sentence).
 - **The fardar.** Tooltip: its first two sentences. Visible: "**The nodes
   last, in both sects.** IV.7, 24: the Head and Tail come **last in both
@@ -429,7 +435,10 @@ Ten `ALLOWED_LONG` entries deleted.
   printed error is not reproduced.* · *The lord of the year is the lord of
   the sign of the year.* · *Figure 146, On Times 4, 7 and On Nativities
   1.20, 10-17.* — its paragraphs verbatim. The two are the page's last
-  elements.
+  elements. The scope index's last heading is "The Indian rule, reported and
+  not adopted." (the fix round), its paragraph opening with main's run-in
+  lead "The Indian rule for the lord of the year -- …" as before, so the
+  phrase does not read twice in a row.
 
 **Copy correction 9b.** "Both are stated in those texts, not built here; the
 choice stays Sahl's." reads "Al-Qabisi's choice is stated in that text, not
@@ -486,7 +495,10 @@ and places page carries" (two), the pages named as the bar names them.
 
 ## Consolidated duplicates
 
-None reduced. Copies made: the lord-of-the-orb hours sentence ("Their
+None reduced. Copies made: "Some software divides the life by the lords of
+the Ascendant's triplicity." stands in the checkbox's tooltip and, since the
+fix round, leads the notes section it is the antecedent of; the
+lord-of-the-orb hours sentence ("Their
 sequence from the day lord at sunrise …") stands in the notes on every chart
 and, on a circumpolar chart, visibly above the table as well; the II.3
 scope clause "PN IV keys the unit to the level of the chart (III.1, 6)" leads
@@ -530,7 +542,9 @@ not composed of the pages' words.
   these pages.
 
 New: `tests/test_readability_c_2026_09_17.py` (54 tests): the engine
-constants (no newline escape in `engine.py`; every `_paragraphs` site
+constants (`test_the_six_note_constants_carry_no_newline_escape` — named
+for what it checks since the fix round; the byte-identity proof is this
+note's, since a comparison against `main` fails on `main` after the merge; every `_paragraphs` site
 rejoins; the two governor constants whole on victors; the scope note's
 sections and rows; the seven-place table; the ladder note visible-then-headed
 on 1240-02-02 with each impediment a line and the whole note recoverable;
@@ -678,7 +692,7 @@ or clauses)* — 9: the three time standards; the nine methods; the checklist's
 conventions; the Moon's four clauses; the Sun's proxies; the Moon's rows;
 the five views.
 
-*Section headings, disclosure titles and bold leads* — 93: the twenty-one
+*Section headings, disclosure titles and bold leads* — 91: the twenty-one
 expander labels ("How the house-master is directed", "How the small days
 are read", "How the mighty days are read, and why this rate", "The nine
 methods, one by one, and how they are counted", "The turning rule the
@@ -700,7 +714,8 @@ listed block by block above; the bold leads of the visible qualifications
 grading.", "The first proxy needs the releaser.", "Two rows for a cusp in
 another sign.", "The natal hour lord is approximate here."); the formula
 line; one table fragment the script split at "Sect." ("13, "my idea") | Not
-built |").
+built |"); "Abu Ma'shar's rule, IX.1, 26-34." and "The Indian rule, reported
+and not adopted." among them since the fix round.
 
 *Placeholders and boilerplate* — 3: "Select a planet to read its effect,
 grades, reading and witnesses"; "Abu Ma'shar's rule is in the notes under
@@ -720,7 +735,7 @@ constant; the script prints it from "days per degree", after the f-string's
 number).
 
 *Reworded sentences listed in the forward run (ALL CAPS to bold, "this
-app", cross-references, correction 9b)* — 33: each is the branch side of a
+app", cross-references, correction 9b)* — 35: each is the branch side of a
 forward miss above ("The engine uses a true-Sun return; …", "Facts from this
 app's own evaluators …", "Note the order: within a year …", "… (the notes
 under the table).", "II.3, 5-6 … this app's own evaluators …", "Only the
