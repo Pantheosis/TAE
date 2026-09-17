@@ -23,14 +23,14 @@ engine.py. Anything else measures 0 and is ignored, so a caption built at
 run time from a local is not this test's business. The measured text is
 the constant parts concatenated in order.
 
-ALLOWED_LONG freezes the first 48 characters of every string over its
-ceiling as the app stood when the tuple was generated. Three tests: no
-string over its ceiling whose key is not in the tuple; every entry in
-the tuple still names an offender, so a builder who shortens a text must
-delete its entry and the list can only shrink; and the tuple is empty,
-expected to fail until the last readability branch (C) empties it, when
-that test's xfail marker is removed. To regenerate the tuple after a
-migration run this module as a script:
+ALLOWED_LONG froze the first 48 characters of every string over its
+ceiling as the app stood when the tuple was generated (90 entries), and
+the readability branches A, B and C deleted them block by block; it is
+empty since C. Three tests: no string over its ceiling whose key is not
+in the tuple (with the tuple empty, no string over its ceiling at all);
+every entry in the tuple still names an offender, so the list can only
+shrink; and the tuple is empty. To see any offenders run this module as
+a script:
 
     python tests/test_text_lengths_2026_09_17.py
 
@@ -50,64 +50,7 @@ KEY_LENGTH = 48
 # entry per offender, grouped by kind and in source order at generation.
 # A later branch that shortens or migrates a text deletes its entry here;
 # nothing is ever added.
-ALLOWED_LONG = (
-    # help
-    'LMT (local mean time) for charts before standard',
-    'I.2, 1: a revolution is the moment the Sun comes',
-    'Year: the revolution alone (Figures 4, 26). Year',
-    'Dykes: "Abu Ma\'shar seems to prefer that the SR ',
-    "I.6, 3: the revolution's planets with their cond",
-    '"If you made the image of the revolution of the ',
-    'II.1, 5-24 ranks nineteen indicators of the year',
-    'II.3, 2: examine the sign of the terminal point ',
-    'II.1, 11-24 list the remaining fourteen indicato',
-    'VI.1, 4: "the lord of the hour in which the nati',
-    'IX.9, 1-9 name eight testimonies and IX.9, 10 th',
-    'II.22, 1: "the planet which the Moon connects wi',
-    'II.13, 1: "If the Sun was the lord of the year, ',
-    'VI.2, 1: "every one of the seven planets, the tw',
-    'III.1, 12: the Ascendant is directed by the asce',
-    'III.2, 4-9: a checklist of questions about the b',
-    'III.1, 12: "what is in the Midheaven or the four',
-    'III.1, 12: "the Ascendant and the things in it a',
-    'Masha\'allah: "look at the position of the govern',
-    '31: "if the nativity was by day, the infortunes ',
-    'IX.7, 29: "you look at the degree of the Ascenda',
-    'IX.7, 23: "you look in the revolution of the yea',
-    '"The days and hours have nine indicators" (IX.7,',
-    'IX.1, 35-39. Five are "rooted" -- turned from th',
-    "IX.1, 26-34: Abu Ma'shar turns the monthly indic",
-    'Sahl, On Nativities 2.11, 1-2 (Theophilus; fn 14',
-    'Some software divides the life by the lords of t',
-    'IV.1, 2-4: the years are Sun 10, Venus 8, Mercur',
-    'A planet may distribute or manage more than once',
-    "I.8, 10-26 and Figure 53 (PN IV): Ptolemy's seve",
-    'Two rows: the lord of the year by annual profect',
-    'The lesser, middle, greater and mighty years and',
-    # glance
-    # caption
-    'The releaser and the house-master PN IV leaves t',
-    "PN IV's own conventions, read from its figures: ",
-    'A table, not the wheel of I.6, 1: every point by',
-    "Facts from the app's own evaluators, run on the ",
-    'Facts, not a verdict. II.3, 5-6 name the factors',
-    'Facts, not judgments: the delineation chapters b',
-    'What PN IV presupposes here rather than states: ',
-    'Partial by nature, and said so per row. Testimon',
-    'Read into the sentences: a connection is a perfe',
-    'The first proxy in every version is the sign the',
-    'The direction "a year for every degree" is propo',
-    'Facts and classification, not judgment: the cond',
-    'What PN IV does not supply here, stated rather t',
-    '**** turned a year a sign from its natal sign (w',
-    'Readings: "the degree of burning" is the Sun\'s n',
-    'Zodiacal, by the sentence: 59\' 08" a day round t',
-    'The rate. IX.7, 25 prints "12 days, <4 hours>, 1',
-    'A "day" is a whole 24-hour period from the birth',
-    'The three cases do not stand alike. The **Ascend',
-    "The three lords of the sect light's triplicity (",
-    '**All three grades are shown and none is chosen.',
-)
+ALLOWED_LONG = ()
 
 
 def _module_constants(tree):
@@ -200,11 +143,10 @@ def test_every_allowlist_entry_still_names_an_offender():
         "from ALLOWED_LONG:\n  " + "\n  ".join(repr(s) for s in stale))
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "ALLOWED_LONG holds every text over its ceiling until the readability branches "
-    "migrate them; this flips to passing when the last of them (C) empties the tuple, "
-    "and that builder removes this marker"))
 def test_the_allowlist_is_empty():
+    """Emptied by the last readability branch (C, 2026-09-17); the xfail
+    marker that expected it full came off in the same commit. Nothing is
+    ever added: a new text over its ceiling fails the first test."""
     assert ALLOWED_LONG == ()
 
 

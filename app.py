@@ -800,12 +800,13 @@ input_time = st.sidebar.time_input("Time", key="time_input_key", step=timedelta(
 # 2026-09-10 evaluation: the saved reference nativity, recorded EST, was
 # loading at LMT, forty minutes wrong). The resolved offset is shown in the
 # box directly under it, before the chart is cast, not at the sidebar's foot.
+# The tooltip names the three standards in a line; their full sentences
+# stand in the sidebar under the resolved offset, in a notes expander.
 time_standard = st.sidebar.selectbox(
     "Time standard", TIME_STANDARD_OPTIONS, key="time_standard_key",
-    help="LMT (local mean time) for charts before standard time was adopted (late 19th century): the "
-         "offset is the longitude at 4 minutes a degree. Standard time: the named zone at the "
-         "birthplace, with daylight saving as the zone's own history records it. Manual: type the "
-         "offset the birth record states, east positive (EST is -5, CDT is -5, IST is +5.5).")
+    help="LMT (local mean time) for charts before standard time was adopted (late 19th century); "
+         "Standard time: the named zone at the birthplace; Manual: type the "
+         "offset the birth record states, east positive.")
 utc_offset_manual = None
 if time_standard == TIME_STANDARD_OPTIONS[2]:
     st.session_state.setdefault("utc_offset_key", EXAMPLE_CHART["utc_offset_key"])
@@ -814,6 +815,13 @@ if time_standard == TIME_STANDARD_OPTIONS[2]:
         format="%.2f", key="utc_offset_key")
 time_standard_box = st.sidebar.empty()
 time_standard_box.caption(_cal_note)
+with st.sidebar.expander("The three time standards", icon=":material/menu_book:"):   # NOTES_ICON, defined below the sidebar
+    st.markdown("- LMT (local mean time) for charts before standard time was adopted (late 19th century): the "
+                "offset is the longitude at 4 minutes a degree.\n"
+                "- Standard time: the named zone at the "
+                "birthplace, with daylight saving as the zone's own history records it.\n"
+                "- Manual: type the "
+                "offset the birth record states, east positive (EST is -5, CDT is -5, IST is +5.5).")
 if st.session_state.get("_loaded_without_standard"):
     st.sidebar.warning(f"'{st.session_state['_loaded_without_standard']}' was saved before the time "
                        "standard was stored with a chart. Check it, then save the chart again.")
@@ -1700,6 +1708,23 @@ def _notes_expander(title, sections):
     dossier too large for one expander; never nested in another."""
     with st.expander(title, icon=NOTES_ICON):
         _note_sections(sections)
+
+def _paragraphs(text, *leads):
+    """A display representation of an engine note: the text cut into
+    paragraphs before each lead phrase, in order, the engine's own string
+    untouched -- joined back with one space, the pieces are the constant
+    (tests/test_readability_c_2026_09_17.py holds each site to that).
+    The notes are runs of adjacent literals in engine.py, where a blank
+    source line puts no break into the value, so the paragraph breaks
+    are made here, at named sentence boundaries, and the same string
+    still feeds the export and every evaluator unchanged."""
+    parts, rest = [], text
+    for lead in leads:
+        head, sep, tail = rest.partition(lead)
+        parts.append(head)
+        rest = sep + tail
+    parts.append(rest)
+    return [p.strip() for p in parts if p.strip()]
 
 def _slug(title):
     return re.sub(r'\W+', '_', title.lower()).strip('_')
@@ -2670,9 +2695,9 @@ def page_chart():
             summary = sign_summary(int(value), sect)
             st.subheader(summary['sign'])
             _panel_columns([
-                ("The lords of the sign. The Reference page carries every sign.", summary['lords']),
-                ("The Egyptian bounds, which the Reference page carries in full.", summary['bounds']),
-                ("The three faces, which the Reference page carries beside the other dignities.", summary['faces']),
+                ("The lords of the sign. The Reference tables page carries every sign.", summary['lords']),
+                ("The Egyptian bounds, which the Reference tables page carries in full.", summary['bounds']),
+                ("The three faces, which the Reference tables page carries beside the other dignities.", summary['faces']),
             ])
         elif kind == "planet":
             summary = point_summary(value, chart_data, essential, accidental, aspects,
@@ -2683,9 +2708,9 @@ def page_chart():
             _panel_columns([
                 ("Where it stands. The Calculated Points and Quadrant divisions tables below carry every point.",
                  summary['position']),
-                ("Its dignity at its own degree. The Dignities page carries the full lordship table.",
+                ("Its dignity at its own degree. The Dignities and places page carries the full lordship table.",
                  summary['essential']),
-                ("Its accidental conditions. The Dignities page carries them for every planet.",
+                ("Its accidental conditions. The Dignities and places page carries them for every planet.",
                  summary['accidental']),
                 ("The connections it stands in. The Configurations page carries the whole aspects table.",
                  summary['connections']),
@@ -4106,6 +4131,63 @@ def _carry(widget_key, seed):
     st.session_state[widget_key] = st.session_state.get(widget_key, seed)
 
 
+# Abu 'Ali's ladder note (JN_YEARS_NOTE), the engine's sentences under
+# headings this page places: the same sections on The releaser page,
+# under the ladder, and on Fardar and ages, under the Planetary years
+# table. Cut at the note's own lead phrases; the angle brackets escaped
+# for Markdown as the caption escaped them; each impediment's definition
+# a line of its own.
+def _jn_years_note_sections():
+    p = [s.replace('<', chr(92) + '<') for s in
+         _paragraphs(JN_YEARS_NOTE, "Read: the place by the division", "\"peregrine\" is a planet",
+                     "\"burned up\" is this app's", "the Sun takes no step", "\"free from the bad ones\" is not tested",
+                     "Where Ch. 4's count differs", "On the additions Abu 'Ali and Sahl disagree")]
+    return [("When this ladder is shown.", p[0]),
+            ("Steps and impediments.", p[1]),
+            ("This app's definitions and exceptions.", "\n".join(f"- {s}" for s in p[2:6]) + "\n\n" + p[6]),
+            ("Source disagreement.", p[7])]
+
+# Abu 'Ali's additions note (JN_CH4_ADDITIONS_NOTE), the same way, for
+# the additions finding's notes on The releaser page.
+def _jn_ch4_note_sections():
+    p = _paragraphs(JN_CH4_ADDITIONS_NOTE, "The principal rows state", "Abu Bakr and 'Umar are separate",
+                    "Fortune strength grades", "Mercury results derived", "A solar modifier",
+                    "Whole-sign aspects and any", "The fortunes are Jupiter")
+    return [("What the rows state.", p[0] + "\n\n" + p[1]),
+            ("Abu Bakr and 'Umar, separate witnesses.", p[2]),
+            ("Grades left unchosen, and Mercury's conjecture.", p[3] + "\n\n" + p[4]),
+            ("The luminaries.", p[5]),
+            ("Conventions of this display.", p[6] + "\n\n" + p[7])]
+
+# Sahl 1.20's readings (SAHL_1_20_READINGS, reaching the page through
+# the hm_years dict's 'readings'), the engine's one long sentence under
+# headings this page places: the placement, the vocabulary as a list, the
+# sentence readings as a list, On Times and 1.23, the test-chart figures.
+# DIVISION and POWER are the engine's own capitals and stand, as BY SCOPE
+# does in the scope note: the constant is not edited for display.
+def _sahl_1_20_readings_sections(text):
+    p = _paragraphs(text, "\"enhanced\" (7-9) =", "\"a share\" =", "\"eastern\" and", "\"under the rays\" =",
+                    "\"alien\" =", "10 and 20 as fn 158", "\"under the earth\" (11)", "12 is subsumed by 10",
+                    "13 is illegible", "14-15 are printed", "19 and 22 (alien", "where a sentence names months",
+                    "Placements no sentence reaches", "On Times 4, 7 is a rule", "1.23, 53 and 61:", "On 406 test charts")
+    return [("The placement: the division, and a power judgment.", p[0]),
+            ("The vocabulary.", "\n".join(f"- {s}" for s in p[1:6])),
+            ("The sentences, as read.", "\n".join(f"- {s}" for s in p[6:14])),
+            ("On Times 4, 7, and 1.23, 53 and 61.", p[14] + "\n\n" + p[15]),
+            ("The test-chart figures.", p[16])]
+
+def _additions_detail(row):
+    """One planet of the additions table, its cells whole under the
+    column headings the table carries."""
+    st.markdown(f"**{row['Planet']}**, {row['Looks at the house-master']}.")
+    st.markdown(f"**Effect (Ch. 4).** {row['Ch. 4']}.")
+    st.markdown(f"**Conditional grades.** Its own lesser years: {row['Its own lesser years']}; if middling in "
+                f"strength: {row['If middling in strength']}; if more unsound: {row['If more unsound']}. "
+                f"Grade: {row['Grade']}.")
+    st.markdown(f"**This app's reading.** {row['Reading']}.")
+    st.markdown(f"**Other witnesses.** {row['Witnesses']}")
+
+
 def _year_under_examination():
     st.subheader("The year under examination",
                  help="Every table on the Prediction pages keys on completed civil anniversaries (II.3, 1: "
@@ -4175,9 +4257,11 @@ def page_timing():
     with tab_rev:
         st.subheader("The revolution of the year",
                      help="I.2, 1: a revolution is the moment the Sun comes back to \"his position in which he was "
-                          "at the root\". I.2, 4: derive its Ascendant and the twelve houses. The engine uses a "
-                          "TRUE-Sun return; Abu Ma'shar computes a mean Sun and then applies the Hipparchan "
-                          "tropical year (I.4, 23-31), which Dykes says plainly does not make sense.")
+                          "at the root\". I.2, 4: derive its Ascendant and the twelve houses.")
+        with _prose():
+            st.markdown("**A true-Sun return.** The engine uses a **true**-Sun return; Abu Ma'shar computes a mean "
+                        "Sun and then applies the Hipparchan tropical year (I.4, 23-31), which Dykes says plainly "
+                        "does not make sense.")
         st.dataframe(pd.DataFrame(pn4['revolution_rows']), hide_index=True, width='stretch',
                      height=_rows_height(len(pn4['revolution_rows'])),
                      column_config=_wide_text_columns(pd.DataFrame(pn4['revolution_rows'])))
@@ -4210,12 +4294,7 @@ def page_timing():
         @st.fragment
         def _timing_wheel_block():
             st.subheader("The charts, drawn",
-                         help="Year: the revolution alone (Figures 4, 26). Year over root: the image of the revolution "
-                              "of the year, I.6, 3-6 (Figure 51 and fn 33; Figures 5 and 27 in Dykes's order). Month "
-                              "over year and root: the image of the revolution of the month, IX.3, 4-8 (Figures 39 "
-                              "and 109, fn 58). Month: the month's revolution alone. Profection: the natal wheel with "
-                              "the sign of the year and the sign of the month (Figures 3, 15, 33). The Wide layout "
-                              "adds a positions column per chart; hover the picture for the expand arrows.")
+                         help="The Wide layout adds a positions column per chart; hover the picture for the expand arrows.")
             st.session_state.setdefault("_timing_bounds", True)
             v_view, v_layout, v_opts = st.columns([2.2, 1.4, 0.9], vertical_alignment="bottom")
             with v_view:
@@ -4225,12 +4304,9 @@ def page_timing():
             with v_opts:
                 with st.popover("Options", icon=":material/tune:", width="stretch"):
                     wheel_order = _reading_radio("Inner wheel", WHEEL_ORDER_OPTIONS, "wheel_order", "_wheel_order",
-                                                 help="Dykes: \"Abu Ma'shar seems to prefer that the SR be the inner "
-                                                      "wheel, but to me this seem unnatural and I only do it to "
-                                                      "illustrate his instructions in Ch. I.6\" (p. 12). Figure 51 "
-                                                      "follows Abu Ma'shar; every other figure in the book puts the "
-                                                      "nativity in the centre. IX.3, 4-6 writes the month first, then "
-                                                      "the year, then the root.")
+                                                 help="Figure 51 follows Abu Ma'shar; every other figure in the book "
+                                                      "puts the nativity in the centre. IX.3, 4-6 writes the month "
+                                                      "first, then the year, then the root.")
                     wheel_bounds = _reading_checkbox("Bounds ring", "timing_bounds", "_timing_bounds",
                                                      help="The Egyptian bounds as a ring, as every PN IV wheel carries them.")
                     # Every control in this popover stands before the
@@ -4327,36 +4403,65 @@ def page_timing():
                                file_name=f"{re.sub(r'[^A-Za-z0-9]+', '_', chart_name).strip('_') or 'chart'}_"
                                          f"{re.sub(r'[^A-Za-z0-9]+', '_', wheel_view).strip('_').lower()}_age{pn4['age']}.svg",
                                mime="image/svg+xml")
-            st.caption("PN IV's own conventions, read from its figures: the nativity in the centre and the "
-                       "revolution outside in every bi-wheel but Figure 51, where Dykes follows Abu Ma'shar's order of I.6 "
-                       "and says so (p. 12); the outer charts in whole signs; \"the profected natal Ascendant "
-                       "... which I have shaded in grey\" (fn 33) -- the sign of the terminal point of the year -- "
-                       "with the profection drawn as a dashed arc from the natal Ascendant (Figures 3, 33); the month "
-                       "as a tri-wheel, root, year, month (fn 58); a ring of the Egyptian bounds on its wheels "
-                       "(Figures 1, 22, 25, 26; not the simplified Figure 51). "
-                       "Default points are Dykes's (p. 12): the seven planets, the nodes, Fortune, the angles; "
+            st.caption("Default points are Dykes's (p. 12): the seven planets, the nodes, Fortune, the angles; "
                        "I.6, 3-4's Lots, rays and twelfth-parts are the toggles, and the inventory table below is "
-                       "the authority the picture is held to. TP marks the terminal point of the year (I.6, 5); the "
-                       "letters under a natal planet mark I.6, 6's time lords -- D distributor, P partner, F lord of "
-                       "the fardar, f its divider, O lord of the orb; the solid arc from the natal Ascendant is the "
-                       "distribution, ending on the degree reached now with its bound tinted (Figures 2, 65). Two "
-                       "things the text asks for that the picture keeps as Dykes drew it: I.6, 2 has the houses "
-                       "\"by their degrees and minutes ... the portions of hours and the ascensions of the right "
-                       "circle\" -- the Alchabitius cusps this app computes -- and the wheel keeps whole signs, as "
-                       "fn 33 says Figure 51 does \"to make the image easier to understand\"; and I.6, 5 profects the "
-                       "terminal point \"from the Lot of Fortune of the root, and from the rest of the indicators\" "
-                       "as well as from the Ascendant, where only the Ascendant's arc is drawn (the Lot of Fortune's "
-                       "profection is in the month's indicators on the Days and months page).")
+                       "the authority the picture is held to.")
+            # The wheel's conventions, read from PN IV's figures: the five
+            # views, the layers, a Mark / Meaning key for the letters and
+            # the arcs (the letters expanded only as the sentence beneath
+            # the key defines them, F the lord of the fardar and f its
+            # divider), and what the picture keeps as Dykes drew it.
+            _notes_expander("How the wheel is drawn", [
+                ("The five views.",
+                 "- Year: the revolution alone (Figures 4, 26).\n"
+                 "- Year over root: the image of the revolution of the year, I.6, 3-6 (Figure 51 and fn 33; "
+                 "Figures 5 and 27 in Dykes's order).\n"
+                 "- Month over year and root: the image of the revolution of the month, IX.3, 4-8 (Figures 39 "
+                 "and 109, fn 58).\n"
+                 "- Month: the month's revolution alone.\n"
+                 "- Profection: the natal wheel with the sign of the year and the sign of the month (Figures 3, 15, 33)."),
+                ("Chart layers.",
+                 "PN IV's own conventions, read from its figures: the nativity in the centre and the "
+                 "revolution outside in every bi-wheel but Figure 51, where Dykes follows Abu Ma'shar's order of I.6 "
+                 "and says so (p. 12); the outer charts in whole signs; \"the profected natal Ascendant "
+                 "... which I have shaded in grey\" (fn 33) -- the sign of the terminal point of the year -- "
+                 "with the profection drawn as a dashed arc from the natal Ascendant (Figures 3, 33); the month "
+                 "as a tri-wheel, root, year, month (fn 58); a ring of the Egyptian bounds on its wheels "
+                 "(Figures 1, 22, 25, 26; not the simplified Figure 51). The inner wheel: Dykes: \"Abu Ma'shar "
+                 "seems to prefer that the SR be the inner wheel, but to me this seem unnatural and I only do it to "
+                 "illustrate his instructions in Ch. I.6\" (p. 12)."),
+                ("Points shown.",
+                 "| Mark | Meaning |\n"
+                 "|---|---|\n"
+                 "| TP | the terminal point of the year (I.6, 5) |\n"
+                 "| D | distributor (I.6, 6's time lords, lettered under a natal planet) |\n"
+                 "| P | partner |\n"
+                 "| F | lord of the fardar |\n"
+                 "| f | its divider |\n"
+                 "| O | lord of the orb |\n"
+                 "| dashed arc | the profection, from the natal Ascendant (Figures 3, 33) |\n"
+                 "| solid arc | the distribution, from the natal Ascendant, ending on the degree reached now with its bound tinted (Figures 2, 65) |\n"
+                 "| shaded sign | the sign of the terminal point of the year (fn 33) |\n"
+                 "| ring | the Egyptian bounds (Figures 1, 22, 25, 26) |\n\n"
+                 "TP marks the terminal point of the year (I.6, 5); the "
+                 "letters under a natal planet mark I.6, 6's time lords -- D distributor, P partner, F lord of "
+                 "the fardar, f its divider, O lord of the orb; the solid arc from the natal Ascendant is the "
+                 "distribution, ending on the degree reached now with its bound tinted (Figures 2, 65)."),
+                ("Display conventions: whole signs drawn, cusps computed.",
+                 "Two "
+                 "things the text asks for that the picture keeps as Dykes drew it: I.6, 2 has the houses "
+                 "\"by their degrees and minutes ... the portions of hours and the ascensions of the right "
+                 "circle\" -- the Alchabitius cusps this app computes -- and the wheel keeps whole signs, as "
+                 "fn 33 says Figure 51 does \"to make the image easier to understand\"; and I.6, 5 profects the "
+                 "terminal point \"from the Lot of Fortune of the root, and from the rest of the indicators\" "
+                 "as well as from the Ascendant, where only the Ascendant's arc is drawn (the Lot of Fortune's "
+                 "profection is in the month's indicators on the Days and months page)."),
+            ])
         _timing_wheel_block()
 
 
         st.subheader("The image of the revolution of the year: its points (I.6, 3-8)",
-                     help="I.6, 3: the revolution's planets with their conditions, \"their rays and twelfth-parts, "
-                          "and the twelfth-parts of the degrees of the houses\"; I.6, 4: the root's planets likewise, "
-                          "\"and the Lots and Head and Tail\"; I.6, 5: the natal Ascendant and the terminal point; "
-                          "I.6, 6: the endpoint of the distribution, the distributor and partner, the fardar lord "
-                          "and its divider, and the lord of the orb, \"each of them in their signs and bounds\"; "
-                          "I.6, 8 and Figure 52: 14 planets, 98 rays, the Head and Tail twice each, 38 "
+                     help="I.6, 8 and Figure 52: 14 planets, 98 rays, the Head and Tail twice each, 38 "
                           "twelfth-parts -- 154 -- \"and the Lots according to how you do it\"; I.6, 9-10: within a "
                           "house, by degree.")
         image_rows, image_counts = pn4['image']
@@ -4364,20 +4469,35 @@ def page_timing():
                     + f" -- I.6, 8 counts 154 without the Lots{' and the count agrees' if image_counts['total of I.6, 8'] == 154 else ', and this chart differs'}.")
         st.dataframe(pd.DataFrame(image_rows), hide_index=True, width='stretch', height=_rows_height(16),
                      column_config=_wide_text_columns(pd.DataFrame(image_rows)))
-        st.caption("A table, not the wheel of I.6, 1: every point by the revolution's house cusps -- I.6, 2: "
-                   "\"calculating the houses by their degrees and minutes, in the way that you calculate the houses by "
-                   "the portions of hours and the ascensions of the right circle\" (the Alchabitius cusps this app "
-                   "computes; Dykes drew Figure 51 by whole signs \"for clarity\", fn 33; Figure 52 is the count table), "
-                   "ordered by degree within the house, with each "
-                   "point's bound. The twelfth-part construction -- 2.5 degrees to a sign, beginning with the sign "
-                   "itself -- is stated at Gr. Intr. V.18, 1-3 (Figure 57). The fixed stars of I.6, 7 are the table below. The Lots are this "
+        st.caption("The fixed stars of I.6, 7 are the table below. The Lots are this "
                    "engine's, \"many or few\"; the count line excludes them as I.6, 8 does.")
+        _notes_expander("How the image table is built", [
+            ("What I.6, 3-8 asks for.",
+             "I.6, 3: the revolution's planets with their conditions, \"their rays and twelfth-parts, "
+             "and the twelfth-parts of the degrees of the houses\"; I.6, 4: the root's planets likewise, "
+             "\"and the Lots and Head and Tail\"; I.6, 5: the natal Ascendant and the terminal point; "
+             "I.6, 6: the endpoint of the distribution, the distributor and partner, the fardar lord "
+             "and its divider, and the lord of the orb, \"each of them in their signs and bounds\"; "
+             "I.6, 8 and Figure 52: 14 planets, 98 rays, the Head and Tail twice each, 38 "
+             "twelfth-parts -- 154 -- \"and the Lots according to how you do it\"; I.6, 9-10: within a "
+             "house, by degree."),
+            ("A table, by the revolution's cusps.",
+             "A table, not the wheel of I.6, 1: every point by the revolution's house cusps -- I.6, 2: "
+             "\"calculating the houses by their degrees and minutes, in the way that you calculate the houses by "
+             "the portions of hours and the ascensions of the right circle\" (the Alchabitius cusps this app "
+             "computes; Dykes drew Figure 51 by whole signs \"for clarity\", fn 33; Figure 52 is the count table), "
+             "ordered by degree within the house, with each "
+             "point's bound."),
+            ("The twelfth-parts.",
+             "The twelfth-part construction -- 2.5 degrees to a sign, beginning with the sign "
+             "itself -- is stated at Gr. Intr. V.18, 1-3 (Figure 57)."),
+        ])
         _fs, _fsr = pn4['fixed_stars'], pn4['fixed_stars_revolution']
         st.markdown("**The fixed stars (I.6, 7 in the root; III.8, 9 in the revolution)** -- Sahl's list, *On Nativities* "
                     "2.2, in Dykes's identifications (the table at that chapter's end, with Rhetorius Ch. 58's natures); "
                     "PN IV names no stars of its own. \"The very degree\" and \"with\" are read as within one degree "
                     "of longitude; the planets \"in the stakes\" by whole-sign place; latitude ignored. Positions from "
-                    "the Swiss Ephemeris star catalogue the app ships (ephe/sefstars.txt).")
+                    "the Swiss Ephemeris star catalogue this app ships (ephe/sefstars.txt).")
         if _fs['refused']:
             st.warning(f"Not computed: {_fs['refused']}.")
         else:
@@ -4396,45 +4516,72 @@ def page_timing():
 
         st.subheader("The reading checklist (I.7, 1-26)",
                      help="\"If you made the image of the revolution of the year, then understand:\" (I.7, 1) -- "
-                          "twenty-six things. 2-6: the revolution's Ascendant -- its house in the root, who is in it "
-                          "and looks at it in both times, who has a claim on it and where they stand, whether its "
-                          "lord has one house or two and looks at them. 7-24: every planet -- motion, strength, "
-                          "aversion and aspect, rays, connection, reception, support, friendship, domain, "
-                          "twelfth-parts, returns, course, transits, the Lots, the stakes, the Sun. 25-26: \"its "
-                          "indication will be according to its place and condition in the two times together.\"")
+                          "twenty-six things.")
+        with _prose():
+            st.markdown("**Facts from this app's own evaluators**, run on the revolution's data as on the root's: the "
+                        "pairwise configurations and the connection rule of the Configurations page, reception under "
+                        "its rule, the domain of the accidental dignities, the solar phase, the twelfth-part (a "
+                        "convention, as the image's notes say), and V.1, 2-3's grades for a return.")
         st.markdown("**I.7, 2-6 -- the revolution's Ascendant:**")
         st.dataframe(pd.DataFrame(pn4['i7_ascendant']), hide_index=True, width='stretch', height=_rows_height(5),
                      column_config=_wide_text_columns(pd.DataFrame(pn4['i7_ascendant'])))
         st.markdown("**I.7, 7-24 -- the planets, in both times** (the numbers are I.7's sentences):")
         st.dataframe(pd.DataFrame(pn4['i7_planets']), hide_index=True, width='stretch', height=_rows_height(14))
-        st.caption("Facts from the app's own evaluators, run on the revolution's data as on the root's: the "
-                   "pairwise configurations and the connection rule of the Configurations page, reception under "
-                   "its rule, the domain of the accidental dignities, the solar phase, the twelfth-part (a "
-                   "convention, as the image's caption says), and V.1, 2-3's grades for a return. Not read, and "
-                   "said so: " + '; '.join(f"{n} \"{t}\" -- {why}" for n, t, why in PN4_I7_NOT_READ)
-                   + ". I.7, 22, the Lots of the year, are in the image above. I.7, 25-26 is the principle the "
-                   "II.3 section applies. No worked example exists; I.7 is a list.")
+        _notes_expander("The twenty-six things, and what is not read", [
+            ("The checklist, I.7, 2-26.",
+             "- 2-6: the revolution's Ascendant -- its house in the root, who is in it "
+             "and looks at it in both times, who has a claim on it and where they stand, whether its "
+             "lord has one house or two and looks at them.\n"
+             "- 7-24: every planet -- motion, strength, "
+             "aversion and aspect, rays, connection, reception, support, friendship, domain, "
+             "twelfth-parts, returns, course, transits, the Lots, the stakes, the Sun.\n"
+             "- 25-26: \"its "
+             "indication will be according to its place and condition in the two times together.\""),
+            ("Not read, and said so.",
+             "\n".join(f"- {n} \"{t}\" -- {why}" for n, t, why in PN4_I7_NOT_READ)),
+            ("The Lots, the principle, and the worked example.",
+             "I.7, 22, the Lots of the year, are in the image above. I.7, 25-26 is the principle the "
+             "II.3 section applies. No worked example exists; I.7 is a list."),
+        ])
 
     with tab_ind:
         st.subheader("Indicators of the year, in Abu Ma'shar's order",
                      help="II.1, 5-24 ranks nineteen indicators of the year and II.1, 25 says \"each one in turn "
-                          "is stronger in indication than the one which is after it\". The first five are computed "
-                          "here; the rest are delineation material. Note the order: WITHIN A YEAR the lord of the "
-                          "year outranks the distributor (II.1, 25; II.23, 1). Across several years the "
-                          "distribution is the stronger (III.2, 2-3) -- PN IV ranks them by scope; Sahl's 1.23, 33 "
-                          "and 1.24, 2 contradict each other as printed (the caption under the table).")
+                          "is stronger in indication than the one which is after it\".")
+        with _prose():
+            st.markdown("The first five are computed here; the rest are delineation material.")
+            st.markdown("**Note the order: within a year** the lord of the "
+                        "year outranks the distributor (II.1, 25; II.23, 1). Across several years the "
+                        "distribution is the stronger (III.2, 2-3) -- PN IV ranks them by scope; Sahl's 1.23, 33 "
+                        "and 1.24, 2 contradict each other as printed (the notes under the table).")
         st.dataframe(pd.DataFrame(pn4['year_rows']), hide_index=True, width='stretch',
                      column_config=_wide_text_columns(pd.DataFrame(pn4['year_rows'])))
-        st.caption(PN4_YEAR_INDICATOR_SCOPE_NOTE)
+        # PN4_YEAR_INDICATOR_SCOPE_NOTE, the engine's sentences under
+        # headings this page places: the scope comparison first, built
+        # from its first and last sentences, which stand whole beneath.
+        _scope = _paragraphs(PN4_YEAR_INDICATOR_SCOPE_NOTE, "Sahl's two consecutive chapters",
+                             "Dykes fn 245 emends", "PN IV's within-the-year ranking")
+        _notes_expander("The lord of the year and the distributor, ranked by scope", [
+            ("Within one year, and across several.",
+             "| Scope | The stronger indicator, and where it is stated |\n"
+             "|---|---|\n"
+             "| Within one year | the lord of the year (II.1, 25; II.23, 1); Sahl's 1.24, 2 agrees |\n"
+             "| Across several years | the distribution (III.2, 2-3); Sahl's 1.23, 33 agrees |\n\n"
+             + _scope[0]),
+            ("Sahl's two sentences, as printed.", _scope[1]),
+            ("The editor's emendation, not adopted.", _scope[2]),
+            ("The disagreement, recorded and not resolved.", _scope[3]),
+        ])
 
         st.subheader("The sign of the terminal point and its lord, examined (II.3, 2-19)",
                      help="II.3, 2: examine the sign of the terminal point in the root -- which house of the circle, "
                           "whose house, exaltation and triplicity, which planets, Lots and twelfth-parts are in it, "
-                          "who looks at it or casts rays at it and from where, and whether it is devoid of them. "
-                          "II.3, 3: the same in the revolution, with where those planets were and are, and their "
-                          "condition in each. II.3, 5-8: the lord of the year's condition in root and revolution "
-                          "compared four ways (Figure 55); II.3, 9-18: reception, a stake of the revolution's "
-                          "Ascendant under an infortune, aversion to the Ascendant.")
+                          "who looks at it or casts rays at it and from where, and whether it is devoid of them.")
+        with _prose():
+            st.markdown("**Facts, not a verdict.** II.3, 5-6 name the factors of a suitable and a contrary condition and "
+                        "give no rule for weighing them, so each factor is shown for each chart from this app's own "
+                        "evaluators (essential and accidental dignity, solar phase, reception under the Configurations "
+                        "page's rule), and Figure 55's cell is not chosen.")
         ii3 = pn4['ii3']
         st.markdown(f"**The sign of the terminal point, {pn4['year']['sign']}, in the root (II.3, 2):**")
         st.dataframe(pd.DataFrame(ii3['root_rows']), hide_index=True, width='stretch', height=_rows_height(5),
@@ -4450,71 +4597,114 @@ def page_timing():
                      column_config=_wide_text_columns(pd.DataFrame(ii3['refinement_rows'])))
         st.markdown("**Figure 55 -- the four cases, in the book's words; which one holds is left to the reader:**")
         st.dataframe(pd.DataFrame(ii3['figure_55']), hide_index=True, width='stretch', height=_rows_height(4))
-        st.caption("Facts, not a verdict. II.3, 5-6 name the factors of a suitable and a contrary condition and "
-                   "give no rule for weighing them, so each factor is shown for each chart from the app's own "
-                   "evaluators (essential and accidental dignity, solar phase, reception under the Configurations "
-                   "page's rule), and Figure 55's cell is not chosen. \"Domain\" is read as sect (fn 46, 48); "
-                   "\"westernization from the Sun\" is shown as the solar side (fn 47). Aspects to the sign and to "
-                   "the lord are by whole sign. Also read: the twelfth-parts (Gr. Intr. V.18, 3) and fn 37-41's "
-                   "classes of sign (VI.4, 4-6: loving, hating, hostile by aspect; IX.2, 33: matching in ascensions, in "
-                   "daylight, or one belt) and of degree (V.20's bright, dusky, empty and dark degrees, the editor's "
-                   "\"probably\"), as facts on rows [3] and [4-7]. "
-                   "The delineations of II.4-II.21 are not built. No worked example exists; Figure 55 is Dykes's "
-                   "table.")
+        _notes_expander("How the factors are read", [
+            ("What II.3, 3-18 asks.",
+             "II.3, 3: the same in the revolution, with where those planets were and are, and their "
+             "condition in each. II.3, 5-8: the lord of the year's condition in root and revolution "
+             "compared four ways (Figure 55); II.3, 9-18: reception, a stake of the revolution's "
+             "Ascendant under an infortune, aversion to the Ascendant."),
+            ("Row conventions.",
+             "- \"Domain\" is read as sect (fn 46, 48); "
+             "\"westernization from the Sun\" is shown as the solar side (fn 47).\n"
+             "- Aspects to the sign and to the lord are by whole sign.\n"
+             "- Also read: the twelfth-parts (Gr. Intr. V.18, 3) and fn 37-41's "
+             "classes of sign (VI.4, 4-6: loving, hating, hostile by aspect; IX.2, 33: matching in ascensions, in "
+             "daylight, or one belt) and of degree (V.20's bright, dusky, empty and dark degrees, the editor's "
+             "\"probably\"), as facts on rows [3] and [4-7]."),
+            ("Not built.",
+             "The delineations of II.4-II.21 are not built. No worked example exists; Figure 55 is Dykes's "
+             "table."),
+        ])
 
         st.subheader("Indicators 6-19: the fact each one reads",
-                     help="II.1, 11-24 list the remaining fourteen indicators, in II.1, 25's order of strength. "
-                          "Each reads a fact from the root and the revolution and judges it in a chapter of its "
-                          "own; the facts are computed here, the judgments are not. Nine are lookups on the two "
-                          "charts. #7 is read from the Moon's connections in her sign (II.22, below). #15 needs "
-                          "the house lords' connections read in the revolution, which the app's static test "
-                          "does not do, and #16 and #17 follow the year's transits, which are not tracked -- "
-                          "those three rows say so.")
+                     help="II.1, 11-24 list the remaining fourteen indicators, in II.1, 25's order of strength.")
+        with _prose():
+            st.markdown("Each reads a fact from the root and the revolution and judges it in a chapter of its "
+                        "own; the facts are computed here, the judgments are not.")
+            st.markdown("**Facts, not judgments:** the delineation chapters behind these rows (II.6-21, V.1-8, VI.3-6, "
+                        "VII.9, VIII.1-15) are not built as revolution readings; VI.3, the revolution's planets in the natal places, belongs "
+                        "here with them, not in the natal Topical Planets in Houses table, whose PN IV halves paraphrase Book II's sentences as natal readings.")
         st.dataframe(pd.DataFrame(pn4['further_rows']), hide_index=True, width='stretch',
                      height=_rows_height(14),
                      column_config=_wide_text_columns(pd.DataFrame(pn4['further_rows'])))
-        st.caption("Facts, not judgments: the delineation chapters behind these rows (II.6-21, V.1-8, VI.3-6, "
-                   "VII.9, VIII.1-15) are not built as revolution readings; VI.3, the revolution's planets in the natal places, belongs "
-                   "here with them, not in the natal Topical Planets in Houses table, whose PN IV halves paraphrase Book II's sentences as natal readings. #8 grades a transit as V.1, 2-3 does -- the degree, the "
-                   "bound, or only the sign. #10 counts each lord from its own Ascendant (fn 128). #14 and #19 "
-                   "count from the three places VI.5, 1 names. #12 and #13 read both the terminal sign and the "
-                   "revolution's Ascendant, as VI.3-4 do.")
+        _notes_expander("Row conventions of the fourteen indicators", [
+            ("What each row reads.",
+             "- Nine are lookups on the two charts.\n"
+             "- #7 is read from the Moon's connections in her sign (II.22, below).\n"
+             "- #15 needs "
+             "the house lords' connections read in the revolution, which this app's static test "
+             "does not do, and #16 and #17 follow the year's transits, which are not tracked -- "
+             "those three rows say so.\n"
+             "- #8 grades a transit as V.1, 2-3 does -- the degree, the "
+             "bound, or only the sign.\n"
+             "- #10 counts each lord from its own Ascendant (fn 128).\n"
+             "- #14 and #19 "
+             "count from the three places VI.5, 1 names.\n"
+             "- #12 and #13 read both the terminal sign and the "
+             "revolution's Ascendant, as VI.3-4 do."),
+        ])
 
         st.subheader("The lord of the orb (VI.1)",
                      help="VI.1, 4: \"the lord of the hour in which the native was born\" is assigned to the "
                           "Ascendant and the first year; VI.1, 5-8: the next hour lord down the spheres to the "
-                          "next house and the next year, and on past twelve -- \"the lord of the thirteenth hour "
-                          "from it belongs to the Ascendant of the root and the thirteenth year\" -- so the loop "
-                          "of seven runs on against the cycle of twelve and the pairing changes every twelve "
-                          "years. Judged \"just as you judge by means of the lord of the year\" (VI.1, 12). "
-                          "Row 5 above is this year's. The table here is VI.1, 18-19: six positions whose hour "
-                          "lords are named by VI.1, 10 -- \"the lord of the hour of the house of assets\" is the "
-                          "second hour lord from the natal one -- read as hour k for house k. VI.1, 10 fixes the "
-                          "name to the first cycle; VI.1, 8's assignment (\"the lord of the thirteenth hour from it "
-                          "belongs to the Ascendant of the root and the thirteenth year\") gives a different planet for "
-                          "the same name from age 12 on; both are shown, neither is stated for 18-19, and the reset "
-                          "Dykes proposes (Intro Sect. 13, \"my idea\") is a third answer, his own.")
+                          "next house and the next year, and on past twelve.")
+        # The planetary hours the cycle starts from are the Chart page's;
+        # where that page flags its hour lord as an equal-hour
+        # approximation (the Sun circumpolar), the sentence that says so
+        # stands here too, beside the table.
+        _hours_sentence = ("Their sequence from "
+                           "the day lord at sunrise is Dykes's Figure 45 (Intro Sect. 13), which the Chart page's hour "
+                           "lord follows with real sunrise and sunset, and with a flagged equal-hour approximation where "
+                           "the Sun is circumpolar; Dykes notes that not everyone agrees on when the day begins.")
+        with _prose():
+            st.markdown("Row 5 above is this year's. The table here is VI.1, 18-19: six positions whose hour "
+                        "lords are named by VI.1, 10 -- \"the lord of the hour of the house of assets\" is the "
+                        "second hour lord from the natal one -- read as hour k for house k.")
+            if pn4['hour_approximate']:
+                st.markdown("**The natal hour lord is approximate here.** " + _hours_sentence)
         st.dataframe(pd.DataFrame(pn4['orb_rows']), hide_index=True, width='stretch',
                      height=_rows_height(len(pn4['orb_rows'])),
                      column_config=_wide_text_columns(pd.DataFrame(pn4['orb_rows'])))
-        st.caption("What PN IV presupposes here rather than states: the planetary hours. Their sequence from "
-                   "the day lord at sunrise is Dykes's Figure 45 (Intro Sect. 13), which the Chart page's hour "
-                   "lord follows with real sunrise and sunset, and with a flagged equal-hour approximation where "
-                   "the Sun is circumpolar; Dykes notes that not everyone agrees on when the day begins. Dykes "
-                   "also floats a single-cycle version in which each house keeps its first hour lord for life "
-                   "(Intro Figure 48), on the thought that the loop is Abu Ma'shar's own error; VI.1, 8 states "
-                   "the loop and the loop is built. His twelve-year \"reset\" of the named lords is, in his "
-                   "words, his idea, and is not built. The delineations of VI.1, 12-17 are not built; the seven days the "
-                   "lord of the orb grants (IX.7, 7-9) are method 2 on the Days and months page (This week / Today / This hour).")
+        _notes_expander("The cycle of the hour lords, and the three answers to their names", [
+            ("The continuing cycle.",
+             "VI.1, 4: \"the lord of the hour in which the native was born\" is assigned to the "
+             "Ascendant and the first year; VI.1, 5-8: the next hour lord down the spheres to the "
+             "next house and the next year, and on past twelve -- \"the lord of the thirteenth hour "
+             "from it belongs to the Ascendant of the root and the thirteenth year\" -- so the loop "
+             "of seven runs on against the cycle of twelve and the pairing changes every twelve "
+             "years. Judged \"just as you judge by means of the lord of the year\" (VI.1, 12)."),
+            ("The names of the lords: three answers, and what is built.",
+             "| Reading | Here |\n"
+             "|---|---|\n"
+             "| The continuing cycle (VI.1, 5-8): the loop of seven runs on against the cycle of twelve | Built |\n"
+             "| The names fixed to the first cycle (VI.1, 10) | Shown beside the loop's planet for the same name; neither is stated for 18-19 |\n"
+             "| A single-cycle version, each house keeping its first hour lord for life (Intro Figure 48, Dykes's thought) | Not built; VI.1, 8 states the loop and the loop is built |\n"
+             "| The twelve-year reset of the named lords (Intro Sect. 13, \"my idea\") | Not built |\n\n"
+             "VI.1, 10 fixes the "
+             "name to the first cycle; VI.1, 8's assignment (\"the lord of the thirteenth hour from it "
+             "belongs to the Ascendant of the root and the thirteenth year\") gives a different planet for "
+             "the same name from age 12 on; both are shown, neither is stated for 18-19, and the reset "
+             "Dykes proposes (Intro Sect. 13, \"my idea\") is a third answer, his own. Dykes "
+             "also floats a single-cycle version in which each house keeps its first hour lord for life "
+             "(Intro Figure 48), on the thought that the loop is Abu Ma'shar's own error; VI.1, 8 states "
+             "the loop and the loop is built. His twelve-year \"reset\" of the named lords is, in his "
+             "words, his idea, and is not built."),
+            ("What PN IV presupposes: the planetary hours.",
+             "What PN IV presupposes here rather than states: the planetary hours. " + _hours_sentence),
+            ("Not built, and built elsewhere.",
+             "The delineations of VI.1, 12-17 are not built; the seven days the "
+             "lord of the orb grants (IX.7, 7-9) are method 2 on the Days and months page (This week / Today / This hour)."),
+        ])
 
         st.subheader("The governor (IX.9, 1-10; IX.2, 4-7)",
-                     help="IX.9, 1-9 name eight testimonies and IX.9, 10 the rule: \"if these eight indicators "
-                          "would combine together in a single planet, then it alone would be the governor ... and "
-                          "if one of them had [only] some of the testimonies, it will be more primary than the "
-                          "others, and the rest of them will have a partnership with it.\" IX.2, 4 gives a second, "
-                          "sign-level governor for the first month: five conditions on the natal Lot, the terminal "
-                          "point, the revolution's Ascendant and Lot, and the sign's quadruplicity; fn 37: such a "
-                          "sign governs the year too.")
+                     help="IX.9, 1-9 name eight testimonies and IX.9, 10 the rule; IX.2, 4 gives a second, "
+                          "sign-level governor for the first month.")
+        with _prose():
+            st.markdown("**Partial by nature, and said so per row.** Testimony #3 and the releaser's half of #4 need the "
+                        "longevity releaser, which PN IV does not supply (IX.8, 123); they are filled from the releaser's "
+                        "distribution (Sahl, On Nativities 1.15, on The releaser page) when that finds one, #4 "
+                        "counted only when the two distributions share one partner; #7 is "
+                        "read from the Moon's connections in her sign (II.22, below).")
         gov_rows, gov = pn4['governor']
         st.markdown(f"**IX.9:** {gov['text']}")
         st.dataframe(pd.DataFrame(gov_rows), hide_index=True, width='stretch', height=_rows_height(8),
@@ -4522,8 +4712,8 @@ def page_timing():
         if pn4['governor_condition']:
             st.markdown(f"**IX.9, 11-13, the condition of the primary planet ({gov['primary'][0]}), as facts** -- the "
                         "conclusions quoted, not pronounced; 13's place half (\"in a stake or in what follows a stake\") is "
-                        "judged by the Alchabitius DIVISION in the revolution, the five degrees at the four axial degrees -- "
-                        "the unit is THIS APP'S CONVENTION (an adopted dynamic-fitness reading), not the text's; "
+                        "judged by the Alchabitius **division** in the revolution, the five degrees at the four axial degrees -- "
+                        "the unit is **this app's convention** (an adopted dynamic-fitness reading), not the text's; "
                         "the row states the three parts and the qualified confidence (IX.5, 4 fn 106).")
             st.dataframe(pd.DataFrame(pn4['governor_condition']), hide_index=True, width='stretch', height=_rows_height(3),
                          column_config=_wide_text_columns(pd.DataFrame(pn4['governor_condition'])))
@@ -4531,28 +4721,33 @@ def page_timing():
         st.markdown(f"**IX.2, 4:** {fm_verdict}")
         st.dataframe(pd.DataFrame(fm_rows), hide_index=True, width='stretch', height=_rows_height(5),
                      column_config=_wide_text_columns(pd.DataFrame(fm_rows)))
-        st.caption("Partial by nature, and said so per row. Testimony #3 and the releaser's half of #4 need the "
-                   "longevity releaser, which PN IV does not supply (IX.8, 123); they are filled from the releaser's "
-                   "distribution (Sahl, On Nativities 1.15, on The releaser page) when that finds one, #4 "
-                   "counted only when the two distributions share one partner; #7 is "
-                   "read from the Moon's connections in her sign (II.22, below). The tally runs over what is "
-                   "available and names a governor ALONE only when all eight are counted and combine in one "
-                   "planet, which is what IX.9, 10 reserves the word for. "
-                   "\"The first lord\" of the revolution's Ascendant is read as its domicile lord (fn 324). The "
-                   "IX.2 test is strict and most years fail it, so its five conditions are shown one by one; "
-                   "Dykes's fn 39 (age 39, everything in Cancer, the Moon) is the case it is checked against. "
-                   "IX.9, 11-13 are shown as facts above (12's 'harmonized by nature' not read; 13's place half by the "
-                   "division, the convention Dykes proposes for strength language, ITA Introduction §6); IX.2, 8-11, "
-                   "the delineations, are not built.")
+        _notes_expander("How the governor is tallied", [
+            ("The eight testimonies, and the rule.",
+             "IX.9, 1-9 name eight testimonies and IX.9, 10 the rule: \"if these eight indicators "
+             "would combine together in a single planet, then it alone would be the governor ... and "
+             "if one of them had [only] some of the testimonies, it will be more primary than the "
+             "others, and the rest of them will have a partnership with it.\""),
+            ("The meaning of \"alone\".",
+             "The tally runs over what is "
+             "available and names a governor **alone** only when all eight are counted and combine in one "
+             "planet, which is what IX.9, 10 reserves the word for."),
+            ("A reading of \"the first lord\".",
+             "\"The first lord\" of the revolution's Ascendant is read as its domicile lord (fn 324)."),
+            ("The first month's governor (IX.2, 4).",
+             "IX.2, 4 gives a second, "
+             "sign-level governor for the first month: five conditions on the natal Lot, the terminal "
+             "point, the revolution's Ascendant and Lot, and the sign's quadruplicity; fn 37: such a "
+             "sign governs the year too. The "
+             "IX.2 test is strict and most years fail it, so its five conditions are shown one by one; "
+             "Dykes's fn 39 (age 39, everything in Cancer, the Moon) is the case it is checked against."),
+            ("The condition of the primary planet, and what is not built.",
+             "IX.9, 11-13 are shown as facts above (12's 'harmonized by nature' not read; 13's place half by the "
+             "division, the convention Dykes proposes for strength language, ITA Introduction §6); IX.2, 8-11, "
+             "the delineations, are not built."),
+        ])
 
         st.subheader("The Moon's connections in her sign, and the portions of the year (II.22)",
-                     help="II.22, 1: \"the planet which the Moon connects with, so long as she is in her [current] "
-                          "sign\"; II.22, 2: \"if it was two planets, the year is divided into two halves; and if "
-                          "her connection in that sign of hers was with three planets, then that year is divided "
-                          "into equal thirds; and if it increased beyond that, then the year is divided according "
-                          "to their number\"; II.22, 3: each portion judged by \"the planet which owns the "
-                          "portion\"; II.22, 4: \"if the Moon was empty in course ... the lord of her house, "
-                          "whether it looked at her or not\". The revolution's Moon is followed by the ephemeris "
+                     help="The revolution's Moon is followed by the ephemeris "
                           "until she leaves her sign, and every perfection of body or Ptolemaic ray before that is "
                           "a connection.")
         mn = pn4['moon']
@@ -4572,25 +4767,43 @@ def page_timing():
                          height=_rows_height(len(pn4['moon_rows'])))
             st.dataframe(pd.DataFrame(pn4['portion_rows']), hide_index=True, width='stretch',
                          height=_rows_height(len(pn4['portion_rows'])))
-        st.caption("Read into the sentences: a connection is a perfection by degree, of the body or a Ptolemaic "
-                   "ray, before she leaves the sign, with the whole-sign configuration re-checked at the moment of "
-                   "perfection (VII.5, 14: no out-of-sign connection); the portions go to the planets in the order "
-                   "she connects, which II.22 does not state; the division is stated for the Moon's year and is "
-                   "shown every year with this year's lord named; \"empty in course\" is no such perfection "
-                   "before she leaves the sign. II.22, 11's rays, Lots and twelfth-parts are not counted. The "
-                   "same computation fills indicator #7 above and testimony #7 of the governor. The judgments of "
-                   "II.22, 5-24 are not built. No worked example exists in PN IV.")
+        _notes_expander("How the Moon's connections are read", [
+            ("The sentences of II.22.",
+             "II.22, 1: \"the planet which the Moon connects with, so long as she is in her [current] "
+             "sign\"; II.22, 2: \"if it was two planets, the year is divided into two halves; and if "
+             "her connection in that sign of hers was with three planets, then that year is divided "
+             "into equal thirds; and if it increased beyond that, then the year is divided according "
+             "to their number\"; II.22, 3: each portion judged by \"the planet which owns the "
+             "portion\"; II.22, 4: \"if the Moon was empty in course ... the lord of her house, "
+             "whether it looked at her or not\"."),
+            ("Read into the sentences.",
+             "- a connection is a perfection by degree, of the body or a Ptolemaic "
+             "ray, before she leaves the sign, with the whole-sign configuration re-checked at the moment of "
+             "perfection (VII.5, 14: no out-of-sign connection);\n"
+             "- the portions go to the planets in the order "
+             "she connects, which II.22 does not state;\n"
+             "- the division is stated for the Moon's year and is "
+             "shown every year with this year's lord named;\n"
+             "- \"empty in course\" is no such perfection "
+             "before she leaves the sign."),
+            ("Not counted, and not built.",
+             "II.22, 11's rays, Lots and twelfth-parts are not counted. The judgments of "
+             "II.22, 5-24 are not built. No worked example exists in PN IV."),
+            ("Where else this computation is used.",
+             "The "
+             "same computation fills indicator #7 above and testimony #7 of the governor."),
+        ])
 
         st.subheader("When a luminary is lord of the year: the proxies (II.13, 1; II.14, 1; II.22, 1-5)",
-                     help="II.13, 1: \"If the Sun was the lord of the year, then the majority of that judgment in "
-                          "that year should be in accordance with the condition of [1] the lord of the sign in "
-                          "which the distribution of the lifespan from the [longevity] releaser was ..., and "
-                          "partnering with it in the indication is [2] the planet which is in Leo in the root of "
-                          "the nativity or in the revolution, and [3] the planet to which the Sun hands over the "
-                          "management (so long as it is in its sign), and then along with that you see [4] where "
-                          "the Sun is, calling upon [that] as a witness.\" II.14, 1 adds the distributor; II.22, "
+                     help="II.14, 1 adds the distributor; II.22, "
                           "1-5 give the Moon's list. Dykes's fn 237 reads these as proxies standing in for the "
                           "luminary.")
+        with _prose():
+            st.markdown("**The first proxy needs the releaser.** The first proxy in every version is the sign the "
+                        "longevity releaser's distribution stands "
+                        "in, which PN IV does not supply (IX.8, 123); it is filled from the releaser's distribution "
+                        "(Sahl, On Nativities 1.15, on The releaser page) when that finds one, and reads "
+                        "unavailable otherwise.")
         if pn4['proxies'] is None:
             st.markdown(f"This year's lord is **{pn4['year']['lord']}**, absent from the revolution.")
         else:
@@ -4598,27 +4811,37 @@ def page_timing():
             st.dataframe(pd.DataFrame(pn4['proxies']), hide_index=True, width='stretch',
                          height=_rows_height(len(pn4['proxies'])),
                          column_config=_wide_text_columns(pd.DataFrame(pn4['proxies'])))
-        st.caption("The first proxy in every version is the sign the longevity releaser's distribution stands "
-                   "in, which PN IV does not supply (IX.8, 123); it is filled from the releaser's distribution "
-                   "(Sahl, On Nativities 1.15, on The releaser page) when that finds one, and reads "
-                   "unavailable otherwise. The Sun's hand-over is read per fn 239 as the Sun's own "
-                   "connections before he leaves his sign, in the revolution (fn 239 notes the book does not say "
-                   "root or revolution), and \"hands over\" as the Sun being the applying body at the perfection; "
-                   "\"where the Sun is\" is his sign and its lord per fn 241. The Moon's rows are the II.22 "
-                   "computation above; her conditions are shown as facts and II.22, 6-10's judgment of them is "
-                   "not built, nor are II.13, 2 - II.21. No worked example exists; fn 238 illustrates the missing "
-                   "part.")
+        _notes_expander("The proxies, and what each depends on", [
+            ("II.13, 1, whole.",
+             "II.13, 1:\n\n> \"If the Sun was the lord of the year, then the majority of that judgment in "
+             "that year should be in accordance with the condition of [1] the lord of the sign in "
+             "which the distribution of the lifespan from the [longevity] releaser was ..., and "
+             "partnering with it in the indication is [2] the planet which is in Leo in the root of "
+             "the nativity or in the revolution, and [3] the planet to which the Sun hands over the "
+             "management (so long as it is in its sign), and then along with that you see [4] where "
+             "the Sun is, calling upon [that] as a witness.\""),
+            ("The Sun's proxies, as read.",
+             "- The Sun's hand-over is read per fn 239 as the Sun's own "
+             "connections before he leaves his sign, in the revolution (fn 239 notes the book does not say "
+             "root or revolution), and \"hands over\" as the Sun being the applying body at the perfection; "
+             "\"where the Sun is\" is his sign and its lord per fn 241."),
+            ("The Moon's rows.",
+             "- The Moon's rows are the II.22 "
+             "computation above; her conditions are shown as facts and II.22, 6-10's judgment of them is "
+             "not built, nor are II.13, 2 - II.21.\n"
+             "- No worked example exists; fn 238 illustrates the missing "
+             "part."),
+        ])
 
         st.subheader("The turning of the houses of the root (VI.2)",
-                     help="VI.2, 1: \"every one of the seven planets, the twelve houses, and the twelve Lots, is "
-                          "turned at the revolutions of years from its own position (a year for every sign), and "
-                          "is directed from its degree (a year for every degree); and when any of them, by turning "
-                          "or by direction, reaches a sign or planetary fortune or infortune, it produces the "
-                          "indication of that sign or planet.\" VI.2, 2-17 say what each is turned for. Only the "
-                          "TURNING is built: whole-sign profection from each point's own natal position, as for "
-                          "the Ascendant. VI.2, 21-24: a quadrant cusp that falls in another sign is turned both "
-                          "from its house by counting and from the sign its degree falls in, and such houses get "
-                          "two rows.")
+                     help="Only the "
+                          "**turning** is built: whole-sign profection from each point's own natal position, as for "
+                          "the Ascendant.")
+        with _prose():
+            st.markdown("**Two rows for a cusp in another sign.** VI.2, 21-24: a quadrant cusp that falls in another "
+                        "sign is turned both "
+                        "from its house by counting and from the sign its degree falls in, and such houses get "
+                        "two rows.")
         st.markdown(f"Turned by **{pn4['age']}** completed years, a sign for each (VI.2, 1).")
         st.dataframe(pd.DataFrame(pn4['turning_rows']), hide_index=True, width='stretch',
                      height=_rows_height(min(len(pn4['turning_rows']), 16)),
@@ -4630,27 +4853,44 @@ def page_timing():
         st.dataframe(pd.DataFrame(pn4['turning_triplicity_rows']), hide_index=True, width='stretch',
                      height=_rows_height(len(pn4['turning_triplicity_rows'])),
                      column_config=_wide_text_columns(pd.DataFrame(pn4['turning_triplicity_rows'])))
-        st.caption("The direction \"a year for every degree\" is proportional semi-arcs, each row saying where it "
-                   "stands at this age: for planets and Lots it is III.1, 12's third case (fn 16), for the cusps "
-                   "VI.2, 21's \"portions of the hours and the right circle\" (fn 33) -- the point's degree "
-                   "directed as the planets are in the Distributions tab (" + PN4_SEMIARCS_SOURCES + "). "
-                   "The Ascendant's and the meridian's directions are the distributions above. Which \"twelve "
-                   "Lots\" VI.2, 1 means is not stated; the formulas in fn 12-31 are Dykes's identifications from "
-                   "Sahl and the Great Introduction, and the app's Lots are paired to them here, with the two "
-                   "places they differ on the night reversal named in the row. \"Whichever had the shift in the "
-                   "root\" for the parents (VI.2, 6, 8) is read as the sect planet, per fn 16 and 19. The "
-                   "triplicity lords of VI.2, 4-5 are the table above; the delineations are not built. No worked example exists; "
-                   "Figures 90-91 are Dykes's diagrams.")
+        _notes_expander("The turning, the direction, and the twelve Lots", [
+            ("VI.2, 1, whole.",
+             "VI.2, 1:\n\n> \"every one of the seven planets, the twelve houses, and the twelve Lots, is "
+             "turned at the revolutions of years from its own position (a year for every sign), and "
+             "is directed from its degree (a year for every degree); and when any of them, by turning "
+             "or by direction, reaches a sign or planetary fortune or infortune, it produces the "
+             "indication of that sign or planet.\"\n\nVI.2, 2-17 say what each is turned for."),
+            ("The direction \"a year for every degree\".",
+             "The direction \"a year for every degree\" is proportional semi-arcs, each row saying where it "
+             "stands at this age: for planets and Lots it is III.1, 12's third case (fn 16), for the cusps "
+             "VI.2, 21's \"portions of the hours and the right circle\" (fn 33) -- the point's degree "
+             "directed as the planets are in the Distributions tab (" + PN4_SEMIARCS_SOURCES + "). "
+             "The Ascendant's and the meridian's directions are the distributions above."),
+            ("Which twelve Lots: not stated.",
+             "Which \"twelve "
+             "Lots\" VI.2, 1 means is not stated; the formulas in fn 12-31 are Dykes's identifications from "
+             "Sahl and the Great Introduction, and this app's Lots are paired to them here, with the two "
+             "places they differ on the night reversal named in the row."),
+            ("A substitution read from the editor.",
+             "\"Whichever had the shift in the "
+             "root\" for the parents (VI.2, 6, 8) is read as the sect planet, per fn 16 and 19."),
+            ("The triplicity lords, and what is not built.",
+             "The "
+             "triplicity lords of VI.2, 4-5 are the table above; the delineations are not built. No worked example exists; "
+             "Figures 90-91 are Dykes's diagrams."),
+        ])
 
     with tab_dist:
         st.subheader("The distribution from the Ascendant (the *jar bakhtar*)",
                      help="III.1, 12: the Ascendant is directed by the ascensions \"of the country in which the "
                           "native was born\" -- oblique ascensions of the birth latitude, one degree of ascension "
-                          "to a year (III.1, 13). III.1, 11: the lord of the bound reached is the distributor, "
-                          "\"whether it looked at [the bound] or not\". III.1, 15-16: the most recent body or ray "
-                          "met is the partner, and it holds until another body or ray is met -- so there is always "
-                          "exactly one, and a ray is a point with no orb. III.1, 14: the Persians gave this "
+                          "to a year (III.1, 13). III.1, 14: the Persians gave this "
                           "particular distribution, and no other, the name *jar bakhtar*.")
+        with _prose():
+            st.markdown("III.1, 11: the lord of the bound reached is the distributor, "
+                        "\"whether it looked at [the bound] or not\". III.1, 15-16: the most recent body or ray "
+                        "met is the partner, and it holds until another body or ray is met -- so there is always "
+                        "exactly one, and a ray is a point with no orb.")
         if pn4['segments'] is None:
             st.warning("Refused at this latitude. Above the polar circle some degrees never rise, the oblique "
                        "ascension has no unique inverse, and an arc of direction from the Ascendant is not "
@@ -4680,11 +4920,11 @@ def page_timing():
 
         st.subheader("The distribution analysed (III.2)",
                      help="III.2, 4-9: a checklist of questions about the bound the distribution stands in, answered "
-                          "here as facts. III.2, 10-17: seven \"static\" types of distributor and partner, by "
-                          "fortune and infortune (Figure 66). III.2, 55-86: twenty-four transitions that can occur "
-                          "inside a year, by the natures of the outgoing and incoming bound lords and managers, and "
-                          "87-101 their twelve indications, quoted here one sentence each. III.2, 102-104 rank the "
-                          "three indicators: the distributor, then the partner by body, then by ray.")
+                          "here as facts.")
+        with _prose():
+            st.markdown("**Facts and classification, not judgment:** the conditions III.2's delineation turns on -- \"in a "
+                        "suitable condition in the root and in the revolution\" -- are not judged, and the prose of "
+                        "III.2, 18-54 is not built.")
         if pn4['iii2_type'] is None:
             st.markdown("No current distribution to analyse (refused at this latitude, or the age is past the table).")
         else:
@@ -4706,28 +4946,42 @@ def page_timing():
             st.markdown("**Transits into the bound, in the revolution** (III.2, 38, 43, 46-47, 54; III.8, 7):")
             st.dataframe(pd.DataFrame(pn4['bound_transits']), hide_index=True, width='stretch',
                          height=_rows_height(len(pn4['bound_transits'])))
-        st.caption("Facts and classification, not judgment: the conditions III.2's delineation turns on -- \"in a "
-                   "suitable condition in the root and in the revolution\" -- are not judged, and the prose of "
-                   "III.2, 18-54 is not built. The Sun, Moon and Mercury are neither fortune nor infortune, and the "
-                   "types and transitions speak only of fortunes and infortunes, so a distribution under one of "
-                   "them reads \"no type by nature\" and a shift involving one \"not among the twenty-four\"; type 5 "
-                   "turns on conditions and is never assigned. The transitions are read from the natal "
-                   "distribution above, as III.2, 105 requires; a revolutionary planet entering the bound is the "
-                   "table just above, each keyed by the static type to the one sentence that speaks of it (III.2, "
-                   "38, 43, 46-47, 54; III.8, 7's condition on the two lords as facts), the Sun, Moon and Mercury "
-                   "addressed by none, and 46-47 speaking of rays only. Every quoted indication that "
-                   "mentions death carries III.2, 110-111's gate: death only in the years the longevity indicator "
-                   "pointed out -- the years the house-master's direction reaches an infortune, on The "
-                   "releaser page. No worked example by the author; "
-                   "Figure 67 with fn 56 is Dykes's diagram of III.2, 33.")
+        _notes_expander("How the distribution is classified", [
+            ("Method: the checklist, the types, the transitions, the ranking.",
+             "III.2, 10-17: seven \"static\" types of distributor and partner, by "
+             "fortune and infortune (Figure 66). III.2, 55-86: twenty-four transitions that can occur "
+             "inside a year, by the natures of the outgoing and incoming bound lords and managers, and "
+             "87-101 their twelve indications, quoted here one sentence each. III.2, 102-104 rank the "
+             "three indicators: the distributor, then the partner by body, then by ray."),
+            ("Classifications, and the three planets of neither nature.",
+             "The Sun, Moon and Mercury are neither fortune nor infortune, and the "
+             "types and transitions speak only of fortunes and infortunes, so a distribution under one of "
+             "them reads \"no type by nature\" and a shift involving one \"not among the twenty-four\"; type 5 "
+             "turns on conditions and is never assigned."),
+            ("The transitions, and the transits into the bound.",
+             "The transitions are read from the natal "
+             "distribution above, as III.2, 105 requires; a revolutionary planet entering the bound is the "
+             "table just above, each keyed by the static type to the one sentence that speaks of it (III.2, "
+             "38, 43, 46-47, 54; III.8, 7's condition on the two lords as facts), the Sun, Moon and Mercury "
+             "addressed by none, and 46-47 speaking of rays only."),
+            ("Qualifications on the quoted conclusions.",
+             "Every quoted indication that "
+             "mentions death carries III.2, 110-111's gate: death only in the years the longevity indicator "
+             "pointed out -- the years the house-master's direction reaches an infortune, on The "
+             "releaser page."),
+            ("No worked example.",
+             "No worked example by the author; "
+             "Figure 67 with fn 56 is Dykes's diagram of III.2, 33."),
+        ])
 
         st.subheader("The distribution from the Midheaven and the fourth",
                      help="III.1, 12: \"what is in the Midheaven or the fourth is directed by the ascensions of "
                           "the right sphere\" -- right ascension, one degree to a year (III.1, 13), the lord of "
                           "the bound reached as distributor (III.1, 11) and the last body or ray met as partner "
-                          "(III.1, 15-16), exactly as for the Ascendant. Fn 14 reads \"the fourth\" as the IC "
-                          "degree itself. Right ascension has no latitude in it, so these two distributions are "
-                          "defined at every latitude and are never refused.")
+                          "(III.1, 15-16), exactly as for the Ascendant.")
+        with _prose():
+            st.markdown("Right ascension has no latitude in it, so these two distributions are "
+                        "defined at every latitude and are never refused.")
         for point in PN4_MERIDIAN_POINTS:
             m = pn4['meridian'][point]
             cur = m['current']
@@ -4748,43 +5002,77 @@ def page_timing():
                             f"{PN4_DISTRIBUTION_SPAN_YEARS:g}-year table")
             st.dataframe(pd.DataFrame(pn4['meridian_rows'][point]), hide_index=True, width='stretch',
                          height=_rows_height(min(len(pn4['meridian_rows'][point]), 12)))
-        st.caption("What PN IV does not supply here, stated rather than filled in. (1) Abu Ma'shar gives this "
-                   "distribution no topic: \"actions, profession, and life projects\" is Dykes (Appendix A, "
-                   "p. 673) and fn 4's al-Qabisi IV.12 -- editors' notes, not a sentence of the book. (2) It is "
-                   "not among the year's indicators: II.2, 6-7 and 12-13 name the Ascendant's and the releaser's "
-                   "distributions only, so it does not enter the indicators table above. (3) No worked example of "
-                   "a meridian direction exists in PN IV -- III.1, 19-45 directs the Ascendant only -- so the "
-                   "engine is checked by arithmetic and against the editor's four-minutes-a-degree animation "
-                   "(Appendix A), not against the author's numbers. (4) The partner-at-birth rule of III.1, 23-25 "
-                   "is worded for the Ascendant and is carried here by analogy. (5) III.1, 12 assigns \"the Ascendant "
-                   "and the things in it\" to the oblique ascensions and \"what is in the Midheaven or the fourth\" to "
-                   "the right ascensions: \"in\" is read as ON THE AXIAL DEGREE ITSELF, "
-                   "recognised with a numerical tolerance (floating-point equality), not an astrological "
-                   "orb -- no 3 degrees, no 5, no band; the Alchabitius division and the five-degree carry-over play no "
-                   "part in choosing the method. A planet on one of the three degrees is directed as that degree is, "
-                   "below; every other planet is \"what is not in these three positions\", the third case, "
-                   "directed by proportional semi-arcs in the next section. The Descendant is not one of the three "
-                   "positions (fn 15).")
+        with _prose():
+            st.markdown("**What PN IV does not supply here, stated rather than filled in.**")
+        _notes_expander("Five things the book leaves unsaid of this distribution", [
+            ("No topic from the author.",
+             "Abu Ma'shar gives this "
+             "distribution no topic: \"actions, profession, and life projects\" is Dykes (Appendix A, "
+             "p. 673) and fn 4's al-Qabisi IV.12 -- editors' notes, not a sentence of the book."),
+            ("Not among the year's indicators.",
+             "It is "
+             "not among the year's indicators: II.2, 6-7 and 12-13 name the Ascendant's and the releaser's "
+             "distributions only, so it does not enter the indicators table above."),
+            ("No worked example.",
+             "No worked example of "
+             "a meridian direction exists in PN IV -- III.1, 19-45 directs the Ascendant only -- so the "
+             "engine is checked by arithmetic and against the editor's four-minutes-a-degree animation "
+             "(Appendix A), not against the author's numbers."),
+            ("The partner at birth, by analogy.",
+             "The partner-at-birth rule of III.1, 23-25 "
+             "is worded for the Ascendant and is carried here by analogy."),
+            ("\"In\", read as on the axial degree itself.",
+             "III.1, 12 assigns \"the Ascendant "
+             "and the things in it\" to the oblique ascensions and \"what is in the Midheaven or the fourth\" to "
+             "the right ascensions: \"in\" is read as **on the axial degree itself**, "
+             "recognised with a numerical tolerance (floating-point equality), not an astrological "
+             "orb -- no 3 degrees, no 5, no band; the Alchabitius division and the five-degree carry-over play no "
+             "part in choosing the method. A planet on one of the three degrees is directed as that degree is, "
+             "below; every other planet is \"what is not in these three positions\", the third case, "
+             "directed by proportional semi-arcs in the next section. The Descendant is not one of the three "
+             "positions (fn 15). Fn 14 reads \"the fourth\" as the IC degree itself."),
+        ])
         st.subheader("The planets, each with its measure under III.1, 12",
-                     help="III.1, 12: \"the Ascendant and the things in it are directed by degrees of ascensions of the "
-                          "country in which the native was born, while what is in the Midheaven or the fourth is "
-                          "directed by the ascensions of the right sphere, and what is not in these three positions "
-                          "is directed according to what we stated in our book [on that topic]\". A planet ON an axial degree is directed as that degree is. Every "
+                     help="A planet **on** an axial degree is directed as that degree is. Every "
                           "other planet is the third case, whose method PN IV defers to a book it does not "
-                          "reproduce: Ptolemy's method as Dykes identifies it (III.1, 12 fn 16; VI.2, 21 fn 33), "
-                          "proportional semi-arcs, as al-Qabisi states it (Introduction IV, ITA VIII.2.2) and Dykes "
-                          "works it (ITA Appendix E): the significator's distance from the meridian, in proportion "
-                          "to its semi-arc, is carried to the promittor's semi-arc, and what the promittor has "
-                          "still to travel is the arc -- PromMD - (SigMD / SigSA) * PromSA -- a degree of it a year "
-                          "(III.1, 13). Here the planet's DEGREE is the significator (latitude 0, as the two other "
-                          "cases direct degrees and as al-Qabisi's tables probably did (Appendix E fn 27), the bound starts, "
-                          "bodies and rays the promittors, the distributor and partner as in every distribution "
-                          "(III.1, 10-11, 15-16). The meridian distance is signed, positive before the meridian in "
-                          "primary motion; the meridian and the semi-arcs are those of the significator's side of "
-                          "the horizon, the promittor's taken from the same meridian even when it stands on the "
-                          "other side; a promittor already past the proportional place comes round after a "
-                          "revolution and falls outside the table. Al-Qabisi's join across quarters (IV.12c) is "
-                          "a different, approximate procedure and is not used; converse directions are not built.")
+                          "reproduce.")
+        # The three positional cases from the engine's own rows (the same
+        # rows the Fardar and ages page tabulates), the formula on a line
+        # of its own, and the definitions and sign conventions beneath it.
+        _cases = "| Point directed | Measured in |\n|---|---|\n" + "\n".join(
+            f"| {r['Point directed']} | {r['Measured in']} |" for r in PN4_ASCENSION_ROWS)
+        _notes_expander("The third case: proportional semi-arcs", [
+            ("III.1, 12, whole.",
+             "III.1, 12:\n\n> \"the Ascendant and the things in it are directed by degrees of ascensions of the "
+             "country in which the native was born, while what is in the Midheaven or the fourth is "
+             "directed by the ascensions of the right sphere, and what is not in these three positions "
+             "is directed according to what we stated in our book [on that topic]\"."),
+            ("The three positional cases.",
+             _cases + "\n\nA planet **on** an axial degree is directed as that degree is."),
+            ("The formula.",
+             "Every "
+             "other planet is the third case, whose method PN IV defers to a book it does not "
+             "reproduce: Ptolemy's method as Dykes identifies it (III.1, 12 fn 16; VI.2, 21 fn 33), "
+             "proportional semi-arcs, as al-Qabisi states it (Introduction IV, ITA VIII.2.2) and Dykes "
+             "works it (ITA Appendix E): the significator's distance from the meridian, in proportion "
+             "to its semi-arc, is carried to the promittor's semi-arc, and what the promittor has "
+             "still to travel is the arc -- PromMD - (SigMD / SigSA) * PromSA -- a degree of it a year "
+             "(III.1, 13).\n\n`PromMD - (SigMD / SigSA) * PromSA`"),
+            ("Definitions.",
+             "Here the planet's **degree** is the significator (latitude 0, as the two other "
+             "cases direct degrees and as al-Qabisi's tables probably did (Appendix E fn 27), the bound starts, "
+             "bodies and rays the promittors, the distributor and partner as in every distribution "
+             "(III.1, 10-11, 15-16)."),
+            ("Sign conventions.",
+             "The meridian distance is signed, positive before the meridian in "
+             "primary motion; the meridian and the semi-arcs are those of the significator's side of "
+             "the horizon, the promittor's taken from the same meridian even when it stands on the "
+             "other side; a promittor already past the proportional place comes round after a "
+             "revolution and falls outside the table."),
+            ("Not used, and not built.",
+             "Al-Qabisi's join across quarters (IV.12c) is "
+             "a different, approximate procedure and is not used; converse directions are not built."),
+        ])
         for ap in pn4['angle_planets']:
             if ap['axis'] is None:
                 st.markdown(f"**{ap['planet']}** at {get_degree_string(ap['degree'])}, {ap['where']}: its degree by "
@@ -4813,13 +5101,8 @@ def page_releaser():
         return
     st.header("The releaser")
     _chart_strip()
-    st.caption("The releaser and the house-master PN IV leaves to another book of Abu Ma'shar's: "
-               "\"the book which we worked on concerning nativities\" (IX.8, 123), his *Book of the "
-               "Judgments of Nativities* (Bodleian Hunt. 546, fn 315), not in hand, and not the *Great "
-               "Introduction*, which has only the Lot of the releaser. They are taken from Sahl, *On "
-               "Nativities* (cited on this page by that book's chapter and sentence). Al-Qabisi's own "
-               "account of the releaser and the house-master (ITA VIII.1.3, al-Qabisi IV.4-6) is in hand "
-               "and stands beside Sahl's in the Sources page's coverage table, not built. What neither "
+    st.caption("They are taken from Sahl, *On "
+               "Nativities* (cited on this page by that book's chapter and sentence). What neither "
                "book settles is listed at the foot of the Fardar and ages page rather than filled in.")
     _sources_scope_line()
     _year_under_examination()
@@ -4832,6 +5115,10 @@ def page_releaser():
     # below states in full; then the one qualification every result here
     # carries. The three notes after the results hold the readings whole.
     with _prose():
+        st.markdown("The releaser and the house-master PN IV leaves to another book of Abu Ma'shar's: "
+                    "\"the book which we worked on concerning nativities\" (IX.8, 123), his *Book of the "
+                    "Judgments of Nativities* (Bodleian Hunt. 546, fn 315), not in hand, and not the *Great "
+                    "Introduction*, which has only the Lot of the releaser.")
         st.markdown("Nawbakht's procedure in Sahl, On Nativities 1.15: by day the Sun, then the meeting, then the "
                     "Ascendant; by night the Moon, then the fullness, then the Lot of Fortune, then the Ascendant. "
                     "The places: \"a stake or what follows a stake\" (1.15, 6-16) is read as a test of the planet's power and "
@@ -4864,7 +5151,7 @@ def page_releaser():
                     f"the lifespan which his indicator in the root had already pointed out\").")
         for _f in _y['flags']:
             st.markdown(f"- {_f}")
-        st.caption(_y['readings'])
+        _notes_expander("How 1.20 is read here", _sahl_1_20_readings_sections(_y['readings']))
         if _y['grade'] is None and pn4['hm_years_jn'] and READING_DEPTH == READING_DEPTH_OPTIONS[1]:
             _j = pn4['hm_years_jn']
             st.markdown(f"**Where 1.20 is silent, the supplement's ladder** ({_j['citation']}): **{_j['text']}**. "
@@ -4875,7 +5162,13 @@ def page_releaser():
                 st.markdown(f"- {_j['table_note']}")
             for _u in _j['umar']:
                 st.markdown(f"- {_u.replace('<', chr(92) + '<')}")
-            st.caption(JN_YEARS_NOTE.replace('<', chr(92) + '<'))
+            # The engine's note on the ladder: its first paragraph -- whose
+            # ladder this is, and that Sahl's grade is never overridden --
+            # visible at reading width; the rest under their headings.
+            _jn_sections = _jn_years_note_sections()
+            with _prose():
+                st.markdown(f"**{_jn_sections[0][0]}** {_jn_sections[0][1]}")
+            _notes_expander("The ladder's steps, this app's definitions, and the sources", _jn_sections[1:])
         if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
             # JN Ch. 4's second half, display only (2026-09-15): one row a planet, no sum.
             _add = pn4['hm_years_additions']
@@ -4885,23 +5178,30 @@ def page_releaser():
                      standing="Supplement · display only",
                      glance="What each planet joined to the house-master or looking at it would add to or subtract "
                             "from its years by Abu 'Ali's chapter.",
+                     # The summary folded (owner's ruling on the preview): the
+                     # glance sentence and the Witnesses sentence visible, the
+                     # rule's detail whole under the first notes heading.
                      summary="What each planet joined to the house-master or looking at it would add to or subtract "
-                             "from its years by Abu 'Ali's chapter: a fortune joined, trine or sextile adds its "
-                             "lesser years, at one of three grades the chapter leaves undefined (none chosen, none "
-                             "defaulting to years); a bad one joined, square or opposite subtracts its lesser years; "
-                             "a fortune's square or opposition and a bad one's sextile or trine are the chapter's "
-                             "explicit zero; Mercury by Dykes's fn 28, a conjecture, the cases it does not pair "
-                             "left undecided under it; the Sun and Moon, given no modifier by the chapter, carry "
-                             "'Umar's solar rule and Abu Bakr's sentence on the luminaries as witnesses. Abu Bakr "
+                             "from its years by Abu 'Ali's chapter. Abu Bakr "
                              "and 'Umar stand beside each row in the Witnesses column with their own conditions.",
                      qualifications=["**Display only:** no sum is formed, and Sahl's grant above is not changed."],
+                     detail=_additions_detail, detail_key='Planet',
+                     detail_placeholder="Select a planet to read its effect, grades, reading and witnesses",
                      note_sections=[
+                         ("The chapter's rule, as read.",
+                          "What each planet joined to the house-master or looking at it would add to or subtract "
+                          "from its years by Abu 'Ali's chapter: a fortune joined, trine or sextile adds its "
+                          "lesser years, at one of three grades the chapter leaves undefined (none chosen, none "
+                          "defaulting to years); a bad one joined, square or opposite subtracts its lesser years; "
+                          "a fortune's square or opposition and a bad one's sextile or trine are the chapter's "
+                          "explicit zero; Mercury by Dykes's fn 28, a conjecture, the cases it does not pair "
+                          "left undecided under it; the Sun and Moon, given no modifier by the chapter, carry "
+                          "'Umar's solar rule and Abu Bakr's sentence on the luminaries as witnesses."),
                          ("Abu 'Ali's chapter, whole.",
                           f"Abu 'Ali, Judgments of Nativities Ch. 4, whole:\n\n> \"{JN_CH4_SENTENCES['fortune']}\" \"{JN_CH4_SENTENCES['infortune']}\" "
                           f"\"{JN_CH4_SENTENCES['nothing']}\" \"{JN_CH4_SENTENCES['mercury']}\" \"{JN_CH4_SENTENCES['mars']}\"\n\n"
                           f"Fn 27 on \"rays\":\n\n> \"{JN_CH4_SENTENCES['fn27']}\"\n\nFn 28 on Mercury:\n\n> \"{JN_CH4_SENTENCES['fn28']}\""),
-                         ("What the rows state, and the conventions of this display.",
-                          JN_CH4_ADDITIONS_NOTE),
+                         *_jn_ch4_note_sections(),
                          ("Abu Bakr, a witness beside Abu 'Ali.",
                           f"Abu Bakr, On Nativities I.15, a witness beside Abu 'Ali (not applied):\n\n> \"{ABU_BAKR_I15_ADDITIONS['method']}\"\n\n"
                           f"He grades the aspecting planet by its place and condition where Abu 'Ali says \"middling\" and \"more unsound\" "
@@ -5057,21 +5357,17 @@ def page_releaser():
         ("Other procedures in these texts, not built.",
          "On Times 4, 2-5's shorter list (victor by testimony, "
          "seven candidates) and Masha'allah's ray in the Ascendant (1.23, 46-50) are the other two "
-         "procedures in these texts, not built. No worked example exists in Sahl."),
+         "procedures in these texts, not built. No worked example exists in Sahl. Al-Qabisi's own "
+         "account of the releaser and the house-master (ITA VIII.1.3, al-Qabisi IV.4-6) is in hand "
+         "and stands beside Sahl's in the Sources page's coverage table, not built."),
     ])
 
     st.subheader("The house-master directed (Sahl, *On Nativities* 1.23, 1-11)",
-                 help="Masha'allah: \"look at the position of the governor [fn 181: the house-master] relative "
-                      "to the Ascendant and its lord, and its position relative to burning and the infortunes; "
-                      "then direct it to the conjunction of the infortunes and the degree of burning, and its "
-                      "opposition and its square, a year for every degree of ascensions. Then calculate for "
-                      "the revolution of that year in which the governor of the native corresponds to the "
-                      "degree of the infortune ... for if your calculation of this and the revolution both "
-                      "indicate burning, and then the governor is burned at the revolution, the native will "
-                      "be destroyed; and if it is not burned at the revolution but it is burned in one of the "
-                      "stakes of the Ascendant of the year, it indicates that as well; and it is worse for that "
-                      "in the Ascendant itself\" (1.23, 2-4). This is the technique that needs no grant of "
+                 help="This is the technique that needs no grant of "
                       "years -- Masha'allah's alternative, absent from PN IV and present in Sahl.")
+    with _prose():
+        st.markdown("**Facts, not judgment:** "
+                    "1.23, 4's verdict is quoted in the notes and not pronounced.")
     if not pn4['house_master']:
         st.markdown("No house-master to direct (see the section above).")
     else:
@@ -5105,46 +5401,76 @@ def page_releaser():
             st.dataframe(pd.DataFrame(pn4['hm_revolution']), hide_index=True, width='stretch',
                          height=_rows_height(len(pn4['hm_revolution'])),
                          column_config=_wide_text_columns(pd.DataFrame(pn4['hm_revolution'])))
-        st.markdown(
-            "**The join, and the denial beside it.** The house-master directed here is selected by NAWBAKHT'S "
-            "rule (1.15, 13: the dignity lord looking at the releaser) and directed by MASHA'ALLAH'S operation "
-            "(1.23, 2, \"direct it\" -- the governor); 1.23, 40 and 43 call Masha'allah's governor \"the "
-            "house-master\" in Sahl's own words, but his governor is found by reception (1.23, 1), and the two "
-            "rules name different planets in about a third of charts. The join is this app's; no sentence "
-            "states it. Abu Ma'shar denies the direction: \"the indicator of the lifespan alone is turned in "
-            "the signs, sign-by-sign, and is not directed degree-by-degree\" (PN IV IX.8, 32; fn 129: \"Some "
-            "texts say that one can also distribute the house-master itself, but to me that seems like a "
-            "misunderstanding\"). Shown as Sahl's, with the denial beside it. "
-            "Two limits of the denial: IX.8, 32 restricts the "
-            "ROLE -- the planet may still be directed in another capacity, since \"all of the planets and Lots "
-            "are [also] directed\" (III.1, 5); and 1.16, 4 (direct the luminary \"even if a house-master is "
-            "not looking\") is a provision the 1.16 exception built above does not cover. IX.8, 30's turning, "
-            "the one operation Abu Ma'shar licenses for the indicator, follows as PN IV's:")
+        # The join and the denial, folded (owner's ruling on the preview):
+        # one sentence visible, the paragraph whole under "The join." and
+        # "The denial." in the block's disclosure below.
+        with _prose():
+            st.markdown(
+                "The house-master directed here is selected by **Nawbakht's** "
+                "rule (1.15, 13: the dignity lord looking at the releaser) and directed by **Masha'allah's** operation "
+                "(1.23, 2, \"direct it\" -- the governor). The join is this app's; no sentence "
+                "states it.")
+        st.markdown("IX.8, 30's turning, "
+                    "the one operation Abu Ma'shar licenses for the indicator, follows as PN IV's:")
         if pn4['hm_turning']:
             st.dataframe(pd.DataFrame(pn4['hm_turning']), hide_index=True, width='stretch',
                          height=_rows_height(min(len(pn4['hm_turning']), 12)),
                          column_config=_wide_text_columns(pd.DataFrame(pn4['hm_turning'])))
         else:
             st.markdown("The turned sign reaches no cutter's body, opposition or square within the span.")
-        st.caption(f"**{pn4['house_master']}** turned a year a sign from its natal sign (whole signs, as VI.2, 1), "
-                   "the years in which the sign reaches a cutter's body, opposition or square: \"if the turning of "
-                   "the years from any of the five releasers (or from the indicator of the lifespan) reached their "
-                   "bodies, oppositions, or squares, then they also kill\" (PN IV IX.8, 30); \"the rest of the "
-                   "rays' direction ... is a weak testimony\" (31) and is not shown. Read: \"their\" as Saturn's "
+        with _prose():
+            st.markdown(f"**{pn4['house_master']}** turned a year a sign from its natal sign (whole signs, as VI.2, 1), "
+                        "the years in which the sign reaches a cutter's body, opposition or square: \"if the turning of "
+                        "the years from any of the five releasers (or from the indicator of the lifespan) reached their "
+                        "bodies, oppositions, or squares, then they also kill\" (PN IV IX.8, 30); \"the rest of the "
+                        "rays' direction ... is a weak testimony\" (31) and is not shown.")
+        st.caption("Read: \"their\" as Saturn's "
                    "and Mars's, the cutters the direction table targets.")
-    st.caption("Readings: \"the degree of burning\" is the Sun's natal degree; \"a year for every degree of "
-               "ascensions\" is the oblique ascension of the birth latitude applied to the house-master's own "
-               "degree, as 1.15, 17, 1.16, 4 and 1.18, 21 apply \"the ascensions of that city\" to the "
-               "luminaries and the Ascendant alike, not PN IV III.1, 12's third case, the proportional "
-               "semi-arcs, which is Abu Ma'shar's assignment and not Sahl's); \"in the year of age\" is the "
-               "completed year the arc falls in. Facts, not judgment: "
-               "1.23, 4's verdict is quoted in the help and not pronounced. Not applied: 4.12, 6 (a retrograde "
-               "planet's rays directed conversely); 1.23, 5-11's further witnesses (the lord of the "
-               "revolution's Ascendant, the lord of the year, the profection reaching an infortune's sign), "
-               "which are the II.3 examination and the indicators in that chapter; 1.23, 13-14's redirection to the "
-               "lord of the Ascendant when the house-master is unsuitable is APPLIED below when a 1.23, 12 flag "
-               "fires; not applied: 1.23, 6; 1.23, 53-60's increase and "
-               "decrease of years; and the 1.21 additions. No worked example exists in Sahl.")
+    _notes_expander("How the house-master is directed", [
+        ("Masha'allah's operation, 1.23, 2-4.",
+         "Masha'allah:\n\n> \"look at the position of the governor [fn 181: the house-master] relative "
+         "to the Ascendant and its lord, and its position relative to burning and the infortunes; "
+         "then direct it to the conjunction of the infortunes and the degree of burning, and its "
+         "opposition and its square, a year for every degree of ascensions. Then calculate for "
+         "the revolution of that year in which the governor of the native corresponds to the "
+         "degree of the infortune ... for if your calculation of this and the revolution both "
+         "indicate burning, and then the governor is burned at the revolution, the native will "
+         "be destroyed; and if it is not burned at the revolution but it is burned in one of the "
+         "stakes of the Ascendant of the year, it indicates that as well; and it is worse for that "
+         "in the Ascendant itself\" (1.23, 2-4)."),
+        ("The join.",
+         "The house-master directed here is selected by **Nawbakht's** "
+         "rule (1.15, 13: the dignity lord looking at the releaser) and directed by **Masha'allah's** operation "
+         "(1.23, 2, \"direct it\" -- the governor); 1.23, 40 and 43 call Masha'allah's governor \"the "
+         "house-master\" in Sahl's own words, but his governor is found by reception (1.23, 1), and the two "
+         "rules name different planets in about a third of charts. The join is this app's; no sentence "
+         "states it."),
+        ("The denial.",
+         "Abu Ma'shar denies the direction:\n\n> \"the indicator of the lifespan alone is turned in "
+         "the signs, sign-by-sign, and is not directed degree-by-degree\" (PN IV IX.8, 32; fn 129: \"Some "
+         "texts say that one can also distribute the house-master itself, but to me that seems like a "
+         "misunderstanding\").\n\nShown as Sahl's, with the denial beside it."),
+        ("Limitations: two limits of the denial.",
+         "Two limits of the denial: IX.8, 32 restricts the "
+         "**role** -- the planet may still be directed in another capacity, since \"all of the planets and Lots "
+         "are [also] directed\" (III.1, 5); and 1.16, 4 (direct the luminary \"even if a house-master is "
+         "not looking\") is a provision the 1.16 exception built above does not cover."),
+        ("Current direction: the readings.",
+         "Readings: \"the degree of burning\" is the Sun's natal degree; \"a year for every degree of "
+         "ascensions\" is the oblique ascension of the birth latitude applied to the house-master's own "
+         "degree, as 1.15, 17, 1.16, 4 and 1.18, 21 apply \"the ascensions of that city\" to the "
+         "luminaries and the Ascendant alike, not PN IV III.1, 12's third case, the proportional "
+         "semi-arcs, which is Abu Ma'shar's assignment and not Sahl's); \"in the year of age\" is the "
+         "completed year the arc falls in."),
+        ("Not applied, and the redirection applied.",
+         "Not applied: 4.12, 6 (a retrograde "
+         "planet's rays directed conversely); 1.23, 5-11's further witnesses (the lord of the "
+         "revolution's Ascendant, the lord of the year, the profection reaching an infortune's sign), "
+         "which are the II.3 examination and the indicators in that chapter; 1.23, 13-14's redirection to the "
+         "lord of the Ascendant when the house-master is unsuitable is **applied** below when a 1.23, 12 flag "
+         "fires; not applied: 1.23, 6; 1.23, 53-60's increase and "
+         "decrease of years; and the 1.21 additions. No worked example exists in Sahl."),
+    ])
     if pn4['hm_redirect']:
         _rd = pn4['hm_redirect']
         st.markdown(f"**1.23, 13-14, the redirection** -- a 1.23, 12 flag stands on the house-master, so \"look at the "
@@ -5167,17 +5493,13 @@ def page_releaser():
     if pn4['father_lot']:
         _fl = pn4['father_lot']
         st.subheader("The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)",
-                     help="31: \"if the nativity was by day, the infortunes which harm his Lot are Mars and Saturn (and "
-                          "Mercury, if he was unfortunate); and if it was by night, the infortunes which harm them are Mars "
-                          "and Mercury (if he was unfortunate)\". 32: \"direct the degree of the Lot of the father and the "
-                          "Sun by day, and by night the Lot and Saturn\". 33: \"if you found an infortune casting its rays "
-                          "upon the Sun and upon the Lot ... it will kill the father when the direction reaches the "
-                          "infortune which casts the rays\"; 34-35 rank two infortunes by enmity and power; 36: Saturn "
-                          "\"from hostility\" is \"more harmful for some of the injuries\".")
-        st.markdown(f"The Lot of the father stands at **{get_degree_string(_fl['lot'])}** (4.14, 1); the second point "
-                    f"directed is **the {_fl['second']}** (32). fn 288 -- Dykes: Mars the main malefic in both sects, "
-                    f"Saturn barred by night because he indicates the father, Mercury when made unfortunate -- is the "
-                    f"editor's reading and is quoted, not applied; 31 is applied as printed.")
+                     help="32: \"direct the degree of the Lot of the father and the "
+                          "Sun by day, and by night the Lot and Saturn\".")
+        with _prose():
+            st.markdown(f"The Lot of the father stands at **{get_degree_string(_fl['lot'])}** (4.14, 1); the second point "
+                        f"directed is **the {_fl['second']}** (32). fn 288 -- Dykes: Mars the main malefic in both sects, "
+                        f"Saturn barred by night because he indicates the father, Mercury when made unfortunate -- is the "
+                        f"editor's reading and is quoted, not applied; 31 is applied as printed.")
         st.dataframe(pd.DataFrame(_fl['harmers']), hide_index=True, width='stretch', height=_rows_height(len(_fl['harmers'])),
                      column_config=_wide_text_columns(pd.DataFrame(_fl['harmers'])))
         for _lab, _tab in (("From the degree of the Lot of the father (32), to the harmers' bodies, squares and oppositions", _fl['from_lot']),
@@ -5190,9 +5512,24 @@ def page_releaser():
                              column_config=_wide_text_columns(pd.DataFrame(_tab)))
             else:
                 st.markdown("No target within the span.")
-        st.caption("Readings: \"casting its rays\" is met by the direction's targets, the harmers' bodies, squares and "
-                   "oppositions (the same set as the house-master's direction; sextiles and trines are not directed); "
-                   "the Sun is not a target here (4.20, 32 directs him). 33-35's choice between two infortunes is not made.")
+        _notes_expander("The harmers, the points directed, and the readings", [
+            ("Harmers, 4.20, 31.",
+             "31: \"if the nativity was by day, the infortunes which harm his Lot are Mars and Saturn (and "
+             "Mercury, if he was unfortunate); and if it was by night, the infortunes which harm them are Mars "
+             "and Mercury (if he was unfortunate)\"."),
+            ("Points directed, 4.20, 32.",
+             "32: \"direct the degree of the Lot of the father and the "
+             "Sun by day, and by night the Lot and Saturn\"."),
+            ("The direction's verdict, and the ranking of two infortunes, 4.20, 33-36.",
+             "33: \"if you found an infortune casting its rays "
+             "upon the Sun and upon the Lot ... it will kill the father when the direction reaches the "
+             "infortune which casts the rays\"; 34-35 rank two infortunes by enmity and power; 36: Saturn "
+             "\"from hostility\" is \"more harmful for some of the injuries\"."),
+            ("Interpretive choices.",
+             "Readings: \"casting its rays\" is met by the direction's targets, the harmers' bodies, squares and "
+             "oppositions (the same set as the house-master's direction; sextiles and trines are not directed); "
+             "the Sun is not a target here (4.20, 32 directs him). 33-35's choice between two infortunes is not made."),
+        ])
 
 
 def page_days():
@@ -5208,13 +5545,16 @@ def page_days():
     _year_under_examination()
 
     st.subheader("The small days: the revolution's Ascendant distributed round the year",
-                 help="IX.7, 29: \"you look at the degree of the Ascendant of the revolution of the year, so "
-                      "that you direct from it (for the knowledge of the conditions of the days), a day for "
-                      "every 59' 08\", until it returns to the degree of the Ascendant at the end of the "
-                      "year.\" IX.7, 30: a body or ray already in the bound of that degree manages until "
-                      "another meets it; otherwise the bound lords, until a planet or ray is reached. IX.7, 31 "
-                      "names it the small days. A second distribution, running inside the year at its own "
+                 help="A second distribution, running inside the year at its own "
                       "rate; the Ascendant's distribution on the Revolutions page runs across the years.")
+    # The method in one line -- start, rate, time origin -- from the
+    # sentences the notes hold whole.
+    with _prose():
+        st.markdown("| Method | As applied |\n"
+                    "|---|---|\n"
+                    "| Start | the degree of the Ascendant of the revolution of the year (IX.7, 29) |\n"
+                    "| Rate | 59' 08\" a day round the zodiac, returning to the degree in 365.28 days |\n"
+                    "| Time origin | the days count from the moment of the revolution (fn 161 leaves a \"day\" undefined) -- read into the sentence rather than stated by it |")
     # IX.7, 31 / 27: the same two directions from any planet, house or Lot (order PN4R-4c-4)
     _sr_pd, _sr_ch = pn4['sr']['planetary_data'], pn4['sr']
     _day_points = {'the revolution\'s Ascendant (the table below)': None}
@@ -5237,7 +5577,7 @@ def page_days():
     _day_choice = _reading_select("Also direct, for the small days (IX.7, 31) and the mighty days (IX.7, 27), from",
                                list(_day_points), "pn4_day_point", "_pn4_day_point",
                                help="IX.7, 31: \"you work like that with everything of the planets, Lots, and houses\". "
-                                    "A READING: the \"houses\" are offered as the revolution's Alchabitius cusps, "
+                                    "**A reading:** the \"houses\" are offered as the revolution's Alchabitius cusps, "
                                     "the degree this app computes for each house -- IX.7, 31 says \"houses\" and "
                                     "names no degree.")
     _extra = _day_points[_day_choice]
@@ -5276,29 +5616,45 @@ def page_days():
                     f"{pn4['day_of_year']:.1f} is outside the year's circuit")
     st.dataframe(pd.DataFrame(pn4['small_days_rows']), hide_index=True, width='stretch',
                  height=_rows_height(min(len(pn4['small_days_rows']), 12)))
-    st.caption("Zodiacal, by the sentence: 59' 08\" a day round the zodiac returns to the degree in 365.28 "
-               "days, the year to within an hour. Abu Ma'shar grades it himself -- \"there is an "
-               "approximation in it, but the correct [approach] is that this way of directing is like the "
-               "direction of the Sun every day ... [with] no harm in the work\" (IX.7, 32); that exact form "
-               "is not built, nor is Dykes's fn 178, which would direct by ascensions. What is read into the "
-               "sentence rather than stated by it: the bodies and rays are the revolution's; the days count "
-               "from the moment of the revolution (fn 161 leaves a \"day\" undefined); the partner already "
-               "in place is looked for behind the degree within its bound, the shape of III.1, 23-25 narrowed "
-               "to the window IX.7, 30 names, since the sentence does not say whether a body ahead in the "
-               "bound manages from the first day. The table below directs the revolution's Ascendant; IX.7, 31 "
-               "extends the method to every planet, Lot and house, and the selector above carries it out, "
-               "printing the small days from the point chosen and its profected mighty days beside them. "
-               "No worked example of it exists in PN IV.")
+    _notes_expander("How the small days are read", [
+        ("The sentences, IX.7, 29-31.",
+         "IX.7, 29: \"you look at the degree of the Ascendant of the revolution of the year, so "
+         "that you direct from it (for the knowledge of the conditions of the days), a day for "
+         "every 59' 08\", until it returns to the degree of the Ascendant at the end of the "
+         "year.\" IX.7, 30: a body or ray already in the bound of that degree manages until "
+         "another meets it; otherwise the bound lords, until a planet or ray is reached. IX.7, 31 "
+         "names it the small days."),
+        ("Zodiacal, by the sentence.",
+         "Zodiacal, by the sentence: 59' 08\" a day round the zodiac returns to the degree in 365.28 "
+         "days, the year to within an hour."),
+        ("Source and approximation.",
+         "Abu Ma'shar grades it himself -- \"there is an "
+         "approximation in it, but the correct [approach] is that this way of directing is like the "
+         "direction of the Sun every day ... [with] no harm in the work\" (IX.7, 32); that exact form "
+         "is not built, nor is Dykes's fn 178, which would direct by ascensions."),
+        ("Read into the sentence.",
+         "What is read into the "
+         "sentence rather than stated by it: the bodies and rays are the revolution's; the days count "
+         "from the moment of the revolution (fn 161 leaves a \"day\" undefined); the partner already "
+         "in place is looked for behind the degree within its bound, the shape of III.1, 23-25 narrowed "
+         "to the window IX.7, 30 names, since the sentence does not say whether a body ahead in the "
+         "bound manages from the first day."),
+        ("The selector, and the worked example.",
+         "The table below directs the revolution's Ascendant; IX.7, 31 "
+         "extends the method to every planet, Lot and house, and the selector above carries it out, "
+         "printing the small days from the point chosen and its profected mighty days beside them. "
+         "No worked example of it exists in PN IV."),
+    ])
 
     st.subheader("The mighty days: the terminal degree of the year directed through the revolution",
-                 help="IX.7, 23: \"you look in the revolution of the year at the degree of the sign which the "
-                      "year terminated at, from the Ascendant of the root\" -- the terminal point -- and a body "
-                      "or ray already in its bound manages until another meets it, else the lord of the bound "
-                      "\"then the lord of the bound which follows it\" (IX.7, 24). IX.7, 25: the arc times "
-                      "\"12 days, <4 hours>, 10 minutes, and 30 seconds (and that is 1/6 of a day and half a sixth "
-                      "of a tenth of a day)\" -- the parenthetical's 12.175 d a degree is applied -- from the first day of the revolution; "
-                      "IX.7, 28: thirty of them are the year, \"approximately\", and this is the mighty days. "
-                      "The profected thirty degrees treated as a year, walked degree by degree.")
+                 help="The profected thirty degrees treated as a year, walked degree by degree.")
+    with _prose():
+        st.markdown(f"**Applied rate: {PN4_MIGHTY_DAYS_PER_DEGREE:g} days per degree** -- the author's parenthetical "
+                    "(IX.7, 25); the three figures that sentence holds are compared in the notes.")
+        st.markdown("The direction does not stop at the end of the sign of the year: it "
+                    "starts at the terminal degree and runs thirty degrees, so its last part lies in the bounds "
+                    "of the next sign, which is what \"then to the lord of the bound which follows it\" "
+                    "describes.")
     md_cur = pn4['mighty_days_current']
     _strip = generate_distribution_strip_svg(pn4['mighty_days'], pn4['day_of_year'], 'days', None, 'The mighty days',
                                             theme=WHEEL_THEME)
@@ -5317,32 +5673,49 @@ def page_days():
                     f"{pn4['day_of_year']:.1f} is outside the thirty degrees ({PN4_MIGHTY_DAYS_SPAN_DEGREES * PN4_MIGHTY_DAYS_PER_DEGREE:.2f} days)")
     st.dataframe(pd.DataFrame(pn4['mighty_days_rows']), hide_index=True, width='stretch',
                  height=_rows_height(min(len(pn4['mighty_days_rows']), 12)))
-    st.caption("The rate. IX.7, 25 prints \"12 days, <4 hours>, 10 minutes, and 30 seconds (and that is 1/6 of "
-               "a day and half a sixth of a tenth of a day)\". Three figures stand in that sentence: the "
-               "manuscript's 12;10,30 days (10 minutes and 30 seconds as sexagesimal fractions OF A DAY, "
-               "12.175 d); the author's parenthetical, 12 + 1/6 + 1/120 = 12.175 d, thirty of which are "
-               "365 1/4 days exactly (IX.7, 28); and Dykes's hybrid 12 d 4 h 10 m 30 s (12.17396 d; thirty "
-               "of them 365 d 5 h 15 m), his \"<4 hours>\" supplied and the minutes read as clock time -- "
-               "fn 177 gives 12 d 4 h 12 m for a 365 1/4-day year, which is the author's fraction again. "
-               "APPLIED: the author's parenthetical, 12.175 d a degree. Zodiacal by construction -- "
-               "no ascension appears in the sentence; fn 175's report that ascensions would make more sense "
-               "is an editor's note. The direction does not stop at the end of the sign of the year: it "
-               "starts at the terminal degree and runs thirty degrees, so its last part lies in the bounds "
-               "of the next sign, which is what \"then to the lord of the bound which follows it\" "
-               "describes. Read into the sentence, as for the small days: the revolution's bodies and rays; "
-               "days from the moment of the revolution; the opening partner behind the degree within its "
-               "bound. IX.7, 27's extension to every planet, house and Lot is the selector above. "
-               "No worked example of it exists in PN IV.")
+    _notes_expander("How the mighty days are read, and why this rate", [
+        ("The sentences, IX.7, 23-28.",
+         "IX.7, 23: \"you look in the revolution of the year at the degree of the sign which the "
+         "year terminated at, from the Ascendant of the root\" -- the terminal point -- and a body "
+         "or ray already in its bound manages until another meets it, else the lord of the bound "
+         "\"then the lord of the bound which follows it\" (IX.7, 24). IX.7, 25: the arc times "
+         "\"12 days, <4 hours>, 10 minutes, and 30 seconds (and that is 1/6 of a day and half a sixth "
+         "of a tenth of a day)\" -- the parenthetical's 12.175 d a degree is applied -- from the first day of the revolution; "
+         "IX.7, 28: thirty of them are the year, \"approximately\", and this is the mighty days."),
+        ("Why this rate.",
+         "| Reading of IX.7, 25 | A degree is |\n"
+         "|---|---|\n"
+         "| The manuscript's 12;10,30 days (10 minutes and 30 seconds as sexagesimal fractions of a day) | 12.175 d |\n"
+         "| The author's parenthetical, 12 + 1/6 + 1/120 | 12.175 d; thirty of which are 365 1/4 days exactly (IX.7, 28) |\n"
+         "| Dykes's hybrid, his \"<4 hours>\" supplied and the minutes read as clock time | 12 d 4 h 10 m 30 s (12.17396 d); thirty of them 365 d 5 h 15 m |\n\n"
+         "IX.7, 25 prints \"12 days, <4 hours>, 10 minutes, and 30 seconds (and that is 1/6 of "
+         "a day and half a sixth of a tenth of a day)\". Three figures stand in that sentence: the "
+         "manuscript's 12;10,30 days (10 minutes and 30 seconds as sexagesimal fractions **of a day**, "
+         "12.175 d); the author's parenthetical, 12 + 1/6 + 1/120 = 12.175 d, thirty of which are "
+         "365 1/4 days exactly (IX.7, 28); and Dykes's hybrid 12 d 4 h 10 m 30 s (12.17396 d; thirty "
+         "of them 365 d 5 h 15 m), his \"<4 hours>\" supplied and the minutes read as clock time -- "
+         "fn 177 gives 12 d 4 h 12 m for a 365 1/4-day year, which is the author's fraction again. "
+         "**Applied**: the author's parenthetical, 12.175 d a degree."),
+        ("Zodiacal by construction.",
+         "Zodiacal by construction -- "
+         "no ascension appears in the sentence; fn 175's report that ascensions would make more sense "
+         "is an editor's note."),
+        ("Read into the sentence.",
+         "Read into the sentence, as for the small days: the revolution's bodies and rays; "
+         "days from the moment of the revolution; the opening partner behind the degree within its "
+         "bound."),
+        ("The selector, and the worked example.",
+         "IX.7, 27's extension to every planet, house and Lot is the selector above. "
+         "No worked example of it exists in PN IV."),
+    ])
 
     st.subheader("The nine methods for the days and hours (IX.7, 1-72)",
-                 help="\"The days and hours have nine indicators\" (IX.7, 1). 1: the days since birth in weeks "
-                      "from the lord of the natal Ascendant (2-6). 2: seven days each from the lord of the orb "
-                      "(7-9). 3: the year in greater and lesser sevenths from the lord of the revolution's "
-                      "Ascendant (10-13). 4: the weeks to the signs (14-17). 5: the days to the signs by "
-                      "twelves (18-20). 6 and 7: the mighty and small days above. 8: the month's days (34-39). "
-                      "9: the ninth-parts, from the terminal sign, the revolution's Ascendant and the Moon "
-                      "(43-72), worked at 57-69. IX.7, 56: all in equal hours. IX.7, 79 declines day and hour "
+                 help="\"The days and hours have nine indicators\" (IX.7, 1). IX.7, 56: all in equal hours. "
+                      "IX.7, 79 declines day and hour "
                       "charts and keeps these.")
+    with _prose():
+        st.markdown("**The day.** A \"day\" is a whole 24-hour period from the birth moment -- fn 161 says the book never says "
+                    "whether from birth or from dawn -- and the moment read is the target date at noon.")
     dm_rows, dm_month, dm_ninth = pn4['day_methods']
     st.dataframe(pd.DataFrame(dm_rows), hide_index=True, width='stretch', height=_rows_height(9),
                  column_config=_wide_text_columns(pd.DataFrame(dm_rows)))
@@ -5352,34 +5725,51 @@ def page_days():
     st.markdown("**9. The ninth-parts** (IX.7, 43-72), from the three starts:")
     st.dataframe(pd.DataFrame(dm_ninth), hide_index=True, width='stretch', height=_rows_height(3),
                  column_config=_wide_text_columns(pd.DataFrame(dm_ninth)))
-    st.caption("A \"day\" is a whole 24-hour period from the birth moment -- fn 161 says the book never says "
-               "whether from birth or from dawn -- and the moment read is the target date at noon. The "
-               "hours are equal (IX.7, 56): 3 3/7 apiece among seven (fn 164), 14 to a sign in a week (fn "
-               "173), two to a sign in a day (IX.7, 20), five to a sign in a sixty-hour slot (IX.7, 38). "
-               "Method 8's four rooted indicators are the monthly profections above (fn 181). Method 9's "
-               "partners are the domicile lords of the fifth and ninth signs from the ninth-part's, as the "
-               "worked example does (Capricorn, Taurus, Virgo: Saturn, Venus, Mercury); its month is 30 d "
-               "10 h 30 m and its ninth-part 3 d 9 h 10 m (IX.7, 54-55). Two of the example's printed "
-               "fractions are wrong, and are shown as printed: "
-               + '; '.join(f"{c} prints {p} for {e} ({fn})" for c, p, e, fn in PN4_IX7_EXAMPLE_ERRATA)
-               + ". The judgments of IX.7, 21-22 and 40-42 are not built.")
+    _notes_expander("The nine methods, one by one, and how they are counted", [
+        ("The nine methods.",
+         "- 1: the days since birth in weeks "
+         "from the lord of the natal Ascendant (2-6).\n"
+         "- 2: seven days each from the lord of the orb "
+         "(7-9).\n"
+         "- 3: the year in greater and lesser sevenths from the lord of the revolution's "
+         "Ascendant (10-13).\n"
+         "- 4: the weeks to the signs (14-17).\n"
+         "- 5: the days to the signs by "
+         "twelves (18-20).\n"
+         "- 6 and 7: the mighty and small days above.\n"
+         "- 8: the month's days (34-39).\n"
+         "- 9: the ninth-parts, from the terminal sign, the revolution's Ascendant and the Moon "
+         "(43-72), worked at 57-69."),
+        ("The hours.",
+         "The "
+         "hours are equal (IX.7, 56): 3 3/7 apiece among seven (fn 164), 14 to a sign in a week (fn "
+         "173), two to a sign in a day (IX.7, 20), five to a sign in a sixty-hour slot (IX.7, 38)."),
+        ("Methods 8 and 9.",
+         "Method 8's four rooted indicators are the monthly profections above (fn 181). Method 9's "
+         "partners are the domicile lords of the fifth and ninth signs from the ninth-part's, as the "
+         "worked example does (Capricorn, Taurus, Virgo: Saturn, Venus, Mercury); its month is 30 d "
+         "10 h 30 m and its ninth-part 3 d 9 h 10 m (IX.7, 54-55)."),
+        ("The example's printed errors, and what is not built.",
+         "Two of the example's printed "
+         "fractions are wrong, and are shown as printed:\n\n"
+         + "\n".join(f"- {c} prints {p} for {e} ({fn})" for c, p, e, fn in PN4_IX7_EXAMPLE_ERRATA)
+         + "\n\nThe judgments of IX.7, 21-22 and 40-42 are not built."),
+    ])
 
     st.subheader("The seven indicators of the month",
                  help="IX.1, 35-39. Five are \"rooted\" -- turned from the positions they hold at the "
                       "revolution of the year -- and two are not, being cast fresh from each monthly "
-                      "revolution. They decrease in universality in the order given (IX.1, 39). The sign of "
-                      "the year is itself month 1 (IX.1, 10), and months run from the revolution dates, not "
-                      "the calendar.")
+                      "revolution.")
+    with _prose():
+        st.markdown("They decrease in universality in the order given (IX.1, 39). The sign of "
+                    "the year is itself month 1 (IX.1, 10), and months run from the revolution dates, not "
+                    "the calendar.")
     PN4_MONTHLY_TURN_LOCAL = _reading_radio(
         "Monthly profections turn", list(PN4_MONTHLY_TURN_OPTIONS),
         "pn4_monthly_turn", "_pn4_monthly_turn",
-        help="IX.1, 26-34: Abu Ma'shar turns the monthly indicators BACKWARDS when the sign is convertible, "
-             "and for a double-bodied sign forwards below 15°00' and backwards from it, because the first "
-             "half of a common sign is of the nature of the fixed sign before it and the second half of the "
-             "convertible sign after it (IX.1, 30). IX.1, 31 applies the test to each indicator's OWN sign, "
-             "individually. Indicator #2, the ninth-part, always runs forward (IX.1, 32). Dykes rejects the "
+        help="Dykes rejects the "
              "whole rule as \"complicated, probably wrong\" and counts forward always; his reading is the "
-             "default here.")
+             "default here. Abu Ma'shar's rule is in the notes under the table.")
     st.dataframe(pd.DataFrame(pn4['monthly_rows']), hide_index=True, width='stretch',
                  height=_rows_height(len(pn4['monthly_rows'])))
     st.caption(f"Month {pn4['month']} of 12. IX.1, 37: each is read against three positions -- the Ascendant "
@@ -5387,6 +5777,18 @@ def page_days():
                "revolution. Indicator #2 is the lord of the first ninth-part of the sign of the year "
                f"({pn4['ninth']['ninth_part_sign']}, lord {pn4['ninth']['lord']}); Abu Ma'shar himself "
                "ignores it through most of Book IX (fn 15).")
+    _notes_expander("The turning rule the radio chooses between", [
+        ("Abu Ma'shar's rule, IX.1, 26-34.",
+         "IX.1, 26-34: Abu Ma'shar turns the monthly indicators **backwards** when the sign is convertible, "
+         "and for a double-bodied sign forwards below 15°00' and backwards from it, because the first "
+         "half of a common sign is of the nature of the fixed sign before it and the second half of the "
+         "convertible sign after it (IX.1, 30). IX.1, 31 applies the test to each indicator's **own** sign, "
+         "individually. Indicator #2, the ninth-part, always runs forward (IX.1, 32)."),
+        ("Dykes's reading, the default.",
+         "Dykes rejects the "
+         "whole rule as \"complicated, probably wrong\" and counts forward always; his reading is the "
+         "default here."),
+    ])
 
 
 def page_fardar():
@@ -5406,53 +5808,75 @@ def page_fardar():
     with c1:
         st.markdown("**III.1, 12 -- the measure, by position**")
         st.dataframe(pd.DataFrame(PN4_ASCENSION_ROWS), hide_index=True, width='stretch')
-        st.caption("The three cases do not stand alike. The **Ascendant** and the **meridian** are the "
-                   "distributions on the Revolutions page, each applied to the degree of its point and to a planet standing on "
-                   "that degree itself (a numerical tolerance, no orb). The **third case** -- everything not on "
-                   "one of the three degrees -- has no method in PN IV: III.1, 12 sends the reader to \"what we "
-                   "stated in our book [on that topic]\", and Dykes's fn 16 (with VI.2, 21 fn 33) identifies it as "
-                   "Ptolemy's proportional semi-arcs, which are applied from the texts that state the method "
-                   "(" + PN4_SEMIARCS_SOURCES + "); no other ascension is substituted.")
+        st.caption("The three cases do not stand alike.")
         st.markdown("**III.1, 6 -- the unit, by level of chart**")
         st.dataframe(pd.DataFrame(PN4_UNIT_ROWS), hide_index=True, width='stretch')
     with c2:
         st.markdown("**III.1, 13 -- the rate ladder**")
         st.dataframe(pd.DataFrame(PN4_LADDER_ROWS), hide_index=True, width='stretch')
-        st.caption("An idealised year of twelve 30-day months (fn 17). The bottom rung is **25 thirds**, a "
-                   "sixtieth of a second of arc: 10″ is a day, so an hour is 10″/24 = 25‴ exactly. "
-                   "(25″ would make an hour two and a half days long; the printed page, p. 288, has 25‴.)")
+        st.caption("An idealised year of twelve 30-day months (fn 17).")
+    _notes_expander("How a degree is directed, and what it is worth", [
+        ("By position, III.1, 12.",
+         "The **Ascendant** and the **meridian** are the "
+         "distributions on the Revolutions page, each applied to the degree of its point and to a planet standing on "
+         "that degree itself (a numerical tolerance, no orb). The **third case** -- everything not on "
+         "one of the three degrees -- has no method in PN IV: III.1, 12 sends the reader to \"what we "
+         "stated in our book [on that topic]\", and Dykes's fn 16 (with VI.2, 21 fn 33) identifies it as "
+         "Ptolemy's proportional semi-arcs, which are applied from the texts that state the method "
+         "(" + PN4_SEMIARCS_SOURCES + "); no other ascension is substituted."),
+        ("By level of chart, III.1, 6.",
+         "PN IV keys the unit to the "
+         "level of the chart (III.1, 6):\n\n"
+         + "\n".join(f"- {r['Directed in the']}: a degree is {r['A degree is']}" for r in PN4_UNIT_ROWS)),
+        ("The rate ladder, III.1, 13.",
+         "The bottom rung is **25 thirds**, a "
+         "sixtieth of a second of arc: 10″ is a day, so an hour is 10″/24 = 25‴ exactly. "
+         "(25″ would make an hour two and a half days long; the printed page, p. 288, has 25‴.)"),
+    ])
 
     st.subheader("The lords of the triplicity of the sect light, over the life",
-                 help="Sahl, On Nativities 2.11, 1-2 (Theophilus; fn 148: Carmen I.24): \"If you found both of "
-                      "the two lords of the triplicity of the luminary to be strong, they indicate high rank "
-                      "from the beginning of his life to its end. And if one of the two was strong and the "
-                      "other weak, his benefit will be in the time of the strong one of them, and his baseness "
-                      "in the time of the one of them [that is falling]\"; 4: \"the partnering lord of the "
-                      "triplicity supports them both in their elevation, through its strength (if it was "
-                      "strong), and brings [them] down (if it was a falling [place])\". 2.13, 39: the first "
-                      "lord \"indicates the end of the father's life, and the beginning of the native's "
-                      "life\". 2.19, 5: \"if the third lord of the triplicity was in the house of marriage, he "
-                      "will gain good fortune at the end of his lifespan\". PN IV VI.2, 4 names the same "
-                      "lords \"at that time of his lifespan\".")
+                 help="The three lords of the sect light's triplicity (the Sun's by day, the Moon's by night) in the "
+                      "day-night-partner order for a day birth and night-day-partner for a night birth, each with its "
+                      "natal condition.")
+    with _prose():
+        st.markdown("**No period is assigned.** No text in hand assigns a number of years to any lord's stretch of the life, "
+                    "so none is shown: fn 14 to VI.2, 4 (\"if the native was older, one would use the second "
+                    "triplicity lord (or for many Persian- and Arabic-language astrologers, the third one)\") is "
+                    "Dykes's gloss and gives no ages either. A split into three thirty-year stretches, as some "
+                    "software prints, is stated nowhere.")
     st.dataframe(pd.DataFrame(pn4['life_lords_rows']), hide_index=True, width='stretch',
                  height=_rows_height(len(pn4['life_lords_rows'])),
                  column_config=_wide_text_columns(pd.DataFrame(pn4['life_lords_rows'])))
-    st.caption("The three lords of the sect light's triplicity (the Sun's by day, the Moon's by night) in the "
-               "day-night-partner order for a day birth and night-day-partner for a night birth, each with its "
-               "natal condition. No text in hand assigns a number of years to any lord's stretch of the life, "
-               "so none is shown: fn 14 to VI.2, 4 (\"if the native was older, one would use the second "
-               "triplicity lord (or for many Persian- and Arabic-language astrologers, the third one)\") is "
-               "Dykes's gloss and gives no ages either. A split into three thirty-year stretches, as some "
-               "software prints, is stated nowhere.")
     if _reading_checkbox("Also show the Ascendant's triplicity lords, for comparison",
                          "life_lords_ascendant", "_life_lords_ascendant",
-                         help="Some software divides the life by the lords of the ASCENDANT's triplicity. No "
-                              "text in hand does: the Ascendant's triplicity lords are the lords of upbringing "
-                              "(Sahl, On Nativities 1.29, 2-5; Appendix A, 9 fn 7), and every passage that "
-                              "gives a lord a time of the life keys it to the luminary. The rows are shown "
+                         help="Some software divides the life by the lords of the **Ascendant's** triplicity. "
+                              "The rows are shown "
                               "only so the difference can be seen."):
         st.dataframe(pd.DataFrame(pn4['life_lords_ascendant_rows']), hide_index=True, width='stretch',
                      height=_rows_height(len(pn4['life_lords_ascendant_rows'])))
+    _notes_expander("The source testimony on the lords over the life", [
+        ("Sahl, On Nativities 2.11, 1-2 and 4.",
+         "Sahl, On Nativities 2.11, 1-2 (Theophilus; fn 148: Carmen I.24): \"If you found both of "
+         "the two lords of the triplicity of the luminary to be strong, they indicate high rank "
+         "from the beginning of his life to its end. And if one of the two was strong and the "
+         "other weak, his benefit will be in the time of the strong one of them, and his baseness "
+         "in the time of the one of them [that is falling]\"; 4: \"the partnering lord of the "
+         "triplicity supports them both in their elevation, through its strength (if it was "
+         "strong), and brings [them] down (if it was a falling [place])\"."),
+        ("2.13, 39 and 2.19, 5.",
+         "2.13, 39: the first "
+         "lord \"indicates the end of the father's life, and the beginning of the native's "
+         "life\". 2.19, 5: \"if the third lord of the triplicity was in the house of marriage, he "
+         "will gain good fortune at the end of his lifespan\"."),
+        ("PN IV VI.2, 4.",
+         "PN IV VI.2, 4 names the same "
+         "lords \"at that time of his lifespan\"."),
+        ("The Ascendant's triplicity lords, for comparison.",
+         "Some software divides the life by the lords of the Ascendant's triplicity. No "
+         "text in hand does: the Ascendant's triplicity lords are the lords of upbringing "
+         "(Sahl, On Nativities 1.29, 2-5; Appendix A, 9 fn 7), and every passage that "
+         "gives a lord a time of the life keys it to the luminary."),
+    ])
     if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
         # al-Andarzaghar's per-house triplicity lords (coverage gap 9,
         # 2026-09-15): a separate table from Sahl's lords over the life
@@ -5489,10 +5913,12 @@ def page_fardar():
     st.subheader("The *fardar*",
                  help="IV.1, 2-4: the years are Sun 10, Venus 8, Mercury 13, Moon 9, Saturn 11, Jupiter 12, "
                       "Mars 7, Head 3, Tail 2 -- 75 in all. The order runs down the spheres from the light of "
-                      "the sect: by day from the Sun, by night from the Moon. IV.7, 24: the Head and Tail come "
-                      "LAST IN BOTH SECTS, \"whether the native was diurnal or nocturnal\" -- the point the "
-                      "later tradition got wrong. IV.7, 25: after 75 the cycle returns to \"the luminary which "
-                      "he began from at his birth\", not always to the Sun.")
+                      "the sect: by day from the Sun, by night from the Moon.")
+    with _prose():
+        st.markdown("**The nodes last, in both sects.** IV.7, 24: the Head and Tail come "
+                    "**last in both sects**, \"whether the native was diurnal or nocturnal\" -- the point the "
+                    "later tradition got wrong. IV.7, 25: after 75 the cycle returns to \"the luminary which "
+                    "he began from at his birth\", not always to the Sun.")
     st.dataframe(pd.DataFrame(pn4['fardar_rows']), hide_index=True, width='stretch',
                  height=_rows_height(len(pn4['fardar_rows'])))
     st.caption("IV.1, 5-6: each planetary period divides into seven equal parts, the lord itself first, then "
@@ -5503,46 +5929,67 @@ def page_fardar():
     st.subheader("When a natal indication comes out (III.7, 32-42)",
                  help="A planet may distribute or manage more than once in a lifetime (III.7, 32), and this "
                       "chapter asks how often what it promised in the root actually manifests, and at what "
-                      "ages. HOW OFTEN is keyed to the quadruplicity of its natal sign: fixed, \"in [only] a "
-                      "single time\" (35); convertible, \"in [only] one of the times\" (39); double-bodied, "
-                      "\"on an occasional basis\" (38). AT WHAT AGE: \"the number of ascensions of the sign in "
-                      "which it was in the root, or the amount of one of its own years\" (42). What Abu "
-                      "Ma'shar himself adds is the last column -- the effect is \"strong, evident, notable\" "
-                      "when such an age falls where that same planet is the distributor or the manager.")
+                      "ages.")
+    with _prose():
+        st.markdown("**All three grades are shown and none is chosen.**")
     st.dataframe(pd.DataFrame(pn4['activation_rows']), hide_index=True, width='stretch',
                  height=_rows_height(len(pn4['activation_rows'])))
-    st.caption("**All three grades are shown and none is chosen.** III.7, 35 picks among the greater, middle "
-               "and lesser years \"in accordance with what its position in the rotation of the circle "
-               "indicated in the root\" -- and never states that rule. It is the same placement question "
-               "*On Times* 4, 7 and *On Nativities* 1.20 disagree about, which PN IV does not adjudicate. "
-               "**Two things in Dykes's fn 191 are also absent**: the SUM of the ascensions and the years, and "
-               "a third, a half and two-thirds of it, are introduced with \"if we follow Valens\" and appear "
-               "in no sentence of III.7; and his worked figure of 20.17 ascensional times for Taurus at 45N "
-               "is not reproduced, the exact computation giving 20.09. III.7, 35's \"once\" is for a fixed-sign "
-               "planet \"NOT looking at the position of the distribution\"; the looking is computed here as the "
-               "whole-sign aspect from the natal sign to the Ascendant's sign at birth (a planet in the sign counted "
-               "as looking) -- whether the position is the current bound's sign or its degree, and whether "
-               "co-presence counts, are silences -- and a looking fixed planet's row says III.7, 36 applies "
-               "\"whenever it distributes\" IF strong, which the chapter does not define, so no row is promoted. "
-               "The confirmation column (III.7, 42) is checked against the distributions of the Ascendant, the "
-               "Midheaven, the fourth and the releaser, each named; the planets' own semi-arc directions are "
-               "not among them, no sentence asking for a planet to confirm itself. "
-               "III.7, 37 exempts the manager, which \"will produce its indication\" whenever it manages.")
+    _notes_expander("How the manifestation is read: the grade, the looking, the confirmation", [
+        ("How often, and at what age, III.7, 35-42.",
+         "**How often** is keyed to the quadruplicity of its natal sign: fixed, \"in [only] a "
+         "single time\" (35); convertible, \"in [only] one of the times\" (39); double-bodied, "
+         "\"on an occasional basis\" (38). **At what age**: \"the number of ascensions of the sign in "
+         "which it was in the root, or the amount of one of its own years\" (42). What Abu "
+         "Ma'shar himself adds is the last column -- the effect is \"strong, evident, notable\" "
+         "when such an age falls where that same planet is the distributor or the manager."),
+        ("The grade choice.",
+         "III.7, 35 picks among the greater, middle "
+         "and lesser years \"in accordance with what its position in the rotation of the circle "
+         "indicated in the root\" -- and never states that rule. It is the same placement question "
+         "*On Times* 4, 7 and *On Nativities* 1.20 disagree about, which PN IV does not adjudicate. "
+         "**Two things in Dykes's fn 191 are also absent**: the **sum** of the ascensions and the years, and "
+         "a third, a half and two-thirds of it, are introduced with \"if we follow Valens\" and appear "
+         "in no sentence of III.7; and his worked figure of 20.17 ascensional times for Taurus at 45N "
+         "is not reproduced, the exact computation giving 20.09."),
+        ("Looking.",
+         "III.7, 35's \"once\" is for a fixed-sign "
+         "planet \"NOT looking at the position of the distribution\"; the looking is computed here as the "
+         "whole-sign aspect from the natal sign to the Ascendant's sign at birth (a planet in the sign counted "
+         "as looking) -- whether the position is the current bound's sign or its degree, and whether "
+         "co-presence counts, are silences -- and a looking fixed planet's row says III.7, 36 applies "
+         "\"whenever it distributes\" **if** strong, which the chapter does not define, so no row is promoted."),
+        ("Confirmation.",
+         "The confirmation column (III.7, 42) is checked against the distributions of the Ascendant, the "
+         "Midheaven, the fourth and the releaser, each named; the planets' own semi-arc directions are "
+         "not among them, no sentence asking for a planet to confirm itself. "
+         "III.7, 37 exempts the manager, which \"will produce its indication\" whenever it manages."),
+    ])
 
     st.subheader("The Ages of Man",
                  help="I.8, 10-26 and Figure 53 (PN IV): Ptolemy's seven ages, ordered by sphere from the lowest "
-                      "upward -- not the quadrant scheme of Sahl, On Nativities 3.9. Each span is a planet's "
-                      "lesser years, or a half or a tenth of its lesser or middle years (I.8, 9). The Moon's 4 "
-                      "is a tenth of her middle years, 39 1/2 (I.8, 12) -- an independent witness for the "
-                      "luminary construction of the middle years used elsewhere in this app.")
+                      "upward -- not the quadrant scheme of Sahl, On Nativities 3.9.")
     st.dataframe(pd.DataFrame(pn4['age_rows']), hide_index=True, width='stretch',
                  height=_rows_height(len(pn4['age_rows'])))
     st.caption("The last age is open-ended: Figure 53 (PN IV) tabulates Saturn as 30 years and ages 68-97, but the "
                "prose governs -- the seventh age runs \"until the end of his lifespan\" (I.8, 25). Abu Ma'shar "
                "refuses to subdivide an age into sevenths the way a *fardar* is subdivided, so there is no "
                "sub-lord here (I.8, 34-35).")
+    _notes_expander("How the spans are counted", [
+        ("The spans, I.8, 9.",
+         "Each span is a planet's "
+         "lesser years, or a half or a tenth of its lesser or middle years (I.8, 9)."),
+        ("The Moon's 4, a witness.",
+         "The Moon's 4 "
+         "is a tenth of her middle years, 39 1/2 (I.8, 12) -- an independent witness for the "
+         "luminary construction of the middle years used elsewhere in this app."),
+    ])
 
-    st.subheader('Chronocrator Matrix', help='Two rows: the lord of the year by annual profection, and the Egyptian bound lord of the Ascendant directed symbolically at one degree per year -- which is not a distribution, as its label says. Abu Ma\'shar names the shortcut himself and grades it: "there is an approximation in it, but the correct [approach] is that this way of directing is like the direction of the Sun every day" (IX.7, 32). The ascensional method he prefers is the jar bakhtar table on the Revolutions page.')
+    st.subheader('Chronocrator Matrix', help='Two rows: the lord of the year by annual profection, and the Egyptian bound lord of the Ascendant directed symbolically at one degree per year -- which is not a distribution, as its label says.')
+    with _prose():
+        st.markdown("**An approximation, by the author's own grading.** Abu Ma'shar names the shortcut himself and grades it: "
+                    "\"there is an approximation in it, but the correct [approach] is that this way of directing is like "
+                    "the direction of the Sun every day\" (IX.7, 32). The ascensional method he prefers is the jar "
+                    "bakhtar table on the Revolutions page.")
     st.dataframe(pd.DataFrame(time_lords_data), hide_index=True, width='stretch')
     # The one heading the short-headings branch left carrying its
     # own metadata: the citation and the standing move to a
@@ -5551,89 +5998,120 @@ def page_fardar():
     st.subheader("Planetary years",
                  help="The lesser, middle, greater and mighty years and the fardar of each planet, beside its placement, "
                       "the grade On Nativities 1.20, 7-34 would give it as house-master (placed by the division, the "
-                      "POWER unit) and what On Times 4, 7 -- a question-chart rule, 4, 2 -- would "
-                      "give it, for comparison. Applied to one planet only: the house-master The releaser page names "
-                      "from On Nativities 1.15, whose grant is printed there with its sentence.")
+                      "**power** unit) and what On Times 4, 7 -- a question-chart rule, 4, 2 -- would "
+                      "give it, for comparison.")
     st.caption("Display only · Gr. Intr. VII.8, Figure 146")
     st.dataframe(pd.DataFrame(planetary_years_data), hide_index=True, width='stretch', height=_rows_height(len(planetary_years_data)))
+    with _prose():
+        st.markdown("**Applied to one planet only:** the house-master The releaser page names "
+                    "from On Nativities 1.15, whose grant is printed there with its sentence.")
     if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
         st.caption("The last column, beside each \"1.20 silent\" cell only: the class Abu 'Ali's ladder gives the "
-                   "planet (JN Ch. 3), its count from Ch. 4's table, and the steps taken. "
-                   + JN_YEARS_NOTE.replace('<', chr(92) + '<'))
+                   "planet (JN Ch. 3), its count from Ch. 4's table, and the steps taken.")
+        _notes_expander("Abu 'Ali's ladder, where 1.20 is silent", _jn_years_note_sections())
 
+    # The scope index: what the book leaves open, each item's state named
+    # (source silence, the editor's proposal, another source used, display
+    # only, not implemented -- different states), then the explanations
+    # under their headings. The help icon marks this expander as a heading
+    # for the table walker; no st.dataframe follows it on the page.
     with st.expander("What Persian Nativities IV does not settle", icon=":material/help:"):
-        st.markdown(
-            "The Prediction pages leave these items open. "
-            "Each is absent because **the book does not answer it**, not because the work was skipped.\n\n"
-            "**The releaser and the house-master.** PN IV names five releasers -- \"the Sun, Moon, Ascendant, "
-            "Lot of Fortune, or the degree of the meeting or degree of the opposition\" (III.3, 1) -- and says "
-            "all five are directed (III.1, 3). It never says **how to choose among them**, how many years the "
-            "house-master grants, how increasers and decreasers are counted, or how to judge a planet that "
-            "passes one test and fails another. Abu Ma'shar says so himself: those \"who look into it are "
-            "wandering around in the dark; but a statement of the truth of that ... is found in the book which "
-            "we worked on concerning nativities\" (IX.8, 123) -- a book not in hand. Two texts in hand do "
-            "answer parts of it: al-Qabisi states the choice among the five and the house-master's order with "
-            "its tie-breaks -- the lord stronger in the releaser's place that looks at it, going down the "
-            "order until one does; equal claimants decided by the stronger in its own place, then the nearer "
-            "degree; and if no lord looks at the releaser it is unfit and the next is taken (ITA VIII.1.3, "
-            "al-Qabisi IV.4-6); Abu 'Ali states how the fortunes add and the infortunes subtract -- a fortune "
-            "joined or in trine or sextile adds its lesser years, an infortune joined or in square or "
-            "opposition subtracts its own, and the other rays of each add or subtract nothing (Judgments of "
-            "Nativities Ch. 4). Both are stated in those texts, not built here; the choice stays Sahl's. Here "
-            "the choice is made from **Sahl**, *On Nativities* 1.15 (Nawbakht), and the house-master is directed "
-            "per 1.23, 2 (Masha'allah), on The releaser page, with every reading that step needed said "
-            "there; the releaser's distribution feeds the governor's testimony #3 and the luminary proxies. "
-            "The distribution **from the Ascendant** remains the *jar bakhtar* of II.2, 6-7.\n\n"
-            "**Where the greater years are granted.** *On Nativities* "
-            "1.20, 7-34 is the one natal grant in these texts -- *On Times* 4 is a question-chart chapter (\"in the hour "
-            "of the question\", 4, 2) and 1.23, 68 sends the reader to \"the section on the house-master\" -- so "
-            "the house-master's years are granted from 1.20 on The releaser page, placed by the division; the "
-            "Planetary years table shows 1.20's grade for every planet and *On Times* 4, 7 for comparison; PN IV is "
-            "silent (IX.8, 123) and III.2, 110-111's gate now has the input it names.\n\n"
-            "**Directing anything that is not the Ascendant or the meridian.** III.1, 12 sends the reader to "
-            "\"what we stated in our book [on that topic]\" for every other point, and PN IV never states it. "
-            "Dykes's fn 16 identifies the method as Ptolemy's proportional semi-arcs; it is applied from the "
-            "texts in hand that state it (" + PN4_SEMIARCS_SOURCES + "), and the page says which choices "
-            "those texts leave open.\n\n"
-            "**Revolutions of the day and the hour.** Defined in principle (I.3, 10-13) and then declined by "
-            "the author: \"there is no need for us [to do] that, because these nine indicators ... are complete "
-            "for everything needed\" (IX.7, 79).\n\n"
-            "**The unit of a directed degree by sign type, strength or planet.** PN IV keys the unit to the "
-            "level of the chart (III.1, 6) and answers a different question from the one the two authors' "
-            "disagreements ask; it is not evidence on either side of them.\n\n"
-            "**The Indian rule for the lord of the year** -- the lord of the first ninth-part of the sign of "
-            "the year (III.10, 1-5), which would restrict the lord of the year to Mars, Venus, Saturn and the "
-            "Moon. PN IV reports it without adopting it, so it is used here only as monthly indicator #2, "
-            "which is where IX.1, 36 puts it. The ninth-parts themselves are al-Qabisi's and Abu Ma'shar's too "
-            "-- each sign in nine divisions of 3 1/3 degrees, the first to the lord of the movable sign of the "
-            "triplicity and the rest in the order of the signs (ITA VII.5, al-Qabisi IV.16-17 and Abbr. "
-            "VII.22-23, Figure 110) -- but no other text in hand makes the first ninth-part's lord the lord of the year.")
+        with _prose():
+            st.markdown(
+                "The Prediction pages leave these items open. "
+                "Each is absent because **the book does not answer it**, not because the work was skipped.")
+            st.markdown(
+                "| Topic | State |\n"
+                "|---|---|\n"
+                "| The releaser and the house-master | Source silence (IX.8, 123); another source used: Sahl's 1.15 and 1.23, 2; al-Qabisi's choice stated in that text, not built; Abu 'Ali's additions and subtractions displayed, row by row, and not applied to Sahl's grant |\n"
+                "| Where the greater years are granted | Source silence (IX.8, 123); another source used: *On Nativities* 1.20 |\n"
+                "| Directing anything that is not the Ascendant or the meridian | Source silence (III.1, 12); the editor's identification (fn 16), applied from the texts that state it |\n"
+                "| Revolutions of the day and the hour | Declined by the author (IX.7, 79); not implemented |\n"
+                "| The unit of a directed degree by sign type, strength or planet | Source silence: PN IV answers a different question (III.1, 6) |\n"
+                "| The Indian rule for the lord of the year | Reported without adoption (III.10, 1-5); used here only as monthly indicator #2 |")
+        _note_sections([
+            ("The releaser and the house-master.",
+             "PN IV names five releasers -- \"the Sun, Moon, Ascendant, "
+             "Lot of Fortune, or the degree of the meeting or degree of the opposition\" (III.3, 1) -- and says "
+             "all five are directed (III.1, 3). It never says **how to choose among them**, how many years the "
+             "house-master grants, how increasers and decreasers are counted, or how to judge a planet that "
+             "passes one test and fails another. Abu Ma'shar says so himself: those \"who look into it are "
+             "wandering around in the dark; but a statement of the truth of that ... is found in the book which "
+             "we worked on concerning nativities\" (IX.8, 123) -- a book not in hand. Two texts in hand do "
+             "answer parts of it: al-Qabisi states the choice among the five and the house-master's order with "
+             "its tie-breaks -- the lord stronger in the releaser's place that looks at it, going down the "
+             "order until one does; equal claimants decided by the stronger in its own place, then the nearer "
+             "degree; and if no lord looks at the releaser it is unfit and the next is taken (ITA VIII.1.3, "
+             "al-Qabisi IV.4-6); Abu 'Ali states how the fortunes add and the infortunes subtract -- a fortune "
+             "joined or in trine or sextile adds its lesser years, an infortune joined or in square or "
+             "opposition subtracts its own, and the other rays of each add or subtract nothing (Judgments of "
+             "Nativities Ch. 4). Al-Qabisi's choice is stated in that text, not built here; Abu 'Ali's additions "
+             "and subtractions are displayed, row by row, and not applied to Sahl's grant; the choice stays Sahl's. Here "
+             "the choice is made from **Sahl**, *On Nativities* 1.15 (Nawbakht), and the house-master is directed "
+             "per 1.23, 2 (Masha'allah), on The releaser page, with every reading that step needed said "
+             "there; the releaser's distribution feeds the governor's testimony #3 and the luminary proxies. "
+             "The distribution **from the Ascendant** remains the *jar bakhtar* of II.2, 6-7."),
+            ("Where the greater years are granted.",
+             "*On Nativities* "
+             "1.20, 7-34 is the one natal grant in these texts -- *On Times* 4 is a question-chart chapter (\"in the hour "
+             "of the question\", 4, 2) and 1.23, 68 sends the reader to \"the section on the house-master\" -- so "
+             "the house-master's years are granted from 1.20 on The releaser page, placed by the division; the "
+             "Planetary years table shows 1.20's grade for every planet and *On Times* 4, 7 for comparison; PN IV is "
+             "silent (IX.8, 123) and III.2, 110-111's gate now has the input it names."),
+            ("Directing anything that is not the Ascendant or the meridian.",
+             "III.1, 12 sends the reader to "
+             "\"what we stated in our book [on that topic]\" for every other point, and PN IV never states it. "
+             "Dykes's fn 16 identifies the method as Ptolemy's proportional semi-arcs; it is applied from the "
+             "texts in hand that state it (" + PN4_SEMIARCS_SOURCES + "), and the page says which choices "
+             "those texts leave open."),
+            ("Revolutions of the day and the hour.",
+             "Defined in principle (I.3, 10-13) and then declined by "
+             "the author: \"there is no need for us [to do] that, because these nine indicators ... are complete "
+             "for everything needed\" (IX.7, 79)."),
+            ("The unit of a directed degree by sign type, strength or planet.",
+             "PN IV keys the unit to the "
+             "level of the chart (III.1, 6) and answers a different question from the one the two authors' "
+             "disagreements ask; it is not evidence on either side of them."),
+            ("The Indian rule, reported and not adopted.",
+             "The Indian rule for the lord of the year -- the lord of the first ninth-part of the sign of "
+             "the year (III.10, 1-5), which would restrict the lord of the year to Mars, Venus, Saturn and the "
+             "Moon. PN IV reports it without adopting it, so it is used here only as monthly indicator #2, "
+             "which is where IX.1, 36 puts it. The ninth-parts themselves are al-Qabisi's and Abu Ma'shar's too "
+             "-- each sign in nine divisions of 3 1/3 degrees, the first to the lord of the movable sign of the "
+             "triplicity and the rest in the order of the signs (ITA VII.5, al-Qabisi IV.16-17 and Abbr. "
+             "VII.22-23, Figure 110) -- but no other text in hand makes the first ninth-part's lord the lord of the year."),
+        ])
 
     with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-        st.markdown(
-            "**The rate ladder's bottom rung is 25‴** -- twenty-five thirds of a degree to the hour, III.1, 13 "
-            "(25″ would make an hour two and a half days long; the arithmetic settles it) -- and **the *fardar* "
-            "order is the prose's, IV.1, 2-4**, of which Figure 43 (p. 116) is the table.\n\n"
-            "**One printed error is not reproduced.** Intro Sect. 2 (p. 7) puts the monthly "
-            "revolutions at 12° **23′** when the natal Sun is at 12° **22′**. The page "
-            "genuinely prints that, and it is contradicted by the rule in its own sentence, by IX.1, 23, by "
-            "IX.3, 2, and by Dykes's own worked example at Intro Sect. 9 p. 95. The degree **and minute** are "
-            "carried unchanged into every sign.\n\n"
-            "**The lord of the year is the lord of the *sign* of the year** (II.3, 1), Persian *salkhudhah* "
-            "-- not the lord of the revolution's Ascendant and not a victor. \"Governor\" (Ar. *mustawli*), "
-            "the sign on which most of the year's indicators coincide (IX.9, 10), is a different term, and "
-            "PN IV keeps \"Ascendant of the year\" and \"sign of the year\" carefully apart (Intro Sect. 8, "
-            "p. 77) where Sahl's English does not.\n\n"
-            "**Figure 146 (VII.8, p. 487)**, verified against the prose restatement at VII.8, 3-8 and the "
-            "fardar total the text gives (\"that is 75 years\", VII.8, 3), agrees with PN IV's IV.1, 2 cell "
-            "for cell. **On Times Ch. 4, 7:** \"if the ruler was in a stake, eastern, it grants its greater "
-            "years; or if it was in what follows the stakes, it grants its middle years; and if it was "
-            "falling, it grants its lesser years.\" **On Nativities 1.20, 10-17:** greater in the Ascendant, "
-            "Midheaven, sign of the west or eleventh when enhanced (10), or under the earth, eastern, in a "
-            "share, enhanced (11); middle in the second or eighth (16), or in the eleventh or fifth when not in a share "
-            "and not eastern (17). The two disagree, PN IV does not adjudicate them, and no row is chosen; "
-            "the house-master's years on The releaser page are Sahl's 1.20 in full, On Times 4, 7 being a "
-            "question-chart rule.")
+        _note_sections([
+            ("The rate ladder's bottom rung, and the fardar order.",
+             "**The rate ladder's bottom rung is 25‴** -- twenty-five thirds of a degree to the hour, III.1, 13 "
+             "(25″ would make an hour two and a half days long; the arithmetic settles it) -- and **the *fardar* "
+             "order is the prose's, IV.1, 2-4**, of which Figure 43 (p. 116) is the table."),
+            ("One printed error is not reproduced.",
+             "Intro Sect. 2 (p. 7) puts the monthly "
+             "revolutions at 12° **23′** when the natal Sun is at 12° **22′**. The page "
+             "genuinely prints that, and it is contradicted by the rule in its own sentence, by IX.1, 23, by "
+             "IX.3, 2, and by Dykes's own worked example at Intro Sect. 9 p. 95. The degree **and minute** are "
+             "carried unchanged into every sign."),
+            ("The lord of the year is the lord of the sign of the year.",
+             "**The lord of the year is the lord of the *sign* of the year** (II.3, 1), Persian *salkhudhah* "
+             "-- not the lord of the revolution's Ascendant and not a victor. \"Governor\" (Ar. *mustawli*), "
+             "the sign on which most of the year's indicators coincide (IX.9, 10), is a different term, and "
+             "PN IV keeps \"Ascendant of the year\" and \"sign of the year\" carefully apart (Intro Sect. 8, "
+             "p. 77) where Sahl's English does not."),
+            ("Figure 146, On Times 4, 7 and On Nativities 1.20, 10-17.",
+             "**Figure 146 (VII.8, p. 487)**, verified against the prose restatement at VII.8, 3-8 and the "
+             "fardar total the text gives (\"that is 75 years\", VII.8, 3), agrees with PN IV's IV.1, 2 cell "
+             "for cell. **On Times Ch. 4, 7:** \"if the ruler was in a stake, eastern, it grants its greater "
+             "years; or if it was in what follows the stakes, it grants its middle years; and if it was "
+             "falling, it grants its lesser years.\" **On Nativities 1.20, 10-17:** greater in the Ascendant, "
+             "Midheaven, sign of the west or eleventh when enhanced (10), or under the earth, eastern, in a "
+             "share, enhanced (11); middle in the second or eighth (16), or in the eleventh or fifth when not in a share "
+             "and not eastern (17). The two disagree, PN IV does not adjudicate them, and no row is chosen; "
+             "the house-master's years on The releaser page are Sahl's 1.20 in full, On Times 4, 7 being a "
+             "question-chart rule."),
+        ])
 
 
 def page_sources():
@@ -5869,8 +6347,18 @@ def page_reference():
                  hide_index=True, width='stretch')
     st.dataframe(pd.DataFrame([{'Scheme': k, 'Places': (', '.join(f"{g}: {p}" for g, p in v.items()) if isinstance(v, dict) else str(v))}
                                for k, v in GOOD_PLACE_SCHEMES.items()]), hide_index=True, width='stretch')
-    # The engine's own note on the printed order, whole, under a heading.
-    _notes_expander(NOTES_TITLE, [("The seven praised places' printed order.", SEVEN_PLACE_RANKING_NOTE)])
+    # The engine's own note on the printed order: the manuscripts compared
+    # in a table built from its two sentences, which stand whole beneath it.
+    _seven = _paragraphs(SEVEN_PLACE_RANKING_NOTE, "Manuscript B reads")
+    _notes_expander(NOTES_TITLE, [
+        ("The seven praised places' printed order.",
+         "| Witness | The order's end |\n"
+         "|---|---|\n"
+         "| Manuscripts H and L (the printed order) | ... 11, 9, 5 |\n"
+         "| Manuscript B | ... 11, 5, 9, with the note that the ninth is the Sun's joy (Introduction Ch. 2, 42, fn 42) |\n"
+         "| The printed text | H/L's order plus B's note -- Dykes's conflation, kept as printed |\n\n"
+         + _seven[0] + "\n\n" + _seven[1]),
+    ])
 
     st.subheader("Planetary years",
                  help="The lesser, middle, greater and mighty years of each planet, with the "

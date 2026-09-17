@@ -230,11 +230,15 @@ def test_the_releaser_shows_its_method_and_qualification_then_three_sibling_disc
     assert heading.help == ("Not PN IV: Abu Ma'shar lists the five candidates (III.3, 1) and sends the reader to "
                             "another book for the choice (IX.8, 123).")
     block = _between(at, RELEASER)
-    assert block[0][0] == "markdown" and block[0][1].startswith("Nawbakht's procedure in Sahl, On Nativities 1.15: by day the Sun")
-    assert "is read as a test of the planet's power and counted by the Alchabitius divisions with the five-degree allowance at the four axial degrees only" in block[0][1]
-    assert "the Lot of Fortune (a candidate by night, 1.15, 14) has no dynamic angularity and is tested by its whole-sign place" in block[0][1]
-    assert "the years the house-master grants are granted from On Nativities 1.20, 7-34 read in full" in block[0][1]
-    assert block[1] == ("markdown", "**Readings made here, each one Sahl leaves open.**")
+    # Re-pinned on branch C: the page caption's exception clause (the book
+    # PN IV leaves the releaser to) leads the method block, so the
+    # procedure is its second paragraph and the qualification its third.
+    assert block[0][0] == "markdown" and block[0][1].startswith("The releaser and the house-master PN IV leaves to another book of Abu Ma'shar's")
+    assert block[1][0] == "markdown" and block[1][1].startswith("Nawbakht's procedure in Sahl, On Nativities 1.15: by day the Sun")
+    assert "is read as a test of the planet's power and counted by the Alchabitius divisions with the five-degree allowance at the four axial degrees only" in block[1][1]
+    assert "the Lot of Fortune (a candidate by night, 1.15, 14) has no dynamic angularity and is tested by its whole-sign place" in block[1][1]
+    assert "the years the house-master grants are granted from On Nativities 1.20, 7-34 read in full" in block[1][1]
+    assert block[2] == ("markdown", "**Readings made here, each one Sahl leaves open.**")
     labels = [label for label, icon in _statuses(at) if icon == NOTES_EXPANDER_ICON]
     assert [l for l in labels if l in RELEASER_NOTES] == list(RELEASER_NOTES)
     # No caption of the old readings survives on the page.
@@ -295,14 +299,21 @@ def test_the_house_masters_years_and_abu_alis_additions_keep_their_flags_and_dis
                                  "from its years by Abu 'Ali's chapter.")
     block = _between(at, additions[0].value)
     assert block[0][0] == "caption" and block[0][1].startswith("Supplement · display only · ")
-    assert block[1][0] == "markdown" and block[1][1].startswith("What each planet joined to the house-master or looking at it would add to or subtract from its years by Abu 'Ali's chapter: a fortune joined, trine or sextile adds its lesser years")
+    # Folded on the owner's ruling (branch C): the summary is the glance
+    # sentence and the Witnesses sentence; the rule's detail is the first
+    # notes section, "The chapter's rule, as read."
+    assert block[1][0] == "markdown" and block[1][1] == ("What each planet joined to the house-master or looking at it would add to or subtract from its years by Abu 'Ali's chapter. "
+                                                         "Abu Bakr and 'Umar stand beside each row in the Witnesses column with their own conditions.")
     assert block[2] == ("markdown", "**Display only:** no sum is formed, and Sahl's grant above is not changed.")
     assert block[3][0] == "dataframe"
     notes = _expander_text(at, "Sources and editorial notes", "Abu 'Ali's chapter, whole")
-    for section in ("**Abu 'Ali's chapter, whole.**", "**What the rows state, and the conventions of this display.**",
+    # Re-pinned on branch C: the engine note's one section is five headed
+    # sections (its paragraphs), the first "What the rows state.".
+    for section in ("**The chapter's rule, as read.**", "**Abu 'Ali's chapter, whole.**", "**What the rows state.**", "**Conventions of this display.**",
                     "**Abu Bakr, a witness beside Abu 'Ali.**", "**'Umar al-Tabari, a witness.**"):
         assert section in notes, section
     assert "Display only: no total is formed and these rows do not change the Sahl-based grant of the years above" in notes
+    assert "a fortune joined, trine or sextile adds its lesser years, at one of three grades the chapter leaves undefined" in notes
     assert "> \"" in notes
 
 

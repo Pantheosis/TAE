@@ -3745,7 +3745,7 @@ def test_fixed_star_catalogue_found_is_the_one_the_app_ships(engine):
     assert swe.calc_ut(2451545.0, swe.MARS)[1] == 260                 # Moshier + speed: the planets untouched
     from conftest import app_source
     assert '("ephe/sefstars.txt", "ephe")' in (Path(engine["__file__"]).parent / "build.spec").read_text()
-    assert "the Swiss Ephemeris star catalogue the app ships (ephe/sefstars.txt)" in app_source()
+    assert "the Swiss Ephemeris star catalogue this app ships (ephe/sefstars.txt)" in app_source()   # "this app" since readability branch C
 
 
 def test_a_catalogue_found_but_unreadable_is_reported_as_such(engine, monkeypatch):

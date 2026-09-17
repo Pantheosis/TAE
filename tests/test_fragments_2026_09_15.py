@@ -47,8 +47,11 @@ LAYOUTS = ["Square", "Wide"]
 # 2026-09-17 (readability branch A: a conditional element before a page's
 # tabs shifted them), unfilled on the default chart, so the fragment is
 # main's fourth child and everything after the strip stands one later.
+# On the Timing page the true-Sun qualification stands at reading width
+# between the first tab's subheader and its table since readability
+# branch C, so the fragment is that tab's fourth child.
 CHART_FRAGMENT = (3,)
-TIMING_FRAGMENT = (6, 0, 2)
+TIMING_FRAGMENT = (6, 0, 3)
 
 
 def _at(page, layout=None, view=None, **state):
@@ -342,8 +345,13 @@ def test_the_page_around_the_chart_fragment_is_untouched():
 def test_the_timing_fragment_holds_the_subheader_picture_and_controls_only():
     at = _at("timing")
     fragment = _node(at, TIMING_FRAGMENT)
-    assert _kinds(fragment) == ["Subheader", "Block", "Image", "DownloadButton", "Caption"]
+    # The wheel's conventions stand in a notes expander after the caption
+    # since readability branch C (AppTest builds an iconed expander as a
+    # Status node); the picture, its download and the caption are as they
+    # were, and no table stands inside the fragment.
+    assert _kinds(fragment) == ["Subheader", "Block", "Image", "DownloadButton", "Caption", "Status"]
     assert list(fragment.children.values())[0].value == "The charts, drawn"
+    assert list(fragment.children.values())[5].label == "How the wheel is drawn"
     # The controls: the View selectbox, the layout radio, the Options popover.
     controls = list(fragment.children.values())[1]
     assert _kinds(controls) == ["Column"] * 3

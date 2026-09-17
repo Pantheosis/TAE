@@ -290,10 +290,14 @@ def test_the_small_days_note_describes_the_control_that_exists():
     at = make_app(page="days")
     at.run()
     assert_no_exception(at, "days")
-    note = [c.value for c in at.main.caption if "59' 08\"" in c.value]
-    assert len(note) == 1, note
-    assert "Only the revolution's Ascendant is directed" not in note[0]
-    assert "the selector above carries it out" in note[0]
+    # Re-pinned on branch C: the small days' caption is a notes expander
+    # ("How the small days are read"); its sentences are read from there.
+    notes = [n for n in at.main if getattr(n, "type", None) == "status" and n.label == "How the small days are read"]
+    assert len(notes) == 1
+    note = " ".join(m.value for m in notes[0].markdown)
+    assert "59' 08\"" in note
+    assert "Only the revolution's Ascendant is directed" not in note
+    assert "the selector above carries it out" in note
 
 
 def test_the_alternate_point_control_is_on_the_page():
