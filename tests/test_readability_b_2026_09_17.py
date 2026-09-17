@@ -207,7 +207,9 @@ def test_the_moon_in_the_houses_shows_its_summary_and_two_qualifications_then_th
     assert block[0][1].startswith("A natal analogy: VII.8 reads the Moon's transit through the houses from the three positions")
     assert "it supplies no condition split" in block[0][1]
     assert block[1][1].startswith("**The text's own reservation.** (From this indication) is the text's own reservation")
-    assert block[2][1].startswith("**The translator's readings.** Where the translator reads conflicting dreams")
+    assert block[2][1] == ("**The translator's readings.** Where the translator reads \"conflicting\" dreams or simply \"different\", "
+                           "both are given; his reading of \"takes away the same\" in the tenth is marked as his guess; the third's "
+                           "\"some of him and his parents\" is as printed.")
     table = _table_under(at, MOON_TITLE, ['House', 'Reading', 'Locator', 'Natal Moon here'])
     box = [s for s in at.main.selectbox if s.key == "the_moon_in_the_houses_pn_iv_vii_8_by_her_transit_detail"][0]
     assert box.value is None and box.placeholder == "Select a house to read the Moon's transit through it in full"

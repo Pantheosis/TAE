@@ -3305,7 +3305,7 @@ def page_dignities():
     with _prose():
         st.markdown("A natal analogy: VII.8 reads the Moon's transit through the houses from the three positions (the Ascendant of the root, the Ascendant of the revolution and the sign of the terminal point), so long as she is in each; it supplies no condition split, so each house has one reading, mixed where the sentence is mixed, and the natal Moon's own whole-sign house is marked.")
         st.markdown("**The text's own reservation.** (From this indication) is the text's own reservation: the Moon's indication alone shows this, and another indication could show otherwise.")
-        st.markdown("**The translator's readings.** Where the translator reads conflicting dreams or simply different, both are given; his reading of takes away the same in the tenth is marked as his guess; the third's some of him and his parents is as printed.")
+        st.markdown("**The translator's readings.** Where the translator reads \"conflicting\" dreams or simply \"different\", both are given; his reading of \"takes away the same\" in the tenth is marked as his guess; the third's \"some of him and his parents\" is as printed.")
     st.dataframe(pd.DataFrame(moon_in_houses_data), hide_index=True, width='stretch', height=_rows_height(len(moon_in_houses_data)),
                  column_config={'House': st.column_config.TextColumn(width="small"),
                                 'Reading': st.column_config.TextColumn(width="large"),
