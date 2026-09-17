@@ -12071,13 +12071,17 @@ def jn_years_fallback(planet, planetary_data, cusps, sect, essential):
             'jn': place_row[2], 'umar': umar, 'text': text, 'citation': JN_YEARS_CITATION, 'table_note': table_note}
 
 # --- Abu 'Ali's additions and subtractions to the house-master's years (JN Ch. 4), DISPLAY ONLY, supplement ---
-# The chapter's second half, built 2026-09-15 on the owner's work order. Sahl
-# 1.20 stays the grant of the years and the app's 1.21 declaration ("the 1.21
-# additions" not applied) stands: this lists what each planet WOULD add or
-# subtract by Ch. 4, one row a planet, and forms no sum. Sentences quoted
-# from Persian Nativities I, pp. 235-236 (photographed 2026-09-15), fn 27-28;
-# Abu Bakr I.15 (PN II pp. 129-130) and 'Umar I.4.4 (PN II pp. 15-16) as
-# witnesses. The test tests/test_jn_years_additions_2026_09_15.py holds the
+# The chapter's second half, built 2026-09-15 on the owner's work order and
+# amended 2026-09-17 on the owner's JN-CH4 ruling (Astra's reading adopted
+# whole: labels, witness cells, two luminary rows, the note; no row's
+# arithmetic changed). Sahl 1.20 stays the grant of the years and the app's
+# 1.21 declaration ("the 1.21 additions" not applied) stands: this lists what
+# each planet WOULD add or subtract by Ch. 4, one row a planet, and forms no
+# sum. Sentences quoted from Persian Nativities I, p. 235 (photographed
+# 2026-09-15, read against the page 2026-09-16), fn 27-28; Abu Bakr I.15 (PN
+# II pp. 129-131) and 'Umar I.4.4 (PN II pp. 15-16) as witnesses, each
+# witness's conditions attached to its own result and gating no row of Abu
+# 'Ali's. The test tests/test_jn_years_additions_2026_09_15.py holds the
 # sentences to the page.
 JN_CH4_SENTENCES = {
     'fortune': ("If therefore you examined how much the kadukhudhāh signified (of years, months and days), and you wished "
@@ -12120,6 +12124,9 @@ ABU_BAKR_I15_ADDITIONS = {
                 "it will always add."),
     'mercury': ("But this is not to be said about Mercury: for if he were with an infortune, he will increase the evil "
                 "and misfortune."),
+    'luminaries': ("If the Sun and Moon were made unfortunate, they destroy, and they add to the infortunes in evil and "
+                   "destruction. Which if it were in their dignity or with fortunes, they will remove evil from the "
+                   "infortunes."),
 }
 TBN_I44_ADDITIONS = {
     'fortunes': ("Know that if fortunes aspected the kadukhudhāh, and it were not under the rays of the Sun, they will "
@@ -12133,38 +12140,78 @@ TBN_I44_ADDITIONS = {
     'infortunes': ("And if the bad ones aspected the kadukhudhāh from out of the opposition or the square aspect, or "
                    "were with it in one sign, they will subtract from it according to their own lesser years, whether "
                    "they received it or not."),
+    'seized': ("If however a bad one aspected the kadukhudhāh by a trine or sextile aspect, and they seized it without "
+               "the aspect of the fortunes, then the bad one which was so [placed] will subtract according to its own "
+               "lesser years."),
+    'fn87': "Again, this is probably besiegement.",
     'sun': ("If the Sun were with the kadukhudhāh by conjunction or opposition and the square aspect, he likewise cuts "
             "off [according to the number of] his lesser years. If he aspected the kadukhudhāh from out of a trine or "
             "sextile, he adds his own lesser years to it."),
+    'sun_reception': ("And if he were conjoined to or opposite it, or he were in its square aspect, and there were "
+                      "reception in the same place, he will subtract months or days [according to] a like [number] of "
+                      "his own lesser years, if God wills."),
 }
 JN_CH4_ADDITIONS_CITATION = "Abu 'Ali, Judgments of Nativities Ch. 4 (fn 27-28), with Abu Bakr I.15 and 'Umar, TBN I.4.4"
 JN_CH4_ADDITIONS_NOTE = (
-    "Display only: these rows say what each planet would add to or subtract from the house-master's years by Abu "
-    "'Ali's chapter, planet by planet; no sum is formed, nothing is scored, and Sahl's grant of the years above is not "
-    "changed by them (Sahl's own 1.21 additions stay not applied). Read: \"joined\" and the aspects by whole sign, as "
-    "this app's other readings of Abu 'Ali are and as 'Umar's \"or were with it in one sign\" has it; the fortunes "
-    "are Jupiter and Venus, the bad ones Saturn and Mars, the luminaries unnamed by the chapter and given no row; "
-    "the lesser years from this app's table, which Ch. 4's table matches in that column. The three grades are the "
-    "chapter's for a fortune's addition and each row prints the count at all three, because no text defines "
-    "\"middling in strength\" or \"more unsound\": the grade is not decided. The bad one's subtraction and Mercury's "
-    "row are not graded by the chapter. Mercury's row is Dykes's reading (fn 28), his company by whole sign with the "
-    "house-master itself left out of it; where fn 28 decides nothing -- Mercury joined to the house-master, or in "
-    "neither company, or in both, or in a company whose aspect fn 28 does not pair with -- the row says so.")
+    "Display only: no total is formed and these rows do not change the Sahl-based grant of the years above (Sahl's "
+    "own 1.21 additions stay not applied). The principal rows state Abu 'Ali, Ch. 4. A fortune's square or "
+    "opposition and a bad one's sextile or trine explicitly contribute zero in that chapter. Abu Bakr and 'Umar are "
+    "separate witnesses with different conditions and, in some cases, different effects; each witness's conditions "
+    "('Umar's house-master under the rays and his fortune retrograde, burned up or impeded; Abu Bakr's reception and "
+    "binding) attach to that witness's result in the Witnesses column and gate no row of Abu 'Ali's. Fortune strength "
+    "grades are conditional alternatives; the chapter does not operationally define their selection, so no grade is "
+    "chosen and none defaults to years. Mercury results derived from Dykes fn 28 are conjectural interpretations, "
+    "and unmatched or mixed cases are not silently treated as zero. A solar modifier shown under 'Umar belongs to "
+    "that witness; no explicit numerical lunar modifier is supplied here. Whole-sign aspects and any same-sign or "
+    "bodily-conjunction definition used by this display are declared implementation conventions except where a "
+    "cited clause expressly specifies sharing a sign ('Umar's \"or were with it in one sign\"): \"joined\" is read by "
+    "whole sign, as this app's other readings of Abu 'Ali are, and Mercury \"with\" a fortune or a bad one is this "
+    "app's convention, whole sign -- in one sign or in any whole-sign aspect, as fn 28 has \"with or in aspect to\" -- "
+    "the house-master itself not counted as his company. The fortunes are Jupiter and "
+    "Venus, the bad ones Saturn and Mars; the lesser years are Ch. 4's own column, which this app's table matches.")
+
+
+JN_CH4_ZERO = "0 -- explicitly neither adds nor subtracts (Abu 'Ali, Ch. 4)"
+JN_CH4_NO_LUMINARY = "no explicit luminary modifier specified here"
+JN_CH4_FN28_LABEL = "Dykes fn 28: conjectural interpretation"
+# The witness cells, one a case: what Abu Bakr I.15 and 'Umar I.4.4 say of the
+# same configuration, each with its own conditions, gating nothing of Abu 'Ali's.
+JN_CH4_WITNESSES = {
+    'fortune adds': "'Umar I.4.4: months if retrograde or burned up",
+    'fortune square': "'Umar I.4.4: adds its lesser years if not retrograde, burned up or impeded",
+    'infortune trine': ("Abu Bakr I.15: adds its lesser years from a good place (to the significator of life, his term) "
+                        "· 'Umar I.4.4: subtracts if it seizes the house-master without a fortune's aspect (fn 87 reads "
+                        "'seized' as besieged)"),
+    'mercury': ("Abu Bakr I.15: \"But this is not to be said about Mercury: for if he were with an infortune, he will "
+                "increase the evil and misfortune.\""),
+    'sun': ("'Umar I.4.4: subtracts his lesser years by conjunction, square or opposition; adds them by trine or "
+            "sextile; with reception in those three, months or days (no unit chosen) -- the 19 is Ch. 4's table reused"),
+    'moon': ("Abu Bakr I.15: made unfortunate, the luminaries destroy and add to the infortunes in evil; in their "
+             "dignity or with fortunes they remove evil (the antecedent of 'it' unclear as printed)"),
+}
 
 
 def evaluate_jn_years_additions(house_master, planetary_data):
     """JN Ch. 4's additions and subtractions to the house-master's years,
     DISPLAY ONLY: one row for each other planet joined to the house-master
     or aspecting it by whole sign -- a fortune joined, trine or sextile
-    adds its lesser years (three grades, none chosen), a bad one joined,
-    square or opposite subtracts its lesser years, a fortune's square or
-    opposition and a bad one's sextile or trine add or subtract nothing,
-    Mercury by fn 28 (Dykes's reading). The luminaries are unnamed by the
-    chapter and get no row; a planet in aversion gets none. Returns a list
-    of dicts (empty when there is no house-master); each carries 'planet',
-    'aspect', 'effect' ('adds', 'subtracts', 'nothing', 'not decided'),
-    'lesser', 'grades' (count and unit at each of JN_CH4_GRADES, or None
-    where the chapter grades nothing), 'sentence', 'reading'. No sum."""
+    adds its lesser years (three grades, none chosen and none defaulting
+    to years), a bad one joined, square or opposite subtracts its lesser
+    years, a fortune's square or opposition and a bad one's sextile or
+    trine are the chapter's explicit zero, Mercury by fn 28 (Dykes's
+    conjecture, labelled so; the cases fn 28 does not pair are not
+    decided under it, with the sentence's literal reading beside). A
+    planet in aversion gets no row. After the five, the luminaries, always
+    (unless the house-master): the chapter gives them no modifier; the
+    Sun's row carries 'Umar's rule attributed to him, the Moon's Abu
+    Bakr's qualitative sentence. Returns a list of dicts (empty when there
+    is no house-master); each carries 'planet', 'aspect' (None in
+    aversion, luminaries only), 'effect' ('adds', 'subtracts', 'nothing',
+    'not decided', 'not specified', 'unresolved'), 'lesser_years',
+    'grades' (count and unit at each of JN_CH4_GRADES, or None where the
+    chapter grades nothing), 'sentence', 'reading', 'witnesses', and for
+    Mercury 'literal' (the sentence read literally: 'adds' / 'subtracts' /
+    None), for the Sun 'umar' ('adds' / 'subtracts' / None). No sum."""
     if not house_master or house_master not in planetary_data:
         return []
     hm_lon = planetary_data[house_master]['longitude']
@@ -12177,41 +12224,78 @@ def evaluate_jn_years_additions(house_master, planetary_data):
             continue
         aspect = 'joined' if look == 'with' else look
         lesser = JN_YEARS_TABLE[planet][2]   # Ch. 4's own lesser column, as jn_years_fallback reads it
-        reading = None
+        reading, witnesses, literal = None, "-", None
         if planet in ('Jupiter', 'Venus'):
             if look in ('with', 'trine', 'sextile'):
                 effect, sentence = 'adds', JN_CH4_SENTENCES['fortune']
+                reading = (f"{lesser:g} years; if middling, {lesser:g} months; if more unsound, {lesser:g} days or "
+                           f"{lesser:g} hours -- strength grade not determined here")
+                witnesses = JN_CH4_WITNESSES['fortune adds']
             else:
                 effect, sentence = 'nothing', JN_CH4_SENTENCES['nothing']
+                reading, witnesses = JN_CH4_ZERO, JN_CH4_WITNESSES['fortune square']
         elif planet in SAHL_INFORTUNES:
             if look in ('with', 'square', 'opposition'):
                 effect, sentence = 'subtracts', JN_CH4_SENTENCES['infortune']
             else:
                 effect, sentence = 'nothing', JN_CH4_SENTENCES['nothing']
+                reading, witnesses = JN_CH4_ZERO, JN_CH4_WITNESSES['infortune trine']
         else:                                                   # Mercury, fn 28
             company = {p: _prosperity_looks(planetary_data[planet]['longitude'], planetary_data[p]['longitude'])
                        for p in ('Jupiter', 'Venus', 'Saturn', 'Mars') if p != house_master and p in planetary_data}
             good = [p for p in ('Jupiter', 'Venus') if company.get(p)]
             bad = [p for p in ('Saturn', 'Mars') if company.get(p)]
-            sentence = JN_CH4_SENTENCES['mercury']
+            sentence, witnesses = JN_CH4_SENTENCES['mercury'], JN_CH4_WITNESSES['mercury']
             if good and not bad and look in ('sextile', 'trine'):
-                effect = 'adds'
-                reading = f"Dykes's reading (fn 28): with or aspecting {', '.join(good)}, himself {look} to the house-master"
+                effect, literal = 'adds', 'adds'
+                reading = (f"Dykes fn 28 (conjectural interpretation): with or aspecting {', '.join(good)}, himself {look} to the "
+                           f"house-master -- adds {lesser:g} years")
             elif bad and not good and look in ('square', 'opposition'):
-                effect = 'subtracts'
-                reading = f"Dykes's reading (fn 28): with or aspecting {', '.join(bad)}, himself {look} to the house-master"
+                effect, literal = 'subtracts', 'subtracts'
+                reading = (f"Dykes fn 28 (conjectural interpretation): with or aspecting {', '.join(bad)}, himself {look} to the "
+                           f"house-master -- subtracts {lesser:g} years")
+            elif good and bad:
+                effect, reading = 'unresolved', "mixed associations: authorial result unresolved"
+            elif not good and not bad:
+                effect, reading = 'not specified', "not specified; not an explicit zero"
             else:
-                effect = 'not decided'
-                why = ("joined to the house-master, which fn 28 does not decide" if look == 'with'
-                       else "in the company of neither a fortune nor a bad one" if not good and not bad
-                       else "in the company of both a fortune and a bad one" if good and bad
-                       else f"in the company of {', '.join(good or bad)} but himself {look} to the house-master, which fn 28 does not decide")
-                reading = f"Dykes's reading (fn 28) reaches no verdict: {why}"
+                effect, literal = 'not decided', ('adds' if good else 'subtracts')
+                # The literal +20 hangs on the sentence's "(which add)": the fortune must itself be one that adds.
+                reading = (f"not decided under fn 28: this pairing is unstated · Abu 'Ali's sentence read literally: "
+                           f"{literal} {lesser:g} years" + (" (if the fortune is one 'which add[s]')" if literal == 'adds' else ""))
         grades = None
         if effect == 'adds' and planet != 'Mercury':
             grades = tuple((text, lesser, unit) for text, unit in JN_CH4_GRADES)
-        rows.append({'planet': planet, 'aspect': aspect, 'effect': effect, 'lesser_years': lesser, 'grades': grades,
-                     'sentence': sentence, 'reading': reading})
+        row = {'planet': planet, 'aspect': aspect, 'effect': effect, 'lesser_years': lesser, 'grades': grades,
+               'sentence': sentence, 'reading': reading, 'witnesses': witnesses}
+        if planet == 'Mercury':
+            row['literal'] = literal
+        rows.append(row)
+    # The luminaries, out of the loop: Ch. 4 names them in its table as
+    # house-master and gives them no modifier. The Sun's row is 'Umar's,
+    # attributed to him in the cell; the Moon's is Abu Bakr's, qualitative.
+    for planet in ('Sun', 'Moon'):
+        if planet == house_master or planet not in planetary_data:
+            continue
+        look = _prosperity_looks(planetary_data[planet]['longitude'], hm_lon)
+        aspect = None if look is None else 'joined' if look == 'with' else look
+        row = {'planet': planet, 'aspect': aspect, 'effect': 'not specified', 'lesser_years': JN_YEARS_TABLE[planet][2],
+               'grades': None, 'sentence': JN_CH4_NO_LUMINARY, 'witnesses': JN_CH4_WITNESSES[planet.lower()]}
+        if planet == 'Sun':
+            n = row['lesser_years']
+            if look in ('with', 'square', 'opposition'):
+                row['umar'] = 'subtracts'
+                row['reading'] = (f"'Umar: subtracts {n:g} years ({aspect}); with reception, months or days (no unit "
+                                  f"chosen) -- reception not tested here")
+            elif look in ('trine', 'sextile'):
+                row['umar'] = 'adds'
+                row['reading'] = f"'Umar: adds {n:g} years ({aspect})"
+            else:
+                row['umar'] = None
+                row['reading'] = "'Umar: none of his cases applies (in aversion)"
+        else:
+            row['reading'] = "not specified"
+        rows.append(row)
     return rows
 
 
@@ -12220,19 +12304,27 @@ def jn_years_additions_rows(house_master, planetary_data):
     out = []
     for r in evaluate_jn_years_additions(house_master, planetary_data):
         n = r['lesser_years']
-        effect = {'adds': f"adds its lesser years ({n:g})", 'subtracts': f"subtracts its lesser years ({n:g})",
-                  'nothing': "adds or subtracts nothing", 'not decided': "not decided"}[r['effect']]
+        if r['planet'] in ('Sun', 'Moon'):
+            effect = JN_CH4_NO_LUMINARY
+        elif r['planet'] == 'Mercury':
+            effect = JN_CH4_FN28_LABEL + " -- " + {
+                'adds': f"adds his lesser years ({n:g})", 'subtracts': f"subtracts his lesser years ({n:g})",
+                'not decided': "not decided", 'not specified': "not specified", 'unresolved': "unresolved"}[r['effect']]
+        else:
+            effect = {'adds': f"adds its lesser years ({n:g})", 'subtracts': f"subtracts its lesser years ({n:g})",
+                      'nothing': "adds or subtracts nothing"}[r['effect']]
         if r['grades']:
             cells = [f"{n:g} {unit}" for _, _, unit in r['grades']]
-            grade = "not decided: no text defines \"middling in strength\" or \"more unsound\""
+            grade = "not determined: no text defines \"middling in strength\" or \"more unsound\""
         elif r['effect'] in ('adds', 'subtracts'):
             cells = [f"{n:g} years", "-", "-"]
             grade = "the chapter grades the fortune's addition only"
         else:
             cells, grade = ["-", "-", "-"], "-"
-        out.append({'Planet': r['planet'], 'Looks at the house-master': f"{r['aspect']} (whole sign)", 'Ch. 4': effect,
+        looks = f"{r['aspect']} (whole sign)" if r['aspect'] else "in aversion (whole sign)"
+        out.append({'Planet': r['planet'], 'Looks at the house-master': looks, 'Ch. 4': effect,
                     'Its own lesser years': cells[0], 'If middling in strength': cells[1], 'If more unsound': cells[2],
-                    'Grade': grade, 'Reading': r['reading'] or "the chapter's sentence"})
+                    'Grade': grade, 'Reading': r['reading'] or "the chapter's sentence", 'Witnesses': r['witnesses']})
     return out
 
 # --- Spear-bearing: two stated definitions, DISPLAY ONLY (owner, 2026-09-11, decision sheet row 11 / DEC-D-18) ---

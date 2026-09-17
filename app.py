@@ -1586,7 +1586,7 @@ if chart_ok:
 # Quotation/Sentence/Standing are this app's citation- and
 # prose-heavy columns, cut off at the default width.
 _WIDE_TEXT_COLUMNS = {'Value', 'Text', 'Reading', 'Source', 'Note', 'Notes',
-                       'Quotation', 'Sentence', 'Standing'}
+                       'Quotation', 'Sentence', 'Standing', 'Witnesses'}
 
 def _wide_text_columns(df):
     """column_config for a table's own text-heavy columns, by name."""
@@ -4254,27 +4254,33 @@ def page_timing():
                 _add = pn4['hm_years_additions']
                 _finding([], "Additions and subtractions to the house-master's years (Abu 'Ali)",
                          JN_CH4_ADDITIONS_CITATION,
-                         _add or [{'Planet': '-', 'Looks at the house-master': f"none of Saturn, Jupiter, Mars, Venus or Mercury is joined to {rel['house_master']} or looks at it by whole sign",
-                                   'Ch. 4': '-', 'Its own lesser years': '-', 'If middling in strength': '-',
-                                   'If more unsound': '-', 'Grade': '-', 'Reading': '-'}],
+                         _add,      # never empty under a house-master: a luminary row is always present
                          standing="Supplement · display only",
                          glance="What each planet joined to the house-master or looking at it would add to or subtract "
                                 "from its years by Abu 'Ali's chapter: a fortune joined, trine or sextile adds its "
-                                "lesser years, at one of three grades the chapter leaves undefined; a bad one joined, "
-                                "square or opposite subtracts its lesser years; Mercury by Dykes's reading. Display "
-                                "only: no sum is formed, and Sahl's grant above is not changed.",
+                                "lesser years, at one of three grades the chapter leaves undefined (none chosen, none "
+                                "defaulting to years); a bad one joined, square or opposite subtracts its lesser years; "
+                                "a fortune's square or opposition and a bad one's sextile or trine are the chapter's "
+                                "explicit zero; Mercury by Dykes's fn 28, a conjecture, the cases it does not pair "
+                                "left undecided under it; the Sun and Moon, given no modifier by the chapter, carry "
+                                "'Umar's solar rule and Abu Bakr's sentence on the luminaries as witnesses. Abu Bakr "
+                                "and 'Umar stand beside each row in the Witnesses column with their own conditions. "
+                                "Display only: no sum is formed, and Sahl's grant above is not changed.",
                          notes=(f"Abu 'Ali, Judgments of Nativities Ch. 4, whole: \"{JN_CH4_SENTENCES['fortune']}\" \"{JN_CH4_SENTENCES['infortune']}\" "
                                 f"\"{JN_CH4_SENTENCES['nothing']}\" \"{JN_CH4_SENTENCES['mercury']}\" \"{JN_CH4_SENTENCES['mars']}\" "
                                 f"Fn 27 on \"rays\": \"{JN_CH4_SENTENCES['fn27']}\" Fn 28 on Mercury: \"{JN_CH4_SENTENCES['fn28']}\"\n\n"
                                 f"{JN_CH4_ADDITIONS_NOTE}\n\n"
                                 f"Abu Bakr, On Nativities I.15, a witness beside Abu 'Ali (not applied): \"{ABU_BAKR_I15_ADDITIONS['method']}\" "
-                                f"He grades the aspecting planet by its place and condition where Abu 'Ali says \"middling\" and \"more unsound\": "
+                                f"He grades the aspecting planet by its place and condition where Abu 'Ali says \"middling\" and \"more unsound\" "
+                                f"(a different grading, not a definition of Abu 'Ali's): "
                                 f"\"{ABU_BAKR_I15_ADDITIONS['grades']}\" And he differs on the bad one's trine and sextile and the fortune's square and "
-                                f"opposition: \"{ABU_BAKR_I15_ADDITIONS['differs']}\" On Mercury: \"{ABU_BAKR_I15_ADDITIONS['mercury']}\"\n\n"
+                                f"opposition: \"{ABU_BAKR_I15_ADDITIONS['differs']}\" On the luminaries: \"{ABU_BAKR_I15_ADDITIONS['luminaries']}\" "
+                                f"On Mercury: \"{ABU_BAKR_I15_ADDITIONS['mercury']}\"\n\n"
                                 f"'Umar al-Tabari, Book of Nativities I.4.4, a witness (not applied): \"{TBN_I44_ADDITIONS['fortunes']}\" "
-                                f"\"{TBN_I44_ADDITIONS['grades']}\" \"{TBN_I44_ADDITIONS['infortunes']}\" With Sahl 1.21, 8, and against Abu 'Ali, on the "
-                                f"fortunes' square and opposition: \"{TBN_I44_ADDITIONS['squares']}\" And the Sun, whom Abu 'Ali does not name: "
-                                f"\"{TBN_I44_ADDITIONS['sun']}\""))
+                                f"\"{TBN_I44_ADDITIONS['grades']}\" \"{TBN_I44_ADDITIONS['infortunes']}\" \"{TBN_I44_ADDITIONS['seized']}\" "
+                                f"(fn 87 on \"seized\": \"{TBN_I44_ADDITIONS['fn87']}\") With Sahl 1.21, 8, and against Abu 'Ali, on the "
+                                f"fortunes' square and opposition: \"{TBN_I44_ADDITIONS['squares']}\" And the Sun, to whom Abu 'Ali's chapter gives no "
+                                f"modifier: \"{TBN_I44_ADDITIONS['sun']}\" \"{TBN_I44_ADDITIONS['sun_reception']}\""))
         if rel['releaser'] is None:
             st.markdown("**The stand-in (Sahl, *On Nativities* 1.32, 11-14, al-Andarzaghar).** The Ascendant's "
                         "distribution in the tab \"from the Ascendant\" is \"the first of them\" (13); the Moon, "

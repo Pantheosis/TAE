@@ -1741,3 +1741,83 @@ say fifteen dashes and describe the page-range locators; `tables.json` regenerat
 Whole suite 3136 passed, 1 skipped, 6 xfailed.
 
 Delta pass (the checker on 0b3a5b1): 93 changed halves verified, none defective, ready to merge. One note acted on: Jupiter 9th Bad had gained an attributed editorial aside on Holden's "fond of gold" (his conjecture of oracles); it leaves the rendered cell as the two lacuna asides did.
+
+## 2026-09-17: JN Ch. 4 rows amended after Astra's reading
+
+The owner's JN-CH4 ruling of 2026-09-16 adopted Astra's reading whole (`process/astra_2026-09-11/JN-CH4_ruling_2026-09-16.md`,
+`JN-CH4_astra_ruling.md`, the packet `JN-CH4_packet.md`, in the corpus repo). Labels, witness cells, two luminary rows
+and the note; no row's arithmetic changed; the finding's title unchanged; Sahl 1.20's grant, the "1.21 additions not
+applied" declaration and the display-only standing untouched. Branch `jnch4-amendments-2026-09-17` off 579316f.
+
+Row by row (`evaluate_jn_years_additions`, `jn_years_additions_rows`; a new column 'Witnesses', prose-wide):
+- (a) The zero rows -- a fortune's square or opposition, a bad one's sextile or trine -- keep 'Ch. 4' "adds or subtracts
+  nothing" and now print in 'Reading' "0 -- explicitly neither adds nor subtracts (Abu 'Ali, Ch. 4)" (`JN_CH4_ZERO`);
+  'Witnesses' for the fortune: "'Umar I.4.4: adds its lesser years if not retrograde, burned up or impeded"; for the
+  bad one: "Abu Bakr I.15: adds its lesser years from a good place (to the significator of life, his term) · 'Umar
+  I.4.4: subtracts if it seizes the house-master without a fortune's aspect (fn 87 reads 'seized' as besieged)"
+  (`JN_CH4_WITNESSES`). 'Umar's seized sentence and fn 87 added to `TBN_I44_ADDITIONS` ('seized', 'fn87'), verbatim.
+- (b) A fortune's addition keeps the three grade columns; 'Reading' now "k years; if middling, k months; if more
+  unsound, k days or k hours -- strength grade not determined here"; 'Grade' reads "not determined: no text defines
+  ..." where it read "not decided" (never "years"); 'Witnesses' "'Umar I.4.4: months if retrograde or burned up".
+- (c) Mercury: 'Ch. 4' carries "Dykes fn 28: conjectural interpretation" (`JN_CH4_FN28_LABEL`) in every case; the
+  paired cases read "Dykes fn 28 (conjectural interpretation): with or aspecting Venus, himself sextile to the
+  house-master -- adds 20 years" (effect 'adds' / 'subtracts', 'literal' the same); the unpaired cases -- with a
+  fortune but square, opposite or joined to the house-master; with a bad one but trine, sextile or joined -- "not
+  decided under fn 28: this pairing is unstated · Abu 'Ali's sentence read literally: adds 20 years" / "subtracts 20
+  years" (effect 'not decided', 'literal' 'adds' / 'subtracts'); with neither "not specified; not an explicit zero"
+  (effect 'not specified'); with both "mixed associations: authorial result unresolved" (effect 'unresolved').
+  'Witnesses' quotes Abu Bakr's Mercury sentence. "With" is declared this app's convention (whole sign, the
+  house-master not counted as company) in the note.
+- (d) Two luminary rows after the loop over the five, always present when there is a house-master (a luminary that is
+  itself the house-master has none): 'Ch. 4' "no explicit luminary modifier specified here" (`JN_CH4_NO_LUMINARY`,
+  also the row's 'sentence'), the grade cells dashes. The Sun: 'Looks at the house-master' computed by whole sign as
+  for the others ("in aversion (whole sign)" when averse), 'Reading' "'Umar: subtracts 19 years (square)" for joined,
+  square or opposition with "; with reception, months or days (no unit chosen) -- reception not tested here" (this app
+  does not test 'Umar's "reception in the same place"; the clause is shown, not computed), "'Umar: adds 19 years
+  (trine)" for trine or sextile, "'Umar: none of his cases applies (in aversion)" otherwise; 'umar' in the dict
+  'subtracts' / 'adds' / None; 'Witnesses' "'Umar I.4.4: subtracts his lesser years by conjunction, square or
+  opposition; adds them by trine or sextile; with reception in those three, months or days (no unit chosen) -- the 19
+  is Ch. 4's table reused" ('sun_reception' added to `TBN_I44_ADDITIONS`, verbatim). The Moon: 'Reading' "not
+  specified"; 'Witnesses' Abu Bakr's luminaries sentence paraphrased with the unclear antecedent flagged ('luminaries'
+  added to `ABU_BAKR_I15_ADDITIONS`, verbatim); his "Lord of the kadukhudhāh joined to the Sun" sentence not used
+  (fn 618). The 19 is read from `JN_YEARS_TABLE['Sun'][2]` inside the same function; no new reader of the table.
+- (e) Verified: no row stating Abu 'Ali is gated by a witness's condition -- the evaluator's five-planet loop decides
+  by the whole-sign look alone, the witnesses' conditions live in `JN_CH4_WITNESSES` only (a test reads the source
+  for the words). The brief's "`umar` list" is `evaluate_jn_years`'s (the ladder), not this evaluator's, which never
+  had one. The subtracting bad one's row is unchanged ('Reading' "the chapter's sentence", 'Witnesses' a dash).
+- Note: `JN_CH4_ADDITIONS_NOTE` replaced with Astra's suggested note in this app's forms ("this app", "Abu 'Ali",
+  "Abu Bakr", "'Umar", straight quotes, " -- "), plus the sentences the old note carried that the ruling keeps (the
+  fortunes and bad ones named, the lesser years Ch. 4's column, "joined" by whole sign, Mercury's "with" as this
+  app's convention, 'Umar's "or were with it in one sign" as the one clause that specifies a sign). The `_finding`
+  glance names the explicit zero, "Mercury by Dykes's fn 28, a conjecture", the Sun and Moon with their witnesses,
+  and the Witnesses column; its Sources expander quotes the four added sentences (Abu Bakr on the luminaries; 'Umar's
+  seized sentence with fn 87, and the Sun's reception sentence) and says Abu Bakr's grading is "a different grading,
+  not a definition of Abu 'Ali's". 'Witnesses' added to `_WIDE_TEXT_COLUMNS` (one line; the column is prose).
+- Comment only: the block header now says Ch. 4 is p. 235 (photographed 2026-09-15, read against the page
+  2026-09-16), the old "pp. 235-236" being wrong -- p. 236 is Ch. 5.
+
+The corpus OCR item (PN I p. 235's middle-years cells "43 $1\frac{1}{2}$"): already repaired by the witness pass
+(corpus `process/proofing_2026-09-16/WITNESS_PASSAGES_READ_REPORT_2026-09-16.md` §3 row 5); confirmed
+`pn1/pn1_photographed.md` line 861 reads "43 ½" and the other middle-years cells (45 ½, 40 ½, 69 ½, 66 ½) likewise,
+matching `JN_YEARS_TABLE`. No photograph read, no corpus file edited.
+
+Tests (`tests/test_jn_years_additions_2026_09_15.py`, 14): the Ch. 4 span re-pinned to end at the p. 236 marker
+(the file now carries Masha'allah III.1.8 before Abu 'Ali, so the old end heading preceded the start and the span
+came out empty on main); the 'Umar span now includes its footnotes (fn 87); the existing sentence-to-page pins kept
+and the six new sentences held to the page; the zero rows' text and witnesses; a fortune row's reading string and no
+'Grade' reading "years"; Mercury's four cases (and joined) by constructed charts; the Sun row in each of 'Umar's
+cases (square, opposition, joined, trine, sextile, aversion) and the Moon row; the luminaries present with no other
+planet looking, absent when the house-master; the note's "conjectural" and "implementation conventions" and no smart
+quotes; no witness condition in the five-planet loop's source; the Releaser tab at both depths with the new note's
+phrases. `tables.json` regenerated once without -n: unchanged (the finding renders at the supplement depth only).
+Pre-existing on main 579316f against the current corpus and left for the mechanic: `test_years_ladder_2026_09_15.py`
+(pins the pre-repair "43 $1\frac{1}{2}$") and `test_andarzaghar_triplicity_lords_2026_09_15.py` (a split ITA marker).
+
+After the blind check (corpus `process/astra_2026-09-11/BUILD_JNCH4_AMEND_CHECK_REPORT_2026-09-17.md`: 0 defects,
+5 notes), three notes applied: (6) Mercury's literal-reading cell qualifies the +20 as Astra's case mapping asks --
+"read literally: adds 20 years (if the fortune is one 'which add[s]')"; the -20 cell is unqualified, the sentence
+having no condition for the bad ones; (7) the note's "with" convention now reads "whole sign -- in one sign or in any
+whole-sign aspect, as fn 28 has "with or in aspect to" -- the house-master itself not counted as his company", which
+is what `_prosperity_looks` does; (19) the unreachable "none of Saturn, Jupiter, Mars, Venus or Mercury ... looks at
+it" fallback row dropped from app.py (a luminary row is always present under a house-master). Tests pin the two
+strings. Rebased onto main after #67 and #68; `tables.json` regenerated once without -n.
