@@ -1851,18 +1851,19 @@ suitable condition" / "If in a bad condition" on the page. The Moon's PN IV halv
 "see the Moon's table below (VII.8, by her transit)" with cite '', and her twelve readings are
 `MOON_IN_HOUSES_VII8`, one unsplit reading per house.
 
-Counts. 352 entries: 196 by Rhetorius, 152 by Firmicus, 4 by Rhetorius, as summarized by Dykes (the
+Counts (as they stand after the check's fixes, below). 355 entries: 198 by Rhetorius, 153 by Firmicus, 4 by Rhetorius, as summarized by Dykes (the
 Moon's fifth and seventh, by night and by day each, fnn 284-285); no cell without an entry (build C
 had left 15 halves dashed, but every one of those cells has testimony under the author's own axis --
 Saturn, Jupiter and Mars in the sixth, Mars in the seventh and Saturn, Mars and the Sun in the
-twelfth had only adverse readings, and adverse testimony is testimony). Axes: 139 unsplit, 78 by day,
-78 by night, 10 in sect, 9 out of sect, 20 general malefic, 18 general benefic; 36 portional, 60
+twelfth had only adverse readings, and adverse testimony is testimony). Axes: 142 unsplit, 78 by day,
+78 by night, 10 in sect, 9 out of sect, 20 general malefic, 18 general benefic; 35 portional, 60
 conditional. Of build C's 153 halves with text, the 123 that cited both authors became two entries,
-one per author, and the 30 that cited one became one; 34 further entries come from splitting one
+one per author, and the 30 that cited one became one; 36 further entries come from splitting one
 author's clauses by his own division or into their own configuration records (Firmicus's III.2, 1-3
 and 4-5 for Saturn in the first; his Mars in the seventh into five, III.4, 38-41, 42-43, 44-45,
 46-49, 50-51; his Moon in the third and twelfth; Rhetorius's Mercury in the second by night, by day
-and the first set); the 38 general class entries and the 4 summaries are new. General class
+and the first set; Saturn's Moon-aspect sentences in the fourth and twelfth as their own unsplit
+entries); the 38 general class entries, the 4 summaries and III.5, 16 are new. General class
 testimony (Ch. 57's "the malefics there ..." / "the benefics ...") is entered for both members of the
 class in the houses whose sections carry such a sentence -- the malefics' in the first, second,
 third, fourth, sixth, eighth, ninth, tenth, eleventh and twelfth (the eleventh's is a good reading:
@@ -1936,7 +1937,7 @@ Page. The help for Topical Planets in Houses is rewritten whole for the three-co
 third column is (both texts, each entry under its author with the author's own division and its
 conditions, because the texts do not divide by well and badly placed), general testimony labelled,
 "portionally" printed, a dash defined as absence of testimony, the translators' reassignments and
-the lost paragraphs, the counts (352; 196, 152, 4; no cell without one), the ~60-word rule and the
+the lost paragraphs, the counts (355; 198, 153, 4; no cell without one), the ~60-word rule and the
 row's detail, the condition columns and their inferred-condition note, the shared locators and the
 falling-places layer, every PN IV half with text, the Moon's pointer, and the Guide cited once, in
 its existing form, as the arrangement's origin. The Timing page caption (VI.3 beside the natal
@@ -1944,9 +1945,9 @@ table "whose PN IV halves paraphrase Book II's sentences as natal readings") is 
 addenda say. No date, file or process on the page.
 
 Tests. `tests/test_prose_tables.py`: `RHETORIUS_HALVES_SENTENCES` retired for `RHETORIUS_ENTRIES`,
-352 rows of (house, planet, author, axis, cite, anchors) in list order -- the anchors carried over
+355 rows of (house, planet, author, axis, cite, anchors) in list order -- the anchors carried over
 from build C's rows where they still fit the entry's text and passage, picked afresh otherwise, all
-352 checked by script against the corpus (for a Rhetorius cite the text of the cited pages, for a
+355 checked by script against the corpus (for a Rhetorius cite the text of the cited pages, for a
 Firmicus cite the cited sentences, for a summary the footnote); `PN4_HALVES_SENTENCES` with the
 shared annotations and the Moon's twelve rows as the pointer with cite ''; `MOON_VII8_SENTENCES`, the
 Moon's twelve (house, cite, anchors), checked likewise. The nine tests the list shape retired are
@@ -1961,7 +1962,7 @@ empty cell and the author counts the help states; general testimony for both cla
 pinned houses and for no other planet; the axes the authors' own (Saturn 1st, Jupiter 1st, Mars 1st,
 Jupiter 2nd, the Moon 6th, Venus 9th's two copies, the four summaries); the conditions constitutive
 (III.2, 4-5 whole and flagged; III.4, 36-37 portional; no full-Moon configuration; 60 conditional,
-36 portional); no Guide wording; the readers' formats (the PN IV half, the pointer, the entry, the
+35 portional, the six inherited flags set and III.2, 18-20's not); no Guide wording; the readers' formats (the PN IV half, the pointer, the entry, the
 cell under and over the word budget, the rows' keys, the Moon table's rows and the natal mark); the
 help's counts and phrases, the caption, the headings and the Moon table on the rendered page; and
 a seeded row selection printing every entry of the list. `tests/test_base_tables.py`'s shape guard
@@ -2000,3 +2001,29 @@ not Saturn's; the Firmicus configuration records build C never cited (III.3, 7; 
 fasces "if the Sun and Venus join him") are the author's primary statement for the placement, so
 they are not flagged conditional though their content is conditioned; the flag marks entries whose
 whole reading is a configuration record (III.2, 4-5; III.3, 9; III.6, 69; 70-71 and the like).
+
+After the check (`BUILD_DELIN_CB_CHECK_REPORT_2026-09-17.md`: 352 of 352 entries verified against
+their passages, 168 of 168 halves accounted for and none lost, one defect and notes; the branch
+rebased by a mechanic onto cc88a95, 9739d86), four changes on the branch: (D7) the `portional` flag
+leaves III.2, 18-20 (Saturn in the fourth by night: sentence 18 says "in this sign", the run's only
+"portion" is the Moon's), 36 flags to 35; the six flags inherited from the place's opening sentence
+where the cited run says only "so put" / "in this place" / "in the Midheaven" (III.2, 4-5; 30; 41-43;
+44-48; III.4, 22-25; 80-81) are KEPT, since dropping them would silently widen Firmicus's scope,
+which ruling row e forbids, and made honest: the help now says the flag is carried from the place's
+opening sentence where the run refers back to it, the engine comment names the six, the entries file
+marks them inherited, and the test pins them set and III.2, 18-20's unset. (N5) Two Saturn clauses
+build C had placed under by night where the page makes no division -- the twelfth's "And if he
+squares or opposes the Moon ... And they experience severe illnesses, and they have internal pains"
+(p. 46) and the fourth's "Aspecting the Moon by opposition or square or being with her ... widowhood
+to the mother and distress from feminine complaints" (pp. 69-70) -- are their own `unsplit` entries,
+the axis being the author's word and these sentences having none; the by-night entries keep what
+the page says by night (the fourth's now cites p. 69 alone). (N6) Saturn in the second's supplement
+reads "the sect word is the editor's, by comparison with Firmicus" -- Holden's fn 2: Cumont's
+inference from Firmicus III.2, 4-6, which also omits the word. (N25) III.5, 16, "the Sun being
+established broadly in the sign of the Hour-marker will make clever people [and] nobles", an
+unconditional whole-sign reading, is an `unsplit` Firmicus entry for the Sun in the first, as its
+tenth-house twin III.5, 86 already was; the p. 48 Saturn entry stays. Counts after: 355 entries --
+198 by Rhetorius, 153 by Firmicus, 4 by Dykes's summary; 142 unsplit; 35 portional; 60 conditional;
+the help, the tests, the entries file and this section say so. The three new and one re-anchored
+fixture rows verified against their passages by script (367 rows in all). `tables.json` regenerated
+once without -n, unchanged.

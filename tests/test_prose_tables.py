@@ -22,7 +22,9 @@ sentence:
      malefic' / 'general benefic' for Ch. 57's class sentences entered for
      Saturn and Mars, and for Jupiter and Venus; the text with every
      condition its sentence states; 'portional' where Firmicus states the
-     placement so; 'conditional' where the whole reading rests on a stated
+     placement so, or where the cited run refers back to the place's opening
+     sentence that states it (III.2, 4-5; 30; 41-43; 44-48; III.4, 22-25;
+     80-81), never where he says "in this sign" (III.2, 18); 'conditional' where the whole reading rests on a stated
      configuration (the reader sends those to the row's detail when a cell
      runs past RHETORIUS_CELL_WORDS, never trimming them). Their pin is
      RHETORIUS_ENTRIES: one row per entry, in list order -- house, planet,
@@ -110,6 +112,7 @@ RHETORIUS_ENTRIES = [
     (1, 'Sun', 'Rhetorius', 'by night', 'Ch. 57, the first, p. 53', ['possessions', 'opposition', 'destroyer']),
     (1, 'Sun', 'Firmicus', 'unsplit', 'III.5, 1-2', ['difficulty', 'masculine', 'protected']),
     (1, 'Sun', 'Firmicus', 'by day', 'III.5, 4-5', ['difficulties', 'generalships', 'hindrances']),
+    (1, 'Sun', 'Firmicus', 'unsplit', 'III.5, 16', ['broadly', 'clever', 'marker']),
     (1, 'Sun', 'Firmicus', 'by night', 'III.5, 21-23', ['dissipates', 'patrimony', 'substance']),
     (1, 'Venus', 'Rhetorius', 'in sect', 'Ch. 57, the first, pp. 53-54', ['quadrupedal', 'allowances', 'predicting']),
     (1, 'Venus', 'Rhetorius', 'out of sect', 'Ch. 57, the first, p. 54', ['reprehensible', 'promiscuous', 'inventors']),
@@ -185,7 +188,8 @@ RHETORIUS_ENTRIES = [
     (3, 'Moon', 'Firmicus', 'by night', 'III.13, 13', ['sacrilegious', 'misfortunes', 'religions']),
     (3, 'Moon', 'Firmicus', 'by day', 'III.13, 14', ['sacrilegious', 'irreligious', 'despoilers']),
     (4, 'Saturn', 'Rhetorius', 'by day', 'Ch. 57, the fourth, p. 69', ['wealth', 'gold', 'up']),
-    (4, 'Saturn', 'Rhetorius', 'by night', 'Ch. 57, the fourth, pp. 69-70', ['childlessness', 'destruction', 'complaints']),
+    (4, 'Saturn', 'Rhetorius', 'by night', 'Ch. 57, the fourth, p. 69', ['destruction', 'illnesses', 'ignoble']),
+    (4, 'Saturn', 'Rhetorius', 'unsplit', 'Ch. 57, the fourth, pp. 69-70', ['childlessness', 'complaints', 'internally']),
     (4, 'Saturn', 'Rhetorius', 'in sect', 'Ch. 57, the fourth, p. 68', ['inheritance', 'exaltation', 'stationary']),
     (4, 'Saturn', 'Rhetorius', 'general malefic', 'Ch. 57, the fourth, p. 67', ['possessions', 'ancestral', 'miserable']),
     (4, 'Saturn', 'Firmicus', 'by day', 'III.2, 17', ['guardians', 'greedy', 'monies']),
@@ -410,8 +414,9 @@ RHETORIUS_ENTRIES = [
     (11, 'Moon', 'Rhetorius', 'by night', 'Ch. 57, the eleventh, p. 100', ['presumptive', 'unaspected', 'receiving']),
     (11, 'Moon', 'Rhetorius', 'by day', 'Ch. 57, the eleventh, p. 100', ['estrangements', 'individuals', 'separations']),
     (11, 'Moon', 'Firmicus', 'unsplit', 'III.13, 31', ['decrees', 'fifth', 'place']),
-    (12, 'Saturn', 'Rhetorius', 'by night', 'Ch. 57, the twelfth, p. 46', ['inconstancy', 'inheritance', 'aspecting']),
+    (12, 'Saturn', 'Rhetorius', 'by night', 'Ch. 57, the twelfth, p. 46', ['inheritance', 'disturbed', 'mentally']),
     (12, 'Saturn', 'Rhetorius', 'by day', 'Ch. 57, the twelfth, p. 46', ['moderate', 'matters', 'these']),
+    (12, 'Saturn', 'Rhetorius', 'unsplit', 'Ch. 57, the twelfth, p. 46', ['inconstancy', 'experience', 'aspecting']),
     (12, 'Saturn', 'Rhetorius', 'general malefic', 'Ch. 57, the twelfth, p. 43', ['destruction', 'unfavorable', 'sicknesses']),
     (12, 'Saturn', 'Firmicus', 'unsplit', 'III.2, 55-56', ['insurrection', 'illnesses', 'middling']),
     (12, 'Jupiter', 'Rhetorius', 'unsplit', 'Ch. 57, the twelfth, pp. 43, 46', ['litigation', 'superiors', 'uprisings']),
@@ -795,7 +800,7 @@ MOON_POINTER = "see the Moon's table below (VII.8, by her transit)"
 PN4_DASHES_THE_HELP_STATES = 0
 RHETORIUS_EMPTY_CELLS_THE_HELP_STATES = 0
 # The entry counts the help states, by author.
-ENTRY_COUNTS_THE_HELP_STATES = {'Rhetorius': 196, 'Firmicus': 152, 'Rhetorius, as summarized by Dykes': 4}
+ENTRY_COUNTS_THE_HELP_STATES = {'Rhetorius': 198, 'Firmicus': 153, 'Rhetorius, as summarized by Dykes': 4}
 # An entry's locator: Rhetorius by chapter, house and Holden's page -- one
 # page (p. 76), a range where the sentences run over more than one page or
 # fold in the house's earlier general sentences (pp. 57-61), or a list where
@@ -977,7 +982,7 @@ def test_the_entries_fixture_covers_every_entry_once(engine):
     ph = engine["PLANETS_IN_HOUSES"]
     expected = [(h, p, e['author'], e['axis'], e['cite']) for h in range(1, 13) for p in PLANETS for e in ph[h][p]['Rhetorius']]
     assert [(h, p, a, x, c) for h, p, a, x, c, _an in RHETORIUS_ENTRIES] == expected
-    assert len(RHETORIUS_ENTRIES) == sum(ENTRY_COUNTS_THE_HELP_STATES.values()) == 352
+    assert len(RHETORIUS_ENTRIES) == sum(ENTRY_COUNTS_THE_HELP_STATES.values()) == 355
 
 
 @pytest.mark.parametrize("i, house, planet, author, axis, cite, anchors",
@@ -1063,6 +1068,15 @@ def test_the_axis_is_the_authors_own_word(engine):
     assert axes(1, 'Jupiter', 'Rhetorius') == ['in sect', 'out of sect', 'unsplit', 'general benefic']
     assert axes(1, 'Mars', 'Rhetorius') == ['in sect', 'out of sect', 'unsplit', 'general malefic']
     assert axes(1, 'Saturn', 'Firmicus') == ['by day', 'by day', 'by night']
+    assert axes(1, 'Sun', 'Firmicus') == ['unsplit', 'by day', 'unsplit', 'by night']
+    assert [e['cite'] for e in ph[1]['Sun']['Rhetorius'] if e['author'] == 'Firmicus'][2] == 'III.5, 16'
+    # a clause the page states without a sect word is an unsplit entry even
+    # where it follows a sect clause: Saturn's Moon-aspect sentences in the
+    # fourth (pp. 69-70) and the twelfth (p. 46)
+    assert axes(4, 'Saturn', 'Rhetorius') == ['by day', 'by night', 'unsplit', 'in sect', 'general malefic']
+    assert axes(12, 'Saturn', 'Rhetorius') == ['by night', 'by day', 'unsplit', 'general malefic']
+    assert ph[4]['Saturn']['Rhetorius'][2]['text'].startswith("Aspecting the Moon") and ph[12]['Saturn']['Rhetorius'][2]['text'].startswith("Squaring or opposing the Moon")
+    assert "Moon" not in ph[4]['Saturn']['Rhetorius'][1]['text'] and "Moon" not in ph[12]['Saturn']['Rhetorius'][0]['text']
     assert axes(2, 'Jupiter', 'Rhetorius') == ['unsplit', 'general benefic'] and ph[2]['Jupiter']['Rhetorius'][0]['text'].startswith("By day or by night:")
     moon6 = ph[6]['Moon']['Rhetorius']
     assert [e['author'] for e in moon6] == ['Rhetorius', 'Rhetorius'] and "mother" in moon6[0]['text'] and "spleen" in moon6[1]['text']
@@ -1090,9 +1104,16 @@ def test_the_conditions_are_constitutive(engine):
     assert [e['cite'] for e in mars6] == ['III.4, 36-37'] and mars6[0]['portional'] and "portionally" in mars6[0]['text']
     assert not any("full Moon" in e['text'] for e in ph[6]['Moon']['Rhetorius'])
     assert all(e['conditional'] for h in ph for p in PLANETS for e in ph[h][p]['Rhetorius'] if e['text'].startswith("With Mars in another pivot"))
+    # the flag is Firmicus's word for the placement, or inherited where the run
+    # refers back to the place's opening sentence that states it; III.2, 18 says
+    # "in this sign" and carries none
+    assert [e['portional'] for e in ph[4]['Saturn']['Rhetorius'] if e['author'] == 'Firmicus'] == [True, False]
+    inherited = {(1, 'Saturn', 'III.2, 4-5'), (7, 'Saturn', 'III.2, 30'), (10, 'Saturn', 'III.2, 41-43'), (10, 'Saturn', 'III.2, 44-48'),
+                 (4, 'Mars', 'III.4, 22-25'), (10, 'Mars', 'III.4, 80-81')}
+    assert all(next(e for e in ph[h][p]['Rhetorius'] if e['cite'] == c)['portional'] for h, p, c in inherited)
     conditional = sum(1 for h in ph for p in PLANETS for e in ph[h][p]['Rhetorius'] if e['conditional'])
     portional = sum(1 for h in ph for p in PLANETS for e in ph[h][p]['Rhetorius'] if e['portional'])
-    assert conditional == 60 and portional == 36
+    assert conditional == 60 and portional == 35
 
 
 def test_no_guide_wording_survives_in_an_entry(engine):

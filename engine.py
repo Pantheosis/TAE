@@ -2061,8 +2061,12 @@ MASHAALLAH_LORDS = {
 #           configuration that is not the planet's occupancy of the place
 #           (the full Moon moving toward Mars) is not an entry;
 #   portional  True where Firmicus states the placement "portionally" (in the
-#           portion of the Hour-marker, portionally in the Nth place); the
-#           reader prints "(portionally)";
+#           portion of the Hour-marker, portionally in the Nth place) -- or
+#           where the cited run refers back to the place's opening sentence
+#           that states it ("so put", "in this place", "in the Midheaven":
+#           III.2, 4-5; 30; 41-43; 44-48; III.4, 22-25; 80-81), since dropping
+#           the flag there would widen his scope silently; the reader prints
+#           "(portionally)";
 #   conditional  True where the entry's whole reading rests on a stated
 #           configuration beyond the placement and the axis (Saturn in the
 #           Hour-marker by day AND Mars in another pivot; Venus in the twelfth
@@ -2192,6 +2196,7 @@ PLANETS_IN_HOUSES = {
                     _E(_R, 'by night', 'Ch. 57, the first, p. 53', "The parents of the lower class; aspected by Saturn or Mars by square or opposition or conjoined to them, the destroyer of the elder brothers, of their life or of all their possessions and actions"),
                     _E(_F, 'unsplit', 'III.5, 1-2', "Brothers, but with difficulty; in a masculine sign, his own house or height, joined by a ray to a benefic or protected by benefics, the trappings of great nobility; the malefics approaching him near the rays weaken the eyesight greatly", portional=True),
                     _E(_F, 'by day', 'III.5, 4-5', "With Saturn in the pivot of the Hour-marker: emperors and kings, or, his powers slightly hindered, consuls and proconsuls; Mars looking at him or with him, generalships, commands and positions of authority with great jealousies, dangers, hindrances, fights or difficulties", portional=True, conditional=True),
+                    _E(_F, 'unsplit', 'III.5, 16', "Broadly in the sign of the Hour-marker: clever people, and nobles"),
                     _E(_F, 'by night', 'III.5, 21-23', "Born of a more sordid class; Saturn or Mars regarding him by square or diameter or with him, he kills the older brothers and dissipates the substance of his life, patrimony and actions; in all the pivots he always weakens the older brothers, or is the first born")],
                 'PN IV': _P(_SUN_STAKE_GOOD + ' -- in the Ascendant or the Midheaven, renowned, a voice among the people of his class, good from the Sultan', 'II.15, 1-2 (shared with the 4th, 7th and 10th)', _SUN_STAKE_BAD, 'II.15, 3 (shared with the 4th, 7th and 10th)')},
         'Venus': {'Rhetorius': [
@@ -2219,7 +2224,7 @@ PLANETS_IN_HOUSES = {
     },
     2: {
         'Saturn': {'Rhetorius': [
-                       _E(_R, 'by night', 'Ch. 57, the second, p. 59', "The loss of children, sizable disturbances, the livelihood reduced, put to shame, the paternal and maternal inheritance lost; lazier in their actions, and some stricken by bodily illness (the sect word is the editor's, from Firmicus)"),
+                       _E(_R, 'by night', 'Ch. 57, the second, p. 59', "The loss of children, sizable disturbances, the livelihood reduced, put to shame, the paternal and maternal inheritance lost; lazier in their actions, and some stricken by bodily illness (the sect word is the editor's, by comparison with Firmicus)"),
                        _E(_R, 'by day', 'Ch. 57, the second, p. 59', "The livelihood increases with the passage of time, though undistinguished and poor in spirit; some getting their living from watery things"),
                        _E(_R, 'general malefic', 'Ch. 57, the second, p. 56', "The malefics present here make impractical and lazy individuals and injuries around the eyes"),
                        _E(_F, 'by night', 'III.2, 8-11', "Serious illnesses and the greatest destructions; a killer of the wife and children, the inciter of the greatest and frequent turmoils, squandering the paternal and maternal assets; slower in all actions, and for some perpetual illnesses of the body; with Mars in any pivot seeing the Sun by square or diameter, or the waxing Moon likewise, miserable, destitute paupers exposing their bodies to danger in daily works (the sect word is the translator's supplement)"),
@@ -2321,11 +2326,12 @@ PLANETS_IN_HOUSES = {
     4: {
         'Saturn': {'Rhetorius': [
                        _E(_R, 'by day', 'Ch. 57, the fourth, p. 69', "He piles up wealth and guards his gold"),
-                       _E(_R, 'by night', 'Ch. 57, the fourth, pp. 69-70', "Destruction of the parents, danger to the father, illnesses to the native and an ignoble youth; aspecting the Moon by opposition or square or with her, childlessness, fathers or guardians of others' children, severe illnesses internally and affecting the stomach, widowhood to the mother and distress from feminine complaints"),
+                       _E(_R, 'by night', 'Ch. 57, the fourth, p. 69', "Destruction of the parents, danger to the father, illnesses to the native, and an ignoble youth"),
+                       _E(_R, 'unsplit', 'Ch. 57, the fourth, pp. 69-70', "Aspecting the Moon by opposition or square, or with her: childlessness, and fathers or guardians of the children of others; and it makes severe illnesses internally and affecting the stomach, widowhood to the mother, and distress from feminine complaints"),
                        _E(_R, 'in sect', 'Ch. 57, the fourth, p. 68', "In a domicile or the exaltation of Jupiter: finders of treasure, and, especially stationary, loss of the parental inheritance; hidden things given, and the children destroyed", conditional=True),
                        _E(_R, 'general malefic', 'Ch. 57, the fourth, p. 67', "Mars or Saturn here give not only a miserable death but injury and suffering, and totally destroy the ancestral possessions"),
                        _E(_F, 'by day', 'III.2, 17', "Greedy for monies, guardians of gold and silver", portional=True),
-                       _E(_F, 'by night', 'III.2, 18-20', "The paternal patrimony squandered and the quick death of the father, serious illnesses and cold humors of the body, and disgrace in the first age; seeing the Moon by square or diameter, or with her in the same portion, sterility, adopting children foreign to him or tutoring little boys, deformed by the defect of perpetual bad health from hidden pains; the mother quickly a widow, serious illnesses from feminine people, worn out by constant pains of the stomach", portional=True)],
+                       _E(_F, 'by night', 'III.2, 18-20', "The paternal patrimony squandered and the quick death of the father, serious illnesses and cold humors of the body, and disgrace in the first age; seeing the Moon by square or diameter, or with her in the same portion, sterility, adopting children foreign to him or tutoring little boys, deformed by the defect of perpetual bad health from hidden pains; the mother quickly a widow, serious illnesses from feminine people, worn out by constant pains of the stomach")],
                    'PN IV': _P(_SAT_STAKE_GOOD, 'II.6, 1-2 (shared with the 1st, 7th and 10th)', _SAT_STAKE_BAD, 'II.6, 3 (shared with the 1st, 7th and 10th)')},
         'Jupiter': {'Rhetorius': [
                         _E(_R, 'in sect', 'Ch. 57, the fourth, p. 70', "Great commanders, persons known to rulers, in charge of public affairs, God-fearing, trusting in the gods and receiving guidance from them about the future; some with positions of importance in temples, some deemed worthy of windfalls; an enjoyable old age"),
@@ -2704,8 +2710,9 @@ PLANETS_IN_HOUSES = {
     },
     12: {
         'Saturn': {'Rhetorius': [
-                       _E(_R, 'by night', 'Ch. 57, the twelfth, p. 46', "The loss of the inheritance, dangers and plots on account of slaves, and the mentally disturbed or perverts; square or opposite the Moon, inconstancy and decline unless Jupiter aspecting either causes a partial overturn of the rulers; severe illnesses, and internal pains"),
+                       _E(_R, 'by night', 'Ch. 57, the twelfth, p. 46', "The loss of the inheritance, dangers and plots on account of slaves, and those who are mentally disturbed or perverts"),
                        _E(_R, 'by day', 'Ch. 57, the twelfth, p. 46', "More moderate in these matters"),
+                       _E(_R, 'unsplit', 'Ch. 57, the twelfth, p. 46', "Squaring or opposing the Moon, inconstancy and decline, unless Jupiter aspecting either the Moon or Saturn causes a partial overturn of the rulers; and they experience severe illnesses, and have internal pains"),
                        _E(_R, 'general malefic', 'Ch. 57, the twelfth, p. 43', "The malefics here make unfavorable births and bodily sicknesses, cuttings or injuries to the feet or the mouth or the toe, and the destruction of slaves and enemies"),
                        _E(_F, 'unsplit', 'III.2, 55-56', "The risks of servile insurrection or dangers on account of slaves, and he bound to slavery; the greatest illnesses and not-middling health problems, especially with the Moon joined to him from any side and no benefic in the pivots; a benefic in any pivot mitigates these evils to some extent -- all gentler and easier by day, stronger and more violent by night")],
                    'PN IV': _P('In his own house or received: victorious over his enemies, who befriend him and praise him well, but little occupied in works that would benefit him; ' + _SAT_FALL_GOOD, 'II.6, 19',
