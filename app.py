@@ -800,12 +800,13 @@ input_time = st.sidebar.time_input("Time", key="time_input_key", step=timedelta(
 # 2026-09-10 evaluation: the saved reference nativity, recorded EST, was
 # loading at LMT, forty minutes wrong). The resolved offset is shown in the
 # box directly under it, before the chart is cast, not at the sidebar's foot.
+# The tooltip names the three standards in a line; their full sentences
+# stand in the sidebar under the resolved offset, in a notes expander.
 time_standard = st.sidebar.selectbox(
     "Time standard", TIME_STANDARD_OPTIONS, key="time_standard_key",
-    help="LMT (local mean time) for charts before standard time was adopted (late 19th century): the "
-         "offset is the longitude at 4 minutes a degree. Standard time: the named zone at the "
-         "birthplace, with daylight saving as the zone's own history records it. Manual: type the "
-         "offset the birth record states, east positive (EST is -5, CDT is -5, IST is +5.5).")
+    help="LMT (local mean time) for charts before standard time was adopted (late 19th century); "
+         "Standard time: the named zone at the birthplace; Manual: type the "
+         "offset the birth record states, east positive.")
 utc_offset_manual = None
 if time_standard == TIME_STANDARD_OPTIONS[2]:
     st.session_state.setdefault("utc_offset_key", EXAMPLE_CHART["utc_offset_key"])
@@ -814,6 +815,13 @@ if time_standard == TIME_STANDARD_OPTIONS[2]:
         format="%.2f", key="utc_offset_key")
 time_standard_box = st.sidebar.empty()
 time_standard_box.caption(_cal_note)
+with st.sidebar.expander("The three time standards", icon=":material/menu_book:"):   # NOTES_ICON, defined below the sidebar
+    st.markdown("- LMT (local mean time) for charts before standard time was adopted (late 19th century): the "
+                "offset is the longitude at 4 minutes a degree.\n"
+                "- Standard time: the named zone at the "
+                "birthplace, with daylight saving as the zone's own history records it.\n"
+                "- Manual: type the "
+                "offset the birth record states, east positive (EST is -5, CDT is -5, IST is +5.5).")
 if st.session_state.get("_loaded_without_standard"):
     st.sidebar.warning(f"'{st.session_state['_loaded_without_standard']}' was saved before the time "
                        "standard was stored with a chart. Check it, then save the chart again.")
@@ -2687,9 +2695,9 @@ def page_chart():
             summary = sign_summary(int(value), sect)
             st.subheader(summary['sign'])
             _panel_columns([
-                ("The lords of the sign. The Reference page carries every sign.", summary['lords']),
-                ("The Egyptian bounds, which the Reference page carries in full.", summary['bounds']),
-                ("The three faces, which the Reference page carries beside the other dignities.", summary['faces']),
+                ("The lords of the sign. The Reference tables page carries every sign.", summary['lords']),
+                ("The Egyptian bounds, which the Reference tables page carries in full.", summary['bounds']),
+                ("The three faces, which the Reference tables page carries beside the other dignities.", summary['faces']),
             ])
         elif kind == "planet":
             summary = point_summary(value, chart_data, essential, accidental, aspects,
@@ -2700,9 +2708,9 @@ def page_chart():
             _panel_columns([
                 ("Where it stands. The Calculated Points and Quadrant divisions tables below carry every point.",
                  summary['position']),
-                ("Its dignity at its own degree. The Dignities page carries the full lordship table.",
+                ("Its dignity at its own degree. The Dignities and places page carries the full lordship table.",
                  summary['essential']),
-                ("Its accidental conditions. The Dignities page carries them for every planet.",
+                ("Its accidental conditions. The Dignities and places page carries them for every planet.",
                  summary['accidental']),
                 ("The connections it stands in. The Configurations page carries the whole aspects table.",
                  summary['connections']),

@@ -792,3 +792,38 @@ def test_the_fardar_page_has_no_text_over_its_ceiling():
     first_line = src[:start].count("\n") + 1
     last_line = src[:end].count("\n") + 1
     assert not [o for o in offenders() if first_line <= o[1] <= last_line]
+
+
+# --- The allowlist closed, the sidebar's LMT help, the pick panel -----------
+
+def test_the_allowlist_is_empty_and_the_guard_passes_plainly():
+    import test_text_lengths_2026_09_17 as guard
+    assert guard.ALLOWED_LONG == ()
+    assert not guard.offenders()
+    src = open(guard.__file__, encoding="utf-8").read()
+    assert "pytest.mark.xfail" not in src
+
+
+def test_the_time_standard_help_is_a_line_and_the_three_standards_stand_in_the_sidebar():
+    at = _page("chart")
+    box = at.sidebar.selectbox(key="time_standard_key")
+    assert box.help == ("LMT (local mean time) for charts before standard time was adopted (late 19th century); "
+                        "Standard time: the named zone at the birthplace; Manual: type the offset the birth record "
+                        "states, east positive.")
+    exp = next(n for n in at.sidebar if getattr(n, "type", None) == "status" and n.label == "The three time standards")
+    assert exp.icon == NOTES_EXPANDER_ICON
+    lines = [ln for ln in _markdowns(exp)[0].split("\n") if ln.startswith("- ")]
+    assert lines == [
+        "- LMT (local mean time) for charts before standard time was adopted (late 19th century): the offset is "
+        "the longitude at 4 minutes a degree.",
+        "- Standard time: the named zone at the birthplace, with daylight saving as the zone's own history records it.",
+        "- Manual: type the offset the birth record states, east positive (EST is -5, CDT is -5, IST is +5.5).",
+    ]
+
+
+def test_the_wheel_pick_panel_names_pages_as_the_bar_names_them():
+    src = ui_source()
+    panel = src[src.index("def _pick_panel(picked):"):src.index("# Looking at the chart is the primary act")]
+    assert "The Reference page carries" not in panel and "The Dignities page carries" not in panel
+    assert panel.count("Reference tables page carries") == 3
+    assert panel.count("Dignities and places page carries") == 2

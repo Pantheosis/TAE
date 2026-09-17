@@ -23,14 +23,14 @@ engine.py. Anything else measures 0 and is ignored, so a caption built at
 run time from a local is not this test's business. The measured text is
 the constant parts concatenated in order.
 
-ALLOWED_LONG freezes the first 48 characters of every string over its
-ceiling as the app stood when the tuple was generated. Three tests: no
-string over its ceiling whose key is not in the tuple; every entry in
-the tuple still names an offender, so a builder who shortens a text must
-delete its entry and the list can only shrink; and the tuple is empty,
-expected to fail until the last readability branch (C) empties it, when
-that test's xfail marker is removed. To regenerate the tuple after a
-migration run this module as a script:
+ALLOWED_LONG froze the first 48 characters of every string over its
+ceiling as the app stood when the tuple was generated (90 entries), and
+the readability branches A, B and C deleted them block by block; it is
+empty since C. Three tests: no string over its ceiling whose key is not
+in the tuple (with the tuple empty, no string over its ceiling at all);
+every entry in the tuple still names an offender, so the list can only
+shrink; and the tuple is empty. To see any offenders run this module as
+a script:
 
     python tests/test_text_lengths_2026_09_17.py
 
@@ -50,12 +50,7 @@ KEY_LENGTH = 48
 # entry per offender, grouped by kind and in source order at generation.
 # A later branch that shortens or migrates a text deletes its entry here;
 # nothing is ever added.
-ALLOWED_LONG = (
-    # help
-    'LMT (local mean time) for charts before standard',
-    # glance
-    # caption
-)
+ALLOWED_LONG = ()
 
 
 def _module_constants(tree):
@@ -148,11 +143,10 @@ def test_every_allowlist_entry_still_names_an_offender():
         "from ALLOWED_LONG:\n  " + "\n  ".join(repr(s) for s in stale))
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "ALLOWED_LONG holds every text over its ceiling until the readability branches "
-    "migrate them; this flips to passing when the last of them (C) empties the tuple, "
-    "and that builder removes this marker"))
 def test_the_allowlist_is_empty():
+    """Emptied by the last readability branch (C, 2026-09-17); the xfail
+    marker that expected it full came off in the same commit. Nothing is
+    ever added: a new text over its ceiling fails the first test."""
     assert ALLOWED_LONG == ()
 
 
