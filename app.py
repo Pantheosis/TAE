@@ -1656,7 +1656,7 @@ def _medium_text_columns(df):
 # container. The number is settled by measurement in the preview
 # (a rendered paragraph's width against the app's own font) so that
 # a line holds about 65-75 characters, the reading-width target.
-PROSE_WIDTH = 680
+PROSE_WIDTH = 450
 
 def _prose():
     """A container at reading width for body text, notes and detail."""
@@ -5372,21 +5372,24 @@ def page_sources():
         st.rerun()
     # --- How citations are written: the key, below the controls --------
     st.subheader("How citations are written")
+    # The key is a three-column table and takes the page's width, as the
+    # tables do; the sentences around it stand at reading width.
     with _prose():
-        st.markdown("A locator names its volume, never the author alone.\n\n"
-                    "| Abbreviation | Work | Example |\n"
-                    "|---|---|---|\n"
-                    "| Sahl, The Introduction | Sahl's *The Introduction* | Sahl, The Introduction Ch. 3, 85 |\n"
-                    "| Sahl, On Nativities | Sahl's *On Nativities* | Sahl, On Nativities 1.22, 9 |\n"
-                    "| Gr. Intr. | Abu Ma'shar's Great Introduction (Dykes) | Gr. Intr. VII.6, 27 |\n"
-                    "| PN IV | Abu Ma'shar's On the Revolutions of the Years of Nativities, Persian Nativities IV (Dykes) | PN IV IX.1, 26 |\n"
-                    "| ITA | Dykes's Introductions to Traditional Astrology, its section and the author excerpted there (al-Qabisi's own numbering, al-Qabisi IV.4, where it is given) | ITA I.22 (al-Qabisi) |\n"
-                    "| Abu Bakr, On Nativities | one of the four nativity treatises of Persian Nativities I and II (Dykes) | Abu Bakr, On Nativities II.5.14 |\n"
-                    "| 'Umar al-Tabari, Book of Nativities | one of the four nativity treatises of Persian Nativities I and II (Dykes) | 'Umar al-Tabari, Book of Nativities I.4.3 |\n"
-                    "| Masha'allah, Book of Aristotle | one of the four nativity treatises of Persian Nativities I and II (Dykes) | Masha'allah, Book of Aristotle III.1.8 |\n"
-                    "| Abu 'Ali al-Khayyat, Judgments of Nativities | one of the four nativity treatises of Persian Nativities I and II (Dykes) | Abu 'Ali al-Khayyat, Judgments of Nativities Ch. 4 |\n"
-                    "| Abbr. | Abu Ma'shar's Abbreviation as ITA prints it | Abbr. II.27 |\n\n"
-                    "Both of Abu Ma'shar's volumes have a Book VII, which is why his name alone no longer locates anything. "
+        st.markdown("A locator names its volume, never the author alone.")
+    st.markdown("| Abbreviation | Work | Example |\n"
+                "|---|---|---|\n"
+                "| Sahl, The Introduction | Sahl's *The Introduction* | Sahl, The Introduction Ch. 3, 85 |\n"
+                "| Sahl, On Nativities | Sahl's *On Nativities* | Sahl, On Nativities 1.22, 9 |\n"
+                "| Gr. Intr. | Abu Ma'shar's Great Introduction (Dykes) | Gr. Intr. VII.6, 27 |\n"
+                "| PN IV | Abu Ma'shar's On the Revolutions of the Years of Nativities, Persian Nativities IV (Dykes) | PN IV IX.1, 26 |\n"
+                "| ITA | Dykes's Introductions to Traditional Astrology, its section and the author excerpted there (al-Qabisi's own numbering, al-Qabisi IV.4, where it is given) | ITA I.22 (al-Qabisi) |\n"
+                "| Abu Bakr, On Nativities | one of the four nativity treatises of Persian Nativities I and II (Dykes) | Abu Bakr, On Nativities II.5.14 |\n"
+                "| 'Umar al-Tabari, Book of Nativities | one of the four nativity treatises of Persian Nativities I and II (Dykes) | 'Umar al-Tabari, Book of Nativities I.4.3 |\n"
+                "| Masha'allah, Book of Aristotle | one of the four nativity treatises of Persian Nativities I and II (Dykes) | Masha'allah, Book of Aristotle III.1.8 |\n"
+                "| Abu 'Ali al-Khayyat, Judgments of Nativities | one of the four nativity treatises of Persian Nativities I and II (Dykes) | Abu 'Ali al-Khayyat, Judgments of Nativities Ch. 4 |\n"
+                "| Abbr. | Abu Ma'shar's Abbreviation as ITA prints it | Abbr. II.27 |")
+    with _prose():
+        st.markdown("Both of Abu Ma'shar's volumes have a Book VII, which is why his name alone no longer locates anything. "
                     "On the Prediction pages other than The releaser, whose rules all come from PN IV, its locators "
                     "are bare Book.chapter, sentence.")
     # The full comparison of the two connection tests. It was the
@@ -5397,12 +5400,15 @@ def page_sources():
         st.markdown(
             "Which author's rule decides whether a pair counts as Connected. The two agree that "
             "looking is sign-to-sign and connecting is degree-to-degree, but they part company at "
-            "the sign boundary and on what activates a connection.\n\n"
-            "| Question | Sahl, as implemented | Abu Ma'shar, as implemented |\n"
-            "|---|---|---|\n"
-            "| Which distance governs? | The applying planet's own light (15/12/9/8/7 by planet), so the test is asymmetric | Two flat distances: assembly within 15 degrees in one sign (VII.4, 3), aspects within 12 degrees of exact (VII.5, 27) |\n"
-            "| What happens at a sign boundary? | A planet at the end of a sign that is not connecting with anything, whose light strikes into the next sign, is connected to the first planet there by body (20-21) | No out-of-sign connection at all: across a boundary the bodies merely 'mix their natures in a weak way' (VII.5, 14) |\n"
-            "| Source | The Introduction Ch. 3, 6-21 | Gr. Intr. VII.4-5 |\n\n"
+            "the sign boundary and on what activates a connection.")
+    st.markdown(
+        "| Question | Sahl, as implemented | Abu Ma'shar, as implemented |\n"
+        "|---|---|---|\n"
+        "| Which distance governs? | The applying planet's own light (15/12/9/8/7 by planet), so the test is asymmetric | Two flat distances: assembly within 15 degrees in one sign (VII.4, 3), aspects within 12 degrees of exact (VII.5, 27) |\n"
+        "| What happens at a sign boundary? | A planet at the end of a sign that is not connecting with anything, whose light strikes into the next sign, is connected to the first planet there by body (20-21) | No out-of-sign connection at all: across a boundary the bodies merely 'mix their natures in a weak way' (VII.5, 14) |\n"
+        "| Source | The Introduction Ch. 3, 6-21 | Gr. Intr. VII.4-5 |")
+    with _prose():
+        st.markdown(
             "This governs only the tables that deliberately present **both** authors -- the aspect grid, "
             "reception, blocking, cutting. Each author's own tables are computed under "
             "that author's rule whatever this is set to; the Configurations page has its own "

@@ -400,7 +400,9 @@ def test_the_sources_page_runs_in_the_new_order_with_the_citation_key_and_the_co
     assert heads == ["Readings in force", "How citations are written", "Connection rule: Sahl and Abu Ma'shar", "Configurable readings"]
     caption = [c.value for c in at.main.caption if c.value.startswith("This app ")][0]
     assert caption.endswith("What this app reads from, how it can be read, and what it does not cover.")
-    key = _between(at, "How citations are written", "Connection rule: Sahl and Abu Ma'shar")[0][1]
+    key_block = _between(at, "How citations are written", "Connection rule: Sahl and Abu Ma'shar")
+    assert [k for k, _ in key_block] == ["markdown", "markdown", "markdown"]   # sentence, the table at page width, sentences
+    key = "\n".join(text for _, text in key_block)
     assert key.startswith("A locator names its volume, never the author alone.")
     rows = re.findall(r"^\| (.+?) \| (.+?) \| (.+?) \|$", key, re.M)
     abbreviations = [a for a, _w, _e in rows]
@@ -414,7 +416,8 @@ def test_the_sources_page_runs_in_the_new_order_with_the_citation_key_and_the_co
     assert "Both of Abu Ma'shar's volumes have a Book VII, which is why his name alone no longer locates anything." in key
     assert "On the Prediction pages other than The releaser, whose rules all come from PN IV, its locators are bare Book.chapter, sentence." in key
     connection = _between(at, "Connection rule: Sahl and Abu Ma'shar", "Configurable readings")
-    text = connection[0][1]
+    assert [k for k, _ in connection][:3] == ["markdown", "markdown", "markdown"]   # intro, the table at page width, scope
+    text = "\n".join(text for kind, text in connection[:3])
     assert text.startswith("Which author's rule decides whether a pair counts as Connected.")
     rows = re.findall(r"^\| (.+?) \| (.+?) \| (.+?) \|$", text, re.M)
     assert rows[0] == ("Question", "Sahl, as implemented", "Abu Ma'shar, as implemented")
