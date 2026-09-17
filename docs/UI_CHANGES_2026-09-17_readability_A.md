@@ -494,6 +494,45 @@ clone's `preferences.json` differs from before only in `_launches`;
 `saved_charts.json` is unchanged; the viewport was reset to desktop and the
 colour scheme to dark.
 
+## Fixed in passing
+
+A tab reset on Configurations, pre-existing on `main` and met on the block
+this branch migrated: a click on the Planetary Condition "eastern/western"
+radio, or on any reading control inside a tab, reruns the page and the rerun
+opened the first tab. The cause is the element tree, not the tabs: elements
+drawn directly in the main block before `st.tabs` varied in number with
+state -- `_readings_note()` rendered its caption only when a reading was off
+its default, `_stale_notice()` its warning only while the draft date did not
+parse, and the fitting-infortune line only when that reading was on -- so
+the tabs' delta path shifted between runs and the frontend took them for a
+new tabs widget. Each of the three now takes a fixed slot: `st.empty()`
+reserved on every run and filled only when there is something to say,
+inside `_readings_note()` itself (every page that calls it benefits) and for
+the fitting-infortune caption on Configurations; and in `_chart_strip()`
+one slot holds the strip caption alone or, while the draft date does not
+parse, a container with the caption and `_stale_notice()`'s warning -- one
+element either way, so the strip's neighbours keep their indices and the
+existing tests that pin the strip as main's second child still hold. An
+unfilled `st.empty()` renders with `display: none` and no height. The other
+page with `st.tabs`, Revolutions, has no other conditional direct child
+before its tabs (the year block's errors stand inside `st.columns`, which do
+not move the main block's indices). Checked on the clone (port 8531): on
+Configurations' Abu Ma'shar tab the radio and the Fitting infortune checkbox
+each rerun the page with the tab held, the readings note and the fitting line
+appearing and disappearing in place; on Revolutions a target date changed
+with the second tab open leaves it open; the clone's readings and target
+were put back. The test pins the invariant AppTest can see: the tabs'
+position among the main block's direct children is the same with and
+without readings off default and the fitting infortune on, and the slots are
+filled, not added. The readings note's slot is a new direct child of main on
+the five pages that call it (unfilled on the default chart), so the tests
+that pin element positions on the Chart page are re-pinned by one:
+`test_fragments_2026_09_15.py` (`CHART_FRAGMENT = (3,)` and the page-around
+test), `test_clickable_wheel_2026_09_15.py` (the fragment's index and the
+folded-introduction test) and `test_chart_layout_2026_09_15.py`
+(`_fragment()`, the captions' and the circumpolar caption's positions); the
+Timing fragment's path is unchanged, that page not calling the note.
+
 ## Nothing-lost
 
 `python tests/tools/prose_preserved.py main --summary`: 1,263 base

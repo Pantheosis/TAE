@@ -1319,14 +1319,25 @@ def _readings_off_default():
             out.append((label, value))
     return out
 
+# An element that is sometimes there and sometimes not, drawn directly in
+# the main block before a page's st.tabs, shifts the tabs' place in the
+# element tree between runs; the frontend then takes them for a new tabs
+# widget and opens the first tab, which is how a click on a control inside
+# the Planetary Condition tab used to throw the reader back to Aspects.
+# So every such element takes a fixed slot -- st.empty(), reserved on every
+# run and filled only when there is something to say -- and the tabs keep
+# their place whatever the readings are. (_stale_notice and the fitting-
+# infortune line do the same; conditional elements inside st.columns or a
+# container do not move the main block's indices.)
 def _readings_note():
     """One line under a page header when a persisted reading is in force
     that a reader might not remember setting (UI_REVIEW §2's caution)."""
+    slot = st.empty()
     off = [(l, v) for l, v in _readings_off_default() if l != "Sources shown"]
     if off:
-        st.caption("Readings in force that differ from the defaults: "
-                   + "; ".join(f"{l} = {v}" for l, v in off)
-                   + ". They are remembered between runs; see Sources and readings to reset them.")
+        slot.caption("Readings in force that differ from the defaults: "
+                     + "; ".join(f"{l} = {v}" for l, v in off)
+                     + ". They are remembered between runs; see Sources and readings to reset them.")
 
 
 # One line under the header of every page whose CONTENT the Sources shown
@@ -1854,8 +1865,18 @@ def _chart_strip():
     # states them. The markers wrap the joined line once, not each
     # part -- a caption renders markdown, as the sidebar's own boxes
     # do.
-    st.caption("  \n".join((entered, f"**{read}**")))
-    _stale_notice()
+    # One element whatever the draft date says: the strip caption alone, or
+    # a container holding the caption and the stale-date warning, in one
+    # st.empty() slot -- so the elements after it, a page's st.tabs among
+    # them, keep their place in the element tree (see _readings_note).
+    strip = "  \n".join((entered, f"**{read}**"))
+    slot = st.empty()
+    if chart_ok and not date_is_valid:
+        with slot.container():
+            st.caption(strip)
+            _stale_notice()
+    else:
+        slot.caption(strip)
 
 
 def _stale_notice():
@@ -3284,9 +3305,10 @@ def page_configurations():
                                "against his own 1, 16-17, so off by default. When on, that malefic drops out of every "
                                "'afflicted by an infortune' test in these tables (Sahl's enclosure, strength and weakness "
                                "94-95; Abu Ma'shar's 3, 47-50 and enclosure; the Moon's 67-68 and 106).")
+    _fitting_slot = st.empty()  # a fixed slot before the tabs (see _readings_note)
     if FITTING_INFORTUNE:
-        st.caption(f"Fitting infortune in force: {SOFTENED_INFORTUNE} rules the Ascendant and is not counted as an infortune."
-                   if SOFTENED_INFORTUNE else "Fitting infortune switched on, but no malefic rules this Ascendant -- nothing changes.")
+        _fitting_slot.caption(f"Fitting infortune in force: {SOFTENED_INFORTUNE} rules the Ascendant and is not counted as an infortune."
+                              if SOFTENED_INFORTUNE else "Fitting infortune switched on, but no malefic rules this Ascendant -- nothing changes.")
     supplement = READING_DEPTH == READING_DEPTH_OPTIONS[1]
 
     def sahl_aspects():

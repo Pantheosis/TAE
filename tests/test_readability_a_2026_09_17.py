@@ -541,3 +541,50 @@ def test_correction_9a_the_indeterminate_band_is_minus_one_to_plus_one_on_both_p
 def engine_source_of(name):
     from conftest import function_source
     return function_source(name)
+
+
+# --- Fixed in passing: the tabs keep their place in the element tree --------
+# A conditional element drawn directly in the main block before st.tabs
+# (the readings-off-default note, the fitting-infortune line, the stale-date
+# warning) shifted the tabs' delta path between runs, and the frontend then
+# treated them as a new tabs widget and opened the first tab on every rerun
+# a control inside a tab caused. Each such element now takes a fixed
+# st.empty() slot (the strip and the stale warning share one, the caption
+# alone or a container with both). The invariant AppTest can pin: the tabs'
+# position among the main block's direct children is the same with and
+# without those elements filled, which holds the tab selection by
+# construction.
+
+def _tabs_index(at):
+    kinds = [getattr(child, "type", None) for child in at.main.children.values()]
+    assert "tab_container" in kinds, kinds
+    return kinds.index("tab_container"), kinds[:kinds.index("tab_container")]
+
+
+@pytest.mark.parametrize("page", ["configurations", "timing"])
+def test_the_tabs_keep_their_place_whatever_the_readings_say(page):
+    plain = make_app(page=page).run()
+    assert_no_exception(plain, page)
+    changed = make_app(page=page, switches={"domain": "Masha'allah", "connection": "Abu Ma'shar"})
+    changed.session_state["_fitting_infortune"] = True
+    changed.run()
+    assert_no_exception(changed, f"{page}, readings changed")
+    index, before = _tabs_index(plain)
+    index_changed, before_changed = _tabs_index(changed)
+    assert index == index_changed, (before, before_changed)
+    # The reserved slots are filled, not added: on Configurations the note
+    # and the fitting-infortune line are captions where the plain run had
+    # empties, at the same positions.
+    if page == "configurations":
+        assert any(c.value.startswith("Readings in force that differ from the defaults") for c in changed.main.caption)
+        assert any(c.value.startswith("Fitting infortune") for c in changed.main.caption)
+        assert not any(c.value.startswith("Readings in force that differ") for c in plain.main.caption)
+        empties = [i for i, k in enumerate(before) if k == "empty"]
+        assert len(empties) >= 2 and all(before_changed[i] in ("empty", "caption") for i in empties)
+    # Every fixed slot is drawn by the app's own helpers, never as a bare
+    # conditional element: by source, the three sites use st.empty().
+    src = ui_source()
+    assert "slot = st.empty()" in src[src.index("def _readings_note"):src.index("def _readings_note") + 900]
+    strip = src[src.index("def _chart_strip"):src.index("def _stale_notice")]
+    assert "slot = st.empty()" in strip and "with slot.container():" in strip and "slot.caption(strip)" in strip
+    assert "_fitting_slot = st.empty()" in src[src.index("def page_configurations"):src.index("_tabs = st.tabs(_labels)")]

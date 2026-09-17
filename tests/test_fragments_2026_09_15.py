@@ -43,7 +43,11 @@ LAYOUTS = ["Square", "Wide"]
 # scope line joined the header block (2026-09-16); the path into the tab is
 # unchanged by the split of 2026-09-17, which took three tabs to pages of
 # their own and left the year block (subheader, columns) where it stood.
-CHART_FRAGMENT = (2,)
+# The readings note under the chart strip is a fixed st.empty() slot since
+# 2026-09-17 (readability branch A: a conditional element before a page's
+# tabs shifted them), unfilled on the default chart, so the fragment is
+# main's fourth child and everything after the strip stands one later.
+CHART_FRAGMENT = (3,)
 TIMING_FRAGMENT = (6, 0, 2)
 
 
@@ -325,11 +329,12 @@ def test_the_page_around_the_chart_fragment_is_untouched():
     outside, where a click on a control does not redraw them."""
     at = _at("chart")
     kids = list(at.main.children.values())
-    # The header, the chart strip, the fragment, the three sentences, then
-    # the page as it was.
-    assert [type(k).__name__ for k in kids[:3]] == ["Header", "Caption", "Block"]
-    assert [type(k).__name__ for k in kids[3:7]] == ["Caption"] * 4
-    assert kids[7].value == "Calculation"
+    # The header, the chart strip, the readings note's (empty) slot, the
+    # fragment, the three sentences, then the page as it was.
+    assert [type(k).__name__ for k in kids[:4]] == ["Header", "Caption", "UnknownElement", "Block"]
+    assert kids[2].type == "empty"
+    assert [type(k).__name__ for k in kids[4:8]] == ["Caption"] * 4
+    assert kids[8].value == "Calculation"
 
 
 def test_the_timing_fragment_holds_the_subheader_picture_and_controls_only():

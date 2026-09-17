@@ -57,7 +57,9 @@ def _kinds(block):
 # four captions and the circumpolar warning, which stay outside, moved up
 # one index in main's own children.
 def _fragment(at):
-    return _kids(at)[2]
+    # After the header, the strip and the readings note's fixed slot
+    # (2026-09-17; the slot is an unfilled st.empty() on the default chart).
+    return _kids(at)[3]
 
 
 def _frag_kids(at):
@@ -237,16 +239,18 @@ def test_the_layout_is_read_before_the_control_is_drawn():
 def test_the_four_captions_follow_the_controls_in_order(layout):
     at = _chart(layout=layout)
     kids = _kids(at)
-    assert [type(k).__name__ for k in kids[3:7]] == ["Caption"] * 4
-    assert [k.value for k in kids[3:7]] == list(INTRO)
+    # kids[2] is the readings note's fixed slot (empty on the default chart)
+    # since 2026-09-17, so the captions stand one child later.
+    assert [type(k).__name__ for k in kids[4:8]] == ["Caption"] * 4
+    assert [k.value for k in kids[4:8]] == list(INTRO)
     # And the Calculation section is what follows them, as before.
-    assert kids[7].value == "Calculation"
+    assert kids[8].value == "Calculation"
 
 
 def test_both_layouts_print_the_same_four_captions_and_not_one_joined():
     """Wide used to join the three with hard breaks in a single caption."""
-    square = [k.value for k in _kids(_chart(layout="Square"))[3:7]]
-    wide = [k.value for k in _kids(_chart(layout="Wide"))[3:7]]
+    square = [k.value for k in _kids(_chart(layout="Square"))[4:8]]
+    wide = [k.value for k in _kids(_chart(layout="Wide"))[4:8]]
     assert square == wide == list(INTRO)
     assert '"  \\n".join(_intro)' not in ui_source()
 
@@ -271,6 +275,6 @@ def test_the_circumpolar_caption_stands_directly_under_the_controls_row():
     under the controls, before the three sentences."""
     at = _chart(manual_lat_key=78.2, manual_lon_key=15.6)
     kids = _kids(at)
-    assert type(kids[3]).__name__ == "Caption"
-    assert "not a temporal hour" in kids[3].value, kids[3].value
-    assert [k.value for k in kids[4:8]] == list(INTRO)
+    assert type(kids[4]).__name__ == "Caption"
+    assert "not a temporal hour" in kids[4].value, kids[4].value
+    assert [k.value for k in kids[5:9]] == list(INTRO)
