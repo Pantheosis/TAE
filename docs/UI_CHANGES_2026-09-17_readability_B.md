@@ -118,7 +118,10 @@ No comparison table on this page.
   house is marked." Visible at reading width: the tooltip's first sentence
   whole (the natal analogy and "it supplies no condition split" explicit),
   then *The text's own reservation.* and *The translator's readings.* (its
-  second and third). The twelve-row table with its natal marker column is
+  second and third; in the third, after the owner's preview on PR #76, the
+  translator's four alternative renderings stand in quotation marks --
+  "conflicting" dreams, "different", "takes away the same", "some of him
+  and his parents" -- punctuation only, no word changed). The twelve-row table with its natal marker column is
   unchanged; under it a "Read details for" selectbox
   (`the_moon_in_the_houses_pn_iv_vii_8_by_her_transit_detail`, options
   "1st house" … "12th house" in the table's order, the natal Moon's house
@@ -566,7 +569,7 @@ worktree at `main`, since removed).
 
 ## Nothing-lost, forward
 
-`python tests/tools/prose_preserved.py main --summary`: 1,329 base sentences, 114 base locators, **55 misses, 0 locator misses, 0 locator count drops**, exit 1. Every miss under its heading; the text of each stands on a page verbatim but for what the heading names.
+`python tests/tools/prose_preserved.py main --summary`: 1,329 base sentences, 114 base locators, **56 misses, 0 locator misses, 0 locator count drops**, exit 1. Every miss under its heading; the text of each stands on a page verbatim but for what the heading names.
 
 *ALL CAPS to bold (capitals inside quotation marks stand, as on main; `test_prose_counts.py` pins none of these phrases, so it is unchanged; `test_decisions_2026_09_08.py`'s d11 test re-pins "STATED by Abu Ma'shar" as "**stated**")* — 42 (one of them, "THE APP'S ANGULAR-PROXIMITY GRADE …", is also "the app's" → "this app's"):
 - ENTERING: "every planet which is at the beginning of a sign is weak until it is firmly established in it and comes to be 5 degrees within it" (Fifty Aphorisms #44, 87), repeated in On Nativities Ch.
@@ -633,9 +636,12 @@ worktree at `main`, since removed).
 - BODIES is whether each planet falls inside the other's sphere of power, which is asymmetric because the spheres differ in size: Abu Ma'shar VII.4, 7 notes that Saturn sits inside the Moon's body from 12 degrees while she only enters his at a little under 9.
 - Retrogradation reverses it, and both authors say so rather than leaving it to be inferred -- Abu Ma'shar VII.5, 24 ("the connection of one of them with the other ... will be BY RETROGRADATION"), VII.5, 118 ("the light one IN MORE DEGREES goes retrograde and connects with the heavy one"), and the note on VII.5, 130 (Saturn "could never be received because he is too slow to connect with anyone, UNLESS BY RETROGRADATION").
 
+*Copy correction: punctuation restored to a quoted reading (owner's preview on PR #76)* — 1: the translator's four alternative renderings of VII.8 in the Moon-in-the-houses paragraph are in quotation marks ("conflicting" dreams, "different", "takes away the same", "some of him and his parents"), as the engine's comment above `_MOON_VII8_TEXTS` writes them; no word changed:
+- Where the translator reads conflicting dreams or simply different, both are given; his reading of takes away the same in the tenth is marked as his guess; the third's some of him and his parents is as printed.
+
 ## Nothing-lost, reverse
 
-`python tests/tools/prose_preserved.py readability-b-2026-09-17 --tree <a detached worktree at main>` from this tree: **148 branch sentences not on main**, plus `LOCATOR-COUNT` lines, which in this direction (base = the branch, tree = main) say the branch holds more copies of a token than main: Ch. 3, 49-55 and VII.5, 129-133 (the reception table's headers and section headings beside the paragraphs), Ch. 3, 58-62 (Non-reception's tooltip and summary), VII.4, 5-8 (the aspects key and its section), Nativities 1.19, VII.2, 31 and VII.2, 61 and 72-73 (the Chart notes beside the tooltips), VII.8, VII.8, 3-8, VII.8, 3 and VII.2 (the witnesses table beside its sentence), Nativities 2.13 (the triplicity block's headings) -- copies made by headings, table headers and a tooltip's sentence standing as the summary too, no copy lost on either side (the forward run reports 0 count drops). Every branch-only sentence classified:
+`python tests/tools/prose_preserved.py readability-b-2026-09-17 --tree <a detached worktree at main>` from this tree: **149 branch sentences not on main**, plus `LOCATOR-COUNT` lines, which in this direction (base = the branch, tree = main) say the branch holds more copies of a token than main: Ch. 3, 49-55 and VII.5, 129-133 (the reception table's headers and section headings beside the paragraphs), Ch. 3, 58-62 (Non-reception's tooltip and summary), VII.4, 5-8 (the aspects key and its section), Nativities 1.19, VII.2, 31 and VII.2, 61 and 72-73 (the Chart notes beside the tooltips), VII.8, VII.8, 3-8, VII.8, 3 and VII.2 (the witnesses table beside its sentence), Nativities 2.13 (the triplicity block's headings) -- copies made by headings, table headers and a tooltip's sentence standing as the summary too, no copy lost on either side (the forward run reports 0 count drops). Every branch-only sentence classified:
 
 *Table rows (the comparison tables' and the keys' rows, and the script's fragments of them)* — 11:
 - VIII.3, 28-29 -- the Lot of the Invisible, which Sahl names
@@ -765,8 +771,9 @@ worktree at `main`, since removed).
 - 83, advancing, is dynamic -- read against the Alchabitius quadrant cusps, since the note on 83 says the word means "dynamically angular or succeedent, i.e. by primary motion with respect to the angular axes, and not by whole sign."
 - 83 also carries Sahl's five-degree rule:
 
-*Reworded per the forward list: "this app", the Dignities and places cross-references, the two locators (otherwise verbatim)* — 11:
+*Reworded per the forward list: "this app", the Dignities and places cross-references, the two locators, the quoted translator's readings (otherwise verbatim)* — 12:
 - The intermediate quantities of the chart calculation -- universal time, the Julian day, sidereal time, the RAMC, the obliquity -- so a hand calculation can be checked against this app line by line.
+- Where the translator reads "conflicting" dreams or simply "different", both are given; his reading of "takes away the same" in the tenth is marked as his guess; the third's "some of him and his parents" is as printed.
 - Domicile, exaltation, the three triplicity lords (day, night, participating) and the three faces of each sign, as this app holds them.
 - The same table this app directs by; pinned against four independent witnesses.
 - The twelve quadrant house cusps computed by the Alchabitius (semi-arc) system -- this app's other unit beside the whole-sign places: whole signs where the texts speak of a topic, these divisions where they speak of a planet's strength (the five-degree allowance at the four axial degrees).
