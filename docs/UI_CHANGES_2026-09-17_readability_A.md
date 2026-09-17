@@ -24,7 +24,7 @@ the engine untouched; `ALLOWED_LONG` losing every entry of a migrated block;
 
 ## The renderer (commit 1)
 
-`PROSE_WIDTH` (450, see the measurement below) and `_prose()` returning
+`PROSE_WIDTH` (680, see the measurement below) and `_prose()` returning
 `st.container(width=PROSE_WIDTH)`. No CSS, no `st.html`, no
 `unsafe_allow_html`, no keyed container.
 
@@ -459,20 +459,23 @@ zero" nowhere, the engine's `abs(net) <= 1` in both evaluators.
 
 ## The width measurement
 
-On the clone (`almuten-readability`, port 8530, the owner's chart), at a
-1400 × 900 viewport, dark theme, the app's font loaded (`document.fonts.check`
-true; computed `16px "Source Sans", sans-serif`, line height 25.6 px). At
-the starting **680 px** the prosperity summary paragraph's rendered lines
-broke at 110, 105, 100, 105, 102 characters (`Range.getBoundingClientRect`
-per character), and `canvas.measureText` of a 70-character reference
-sentence at the paragraph's computed font gave 107–108 characters a line.
-The average character of the page's own prose measures 6.27 px, so 65–75
-characters is 408–470 px. At **450 px** the same paragraph breaks at 73, 69,
-69, 69, 61, 71, 64 (68 on average over its full lines) and the canvas
-estimate is 74. `PROSE_WIDTH = 450`. At the phone preset (375 px, light
-theme) the paragraph is 343 px, the page's width, with no horizontal scroll;
-at 700 px (standing in for 200 % zoom at 1400) it is 450 px and the page does
-not scroll sideways; tables scroll inside themselves as before.
+`PROSE_WIDTH = 680`, the owner's ruling on the preview: the app is
+desktop-only, never a phone, and 450 px read far too narrow on a normal
+screen. Measured on the clone (`almuten-readability-2`, port 8531, the
+owner's chart) at a 1400 × 900 viewport, dark theme, the app's font loaded
+(`document.fonts.check` true; computed `16px "Source Sans", sans-serif`,
+line height 25.6 px): at **680 px** the prosperity summary paragraph's
+rendered lines break at 110, 105, 100, 105, 102 characters
+(`Range.getBoundingClientRect` per character; 105 on average over its full
+lines), and `canvas.measureText` of the paragraph's own first 70 characters
+at its computed font gives 112 characters a line (a 74-character reference
+sentence gave 107). For the record, the branch first settled 450 px from the
+plan's 65–75 target -- the same paragraph broke at 73, 69, 69, 69, 61, 71,
+64 characters there (68 on average; the page's average character is 6.27 px,
+so 65–75 characters is 408–470 px), and at the phone preset the paragraph
+took the page's 343 px with no sideways scroll -- before the owner ruled
+for 680. The page does not scroll sideways at 700 px either; tables scroll
+inside themselves as before.
 
 Every migrated block was opened on the owner's saved chart in the pane:
 Findings (the detail selectbox by keyboard — ArrowDown, Enter — printing the
@@ -582,8 +585,9 @@ locator token is missing and none lost a copy.
   its colon or dash ("2.11, 4:", "2.11, 1-3 --") so the old fragment
   survives; a closing quotation mark that opened the next constant on `main`
   stays at the head of that constant.
-- Three-column Markdown tables are cramped at 450 px: place them outside
-  `_prose()` (as the Sources page does); two-column tables read well inside.
+- Three-column Markdown tables are best placed outside `_prose()` at the
+  page's width (as the Sources page does); two-column tables read well
+  inside.
 - A detail selectbox inside a fragment stays inside it (the planets block);
   the pointer path writes the selectbox's key before the selectbox is drawn
   and remembers the last grid selection in a plain session key.

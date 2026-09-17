@@ -1656,7 +1656,7 @@ def _medium_text_columns(df):
 # container. The number is settled by measurement in the preview
 # (a rendered paragraph's width against the app's own font) so that
 # a line holds about 65-75 characters, the reading-width target.
-PROSE_WIDTH = 450
+PROSE_WIDTH = 680
 
 def _prose():
     """A container at reading width for body text, notes and detail."""
