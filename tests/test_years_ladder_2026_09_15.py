@@ -60,7 +60,7 @@ def test_the_ladder_is_verbatim_in_jn_ch_3_and_4(engine, jn_span):
     # Ch. 4's table, row by row
     for planet, (g, m, l) in engine["JN_YEARS_TABLE"].items():
         def cell(v):
-            return f"{int(v)} $1\\frac{{1}}{{2}}$" if v != int(v) else str(int(v))
+            return f"{int(v)} ½" if v != int(v) else str(int(v))
         assert re.search(rf"\| {planet}\s+\| {re.escape(cell(g))}\s+\| {re.escape(cell(m))}\s+\| {re.escape(cell(l))}\s+\|", jn_span), planet
     assert engine["JN_YEARS_TABLE_DIFFERS"] == {'Sun': (69.5, 39.5), 'Moon': (66.5, 39.5)}
 
