@@ -8,7 +8,8 @@ Reference page's seven-place table); one commit per page in the brief's order
 the allowlist (with the sidebar's time-standard tooltip and the Chart page's
 pick-panel cross-references); this note, and an eighth after the two gates (`C_ADVERSARIAL_REPORT_2026-09-17.md`,
 `C_BLIND_TEXT_REPORT_2026-09-17.md`, nothing under Must change; the paragraphs
-below read as the branch stands after it). **`engine.py` is byte-identical to
+below read as the branch stands after it), and a ninth for the caption the
+owner's preview found that no net had caught (see "Missed by every net"). **`engine.py` is byte-identical to
 `main`** (`git diff main -- engine.py` and `git diff -w main -- engine.py` are
 both empty — see "The engine constants" for why that is stricter than the
 brief asked and what was done instead). `tests/fixtures/tables.json` is
@@ -118,6 +119,60 @@ end)**, three rows, built from: "Printed order (manuscripts H and L: ... 11,
 9, 5)." · "Manuscript B reads ... 11, 5, 9; the printed text takes H/L's
 order plus B's note that the ninth is the Sun's joy (Introduction Ch. 2, 42,
 fn 42) -- Dykes's conflation, kept as printed." Both stand whole beneath.
+
+## Missed by every net: Sahl 1.20's readings (commit 9, `9d3d494`)
+
+On The releaser page, under "The house-master's years", `st.caption(_y['readings'])`
+printed `SAHL_1_20_READINGS` (engine.py, 1,850 characters, DIVISION and POWER
+in capitals) in the caption font. Three nets missed it: the handoff's §5.4
+table of engine-supplied notes and the plan's §1.6 list of six constants
+were compiled from constants app.py names, and this one reaches the page
+through the `hm_years` dict's `'readings'`; and the AST length guard
+(`test_text_lengths_2026_09_17.py`) measures a subscript as 0, so a caption
+whose argument is `_y['readings']` was never an offender. What closes them:
+`tests/test_rendered_lengths_2026_09_17.py` (24 tests, parametrised over
+`conftest.PAGES` and `READING_DEPTHS`, xdist-safe) renders every page on the
+default chart at both depths and holds every `st.caption` outside a book- or
+help-icon disclosure to 400 characters — the plan's caption ceiling applied
+to the rendered page, where the source of the string does not matter. It
+passes on this branch; on the branch head before commit 9 it fails on the
+releaser at both depths; on `main` it fails on eight of the twenty-four
+(releaser, timing, days, fardar at both depths). It measures captions only:
+the markdown paragraphs over 400 are the owner's call, not a rule.
+
+The fix, by the same discipline as the other engine notes: engine.py stays
+byte-identical; `_sahl_1_20_readings_sections(text)` cuts the constant with
+`_paragraphs` at its own lead phrases and the block ends in the disclosure
+"How 1.20 is read here" — *The placement: the division, and a power
+judgment.* (the first clause, through "(the same attribution as the
+releaser's places);") · *The vocabulary.* (five lines) · *The sentences, as
+read.* (eight lines) · *On Times 4, 7, and 1.23, 53 and 61.* (two
+paragraphs) · *The test-chart figures.* The lead phrases, in order:
+`"enhanced" (7-9) =` · `"a share" =` · `"eastern" and` · `"under the rays"
+=` · `"alien" =` · `10 and 20 as fn 158` · `"under the earth" (11)` · `12 is
+subsumed by 10` · `13 is illegible` · `14-15 are printed` · `19 and 22
+(alien` · `where a sentence names months` · `Placements no sentence reaches`
+· `On Times 4, 7 is a rule` · `1.23, 53 and 61:` · `On 406 test charts`. The
+rejoin test covers the site (the AST reader maps the helper's `text`
+argument to the constant; exact rejoin, no break inside a quotation), and
+`test_the_1_20_readings_are_headed_sections_not_a_caption` reads the five
+sections, the two lists' lines and the whole constant back from the bodies.
+DIVISION and POWER are the engine's own capitals and stand, as BY SCOPE
+stands in the scope note: the constant is not edited for display, and a
+display-side substitution would be a second copy of the engine's sentence.
+The block's three markdown paragraphs and the flags list stand above the
+disclosure as they were; it renders only with them (`pn4['hm_years']`). The
+export carries no such string (the timing bundle exports tables; the
+byte-compare stands). One thing the constant says that this branch cannot
+change: "is shown on the Chart page for comparison only" of On Times 4, 7,
+where the Planetary years table has stood on Fardar and ages since branch N
+— an engine sentence, for the doctrine audit.
+
+Nothing-lost: the forward run is unchanged at 44 (the constant's sentences
+are intact in engine.py); the reverse run gains two headings over 25
+characters, "The placement: the division, and a power judgment." and "On
+Times 4, 7, and 1.23, 53 and 61." (the title and the other three headings
+are shorter and silent), 156 → 158, classified under section headings below.
 
 ## Revolutions (commit 2, `e58fae1`)
 
@@ -541,7 +596,8 @@ not composed of the pages' words.
   the year", which the Chronocrator tooltip keeps, and no ALL CAPS phrase of
   these pages.
 
-New: `tests/test_readability_c_2026_09_17.py` (54 tests): the engine
+New: `tests/test_rendered_lengths_2026_09_17.py` (24 tests, above) and
+`tests/test_readability_c_2026_09_17.py` (55 tests): the engine
 constants (`test_the_six_note_constants_carry_no_newline_escape` — named
 for what it checks since the fix round; the byte-identity proof is this
 note's, since a comparison against `main` fails on `main` after the merge; every `_paragraphs` site
@@ -671,8 +727,8 @@ Nothing else is a miss: no locator token is missing and none lost a copy.
 ## Nothing-lost, reverse
 
 `python tests/tools/prose_preserved.py readability-c-2026-09-17 --engine
---tree <a detached worktree at main>` from this tree: **156 branch sentences
-not on main**, plus five `LOCATOR-COUNT` lines that in this direction say
+--tree <a detached worktree at main>` from this tree: **158 branch sentences
+not on main** (156 before commit 9), plus five `LOCATOR-COUNT` lines that in this direction say
 the branch holds more copies of a token than main (Nativities 1.20 9 → 8,
 Nativities 2.1 9 → 8, Nativities 2.11 3 → 2, Ch. 4 43 → 40, Ch. 2 29 → 28:
 copies made by section headings, the scope index's rows and the seven-place
@@ -692,7 +748,7 @@ or clauses)* — 9: the three time standards; the nine methods; the checklist's
 conventions; the Moon's four clauses; the Sun's proxies; the Moon's rows;
 the five views.
 
-*Section headings, disclosure titles and bold leads* — 91: the twenty-one
+*Section headings, disclosure titles and bold leads* — 93: the twenty-one
 expander labels ("How the house-master is directed", "How the small days
 are read", "How the mighty days are read, and why this rate", "The nine
 methods, one by one, and how they are counted", "The turning rule the
@@ -715,7 +771,9 @@ grading.", "The first proxy needs the releaser.", "Two rows for a cusp in
 another sign.", "The natal hour lord is approximate here."); the formula
 line; one table fragment the script split at "Sect." ("13, "my idea") | Not
 built |"); "Abu Ma'shar's rule, IX.1, 26-34." and "The Indian rule, reported
-and not adopted." among them since the fix round.
+and not adopted." among them since the fix round, and "The placement: the
+division, and a power judgment." and "On Times 4, 7, and 1.23, 53 and 61."
+since commit 9 (the 1.20 readings' disclosure).
 
 *Placeholders and boilerplate* — 3: "Select a planet to read its effect,
 grades, reading and witnesses"; "Abu Ma'shar's rule is in the notes under
