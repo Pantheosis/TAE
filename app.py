@@ -1701,6 +1701,23 @@ def _notes_expander(title, sections):
     with st.expander(title, icon=NOTES_ICON):
         _note_sections(sections)
 
+def _paragraphs(text, *leads):
+    """A display representation of an engine note: the text cut into
+    paragraphs before each lead phrase, in order, the engine's own string
+    untouched -- joined back with one space, the pieces are the constant
+    (tests/test_readability_c_2026_09_17.py holds each site to that).
+    The notes are runs of adjacent literals in engine.py, where a blank
+    source line puts no break into the value, so the paragraph breaks
+    are made here, at named sentence boundaries, and the same string
+    still feeds the export and every evaluator unchanged."""
+    parts, rest = [], text
+    for lead in leads:
+        head, sep, tail = rest.partition(lead)
+        parts.append(head)
+        rest = sep + tail
+    parts.append(rest)
+    return [p.strip() for p in parts if p.strip()]
+
 def _slug(title):
     return re.sub(r'\W+', '_', title.lower()).strip('_')
 
@@ -4106,6 +4123,46 @@ def _carry(widget_key, seed):
     st.session_state[widget_key] = st.session_state.get(widget_key, seed)
 
 
+# Abu 'Ali's ladder note (JN_YEARS_NOTE), the engine's sentences under
+# headings this page places: the same sections on The releaser page,
+# under the ladder, and on Fardar and ages, under the Planetary years
+# table. Cut at the note's own lead phrases; the angle brackets escaped
+# for Markdown as the caption escaped them; each impediment's definition
+# a line of its own.
+def _jn_years_note_sections():
+    p = [s.replace('<', chr(92) + '<') for s in
+         _paragraphs(JN_YEARS_NOTE, "Read: the place by the division", "\"peregrine\" is a planet",
+                     "\"burned up\" is this app's", "the Sun takes no step", "\"free from the bad ones\" is not tested",
+                     "Where Ch. 4's count differs", "On the additions Abu 'Ali and Sahl disagree")]
+    return [("When this ladder is shown.", p[0]),
+            ("Steps and impediments.", p[1]),
+            ("This app's definitions and exceptions.", "\n".join(f"- {s}" for s in p[2:6]) + "\n\n" + p[6]),
+            ("Source disagreement.", p[7])]
+
+# Abu 'Ali's additions note (JN_CH4_ADDITIONS_NOTE), the same way, for
+# the additions finding's notes on The releaser page.
+def _jn_ch4_note_sections():
+    p = _paragraphs(JN_CH4_ADDITIONS_NOTE, "The principal rows state", "Abu Bakr and 'Umar are separate",
+                    "Fortune strength grades", "Mercury results derived", "A solar modifier",
+                    "Whole-sign aspects and any", "The fortunes are Jupiter")
+    return [("What the rows state.", p[0] + "\n\n" + p[1]),
+            ("Abu Bakr and 'Umar, separate witnesses.", p[2]),
+            ("Grades left unchosen, and Mercury's conjecture.", p[3] + "\n\n" + p[4]),
+            ("The luminaries.", p[5]),
+            ("Conventions of this display.", p[6] + "\n\n" + p[7])]
+
+def _additions_detail(row):
+    """One planet of the additions table, its cells whole under the
+    column headings the table carries."""
+    st.markdown(f"**{row['Planet']}**, {row['Looks at the house-master']}.")
+    st.markdown(f"**Effect (Ch. 4).** {row['Ch. 4']}.")
+    st.markdown(f"**Conditional grades.** Its own lesser years: {row['Its own lesser years']}; if middling in "
+                f"strength: {row['If middling in strength']}; if more unsound: {row['If more unsound']}. "
+                f"Grade: {row['Grade']}.")
+    st.markdown(f"**This app's reading.** {row['Reading']}.")
+    st.markdown(f"**Other witnesses.** {row['Witnesses']}")
+
+
 def _year_under_examination():
     st.subheader("The year under examination",
                  help="Every table on the Prediction pages keys on completed civil anniversaries (II.3, 1: "
@@ -4425,7 +4482,22 @@ def page_timing():
                           "and 1.24, 2 contradict each other as printed (the caption under the table).")
         st.dataframe(pd.DataFrame(pn4['year_rows']), hide_index=True, width='stretch',
                      column_config=_wide_text_columns(pd.DataFrame(pn4['year_rows'])))
-        st.caption(PN4_YEAR_INDICATOR_SCOPE_NOTE)
+        # PN4_YEAR_INDICATOR_SCOPE_NOTE, the engine's sentences under
+        # headings this page places: the scope comparison first, built
+        # from its first and last sentences, which stand whole beneath.
+        _scope = _paragraphs(PN4_YEAR_INDICATOR_SCOPE_NOTE, "Sahl's two consecutive chapters",
+                             "Dykes fn 245 emends", "PN IV's within-the-year ranking")
+        _notes_expander("The lord of the year and the distributor, ranked by scope", [
+            ("Within one year, and across several.",
+             "| Scope | The stronger indicator, and where it is stated |\n"
+             "|---|---|\n"
+             "| Within one year | the lord of the year (II.1, 25; II.23, 1); Sahl's 1.24, 2 agrees |\n"
+             "| Across several years | the distribution (III.2, 2-3); Sahl's 1.23, 33 agrees |\n\n"
+             + _scope[0]),
+            ("Sahl's two sentences, as printed.", _scope[1]),
+            ("The editor's emendation, not adopted.", _scope[2]),
+            ("The disagreement, recorded and not resolved.", _scope[3]),
+        ])
 
         st.subheader("The sign of the terminal point and its lord, examined (II.3, 2-19)",
                      help="II.3, 2: examine the sign of the terminal point in the root -- which house of the circle, "
@@ -4875,7 +4947,13 @@ def page_releaser():
                 st.markdown(f"- {_j['table_note']}")
             for _u in _j['umar']:
                 st.markdown(f"- {_u.replace('<', chr(92) + '<')}")
-            st.caption(JN_YEARS_NOTE.replace('<', chr(92) + '<'))
+            # The engine's note on the ladder: its first paragraph -- whose
+            # ladder this is, and that Sahl's grade is never overridden --
+            # visible at reading width; the rest under their headings.
+            _jn_sections = _jn_years_note_sections()
+            with _prose():
+                st.markdown(f"**{_jn_sections[0][0]}** {_jn_sections[0][1]}")
+            _notes_expander("The ladder's steps, this app's definitions, and the sources", _jn_sections[1:])
         if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
             # JN Ch. 4's second half, display only (2026-09-15): one row a planet, no sum.
             _add = pn4['hm_years_additions']
@@ -4895,13 +4973,14 @@ def page_releaser():
                              "'Umar's solar rule and Abu Bakr's sentence on the luminaries as witnesses. Abu Bakr "
                              "and 'Umar stand beside each row in the Witnesses column with their own conditions.",
                      qualifications=["**Display only:** no sum is formed, and Sahl's grant above is not changed."],
+                     detail=_additions_detail, detail_key='Planet',
+                     detail_placeholder="Select a planet to read its effect, grades, reading and witnesses",
                      note_sections=[
                          ("Abu 'Ali's chapter, whole.",
                           f"Abu 'Ali, Judgments of Nativities Ch. 4, whole:\n\n> \"{JN_CH4_SENTENCES['fortune']}\" \"{JN_CH4_SENTENCES['infortune']}\" "
                           f"\"{JN_CH4_SENTENCES['nothing']}\" \"{JN_CH4_SENTENCES['mercury']}\" \"{JN_CH4_SENTENCES['mars']}\"\n\n"
                           f"Fn 27 on \"rays\":\n\n> \"{JN_CH4_SENTENCES['fn27']}\"\n\nFn 28 on Mercury:\n\n> \"{JN_CH4_SENTENCES['fn28']}\""),
-                         ("What the rows state, and the conventions of this display.",
-                          JN_CH4_ADDITIONS_NOTE),
+                         *_jn_ch4_note_sections(),
                          ("Abu Bakr, a witness beside Abu 'Ali.",
                           f"Abu Bakr, On Nativities I.15, a witness beside Abu 'Ali (not applied):\n\n> \"{ABU_BAKR_I15_ADDITIONS['method']}\"\n\n"
                           f"He grades the aspecting planet by its place and condition where Abu 'Ali says \"middling\" and \"more unsound\" "
@@ -5558,8 +5637,8 @@ def page_fardar():
     st.dataframe(pd.DataFrame(planetary_years_data), hide_index=True, width='stretch', height=_rows_height(len(planetary_years_data)))
     if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
         st.caption("The last column, beside each \"1.20 silent\" cell only: the class Abu 'Ali's ladder gives the "
-                   "planet (JN Ch. 3), its count from Ch. 4's table, and the steps taken. "
-                   + JN_YEARS_NOTE.replace('<', chr(92) + '<'))
+                   "planet (JN Ch. 3), its count from Ch. 4's table, and the steps taken.")
+        _notes_expander("Abu 'Ali's ladder, where 1.20 is silent", _jn_years_note_sections())
 
     with st.expander("What Persian Nativities IV does not settle", icon=":material/help:"):
         st.markdown(
@@ -5869,8 +5948,18 @@ def page_reference():
                  hide_index=True, width='stretch')
     st.dataframe(pd.DataFrame([{'Scheme': k, 'Places': (', '.join(f"{g}: {p}" for g, p in v.items()) if isinstance(v, dict) else str(v))}
                                for k, v in GOOD_PLACE_SCHEMES.items()]), hide_index=True, width='stretch')
-    # The engine's own note on the printed order, whole, under a heading.
-    _notes_expander(NOTES_TITLE, [("The seven praised places' printed order.", SEVEN_PLACE_RANKING_NOTE)])
+    # The engine's own note on the printed order: the manuscripts compared
+    # in a table built from its two sentences, which stand whole beneath it.
+    _seven = _paragraphs(SEVEN_PLACE_RANKING_NOTE, "Manuscript B reads")
+    _notes_expander(NOTES_TITLE, [
+        ("The seven praised places' printed order.",
+         "| Witness | The order's end |\n"
+         "|---|---|\n"
+         "| Manuscripts H and L (the printed order) | ... 11, 9, 5 |\n"
+         "| Manuscript B | ... 11, 5, 9, with the note that the ninth is the Sun's joy (Introduction Ch. 2, 42, fn 42) |\n"
+         "| The printed text | H/L's order plus B's note -- Dykes's conflation, kept as printed |\n\n"
+         + _seven[0] + "\n\n" + _seven[1]),
+    ])
 
     st.subheader("Planetary years",
                  help="The lesser, middle, greater and mighty years of each planet, with the "

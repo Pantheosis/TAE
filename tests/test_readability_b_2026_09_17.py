@@ -573,8 +573,13 @@ def test_the_reference_page_keeps_its_headings_and_moves_the_long_captions_into_
 
 
 def test_the_seven_place_note_is_the_engine_constant_whole(engine):
+    """Re-pinned on branch C: the constant's two sentences stand in one
+    markdown under the manuscripts table, a paragraph break between them
+    (the display split of app.py's _paragraphs; the constant itself is
+    unchanged), so the check is on the normalised text."""
     at = _reference()
-    assert engine["SEVEN_PLACE_RANKING_NOTE"] in _markdown(at)
+    note = re.sub(r"\s+", " ", engine["SEVEN_PLACE_RANKING_NOTE"])
+    assert any(note in re.sub(r"\s+", " ", m) for m in _markdown(at))
 
 
 def test_the_planetary_years_state_the_convention_above_the_table_and_compare_the_witnesses_in_a_table():

@@ -299,7 +299,9 @@ def test_the_house_masters_years_and_abu_alis_additions_keep_their_flags_and_dis
     assert block[2] == ("markdown", "**Display only:** no sum is formed, and Sahl's grant above is not changed.")
     assert block[3][0] == "dataframe"
     notes = _expander_text(at, "Sources and editorial notes", "Abu 'Ali's chapter, whole")
-    for section in ("**Abu 'Ali's chapter, whole.**", "**What the rows state, and the conventions of this display.**",
+    # Re-pinned on branch C: the engine note's one section is five headed
+    # sections (its paragraphs), the first "What the rows state.".
+    for section in ("**Abu 'Ali's chapter, whole.**", "**What the rows state.**", "**Conventions of this display.**",
                     "**Abu Bakr, a witness beside Abu 'Ali.**", "**'Umar al-Tabari, a witness.**"):
         assert section in notes, section
     assert "Display only: no total is formed and these rows do not change the Sahl-based grant of the years above" in notes
