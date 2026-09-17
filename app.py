@@ -251,6 +251,16 @@ export default function (component) {
 
 NATAL_WHEEL = st.components.v2.component("natal_wheel", css=NATAL_WHEEL_CSS, js=NATAL_WHEEL_JS)
 
+# The sidebar's first row, above the Nativity header (the owner's ruling on
+# the preview): the "Here & Now" button on the left and the home place's
+# popover on the right, each drawn INTO its column further down the script
+# -- the button once the preferences are read, the popover once the
+# Birthplace block has resolved this run's place -- so that the row stands
+# at the top of the sidebar while the controls in it are drawn from state
+# that exists only lower down. The home's controls live in the popover, out
+# of sight until wanted, so the nativity's own boxes are not crowded.
+_here_now_slot, _home_slot = st.sidebar.columns([3, 2])
+
 st.sidebar.header("Nativity")
 
 if "saved_charts" not in st.session_state:
@@ -587,8 +597,8 @@ if _selection is not None:
 
 # --- Here & Now: a chart for the home place at this moment -----------------
 # "Here" is a STORED home place (the owner's ruling): the reader sets it
-# from the birthplace the sidebar has already resolved, with the button
-# under the resolved-place box further down, and it is kept in the
+# from the birthplace the sidebar has already resolved, with the button in
+# the "Home" popover of the sidebar's first row, and it is kept in the
 # preferences file as 'home_place' -- not browser geolocation, not a
 # lookup; this app is desktop only and offline. "Now" is this computer's
 # clock, read through engine.now_utc() so that a test can freeze it.
@@ -689,9 +699,9 @@ def _here_and_now():
 
 
 _home_in_force = _home_place()
-st.sidebar.button(
+_here_now_slot.button(
     "\U0001F4CD Here & Now", key="_here_and_now", on_click=_here_and_now,
-    disabled=_home_in_force is None,
+    disabled=_home_in_force is None, width="stretch",
     help=("Cast a chart for the home place at this moment, by this computer's clock."
           if _home_in_force else "Set a home place under Birthplace first."))
 
@@ -1069,31 +1079,38 @@ else:
     # they are switched on (F02a).
     st.session_state["_resolved_lat"] = float(lat)
     st.session_state["_resolved_lon"] = float(lon)
-    # "Set as home", under the resolved-place box, only while a place is
-    # resolved and in range: it keeps this place as the home the
-    # "Here & Now" button casts at. The press is handled HERE, from THIS
-    # run's lat, lon and location_query -- the values the box beside the
-    # button shows -- and not in an on_click callback reading _resolved_*
-    # from the run before: the natural gesture, a city typed over and the
-    # button clicked without Enter, delivers the edit and the click in one
-    # run, and a callback wrote the previous place (Madrid in the box,
-    # Berlin written; the adversarial pass). The "Here & Now" button at the
-    # top of the sidebar was drawn before this press was seen, so when the
-    # home changes the run is repeated from the sidebar's foot, where every
-    # field has been drawn, as the delete confirmation does.
-    if st.sidebar.button("Set as home", key="_set_home",
-                         help="Keep this place as the home that Here & Now casts a chart for."):
+
+# --- The home place's popover, in the sidebar's first row -----------------
+# Drawn HERE, after the Birthplace block, into the slot reserved at the top
+# of the sidebar: "Set as home" must write THIS run's lat, lon and
+# location_query -- the place the resolved box shows -- and those exist only
+# once the block above has run. The natural gesture, a city typed over and
+# the button clicked without Enter, delivers the edit and the click in one
+# run, and an on_click callback reading _resolved_* from the run before
+# wrote the previous place (Madrid in the box, Berlin written; the
+# adversarial pass) -- so the press is handled inline, from this run's
+# values. The "Here & Now" button and this popover's label were drawn or
+# chosen before the press was seen, so when the home changes the run is
+# repeated from the sidebar's foot, where every field has been drawn, as
+# the delete confirmation does. The button is enabled only while this run
+# resolved a place in range, which is what chart_ok says at this height.
+_home_now = _home_place()
+with _home_slot.popover("Home" if _home_now else "Set home", width="stretch"):
+    if _home_now:
+        st.caption(f"Home: {escape(_home_now['label'])} · "
+                   f"{_home_now['lat']:.4f}, {_home_now['lon']:.4f}")
+    else:
+        st.caption("Resolve a place under Birthplace, then set it as home.")
+    if st.button("Set as home", key="_set_home", disabled=not chart_ok, width="stretch",
+                 help="Keep the place resolved under Birthplace as the home that Here & Now casts a chart for."):
         _home_set = {"label": str(location_query), "lat": float(lat), "lon": float(lon)}
         if home_place_is_valid(_home_set) and _home_set != st.session_state.get("home_place"):
             st.session_state["home_place"] = _home_set
             _remember("home_place", _home_set)
             st.session_state["_home_changed"] = True
-_home_now = _home_place()
-if _home_now:
-    st.sidebar.caption(f"Home: {escape(_home_now['label'])} · "
-                       f"{_home_now['lat']:.4f}, {_home_now['lon']:.4f}")
-    st.sidebar.button("Forget home", key="_forget_home", on_click=_forget_home_place,
-                      help="Remove the home place; Here & Now is then disabled.")
+    if _home_now:
+        st.button("Forget home", key="_forget_home", on_click=_forget_home_place, width="stretch",
+                  help="Remove the home place; Here & Now is then disabled.")
 
 # --- The target of the Timing page: an age or a date -----------------------
 # Set on the Timing page, where it is used (the owner's instinct, 2026-09-10),
@@ -1348,10 +1365,10 @@ if _readings_open_now:
     st.session_state.pop("_readings_pending", None)
     st.rerun()
 
-# A home set under Birthplace on this run: the "Here & Now" button at the
-# top of the sidebar was drawn disabled before the press was seen, so the
-# run is repeated from here, where every field has been drawn and a rerun
-# costs nothing. Once: the flag is popped.
+# A home set on this run: the "Here & Now" button at the top of the sidebar
+# was drawn disabled, and the popover's label chosen, before the press was
+# seen, so the run is repeated from here, where every field has been drawn
+# and a rerun costs nothing. Once: the flag is popped.
 if st.session_state.pop("_home_changed", None):
     st.rerun()
 

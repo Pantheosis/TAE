@@ -52,44 +52,70 @@ preference. "Set as home" writes both the session's copy and the file,
 through `_remember('home_place', …)`, which compares first; "Forget home"
 pops the session's copy and calls `_forget`.
 
-### "Set as home", the caption, "Forget home"
+### The layout: one row above the Nativity header (the owner's ruling)
 
-Under Birthplace, directly after the resolved-place box
-(`location_box`), inside the `else` arm of the one validation of the
-coordinates — so the button is drawn only when a place is resolved and in
-range, which is where `_resolved_lat`/`_resolved_lon` are written. The
-press is handled at the button's own site, on the run in which
-`st.button` returns True, from **that run's** `lat`, `lon` and
-`location_query` — the values the box beside the button shows (an atlas
-label such as "Florence, 16 (IT)", or "Manual [43.7792, 11.2463]", or a
-loaded record's own label) — built into the dict with `float()`
-coordinates, checked with `home_place_is_valid`, compared with the home
-in force, and remembered when it differs. (The first commit did this in
-an `on_click` callback reading `_resolved_*` from the previous run; the
-fix round replaced it — see below.)
+The owner's ruling on the preview of PR #78: the first layout was too
+cluttered — the home's controls intermixed with an already crowded
+nativity sidebar — and the set/forget controls must be sequenced, out of
+sight until wanted. The layout is now:
 
-Then, whenever a valid home is in force: the caption
-`Home: <label> · <lat:.4f>, <lon:.4f>` (for example
-"Home: Florence, 16 (IT) · 43.7792, 11.2463"; the label goes through
-`escape` as the resolved box's does) and the "Forget home" button.
+- **One row at the very top of the sidebar, above the "Nativity"
+  header**: `_here_now_slot, _home_slot = st.sidebar.columns([3, 2])`.
+  Left, the "📍 Here & Now" button (`width="stretch"`); right, an
+  `st.popover` (`width="stretch"`) labelled **"Home"** when a home is set
+  and **"Set home"** when none is. The two controls fill the row.
+- **Inside the popover**: the caption "Home: <label> · lat, lon" (or,
+  with no home, "Resolve a place under Birthplace, then set it as
+  home."), the **Set as home** button (stretched; enabled only while this
+  run resolved a place in range; help "Keep the place resolved under
+  Birthplace as the home that Here & Now casts a chart for."), and
+  **Forget home** (stretched) when a home is set.
+- **Under Birthplace: nothing of this branch's.** The section's direct
+  children, from its header to the chart-name box, are exactly main's —
+  measured on an archive of main and pinned in a test (below).
 
-All three buttons carry `key`s. "Forget home" and "Here & Now" have
-`on_click` callbacks, which run before the widgets of the rerun they
-trigger — so after "Forget home" the "Here & Now" button, drawn far
-above, is drawn disabled at once. "Set as home" is handled inline, which
-leaves the top button one run stale on its own; so when the home has
+**Which container the home controls ended in, and why.** The popover is
+drawn into the row's right column *from further down the script*, after
+the Birthplace block — `with _home_slot.popover(...)` at the site where
+the first layout drew "Set as home" under the resolved box. Both columns
+are created before the header, so the row stands at the top of the
+sidebar in the DOM; each control is drawn into its column later, where
+the state it needs exists: the "Here & Now" button once the preferences
+have been read (the same site as before, now `_here_now_slot.button`),
+the popover once this run's `lat`, `lon` and `location_query` exist. So
+"Set as home" is still handled inline, at its own site, from **this
+run's** resolved values — the fix round's rule, the edit-and-click
+gesture still writes the place the box shows — and nothing reads
+`_resolved_*` from the run before. (The alternative, drawing the popover
+at the top and deferring the press's effect to the foot, would have had
+the press read values resolved later in the same run, which is the same
+thing with more state; the slot needs none.) The dict is built with
+`float()` coordinates, checked with `home_place_is_valid`, compared with
+the home in force, and remembered when it differs.
+
+The "Here & Now" button and the popover's label were drawn or chosen
+before the press was seen — the popover's label is passed when it is
+created, and the press is handled inside it — so when the home has
 changed the site sets `_home_changed` and the run is repeated from the
 sidebar's foot (beside `_delete_now`, where every field has been drawn
-and a rerun costs nothing; the flag is popped, so once). A rerun from
-sidebar height is not available (the delete confirmation learned that:
-it abandons the run before the date, time and place widgets are drawn).
+and a rerun costs nothing; the flag is popped, so once). "Forget home"
+and "Here & Now" keep their `on_click` callbacks, which run before the
+widgets of the rerun they trigger, so after Forget the button is drawn
+disabled and the label reads "Set home" at once. A rerun from sidebar
+height is not available (the delete confirmation learned that: it
+abandons the run before the date, time and place widgets are drawn).
+
+AppTest sees inside a popover: it is a `Block` of type `"popover"` under
+the column, its label in `proto.popover.label`, its children reachable
+by `at.sidebar.button(key=...)` and `.caption` as any other block's.
+No fallback to an expander was needed.
 
 ### "Here & Now"
 
-Directly under the `Nativity` header, the first thing drawn after it
-(before the flash, the store-error notice, the record notice and the
-picker): `st.sidebar.button("📍 Here & Now", key="_here_and_now", …)`.
-The glyph is an emoji, as the sidebar's other buttons' glyphs are (📂, 🗑,
+In the top row's left column: `_here_now_slot.button("📍 Here & Now",
+key="_here_and_now", width="stretch", …)`, drawn at the site under the
+preferences block where the first layout drew it under the header. The
+glyph is an emoji, as the sidebar's other buttons' glyphs are (📂, 🗑,
 💾) — the app's symbol font covers the 26 astrological glyphs only, so
 "⌖" would have fallen to the system font. `help` is "Cast a chart for the
 home place at this moment, by this computer's clock." when a valid home
@@ -176,27 +202,42 @@ preferences environment moves and a reload puts the real functions back.
 
 ### What a reader sees
 
-Under "Nativity": the button "📍 Here & Now", greyed with the tooltip
-"Set a home place under Birthplace first." until a home is set. Under the
-green resolved-place box: "Set as home"; once pressed, the caption
-"Home: Petoskey, MI (US) · 45.3733, -84.9553" (two lines at the sidebar's
-300 px) and "Forget home" under it. A press of "Here & Now" fills the date,
-time, standard and coordinate boxes and the page reads the chart of this
-moment; with a saved chart loaded, the strip reads "Jason Armfield
-(modified) · 2026-09-17 11:45:12 · America/Detroit -04:00 · Petoskey, MI
-(US) 45.37, -84.96" and the picker's caption says "Edited since it was
-saved."
+At the top of the sidebar, above "Nativity", one row: "📍 Here & Now"
+(148 px wide at the sidebar's 300 px) and, beside it, "Set home ▾"
+(96 px) — greyed button and "Set home" until a home is set. Opening "Set
+home" shows "Resolve a place under Birthplace, then set it as home." and
+the "Set as home" button, disabled until the green resolved-place box
+holds a place. Once pressed, the row reads "📍 Here & Now" enabled and
+"Home ▾"; opening "Home" shows "Home: Petoskey, MI (US) · 45.3733,
+-84.9553", "Set as home" and "Forget home". Nothing else changes in the
+sidebar: the nativity's boxes and the Birthplace section are main's. A
+press of "Here & Now" fills the date, time, standard and coordinate boxes
+and the page reads the chart of this moment; with a saved chart loaded,
+the strip reads "Jason Armfield (modified) · 2026-09-17 13:03:36 ·
+America/Detroit -04:00 · Petoskey, MI (US) 45.37, -84.96" and the
+picker's caption says "Edited since it was saved."
 
 ## Tests
 
-`tests/test_here_and_now_2026_09_17.py`, 45 tests, AppTest, preferences
+`tests/test_here_and_now_2026_09_17.py`, 48 tests, AppTest, preferences
 switched on against a `tmp_path` `XDG_DATA_HOME` as `test_preferences.py`
 does. A button drawn disabled takes no click under AppTest (nor in a
 browser), so tests that seed a home in `session_state` do it before the
 first run.
 
-- No home: the button disabled with its help; "Set as home" present with
-  Florence resolved, absent with no atlas match and with a latitude of 91.
+- No home: the button disabled with its help, the popover labelled "Set
+  home" with its caption; "Set as home" enabled with Florence resolved,
+  disabled with no atlas match and with a latitude of 91.
+- The top row (layout round): the sidebar's first child is a
+  `flex_container` of two `column`s, the left holding exactly the
+  "📍 Here & Now" button, the right exactly one `popover`; the "Nativity"
+  header is the second child. With and without a home.
+- The Birthplace section is exactly main's (layout round): the direct
+  children from the "Birthplace" header to the chart-name box, for the
+  harness's manual pair and for Florence through the atlas, equal the
+  sequence measured on an archive of main — before and after "Set as
+  home" — and no "Set as home" element stands among the sidebar's direct
+  children.
 - "Set as home" on the atlas's Florence: the file holds
   `{"label": "Florence, 16 (IT)", "lat": 43.77925, "lon": 11.24626}` with
   float coordinates, the caption names it, the button is enabled with its
@@ -208,7 +249,8 @@ first run.
   and coordinates, the caption names it and the top button is enabled on
   that run; a latitude set to 10.0 and clicked in one run writes
   `Manual [10.0000, …]`. Both fail on the first commit's `app.py`
-  (Florence written for Paris).
+  (Florence written for Paris); both pass unchanged with the popover,
+  whose button is found by key.
 - A home in the file is carried into a fresh session; the manual pair is a
   home too; nothing is written under the harness guard.
 - The validator: the good shape and a polar pair admitted; nineteen
@@ -267,7 +309,8 @@ test changed.
 - The example chart's Markdown export, taken from `_analysis_markdown`
   under AppTest on an archive of `main` and on the branch: 220,351 bytes
   each, one differing line, the `engine_file_sha256` row.
-- Preview on the coordinator's launch entry at port 8531 (cloned data),
+- Preview of the first layout (superseded by the layout round below) on
+  the coordinator's launch entry at port 8531 (cloned data),
   1400 × 900 and 1920 × 1080, light and dark: the disabled button under
   the header at y 132 with the header at 76, its tooltip on hover; "Set
   as home" 97 px wide under the resolved box; the caption and "Forget
@@ -275,7 +318,24 @@ test changed.
   disabling the button on the same run. The clone's home was forgotten
   and its launch count put back to 99 before the preview was stopped.
 - Full suite `-n auto`: 3731 passed, 1 skipped at the first commit; 3734
-  passed, 1 skipped after the fix round (main: 3688 passed, 1 skipped).
+  passed, 1 skipped after the fix round; 3737 passed, 1 skipped after the
+  layout round (main: 3688 passed, 1 skipped).
+- Preview of the layout round on the clone at port 8531, 1400 × 900 and
+  1920 × 1080, light and dark: the row at y 76 (button 148 × 40 at x 20,
+  popover 96 × 40 at x 184, 16 px between), the "Nativity" header at
+  y 132 against main's 76 — **the height cost is one row, 56 px, in every
+  state**, with and without a home, since nothing stands under Birthplace
+  any more (the first layout cost 112 px with no home and about 206 with
+  one). The popover open with a home: a 295–300 px panel at y 120 holding
+  the caption (two lines), "Set as home" and "Forget home" at 247 px;
+  open without one: a 358 px panel with the sentence and "Set as home" at
+  310 px. "Forget home" in the panel disables the button and relabels
+  the popover "Set home" on the same run; "Set as home" in the panel (the
+  clone's Petoskey resolved) enables it and relabels "Home" on the same
+  gesture; "Here & Now" from the row casts (strip "Jason Armfield
+  (modified) · 2026-09-17 13:03:36 · …"). No horizontal scroll at either
+  width. The clone's home (Alanson, MI, the owner's own on the clone when
+  this round began) put back and its launch count restored.
 
 ## What was left
 
@@ -320,12 +380,11 @@ from the foot — is the model if the owner wants it closed.
 
 ### Design consequences for the owner
 
-- **Sidebar height.** The "Here & Now" block is 56 px (40 + 16) and so is
-  "Set as home", so the sidebar is about 112 px taller than main's with no
-  home; the caption (38 px, two lines at 300 px) and "Forget home" (56)
-  make it about 206 px taller with one. On the owner's chart Save was
-  already below a 900 px fold on main (about y 1136–1197) and stands at
-  about 1309 with no home and 1403 with one. Nothing scrolls sideways.
+- **Sidebar height.** After the layout round: one row of 56 px (40 + 16)
+  above the "Nativity" header, in every state — the home's controls are
+  inside the popover and nothing stands under Birthplace. (The first
+  layout cost about 112 px with no home and about 206 with one; the
+  owner's ruling replaced it.) Nothing scrolls sideways.
 - After Here & Now the coordinate toggle behaves as for a loaded record
   (F02's rule): switching it off shows the city box's last text and casts
   that place at the cast time.
@@ -339,3 +398,14 @@ from the foot — is the model if the owner wants it closed.
   one sentence slot the sidebar has beside the picker, and the sentence
   is cleared by everything that clears that slot. If the owner would
   rather it had a slot of its own, that is a one-key change.
+
+## The layout round
+
+The owner's ruling on the preview of PR #78, applied in one commit:
+behaviour and validation unchanged; the "Here & Now" button and a "Home"
+/ "Set home" popover in one row above the Nativity header, the home's
+caption, "Set as home" and "Forget home" inside the popover, and the
+Birthplace section returned to exactly main's layout. The container and
+the reason are in "The layout" above; the tests and the preview
+measurements in their sections. `engine.py` untouched this round; the
+fixture untouched; the length guards silent.

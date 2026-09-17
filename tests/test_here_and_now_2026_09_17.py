@@ -2,7 +2,9 @@
 casts at.
 
 "Here" is a stored home place: the reader keeps the birthplace the sidebar
-has resolved, with "Set as home" under the resolved-place box, and it is
+has resolved, with "Set as home" in the "Home" popover of the sidebar's
+first row (the owner's ruling on the preview: the home's controls out of
+sight until wanted, the Birthplace section exactly main's), and it is
 the preference 'home_place' -- {"label", "lat", "lon"}, validated by
 engine.home_place_is_valid so that a hand-edited file cannot take the app
 down. "Now" is this computer's clock, read through engine.now_utc() (and,
@@ -68,6 +70,33 @@ def _here_now(at):
     return at.sidebar.button(key="_here_and_now")
 
 
+def _set_home(at):
+    return at.sidebar.button(key="_set_home")
+
+
+def _top_row(at):
+    """The sidebar's first child: the row above the Nativity header."""
+    return list(at.sidebar.children.values())[0]
+
+
+def _popover(at):
+    """The home popover, the one child of the top row's second column."""
+    columns = list(_top_row(at).children.values())
+    assert len(columns) == 2
+    blocks = list(columns[1].children.values())
+    assert len(blocks) == 1 and blocks[0].type == "popover", [b.type for b in blocks]
+    return blocks[0]
+
+
+def _popover_label(at):
+    return _popover(at).proto.popover.label
+
+
+def _sidebar_kinds(at):
+    return [(getattr(c, "type", None), str(getattr(c, "label", None) or getattr(c, "value", None) or ""))
+            for c in at.sidebar.children.values()]
+
+
 def _buttons(at):
     return [b.label for b in at.sidebar.button]
 
@@ -98,25 +127,86 @@ def test_no_home_stored_the_button_is_disabled_and_says_why(prefs_on):
     button = _here_now(at)
     assert button.disabled
     assert button.help == "Set a home place under Birthplace first."
-    assert "Set as home" in _buttons(at)
+    assert _popover_label(at) == "Set home"
+    assert not _set_home(at).disabled
     assert "Forget home" not in _buttons(at)
     assert _home_caption(at) is None
+    assert [c.value for c in _popover(at).caption] == ["Resolve a place under Birthplace, then set it as home."]
 
 
-def test_set_as_home_is_absent_until_a_place_is_resolved(prefs_on):
+def test_the_top_row_holds_exactly_the_two_controls(prefs_on):
+    """The sidebar's first child is the row above the Nativity header: two
+    columns, the left holding the Here & Now button alone, the right the
+    home popover alone; the header comes next."""
+    for at in (_florence_app().run(), make_app(page="chart").run()):
+        row = _top_row(at)
+        assert row.type == "flex_container"
+        columns = list(row.children.values())
+        assert [c.type for c in columns] == ["column", "column"]
+        left = list(columns[0].children.values())
+        assert [(c.type, c.label) for c in left] == [("button", "\U0001F4CD Here & Now")]
+        right = list(columns[1].children.values())
+        assert [c.type for c in right] == ["popover"]
+        kinds = _sidebar_kinds(at)
+        assert kinds[1] == ("header", "Nativity"), kinds[:3]
+
+
+# The Birthplace section's direct children on main, from its header to the
+# chart-name box, for the harness's manual pair and for a city resolved
+# through the atlas -- measured on an archive of main; the branch adds
+# nothing under Birthplace (the owner's ruling).
+BIRTHPLACE_ON_MAIN = {
+    "manual": [("header", "Birthplace"), ("toggle", "Enter coordinates directly"),
+               ("number_input", "Latitude"), ("number_input", "Longitude"),
+               ("success", "**Manual [43.7792, 11.2463]**  \n43.7792, 11.2463"),
+               ("text_input", "Chart name (for saving)")],
+    "city": [("header", "Birthplace"), ("toggle", "Enter coordinates directly"),
+             ("text_input", "City, or latitude, longitude"), ("selectbox", "Select specific location:"),
+             ("success", "**Florence, 16 (IT)**  \n43.7792, 11.2463 · Europe/Rome"),
+             ("text_input", "Chart name (for saving)")],
+}
+
+
+@pytest.mark.parametrize("which", sorted(BIRTHPLACE_ON_MAIN))
+def test_the_birthplace_section_is_exactly_mains(prefs_on, which):
+    """With and without a home set, and after Set as home: no extra element
+    between the Birthplace header and the chart-name box."""
+    at = make_app(page="chart")
+    if which == "city":
+        at.session_state["manual_coords_key"] = False
+        at.session_state["location_input_key"] = "Florence"
+        at.session_state["time_standard_key"] = STANDARD
+    at.run()
+    assert_no_exception(at, which)
+
+    def section(at):
+        kinds = _sidebar_kinds(at)
+        start = next(i for i, (t, l) in enumerate(kinds) if (t, l) == ("header", "Birthplace"))
+        end = next(i for i, (t, l) in enumerate(kinds) if t == "text_input" and l.startswith("Chart name"))
+        return kinds[start:end + 1]
+
+    assert section(at) == BIRTHPLACE_ON_MAIN[which]
+    _set_home(at).click().run()
+    assert _popover_label(at) == "Home"
+    assert section(at) == BIRTHPLACE_ON_MAIN[which]
+    assert "Set as home" not in [l for t, l in _sidebar_kinds(at)]
+
+
+def test_set_as_home_is_disabled_until_a_place_is_resolved(prefs_on):
     at = make_app(page="chart")
     at.session_state["manual_coords_key"] = False
     at.session_state["location_input_key"] = "Zzqxv nowhere"
     at.run()
     assert_no_exception(at, "no match")
     assert any("No matches" in w.value for w in at.sidebar.warning)
-    assert "Set as home" not in _buttons(at)
+    assert _set_home(at).disabled
     assert _here_now(at).disabled
     # An out-of-range pair is not a resolved place either.
     at = make_app(page="chart")
     at.session_state["manual_lat_key"] = 91.0
     at.run()
-    assert "Set as home" not in _buttons(at)
+    assert _set_home(at).disabled
+    assert _popover_label(at) == "Set home"
 
 
 def test_set_as_home_writes_the_resolved_place_and_the_caption_names_it(prefs_on):
@@ -130,6 +220,8 @@ def test_set_as_home_writes_the_resolved_place_and_the_caption_names_it(prefs_on
     assert set(on_disk) == {"label", "lat", "lon"}
     assert isinstance(on_disk["lat"], float) and isinstance(on_disk["lon"], float)
     assert _home_caption(at) == f"Home: {label} · {on_disk['lat']:.4f}, {on_disk['lon']:.4f}"
+    assert [c.value for c in _popover(at).caption] == [_home_caption(at)]
+    assert _popover_label(at) == "Home"
     assert "Forget home" in _buttons(at)
     assert not _here_now(at).disabled
     assert _here_now(at).help == "Cast a chart for the home place at this moment, by this computer's clock."
@@ -146,6 +238,7 @@ def test_set_as_home_writes_the_resolved_place_and_the_caption_names_it(prefs_on
     assert "home_place" not in json.loads(_prefs_path().read_text())
     assert "home_place" not in at.session_state
     assert _here_now(at).disabled
+    assert _popover_label(at) == "Set home"
     assert "Forget home" not in _buttons(at)
     assert _home_caption(at) is None
 
@@ -546,9 +639,11 @@ def test_the_sidebar_text_is_short_and_in_this_apps_voice():
     src = APP_PATH.read_text()
     for text in ("Cast a chart for the home place at this moment, by this computer's clock.",
                  "Set a home place under Birthplace first.",
-                 "Keep this place as the home that Here & Now casts a chart for.",
+                 "Keep the place resolved under Birthplace as the home that Here & Now casts a chart for.",
                  "Remove the home place; Here & Now is then disabled.",
-                 "so Here & Now cast nothing."):
+                 "Resolve a place under Birthplace, then set it as home.",
+                 "so Here & Now cast nothing.",
+                 '"Home" if _home_now else "Set home"'):
         assert text in src
         assert len(text) <= 300
         assert "the app" not in text
