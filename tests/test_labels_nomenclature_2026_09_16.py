@@ -263,16 +263,21 @@ def test_topical_planets_in_houses_is_headed_once():
     assert len(headings) == 1, [h.value for h in at.main.subheader]
     # The surviving sentences are the ones that are true: the PN IV halves
     # are Book II's own sentences, the Rhetorius halves Ch. 57's and
-    # Mathesis III's.
-    assert "this app's paraphrases of Rhetorius, Astrological Compendium Ch. 57" in headings[0].help
-    assert "this app's paraphrases of Abu Ma'shar's Book II" in headings[0].help
-    assert "still print" not in headings[0].help
-    assert "not in hand" not in headings[0].help
+    # Mathesis III's. They stand in the block's notes expander since the
+    # tooltip became one sentence (readability branch A, 2026-09-17).
+    notes = "\n".join(m.value for node in at.main if getattr(node, "type", None) == "status"
+                      and node.label == "Sources and editorial notes" for m in node.markdown)
+    assert "this app's paraphrases of Rhetorius, Astrological Compendium Ch. 57" in notes
+    assert "this app's paraphrases of Abu Ma'shar's Book II" in notes
+    assert "still print" not in notes and "still print" not in headings[0].help
+    assert "not in hand" not in notes and "not in hand" not in headings[0].help
 
 
 def test_the_condition_caption_says_what_the_dignities_page_does(configurations):
-    caption = [c.value for c in configurations.main.caption
-               if "Net and Verdict are this app's heuristic" in c.value]
+    # The qualification stands above the table as body text since
+    # readability branch A (2026-09-17); the sentences are the caption's.
+    caption = [m.value for m in configurations.main.markdown
+               if "Net and Verdict are this app's heuristic" in m.value]
     assert len(caption) == 1, caption
     text = caption[0]
     assert "chooses neither" in text and "Indeterminate on both" in text

@@ -3945,16 +3945,18 @@ def test_syzygy_governor_rows_are_on_the_victors_page_with_the_relabelled_almute
     assert "Almuten by 5/4/3/2/1 points (al-Qabisi's weights, ITA I.18; a technique not in Sahl)" in src
     assert "the weights are stated in no text in hand" not in src
     assert '"Syzygy Lord (Almuten)"' not in src
-    for phrase in ("THE VERDICT names a planet only where the text's clear subcases decide",
+    # The editorial capitals became bold when the caption became headed
+    # notes (readability branch A, 2026-09-17); the sentences are the same.
+    for phrase in ("**The verdict** names a planet only where the text's clear subcases decide",
                    "is a preference among the claim-holders, not a veto",
-                   "the SUN is a claim-holder whose side relative to himself is not applicable",
+                   "the **Sun** is a claim-holder whose side relative to himself is not applicable",
                    "7 is kept as a profile, not a score",
                    "1.20, 2-4's ranking of the lords being stated for the house-master, not borrowed here",
                    "the text's own word for the stakes is the counted sign",
                    "(The Introduction Ch. 2, 31)",
                    "the Moon's side is the same rising-before-the-Sun rule as the planets'",
                    "Gr. Intr. VII.2, 4 names her right and left",
-                   "every condition is read in the NATAL chart"):
+                   "every condition is read in the **natal** chart"):
         assert phrase in src, phrase
 
 

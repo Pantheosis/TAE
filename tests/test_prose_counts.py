@@ -33,7 +33,7 @@ def test_weakness_testimonies_ten():
 def test_abu_mashar_moon_corruptions_eleven():
     labels = cited_paragraphs(function_source("_abu_mashar_moon_corruption"), 64, 74)
     assert labels == set(range(64, 75)), f"VII.6 Moon labels cite {sorted(labels)}"
-    assert prose_number(r"for the Moon only, HIS OWN (\w+) corruptions") == len(labels)
+    assert prose_number(r"for the Moon only, his own (\w+) corruptions") == len(labels)
     # The docstring announces the same count.
     assert re.search(r"The ELEVEN corruptions", function_source("_abu_mashar_moon_corruption"))
 

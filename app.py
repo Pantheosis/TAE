@@ -1319,14 +1319,25 @@ def _readings_off_default():
             out.append((label, value))
     return out
 
+# An element that is sometimes there and sometimes not, drawn directly in
+# the main block before a page's st.tabs, shifts the tabs' place in the
+# element tree between runs; the frontend then takes them for a new tabs
+# widget and opens the first tab, which is how a click on a control inside
+# the Planetary Condition tab used to throw the reader back to Aspects.
+# So every such element takes a fixed slot -- st.empty(), reserved on every
+# run and filled only when there is something to say -- and the tabs keep
+# their place whatever the readings are. (_stale_notice and the fitting-
+# infortune line do the same; conditional elements inside st.columns or a
+# container do not move the main block's indices.)
 def _readings_note():
     """One line under a page header when a persisted reading is in force
     that a reader might not remember setting (UI_REVIEW §2's caution)."""
+    slot = st.empty()
     off = [(l, v) for l, v in _readings_off_default() if l != "Sources shown"]
     if off:
-        st.caption("Readings in force that differ from the defaults: "
-                   + "; ".join(f"{l} = {v}" for l, v in off)
-                   + ". They are remembered between runs; see Sources and readings to reset them.")
+        slot.caption("Readings in force that differ from the defaults: "
+                     + "; ".join(f"{l} = {v}" for l, v in off)
+                     + ". They are remembered between runs; see Sources and readings to reset them.")
 
 
 # One line under the header of every page whose CONTENT the Sources shown
@@ -1588,11 +1599,26 @@ if chart_ok:
 # quotations, measured frequencies and superseded readings -- served
 # as hover text, which cannot be scrolled, selected or searched.
 #
-# Three depths, three containers. GLANCE: what this is, in the
-# tooltip, under about 200 characters. CHECK: the citation, as a
-# visible caption, plus the row's own Source and Standing columns
-# where the table carries them. AUDIT: the quotations and the
-# measurements, in an expander under the table.
+# Three depths, and the layers each is served in. GLANCE: what this
+# is, in the tooltip -- one sentence, about 200 characters the aim;
+# the guard test (tests/test_text_lengths_2026_09_17.py) holds help=
+# and glance= to a ceiling of 300 and a caption to 400. CHECK: the
+# citation, as a visible caption under the heading (standing · source),
+# plus the row's own Source and Standing columns where the table
+# carries them; then, visible above the table and at reading width,
+# the SUMMARY (one or two sentences: what the reader is looking at)
+# and the QUALIFICATIONS (short bold-led statements the result cannot
+# be read without -- "This app's synthesis.", "Display only." --
+# supplied by the call, never inferred from the rows). AUDIT: the
+# quotations, the alternatives and the measurements, in the notes
+# expander under the table, as headed sections (note_sections) at
+# reading width, or as one Markdown string (notes=) where a block has
+# not been divided yet; and, for a row too long for its cell, a
+# selectbox under the table that prints one row's fields whole
+# (detail= and detail_key=). The largest dossiers place further
+# expanders after the finding themselves (_notes_expander), never
+# nested. Nothing in these layers reads the chart: every status and
+# value comes from the engine's rows.
 #
 # column_config, name-based: the DataFrame's own values never change
 # on this branch (the doctrine fixtures compare them), only how a
@@ -1634,6 +1660,59 @@ def _medium_text_columns(df):
     return {col: st.column_config.TextColumn(width="medium")
             for col in df.columns if col in _MEDIUM_TEXT_COLUMNS}
 
+# Reading width. Body text at PROSE_WIDTH pixels: a container that
+# the page's own width constrains, so prose narrows on a phone and
+# stops growing on a wide desktop instead of running the window's
+# width. Native and nothing else: no CSS, no st.html, no keyed
+# container. The number is settled by measurement in the preview
+# (a rendered paragraph's width against the app's own font) so that
+# a line holds about 65-75 characters, the reading-width target.
+PROSE_WIDTH = 680
+
+def _prose():
+    """A container at reading width for body text, notes and detail."""
+    return st.container(width=PROSE_WIDTH)
+
+# One notes disclosure, the same everywhere: the book icon (which is
+# what the table walker in tests/conftest.py skips an expander by),
+# and inside it, at reading width, headed sections -- each heading a
+# bold line of its own, each body one Markdown string that may hold
+# a comparison table or a "> " quotation, and never an st.dataframe,
+# which would enter the table fixture under the expander's label.
+NOTES_ICON = ":material/menu_book:"
+NOTES_TITLE = "Sources and editorial notes"
+
+def _note_sections(sections):
+    with _prose():
+        for heading, body in sections:
+            st.markdown(f"**{heading}**")
+            st.markdown(body)
+
+def _notes_expander(title, sections):
+    """A sibling topic expander a page places after a finding, for a
+    dossier too large for one expander; never nested in another."""
+    with st.expander(title, icon=NOTES_ICON):
+        _note_sections(sections)
+
+def _slug(title):
+    return re.sub(r'\W+', '_', title.lower()).strip('_')
+
+# "Read details for": a selectbox listing one field of every row, in
+# the table's order, unselected until the reader picks -- the keyboard
+# path to a row whose cells are too long to be read in the table --
+# and the row's fields printed whole under it by the caller's own
+# renderer. Widget key `<slug>_detail`, the slug derived from the
+# finding's title as _tick_grid derives its grid key.
+def _detail_selector(title, data, detail_key, detail, placeholder):
+    options = [str(row[detail_key]) for row in data]
+    if len(set(options)) != len(options):
+        options = [f"{n}. {option}" for n, option in enumerate(options, 1)]
+    picked = st.selectbox("Read details for", options, index=None, key=f"{_slug(title)}_detail",
+                          placeholder=placeholder)
+    if picked is not None and picked in options:
+        with _prose():
+            detail(data[options.index(picked)])
+
 # A finding with nothing to report is not given a heading at all --
 # it is collected and named in one line at the foot of its group,
 # which is what turns seventeen "No X found" headings into four.
@@ -1642,7 +1721,10 @@ def _medium_text_columns(df):
 # heading is the finding's NAME; the footing and the citation are one
 # caption under it, separated by a middle dot.
 def _finding(bucket, title, citation, data, glance=None, notes=None, columns=None, height=None,
-             standing=None, absent=None, column_help=None, caption=None):
+             standing=None, absent=None, column_help=None, caption=None,
+             summary=None, qualifications=None, detail=None, detail_key=None,
+             detail_placeholder="Select a row to read its grounds and source passages",
+             notes_title=NOTES_TITLE, note_sections=None):
     if not data:
         # absent= is for a finding whose emptiness is the END OF A SEARCH,
         # not an absence: the search ran, it was bounded, and what it
@@ -1659,6 +1741,15 @@ def _finding(bucket, title, citation, data, glance=None, notes=None, columns=Non
     st.subheader(title, help=glance)
     if standing or citation:
         st.caption(" · ".join(part for part in (standing, citation) if part))
+    # summary= and qualifications= are body text at reading width above
+    # the table: what the rows are, then the statements the rows cannot
+    # be read without, each its own bold-led paragraph.
+    if summary or qualifications:
+        with _prose():
+            if summary:
+                st.markdown(summary)
+            for _statement in (qualifications or ()):
+                st.markdown(_statement)
     # columns= pins the order (pandas otherwise takes the first
     # row's); height= shows every row of a table meant to be read
     # whole, instead of st.dataframe's ten-row inner scroll.
@@ -1677,9 +1768,18 @@ def _finding(bucket, title, citation, data, glance=None, notes=None, columns=Non
     # rows themselves rather than the finding's source.
     if caption:
         st.caption(caption)
-    if notes:
-        with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-            st.markdown(notes)
+    # detail= prints one chosen row whole, under the table, from the
+    # same rows the table was built from.
+    if detail is not None and detail_key:
+        _detail_selector(title, data, detail_key, detail, detail_placeholder)
+    # The notes: headed sections at reading width (note_sections=),
+    # one Markdown string as before (notes=), or both, notes first.
+    if notes or note_sections:
+        with st.expander(notes_title, icon=NOTES_ICON):
+            if notes:
+                st.markdown(notes)
+            if note_sections:
+                _note_sections(note_sections)
 
 def _absent(bucket):
     if bucket:
@@ -1765,8 +1865,18 @@ def _chart_strip():
     # states them. The markers wrap the joined line once, not each
     # part -- a caption renders markdown, as the sidebar's own boxes
     # do.
-    st.caption("  \n".join((entered, f"**{read}**")))
-    _stale_notice()
+    # One element whatever the draft date says: the strip caption alone, or
+    # a container holding the caption and the stale-date warning, in one
+    # st.empty() slot -- so the elements after it, a page's st.tabs among
+    # them, keep their place in the element tree (see _readings_note).
+    strip = "  \n".join((entered, f"**{read}**"))
+    slot = st.empty()
+    if chart_ok and not date_is_valid:
+        with slot.container():
+            st.caption(strip)
+            _stale_notice()
+    else:
+        slot.caption(strip)
 
 
 def _stale_notice():
@@ -1851,7 +1961,8 @@ _PARAGRAPH = re.compile(r'\((\d{2,3})(?=[;,)])')
 # before the trailing run of sentence numbers is the chapter locator.
 _CITATION_LOCATOR = re.compile(r'^(.*), [\d\s,-]+$')
 
-def _tick_grid(bucket, title, citation, data, text_key, columns, glance=None, notes=None):
+def _tick_grid(bucket, title, citation, data, text_key, columns, glance=None, notes=None,
+               key=None, note_sections=None):
     if not data:
         bucket.append(title)
         return
@@ -1881,9 +1992,10 @@ def _tick_grid(bucket, title, citation, data, text_key, columns, glance=None, no
             help=f"{_locator}, {num}" if _locator else f"sentence {num}",
             width="small")
     # A row can be selected (single-row, rerun): the grid's key is
-    # its title, lower-cased and underscored. The selection reruns
+    # its title, lower-cased and underscored, unless key= names it
+    # (so a title can change without the key). The selection reruns
     # the fragment this grid stands in and nothing else on the page.
-    _grid_key = re.sub(r'\W+', '_', title.lower()).strip('_') + '_grid'
+    _grid_key = key or _slug(title) + '_grid'
     _event = st.dataframe(pd.DataFrame(grid), hide_index=True, width='stretch', height=_rows_height(len(grid)),
                           column_config=_grid_columns, on_select="rerun", selection_mode="single-row",
                           key=_grid_key)
@@ -1893,9 +2005,12 @@ def _tick_grid(bucket, title, citation, data, text_key, columns, glance=None, no
     with st.expander("Answer key: testimonies in words"):
         st.dataframe(pd.DataFrame(data, columns=['Planet', text_key, 'Count']),
                      hide_index=True, width='stretch', height=_rows_height(len(data)))
-    if notes:
-        with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-            st.markdown(notes)
+    if notes or note_sections:
+        with st.expander(NOTES_TITLE, icon=NOTES_ICON):
+            if notes:
+                st.markdown(notes)
+            if note_sections:
+                _note_sections(note_sections)
 
 # Why a tick fired: the selected planet's row, one block per ticked
 # testimony in numerical order -- the sentence's locator as the
@@ -2875,20 +2990,72 @@ def page_findings():
     # 1-3), the partnering lord (2.11, 4) and the Lot step (2.3, 6) modify
     # it. Rows a text other than Sahl states (2.16, 6, bracketed from BA)
     # show under Course text and supplement only.
+    # One row of the finding printed whole: its four cells as labelled
+    # paragraphs, the words the table holds and nothing else.
+    def _prosperity_row(row):
+        for _field in ('Class', 'Ground', 'Sahl', 'Also'):
+            if row.get(_field):
+                st.markdown(f"**{_field}.** {row[_field]}")
     _finding(_gap, "Sahl: indications of fortune and livelihood", "Sahl, On Nativities 2.1-2.21",
               [r for r in prosperity_data if READING_DEPTH == READING_DEPTH_OPTIONS[1] or not r['Supplement']],
               columns=['Class', 'Ground', 'Sahl', 'Also'],
               column_help={'Class': "The first two triplicity lords describe the pattern across their periods; the partnering lord, the Lot of Fortune, and other conditions modify the reading. A single seven-class outcome is not specified for every combination in Sahl's chapter."},
-              glance="Sahl's indications of fortune and livelihood. The first row is this app's synthesis: the class it reads from the first and second lords of the sect light's triplicity by whole-sign place, said so, with the partnering lord's modification (2.11, 4) and, when the Lot of Fortune is worked (2.3, 6), the Lot's judgment beside the lords' -- mixed or unresolved where Sahl gives no precedence; under it the lords, the partnering lord, and every further rule of the chapter that the chart meets, each with Sahl's sentence and the parallel in the Book of Aristotle or Abu 'Ali. Display only; nothing scores it.",
-              notes="Sahl, On Nativities 2.1, 2-9: \"And good fortune is based on seven approaches: The first of them, on good fortune and how much that good fortune will come to. Second, <on one who> falls from that good fortune. Third, those whose livelihood is middling. Fourth, the rabble [and] those who come down from an ascent to a downfall. Fifth, those who rise up after wretchedness. Sixth, the wretched who do not cease to be in wretchedness. Seventh, those whose profit comes from their own hands.\" Dykes's comment at the head of the chapter: the fourth repeats the second, and the seventh joins profit from one's own hands with violence and injustice (fn 1; 2.21, 3); his table sets them against the Book of Aristotle's III.2.1-III.2.6.\n\n"
-                    "The synthesis. The first two triplicity lords describe the pattern across their periods; the partnering lord, the Lot of Fortune, and other conditions modify the reading. A single seven-class outcome is not specified for every combination in Sahl's chapter, so the first row is this app's synthesis and says \"read by this app as class N\" with its grounds. The pattern is Theophilus's, 2.11, 1-3 -- \"" + PROSPERITY_SAHL['2.11, 1'] + " " + PROSPERITY_SAHL['2.11, 2'] + " " + PROSPERITY_SAHL['2.11, 3'] + "\" -- with 2.11, 5, \"" + PROSPERITY_SAHL['2.11, 5'] + "\", and 2.13, 40, \"" + PROSPERITY_SAHL['2.13, 40'] + "\" Strong is a stake or what follows one, falling the third, sixth, ninth and twelfth (fn 149 on \"strong\"), by whole sign. Both strong is read as class 1 (both in the stakes is 2.3, 2's \"happy for all the days of his life\"); both weak as class 6, the ground naming each lord's weakness -- falling (2.11, 3) or under the rays (2.11, 5) -- since 2.11, 3's word is falling and 2.11, 5 says only that a lord under the rays has no strength; the mixed pair is a timing pattern, \"benefit in the time of the strong one\" (2.11, 2), read by this app as class 2 when the first lord is the strong one and class 5 when the second is, the first lord's time being the beginning of life (2.13, 39). The infortunes with a lord or in its square or opposition are listed: 2.11, 4 makes their aspect an increase or a subtraction, not a class step, and Abu 'Ali's charts read the lords' places.\n\n"
-                    "The partnering lord. 2.11, 4: \"" + PROSPERITY_SAHL['2.11, 4'] + "\" -- the third lord of the sect light's triplicity is a stated modifier, ranked third by 2.3, 22 (\"" + PROSPERITY_SAHL['2.3, 22'] + "\"): its row gives its whole-sign place and its effect in Sahl's words, and the synthesis appends the modification -- \"Modified by the partnering lord (2.11, 4)\", its place, its effect, \"no class step\" -- Sahl giving no class step for it. A lord under the rays in a stake or what follows one is neither: 2.11, 4's support wants strength and its bringing down a falling place. Abu 'Ali's own phrase for the Lot at Figure 20, \"of the nature of Venus\", is not a rule Sahl states and is not read.\n\n"
-                    "Three measures, kept apart. The synthesis reads the whole-sign place from the Ascendant. 2.3, 17-18 -- \"" + PROSPERITY_SAHL['2.3, 17'] + " " + PROSPERITY_SAHL['2.3, 18'] + "\" -- are a second measure, the sign against the degree, read from the quadrant cusps when the chart carries them and shown as their own rows (\"By sign and by degree\"); they move nothing. The fifteen degrees -- \"" + PROSPERITY_SAHL['2.13, 48'] + " " + PROSPERITY_SAHL['2.13, 49'] + " " + PROSPERITY_SAHL['2.13, 50'] + " " + PROSPERITY_SAHL['2.13, 51'] + "\" -- are a third, measured from the axial degree by ascensions (fnn 82-83, 222): oblique ascension from the Ascendant, oblique descension from the seventh, right ascension from the Midheaven and the fourth, the nearest stake behind the lord; shown as the grade row when the chart carries its meridian and latitude, and never folded into strong or weak. No house system is changed by any of the three.\n\n"
-                    "The Lot step. 2.3, 6: \"" + PROSPERITY_SAHL['2.3, 6'] + "\" The sentence's \"the lord of the triplicity\" is singular and states no quantifier -- not the first lord only, not both together; this app enters the Lot step when either lord is made unfortunate, its own reading of that singular, not the sentence's word. \"Made unfortunate\" is read by this app as a lord weak (falling, or under the rays) or with an infortune with it or in its square or opposition (2.20, 1's gloss, applied here as it is to the Lot, its lord and the lords of places). Sahl's own \"made unfortunate\" is affliction by the infortunes (2.17, 2, \"the infortunes made them unfortunate\"; 2.20, 1's gloss; and 2.11, 14 keeps \"falling\" and \"made unfortunate\" apart); the wider gate rests on 2.3, 2's \"cleansed of the infortunes and of defects\" and is this app's. At the Lot, Sahl's sentences are judgments of the native, not evidence to collect: 2.3, 7 \"the native will be a king, or prominent\", 2.3, 9 \"he will be happy\", 2.16, 2 and 4 \"in the middle\", 2.20, 1 \"will not cease to be miserable from the day he is born up to the day he dies\". No sentence says how they combine with Theophilus's judgment from the two lords (2.11, 1-3): none says the Lot's sentence replaces it, none says the two lords' reading stands regardless, none makes the number of weak lords a threshold, and 2.11, 4's \"increases in that and subtracts from that\" is about the aspects of the fortunes and infortunes, not the Lot's verdict; Sahl gives an order of investigation (2.3, 6, then 2.3, 10, \"" + PROSPERITY_SAHL['2.3, 10'] + "\"), not a precedence among verdicts, and Theophilus (2.11) and al-Andarzaghar (2.16, 2.20) are never reconciled into one rule. So when a sentence of the Lot's is met the synthesis carries two attributed clauses, the Lot's judgment with its sentence and the two lords' with theirs, and says the combination is this app's. With one lord strong and the other made unfortunate, the two lords give a timing pattern (2.11, 2), not a level, and the Lot's level stands beside it, mixed by design and no single class -- \"the Lot indicates middling livelihood (2.16, 4); the two triplicity lords indicate hardship in the first lord's time and benefit in the second's (2.11, 2)\" -- with 2.11, 2 shown beside it: \"" + PROSPERITY_SAHL['2.11, 2'] + "\" That mixed reading rests on 2.16, 5, which couples a middling condition with variation (\"sometimes with good, and sometimes with hardship\"), and holds for the Lot's middling and high levels; 2.20's misery \"from the day he is born up to the day he dies\" admits no time of benefit, so beside the mixed pair it is a conflict, not a mixture. When the two lords give a level (2.11, 1 high rank throughout, 2.11, 3 baseness throughout) and the Lot the same level, the two are concordant and the class is read; when the judgments are opposed -- both lords falling and the Lot promising very high rank (2.3, 7), both strong and the Lot 2.20's misery, or one strong and the Lot 2.20's misery -- the synthesis says \"conflicting status indications\", names both with their sentences, and reads unresolved: this app installs no priority. 2.16, 2 and 4 need no order between them, both supporting the one middling statement; 2.3, 7 cannot hold with 2.16, 4 (the infortunes not looking at the Lot against all looking), with 2.16, 2 (the lord cleansed against made unfortunate) or with 2.20, 1 (the Lot in a stake or what follows against the sixth or twelfth) under the one measure of looking; 2.3, 9 can hold beside 2.16 or 2.20, and where the Lot's own sentences are met at two levels the synthesis says so and is unresolved, no order installed. 2.3, 7's \"eastern or cleansed\" is read as \"and\" (fn 87), and its \"from a strong position\" is not tested. 2.3, 9's \"it occurred in the fifth or eleventh from the Ascendant\" is the Lot's lord, the sentence's subject, and the place tested is the lord's. 2.3, 10-11's further step, the lords of the Ascendant, the Midheaven and the house of hope, is not computed here except as 2.16, 5's motley mixture.\n\n"
-                    "2.20, 1, as this app reads its chain: \"" + PROSPERITY_SAHL['2.20, 1'] + "\" The first clause is two alternatives, the lord made unfortunate or the Lot unfortunate; \"it\" in \"the sixth and twelfth\" is the Lot, which is in one of the two places, not both -- the nearest antecedent in the fuller text, though there is another reading: fn 255 says one manuscript omits the phrase about the Lot, so there \"it\" is the lord, and the Book of Aristotle (III.2.5 [5.1], the row's parallel) has the lords of the triplicity or of the Lot themselves in the sixth or twelfth; this app reads the Lot; \"the infortunes were with it or they looked at it from a square or opposition\" says what unfortunate means and is applied to the Lot; \"the lord of the Lot in the house of its fall, or made unfortunate\" is two alternatives, and its \"powerful in misfortune\" is not tested; the parenthesis is the sect light; and the Mars clause is for a day birth only -- with the Lot, or opposing or in square to it -- so by night it is not required (fn 256: one manuscript adds \"or with the Sun\"; Carmen has the lord of the Lot). The Lot in the sixth or twelfth with an infortune on it, its lord in its fall or made unfortunate, and Mars on the Lot by day, all together, are what the row tests. 2.20, 2 is read whole, its continuation over the page included: \"" + PROSPERITY_SAHL['2.20, 2'] + "\" -- the lord of the Lot in the sixth or twelfth, Jupiter and Venus both made unfortunate in the sixth or twelfth, both not looking at the Moon; the bracketed \"worse is if\" clause is an aggravation, not a condition, and is not tested (fn 258: added with the sense of Carmen).\n\n"
-                    "The middle has several routes in the chapter, each its own row: the third fifteen degrees by ascensions (2.13, 50; 2.16, 3, whose wording Dykes calls unclear, fn 222); the Lot's 2.16, 2 and 4; 2.16, 5's motley mixture of the lords of the Ascendant, the Midheaven and the house of hope (listed; its third place disputed, fnn 225-226: the second house); 2.16, 6, bracketed in Sahl from BA III.2.3, 6, shown under Course text and supplement only; 2.11, 14, \"" + PROSPERITY_SAHL['2.11, 14'] + "\" -- the lord of the house of assets falling but not made unfortunate, falling read as the place (fn 154 on 2.11, 13 asks whether its fall is meant); and 2.3, 19, \"" + PROSPERITY_SAHL['2.3, 19'] + "\", a lord of the triplicity in the second or eighth, listed as a decline (2.3, 20: set aright if a fortune; 2.3, 21: Jupiter there, not the governor). Abu 'Ali's own rule, the lords in the succedents middling, is quoted beside the rows and not applied: his second example, both lords in succedents, he calls prosperity and riches.\n\n"
-                    "Sahl's further indications -- the eleventh from the Ascendant (2.3, 12), the falling of 2.17 (2, 3, 4, 5, 7, 8, 10, 11), the rising of 2.19 (1, 2, 5, 6), the earnings of 2.21 (1-4) -- are listed under the synthesis with their sentences and do not move it: the chapter gives no order for combining them and the twelve charts apply none. 2.17, 8 states its own precedence (\"even if he was a king\") and is listed, not applied to the class; 2.19, 6 is listed on 2.17, 7's footing (BA III.2.4 [4.5] has the stars \"from the east toward the Midheaven\" where Sahl has the bad places). 2.17, 7's and 2.21, 3's eleventh from the Lot of Fortune is Sahl's own; the Book of Aristotle (III.2.1 [1.7]) has it as strong as the eleventh from the Ascendant. The Moon's separation and connection (2.17, 10; 2.19, 2) are read by degree within her orb when the chart carries motions. Not read: 2.3, 3, 4-5 (except as the grade's footing, fnn 82-83), 8, 10-11 (except as above), 13-16, 23-24; 2.11, 6-13 and 15-19; 2.13 apart from 39-40 and 48-51; 2.16, 3 except as the grade; 2.17, 6, 9, 12-14 and 2.18; 2.19, 3-4 and 7-9; 2.20, 3-6; 2.2's fixed stars; 2.4-2.10 and 2.12-2.15, which are the chapter's other topics.\n\n"
-                    "The fixtures are Abu 'Ali's twelve worked charts (PN I, JN Ch. 7, Figures 10-21), read by whole sign from the signs he prints; the degrees he does not print are left unknown, and the six charts that his notes or Dykes's read otherwise than the printed signs allow are held in the tests as textual observations, not as verdicts this app must reproduce.")
+              glance="Sahl's indications of fortune and livelihood. Display only; nothing scores it.",
+              summary="The first row is this app's synthesis: the class it reads from the first and second lords of the sect light's triplicity by whole-sign place, said so, with the partnering lord's modification (2.11, 4) and, when the Lot of Fortune is worked (2.3, 6), the Lot's judgment beside the lords' -- mixed or unresolved where Sahl gives no precedence; under it the lords, the partnering lord, and every further rule of the chapter that the chart meets, each with Sahl's sentence and the parallel in the Book of Aristotle or Abu 'Ali.",
+              qualifications=["**This app's synthesis.** A single seven-class outcome is not specified for every combination in Sahl's chapter, so the first row is this app's synthesis and says \"read by this app as class N\" with its grounds."],
+              detail=_prosperity_row, detail_key='Class')
+    _notes_expander("How the prosperity reading is assembled", [
+        ("The two triplicity lords.",
+         "The first two triplicity lords describe the pattern across their periods; the partnering lord, the Lot of Fortune, and other conditions modify the reading. The pattern is Theophilus's, 2.11, 1-3 --\n\n> \"" + PROSPERITY_SAHL['2.11, 1'] + " " + PROSPERITY_SAHL['2.11, 2'] + " " + PROSPERITY_SAHL['2.11, 3'] + "\"\n\n-- with 2.11, 5,\n\n> \"" + PROSPERITY_SAHL['2.11, 5'] + "\",\n\nand 2.13, 40,\n\n> \"" + PROSPERITY_SAHL['2.13, 40'] + "\"\n\nStrong is a stake or what follows one, falling the third, sixth, ninth and twelfth (fn 149 on \"strong\"), by whole sign. Both strong is read as class 1 (both in the stakes is 2.3, 2's \"happy for all the days of his life\"); both weak as class 6, the ground naming each lord's weakness -- falling (2.11, 3) or under the rays (2.11, 5) -- since 2.11, 3's word is falling and 2.11, 5 says only that a lord under the rays has no strength; the mixed pair is a timing pattern, \"benefit in the time of the strong one\" (2.11, 2), read by this app as class 2 when the first lord is the strong one and class 5 when the second is, the first lord's time being the beginning of life (2.13, 39). The infortunes with a lord or in its square or opposition are listed: 2.11, 4 makes their aspect an increase or a subtraction, not a class step, and Abu 'Ali's charts read the lords' places."),
+        ("The partnering lord.",
+         "2.11, 4:\n\n> \"" + PROSPERITY_SAHL['2.11, 4'] + "\"\n\n-- the third lord of the sect light's triplicity is a stated modifier, ranked third by 2.3, 22 (\"" + PROSPERITY_SAHL['2.3, 22'] + "\"): its row gives its whole-sign place and its effect in Sahl's words, and the synthesis appends the modification -- \"Modified by the partnering lord (2.11, 4)\", its place, its effect, \"no class step\" -- Sahl giving no class step for it. A lord under the rays in a stake or what follows one is neither: 2.11, 4's support wants strength and its bringing down a falling place. Abu 'Ali's own phrase for the Lot at Figure 20, \"of the nature of Venus\", is not a rule Sahl states and is not read."),
+        ("Three measures, kept apart.",
+         "| Measure | Its part in the reading |\n"
+         "|---|---|\n"
+         "| The whole-sign place from the Ascendant | Read by the synthesis: strong is a stake or what follows one, falling the third, sixth, ninth and twelfth |\n"
+         "| The sign against the degree (2.3, 17-18) | A second measure, read from the quadrant cusps when the chart carries them and shown as their own rows (\"By sign and by degree\"); they move nothing |\n"
+         "| The fifteen degrees from the axial degree by ascensions (2.13, 48-51) | A third measure, shown as the grade row when the chart carries its meridian and latitude, and never folded into strong or weak |\n\n"
+         "The synthesis reads the whole-sign place from the Ascendant. 2.3, 17-18 --\n\n> \"" + PROSPERITY_SAHL['2.3, 17'] + " " + PROSPERITY_SAHL['2.3, 18'] + "\"\n\n-- are a second measure, the sign against the degree, read from the quadrant cusps when the chart carries them and shown as their own rows (\"By sign and by degree\"); they move nothing. The fifteen degrees --\n\n> \"" + PROSPERITY_SAHL['2.13, 48'] + " " + PROSPERITY_SAHL['2.13, 49'] + " " + PROSPERITY_SAHL['2.13, 50'] + " " + PROSPERITY_SAHL['2.13, 51'] + "\"\n\n-- are a third, measured from the axial degree by ascensions (fnn 82-83, 222): oblique ascension from the Ascendant, oblique descension from the seventh, right ascension from the Midheaven and the fourth, the nearest stake behind the lord; shown as the grade row when the chart carries its meridian and latitude, and never folded into strong or weak. No house system is changed by any of the three."),
+        ("When the Lot is considered.",
+         "2.3, 6:\n\n> \"" + PROSPERITY_SAHL['2.3, 6'] + "\"\n\nThe sentence's \"the lord of the triplicity\" is singular and states no quantifier -- not the first lord only, not both together; this app enters the Lot step when either lord is made unfortunate, its own reading of that singular, not the sentence's word. \"Made unfortunate\" is read by this app as a lord weak (falling, or under the rays) or with an infortune with it or in its square or opposition (2.20, 1's gloss, applied here as it is to the Lot, its lord and the lords of places). Sahl's own \"made unfortunate\" is affliction by the infortunes (2.17, 2, \"the infortunes made them unfortunate\"; 2.20, 1's gloss; and 2.11, 14 keeps \"falling\" and \"made unfortunate\" apart); the wider gate rests on 2.3, 2's \"cleansed of the infortunes and of defects\" and is this app's."),
+    ])
+    _notes_expander("How the Lot and the triplicity lords are combined", [
+        ("What each source judges, and that Sahl gives no precedence.",
+         "At the Lot, Sahl's sentences are judgments of the native, not evidence to collect: 2.3, 7 \"the native will be a king, or prominent\", 2.3, 9 \"he will be happy\", 2.16, 2 and 4 \"in the middle\", 2.20, 1 \"will not cease to be miserable from the day he is born up to the day he dies\". No sentence says how they combine with Theophilus's judgment from the two lords (2.11, 1-3): none says the Lot's sentence replaces it, none says the two lords' reading stands regardless, none makes the number of weak lords a threshold, and 2.11, 4's \"increases in that and subtracts from that\" is about the aspects of the fortunes and infortunes, not the Lot's verdict; Sahl gives an order of investigation (2.3, 6, then 2.3, 10, \"" + PROSPERITY_SAHL['2.3, 10'] + "\"), not a precedence among verdicts, and Theophilus (2.11) and al-Andarzaghar (2.16, 2.20) are never reconciled into one rule. So when a sentence of the Lot's is met the synthesis carries two attributed clauses, the Lot's judgment with its sentence and the two lords' with theirs, and says the combination is this app's."),
+        ("Mixed: one lord strong, the other made unfortunate.",
+         "With one lord strong and the other made unfortunate, the two lords give a timing pattern (2.11, 2), not a level, and the Lot's level stands beside it, mixed by design and no single class -- \"the Lot indicates middling livelihood (2.16, 4); the two triplicity lords indicate hardship in the first lord's time and benefit in the second's (2.11, 2)\" -- with 2.11, 2 shown beside it:\n\n> \"" + PROSPERITY_SAHL['2.11, 2'] + "\"\n\nThat mixed reading rests on 2.16, 5, which couples a middling condition with variation (\"sometimes with good, and sometimes with hardship\"), and holds for the Lot's middling and high levels; 2.20's misery \"from the day he is born up to the day he dies\" admits no time of benefit, so beside the mixed pair it is a conflict, not a mixture."),
+        ("Agreement, and conflict left unresolved.",
+         "When the two lords give a level (2.11, 1 high rank throughout, 2.11, 3 baseness throughout) and the Lot the same level, the two are concordant and the class is read; when the judgments are opposed -- both lords falling and the Lot promising very high rank (2.3, 7), both strong and the Lot 2.20's misery, or one strong and the Lot 2.20's misery -- the synthesis says \"conflicting status indications\", names both with their sentences, and reads unresolved: this app installs no priority."),
+        ("The Lot's own sentences met at two levels.",
+         "2.16, 2 and 4 need no order between them, both supporting the one middling statement; 2.3, 7 cannot hold with 2.16, 4 (the infortunes not looking at the Lot against all looking), with 2.16, 2 (the lord cleansed against made unfortunate) or with 2.20, 1 (the Lot in a stake or what follows against the sixth or twelfth) under the one measure of looking; 2.3, 9 can hold beside 2.16 or 2.20, and where the Lot's own sentences are met at two levels the synthesis says so and is unresolved, no order installed. 2.3, 7's \"eastern or cleansed\" is read as \"and\" (fn 87), and its \"from a strong position\" is not tested. 2.3, 9's \"it occurred in the fifth or eleventh from the Ascendant\" is the Lot's lord, the sentence's subject, and the place tested is the lord's. 2.3, 10-11's further step, the lords of the Ascendant, the Midheaven and the house of hope, is not computed here except as 2.16, 5's motley mixture."),
+    ])
+    _notes_expander("Source passages, alternatives and coverage", [
+        ("The seven approaches.",
+         "Sahl, On Nativities 2.1, 2-9:\n\n> \"And good fortune is based on seven approaches: The first of them, on good fortune and how much that good fortune will come to. Second, <on one who> falls from that good fortune. Third, those whose livelihood is middling. Fourth, the rabble [and] those who come down from an ascent to a downfall. Fifth, those who rise up after wretchedness. Sixth, the wretched who do not cease to be in wretchedness. Seventh, those whose profit comes from their own hands.\"\n\nDykes's comment at the head of the chapter: the fourth repeats the second, and the seventh joins profit from one's own hands with violence and injustice (fn 1; 2.21, 3); his table sets them against the Book of Aristotle's III.2.1-III.2.6."),
+        ("2.20, 1-2, as this app reads the chain.",
+         "2.20, 1, as this app reads its chain:\n\n> \"" + PROSPERITY_SAHL['2.20, 1'] + "\"\n\nThe first clause is two alternatives, the lord made unfortunate or the Lot unfortunate; \"it\" in \"the sixth and twelfth\" is the Lot, which is in one of the two places, not both -- the nearest antecedent in the fuller text, though there is another reading: fn 255 says one manuscript omits the phrase about the Lot, so there \"it\" is the lord, and the Book of Aristotle (III.2.5 [5.1], the row's parallel) has the lords of the triplicity or of the Lot themselves in the sixth or twelfth; this app reads the Lot; \"the infortunes were with it or they looked at it from a square or opposition\" says what unfortunate means and is applied to the Lot; \"the lord of the Lot in the house of its fall, or made unfortunate\" is two alternatives, and its \"powerful in misfortune\" is not tested; the parenthesis is the sect light; and the Mars clause is for a day birth only -- with the Lot, or opposing or in square to it -- so by night it is not required (fn 256: one manuscript adds \"or with the Sun\"; Carmen has the lord of the Lot). The Lot in the sixth or twelfth with an infortune on it, its lord in its fall or made unfortunate, and Mars on the Lot by day, all together, are what the row tests. 2.20, 2 is read whole, its continuation over the page included:\n\n> \"" + PROSPERITY_SAHL['2.20, 2'] + "\"\n\n-- the lord of the Lot in the sixth or twelfth, Jupiter and Venus both made unfortunate in the sixth or twelfth, both not looking at the Moon; the bracketed \"worse is if\" clause is an aggravation, not a condition, and is not tested (fn 258: added with the sense of Carmen)."),
+        ("Routes to middling livelihood.",
+         "The middle has several routes in the chapter, each its own row: the third fifteen degrees by ascensions (2.13, 50; 2.16, 3, whose wording Dykes calls unclear, fn 222); the Lot's 2.16, 2 and 4; 2.16, 5's motley mixture of the lords of the Ascendant, the Midheaven and the house of hope (listed; its third place disputed, fnn 225-226: the second house); 2.16, 6, bracketed in Sahl from BA III.2.3, 6, shown under Course text and supplement only; 2.11, 14, \"" + PROSPERITY_SAHL['2.11, 14'] + "\" -- the lord of the house of assets falling but not made unfortunate, falling read as the place (fn 154 on 2.11, 13 asks whether its fall is meant); and 2.3, 19, \"" + PROSPERITY_SAHL['2.3, 19'] + "\", a lord of the triplicity in the second or eighth, listed as a decline (2.3, 20: set aright if a fortune; 2.3, 21: Jupiter there, not the governor). Abu 'Ali's own rule, the lords in the succedents middling, is quoted beside the rows and not applied: his second example, both lords in succedents, he calls prosperity and riches."),
+        ("Further indications, listed under the synthesis.",
+         "Sahl's further indications -- the eleventh from the Ascendant (2.3, 12), the falling of 2.17 (2, 3, 4, 5, 7, 8, 10, 11), the rising of 2.19 (1, 2, 5, 6), the earnings of 2.21 (1-4) -- are listed under the synthesis with their sentences and do not move it: the chapter gives no order for combining them and the twelve charts apply none. 2.17, 8 states its own precedence (\"even if he was a king\") and is listed, not applied to the class; 2.19, 6 is listed on 2.17, 7's footing (BA III.2.4 [4.5] has the stars \"from the east toward the Midheaven\" where Sahl has the bad places). 2.17, 7's and 2.21, 3's eleventh from the Lot of Fortune is Sahl's own; the Book of Aristotle (III.2.1 [1.7]) has it as strong as the eleventh from the Ascendant. The Moon's separation and connection (2.17, 10; 2.19, 2) are read by degree within her orb when the chart carries motions."),
+        ("Passages not evaluated.",
+         "| Passage | Extent not evaluated |\n"
+         "|---|---|\n"
+         "| 2.3, 3, 4-5 | Not read, except as the grade's footing (fnn 82-83) |\n"
+         "| 2.3, 8 | Not read |\n"
+         "| 2.3, 10-11 | Not read, except as 2.16, 5's motley mixture |\n"
+         "| 2.3, 13-16, 23-24 | Not read |\n"
+         "| 2.11, 6-13 and 15-19 | Not read |\n"
+         "| 2.13 apart from 39-40 and 48-51 | Not read |\n"
+         "| 2.16, 3 | Not read, except as the grade |\n"
+         "| 2.17, 6, 9, 12-14 and 2.18 | Not read |\n"
+         "| 2.19, 3-4 and 7-9 | Not read |\n"
+         "| 2.20, 3-6 | Not read |\n"
+         "| 2.2's fixed stars | Not read |\n"
+         "| 2.4-2.10 and 2.12-2.15 | The chapter's other topics, not read |"),
+        ("The worked-chart checks.",
+         "The fixtures are Abu 'Ali's twelve worked charts (PN I, JN Ch. 7, Figures 10-21), read by whole sign from the signs he prints; the degrees he does not print are left unknown, and the six charts that his notes or Dykes's read otherwise than the printed signs allow are held in the tests as textual observations, not as verdicts this app must reproduce."),
+    ])
     if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
         _finding(_gap, 'Places harming the eyesight', 'Sahl, On Nativities 6.2, 48-75; Gr. Intr. VI.20; Abu Bakr, On Nativities II.7.3',
                 eyesight_places_data,
@@ -2993,34 +3160,62 @@ def page_dignities():
                      column_config=_yes_no_columns(pd.DataFrame(sect_rows)))
     st.caption("Sect: Sahl, The Introduction Ch. 3, 85. Domain: Gr. Intr. VII.1, 37 and VII.6, 13 "
                "(or Masha'allah, On Nativities 1.23, 17, per the switch).")
-    st.subheader('Topical Planets in Houses', help="Each planet's whole-sign house placement with the readings for that pairing from two traditions, in three text columns, every entry with its locator. The third column, Rhetorius and Firmicus, as the texts state it, is this app's paraphrases of Rhetorius, Astrological Compendium Ch. 57, the significations of the twelve houses, cited by chapter, house and page -- one page, or the pages a reading runs over or folds in (Ch. 57, the sixth, p. 76; the second, pp. 57-61) -- and of Firmicus, Mathesis III.2-III.7 and III.13, the planets in the twelve places, cited by chapter and sentence (III.2, 8): one tradition, but two witnesses, kept apart. Neither text divides a planet's reading into well and badly placed; they divide by sect and by conditions, so the column is a list of entries, each under its own author and under the author's own division as he states it -- by day or by night, in sect or out of sect, or unsplit where the sentence makes no such division -- and each keeping every condition its sentence states; an entry whose whole reading rests on a stated configuration is kept whole or left out whole, never trimmed of its conditions. Ch. 57's sentences on the malefics or the benefics in a house are entered for Saturn and Mars, or for Jupiter and Venus, labelled general malefic or general benefic testimony. Firmicus's portionally is printed after the entry, and is carried from the place's opening sentence where the cited run refers back to it (so put, in this place), since dropping it there would widen his scope silently. Where the two authors disagree, both entries stand. Where the translators mark a paragraph as printed under the wrong house -- Rhetorius's second set of third-house paragraphs is the ninth's, and his second set for Saturn, Jupiter, Mars and Mercury in the eleventh is the fifth's -- it serves the house it belongs to and is cited under it; the Sun and Venus paragraphs printed under the third serve the third as well, as the translator's note there says. Dykes's notes to III.13 supply Rhetorius's Moon in the fifth and seventh where Firmicus's own sentences are lost, entered as Rhetorius, as summarized by Dykes; Rhetorius's Moon in the sixth, eighth and twelfth is lost in the manuscripts, and his sixth-house transfer of the Sun's sentence to the mother stands for her there. The list holds 355 entries: 198 by Rhetorius, 153 by Firmicus and 4 by Dykes's summary; no cell is without one -- a dash, where a cell had none, would be the absence of testimony, not a neutral reading. A cell whose entries run past about sixty words prints only the entries that do not rest on a configuration and says how many it left to the row's detail: select a planet's row in the table above the readings and every entry of its list is printed in full beneath it. The two condition columns, If in a suitable condition and If in a bad condition, are this app's paraphrases of Abu Ma'shar's Book II chapters on the lord of the year in the houses of the circle (Saturn II.6, Jupiter II.9, Mars II.12, the Sun II.15, Venus II.18, Mercury II.21), applied to natal planets -- that application is the reading of the TNAC Reference Guide for the Planets and Places (Dykes, 2023), and this app follows it and says so. Book II's division is the planet's condition -- suitable, received, in his own house, against alien, not received, made unfortunate or retrograde -- with the house among its factors, so the columns are an index to the sentences, not a rule of location: the qualifications stated in each entry control, and where a suitable reading's sentence states no condition (Mercury in the ninth or third, II.21, 8) the entry says so -- condition not explicitly stated -- its condition being inferred from its adverse pair. A paired house cites the pair's sentence and names the sharing; Saturn's four falling places (II.6, 22-24), Jupiter's four places not looking at the Ascendant (II.9, 15-16) and Venus falling from the stakes (II.18, 18) are carried whole beside each house's own sentence, with their premise in the revolution. Every PN IV half has text; the Moon has no Book II houses chapter (II.22, 13 says to judge her in the manner of the rest of the planets, and the translator's note there points to VII.8, her transit through the twelve houses), and her two halves point to her own table below, since VII.8 supplies no condition split. The arrangement -- seven planets in twelve places -- is the Guide's; the wording of no column is.")
-    st.caption("The Book II entries adapt PN IV's annual rules for planets serving as lord of the year to natal house positions. The source evaluates the root and revolution together; the natal lookup does not establish those annual prerequisites. The columns summarize suitable and adverse conditions, with the qualifications shown in each entry. The third column is Rhetorius Ch. 57 and Firmicus, Mathesis III, as the texts state it, under each author's own division; the Moon's PN IV reading is VII.8, by her transit, in her own table below; every entry carries its locator.")
+    # One planet's row printed whole: its placement with the Lean and the
+    # row's own standing, both PN IV halves, and every entry of its list.
+    def _planet_in_house_detail(row):
+        _n = len(row['Entries'])
+        st.markdown(f"**{row['Planet']} in the {HOUSE_ORDINAL[row['Placed in (WS place)']]} place.** "
+                    f"Lean: {row['Lean']} (Net {row['Net']}; {row['Standing']}).")
+        st.markdown(f"**If in a suitable condition (PN IV).** {row['If in a suitable condition']}")
+        st.markdown(f"**If in a bad condition (PN IV).** {row['If in a bad condition']}")
+        st.markdown(f"**Rhetorius and Firmicus, as the texts state it: {_n} {'entry' if _n == 1 else 'entries'}.**")
+        for _entry in row['Entries']:
+            st.markdown(_entry)
+    st.subheader('Topical Planets in Houses', help="Each planet's whole-sign house placement with the readings for that pairing from two traditions, in three text columns, every entry with its locator.")
+    st.caption("The third column is Rhetorius Ch. 57 and Firmicus, Mathesis III, as the texts state it, under each author's own division; the Moon's PN IV reading is VII.8, by her transit, in her own table below; every entry carries its locator.")
+    with _prose():
+        st.markdown("**Natal adaptation.** The Book II entries adapt PN IV's annual rules for planets serving as lord of the year to natal house positions. The source evaluates the root and revolution together; the natal lookup does not establish those annual prerequisites. The columns summarize suitable and adverse conditions, with the qualifications shown in each entry.")
     # The readings wrap in st.table; the structural columns stay above.
     # The structural table is selectable (single row, rerun) and stands
     # with the readings and the row's detail in one @st.fragment, the way
-    # the tick grids do: a selection reruns this block alone and prints
-    # every entry of the planet's Rhetorius/Firmicus list in full under
-    # the table, the entries a long cell left to the detail included.
+    # the tick grids do: a selection reruns this block alone. The
+    # selectbox under the table is the state of the detail panel; a row
+    # click writes the same key (a new grid selection, seen before the
+    # selectbox is drawn, becomes its value), so the pointer and the
+    # keyboard reach one panel, which prints the planet's placement with
+    # its Lean, both PN IV halves whole, and every entry of its
+    # Rhetorius/Firmicus list in full, the entries a long cell left to the
+    # detail included.
     @st.fragment
     def _planets_in_houses_block():
         _event = st.dataframe(pd.DataFrame(planets_in_houses_data, columns=['Planet', 'Placed in (WS place)', 'Lean']),
                               hide_index=True, width='content', height=_rows_height(len(planets_in_houses_data)),
                               on_select="rerun", selection_mode="single-row", key="topical_planets_in_houses_grid")
         _picked = list(_event.selection.rows)
-        if _picked and 0 <= _picked[0] < len(planets_in_houses_data):
-            _row = planets_in_houses_data[_picked[0]]
-            st.subheader(f"{_row['Planet']} in the {HOUSE_ORDINAL[_row['Placed in (WS place)']]} place: "
-                         f"{len(_row['Entries'])} {'entry' if len(_row['Entries']) == 1 else 'entries'}")
-            for _entry in _row['Entries']:
-                st.markdown(_entry)
+        if _picked != st.session_state.get("_topical_planets_in_houses_last_row"):
+            st.session_state["_topical_planets_in_houses_last_row"] = _picked
+            if _picked and 0 <= _picked[0] < len(planets_in_houses_data):
+                st.session_state["topical_planets_in_houses_detail"] = planets_in_houses_data[_picked[0]]['Planet']
+        _detail_selector('Topical Planets in Houses', planets_in_houses_data, 'Planet', _planet_in_house_detail,
+                         "Select a planet to read its complete entries and sources")
         with st.expander("Rhetorius / PN IV readings for these placements", expanded=READING_DEPTH == READING_DEPTH_OPTIONS[1]):
             st.table(pd.DataFrame(planets_in_houses_data,
                                   columns=['Planet', 'Net', 'Standing', 'If in a suitable condition', 'If in a bad condition',
                                            'Rhetorius and Firmicus, as the texts state it']),
                      hide_index=True)
     _planets_in_houses_block()
-    with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-        st.markdown("Neither is chosen for you. The only thing available to choose with is the Net from the Planetary Condition table, and that number is this app's own arithmetic -- Abu Ma'shar enumerates the VII.6 conditions, never totals them, gives no weighting and no tie rule. An invented score silently picking one of two classical delineations turns a convenience into a verdict.\n\nThe Net is shown as a LEAN instead, and reads Indeterminate within a margin of one, which is the width of a single testimony: those charts sit one label away from the opposite reading, and should be judged on the condition counts and the labels rather than on the number.")
+    _notes_expander(NOTES_TITLE, [
+        ("Which sources each column represents.",
+         "The third column, Rhetorius and Firmicus, as the texts state it, is this app's paraphrases of Rhetorius, Astrological Compendium Ch. 57, the significations of the twelve houses, cited by chapter, house and page -- one page, or the pages a reading runs over or folds in (Ch. 57, the sixth, p. 76; the second, pp. 57-61) -- and of Firmicus, Mathesis III.2-III.7 and III.13, the planets in the twelve places, cited by chapter and sentence (III.2, 8): one tradition, but two witnesses, kept apart. The two condition columns, If in a suitable condition and If in a bad condition, are this app's paraphrases of Abu Ma'shar's Book II chapters on the lord of the year in the houses of the circle (Saturn II.6, Jupiter II.9, Mars II.12, the Sun II.15, Venus II.18, Mercury II.21), applied to natal planets -- that application is the reading of the TNAC Reference Guide for the Planets and Places (Dykes, 2023), and this app follows it and says so. Every PN IV half has text; the Moon has no Book II houses chapter (II.22, 13 says to judge her in the manner of the rest of the planets, and the translator's note there points to VII.8, her transit through the twelve houses), and her two halves point to her own table below, since VII.8 supplies no condition split. The arrangement -- seven planets in twelve places -- is the Guide's; the wording of no column is."),
+        ("How conditional entries are included.",
+         "Neither text divides a planet's reading into well and badly placed; they divide by sect and by conditions, so the column is a list of entries, each under its own author and under the author's own division as he states it -- by day or by night, in sect or out of sect, or unsplit where the sentence makes no such division -- and each keeping every condition its sentence states; an entry whose whole reading rests on a stated configuration is kept whole or left out whole, never trimmed of its conditions. Ch. 57's sentences on the malefics or the benefics in a house are entered for Saturn and Mars, or for Jupiter and Venus, labelled general malefic or general benefic testimony. Firmicus's portionally is printed after the entry, and is carried from the place's opening sentence where the cited run refers back to it (so put, in this place), since dropping it there would widen his scope silently. Where the two authors disagree, both entries stand. A cell whose entries run past about sixty words prints only the entries that do not rest on a configuration and says how many it left to the row's detail: select a planet's row in the table above the readings and every entry of its list is printed in full beneath it."),
+        ("Misplaced, missing and supplemented passages.",
+         "Where the translators mark a paragraph as printed under the wrong house -- Rhetorius's second set of third-house paragraphs is the ninth's, and his second set for Saturn, Jupiter, Mars and Mercury in the eleventh is the fifth's -- it serves the house it belongs to and is cited under it; the Sun and Venus paragraphs printed under the third serve the third as well, as the translator's note there says. Dykes's notes to III.13 supply Rhetorius's Moon in the fifth and seventh where Firmicus's own sentences are lost, entered as Rhetorius, as summarized by Dykes; Rhetorius's Moon in the sixth, eighth and twelfth is lost in the manuscripts, and his sixth-house transfer of the Sun's sentence to the mother stands for her there. The list holds 355 entries: 198 by Rhetorius, 153 by Firmicus and 4 by Dykes's summary; no cell is without one -- a dash, where a cell had none, would be the absence of testimony, not a neutral reading."),
+        ("How PN IV is adapted to natal placements.",
+         "Book II's division is the planet's condition -- suitable, received, in his own house, against alien, not received, made unfortunate or retrograde -- with the house among its factors, so the columns are an index to the sentences, not a rule of location: the qualifications stated in each entry control, and where a suitable reading's sentence states no condition (Mercury in the ninth or third, II.21, 8) the entry says so -- condition not explicitly stated -- its condition being inferred from its adverse pair. A paired house cites the pair's sentence and names the sharing; Saturn's four falling places (II.6, 22-24), Jupiter's four places not looking at the Ascendant (II.9, 15-16) and Venus falling from the stakes (II.18, 18) are carried whole beside each house's own sentence, with their premise in the revolution."),
+        ("Why both condition readings remain visible.",
+         "Neither is chosen for you. The only thing available to choose with is the Net from the Planetary Condition table, and that number is this app's own arithmetic -- Abu Ma'shar enumerates the VII.6 conditions, never totals them, gives no weighting and no tie rule. An invented score silently picking one of two classical delineations turns a convenience into a verdict.\n\nThe Net is shown as a **lean** instead, and reads Indeterminate within a margin of one, which is the width of a single testimony: those charts sit one label away from the opposite reading, and should be judged on the condition counts and the labels rather than on the number."),
+    ])
     st.subheader("The Moon in the houses — PN IV VII.8, by her transit", help="A natal analogy: VII.8 reads the Moon's transit through the houses from the three positions (the Ascendant of the root, the Ascendant of the revolution and the sign of the terminal point), so long as she is in each; it supplies no condition split, so each house has one reading, mixed where the sentence is mixed, and the natal Moon's own whole-sign house is marked. (From this indication) is the text's own reservation: the Moon's indication alone shows this, and another indication could show otherwise. Where the translator reads conflicting dreams or simply different, both are given; his reading of takes away the same in the tenth is marked as his guess; the third's some of him and his parents is as printed.")
     st.dataframe(pd.DataFrame(moon_in_houses_data), hide_index=True, width='stretch', height=_rows_height(len(moon_in_houses_data)),
                  column_config={'House': st.column_config.TextColumn(width="small"),
@@ -3110,9 +3305,10 @@ def page_configurations():
                                "against his own 1, 16-17, so off by default. When on, that malefic drops out of every "
                                "'afflicted by an infortune' test in these tables (Sahl's enclosure, strength and weakness "
                                "94-95; Abu Ma'shar's 3, 47-50 and enclosure; the Moon's 67-68 and 106).")
+    _fitting_slot = st.empty()  # a fixed slot before the tabs (see _readings_note)
     if FITTING_INFORTUNE:
-        st.caption(f"Fitting infortune in force: {SOFTENED_INFORTUNE} rules the Ascendant and is not counted as an infortune."
-                   if SOFTENED_INFORTUNE else "Fitting infortune switched on, but no malefic rules this Ascendant -- nothing changes.")
+        _fitting_slot.caption(f"Fitting infortune in force: {SOFTENED_INFORTUNE} rules the Ascendant and is not counted as an infortune."
+                              if SOFTENED_INFORTUNE else "Fitting infortune switched on, but no malefic rules this Ascendant -- nothing changes.")
     supplement = READING_DEPTH == READING_DEPTH_OPTIONS[1]
 
     def sahl_aspects():
@@ -3294,13 +3490,24 @@ def page_configurations():
             _absent(_gap)
 
     def abu_condition():
-        st.subheader('Planetary Condition', help="Each planet checked against Abu Ma'shar's conditions in Gr. Intr. VII.6, kept in his own four groups: good fortune (1-20), strength (21-29), weakness (30-46), misfortune (47-62), plus, for the Moon only, HIS OWN eleven corruptions (63-74).")
+        st.subheader('Planetary Condition', help="Each planet checked against Abu Ma'shar's conditions in Gr. Intr. VII.6, kept in his own four groups: good fortune (1-20), strength (21-29), weakness (30-46), misfortune (47-62), plus, for the Moon only, his own eleven corruptions (63-74).")
         st.caption("Gr. Intr. VII.6")
         _reading_radio("VII.6, 27/45 'eastern/western relative to the Sun'", EASTERN_RULE_OPTIONS,
                        "eastern_rule", "_eastern_rule",
                        help="'hemisphere': the whole half, excluding the rays (VII.2, 2; VII.6, 34). "
                             "'VII.2 band': only the easternizing and westernizing bands (VII.2, 14-31). "
                             "Affects: Planetary Condition (27, 45). Full text on the Sources page.")
+        # The qualification the table cannot be read without, above it.
+        # Net's Indeterminate band is the engine's abs(net) <= 1, the same
+        # margin the Dignities page's Lean reads (copy correction 9a).
+        with _prose():
+            st.markdown(
+                ":orange[**Net and Verdict are this app's heuristic, not Abu Ma'shar's.**] He enumerates these "
+                "conditions; he nowhere adds them up, and VII.6 gives no weighting and no tie rule. They are kept "
+                "beside the Dignities page, which prints both the good and the bad Rhetorius/PN IV reading for each "
+                "placement and chooses neither, showing this Net as a lean; a Net of −1, 0 or +1 is Indeterminate on both "
+                "pages. Read the four counts and the labels themselves in preference to the single number."
+            )
         condition_list = []
         for p, cond in abu_mashar_condition.items():
             condition_list.append({
@@ -3316,22 +3523,41 @@ def page_configurations():
                 "Moon Defects": str(cond['Moon Defects']) if cond['Moon Defects'] else '',
                 "Good Fortune / Strength": ", ".join(cond['Positive Labels']) if cond['Positive Labels'] else "-",
                 "Weakness / Misfortune": ", ".join(cond['Negative Labels']) if cond['Negative Labels'] else "-",
-                # Last, and labelled app arithmetic in the caption:
-                # VII.6 never totals its conditions.
+                # Last, and labelled app arithmetic in the qualification
+                # above: VII.6 never totals its conditions.
                 "Net": cond['Net'],
                 "Verdict": cond['Condition'],
             })
         df_condition = pd.DataFrame(condition_list).sort_values(by="Net", ascending=False)
         st.dataframe(df_condition, hide_index=True, width='stretch', height=_rows_height(len(df_condition)))
-        st.caption(
-            ":orange[**Net and Verdict are this app's heuristic, not Abu Ma'shar's.**] He enumerates these "
-            "conditions; he nowhere adds them up, and VII.6 gives no weighting and no tie rule. They are kept "
-            "beside the Dignities page, which prints both the good and the bad Rhetorius/PN IV reading for each "
-            "placement and chooses neither, showing this Net as a lean; a Net of zero is Indeterminate on both "
-            "pages. Read the four counts and the labels themselves in preference to the single number."
-        )
-        with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-            st.markdown("The Moon's eleven corruptions (63-74) are shown as their own count rather than folded in with the rest. Sahl's ten (The Introduction Ch. 3, 103-112) are a different list, not a variant reading of this one, and have their own table, Corruption of the Moon, in the Sahl view: Abu Ma'shar has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear here.\n\nThe four counts and the labels are the report. NET and VERDICT are a convenience of this app and NOT Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They are kept because Topical Planets in Houses on the Dignities page prints both the good and the bad reading for every placement and chooses neither: this Net is shown there as a lean, and a Net of zero is Indeterminate in both places.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's eleven corruptions contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once.\n\nEnclosure here is Abu Ma'shar's own (56-62) -- by degree within 7 degrees either side counting rays as well as bodies, by sign in the 2nd and 12th, or separating from one encloser and connecting with the other -- and it can be DISSOLVED: the degree type when the Sun or a fortune casts a ray within 7 degrees of the enclosed planet (60), the sign type by any look from them (61). The standalone Enclosure table in the Connection group of the Sahl view is Sahl's separate version.\n\nThe by-sign type counts an encloser's RAYS as well as its body, which is what 58 says twice. Be aware that this makes it common: it fires on roughly 43% of placements, because a planet's rays reach eight of the twelve signs. A bodies-only variant at about 2% exists in the code (SIGN_ENCLOSURE_BODIES_ONLY) but is this project's own conjecture, not the text, so it is off.")
+        # The rows in the order the table displays them (its index after the
+        # sort is the row list's positions), so the selectbox lists the
+        # planets as the table does.
+        condition_shown = [condition_list[i] for i in df_condition.index]
+        # One planet's row in words: the four counts (and the Moon's own),
+        # Net and Verdict on one line, then the evaluator's own label lists
+        # as bullets under the table's two label headings -- the arrays as
+        # the engine holds them, never the joined cell split on its commas.
+        def _condition_detail(row):
+            cond = abu_mashar_condition[row['Planet']]
+            counts = (f"Good Fortune {row['Good Fortune']} · Strength {row['Strength']} · Weakness {row['Weakness']} · "
+                      f"Misfortune {row['Misfortune']}"
+                      + (f" · Moon Defects {row['Moon Defects']}" if row['Moon Defects'] else "")
+                      + f" · Net {row['Net']} · Verdict {row['Verdict']}")
+            st.markdown(f"**{row['Planet']}.** {counts}")
+            for heading, labels in (("Good Fortune / Strength", cond['Positive Labels']),
+                                    ("Weakness / Misfortune", cond['Negative Labels'])):
+                st.markdown(f"**{heading}**\n\n" + ("\n".join(f"- {label}" for label in labels) if labels else "-"))
+        _detail_selector('Planetary Condition', condition_shown, 'Planet', _condition_detail,
+                         "Select a planet to read its conditions in words")
+        _notes_expander(NOTES_TITLE, [
+            ("The two Moon checklists.",
+             "The Moon's eleven corruptions (63-74) are shown as their own count rather than folded in with the rest. Sahl's ten (The Introduction Ch. 3, 103-112) are a different list, not a variant reading of this one, and have their own table, Corruption of the Moon, in the Sahl view: Abu Ma'shar has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear here."),
+            ("How this app's count is formed.",
+             "The four counts and the labels are the report. **Net** and **Verdict** are a convenience of this app and **not** Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They are kept because Topical Planets in Houses on the Dignities page prints both the good and the bad reading for every placement and chooses neither: this Net is shown there as a lean, and a Net of −1, 0 or +1 is Indeterminate in both places.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's eleven corruptions contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once."),
+            ("Enclosure under this source.",
+             "Enclosure here is Abu Ma'shar's own (56-62) -- by degree within 7 degrees either side counting rays as well as bodies, by sign in the 2nd and 12th, or separating from one encloser and connecting with the other -- and it can be **dissolved**: the degree type when the Sun or a fortune casts a ray within 7 degrees of the enclosed planet (60), the sign type by any look from them (61). The standalone Enclosure table in the Connection group of the Sahl view is Sahl's separate version.\n\nThe by-sign type counts an encloser's **rays** as well as its body, which is what 58 says twice. Be aware that this makes it common: it fires on roughly 43% of placements, because a planet's rays reach eight of the twelve signs. A bodies-only variant at about 2% exists in the code (SIGN_ENCLOSURE_BODIES_ONLY) but is this project's own conjecture, not the text, so it is off."),
+        ])
 
     def abu_natural():
         _finding(_gap, 'Natural connections', "Gr. Intr. VII.5, 53-77", natural_connections,
@@ -3482,43 +3708,76 @@ def page_victors():
     syzygy_rows = _syzygy_rows()
     st.dataframe(pd.DataFrame(syzygy_rows), hide_index=True, width='stretch',
                  column_config=_wide_text_columns(pd.DataFrame(syzygy_rows)))
+    with _prose():
+        st.markdown("**The verdict** names a planet only where the text's clear subcases decide, and otherwise says "
+                    "\"unresolved\" with each candidate's profile.")
+    # The governor's own table stands in this expander, which is its
+    # heading for the table walker (no book icon here, so the table keeps
+    # its key); the notes follow the table inside it as headed sections.
     with st.expander("Governor of the syzygy degree: the five lords under 1.7, 3-7"):
         st.dataframe(pd.DataFrame(syzygy_governor['rows']), hide_index=True, width='stretch',
                      height=_rows_height(len(syzygy_governor['rows'])))
-        st.caption("Sahl, On Nativities 1.7, 3: \"you will know the one in charge of that portion from five things: the "
-                   "lord of the house, triplicity, exaltation, bound, and image, and the eastern one of them -- if [one] had "
-                   "superior claims over the rest of them\"; 4: \"Then see which of them is stronger in its [own] place, and "
-                   "is direct in course, looking at the sign of the meeting or opposition\"; 7: \"if they were both in power "
-                   "equally, [then] whichever of them was in a stake or in its own house, triplicity, bound, or exaltation, "
-                   "and had superiority over its associate in this respect, that is the governor.\" [Sahl I p. 265]. "
-                   "THE VERDICT names a planet only where the text's clear subcases decide, and otherwise says "
-                   "\"unresolved\" with each candidate's profile: the five lords of the degree (the sect's triplicity lord) "
-                   "are the candidates; a retrograde one, or one not looking at the syzygy's sign (the same sign or a "
-                   "whole-sign aspect), is not eligible (4, read as eligibility); 3's \"the eastern one\" is a preference "
-                   "among the claim-holders, not a veto -- a western candidate is set aside only by an eastern one with at "
-                   "least as many claims on the degree; the SUN is a claim-holder whose side relative to himself is not "
-                   "applicable, so 3 neither prefers nor sets him aside, and a contest that only easternness would decide "
-                   "against him is left unresolved; 7 is kept as a profile, not a score -- a candidate with a listed "
-                   "advantage (a stake; own house, exaltation, triplicity or bound; the image is not in 7's list) beats one "
-                   "with none, and two that each hold one are left unresolved, the text stating no ranking among them and "
-                   "1.20, 2-4's ranking of the lords being stated for the house-master, not borrowed here. NOT MODELLED: "
-                   + SAHL_1_7_UNMODELLED + ". READINGS: \"in a stake\" is read by the DIVISION (Alchabitius, the five "
-                   "degrees at the four axial degrees), the convention Dykes proposes for strength language (ITA "
-                   "Introduction §6, quadrant divisions for power; Alchabitius this app's choice among them) -- the text's own word "
-                   "for the stakes is the counted sign, \"the sign of the Ascendant, the fourth, the seventh, and the "
-                   "tenth\" (The Introduction Ch. 2, 31); the Moon's side is the same rising-before-the-Sun rule as the "
-                   "planets', the texts not defining her easternness for this procedure (Gr. Intr. VII.2, 4 names her right "
-                   "and left, not \"eastern\"; al-Qabisi bridges the two words, the superiors from the Sun's rays to his "
-                   "opposition being called eastern and right, ITA II.10.1, al-Qabisi III.8); the target degree is the "
-                   "lunation's and every condition is read in the "
-                   "NATAL chart, extending the natal context of Dykes's comment to 3-7, whose moment the text does not "
-                   "state. THE APPROXIMATION row is " + SAHL_1_7_MODEL_DISCLOSURE + "; the almuten row is the 5/4/3/2/1 "
-                   "weighting al-Qabisi states (ITA I.18: the lord of the domicile five strengths, of the exaltation "
-                   "four, of the triplicity three, of the bound two, of the face one; Dykes's fn 210 there, only the "
-                   "primary triplicity lord scoring), a technique not in Sahl. Where the three differ, the difference "
-                   "is the finding.")
-    st.subheader('Victor of the Chart', help="Ibn Ezra's victor worksheet (his book is not in hand), reproduced cell for cell so it can be checked against a hand-filled sheet. The weights and the five places are al-Qabisi's -- ITA I.18, the five dignities' points, and ITA VIII.1.4 (al-Qabisi IV.7), the victor over the native from the Ascendant, the two luminaries, the Lot of Fortune and the prenatal syzygy; the worksheet's Day, Hour and Places rows are ibn Ezra's. Dykes's standing critique of the weighting (ITA I.18 fn 211): with the Dorothean triplicities and the Egyptian bounds, and only the primary triplicity lord scoring, the victor is always the domicile or the exaltation lord but for a few degrees of Pisces (Mars) and of Cancer (Venus). The seven planets are the columns.")
+        _note_sections([
+            ("How the governor is decided.",
+             "**The verdict** names a planet only where the text's clear subcases decide, and otherwise says "
+             "\"unresolved\" with each candidate's profile: the five lords of the degree (the sect's triplicity lord) "
+             "are the candidates; a retrograde one, or one not looking at the syzygy's sign (the same sign or a "
+             "whole-sign aspect), is not eligible (4, read as eligibility); 3's \"the eastern one\" is a preference "
+             "among the claim-holders, not a veto -- a western candidate is set aside only by an eastern one with at "
+             "least as many claims on the degree; the **Sun** is a claim-holder whose side relative to himself is not "
+             "applicable, so 3 neither prefers nor sets him aside, and a contest that only easternness would decide "
+             "against him is left unresolved; 7 is kept as a profile, not a score -- a candidate with a listed "
+             "advantage (a stake; own house, exaltation, triplicity or bound; the image is not in 7's list) beats one "
+             "with none, and two that each hold one are left unresolved, the text stating no ranking among them and "
+             "1.20, 2-4's ranking of the lords being stated for the house-master, not borrowed here."),
+            ("Interpretive choices.",
+             "| Choice | Reading made here |\n"
+             "|---|---|\n"
+             "| \"In a stake\" | Read by the division (Alchabitius, the five degrees at the four axial degrees), the convention Dykes proposes for strength language; the text's own word for the stakes is the counted sign |\n"
+             "| The Moon's side | The same rising-before-the-Sun rule as the planets', the texts not defining her easternness for this procedure |\n"
+             "| The Sun's side | A claim-holder whose side relative to himself is not applicable, so 3 neither prefers nor sets him aside |\n"
+             "| The chart the conditions are read in | The natal chart, the target degree being the lunation's; the natal context of Dykes's comment extended to 3-7, whose moment the text does not state |\n\n"
+             "\"in a stake\" is read by the **division** (Alchabitius, the five "
+             "degrees at the four axial degrees), the convention Dykes proposes for strength language (ITA "
+             "Introduction §6, quadrant divisions for power; Alchabitius this app's choice among them) -- the text's own word "
+             "for the stakes is the counted sign, \"the sign of the Ascendant, the fourth, the seventh, and the "
+             "tenth\" (The Introduction Ch. 2, 31); the Moon's side is the same rising-before-the-Sun rule as the "
+             "planets', the texts not defining her easternness for this procedure (Gr. Intr. VII.2, 4 names her right "
+             "and left, not \"eastern\"; al-Qabisi bridges the two words, the superiors from the Sun's rays to his "
+             "opposition being called eastern and right, ITA II.10.1, al-Qabisi III.8); the target degree is the "
+             "lunation's and every condition is read in the "
+             "**natal** chart, extending the natal context of Dykes's comment to 3-7, whose moment the text does not "
+             "state."),
+            ("The three results compared.",
+             "The **approximation** row is " + SAHL_1_7_MODEL_DISCLOSURE + "; the almuten row is the 5/4/3/2/1 "
+             "weighting al-Qabisi states (ITA I.18: the lord of the domicile five strengths, of the exaltation "
+             "four, of the triplicity three, of the bound two, of the face one; Dykes's fn 210 there, only the "
+             "primary triplicity lord scoring), a technique not in Sahl. Where the three differ, the difference "
+             "is the finding."),
+            ("Source passages, and what is not modelled.",
+             "Sahl, On Nativities 1.7, 3:\n\n> \"you will know the one in charge of that portion from five things: the "
+             "lord of the house, triplicity, exaltation, bound, and image, and the eastern one of them -- if [one] had "
+             "superior claims over the rest of them\";\n\n4:\n\n> \"Then see which of them is stronger in its [own] place, and "
+             "is direct in course, looking at the sign of the meeting or opposition\";\n\n7:\n\n> \"if they were both in power "
+             "equally, [then] whichever of them was in a stake or in its own house, triplicity, bound, or exaltation, "
+             "and had superiority over its associate in this respect, that is the governor.\"\n\n[Sahl I p. 265]. "
+             "Not modelled: " + SAHL_1_7_UNMODELLED + "."),
+        ])
+    st.subheader('Victor of the Chart', help="Ibn Ezra's victor worksheet (his book is not in hand), reproduced cell for cell so it can be checked against a hand-filled sheet.")
     st.caption("ibn Ezra's victor #1, 1485/1537")
+    with _prose():
+        st.markdown("1. The first five rows score each planet's essential-dignity claim **at that point's** degree -- Sun, Moon, Ascendant, Lot of Fortune, and the prenatal New/Full Moon.\n"
+                    "2. Then Lord of the Day (+7), Lord of the Hour (+6) and Places are added **once** each, not per point; Places is keyed the other way round, by the candidate planet's own whole-sign house.\n"
+                    "3. Every column is summed into Totals, and the single highest total is the chart's victor.")
+        # The four computed combinations, read off the results: the two
+        # weightings against the two Places wheels, each cell the scheme's
+        # own victor, total and preset status.
+        def _victor_cell(weights, places):
+            res = victors_data[f"{weights} weights + {places} places" + (" (matched preset)" if weights == places else "")]
+            return (f"**{res['victor']}** ({res['total']})" + (", tied at the top" if res['tied'] else "")
+                    + (", matched preset" if weights == places else ""))
+        st.markdown("| Dignity weights | Older places | Newer places |\n|---|---|---|\n"
+                    + "\n".join(f"| {w} | {_victor_cell(w, 'Older')} | {_victor_cell(w, 'Newer')} |" for w in ("Older", "Newer")))
     # The two same-tradition pairings are the grids a student fills
     # in; the two off-diagonal pairings are the cross-check.
     def _victor_grid(scheme_name, res):
@@ -3533,8 +3792,18 @@ def page_victors():
             if 'matched preset' not in scheme_name:
                 _victor_grid(scheme_name, res)
 
-    with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-        st.markdown('The first five rows score each planet\'s essential-dignity claim AT THAT POINT\'S degree -- Sun, Moon, Ascendant, Lot of Fortune, and the prenatal New/Full Moon. Then Lord of the Day (+7), Lord of the Hour (+6) and Places are added ONCE each, not per point; Places is keyed the other way round, by the candidate planet\'s own whole-sign house. Every column is summed into Totals, and the single highest total is the chart\'s victor.\n\nTWO INDEPENDENT AXES, and all four combinations are shown. The dignity weights are Older (al-Tabari/Masha\'allah, Bound 3 > Triplicity 2) or Newer (al-Qabisi/Abu Ma\'shar, Triplicity 3 > Bound 2); the Places wheel is ibn Ezra\'s own or Masha\'allah\'s. The "Older" attribution is kept as its source prints it; the one passage in these texts that gives \'Umar\'s weights -- Abu Bakr, On Nativities II.5.14, through al-\'Anbas -- has triplicity 3 and bound 2, the "Newer" order; al-Qabisi knows the other order without naming its authors ("certain people put the bound before the triplicity", Introduction I.22), so only the attribution is unwitnessed here. Nothing in the source says which wheel goes with which weighting, so pairing each with the wheel of its own named tradition is a reading, not a fact -- those two are labelled "matched preset" and the two off-diagonal combinations, previously not computed at all, are shown beside them. Where all four agree the victor is robust; where they part, the disagreement is the finding. Ibn Ezra\'s later victor #2 (1507) replaces the two chronocrator rows with a Superiors row scored only for Saturn, Jupiter and Mars; its weight is stated in no text in hand, so it is not implemented rather than guessed.')
+    _notes_expander(NOTES_TITLE, [
+        ("The weights and the places.",
+         "The weights and the five places are al-Qabisi's -- ITA I.18, the five dignities' points, and ITA VIII.1.4 (al-Qabisi IV.7), the victor over the native from the Ascendant, the two luminaries, the Lot of Fortune and the prenatal syzygy; the worksheet's Day, Hour and Places rows are ibn Ezra's. The seven planets are the columns."),
+        ("Two independent axes.",
+         "**Two independent axes**, and all four combinations are shown. The dignity weights are Older (al-Tabari/Masha'allah, Bound 3 > Triplicity 2) or Newer (al-Qabisi/Abu Ma'shar, Triplicity 3 > Bound 2); the Places wheel is ibn Ezra's own or Masha'allah's. Nothing in the source says which wheel goes with which weighting, so pairing each with the wheel of its own named tradition is a reading, not a fact -- those two are labelled \"matched preset\" and the two off-diagonal combinations, previously not computed at all, are shown beside them. Where all four agree the victor is robust; where they part, the disagreement is the finding."),
+        ("The \"Older\" attribution.",
+         "The \"Older\" attribution is kept as its source prints it; the one passage in these texts that gives 'Umar's weights -- Abu Bakr, On Nativities II.5.14, through al-'Anbas -- has triplicity 3 and bound 2, the \"Newer\" order; al-Qabisi knows the other order without naming its authors (\"certain people put the bound before the triplicity\", Introduction I.22), so only the attribution is unwitnessed here."),
+        ("Dykes's critique of the weighting.",
+         "Dykes's standing critique of the weighting (ITA I.18 fn 211): with the Dorothean triplicities and the Egyptian bounds, and only the primary triplicity lord scoring, the victor is always the domicile or the exaltation lord but for a few degrees of Pisces (Mars) and of Cancer (Venus)."),
+        ("Ibn Ezra's later victor, not implemented.",
+         "Ibn Ezra's later victor #2 (1507) replaces the two chronocrator rows with a Superiors row scored only for Saturn, Jupiter and Mars; its weight is stated in no text in hand, so it is not implemented rather than guessed."),
+    ])
 # --- The year under examination (2026-09-10; a block of its own
 # 2026-09-17) ----------------------------------------------------
 # The target lives on the Prediction pages, where it is used, not in
@@ -4280,16 +4549,19 @@ def page_releaser():
     # --- SAHL: the releaser and the house-master (2026-09-10) ---
     st.subheader("The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)",
                  help="Not PN IV: Abu Ma'shar lists the five candidates (III.3, 1) and sends the reader to "
-                      "another book for the choice (IX.8, 123). Nawbakht's procedure in Sahl, On Nativities "
-                      "1.15: by day the Sun, then the meeting, then the Ascendant; by night the Moon, then "
-                      "the fullness, then the Lot of Fortune, then the Ascendant. Each needs its place -- "
-                      "by day \"the Ascendant, the Midheaven, the house of hope, or ... the stake of the "
-                      "west, or ... the eighth\" (6), by night \"a stake or what follows a stake\" (11) -- "
-                      "and \"the lord of the bound, house, exaltation, triplicity, or image looking at\" it "
-                      "(11); \"that one ... which is looking at the releaser, is the house-master\" (13). "
-                      "1.16: the Sun in Aries or Leo, the Moon in Taurus or Cancer, is both. 1.20, 2-4 rank "
-                      "the lords: bound, house, exaltation, triplicity, image; two shares beat one; the "
-                      "bound lord in the Ascendant with the releaser beats all.")
+                      "another book for the choice (IX.8, 123).")
+    # The method in one paragraph, from the sentences the readings note
+    # below states in full; then the one qualification every result here
+    # carries. The three notes after the results hold the readings whole.
+    with _prose():
+        st.markdown("Nawbakht's procedure in Sahl, On Nativities 1.15: by day the Sun, then the meeting, then the "
+                    "Ascendant; by night the Moon, then the fullness, then the Lot of Fortune, then the Ascendant. "
+                    "The places: \"a stake or what follows a stake\" (1.15, 6-16) is read as a test of the planet's power and "
+                    "counted by the Alchabitius divisions with the five-degree allowance at the four axial degrees "
+                    "only; the Lot of Fortune (a candidate by night, 1.15, 14) has no dynamic angularity and is "
+                    "tested by its whole-sign place; the years the house-master grants are granted from On "
+                    "Nativities 1.20, 7-34 read in full.")
+        st.markdown("**Readings made here, each one Sahl leaves open.**")
     rel = pn4['releaser']
     st.markdown(f"**{rel['verdict']}**")
     st.dataframe(pd.DataFrame(rel['candidates']), hide_index=True, width='stretch',
@@ -4308,8 +4580,8 @@ def page_releaser():
     if pn4['hm_years']:
         _y = pn4['hm_years']
         st.markdown(f"**The house-master's years** (Sahl, *On Nativities* 1.20, 7-34, Nawbakht -- the section "
-                    f"1.23, 68, Masha'allah, sends the reader to): **{_y['text']}**. Placed by division "
-                    f"{_y['division']} (the POWER unit). These are the years the infortunes may cut off (1.23, 53 and "
+                    f"1.23, 68, Masha'allah, sends the reader to): **{_y['text']}**.\n\nPlaced by division "
+                    f"{_y['division']} (the **power** unit).\n\nThese are the years the infortunes may cut off (1.23, 53 and "
                     f"61) and the input PN IV III.2, 110-111's gate names (\"only if those years matched the years of "
                     f"the lifespan which his indicator in the root had already pointed out\").")
         for _f in _y['flags']:
@@ -4334,30 +4606,38 @@ def page_releaser():
                      _add,      # never empty under a house-master: a luminary row is always present
                      standing="Supplement · display only",
                      glance="What each planet joined to the house-master or looking at it would add to or subtract "
-                            "from its years by Abu 'Ali's chapter: a fortune joined, trine or sextile adds its "
-                            "lesser years, at one of three grades the chapter leaves undefined (none chosen, none "
-                            "defaulting to years); a bad one joined, square or opposite subtracts its lesser years; "
-                            "a fortune's square or opposition and a bad one's sextile or trine are the chapter's "
-                            "explicit zero; Mercury by Dykes's fn 28, a conjecture, the cases it does not pair "
-                            "left undecided under it; the Sun and Moon, given no modifier by the chapter, carry "
-                            "'Umar's solar rule and Abu Bakr's sentence on the luminaries as witnesses. Abu Bakr "
-                            "and 'Umar stand beside each row in the Witnesses column with their own conditions. "
-                            "Display only: no sum is formed, and Sahl's grant above is not changed.",
-                     notes=(f"Abu 'Ali, Judgments of Nativities Ch. 4, whole: \"{JN_CH4_SENTENCES['fortune']}\" \"{JN_CH4_SENTENCES['infortune']}\" "
-                            f"\"{JN_CH4_SENTENCES['nothing']}\" \"{JN_CH4_SENTENCES['mercury']}\" \"{JN_CH4_SENTENCES['mars']}\" "
-                            f"Fn 27 on \"rays\": \"{JN_CH4_SENTENCES['fn27']}\" Fn 28 on Mercury: \"{JN_CH4_SENTENCES['fn28']}\"\n\n"
-                            f"{JN_CH4_ADDITIONS_NOTE}\n\n"
-                            f"Abu Bakr, On Nativities I.15, a witness beside Abu 'Ali (not applied): \"{ABU_BAKR_I15_ADDITIONS['method']}\" "
-                            f"He grades the aspecting planet by its place and condition where Abu 'Ali says \"middling\" and \"more unsound\" "
-                            f"(a different grading, not a definition of Abu 'Ali's): "
-                            f"\"{ABU_BAKR_I15_ADDITIONS['grades']}\" And he differs on the bad one's trine and sextile and the fortune's square and "
-                            f"opposition: \"{ABU_BAKR_I15_ADDITIONS['differs']}\" On the luminaries: \"{ABU_BAKR_I15_ADDITIONS['luminaries']}\" "
-                            f"On Mercury: \"{ABU_BAKR_I15_ADDITIONS['mercury']}\"\n\n"
-                            f"'Umar al-Tabari, Book of Nativities I.4.4, a witness (not applied): \"{TBN_I44_ADDITIONS['fortunes']}\" "
-                            f"\"{TBN_I44_ADDITIONS['grades']}\" \"{TBN_I44_ADDITIONS['infortunes']}\" \"{TBN_I44_ADDITIONS['seized']}\" "
-                            f"(fn 87 on \"seized\": \"{TBN_I44_ADDITIONS['fn87']}\") With Sahl 1.21, 8, and against Abu 'Ali, on the "
-                            f"fortunes' square and opposition: \"{TBN_I44_ADDITIONS['squares']}\" And the Sun, to whom Abu 'Ali's chapter gives no "
-                            f"modifier: \"{TBN_I44_ADDITIONS['sun']}\" \"{TBN_I44_ADDITIONS['sun_reception']}\""))
+                            "from its years by Abu 'Ali's chapter.",
+                     summary="What each planet joined to the house-master or looking at it would add to or subtract "
+                             "from its years by Abu 'Ali's chapter: a fortune joined, trine or sextile adds its "
+                             "lesser years, at one of three grades the chapter leaves undefined (none chosen, none "
+                             "defaulting to years); a bad one joined, square or opposite subtracts its lesser years; "
+                             "a fortune's square or opposition and a bad one's sextile or trine are the chapter's "
+                             "explicit zero; Mercury by Dykes's fn 28, a conjecture, the cases it does not pair "
+                             "left undecided under it; the Sun and Moon, given no modifier by the chapter, carry "
+                             "'Umar's solar rule and Abu Bakr's sentence on the luminaries as witnesses. Abu Bakr "
+                             "and 'Umar stand beside each row in the Witnesses column with their own conditions.",
+                     qualifications=["**Display only:** no sum is formed, and Sahl's grant above is not changed."],
+                     note_sections=[
+                         ("Abu 'Ali's chapter, whole.",
+                          f"Abu 'Ali, Judgments of Nativities Ch. 4, whole:\n\n> \"{JN_CH4_SENTENCES['fortune']}\" \"{JN_CH4_SENTENCES['infortune']}\" "
+                          f"\"{JN_CH4_SENTENCES['nothing']}\" \"{JN_CH4_SENTENCES['mercury']}\" \"{JN_CH4_SENTENCES['mars']}\"\n\n"
+                          f"Fn 27 on \"rays\":\n\n> \"{JN_CH4_SENTENCES['fn27']}\"\n\nFn 28 on Mercury:\n\n> \"{JN_CH4_SENTENCES['fn28']}\""),
+                         ("What the rows state, and the conventions of this display.",
+                          JN_CH4_ADDITIONS_NOTE),
+                         ("Abu Bakr, a witness beside Abu 'Ali.",
+                          f"Abu Bakr, On Nativities I.15, a witness beside Abu 'Ali (not applied):\n\n> \"{ABU_BAKR_I15_ADDITIONS['method']}\"\n\n"
+                          f"He grades the aspecting planet by its place and condition where Abu 'Ali says \"middling\" and \"more unsound\" "
+                          f"(a different grading, not a definition of Abu 'Ali's):\n\n"
+                          f"> \"{ABU_BAKR_I15_ADDITIONS['grades']}\"\n\nAnd he differs on the bad one's trine and sextile and the fortune's square and "
+                          f"opposition:\n\n> \"{ABU_BAKR_I15_ADDITIONS['differs']}\"\n\nOn the luminaries:\n\n> \"{ABU_BAKR_I15_ADDITIONS['luminaries']}\"\n\n"
+                          f"On Mercury:\n\n> \"{ABU_BAKR_I15_ADDITIONS['mercury']}\""),
+                         ("'Umar al-Tabari, a witness.",
+                          f"'Umar al-Tabari, Book of Nativities I.4.4, a witness (not applied):\n\n> \"{TBN_I44_ADDITIONS['fortunes']}\" "
+                          f"\"{TBN_I44_ADDITIONS['grades']}\" \"{TBN_I44_ADDITIONS['infortunes']}\" \"{TBN_I44_ADDITIONS['seized']}\"\n\n"
+                          f"(fn 87 on \"seized\": \"{TBN_I44_ADDITIONS['fn87']}\") With Sahl 1.21, 8, and against Abu 'Ali, on the "
+                          f"fortunes' square and opposition:\n\n> \"{TBN_I44_ADDITIONS['squares']}\"\n\nAnd the Sun, to whom Abu 'Ali's chapter gives no "
+                          f"modifier:\n\n> \"{TBN_I44_ADDITIONS['sun']}\" \"{TBN_I44_ADDITIONS['sun_reception']}\""),
+                     ])
     if rel['releaser'] is None:
         st.markdown("**The stand-in (Sahl, *On Nativities* 1.32, 11-14, al-Andarzaghar).** The Ascendant's "
                     "distribution on the Revolutions page, \"from the Ascendant\", is \"the first of them\" (13); the Moon, "
@@ -4402,67 +4682,105 @@ def page_releaser():
                 st.markdown(f"Age {pn4['age']} is past the {PN4_DISTRIBUTION_SPAN_YEARS:g}-year table.")
             st.dataframe(pd.DataFrame(pn4['releaser_rows']), hide_index=True, width='stretch',
                          height=_rows_height(min(len(pn4['releaser_rows']), 12)))
-    st.caption("Readings made here, each one Sahl leaves open. (1) THE PLACES: \"a stake or what follows a stake\" "
-               "(1.15, 6-16) is read as a test of the planet's POWER and counted by the Alchabitius divisions with the "
-               "five-degree allowance at the four axial degrees only -- a planet 0-5 degrees past the Ascendant, "
-               "Midheaven, setting degree or fourth into the cadent division keeps the stake's power, measured from "
-               "the axial degree, in longitude -- a proxy, though al-Qabisi's own unit: his rule reads \"five "
-               "equal degrees\", the zodiac's (ITA VIII.1.3, al-Qabisi IV.4). The warrant for the unit is the "
-               "translator's convention, adopted here: Dykes proposes it as his own solution -- whole signs for "
-               "topics, quadrant divisions for power (ITA Introduction §6) -- and Alchabitius, and the five degrees "
-               "at the four axial degrees only, are the course's (Lesson 3, A Chart Tour, §4-5; the Course Glossary "
-               "s.v. Advancement), Alchabitius being this app's choice among the quadrant systems he names; the texts "
-               "in hand give the dispatch: Carmen p. 108 fn 187, \"Dorotheus ... is using dynamic divisions to speak "
-               "of the planets' power, because one can only move from a stake to a decline by primary motion\"; "
-               "with fn 109 on 1.15, 6 agreeing (\"quadrant divisions, not whole signs\"). These texts' own "
-               "vocabulary counts SIGNS -- Introduction 2, 31-35 defines the stakes, \"what follows the stakes\" and "
-               "the falling places as counted signs, and 1.20, 10 says \"the sign of the west\" -- so the division "
-               "reading is the translator's, not Sahl's or Nawbakht's; 1.18, 19 (\"its strength will be in the "
-               "Ascendant ... and likewise in all of the houses\") is about strength and is read as the four "
-               "stakes; Aphorism #44 and 1.22, 9 witness the five degrees, not the house system. Al-Qabisi, in his own "
-               "releaser procedure, states the same five degrees for every house -- before the degree of the "
-               "Ascendant \"or any house\" (ITA VIII.1.3, al-Qabisi IV.4) -- and is the quadrant witness for that "
-               "procedure: he looks for the releaser in the angles and their followers as the twelve houses are "
-               "calculated through the degrees of the Ascendant's hours, a different author's method; here the five "
-               "degrees stay at the four stakes and the places are Sahl's. The Lot of Fortune "
-               "(a candidate by night, 1.15, 14) has no dynamic angularity and is tested by its whole-sign place. "
-               "The meeting's and the fullness's degrees (1.15, 6-8, 12) are neither planet nor Lot: the division is "
-               "used for them, an open reading. The day list is the five places 1.15, 6 names, the night list every "
-               "stake and succedent. (2) \"Looking\" is the whole-sign aspect, and a lord in the candidate's own "
-               "sign counts as looking (1.20, 4). (3) A candidate is not its own house-master except in 1.16's four "
-               "signs. (4) The triplicity lord is the lord of the sect. (5) The meeting is the last New Moon and the "
-               "fullness the last Full Moon before birth; the fullness's degree is the luminary that was above the "
-               "earth at the Full Moon: On Nativities 1.7, 2 (\"take the portion of whichever of the two luminaries "
-               "was above the earth\"), stated there for the Ascendant's degree and applied here by the same word, "
-               "\"portion\" (1.15, 12); when both or neither is above the earth the app takes the Moon's degree. "
-               "Al-Qabisi reports three opinions on the fullness's degree (ITA VIII.1.2, al-Qabisi IV.3): Ptolemy's, "
-               "the degree of the luminary that was above the earth; certain sages', that when one luminary is on "
-               "the eastern degree and the other on the western, the eastern degree is the prevention's; and "
-               "Valens's, the Moon's degree. The Moon default is Valens's; the sages' tie rule is named here and "
-               "not adopted. (6) \"In good places\" for the Ascendant's lord (1.15, 16): Sahl's seven praised "
-               "places (Introduction 2, 37-44: \"praised, powerful\"; 1.30, 71 names them; fn 372 calls them "
-               "\"good or advantageous\"), counted by whole-sign place; no sentence of Sahl's defines 16's phrase, so "
-               "the identification is an interpretation -- with Dykes's backing: the seven are the busy places of "
-               "Timaeus and Dorotheus, which he says Sahl \"explicitly uses\" in the Introduction, calling them "
-               "\"praiseworthy\" and \"stronger\" (ITA III.4, Dykes's comment; ITA Introduction §6). (7) The day "
-               "chart consults the "
-               "Sun, the meeting, then the "
-               "Ascendant (1.15, 9: \"if the meeting and the Sun were both falling, then the releaser at that time "
-               "will be the Ascendant\"); the night chart the Moon, the fullness, the Lot, then the Ascendant "
-               "(10-14). 1.15, 15 lists all five before the Ascendant and is read as the summary of the two lists; "
-               "read as a procedure it would consult the other sect's candidates first, which changes the releaser "
-               "in about one day chart in seven. The meeting's gate (1.15, 8) states a place test only; the "
-               "looking-lord test the app applies to it is supplied from 15's general wording (a reading). "
-               "Not applied, and named: "
-               + '; '.join(f"{c} ({t})" for c, t in SAHL_RELEASER_NOT_APPLIED) + ". "
-               "The YEARS the house-master grants are granted from On Nativities 1.20, 7-34 read in full, "
-               "above: On Times 4 is a question-chart chapter (\"in the hour of the "
-               "question\", 4, 2) and 1.23, 68 sends the reader to \"the section on the house-master\", so the "
-               "texts hold one natal grant, and the apparent disagreement was a tie between a horary rule and a "
-               "natal one; the Chart page's Planetary years table shows 1.20's grade for every planet and On "
-               "Times 4, 7 for comparison. On Times 4, 2-5's shorter list (victor by testimony, "
-               "seven candidates) and Masha'allah's ray in the Ascendant (1.23, 46-50) are the other two "
-               "procedures in these texts, not built. No worked example exists in Sahl.")
+    _notes_expander("Place tests and candidate selection", [
+        ("The placement convention.",
+         "| Point or test | Convention |\n"
+         "|---|---|\n"
+         "| The places: \"a stake or what follows a stake\" (1.15, 6-16) | A test of the planet's power, counted by the Alchabitius divisions with the five-degree allowance at the four axial degrees only |\n"
+         "| The Lot of Fortune (a candidate by night, 1.15, 14) | Its whole-sign place; it has no dynamic angularity |\n"
+         "| The meeting's and the fullness's degrees (1.15, 6-8, 12) | The division, an open reading; they are neither planet nor Lot |\n"
+         "| \"In good places\" for the Ascendant's lord (1.15, 16) | Sahl's seven praised places, counted by whole-sign place; the identification is an interpretation |\n\n"
+         "The places: \"a stake or what follows a stake\" "
+         "(1.15, 6-16) is read as a test of the planet's **power** and counted by the Alchabitius divisions with the "
+         "five-degree allowance at the four axial degrees only -- a planet 0-5 degrees past the Ascendant, "
+         "Midheaven, setting degree or fourth into the cadent division keeps the stake's power, measured from "
+         "the axial degree, in longitude -- a proxy, though al-Qabisi's own unit: his rule reads \"five "
+         "equal degrees\", the zodiac's (ITA VIII.1.3, al-Qabisi IV.4). The warrant for the unit is the "
+         "translator's convention, adopted here: Dykes proposes it as his own solution -- whole signs for "
+         "topics, quadrant divisions for power (ITA Introduction §6) -- and Alchabitius, and the five degrees "
+         "at the four axial degrees only, are the course's (Lesson 3, A Chart Tour, §4-5; the Course Glossary "
+         "s.v. Advancement), Alchabitius being this app's choice among the quadrant systems he names; the texts "
+         "in hand give the dispatch: Carmen p. 108 fn 187, \"Dorotheus ... is using dynamic divisions to speak "
+         "of the planets' power, because one can only move from a stake to a decline by primary motion\"; "
+         "with fn 109 on 1.15, 6 agreeing (\"quadrant divisions, not whole signs\"). These texts' own "
+         "vocabulary counts **signs** -- Introduction 2, 31-35 defines the stakes, \"what follows the stakes\" and "
+         "the falling places as counted signs, and 1.20, 10 says \"the sign of the west\" -- so the division "
+         "reading is the translator's, not Sahl's or Nawbakht's; 1.18, 19 (\"its strength will be in the "
+         "Ascendant ... and likewise in all of the houses\") is about strength and is read as the four "
+         "stakes; Aphorism #44 and 1.22, 9 witness the five degrees, not the house system. Al-Qabisi, in his own "
+         "releaser procedure, states the same five degrees for every house -- before the degree of the "
+         "Ascendant \"or any house\" (ITA VIII.1.3, al-Qabisi IV.4) -- and is the quadrant witness for that "
+         "procedure: he looks for the releaser in the angles and their followers as the twelve houses are "
+         "calculated through the degrees of the Ascendant's hours, a different author's method; here the five "
+         "degrees stay at the four stakes and the places are Sahl's. The Lot of Fortune "
+         "(a candidate by night, 1.15, 14) has no dynamic angularity and is tested by its whole-sign place. "
+         "The meeting's and the fullness's degrees (1.15, 6-8, 12) are neither planet nor Lot: the division is "
+         "used for them, an open reading. The day list is the five places 1.15, 6 names, the night list every "
+         "stake and succedent."),
+        ("The order of candidates by sect.",
+         "| Sect | Candidates, in order |\n"
+         "|---|---|\n"
+         "| Day | the Sun, the meeting, then the Ascendant |\n"
+         "| Night | the Moon, the fullness, the Lot of Fortune, then the Ascendant |\n\n"
+         "Each needs its place -- "
+         "by day \"the Ascendant, the Midheaven, the house of hope, or ... the stake of the "
+         "west, or ... the eighth\" (6), by night \"a stake or what follows a stake\" (11) -- "
+         "and \"the lord of the bound, house, exaltation, triplicity, or image looking at\" it "
+         "(11); \"that one ... which is looking at the releaser, is the house-master\" (13). "
+         "The day chart consults the Sun, the meeting, then the "
+         "Ascendant (1.15, 9: \"if the meeting and the Sun were both falling, then the releaser at that time "
+         "will be the Ascendant\"); the night chart the Moon, the fullness, the Lot, then the Ascendant "
+         "(10-14). 1.15, 15 lists all five before the Ascendant and is read as the summary of the two lists; "
+         "read as a procedure it would consult the other sect's candidates first, which changes the releaser "
+         "in about one day chart in seven. The meeting's gate (1.15, 8) states a place test only; the "
+         "looking-lord test this app applies to it is supplied from 15's general wording (a reading)."),
+        ("Not applied, and named.",
+         "\n".join(f"- {c} ({t})" for c, t in SAHL_RELEASER_NOT_APPLIED)),
+    ])
+    _notes_expander("Lunations, looking, and the house-master", [
+        ("The meeting and the fullness, and the fullness's degree.",
+         "The meeting is the last New Moon and the "
+         "fullness the last Full Moon before birth; the fullness's degree is the luminary that was above the "
+         "earth at the Full Moon: On Nativities 1.7, 2 (\"take the portion of whichever of the two luminaries "
+         "was above the earth\"), stated there for the Ascendant's degree and applied here by the same word, "
+         "\"portion\" (1.15, 12); when both or neither is above the earth this app takes the Moon's degree. "
+         "Al-Qabisi reports three opinions on the fullness's degree (ITA VIII.1.2, al-Qabisi IV.3): Ptolemy's, "
+         "the degree of the luminary that was above the earth; certain sages', that when one luminary is on "
+         "the eastern degree and the other on the western, the eastern degree is the prevention's; and "
+         "Valens's, the Moon's degree. The Moon default is Valens's; the sages' tie rule is named here and "
+         "not adopted."),
+        ("Looking.",
+         "\"Looking\" is the whole-sign aspect, and a lord in the candidate's own "
+         "sign counts as looking (1.20, 4)."),
+        ("A candidate as its own house-master.",
+         "A candidate is not its own house-master except in 1.16's four "
+         "signs. 1.16: the Sun in Aries or Leo, the Moon in Taurus or Cancer, is both."),
+        ("The triplicity lord.",
+         "The triplicity lord is the lord of the sect."),
+        ("The lords ranked.",
+         "1.20, 2-4 rank the lords: bound, house, exaltation, triplicity, image; two shares beat one; the "
+         "bound lord in the Ascendant with the releaser beats all."),
+        ("\"In good places\" for the Ascendant's lord.",
+         "\"In good places\" for the Ascendant's lord (1.15, 16): Sahl's seven praised "
+         "places (Introduction 2, 37-44: \"praised, powerful\"; 1.30, 71 names them; fn 372 calls them "
+         "\"good or advantageous\"), counted by whole-sign place; no sentence of Sahl's defines 16's phrase, so "
+         "the identification is an interpretation -- with Dykes's backing: the seven are the busy places of "
+         "Timaeus and Dorotheus, which he says Sahl \"explicitly uses\" in the Introduction, calling them "
+         "\"praiseworthy\" and \"stronger\" (ITA III.4, Dykes's comment; ITA Introduction §6)."),
+    ])
+    _notes_expander("Years granted and alternative procedures", [
+        ("The natal grant.",
+         "The **years** the house-master grants are granted from On Nativities 1.20, 7-34 read in full, "
+         "above: On Times 4 is a question-chart chapter (\"in the hour of the "
+         "question\", 4, 2) and 1.23, 68 sends the reader to \"the section on the house-master\", so the "
+         "texts hold one natal grant, and the apparent disagreement was a tie between a horary rule and a "
+         "natal one; the Fardar and ages page's Planetary years table shows 1.20's grade for every planet and On "
+         "Times 4, 7 for comparison."),
+        ("Other procedures in these texts, not built.",
+         "On Times 4, 2-5's shorter list (victor by testimony, "
+         "seven candidates) and Masha'allah's ray in the Ascendant (1.23, 46-50) are the other two "
+         "procedures in these texts, not built. No worked example exists in Sahl."),
+    ])
 
     st.subheader("The house-master directed (Sahl, *On Nativities* 1.23, 1-11)",
                  help="Masha'allah: \"look at the position of the governor [fn 181: the house-master] relative "
@@ -5048,34 +5366,17 @@ def page_sources():
     # an exported analysis is signed with, and a reader holding an older
     # export needs to be able to read the current one off the app itself.
     st.caption(f"This app {APP_VERSION}. "
-               "What the app reads from, how it can be read, and what it does not cover.  \n"
-               "**How citations are written.** A locator names its volume, never the author alone: "
-               "*Sahl, The Introduction Ch. 3, 85* and *Sahl, On Nativities 1.22, 9*; *Gr. Intr. VII.6, 27* "
-               "is Abu Ma'shar's Great Introduction (Dykes); *PN IV IX.1, 26* is his On the Revolutions of "
-               "the Years of Nativities, Persian Nativities IV (Dykes) -- and on the Prediction pages other than The releaser, whose rules "
-               "all come from that book, its locators are bare Book.chapter, sentence. Both of Abu Ma'shar's "
-               "volumes have a Book VII, which is why his name alone no longer locates anything. *ITA I.22 "
-               "(al-Qabisi)* is Dykes's Introductions to Traditional Astrology, its section and the author excerpted "
-               "there (al-Qabisi's own numbering, *al-Qabisi IV.4*, where it is given); *Abu Bakr, On Nativities "
-               "II.5.14*, *'Umar al-Tabari, Book of Nativities I.4.3*, *Masha'allah, Book of Aristotle III.1.8* and "
-               "*Abu 'Ali al-Khayyat, Judgments of Nativities Ch. 4* are the four nativity treatises of Persian "
-               "Nativities I and II (Dykes); *Abbr. II.27* is Abu Ma'shar's Abbreviation as ITA prints it.")
+               "What this app reads from, how it can be read, and what it does not cover.")
     # --- The readings in force (2026-09-10) ----------------------------
     st.subheader("Readings in force",
                  help="Every doctrinal switch, where it is set, what it says now and what the default "
-                      "is. They are remembered between runs. Reset returns all of them to the defaults. "
-                      "Sources shown is stored under the two names the table prints: Course text, which is "
-                      "Sahl's course texts alone, and Course text and supplement, which is those texts with "
-                      "Abu Ma'shar's beside them.")
+                      "is. They are remembered between runs. Reset returns all of them to the defaults.")
     _reading_radio("Sources shown", READING_DEPTH_OPTIONS, "reading_depth", "_reading_depth",
                    format_func={READING_DEPTH_OPTIONS[0]: "Sahl's course texts",
                                 READING_DEPTH_OPTIONS[1]: "With Abu Ma'shar's supplement"}.get,
-                   help="Sahl's course texts: the tables of Sahl's Introduction and On Nativities alone, with "
-                        "Abu Ma'shar's Great Introduction VII kept apart in its own tab on the Configurations "
-                        "page and behind closed expanders elsewhere. With Abu Ma'shar's supplement: his tables "
-                        "are laid beside Sahl's on the same topic -- further findings, three more topical "
-                        "Lots, a reference table and the supplementary expanders open -- and the Configurations "
-                        "page folds his tab into the topic blocks it belongs to.")
+                   help="Sahl's course texts: the tables of Sahl's Introduction and On Nativities alone. "
+                        "With Abu Ma'shar's supplement: his tables are laid beside Sahl's on the same topic. "
+                        "Full text under Configurable readings below.")
     # What the chart the picker names was saved under, beside what is in
     # force (F03). A dash where there is nothing to show: no record
     # selected, or one written before this app stored the readings with a
@@ -5095,71 +5396,136 @@ def page_sources():
             st.session_state.pop(sk, None)
             _forget(sk)
         st.rerun()
+    # --- How citations are written: the key, below the controls --------
+    st.subheader("How citations are written")
+    # The key is a three-column table and takes the page's width, as the
+    # tables do; the sentences around it stand at reading width.
+    with _prose():
+        st.markdown("A locator names its volume, never the author alone.")
+    st.markdown("| Citation form | Work | Example |\n"
+                "|---|---|---|\n"
+                "| Sahl, The Introduction | Sahl's *The Introduction* | Sahl, The Introduction Ch. 3, 85 |\n"
+                "| Sahl, On Nativities | Sahl's *On Nativities* | Sahl, On Nativities 1.22, 9 |\n"
+                "| Gr. Intr. | Abu Ma'shar's Great Introduction (Dykes) | Gr. Intr. VII.6, 27 |\n"
+                "| PN IV | Abu Ma'shar's On the Revolutions of the Years of Nativities, Persian Nativities IV (Dykes) | PN IV IX.1, 26 |\n"
+                "| ITA | Dykes's Introductions to Traditional Astrology, its section and the author excerpted there (al-Qabisi's own numbering, al-Qabisi IV.4, where it is given) | ITA I.22 (al-Qabisi) |\n"
+                "| Abu Bakr, On Nativities | one of the four nativity treatises of Persian Nativities I and II (Dykes) | Abu Bakr, On Nativities II.5.14 |\n"
+                "| 'Umar al-Tabari, Book of Nativities | one of the four nativity treatises of Persian Nativities I and II (Dykes) | 'Umar al-Tabari, Book of Nativities I.4.3 |\n"
+                "| Masha'allah, Book of Aristotle | one of the four nativity treatises of Persian Nativities I and II (Dykes) | Masha'allah, Book of Aristotle III.1.8 |\n"
+                "| Abu 'Ali al-Khayyat, Judgments of Nativities | one of the four nativity treatises of Persian Nativities I and II (Dykes) | Abu 'Ali al-Khayyat, Judgments of Nativities Ch. 4 |\n"
+                "| Abbr. | Abu Ma'shar's Abbreviation as ITA prints it | Abbr. II.27 |")
+    with _prose():
+        st.markdown("Both of Abu Ma'shar's volumes have a Book VII, which is why his name alone no longer locates anything. "
+                    "On the Prediction pages other than The releaser, whose rules all come from PN IV, its locators "
+                    "are bare Book.chapter, sentence.")
     # The full comparison of the two connection tests. It was the
     # Connection rule radio's tooltip; the radio (Configurations page)
     # now carries a one-line help and points here.
     st.subheader("Connection rule: Sahl and Abu Ma'shar")
+    with _prose():
+        st.markdown(
+            "Which author's rule decides whether a pair counts as Connected. The two agree that "
+            "looking is sign-to-sign and connecting is degree-to-degree, but they part company at "
+            "the sign boundary and on what activates a connection.")
     st.markdown(
-        "Which author's rule decides whether a pair counts as Connected. The two agree that "
-        "looking is sign-to-sign and connecting is degree-to-degree, but they part company at "
-        "the sign boundary and on what activates a connection.\n\n"
-        "**Sahl** (The Introduction Ch. 3, 6-21): the applying planet's OWN light governs "
-        "(15/12/9/8/7 by planet), so the test is asymmetric. A planet at the end of a sign that "
-        "is not connecting with anything, whose light strikes into the next sign, IS connected "
-        "to the first planet there by body (20-21) -- even though the two do not see each other.\n\n"
-        "A DISSENTING READING is recorded in the code but not implemented. Sahl 13 says that with "
-        "15 degrees between THE SUN and a planet 'he has already shone his light, and he is connected "
-        "with [the planet]' -- and the Sun is the HEAVIER body there -- while 18 closes the list of "
-        "lights with 'they are connected ONE TO THE OTHER'. Against that, 19 states the test itself in "
-        "terms of the mover ('it already struck WITH ITS OWN LIGHT'), and Abu Ma'shar, using the same "
-        "orb table, needs the asymmetry: with Saturn and the Moon within 12 degrees 'Saturn is in the "
-        "power of the Moon's body while the Moon is NOT YET in the power of Saturn's' (VII.4, 7). The "
-        "asymmetric reading is kept; the reciprocal one would move about 5% of applying pairs, and only "
-        "half of those involve the Sun.\n\n"
-        "**Abu Ma'shar** (Gr. Intr. VII.4-5): two flat distances instead -- assembly "
-        "within 15 degrees in one sign (VII.4, 3), aspects within 12 degrees of exact (VII.5, 27, "
-        "since aspect rays have no bodies of their own). No out-of-sign connection at all: across "
-        "a boundary the bodies merely 'mix their natures in a weak way' (VII.5, 14).\n\n"
-        "This governs only the tables that deliberately present BOTH authors -- the aspect grid, "
-        "reception, blocking, cutting. Each author's own tables are computed under "
-        "that author's rule whatever this is set to; the Configurations page has its own "
-        "control for which author you want to SEE."
-    )
-    # The five readings the sources leave open. Each control sits on
-    # the page and table it changes with a one-line help; the full
-    # text of each, as it stood in the sidebar, is here.
+        "| Question | Sahl, as implemented | Abu Ma'shar, as implemented |\n"
+        "|---|---|---|\n"
+        "| Which distance governs? | The applying planet's own light (15/12/9/8/7 by planet), so the test is asymmetric | Two flat distances: assembly within 15 degrees in one sign (VII.4, 3), aspects within 12 degrees of exact (VII.5, 27) |\n"
+        "| What happens at a sign boundary? | A planet at the end of a sign that is not connecting with anything, whose light strikes into the next sign, is connected to the first planet there by body (20-21) | No out-of-sign connection at all: across a boundary the bodies merely 'mix their natures in a weak way' (VII.5, 14) |\n"
+        "| Source | The Introduction Ch. 3, 6-21 | Gr. Intr. VII.4-5 |")
+    with _prose():
+        st.markdown(
+            "This governs only the tables that deliberately present **both** authors -- the aspect grid, "
+            "reception, blocking, cutting. Each author's own tables are computed under "
+            "that author's rule whatever this is set to; the Configurations page has its own "
+            "control for which author you want to **see**."
+        )
+    _notes_expander("The two rules in full, and the alternative reading", [
+        ("Sahl's rule.",
+         "**Sahl** (The Introduction Ch. 3, 6-21): the applying planet's **own** light governs "
+         "(15/12/9/8/7 by planet), so the test is asymmetric. A planet at the end of a sign that "
+         "is not connecting with anything, whose light strikes into the next sign, **is** connected "
+         "to the first planet there by body (20-21) -- even though the two do not see each other."),
+        ("Abu Ma'shar's rule.",
+         "**Abu Ma'shar** (Gr. Intr. VII.4-5): two flat distances instead -- assembly "
+         "within 15 degrees in one sign (VII.4, 3), aspects within 12 degrees of exact (VII.5, 27, "
+         "since aspect rays have no bodies of their own). No out-of-sign connection at all: across "
+         "a boundary the bodies merely 'mix their natures in a weak way' (VII.5, 14)."),
+        ("Alternative reading: reciprocal light, not implemented.",
+         "A **dissenting reading** is recorded in the code but not implemented. Sahl 13 says that with "
+         "15 degrees between **the Sun** and a planet 'he has already shone his light, and he is connected "
+         "with [the planet]' -- and the Sun is the **heavier** body there -- while 18 closes the list of "
+         "lights with 'they are connected ONE TO THE OTHER'. Against that, 19 states the test itself in "
+         "terms of the mover ('it already struck WITH ITS OWN LIGHT'), and Abu Ma'shar, using the same "
+         "orb table, needs the asymmetry: with Saturn and the Moon within 12 degrees 'Saturn is in the "
+         "power of the Moon's body while the Moon is NOT YET in the power of Saturn's' (VII.4, 7). The "
+         "asymmetric reading is kept; the reciprocal one would move about 5% of applying pairs, and only "
+         "half of those involve the Sun."),
+    ])
+    # The readings the sources leave open, one section each, in the
+    # registry's order: the reading's own paragraph (its bold lead, its
+    # source and alternatives, the views it affects), then the value in
+    # force, the default and the page its control stands on, read from the
+    # same state the table above prints. Each control sits on the page and
+    # table it changes with a one-line help; the full text is here.
     st.subheader("Configurable readings")
-    st.markdown(
-        "**VII.6, 27/45 'eastern/western relative to the Sun'** (Configurations page, Planetary Condition) -- "
-        "'hemisphere': the whole half, excluding the rays (VII.2, 2; VII.6, 34). 'VII.2 band': only "
-        "the easternizing band 15/18 to 90 degrees (VII.2, 14-21) and the westernizing band 90 down to "
-        "15 degrees (VII.2, 29-31). Superiors: 52% vs 25% of placements. "
-        "Affects: Planetary Condition (27, 45).\n\n"
-        "**Moon under the rays to 15 degrees (Sahl, On Nativities 1.19, 6)** (Chart page, Planetary Positions) -- "
-        "Gr. Intr. VII.2, 61 and 72-73 give 12; Sahl gives 15 for the Moon's fitness as releaser. "
-        "Affects: the Solar phase column of Planetary Positions; on the Configurations page, "
-        "Weakness of the Planets (93), Planetary Condition and Corruption of the Moon.\n\n"
-        "**Mars under the rays to 18 degrees west (Dykes's table in On Nativities 1.22, fn 175)** (Chart page, Planetary Positions) -- "
-        "Gr. Intr. VII.2, 31 has Mars under the rays at 15 on the western side; Dykes's chapter-head table for "
-        "Sahl, with fn 175 reading VII.2, 30's westernizing boundary into 18, has him at 18; Sahl's own sentences "
-        "are silent on Mars west. Both agree on 18 east. Affects: the Solar phase column and every test that "
-        "reads it; a 3-degree band on one planet.\n\n"
-        "**Fitting infortune (Sahl, Choices Ch. 1, 12)** (Configurations page, beside the Connection test) -- "
-        "\"the infortunes are perhaps more fitting for him, since [one] may be the lord of the original Ascendant\"; "
-        "off by default because 1, 16-17 says the opposite. When on, the malefic ruling the Ascendant is not an "
-        "infortune for any affliction test; it keeps its nature where that is what is meant.\n\n"
-        "**Domain (hayz)** (Dignities page, Sect table) -- "
-        "Gr. Intr. VII.1, 37 / VII.6, 13: sign gender fixed to the planet's own. Masha'allah, "
-        "On Nativities 1.23, 17: a male planet by day above the earth in a male sign, by night under "
-        "the earth in a FEMALE sign; feminine planets by hemisphere only. "
-        "Affects: the Sect table and Dignity Evaluation on the Dignities page, and Planetary Condition (13) "
-        "on the Configurations page.\n\n"
-        "**House-based Lots measure to the** (Lots page, Topical Lots) -- "
-        "'The second place', 'the degree of the eighth place', 'the ninth' (On Nativities 2.15, 1; "
-        "8.6, 1; Ch. 9, 9). Whole-sign: the Ascendant's degree carried into that sign. Quadrant: the "
-        "Alchabitius cusp. "
-        "Affects: Topical Lots."
-    )
+    _reading_text = {
+        "_eastern_rule": (
+            "**VII.6, 27/45 'eastern/western relative to the Sun'** (Configurations page, Planetary Condition) -- "
+            "'hemisphere': the whole half, excluding the rays (VII.2, 2; VII.6, 34). 'VII.2 band': only "
+            "the easternizing band 15/18 to 90 degrees (VII.2, 14-21) and the westernizing band 90 down to "
+            "15 degrees (VII.2, 29-31). Superiors: 52% vs 25% of placements.",
+            "Affects: Planetary Condition (27, 45)."),
+        "_moon_rays_15": (
+            "**Moon under the rays to 15 degrees (Sahl, On Nativities 1.19, 6)** (Chart page, Planetary Positions) -- "
+            "Gr. Intr. VII.2, 61 and 72-73 give 12; Sahl gives 15 for the Moon's fitness as releaser.",
+            "Affects: the Solar phase column of Planetary Positions; on the Configurations page, "
+            "Weakness of the Planets (93), Planetary Condition and Corruption of the Moon."),
+        "_mars_west_18": (
+            "**Mars under the rays to 18 degrees west (Dykes's table in On Nativities 1.22, fn 175)** (Chart page, Planetary Positions) -- "
+            "Gr. Intr. VII.2, 31 has Mars under the rays at 15 on the western side; Dykes's chapter-head table for "
+            "Sahl, with fn 175 reading VII.2, 30's westernizing boundary into 18, has him at 18; Sahl's own sentences "
+            "are silent on Mars west. Both agree on 18 east.",
+            "Affects: the Solar phase column and every test that "
+            "reads it; a 3-degree band on one planet."),
+        "_fitting_infortune": (
+            "**Fitting infortune (Sahl, Choices Ch. 1, 12)** (Configurations page, beside the Connection test) -- "
+            "\"the infortunes are perhaps more fitting for him, since [one] may be the lord of the original Ascendant\"; "
+            "off by default because 1, 16-17 says the opposite. When on, the malefic ruling the Ascendant is not an "
+            "infortune for any affliction test; it keeps its nature where that is what is meant.",
+            None),
+        "_domain_rule": (
+            "**Domain (hayz)** (Dignities and places page, Sect table) -- "
+            "Gr. Intr. VII.1, 37 / VII.6, 13: sign gender fixed to the planet's own. Masha'allah, "
+            "On Nativities 1.23, 17: a male planet by day above the earth in a male sign, by night under "
+            "the earth in a **female** sign; feminine planets by hemisphere only.",
+            "Affects: the Sect table and Dignity Evaluation on the Dignities and places page, and Planetary Condition (13) "
+            "on the Configurations page."),
+        "_lot_house_cusp": (
+            "**House-based Lots measure to the** (Lots page, Topical Lots) -- "
+            "'The second place', 'the degree of the eighth place', 'the ninth' (On Nativities 2.15, 1; "
+            "8.6, 1; Ch. 9, 9). Whole-sign: the Ascendant's degree carried into that sign. Quadrant: the "
+            "Alchabitius cusp.",
+            "Affects: Topical Lots."),
+        "_reading_depth": (
+            "**Sources shown** (this page) -- Sahl's course texts: the tables of Sahl's Introduction and On Nativities alone, with "
+            "Abu Ma'shar's Great Introduction VII kept apart in its own tab on the Configurations "
+            "page and behind closed expanders elsewhere. With Abu Ma'shar's supplement: his tables "
+            "are laid beside Sahl's on the same topic -- further findings, three more topical "
+            "Lots, a reference table and the supplementary expanders open -- and the Configurations "
+            "page folds his tab into the topic blocks it belongs to. "
+            "Sources shown is stored under the two names the table prints: Course text, which is "
+            "Sahl's course texts alone, and Course text and supplement, which is those texts with "
+            "Abu Ma'shar's beside them.",
+            None),
+    }
+    with _prose():
+        for _label, _wk, _sk, _default, _page in READINGS_REGISTRY:
+            _paragraph, _affects = _reading_text.get(_sk, (f"**{_label}**", None))
+            st.markdown(_paragraph)
+            if _affects:
+                st.markdown(_affects)
+            st.caption(f"In force: {_reading(_wk, _sk, _default)} · default: {_default} · set on the {_page} page")
     with st.expander("Coverage: what these sources contain that this app does not", expanded=False):
         st.caption(
             "Named explicitly so the absence is a stated scope limit rather than an "

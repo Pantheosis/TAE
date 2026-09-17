@@ -306,7 +306,7 @@ def test_the_chart_page_mounts_the_wheel_and_draws_no_panel(layout):
     at.session_state["_wheel_layout"] = layout
     at.run()
     assert_no_exception(at, f"chart, {layout}")
-    fragment = list(at.main.children.values())[2]
+    fragment = list(at.main.children.values())[3]     # after the header, the strip and the readings note's slot
     mounts = component_mounts(fragment, "natal_wheel")
     assert len(mounts) == 1
     assert len(list(fragment.children.values())) == 2, "picture, controls row, and no panel"
@@ -393,13 +393,14 @@ def test_the_launch_count_is_a_preference_counted_once_a_session():
 
 def test_the_folded_introduction_stands_where_the_captions_stood():
     """Outside the wheel fragment, in the place the three captions had:
-    header, strip, fragment, then the introduction."""
+    header, strip, the readings note's slot (empty on the default chart),
+    fragment, then the introduction."""
     at = _chart_page(3)
     kids = list(at.main.children.values())
-    assert [type(k).__name__ for k in kids[:3]] == ["Header", "Caption", "Block"]
-    assert type(kids[3]).__name__ == "Expander"
-    assert kids[3].label == "About this app"
-    assert kids[4].value == "Calculation"
+    assert [type(k).__name__ for k in kids[:4]] == ["Header", "Caption", "UnknownElement", "Block"]
+    assert type(kids[4]).__name__ == "Expander"
+    assert kids[4].label == "About this app"
+    assert kids[5].value == "Calculation"
 
 
 # --- C. The panel says what the tables say --------------------------------

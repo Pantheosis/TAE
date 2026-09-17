@@ -139,11 +139,23 @@ def test_the_readings_table_names_it_sources_shown_and_prints_the_stored_value()
     assert rows["Sources shown"]["Set on"] == "Sources and readings"
 
 
+def _sources_shown_section(at):
+    """The Sources shown section under Configurable readings: the one
+    markdown that opens with its bold name (readability branch A,
+    2026-09-17, where the readings-in-force tooltip's sentence on the two
+    stored names moved)."""
+    hits = [m.value for m in at.main.markdown if m.value.startswith("**Sources shown**")]
+    assert len(hits) == 1, hits
+    return hits[0]
+
+
 def test_the_readings_in_force_help_says_what_each_stored_value_means():
     at = make_app(page="sources").run()
     help_text = [s.help for s in at.main.subheader if s.value == "Readings in force"][0]
-    assert "Sources shown" in help_text
-    assert COURSE_TEXT in help_text and WITH_SUPPLEMENT in help_text
+    assert help_text.startswith("Every doctrinal switch, where it is set, what it says now and what the default is.")
+    section = _sources_shown_section(at)
+    assert "Sources shown is stored under the two names the table prints" in section
+    assert COURSE_TEXT in section and WITH_SUPPLEMENT in section
 
 
 def test_the_readings_note_still_excludes_it():
@@ -168,9 +180,15 @@ def test_the_radio_help_describes_both_states_without_the_word_depth():
     assert help_text.startswith(DISPLAY[COURSE_TEXT] + ":")
     assert DISPLAY[WITH_SUPPLEMENT] + ":" in help_text
     # What each state does: whose tables are shown, and where the
-    # Configurations page keeps Abu Ma'shar's.
-    assert "its own tab on the Configurations" in help_text
-    assert "folds his tab into the topic blocks" in help_text
+    # Configurations page keeps Abu Ma'shar's -- in the Sources shown
+    # section the tooltip points to, since the tooltip became two short
+    # sentences (readability branch A, 2026-09-17).
+    assert help_text.endswith("Full text under Configurable readings below.")
+    section = _sources_shown_section(at)
+    assert "depth" not in section.lower()
+    assert DISPLAY[COURSE_TEXT] + ":" in section and DISPLAY[WITH_SUPPLEMENT] + ":" in section
+    assert "its own tab on the Configurations" in section
+    assert "folds his tab into the topic blocks" in section
 
 
 # --- The scope line ------------------------------------------------------
