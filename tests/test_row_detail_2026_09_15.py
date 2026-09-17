@@ -271,7 +271,11 @@ def test_the_grid_carries_on_select_and_a_key_from_its_title():
     assert 'on_select="rerun"' in body
     assert 'selection_mode="single-row"' in body
     assert "key=_grid_key" in body
-    assert "_grid_key = re.sub(r'\\W+', '_', title.lower()).strip('_') + '_grid'" in body
+    # The derivation moved into _slug() when key= was added (2026-09-17);
+    # with key= omitted the grid's key is what it always was.
+    assert "_grid_key = key or _slug(title) + '_grid'" in body
+    slug = ast.get_source_segment(ui_source(), _function_def("_slug"))
+    assert "re.sub(r'\\W+', '_', title.lower()).strip('_')" in slug
     assert re.sub(r'\W+', '_', 'Strength of the Planets'.lower()).strip('_') + '_grid' == STRENGTH_KEY
     assert re.sub(r'\W+', '_', 'Weakness of the Planets'.lower()).strip('_') + '_grid' == WEAKNESS_KEY
     # The grid's own DataFrame and column_config are what they were.

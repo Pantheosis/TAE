@@ -1588,11 +1588,26 @@ if chart_ok:
 # quotations, measured frequencies and superseded readings -- served
 # as hover text, which cannot be scrolled, selected or searched.
 #
-# Three depths, three containers. GLANCE: what this is, in the
-# tooltip, under about 200 characters. CHECK: the citation, as a
-# visible caption, plus the row's own Source and Standing columns
-# where the table carries them. AUDIT: the quotations and the
-# measurements, in an expander under the table.
+# Three depths, and the layers each is served in. GLANCE: what this
+# is, in the tooltip -- one sentence, about 200 characters the aim;
+# the guard test (tests/test_text_lengths_2026_09_17.py) holds help=
+# and glance= to a ceiling of 300 and a caption to 400. CHECK: the
+# citation, as a visible caption under the heading (standing · source),
+# plus the row's own Source and Standing columns where the table
+# carries them; then, visible above the table and at reading width,
+# the SUMMARY (one or two sentences: what the reader is looking at)
+# and the QUALIFICATIONS (short bold-led statements the result cannot
+# be read without -- "This app's synthesis.", "Display only." --
+# supplied by the call, never inferred from the rows). AUDIT: the
+# quotations, the alternatives and the measurements, in the notes
+# expander under the table, as headed sections (note_sections) at
+# reading width, or as one Markdown string (notes=) where a block has
+# not been divided yet; and, for a row too long for its cell, a
+# selectbox under the table that prints one row's fields whole
+# (detail= and detail_key=). The largest dossiers place further
+# expanders after the finding themselves (_notes_expander), never
+# nested. Nothing in these layers reads the chart: every status and
+# value comes from the engine's rows.
 #
 # column_config, name-based: the DataFrame's own values never change
 # on this branch (the doctrine fixtures compare them), only how a
@@ -1634,6 +1649,59 @@ def _medium_text_columns(df):
     return {col: st.column_config.TextColumn(width="medium")
             for col in df.columns if col in _MEDIUM_TEXT_COLUMNS}
 
+# Reading width. Body text at PROSE_WIDTH pixels: a container that
+# the page's own width constrains, so prose narrows on a phone and
+# stops growing on a wide desktop instead of running the window's
+# width. Native and nothing else: no CSS, no st.html, no keyed
+# container. The number is settled by measurement in the preview
+# (a rendered paragraph's width against the app's own font) so that
+# a line holds about 65-75 characters, the reading-width target.
+PROSE_WIDTH = 680
+
+def _prose():
+    """A container at reading width for body text, notes and detail."""
+    return st.container(width=PROSE_WIDTH)
+
+# One notes disclosure, the same everywhere: the book icon (which is
+# what the table walker in tests/conftest.py skips an expander by),
+# and inside it, at reading width, headed sections -- each heading a
+# bold line of its own, each body one Markdown string that may hold
+# a comparison table or a "> " quotation, and never an st.dataframe,
+# which would enter the table fixture under the expander's label.
+NOTES_ICON = ":material/menu_book:"
+NOTES_TITLE = "Sources and editorial notes"
+
+def _note_sections(sections):
+    with _prose():
+        for heading, body in sections:
+            st.markdown(f"**{heading}**")
+            st.markdown(body)
+
+def _notes_expander(title, sections):
+    """A sibling topic expander a page places after a finding, for a
+    dossier too large for one expander; never nested in another."""
+    with st.expander(title, icon=NOTES_ICON):
+        _note_sections(sections)
+
+def _slug(title):
+    return re.sub(r'\W+', '_', title.lower()).strip('_')
+
+# "Read details for": a selectbox listing one field of every row, in
+# the table's order, unselected until the reader picks -- the keyboard
+# path to a row whose cells are too long to be read in the table --
+# and the row's fields printed whole under it by the caller's own
+# renderer. Widget key `<slug>_detail`, the slug derived from the
+# finding's title as _tick_grid derives its grid key.
+def _detail_selector(title, data, detail_key, detail, placeholder):
+    options = [str(row[detail_key]) for row in data]
+    if len(set(options)) != len(options):
+        options = [f"{n}. {option}" for n, option in enumerate(options, 1)]
+    picked = st.selectbox("Read details for", options, index=None, key=f"{_slug(title)}_detail",
+                          placeholder=placeholder)
+    if picked is not None and picked in options:
+        with _prose():
+            detail(data[options.index(picked)])
+
 # A finding with nothing to report is not given a heading at all --
 # it is collected and named in one line at the foot of its group,
 # which is what turns seventeen "No X found" headings into four.
@@ -1642,7 +1710,10 @@ def _medium_text_columns(df):
 # heading is the finding's NAME; the footing and the citation are one
 # caption under it, separated by a middle dot.
 def _finding(bucket, title, citation, data, glance=None, notes=None, columns=None, height=None,
-             standing=None, absent=None, column_help=None, caption=None):
+             standing=None, absent=None, column_help=None, caption=None,
+             summary=None, qualifications=None, detail=None, detail_key=None,
+             detail_placeholder="Select a row to read its grounds and source passages",
+             notes_title=NOTES_TITLE, note_sections=None):
     if not data:
         # absent= is for a finding whose emptiness is the END OF A SEARCH,
         # not an absence: the search ran, it was bounded, and what it
@@ -1659,6 +1730,15 @@ def _finding(bucket, title, citation, data, glance=None, notes=None, columns=Non
     st.subheader(title, help=glance)
     if standing or citation:
         st.caption(" · ".join(part for part in (standing, citation) if part))
+    # summary= and qualifications= are body text at reading width above
+    # the table: what the rows are, then the statements the rows cannot
+    # be read without, each its own bold-led paragraph.
+    if summary or qualifications:
+        with _prose():
+            if summary:
+                st.markdown(summary)
+            for _statement in (qualifications or ()):
+                st.markdown(_statement)
     # columns= pins the order (pandas otherwise takes the first
     # row's); height= shows every row of a table meant to be read
     # whole, instead of st.dataframe's ten-row inner scroll.
@@ -1677,9 +1757,18 @@ def _finding(bucket, title, citation, data, glance=None, notes=None, columns=Non
     # rows themselves rather than the finding's source.
     if caption:
         st.caption(caption)
-    if notes:
-        with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-            st.markdown(notes)
+    # detail= prints one chosen row whole, under the table, from the
+    # same rows the table was built from.
+    if detail is not None and detail_key:
+        _detail_selector(title, data, detail_key, detail, detail_placeholder)
+    # The notes: headed sections at reading width (note_sections=),
+    # one Markdown string as before (notes=), or both, notes first.
+    if notes or note_sections:
+        with st.expander(notes_title, icon=NOTES_ICON):
+            if notes:
+                st.markdown(notes)
+            if note_sections:
+                _note_sections(note_sections)
 
 def _absent(bucket):
     if bucket:
@@ -1851,7 +1940,8 @@ _PARAGRAPH = re.compile(r'\((\d{2,3})(?=[;,)])')
 # before the trailing run of sentence numbers is the chapter locator.
 _CITATION_LOCATOR = re.compile(r'^(.*), [\d\s,-]+$')
 
-def _tick_grid(bucket, title, citation, data, text_key, columns, glance=None, notes=None):
+def _tick_grid(bucket, title, citation, data, text_key, columns, glance=None, notes=None,
+               key=None, note_sections=None):
     if not data:
         bucket.append(title)
         return
@@ -1881,9 +1971,10 @@ def _tick_grid(bucket, title, citation, data, text_key, columns, glance=None, no
             help=f"{_locator}, {num}" if _locator else f"sentence {num}",
             width="small")
     # A row can be selected (single-row, rerun): the grid's key is
-    # its title, lower-cased and underscored. The selection reruns
+    # its title, lower-cased and underscored, unless key= names it
+    # (so a title can change without the key). The selection reruns
     # the fragment this grid stands in and nothing else on the page.
-    _grid_key = re.sub(r'\W+', '_', title.lower()).strip('_') + '_grid'
+    _grid_key = key or _slug(title) + '_grid'
     _event = st.dataframe(pd.DataFrame(grid), hide_index=True, width='stretch', height=_rows_height(len(grid)),
                           column_config=_grid_columns, on_select="rerun", selection_mode="single-row",
                           key=_grid_key)
@@ -1893,9 +1984,12 @@ def _tick_grid(bucket, title, citation, data, text_key, columns, glance=None, no
     with st.expander("Answer key: testimonies in words"):
         st.dataframe(pd.DataFrame(data, columns=['Planet', text_key, 'Count']),
                      hide_index=True, width='stretch', height=_rows_height(len(data)))
-    if notes:
-        with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-            st.markdown(notes)
+    if notes or note_sections:
+        with st.expander(NOTES_TITLE, icon=NOTES_ICON):
+            if notes:
+                st.markdown(notes)
+            if note_sections:
+                _note_sections(note_sections)
 
 # Why a tick fired: the selected planet's row, one block per ticked
 # testimony in numerical order -- the sentence's locator as the
