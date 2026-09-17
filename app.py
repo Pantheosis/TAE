@@ -4766,7 +4766,7 @@ def page_timing():
                           "triplicity supports them both in their elevation, through its strength (if it was "
                           "strong), and brings [them] down (if it was a falling [place])\". 2.13, 39: the first "
                           "lord \"indicates the end of the father's life, and the beginning of the native's "
-                          "life\". 2.17, 5: \"if the third lord of the triplicity was in the house of marriage, he "
+                          "life\". 2.19, 5: \"if the third lord of the triplicity was in the house of marriage, he "
                           "will gain good fortune at the end of his lifespan\". PN IV VI.2, 4 names the same "
                           "lords \"at that time of his lifespan\".")
         st.dataframe(pd.DataFrame(pn4['life_lords_rows']), hide_index=True, width='stretch',
