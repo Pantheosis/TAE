@@ -660,3 +660,135 @@ def test_the_days_page_has_no_text_over_its_ceiling():
     first_line = src[:start].count("\n") + 1
     last_line = src[:end].count("\n") + 1
     assert not [o for o in offenders() if first_line <= o[1] <= last_line]
+
+
+# --- Fardar and ages -------------------------------------------------------
+
+@pytest.fixture(scope="module")
+def fardar_page():
+    return _page("fardar")
+
+
+FARDAR_BLOCKS = {
+    "The lords of the triplicity of the sect light, over the life": (
+        "The three lords of the sect light's triplicity (the Sun's by day, the Moon's by night) in the "
+        "day-night-partner order for a day birth and night-day-partner for a night birth, each with its natal "
+        "condition.",
+        ["**No period is assigned.** No text in hand assigns a number of years to any lord's stretch of the life"],
+        "The source testimony on the lords over the life",
+        ["Sahl, On Nativities 2.11, 1-2 and 4.", "2.13, 39 and 2.19, 5.", "PN IV VI.2, 4.",
+         "The Ascendant's triplicity lords, for comparison."]),
+    "The *fardar*": (
+        "IV.1, 2-4: the years are Sun 10, Venus 8, Mercury 13, Moon 9, Saturn 11, Jupiter 12, Mars 7, Head 3, "
+        "Tail 2 -- 75 in all. The order runs down the spheres from the light of the sect: by day from the Sun, "
+        "by night from the Moon.",
+        ["**The nodes last, in both sects.** IV.7, 24: the Head and Tail come **last in both sects**"],
+        None, []),
+    "When a natal indication comes out (III.7, 32-42)": (
+        "A planet may distribute or manage more than once in a lifetime (III.7, 32), and this chapter asks how "
+        "often what it promised in the root actually manifests, and at what ages.",
+        ["**All three grades are shown and none is chosen.**"],
+        "How the manifestation is read: the grade, the looking, the confirmation",
+        ["How often, and at what age, III.7, 35-42.", "The grade choice.", "Looking.", "Confirmation."]),
+    "The Ages of Man": (
+        "I.8, 10-26 and Figure 53 (PN IV): Ptolemy's seven ages, ordered by sphere from the lowest upward -- not "
+        "the quadrant scheme of Sahl, On Nativities 3.9.",
+        [],
+        "How the spans are counted",
+        ["The spans, I.8, 9.", "The Moon's 4, a witness."]),
+    "Chronocrator Matrix": (
+        "Two rows: the lord of the year by annual profection, and the Egyptian bound lord of the Ascendant "
+        "directed symbolically at one degree per year -- which is not a distribution, as its label says.",
+        ["**An approximation, by the author's own grading.** Abu Ma'shar names the shortcut himself and grades it"],
+        None, []),
+    "Planetary years": (
+        "The lesser, middle, greater and mighty years and the fardar of each planet, beside its placement, the "
+        "grade On Nativities 1.20, 7-34 would give it as house-master (placed by the division, the **power** "
+        "unit) and what On Times 4, 7 -- a question-chart rule, 4, 2 -- would give it, for comparison.",
+        ["**Applied to one planet only:** the house-master The releaser page names from On Nativities 1.15"],
+        None, []),
+}
+
+
+@pytest.mark.parametrize("title", list(FARDAR_BLOCKS))
+def test_each_fardar_block_has_its_tooltip_visible_text_and_headed_notes(fardar_page, title):
+    tooltip, visible, label, sections = FARDAR_BLOCKS[title]
+    at = fardar_page
+    assert _heading(at, title).help == tooltip
+    assert len(tooltip) <= 300
+    shown = _visible_markdowns(at)
+    for opening in visible:
+        assert any(m.startswith(opening) for m in shown), opening
+    if label:
+        exp = _expander(at, label)
+        assert exp.icon == NOTES_EXPANDER_ICON
+        assert _headings_in(exp) == [f"**{s}**" for s in sections]
+        assert not exp.dataframe
+
+
+def test_the_direction_units_keep_their_three_tables_with_separate_notes(fardar_page, engine):
+    at = fardar_page
+    captions = [c.value for c in at.main.caption]
+    assert "The three cases do not stand alike." in captions
+    assert "An idealised year of twelve 30-day months (fn 17)." in captions
+    exp = _expander(at, "How a degree is directed, and what it is worth")
+    assert _headings_in(exp) == ["**By position, III.1, 12.**", "**By level of chart, III.1, 6.**",
+                                 "**The rate ladder, III.1, 13.**"]
+    md = _markdowns(exp)
+    assert md[1].startswith("The **Ascendant** and the **meridian** are the distributions on the Revolutions page")
+    assert md[1].endswith("; no other ascension is substituted.")
+    for r in engine["PN4_UNIT_ROWS"]:
+        assert f"- {r['Directed in the']}: a degree is {r['A degree is']}" in md[3]
+    assert md[5].startswith("The bottom rung is **25 thirds**")
+    checkbox = next(c for c in at.main.checkbox if c.key == "life_lords_ascendant")
+    assert checkbox.help == ("Some software divides the life by the lords of the **Ascendant's** triplicity. The rows "
+                             "are shown only so the difference can be seen.")
+
+
+def test_the_scope_index_names_each_items_state_with_correction_9b(fardar_page):
+    at = fardar_page
+    kids = list(at.main.children.values())
+    statuses = [n for n in kids if getattr(n, "type", None) == "status"]
+    assert [n.label for n in statuses[-2:]] == ["What Persian Nativities IV does not settle", "Sources and editorial notes"]
+    assert statuses[-2].icon == ":material/help:" and statuses[-1].icon == NOTES_EXPANDER_ICON
+    # The two foot expanders are the page's last elements, and no
+    # dataframe stands after the help-icon one.
+    assert kids[-2:] == statuses[-2:]
+    assert not statuses[-2].dataframe and not statuses[-1].dataframe
+    md = _markdowns(statuses[-2])
+    assert md[0].startswith("The Prediction pages leave these items open.")
+    index = md[1]
+    assert index.startswith("| Topic | State |")
+    rows = [ln for ln in index.split("\n") if ln.startswith("| ") and not ln.startswith("| Topic")]
+    assert [r.split(" | ")[0][2:] for r in rows] == [
+        "The releaser and the house-master", "Where the greater years are granted",
+        "Directing anything that is not the Ascendant or the meridian", "Revolutions of the day and the hour",
+        "The unit of a directed degree by sign type, strength or planet", "The Indian rule for the lord of the year"]
+    assert "displayed, row by row, and not applied to Sahl's grant" in rows[0]
+    assert "not implemented" in rows[3] and "Source silence" in rows[4]
+    headings = _headings_in(statuses[-2])
+    assert headings == ["**The releaser and the house-master.**", "**Where the greater years are granted.**",
+                        "**Directing anything that is not the Ascendant or the meridian.**",
+                        "**Revolutions of the day and the hour.**",
+                        "**The unit of a directed degree by sign type, strength or planet.**",
+                        "**The Indian rule for the lord of the year.**"]
+    text = "\n".join(md)
+    # Correction 9b: Abu 'Ali's modifiers are displayed and not applied, never "not built here".
+    assert ("Al-Qabisi's choice is stated in that text, not built here; Abu 'Ali's additions and subtractions are "
+            "displayed, row by row, and not applied to Sahl's grant; the choice stays Sahl's.") in text
+    assert "Both are stated in those texts, not built here" not in text
+    assert "Both are stated in those texts, not built here" not in ui_source()
+    editorial = _headings_in(statuses[-1])
+    assert editorial == ["**The rate ladder's bottom rung, and the fardar order.**", "**One printed error is not reproduced.**",
+                         "**The lord of the year is the lord of the sign of the year.**",
+                         "**Figure 146, On Times 4, 7 and On Nativities 1.20, 10-17.**"]
+
+
+def test_the_fardar_page_has_no_text_over_its_ceiling():
+    from test_text_lengths_2026_09_17 import offenders
+    src = ui_source()
+    start = src.index("def page_fardar():")
+    end = src.index("def page_sources():")
+    first_line = src[:start].count("\n") + 1
+    last_line = src[:end].count("\n") + 1
+    assert not [o for o in offenders() if first_line <= o[1] <= last_line]

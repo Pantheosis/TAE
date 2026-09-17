@@ -53,18 +53,8 @@ KEY_LENGTH = 48
 ALLOWED_LONG = (
     # help
     'LMT (local mean time) for charts before standard',
-    'Sahl, On Nativities 2.11, 1-2 (Theophilus; fn 14',
-    'Some software divides the life by the lords of t',
-    'IV.1, 2-4: the years are Sun 10, Venus 8, Mercur',
-    'A planet may distribute or manage more than once',
-    "I.8, 10-26 and Figure 53 (PN IV): Ptolemy's seve",
-    'Two rows: the lord of the year by annual profect',
-    'The lesser, middle, greater and mighty years and',
     # glance
     # caption
-    'The three cases do not stand alike. The **Ascend',
-    "The three lords of the sect light's triplicity (",
-    '**All three grades are shown and none is chosen.',
 )
 
 
