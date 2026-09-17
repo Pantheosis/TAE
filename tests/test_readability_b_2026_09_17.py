@@ -526,3 +526,81 @@ def test_the_condition_block_names_the_dignities_and_places_page_and_the_page_sa
                  "EQUAL DAYLIGHT", "DEGREES:", "AFFINITY:", "ORDERED SEQUENCE", "REVOKING (117)", "RESISTANCE (118)", "ESCAPE (119)",
                  "candidate NEAREST", "more DISTANT"):
         assert caps not in page, caps
+
+
+# --- Reference tables -------------------------------------------------------
+
+def _reference(depth=READING_DEPTHS[0]):
+    at = make_app(page="reference")
+    at.session_state["_reading_depth"] = depth
+    at.run()
+    assert_no_exception(at, "reference")
+    return at
+
+
+def test_the_reference_page_keeps_its_headings_and_moves_the_long_captions_into_headed_notes():
+    at = _reference()
+    assert [h.value for h in at.main.subheader] == ["Dignities by sign", "Egyptian bounds",
+                                                    "Orders of the dignities, and the good places",
+                                                    "Planetary years", "Degrees of nobility and rank", "The Ages of Man"]
+    captions = [c.value for c in at.main.caption]
+    assert any(c.startswith("Sources: Sahl, The Introduction Ch. 1;") and c.endswith("against the 15th.") for c in captions)
+    assert "Gr. Intr. VII.8, Figure 146; the fardar periods PN IV IV.1, 2." in captions
+    assert not any("Triplicity lords are Dorothean" in c or "Sahl's figure prints bare degrees" in c
+                   or c.startswith("Printed order (manuscripts") for c in captions)
+    md = _markdown(at)
+    for section in ("**The triplicity lords.**", "**The faces.**", "**The seven praised places' printed order.**",
+                    "**Two constructions of the middle years.**", "**The witnesses, kept apart.**",
+                    "**Four witnesses, and three against.**", "**A variant not adopted.**",
+                    "**The ordinal span, and the editor's endpoint reading.**", "**The distinct source lists.**"):
+        assert section in md, section
+    text = "\n".join(md)
+    assert "Triplicity lords are Dorothean (Gr. Intr. V.14, 6-9; Figure 53 (Gr. Intr.));" in text
+    assert "Faces are read at 5, 15 and 25 degrees of each sign." in md
+    assert "as this app holds them" in _heading(at, "Dignities by sign").help
+    assert "this app directs by" in _heading(at, "Egyptian bounds").help
+
+
+def test_the_seven_place_note_is_the_engine_constant_whole(engine):
+    at = _reference()
+    assert engine["SEVEN_PLACE_RANKING_NOTE"] in _markdown(at)
+
+
+def test_the_planetary_years_state_the_convention_above_the_table_and_compare_the_witnesses_in_a_table():
+    at = _reference()
+    block = _between(at, "Planetary years", "Degrees of nobility and rank")
+    assert [k for k, _ in block][:4] == ["markdown", "dataframe", "caption", "status"], block
+    assert block[0][1] == ("**The middle years, this app's convention.** This app keeps 39 1/2, the Arabic Great Introduction's, "
+                           "the table it reads for the rest of the row.")
+    assert block[3][1] == "Why the middle years differ"
+    assert [i for l, i in _statuses(at) if l == "Why the middle years differ"] == [NOTES_EXPANDER_ICON]
+    md = _markdown(at)
+    table = [m for m in md if m.startswith("| Construction | The luminaries' middle years | Witnesses |")][0]
+    rows = re.findall(r"^\| ([^|]+?) \| ([^|]+?) \| ([^|]+?) \|$", table, re.M)[1:]
+    assert [(c, v) for c, v, _ in rows] == [("(least + great/2)/2", "39 1/2 for both"),
+                                            ("The ordinary mean", "the Sun 69 1/2 and the Moon 66 1/2")]
+    assert rows[0][2].startswith("Valens VII.5; Gr. Intr. VII.8, 3-8 with Figure 146; Abu Bakr, On Nativities I.16")
+    assert rows[1][2].startswith("Masha'allah, Book of Aristotle III.1.8; Abu 'Ali al-Khayyat, Judgments of Nativities Ch. 4")
+    text = "\n".join(md)
+    assert ("which Valens VII.5 states outright:\n\n> \"The sun has half of 120 years and hence receives 60; its minimum period is 19. "
+            "The total is 79, half of which is 39 years, 6 months.\"\n\nThe Moon's is the same, half of 108 with 25, 79 halved.") in text
+    assert "So the luminaries' 39 1/2 has four witnesses in hand -- Valens VII.5;" in text
+    assert "Valens's Venus is a complete period of 84 (half 46), not Figure 146's 82 -- a variant not adopted." in md
+
+
+@pytest.mark.parametrize("depth", READING_DEPTHS)
+def test_the_nobility_degrees_state_the_ordinal_convention_above_the_table_and_the_rest_in_two_sections(depth):
+    at = _reference(depth)
+    block = _between(at, "Degrees of nobility and rank", "The Ages of Man" if depth == READING_DEPTHS[0]
+                     else "The natures of the planets (Gr. Intr. IV.1)")
+    assert [k for k, _ in block][:3] == ["markdown", "dataframe", "status"], block
+    assert block[0][1] == ("**This app's ordinal-degree convention.** Sahl's figure prints bare degrees, read here as ordinals -- "
+                           "how Abu Ma'shar's Figure 64 prints the same rule's degrees.")
+    md = _markdown(at)
+    span = [m for m in md if m.startswith("Dykes resolves the ordinal to a point:")][0]
+    assert span.endswith("the point at which the ordinal span tested here (18° to 19° for the nineteenth) ends.")
+    lists = [m for m in md if m.startswith("Al-Qabisi's own table of the same rule")][0]
+    if depth == READING_DEPTHS[1]:
+        assert lists.endswith("six of the eight disagreeing; the text reconciles none of it.")
+    else:
+        assert lists.endswith("Course text and supplement lays it beside this one.")

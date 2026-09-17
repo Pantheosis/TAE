@@ -5792,7 +5792,7 @@ def page_reference():
 
     st.subheader("Dignities by sign",
                  help="Domicile, exaltation, the three triplicity lords (day, night, participating) "
-                      "and the three faces of each sign, as the app holds them. The exaltation degrees are "
+                      "and the three faces of each sign, as this app holds them. The exaltation degrees are "
                       "the standard scheme (Gr. Intr. V.5, Figure 38) and are printed only here.")
     rows = []
     for i, sign in enumerate(SIGN_ORDER):
@@ -5807,13 +5807,17 @@ def page_reference():
     st.dataframe(pd.DataFrame(rows), hide_index=True, width='stretch', height=_rows_height(12))
     st.caption("Sources: Sahl, The Introduction Ch. 1; the exaltation degrees Gr. Intr. V.5 (Figure 38), the standard "
                "scheme -- Hermes's (V.7, Figure 39) differ only for Jupiter and Mercury, the 16th degree of Cancer and "
-               "of Virgo against the 15th. "
-               "Triplicity lords are Dorothean (Gr. Intr. V.14, 6-9; Figure 53 (Gr. Intr.)); Virgo's partner is "
-               "Mercury 'in preference to' Mars (V.14, 7; fn 100). Faces are read at 5, 15 and 25 degrees of each sign.")
+               "of Virgo against the 15th.")
+    _notes_expander(NOTES_TITLE, [
+        ("The triplicity lords.",
+         "Triplicity lords are Dorothean (Gr. Intr. V.14, 6-9; Figure 53 (Gr. Intr.)); Virgo's partner is "
+         "Mercury 'in preference to' Mars (V.14, 7; fn 100)."),
+        ("The faces.", "Faces are read at 5, 15 and 25 degrees of each sign."),
+    ])
 
     st.subheader("Egyptian bounds",
                  help="The bounds every distribution on the Prediction pages runs through (III.1, 11). The "
-                      "same table the app directs by; pinned against four independent witnesses.")
+                      "same table this app directs by; pinned against four independent witnesses.")
     bound_rows = []
     for sign in SIGN_ORDER:
         row, start = {'Sign': sign}, 0
@@ -5830,27 +5834,51 @@ def page_reference():
                  hide_index=True, width='stretch')
     st.dataframe(pd.DataFrame([{'Scheme': k, 'Places': (', '.join(f"{g}: {p}" for g, p in v.items()) if isinstance(v, dict) else str(v))}
                                for k, v in GOOD_PLACE_SCHEMES.items()]), hide_index=True, width='stretch')
-    st.caption(SEVEN_PLACE_RANKING_NOTE)
+    # The engine's own note on the printed order, whole, under a heading.
+    _notes_expander(NOTES_TITLE, [("The seven praised places' printed order.", SEVEN_PLACE_RANKING_NOTE)])
 
     st.subheader("Planetary years",
                  help="The lesser, middle, greater and mighty years of each planet, with the "
                       "fardar period (PN IV IV.1, 2). A reference table: the one grant of years this app makes, "
                       "the house-master's from On Nativities 1.20, is on The releaser page.")
     years = reference_planetary_years_rows()
+    with _prose():
+        st.markdown("**The middle years, this app's convention.** This app keeps 39 1/2, the Arabic Great Introduction's, "
+                    "the table it reads for the rest of the row.")
     st.dataframe(pd.DataFrame(years), hide_index=True, width='content', height=_rows_height(len(years)))
-    st.caption("Gr. Intr. VII.8, Figure 146; the fardar periods PN IV IV.1, 2. The "
-               "middle years use two constructions, the ordinary mean for the planets and (least + great/2)/2 "
-               "for the luminaries, which Valens VII.5 states outright: \"The sun has half of 120 years and hence "
-               "receives 60; its minimum period is 19. The total is 79, half of which is 39 years, 6 months.\" "
-               "The Moon's is the same, half of 108 with 25, 79 halved. So the luminaries' 39 1/2 has four "
-               "witnesses in hand -- Valens VII.5; Gr. Intr. VII.8, 3-8 with Figure 146; Abu Bakr, On Nativities I.16, the same "
-               "construction in prose (half the greater years added to the lesser, the sum halved); PN IV I.8, 12, "
-               "the Moon's 4 as a tenth of her middle years -- and three against it that take the ordinary mean, "
-               "the Sun 69 1/2 and the Moon 66 1/2: Masha'allah, Book of Aristotle III.1.8; Abu 'Ali al-Khayyat, "
-               "Judgments of Nativities Ch. 4; and the Latin Great Introduction's table of the years as Dykes prints "
-               "it (ITA VII.2, Figure 108). This app keeps 39 1/2, the Arabic Great Introduction's, the table it "
-               "reads for the rest of the row. Valens's Venus is a complete period of 84 (half 46), not Figure "
-               "146's 82 -- a variant not adopted.")
+    st.caption("Gr. Intr. VII.8, Figure 146; the fardar periods PN IV IV.1, 2.")
+    # The two constructions and their witnesses at the page's width, each
+    # witness under its own construction and no consensus drawn; the
+    # sentences the table was built from stand whole beneath it.
+    with st.expander("Why the middle years differ", icon=NOTES_ICON):
+        with _prose():
+            st.markdown("**Two constructions of the middle years.**")
+            st.markdown("The middle years use two constructions, the ordinary mean for the planets and (least + great/2)/2 "
+                        "for the luminaries, which Valens VII.5 states outright:\n\n> \"The sun has half of 120 years and hence "
+                        "receives 60; its minimum period is 19. The total is 79, half of which is 39 years, 6 months.\"\n\n"
+                        "The Moon's is the same, half of 108 with 25, 79 halved.")
+            st.markdown("**The witnesses, kept apart.**")
+        st.markdown(
+            "| Construction | The luminaries' middle years | Witnesses |\n"
+            "|---|---|---|\n"
+            "| (least + great/2)/2 | 39 1/2 for both | Valens VII.5; Gr. Intr. VII.8, 3-8 with Figure 146; Abu Bakr, On Nativities I.16, "
+            "the same construction in prose (half the greater years added to the lesser, the sum halved); PN IV I.8, 12, "
+            "the Moon's 4 as a tenth of her middle years |\n"
+            "| The ordinary mean | the Sun 69 1/2 and the Moon 66 1/2 | Masha'allah, Book of Aristotle III.1.8; Abu 'Ali al-Khayyat, "
+            "Judgments of Nativities Ch. 4; the Latin Great Introduction's table of the years as Dykes prints it (ITA VII.2, Figure 108) |")
+        _note_sections([
+            ("Four witnesses, and three against.",
+             "So the luminaries' 39 1/2 has four "
+             "witnesses in hand -- Valens VII.5; Gr. Intr. VII.8, 3-8 with Figure 146; Abu Bakr, On Nativities I.16, the same "
+             "construction in prose (half the greater years added to the lesser, the sum halved); PN IV I.8, 12, "
+             "the Moon's 4 as a tenth of her middle years -- and three against it that take the ordinary mean, "
+             "the Sun 69 1/2 and the Moon 66 1/2: Masha'allah, Book of Aristotle III.1.8; Abu 'Ali al-Khayyat, "
+             "Judgments of Nativities Ch. 4; and the Latin Great Introduction's table of the years as Dykes prints "
+             "it (ITA VII.2, Figure 108)."),
+            ("A variant not adopted.",
+             "Valens's Venus is a complete period of 84 (half 46), not Figure "
+             "146's 82 -- a variant not adopted."),
+        ])
 
     st.subheader("Degrees of nobility and rank",
                  help="Sahl, On Nativities 1.38, 39-41 and Figure 57 of his volume: the degrees in which, with the "
@@ -5861,17 +5889,24 @@ def page_reference():
     if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
         for row in _nob_rows:
             row["Abu Ma'shar (Gr. Intr. V.22, 4)"] = ', '.join(str(d) for d in ELEVATION_DEGREES.get(row['Sign'], [])) or '-'
+    with _prose():
+        st.markdown("**This app's ordinal-degree convention.** Sahl's figure prints bare degrees, read here as ordinals -- "
+                    "how Abu Ma'shar's Figure 64 prints the same rule's degrees.")
     st.dataframe(pd.DataFrame(_nob_rows), hide_index=True, width='content', height=_rows_height(12))
-    st.caption("Sahl\'s figure prints bare degrees, read here as ordinals -- how Abu Ma\'shar\'s Figure 64 prints the same rule\'s degrees. "
-               "Dykes resolves the ordinal to a point: on the inconsistency between cardinal and ordinal numbers in "
-               "these tables his sense is that the authors meant the end of the nineteenth degree, that is 19° (ITA I.3 "
-               "fn 23), the point at which the ordinal span tested here (18° to 19° for the nineteenth) ends. Al-Qabisi\'s own table of the same rule "
-               "(al-Qabisi I.53, ITA VII.9, Figure 118) is a third list, printed as ordinals and disagreeing with both "
-               "Sahl\'s and Abu Ma\'shar\'s; it is not tabled here. "
-               + ("Abu Ma'shar's column is the supplement's: the same rule, stated at V.22, 4 with Figure 64's table, "
-                  "twelve signs to Sahl's eight, six of the eight disagreeing; the text reconciles none of it."
-                  if READING_DEPTH == READING_DEPTH_OPTIONS[1] else
-                  "Abu Ma'shar states the same rule with a table of his own; Course text and supplement lays it beside this one."))
+    _notes_expander(NOTES_TITLE, [
+        ("The ordinal span, and the editor's endpoint reading.",
+         "Dykes resolves the ordinal to a point: on the inconsistency between cardinal and ordinal numbers in "
+         "these tables his sense is that the authors meant the end of the nineteenth degree, that is 19° (ITA I.3 "
+         "fn 23), the point at which the ordinal span tested here (18° to 19° for the nineteenth) ends."),
+        ("The distinct source lists.",
+         "Al-Qabisi's own table of the same rule "
+         "(al-Qabisi I.53, ITA VII.9, Figure 118) is a third list, printed as ordinals and disagreeing with both "
+         "Sahl's and Abu Ma'shar's; it is not tabled here. "
+         + ("Abu Ma'shar's column is the supplement's: the same rule, stated at V.22, 4 with Figure 64's table, "
+            "twelve signs to Sahl's eight, six of the eight disagreeing; the text reconciles none of it."
+            if READING_DEPTH == READING_DEPTH_OPTIONS[1] else
+            "Abu Ma'shar states the same rule with a table of his own; Course text and supplement lays it beside this one.")),
+    ])
 
     if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
         st.subheader("The natures of the planets (Gr. Intr. IV.1)",

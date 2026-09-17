@@ -110,9 +110,6 @@ ALLOWED_LONG = (
     'The three cases do not stand alike. The **Ascend',
     "The three lords of the sect light's triplicity (",
     '**All three grades are shown and none is chosen.',
-    'Sources: Sahl, The Introduction Ch. 1; the exalt',
-    'Gr. Intr. VII.8, Figure 146; the fardar periods ',
-    "Sahl's figure prints bare degrees, read here as ",
 )
 
 
