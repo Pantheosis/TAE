@@ -1801,7 +1801,7 @@ CHALDEAN_ORDER = ['Mars', 'Sun', 'Venus', 'Mercury', 'Moon', 'Saturn', 'Jupiter'
 # essential dignities at a degree: a planet's own score, the prenatal
 # syzygy's almuten, and the newer victor scheme (al-Qabisi / Abu Ma'shar,
 # triplicity above bound). Stated by al-Qabisi I.22 (ITA I.18, p. 81):
-# domicile 5, exaltation 4, triplicity 3, bound 2, face 1 (OCR, unverified).
+# domicile 5, exaltation 4, triplicity 3, bound 2, face 1 (ITA printed p. 81, read against the photograph 2026-09-17).
 # The older victor scheme swaps bound and triplicity and is written out at
 # VICTOR_WEIGHTS.
 ESSENTIAL_DIGNITY_WEIGHTS = {'domicile': 5, 'exaltation': 4, 'triplicity': 3, 'term': 2, 'face': 1}
@@ -5894,7 +5894,7 @@ ANGLE_CUSP_INDICES = (0, 3, 6, 9)  # the four stakes, in swe.houses order
 # the all-cusps form was retired the same day; the constant stays for the
 # `angles_only` parameter's default and is no longer a reading. A primary
 # text of ANOTHER author reads the phrase literally: al-Qabisi IV.4 (ITA
-# VIII.1.3, p. 355; OCR, unverified), inside his own releaser procedure,
+# VIII.1.3, printed p. 355, read against the photograph 2026-09-17), inside his own releaser procedure,
 # "every planet which was before the degree of the Ascendant or any house by
 # five equal degrees and less, its strength will be valid in the house which
 # follows it" -- and ITA's Introduction §6 (p. 12) gives the all-cusps form
@@ -5911,7 +5911,7 @@ def get_effective_house(longitude, cusps, angles_only=None):
 
     MEASURED IN ECLIPTIC LONGITUDE -- a text's own unit, not a choice
     alone: al-Qabisi IV.4 states the rule "by five equal degrees" (ITA
-    VIII.1.3, p. 355; OCR, unverified), and "equal degrees" is the Great
+    VIII.1.3, printed p. 355, read against the photograph 2026-09-17), and "equal degrees" is the Great
     Introduction's term for ecliptic measure (ITA VI.1.1 fn 2, p. 281).
     Against it, Dykes' note on Fifty Aphorisms #44 says the five degrees
     are reckoned "AS MEASURED IN DIURNAL MOTION, hence Sahl's reference to
@@ -6013,7 +6013,7 @@ def calculate_prenatal_syzygy(jd_natal, lat, lon, natal_houses):
       moment). When both or neither is above the earth the Moon's degree
       is taken (FINAL-A6, 2026-09-11, when the line here said "per medieval
       practice" and cited nothing). Since 2026-09-15 the choice has its
-      text: al-Qabisi IV.3 (ITA VIII.1.2, p. 352; OCR, unverified) reports
+      text: al-Qabisi IV.3 (ITA VIII.1.2, printed p. 352, read against the photograph 2026-09-17) reports
       three opinions on the fullness's degree -- Ptolemy's, "the degree of
       the luminary which was above the earth"; "certain ones of the
       sages'", when one luminary is on the eastern degree and the other on
@@ -6095,7 +6095,7 @@ def calculate_prenatal_syzygy(jd_natal, lat, lon, natal_houses):
     # dignities ruling this degree (only the sect-appropriate triplicity
     # lord counts, not the Participating ruler, matching standard almuten
     # scoring). The course's technique; the weights are al-Qabisi's, ITA
-    # I.18 (al-Qabisi I.22, p. 81; OCR, unverified): "the Lord of a domicile
+    # I.18 (al-Qabisi I.22, printed p. 81, read against the photograph 2026-09-17): "the Lord of a domicile
     # has five strengths, and the Lord of the exaltation four, and the Lord
     # of the triplicity three, and the Lord of the bound two, and the Lord
     # of the face one", fn 210 "only the primary triplicity Lord receives
@@ -6169,11 +6169,11 @@ def calculate_prenatal_syzygy(jd_natal, lat, lon, natal_houses):
 # planets, declared (Gr. Intr. VII.2, 4 names her right and left, not
 # "eastern"; al-Qabisi III.8a, ITA II.10.1 p. 98, states the bridge: the
 # superiors from the rays to the opposition "are called 'eastern' and
-# 'right'", OCR, unverified -- 3.16). Every condition read in the NATAL
+# 'right'", printed p. 98, read against the photograph 2026-09-17 -- 3.16). Every condition read in the NATAL
 # chart, declared. Al-Qabisi's own tie-breaks for his governor (IV.5, ITA
 # VIII.1.3 p. 356: equal claimants that all aspect, "the one which was
 # stronger in [its own] place"; equal there, "the one which was closer to
-# the degree of the releaser", OCR, unverified) are a different technique of
+# the degree of the releaser", printed p. 356, read against the photograph 2026-09-17) are a different technique of
 # a different author, named in SAHL_1_7_UNMODELLED and not borrowed
 # (decision 15).
 SAHL_1_7_LOOKING_SIGN_COUNTS = (0, 2, 3, 4, 6)   # the same sign or a whole-sign aspect to it
@@ -7433,7 +7433,7 @@ def evaluate_nobility_degrees(planetary_data, ascendant_lon, sect):
 # motion. The text gives moments, not spans: a phase here runs from its own
 # degree to the next one's, and the boundaries the text does not give are
 # Abu Ma'shar's markers of the Moon's phases applied to Valens's phases --
-# Abbr. II.27-31 in ITA II.10.5 (p. 108; OCR, unverified): the conjunction,
+# Abbr. II.27-31 in ITA II.10.5 (printed p. 108 with Figure 52, read against the photograph 2026-09-17): the conjunction,
 # "if she receded from him by 12°", 90°, "distant from the opposite of the
 # Sun by 12°", the opposition, "if she would add 12° on top of the
 # opposite", 90°, "distant from the Sun by 12°". Used: 12 degrees after the
@@ -10154,13 +10154,13 @@ def planets_in_houses_cell(wsh_house, planet, half):
 # luminaries as an error.
 # NOT CLOSED BY THAT: the witnesses split four and three. For 39 1/2 --
 # Valens VII.5 (Riley, read 2026-09-15); Gr. Intr. VII.8, 3-8 with Figure 146 (the 2020 Arabic volume, photographed);
-# Abu Bakr, On Nativities I.16 (PDF p. 159; OCR, unverified: "by the halving
+# Abu Bakr, On Nativities I.16 (PN II printed p. 133, read against the photograph 2026-09-16: "by the halving
 # of their greater years and the addition of their lesser years, and the
 # halving of all of them assembled together"); the course's table; PN IV
 # I.8, 12 is Abu Ma'shar again. For the ordinary mean, Sun 69 1/2 / Moon
-# 66 1/2 -- Masha'allah, Book of Aristotle III.1.8 (PN I pdf p. 105; OCR,
-# unverified); Abu 'Ali, Judgments of Nativities Ch. 4 (pdf p. 279; OCR,
-# unverified); the Latin Gr. Intr. Figure 108 as ITA VII.2 prints it (p. 332,
+# 66 1/2 -- Masha'allah, Book of Aristotle III.1.8 (PN I printed p. 60, the years table, read against the photograph 2026-09-16);
+# Abu 'Ali, Judgments of Nativities Ch. 4 (PN I printed p. 235, read against the photograph 2026-09-16);
+# the Latin Gr. Intr. Figure 108 as ITA VII.2 prints it (p. 332,
 # read on the page by the owner). Dykes calls 69 1/2 "traditional" at PN II
 # fn 625. Owner's decision of 2026-09-15 (reconciliation decision 1, as
 # recommended): keep 39 1/2, and say all six on the Reference page.
@@ -11061,7 +11061,7 @@ def pn4_distribution_at_age(segments, age_years):
 # whole signs"); and the dispatch is Dykes's own published proposal, ITA
 # Introduction §6, pp. 15-20 ("(1) adopt whole signs for topics; ... (3)
 # apply Nechepso's eight-place scheme to quadrant-based dynamical
-# divisions", OCR, unverified), so the page cites him (3.7, 2026-09-15).
+# divisions", ITA Introduction printed pp. 19-20, read against the photograph 2026-09-17), so the page cites him (3.7, 2026-09-15).
 # Al-Qabisi IV.4 (ITA VIII.1.3) uses quadrant houses in his own releaser
 # procedure with the five degrees at "any house" -- named on the tab as a
 # different author's method (decisions 2 and 17). The corpus's own
@@ -11140,7 +11140,7 @@ SAHL_DIGNITY_RANK = ('bound', 'house', 'exaltation', 'triplicity', 'face')   # 1
 # stake-or-succedent class of 1.15, 11 as reading 6); Dykes says the seven
 # are the busy places of Timaeus and Dorotheus, which Sahl "explicitly uses"
 # in Introduction §4 (ITA III.4 comment, p. 121) and Dorotheus calls "good"
-# and "strong" (ITA Introduction §6, p. 18) (OCR, unverified; 3.17). Counted by WHOLE-SIGN
+# and "strong" (ITA Introduction §6, p. 18) (ITA printed p. 121 and the Introduction's §6 pp. 15-18, read against the photograph 2026-09-17; 3.17). Counted by WHOLE-SIGN
 # PLACE: topic language, the canon of 2026-09-11. Owner, decision sheet row
 # 12 (REL-2-6), corroborated blind (astra_2026-09-11/1.15_readings_ruling Q2).
 SAHL_GOOD_PLACES = (1, 10, 7, 4, 11, 9, 5)
@@ -11614,7 +11614,7 @@ SAHL_1_30_22 = "Then, look at the position of the Moon on the third day, the sev
 # Two days, the birth day counted as the first. The witness is Firmicus's
 # worked chart: in the nativity of Albinus (Mathesis II.29, 21-22, 34; Figure
 # 34 -- Mar 14 303 AD JC, 10:43:13 PM LMT, Rome, the Moon 14 58' Cancer, Mars
-# 11 18' Aquarius) "on the third day the Moon, being established in Leo, full
+# 11 15' Aquarius) "on the third day the Moon, being established in Leo, full
 # of light, flung herself into the rays of Mars" (II.29, 34; III.14, 17-19).
 # By the ephemeris the Moon is at 0 Leo one day after the birth (168 from
 # Mars), 14 Leo two days after (182, on his opposition ray), 29 Leo three
