@@ -479,12 +479,18 @@ def test_the_strength_and_weakness_rows_carry_their_testimonies(analysis):
 
 
 def test_the_timing_bundles_tables_are_under_the_pages_own_headings(analysis):
-    at = make_app(page="timing").run()
-    assert_no_exception(at, "timing")
-    on_page = {heading for heading, _cols in table_inventory(at)}
+    """The export's Timing section keeps its name and its headings; since
+    2026-09-17 the pages that render them are four (Timing, The releaser,
+    Days and months, Fardar and ages), so the headings are gathered from
+    all four."""
+    on_page = set()
+    for page in ("timing", "releaser", "days", "fardar"):
+        at = make_app(page=page).run()
+        assert_no_exception(at, page)
+        on_page |= {heading for heading, _cols in table_inventory(at)}
     exported = set(analysis["results"]["Timing"])
     missing = exported - on_page
-    assert not missing, f"the export names headings the Timing page does not render: {sorted(missing)}"
+    assert not missing, f"the export names headings the Prediction pages do not render: {sorted(missing)}"
     assert len(exported) > 20
 
 

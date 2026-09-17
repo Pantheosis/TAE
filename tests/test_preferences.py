@@ -133,7 +133,8 @@ def test_option_values_renamed_by_the_citation_convention_still_load(prefs_on):
     _prefs_path().parent.mkdir(parents=True)
     _prefs_path().write_text(json.dumps({"_pn4_monthly_turn": "Abu Ma'shar IX.1, 26-34",
                                          "_wheel_order": "Revolution inside (Abu Ma'shar, I.6)"}))
-    at = make_app(page="timing").run()
+    # The monthly turn's radio stands on Days and months since 2026-09-17.
+    at = make_app(page="days").run()
     assert_no_exception(at, "renamed options")
     assert at.session_state["_pn4_monthly_turn"] == "PN IV IX.1, 26-34"
     assert at.session_state["_wheel_order"] == "Revolution inside (Abu Ma'shar's order, PN IV I.6)"

@@ -41,7 +41,8 @@ LAYOUTS = ["Square", "Wide"]
 # first tab, after that tab's own subheader and table. The Timing page's
 # tabs moved from main's sixth child to its seventh when the Sources shown
 # scope line joined the header block (2026-09-16); the path into the tab is
-# unchanged.
+# unchanged by the split of 2026-09-17, which took three tabs to pages of
+# their own and left the year block (subheader, columns) where it stood.
 CHART_FRAGMENT = (2,)
 TIMING_FRAGMENT = (6, 0, 2)
 
@@ -342,8 +343,9 @@ def test_the_timing_fragment_holds_the_subheader_picture_and_controls_only():
 
 
 def test_no_table_on_the_timing_page_is_inside_the_fragment():
-    """The 67 tables are what the fragment exists to stop redrawing, so not
-    one of them may be inside it."""
+    """The page's tables are what the fragment exists to stop redrawing, so
+    not one of them may be inside it (67 until 2026-09-17, when three tabs
+    became pages of their own; the default chart draws 39 now)."""
     at = _at("timing")
     fragment = _node(at, TIMING_FRAGMENT)
 
@@ -353,24 +355,27 @@ def test_no_table_on_the_timing_page_is_inside_the_fragment():
         return n
 
     assert dataframes(fragment) == 0
-    assert dataframes(at.main) > 50, "the page still draws its tables, outside the fragment"
+    assert dataframes(at.main) > 30, "the page still draws its tables, outside the fragment"
 
 
 def test_the_direction_strips_stay_outside_the_timing_fragment():
-    """Six strips are drawn at the top level from WHEEL_THEME, on tabs of
-    their own; only the revolution wheel moved."""
+    """The direction strips are drawn at the top level from WHEEL_THEME,
+    three of them on this page's tabs since 2026-09-17; only the revolution
+    wheel moved into the fragment."""
     at = _at("timing")
     assert len(_images(_node(at, TIMING_FRAGMENT))) == 1
     assert len(_images(at.main)) > 1
 
 
 # --- The leftover: the Planetary years heading ----------------------------
+# On the Fardar and ages page since 2026-09-17 (the Fardar, Ages & Reference
+# Tables tab of the Timing page before that).
 
 def test_the_planetary_years_heading_carries_no_metadata():
     """The one heading the short-headings branch left with its citation and
     its standing inside it. The caption under it reads the way _finding()'s
     own does: the standing, a middle dot, the citation."""
-    at = _at("timing")
+    at = _at("fardar")
     headings = [s.value for s in at.main.get("subheader")]
     assert "Planetary years" in headings
     assert not any("Figure 146" in h for h in headings), headings
@@ -380,9 +385,8 @@ def test_the_planetary_years_heading_carries_no_metadata():
 
 
 def test_the_planetary_years_caption_follows_its_heading():
-    at = _at("timing")
-    tab = _node(at, (6, 5))
-    kids = list(tab.children.values())
+    at = _at("fardar")
+    kids = list(at.main.children.values())
     at_heading = next(i for i, k in enumerate(kids)
                       if type(k).__name__ == "Subheader" and k.value == "Planetary years")
     assert type(kids[at_heading + 1]).__name__ == "Caption"

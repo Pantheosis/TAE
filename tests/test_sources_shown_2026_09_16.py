@@ -28,6 +28,9 @@ SCOPED_PAGES = {
     "configurations": "Configurations",
     "lots": "Lots",
     "timing": "Timing",
+    "releaser": "The releaser",
+    "days": "Days and months",
+    "fardar": "Fardar and ages",
     "reference": "Reference tables",
 }
 # The pages it does not change. Sources is where it is SET, and the Sources

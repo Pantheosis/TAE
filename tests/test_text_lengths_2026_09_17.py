@@ -118,7 +118,7 @@ ALLOWED_LONG = (
     "The point weights are this app's own ranking con",
     ":orange[**Net and Verdict are this app's heurist",
     'Sahl, On Nativities 1.7, 3: "you will know the o',
-    "Every rule on this page comes from Abu Ma'shar, ",
+    'The releaser and the house-master PN IV leaves t',
     "PN IV's own conventions, read from its figures: ",
     'A table, not the wheel of I.6, 1: every point by',
     "Facts from the app's own evaluators, run on the ",
