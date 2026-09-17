@@ -19,7 +19,7 @@ import json
 import pytest
 
 from conftest import (CHARTS, EXECUTABLE_DIR, FLORENCE, LOCAL_TIME,
-                      assert_no_exception, make_app, ui_source)
+                      assert_no_exception, find_table, make_app, ui_source)
 
 # The Moon-Sun row of the default chart is the review's E11: the three
 # columns that appeared to contradict each other, now each naming its own
@@ -134,19 +134,6 @@ def test_no_row_claims_a_completion_the_tests_do_not_decide(engine):
 
 # --- The table as the page renders it ------------------------------------
 
-def _config(at, heading):
-    current = None
-    for node in at.main:
-        kind = getattr(node, "type", None)
-        if kind == "subheader":
-            current = node.value
-        elif kind == "expander" and node.label != "Sources and editorial notes":
-            current = node.label
-        elif kind == "dataframe" and current == heading:
-            return json.loads(node.proto.columns), node
-    raise LookupError(heading)
-
-
 @pytest.fixture(scope="module")
 def configurations():
     at = make_app(page="configurations")
@@ -156,7 +143,7 @@ def configurations():
 
 
 def test_the_rendered_table_carries_the_two_new_headings(configurations):
-    _config_json, node = _config(configurations, "Aspects, aversions and connections")
+    node = find_table(configurations, "Aspects, aversions and connections")
     frame = node.value
     assert "Connecting planet" in frame.columns and "Connection" in frame.columns
     assert "Applying Planet" not in frame.columns and "Connected" not in frame.columns
@@ -169,7 +156,7 @@ def test_the_rendered_table_carries_the_two_new_headings(configurations):
     ("Orientation", "Dexter, Dykes's right"),
 ])
 def test_the_four_columns_define_themselves_on_the_heading(configurations, column, phrase):
-    config, _node = _config(configurations, "Aspects, aversions and connections")
+    config = json.loads(find_table(configurations, "Aspects, aversions and connections").proto.columns)
     assert phrase in config[column]["help"], config[column]["help"]
 
 

@@ -216,22 +216,56 @@ def assert_no_exception(at, context=""):
 
 # --- Table identity -----------------------------------------------------
 
-def table_inventory(at):
-    """Every st.dataframe on the rendered page, in order, as
-    (heading, columns). The heading is the nearest preceding st.subheader
-    or expander label -- a "Sources and editorial notes" expander follows
-    its table and is not a heading for the next one."""
-    inventory = []
+NOTES_EXPANDER_LABEL = "Sources and editorial notes"
+NOTES_EXPANDER_ICON = ":material/menu_book:"
+
+
+def _is_notes_expander(node):
+    """An expander that is a notes panel, not a table heading: labelled
+    "Sources and editorial notes" or carrying the book icon. AppTest
+    builds an expander WITH an icon as a Status node (type "status") and
+    one without as an Expander (type "expander"); both come from the same
+    Expandable proto and both carry .label and .icon, so the walker
+    reads the two types alike. `.icon` is the raw string as passed to
+    st.expander(icon=...), e.g. ":material/menu_book:", not a normalised
+    form (Streamlit 1.62.0)."""
+    if getattr(node, "type", None) not in ("expander", "status"):
+        return False
+    return node.label == NOTES_EXPANDER_LABEL or node.icon == NOTES_EXPANDER_ICON
+
+
+def table_nodes(at):
+    """Every st.dataframe on the rendered page, in order, as (heading,
+    node). The heading is the nearest preceding st.subheader or expander
+    label; a notes expander (see _is_notes_expander) is skipped -- it
+    follows its table, or holds a lookup table of its own, and is not a
+    heading for what comes next."""
+    found = []
     heading = None
     for node in at.main:          # Block.__iter__ walks the tree in order
         kind = getattr(node, "type", None)
         if kind == "subheader":
             heading = node.value
-        elif kind == "expander" and node.label != "Sources and editorial notes":
+        elif kind in ("expander", "status") and not _is_notes_expander(node):
             heading = node.label
         elif kind == "dataframe":
-            inventory.append((heading or "(no heading)", list(node.value.columns)))
-    return inventory
+            found.append((heading or "(no heading)", node))
+    return found
+
+
+def table_inventory(at):
+    """Every st.dataframe on the rendered page, in order, as
+    (heading, columns), keyed as table_nodes() keys them."""
+    return [(heading, list(node.value.columns)) for heading, node in table_nodes(at)]
+
+
+def find_table(at, heading):
+    """The first st.dataframe element under exactly this heading, keyed
+    as table_nodes() keys headings."""
+    for found, node in table_nodes(at):
+        if found == heading:
+            return node
+    raise LookupError(f"no dataframe found under heading {heading!r}")
 
 
 # --- Components ---------------------------------------------------------
