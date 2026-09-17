@@ -53,11 +53,6 @@ KEY_LENGTH = 48
 ALLOWED_LONG = (
     # help
     'LMT (local mean time) for charts before standard',
-    'IX.7, 29: "you look at the degree of the Ascenda',
-    'IX.7, 23: "you look in the revolution of the yea',
-    '"The days and hours have nine indicators" (IX.7,',
-    'IX.1, 35-39. Five are "rooted" -- turned from th',
-    "IX.1, 26-34: Abu Ma'shar turns the monthly indic",
     'Sahl, On Nativities 2.11, 1-2 (Theophilus; fn 14',
     'Some software divides the life by the lords of t',
     'IV.1, 2-4: the years are Sun 10, Venus 8, Mercur',
@@ -67,9 +62,6 @@ ALLOWED_LONG = (
     'The lesser, middle, greater and mighty years and',
     # glance
     # caption
-    'Zodiacal, by the sentence: 59\' 08" a day round t',
-    'The rate. IX.7, 25 prints "12 days, <4 hours>, 1',
-    'A "day" is a whole 24-hour period from the birth',
     'The three cases do not stand alike. The **Ascend',
     "The three lords of the sect light's triplicity (",
     '**All three grades are shown and none is chosen.',

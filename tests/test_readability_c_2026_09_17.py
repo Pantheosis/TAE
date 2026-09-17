@@ -556,3 +556,107 @@ def test_the_releaser_page_has_no_text_over_its_ceiling():
     first_line = src[:start].count("\n") + 1
     last_line = src[:end].count("\n") + 1
     assert not [o for o in offenders() if first_line <= o[1] <= last_line]
+
+
+# --- Days and months -------------------------------------------------------
+
+@pytest.fixture(scope="module")
+def days_page():
+    return _page("days")
+
+
+DAYS_BLOCKS = {
+    "The small days: the revolution's Ascendant distributed round the year": (
+        "A second distribution, running inside the year at its own rate; the Ascendant's distribution on the "
+        "Revolutions page runs across the years.",
+        ["| Method | |"],
+        "How the small days are read",
+        ["The sentences, IX.7, 29-31.", "Zodiacal, by the sentence.", "Source and approximation.",
+         "Read into the sentence.", "The selector, and the worked example."]),
+    "The mighty days: the terminal degree of the year directed through the revolution": (
+        "The profected thirty degrees treated as a year, walked degree by degree.",
+        ["**Applied rate: 12.175 days per degree** -- the author's parenthetical (IX.7, 25)",
+         "The direction does not stop at the end of the sign of the year: it starts at the terminal degree and "
+         "runs thirty degrees, so its last part lies in the bounds of the next sign"],
+        "How the mighty days are read, and why this rate",
+        ["The sentences, IX.7, 23-28.", "Why this rate.", "Zodiacal by construction.", "Read into the sentence.",
+         "The selector, and the worked example."]),
+    "The nine methods for the days and hours (IX.7, 1-72)": (
+        "\"The days and hours have nine indicators\" (IX.7, 1). IX.7, 56: all in equal hours. IX.7, 79 declines "
+        "day and hour charts and keeps these.",
+        ["**The day.** A \"day\" is a whole 24-hour period from the birth moment"],
+        "The nine methods, one by one, and how they are counted",
+        ["The nine methods.", "The hours.", "Methods 8 and 9.", "The example's printed errors, and what is not built."]),
+    "The seven indicators of the month": (
+        "IX.1, 35-39. Five are \"rooted\" -- turned from the positions they hold at the revolution of the year -- "
+        "and two are not, being cast fresh from each monthly revolution.",
+        ["They decrease in universality in the order given (IX.1, 39). The sign of the year is itself month 1"],
+        "The turning rule the radio chooses between",
+        ["Abu Ma'shar's rule, IX.1, 26-32.", "Dykes's reading, the default."]),
+}
+
+
+@pytest.mark.parametrize("title", list(DAYS_BLOCKS))
+def test_each_days_block_has_its_tooltip_visible_text_and_headed_notes(days_page, title):
+    tooltip, visible, label, sections = DAYS_BLOCKS[title]
+    at = days_page
+    assert _heading(at, title).help == tooltip
+    shown = _visible_markdowns(at)
+    for opening in visible:
+        assert any(m.startswith(opening) for m in shown), opening
+    exp = _expander(at, label)
+    assert exp.icon == NOTES_EXPANDER_ICON
+    assert _headings_in(exp) == [f"**{s}**" for s in sections]
+    assert not exp.dataframe
+
+
+def test_the_small_days_method_line_names_start_rate_and_time_origin(days_page):
+    method = next(m for m in _visible_markdowns(days_page) if m.startswith("| Method | |"))
+    assert "| Start | the degree of the Ascendant of the revolution of the year (IX.7, 29) |" in method
+    assert "| Rate | 59' 08\" a day round the zodiac, returning to the degree in 365.28 days |" in method
+    assert "| Time origin | the days count from the moment of the revolution (fn 161 leaves a \"day\" undefined) |" in method
+    box = next(b for b in days_page.main.selectbox if b.key == "pn4_day_point")
+    assert "A **reading**: the \"houses\" are offered" in box.help
+
+
+def test_the_mighty_days_rate_is_the_engines_constant_and_the_three_readings_are_compared(days_page, engine):
+    rate = engine["PN4_MIGHTY_DAYS_PER_DEGREE"]
+    assert f"{rate:g}" == "12.175"
+    exp = _expander(days_page, "How the mighty days are read, and why this rate")
+    why = next(m for m in _markdowns(exp) if m.startswith("| Reading of IX.7, 25 | A degree is |"))
+    for row in ("| The manuscript's 12;10,30 days (10 minutes and 30 seconds as sexagesimal fractions of a day) | 12.175 d |",
+                "| The author's parenthetical, 12 + 1/6 + 1/120 | 12.175 d; thirty of which are 365 1/4 days exactly (IX.7, 28) |",
+                "| Dykes's hybrid, his \"<4 hours>\" supplied and the minutes read as clock time | 12 d 4 h 10 m 30 s (12.17396 d); thirty of them 365 d 5 h 15 m |"):
+        assert row in why, row
+    assert "Three figures stand in that sentence: the manuscript's 12;10,30 days" in why
+    assert why.endswith("**Applied**: the author's parenthetical, 12.175 d a degree.")
+
+
+def test_the_nine_methods_are_listed_one_per_line_with_the_errata(days_page, engine):
+    exp = _expander(days_page, "The nine methods, one by one, and how they are counted")
+    md = _markdowns(exp)
+    methods = [ln for ln in md[1].split("\n") if ln.startswith("- ")]
+    assert [ln[:5] for ln in methods] == ["- 1: ", "- 2: ", "- 3: ", "- 4: ", "- 5: ", "- 6 a", "- 8: ", "- 9: "]
+    errata = md[7]
+    for c, p, e, fn in engine["PN4_IX7_EXAMPLE_ERRATA"]:
+        assert f"- {c} prints {p} for {e} ({fn})" in errata
+    assert errata.endswith("The judgments of IX.7, 21-22 and 40-42 are not built.")
+
+
+def test_the_monthly_turn_radio_keeps_dykes_reading_in_its_help_and_abu_mashars_rule_in_the_notes(days_page):
+    radio = next(r for r in days_page.main.radio if r.key == "pn4_monthly_turn")
+    assert radio.help.startswith("Dykes rejects the whole rule as \"complicated, probably wrong\"")
+    exp = _expander(days_page, "The turning rule the radio chooses between")
+    md = _markdowns(exp)
+    assert "turns the monthly indicators **backwards** when the sign is convertible" in md[1]
+    assert "each indicator's **own** sign, individually" in md[1]
+
+
+def test_the_days_page_has_no_text_over_its_ceiling():
+    from test_text_lengths_2026_09_17 import offenders
+    src = ui_source()
+    start = src.index("def page_days():")
+    end = src.index("def page_fardar():")
+    first_line = src[:start].count("\n") + 1
+    last_line = src[:end].count("\n") + 1
+    assert not [o for o in offenders() if first_line <= o[1] <= last_line]

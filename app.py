@@ -5504,13 +5504,16 @@ def page_days():
     _year_under_examination()
 
     st.subheader("The small days: the revolution's Ascendant distributed round the year",
-                 help="IX.7, 29: \"you look at the degree of the Ascendant of the revolution of the year, so "
-                      "that you direct from it (for the knowledge of the conditions of the days), a day for "
-                      "every 59' 08\", until it returns to the degree of the Ascendant at the end of the "
-                      "year.\" IX.7, 30: a body or ray already in the bound of that degree manages until "
-                      "another meets it; otherwise the bound lords, until a planet or ray is reached. IX.7, 31 "
-                      "names it the small days. A second distribution, running inside the year at its own "
+                 help="A second distribution, running inside the year at its own "
                       "rate; the Ascendant's distribution on the Revolutions page runs across the years.")
+    # The method in one line -- start, rate, time origin -- from the
+    # sentences the notes hold whole.
+    with _prose():
+        st.markdown("| Method | |\n"
+                    "|---|---|\n"
+                    "| Start | the degree of the Ascendant of the revolution of the year (IX.7, 29) |\n"
+                    "| Rate | 59' 08\" a day round the zodiac, returning to the degree in 365.28 days |\n"
+                    "| Time origin | the days count from the moment of the revolution (fn 161 leaves a \"day\" undefined) |")
     # IX.7, 31 / 27: the same two directions from any planet, house or Lot (order PN4R-4c-4)
     _sr_pd, _sr_ch = pn4['sr']['planetary_data'], pn4['sr']
     _day_points = {'the revolution\'s Ascendant (the table below)': None}
@@ -5533,7 +5536,7 @@ def page_days():
     _day_choice = _reading_select("Also direct, for the small days (IX.7, 31) and the mighty days (IX.7, 27), from",
                                list(_day_points), "pn4_day_point", "_pn4_day_point",
                                help="IX.7, 31: \"you work like that with everything of the planets, Lots, and houses\". "
-                                    "A READING: the \"houses\" are offered as the revolution's Alchabitius cusps, "
+                                    "A **reading**: the \"houses\" are offered as the revolution's Alchabitius cusps, "
                                     "the degree this app computes for each house -- IX.7, 31 says \"houses\" and "
                                     "names no degree.")
     _extra = _day_points[_day_choice]
@@ -5572,29 +5575,45 @@ def page_days():
                     f"{pn4['day_of_year']:.1f} is outside the year's circuit")
     st.dataframe(pd.DataFrame(pn4['small_days_rows']), hide_index=True, width='stretch',
                  height=_rows_height(min(len(pn4['small_days_rows']), 12)))
-    st.caption("Zodiacal, by the sentence: 59' 08\" a day round the zodiac returns to the degree in 365.28 "
-               "days, the year to within an hour. Abu Ma'shar grades it himself -- \"there is an "
-               "approximation in it, but the correct [approach] is that this way of directing is like the "
-               "direction of the Sun every day ... [with] no harm in the work\" (IX.7, 32); that exact form "
-               "is not built, nor is Dykes's fn 178, which would direct by ascensions. What is read into the "
-               "sentence rather than stated by it: the bodies and rays are the revolution's; the days count "
-               "from the moment of the revolution (fn 161 leaves a \"day\" undefined); the partner already "
-               "in place is looked for behind the degree within its bound, the shape of III.1, 23-25 narrowed "
-               "to the window IX.7, 30 names, since the sentence does not say whether a body ahead in the "
-               "bound manages from the first day. The table below directs the revolution's Ascendant; IX.7, 31 "
-               "extends the method to every planet, Lot and house, and the selector above carries it out, "
-               "printing the small days from the point chosen and its profected mighty days beside them. "
-               "No worked example of it exists in PN IV.")
+    _notes_expander("How the small days are read", [
+        ("The sentences, IX.7, 29-31.",
+         "IX.7, 29: \"you look at the degree of the Ascendant of the revolution of the year, so "
+         "that you direct from it (for the knowledge of the conditions of the days), a day for "
+         "every 59' 08\", until it returns to the degree of the Ascendant at the end of the "
+         "year.\" IX.7, 30: a body or ray already in the bound of that degree manages until "
+         "another meets it; otherwise the bound lords, until a planet or ray is reached. IX.7, 31 "
+         "names it the small days."),
+        ("Zodiacal, by the sentence.",
+         "Zodiacal, by the sentence: 59' 08\" a day round the zodiac returns to the degree in 365.28 "
+         "days, the year to within an hour."),
+        ("Source and approximation.",
+         "Abu Ma'shar grades it himself -- \"there is an "
+         "approximation in it, but the correct [approach] is that this way of directing is like the "
+         "direction of the Sun every day ... [with] no harm in the work\" (IX.7, 32); that exact form "
+         "is not built, nor is Dykes's fn 178, which would direct by ascensions."),
+        ("Read into the sentence.",
+         "What is read into the "
+         "sentence rather than stated by it: the bodies and rays are the revolution's; the days count "
+         "from the moment of the revolution (fn 161 leaves a \"day\" undefined); the partner already "
+         "in place is looked for behind the degree within its bound, the shape of III.1, 23-25 narrowed "
+         "to the window IX.7, 30 names, since the sentence does not say whether a body ahead in the "
+         "bound manages from the first day."),
+        ("The selector, and the worked example.",
+         "The table below directs the revolution's Ascendant; IX.7, 31 "
+         "extends the method to every planet, Lot and house, and the selector above carries it out, "
+         "printing the small days from the point chosen and its profected mighty days beside them. "
+         "No worked example of it exists in PN IV."),
+    ])
 
     st.subheader("The mighty days: the terminal degree of the year directed through the revolution",
-                 help="IX.7, 23: \"you look in the revolution of the year at the degree of the sign which the "
-                      "year terminated at, from the Ascendant of the root\" -- the terminal point -- and a body "
-                      "or ray already in its bound manages until another meets it, else the lord of the bound "
-                      "\"then the lord of the bound which follows it\" (IX.7, 24). IX.7, 25: the arc times "
-                      "\"12 days, <4 hours>, 10 minutes, and 30 seconds (and that is 1/6 of a day and half a sixth "
-                      "of a tenth of a day)\" -- the parenthetical's 12.175 d a degree is applied -- from the first day of the revolution; "
-                      "IX.7, 28: thirty of them are the year, \"approximately\", and this is the mighty days. "
-                      "The profected thirty degrees treated as a year, walked degree by degree.")
+                 help="The profected thirty degrees treated as a year, walked degree by degree.")
+    with _prose():
+        st.markdown(f"**Applied rate: {PN4_MIGHTY_DAYS_PER_DEGREE:g} days per degree** -- the author's parenthetical "
+                    "(IX.7, 25); the three figures that sentence holds are compared in the notes.")
+        st.markdown("The direction does not stop at the end of the sign of the year: it "
+                    "starts at the terminal degree and runs thirty degrees, so its last part lies in the bounds "
+                    "of the next sign, which is what \"then to the lord of the bound which follows it\" "
+                    "describes.")
     md_cur = pn4['mighty_days_current']
     _strip = generate_distribution_strip_svg(pn4['mighty_days'], pn4['day_of_year'], 'days', None, 'The mighty days',
                                             theme=WHEEL_THEME)
@@ -5613,32 +5632,49 @@ def page_days():
                     f"{pn4['day_of_year']:.1f} is outside the thirty degrees ({PN4_MIGHTY_DAYS_SPAN_DEGREES * PN4_MIGHTY_DAYS_PER_DEGREE:.2f} days)")
     st.dataframe(pd.DataFrame(pn4['mighty_days_rows']), hide_index=True, width='stretch',
                  height=_rows_height(min(len(pn4['mighty_days_rows']), 12)))
-    st.caption("The rate. IX.7, 25 prints \"12 days, <4 hours>, 10 minutes, and 30 seconds (and that is 1/6 of "
-               "a day and half a sixth of a tenth of a day)\". Three figures stand in that sentence: the "
-               "manuscript's 12;10,30 days (10 minutes and 30 seconds as sexagesimal fractions OF A DAY, "
-               "12.175 d); the author's parenthetical, 12 + 1/6 + 1/120 = 12.175 d, thirty of which are "
-               "365 1/4 days exactly (IX.7, 28); and Dykes's hybrid 12 d 4 h 10 m 30 s (12.17396 d; thirty "
-               "of them 365 d 5 h 15 m), his \"<4 hours>\" supplied and the minutes read as clock time -- "
-               "fn 177 gives 12 d 4 h 12 m for a 365 1/4-day year, which is the author's fraction again. "
-               "APPLIED: the author's parenthetical, 12.175 d a degree. Zodiacal by construction -- "
-               "no ascension appears in the sentence; fn 175's report that ascensions would make more sense "
-               "is an editor's note. The direction does not stop at the end of the sign of the year: it "
-               "starts at the terminal degree and runs thirty degrees, so its last part lies in the bounds "
-               "of the next sign, which is what \"then to the lord of the bound which follows it\" "
-               "describes. Read into the sentence, as for the small days: the revolution's bodies and rays; "
-               "days from the moment of the revolution; the opening partner behind the degree within its "
-               "bound. IX.7, 27's extension to every planet, house and Lot is the selector above. "
-               "No worked example of it exists in PN IV.")
+    _notes_expander("How the mighty days are read, and why this rate", [
+        ("The sentences, IX.7, 23-28.",
+         "IX.7, 23: \"you look in the revolution of the year at the degree of the sign which the "
+         "year terminated at, from the Ascendant of the root\" -- the terminal point -- and a body "
+         "or ray already in its bound manages until another meets it, else the lord of the bound "
+         "\"then the lord of the bound which follows it\" (IX.7, 24). IX.7, 25: the arc times "
+         "\"12 days, <4 hours>, 10 minutes, and 30 seconds (and that is 1/6 of a day and half a sixth "
+         "of a tenth of a day)\" -- the parenthetical's 12.175 d a degree is applied -- from the first day of the revolution; "
+         "IX.7, 28: thirty of them are the year, \"approximately\", and this is the mighty days."),
+        ("Why this rate.",
+         "| Reading of IX.7, 25 | A degree is |\n"
+         "|---|---|\n"
+         "| The manuscript's 12;10,30 days (10 minutes and 30 seconds as sexagesimal fractions of a day) | 12.175 d |\n"
+         "| The author's parenthetical, 12 + 1/6 + 1/120 | 12.175 d; thirty of which are 365 1/4 days exactly (IX.7, 28) |\n"
+         "| Dykes's hybrid, his \"<4 hours>\" supplied and the minutes read as clock time | 12 d 4 h 10 m 30 s (12.17396 d); thirty of them 365 d 5 h 15 m |\n\n"
+         "IX.7, 25 prints \"12 days, <4 hours>, 10 minutes, and 30 seconds (and that is 1/6 of "
+         "a day and half a sixth of a tenth of a day)\". Three figures stand in that sentence: the "
+         "manuscript's 12;10,30 days (10 minutes and 30 seconds as sexagesimal fractions **of a day**, "
+         "12.175 d); the author's parenthetical, 12 + 1/6 + 1/120 = 12.175 d, thirty of which are "
+         "365 1/4 days exactly (IX.7, 28); and Dykes's hybrid 12 d 4 h 10 m 30 s (12.17396 d; thirty "
+         "of them 365 d 5 h 15 m), his \"<4 hours>\" supplied and the minutes read as clock time -- "
+         "fn 177 gives 12 d 4 h 12 m for a 365 1/4-day year, which is the author's fraction again. "
+         "**Applied**: the author's parenthetical, 12.175 d a degree."),
+        ("Zodiacal by construction.",
+         "Zodiacal by construction -- "
+         "no ascension appears in the sentence; fn 175's report that ascensions would make more sense "
+         "is an editor's note."),
+        ("Read into the sentence.",
+         "Read into the sentence, as for the small days: the revolution's bodies and rays; "
+         "days from the moment of the revolution; the opening partner behind the degree within its "
+         "bound."),
+        ("The selector, and the worked example.",
+         "IX.7, 27's extension to every planet, house and Lot is the selector above. "
+         "No worked example of it exists in PN IV."),
+    ])
 
     st.subheader("The nine methods for the days and hours (IX.7, 1-72)",
-                 help="\"The days and hours have nine indicators\" (IX.7, 1). 1: the days since birth in weeks "
-                      "from the lord of the natal Ascendant (2-6). 2: seven days each from the lord of the orb "
-                      "(7-9). 3: the year in greater and lesser sevenths from the lord of the revolution's "
-                      "Ascendant (10-13). 4: the weeks to the signs (14-17). 5: the days to the signs by "
-                      "twelves (18-20). 6 and 7: the mighty and small days above. 8: the month's days (34-39). "
-                      "9: the ninth-parts, from the terminal sign, the revolution's Ascendant and the Moon "
-                      "(43-72), worked at 57-69. IX.7, 56: all in equal hours. IX.7, 79 declines day and hour "
+                 help="\"The days and hours have nine indicators\" (IX.7, 1). IX.7, 56: all in equal hours. "
+                      "IX.7, 79 declines day and hour "
                       "charts and keeps these.")
+    with _prose():
+        st.markdown("**The day.** A \"day\" is a whole 24-hour period from the birth moment -- fn 161 says the book never says "
+                    "whether from birth or from dawn -- and the moment read is the target date at noon.")
     dm_rows, dm_month, dm_ninth = pn4['day_methods']
     st.dataframe(pd.DataFrame(dm_rows), hide_index=True, width='stretch', height=_rows_height(9),
                  column_config=_wide_text_columns(pd.DataFrame(dm_rows)))
@@ -5648,34 +5684,51 @@ def page_days():
     st.markdown("**9. The ninth-parts** (IX.7, 43-72), from the three starts:")
     st.dataframe(pd.DataFrame(dm_ninth), hide_index=True, width='stretch', height=_rows_height(3),
                  column_config=_wide_text_columns(pd.DataFrame(dm_ninth)))
-    st.caption("A \"day\" is a whole 24-hour period from the birth moment -- fn 161 says the book never says "
-               "whether from birth or from dawn -- and the moment read is the target date at noon. The "
-               "hours are equal (IX.7, 56): 3 3/7 apiece among seven (fn 164), 14 to a sign in a week (fn "
-               "173), two to a sign in a day (IX.7, 20), five to a sign in a sixty-hour slot (IX.7, 38). "
-               "Method 8's four rooted indicators are the monthly profections above (fn 181). Method 9's "
-               "partners are the domicile lords of the fifth and ninth signs from the ninth-part's, as the "
-               "worked example does (Capricorn, Taurus, Virgo: Saturn, Venus, Mercury); its month is 30 d "
-               "10 h 30 m and its ninth-part 3 d 9 h 10 m (IX.7, 54-55). Two of the example's printed "
-               "fractions are wrong, and are shown as printed: "
-               + '; '.join(f"{c} prints {p} for {e} ({fn})" for c, p, e, fn in PN4_IX7_EXAMPLE_ERRATA)
-               + ". The judgments of IX.7, 21-22 and 40-42 are not built.")
+    _notes_expander("The nine methods, one by one, and how they are counted", [
+        ("The nine methods.",
+         "- 1: the days since birth in weeks "
+         "from the lord of the natal Ascendant (2-6).\n"
+         "- 2: seven days each from the lord of the orb "
+         "(7-9).\n"
+         "- 3: the year in greater and lesser sevenths from the lord of the revolution's "
+         "Ascendant (10-13).\n"
+         "- 4: the weeks to the signs (14-17).\n"
+         "- 5: the days to the signs by "
+         "twelves (18-20).\n"
+         "- 6 and 7: the mighty and small days above.\n"
+         "- 8: the month's days (34-39).\n"
+         "- 9: the ninth-parts, from the terminal sign, the revolution's Ascendant and the Moon "
+         "(43-72), worked at 57-69."),
+        ("The hours.",
+         "The "
+         "hours are equal (IX.7, 56): 3 3/7 apiece among seven (fn 164), 14 to a sign in a week (fn "
+         "173), two to a sign in a day (IX.7, 20), five to a sign in a sixty-hour slot (IX.7, 38)."),
+        ("Methods 8 and 9.",
+         "Method 8's four rooted indicators are the monthly profections above (fn 181). Method 9's "
+         "partners are the domicile lords of the fifth and ninth signs from the ninth-part's, as the "
+         "worked example does (Capricorn, Taurus, Virgo: Saturn, Venus, Mercury); its month is 30 d "
+         "10 h 30 m and its ninth-part 3 d 9 h 10 m (IX.7, 54-55)."),
+        ("The example's printed errors, and what is not built.",
+         "Two of the example's printed "
+         "fractions are wrong, and are shown as printed:\n\n"
+         + "\n".join(f"- {c} prints {p} for {e} ({fn})" for c, p, e, fn in PN4_IX7_EXAMPLE_ERRATA)
+         + "\n\nThe judgments of IX.7, 21-22 and 40-42 are not built."),
+    ])
 
     st.subheader("The seven indicators of the month",
                  help="IX.1, 35-39. Five are \"rooted\" -- turned from the positions they hold at the "
                       "revolution of the year -- and two are not, being cast fresh from each monthly "
-                      "revolution. They decrease in universality in the order given (IX.1, 39). The sign of "
-                      "the year is itself month 1 (IX.1, 10), and months run from the revolution dates, not "
-                      "the calendar.")
+                      "revolution.")
+    with _prose():
+        st.markdown("They decrease in universality in the order given (IX.1, 39). The sign of "
+                    "the year is itself month 1 (IX.1, 10), and months run from the revolution dates, not "
+                    "the calendar.")
     PN4_MONTHLY_TURN_LOCAL = _reading_radio(
         "Monthly profections turn", list(PN4_MONTHLY_TURN_OPTIONS),
         "pn4_monthly_turn", "_pn4_monthly_turn",
-        help="IX.1, 26-34: Abu Ma'shar turns the monthly indicators BACKWARDS when the sign is convertible, "
-             "and for a double-bodied sign forwards below 15°00' and backwards from it, because the first "
-             "half of a common sign is of the nature of the fixed sign before it and the second half of the "
-             "convertible sign after it (IX.1, 30). IX.1, 31 applies the test to each indicator's OWN sign, "
-             "individually. Indicator #2, the ninth-part, always runs forward (IX.1, 32). Dykes rejects the "
+        help="Dykes rejects the "
              "whole rule as \"complicated, probably wrong\" and counts forward always; his reading is the "
-             "default here.")
+             "default here. Abu Ma'shar's rule is in the notes under the table.")
     st.dataframe(pd.DataFrame(pn4['monthly_rows']), hide_index=True, width='stretch',
                  height=_rows_height(len(pn4['monthly_rows'])))
     st.caption(f"Month {pn4['month']} of 12. IX.1, 37: each is read against three positions -- the Ascendant "
@@ -5683,6 +5736,18 @@ def page_days():
                "revolution. Indicator #2 is the lord of the first ninth-part of the sign of the year "
                f"({pn4['ninth']['ninth_part_sign']}, lord {pn4['ninth']['lord']}); Abu Ma'shar himself "
                "ignores it through most of Book IX (fn 15).")
+    _notes_expander("The turning rule the radio chooses between", [
+        ("Abu Ma'shar's rule, IX.1, 26-32.",
+         "IX.1, 26-34: Abu Ma'shar turns the monthly indicators **backwards** when the sign is convertible, "
+         "and for a double-bodied sign forwards below 15°00' and backwards from it, because the first "
+         "half of a common sign is of the nature of the fixed sign before it and the second half of the "
+         "convertible sign after it (IX.1, 30). IX.1, 31 applies the test to each indicator's **own** sign, "
+         "individually. Indicator #2, the ninth-part, always runs forward (IX.1, 32)."),
+        ("Dykes's reading, the default.",
+         "Dykes rejects the "
+         "whole rule as \"complicated, probably wrong\" and counts forward always; his reading is the "
+         "default here."),
+    ])
 
 
 def page_fardar():
