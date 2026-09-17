@@ -10,7 +10,8 @@ pick-panel cross-references); this note, and an eighth after the two gates (`C_A
 `C_BLIND_TEXT_REPORT_2026-09-17.md`, nothing under Must change; the paragraphs
 below read as the branch stands after it), a ninth for the caption the
 owner's preview found that no net had caught (see "Missed by every net"),
-and an eleventh folding the join on the owner's ruling. **`engine.py` is byte-identical to
+an eleventh folding the join on the owner's ruling, and a thirteenth folding
+the additions finding's summary on his second. **`engine.py` is byte-identical to
 `main`** (`git diff main -- engine.py` and `git diff -w main -- engine.py` are
 both empty — see "The engine constants" for why that is stricter than the
 brief asked and what was done instead). `tests/fixtures/tables.json` is
@@ -338,8 +339,21 @@ rows to the constant.
 
 ## The releaser (commit 3, `02ff991`)
 
-Five `ALLOWED_LONG` entries deleted. Branch A's releaser block and additions
-finding are as A left them but for commit 1's sections and detail.
+Five `ALLOWED_LONG` entries deleted. Branch A's releaser block is as A left
+it but for commit 1's sections and detail; the additions finding's summary
+is folded on the owner's second ruling from the preview of PR #77 (commit
+`610a2dd`): its `summary=` is the glance sentence ("What each planet joined
+to the house-master or looking at it would add to or subtract from its
+years by Abu 'Ali's chapter.") and the Witnesses sentence ("Abu Bakr and
+'Umar stand beside each row in the Witnesses column with their own
+conditions."), the "**Display only:**" qualification still visible, and the
+rule's detail — the 755-character sentence A had made the summary: the
+fortune's lesser years at three undefined grades (none chosen, none
+defaulting), the bad one's subtraction, the explicit zeros, Mercury by fn 28
+and the undecided cases, the luminaries under 'Umar's solar rule and Abu
+Bakr's sentence — stands whole under *The chapter's rule, as read.* as the
+first of the finding's notes sections, before *Abu 'Ali's chapter, whole.*
+and the `JN_CH4_ADDITIONS_NOTE` sections.
 
 - **The opening caption** (682 characters) is its two short sentences: "They
   are taken from Sahl, *On Nativities* (cited on this page by that book's
@@ -737,7 +751,8 @@ Nothing else is a miss: no locator token is missing and none lost a copy.
 
 `python tests/tools/prose_preserved.py readability-c-2026-09-17 --engine
 --tree <a detached worktree at main>` from this tree: **158 branch sentences
-not on main** (156 before commit 9, 158 before the join was folded), plus five `LOCATOR-COUNT` lines that in this direction say
+not on main** (156 before commit 9, 158 before the join was folded, 159
+before the additions summary was), plus five `LOCATOR-COUNT` lines that in this direction say
 the branch holds more copies of a token than main (Nativities 1.20 9 → 8,
 Nativities 2.1 9 → 8, Nativities 2.11 3 → 2, Ch. 4 43 → 40, Ch. 2 29 → 28:
 copies made by section headings, the scope index's rows and the seven-place
@@ -757,7 +772,7 @@ or clauses)* — 9: the three time standards; the nine methods; the checklist's
 conventions; the Moon's four clauses; the Sun's proxies; the Moon's rows;
 the five views.
 
-*Section headings, disclosure titles and bold leads* — 93: the twenty-one
+*Section headings, disclosure titles and bold leads* — 94: the twenty-one
 expander labels ("How the house-master is directed", "How the small days
 are read", "How the mighty days are read, and why this rate", "The nine
 methods, one by one, and how they are counted", "The turning rule the
@@ -782,7 +797,9 @@ line; one table fragment the script split at "Sect." ("13, "my idea") | Not
 built |"); "Abu Ma'shar's rule, IX.1, 26-34." and "The Indian rule, reported
 and not adopted." among them since the fix round, and "The placement: the
 division, and a power judgment." and "On Times 4, 7, and 1.23, 53 and 61."
-since commit 9 (the 1.20 readings' disclosure).
+since commit 9 (the 1.20 readings' disclosure), and "The chapter's rule, as
+read." since the additions summary was folded (its visible part is the
+glance sentence main already had, so the forward run did not move).
 
 *Placeholders and boilerplate* — 3: "Select a planet to read its effect,
 grades, reading and witnesses"; "Abu Ma'shar's rule is in the notes under
