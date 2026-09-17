@@ -22,8 +22,8 @@ INTRO = (
     "Revolutions of the Years of Nativities* (*Persian Nativities* IV), in Benjamin Dykes's "
     "translations, with his *Great Introduction* as the supplement. Every rule applied on "
     "a page names its sentence.",
-    "Enter or load a nativity in the sidebar. Part 1 sets out what the chart contains, "
-    "Part 2 what the year holds; the reference tables and the sources close the page "
+    "Enter or load a nativity in the sidebar. The Nativity sets out what the chart contains, "
+    "Prediction what the year holds; the reference tables and the sources close the page "
     "list. The judgment is the astrologer's.",
     "Click a planet or a sign on the wheel for what the tables say of it; hover a sign for its bounds and triplicity lords.",
 )

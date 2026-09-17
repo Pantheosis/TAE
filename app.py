@@ -37,7 +37,7 @@ st.set_page_config(
 
 # --- Structure: the course's own order, in three sections -----------------
 # Pages follow the syllabus and are grouped in the navigation as the course
-# is: Part 1 (the nativity), Part 2 (prediction), and the reference pages.
+# is: The Nativity, Prediction, and the reference pages.
 # Nothing is hidden. The lesson gate that used to hide pages by lesson
 # number went on 2026-09-10 (UI_REVIEW_2026-09-10.md §1): the course
 # reviews later material early -- the Lesson 5 warm-ups are the planets
@@ -2715,8 +2715,8 @@ def page_chart():
               "Revolutions of the Years of Nativities* (*Persian Nativities* IV), in Benjamin Dykes's "
               "translations, with his *Great Introduction* as the supplement. Every rule applied on "
               "a page names its sentence.",
-              "Enter or load a nativity in the sidebar. Part 1 sets out what the chart contains, "
-              "Part 2 what the year holds; the reference tables and the sources close the page "
+              "Enter or load a nativity in the sidebar. The Nativity sets out what the chart contains, "
+              "Prediction what the year holds; the reference tables and the sources close the page "
               "list. The judgment is the astrologer's.",
               "Click a planet or a sign on the wheel for what the tables say of it; hover a sign for its bounds and triplicity lords.")
     # They are read once and then in the way, so they stand open for
@@ -2827,7 +2827,7 @@ def page_findings():
         return
     st.header("Findings")
     _chart_strip()
-    st.caption("Part 1: the nativity. The delineations the texts read off the chart already cast -- "
+    st.caption("The delineations the texts read off the chart already cast -- "
                "Sahl's own findings first, then the supplement's -- each under the sentence it applies. "
                "Nothing here is scored; the judgment is the astrologer's.")
     _sources_scope_line()
@@ -3526,7 +3526,7 @@ def page_timing():
         return
     st.header("Timing")
     _chart_strip()
-    st.caption("Part 2: prediction. Every rule on this page comes from Abu Ma'shar, "
+    st.caption("Every rule on this page comes from Abu Ma'shar, "
                "*On the Revolutions of the Years of Nativities* (*Persian Nativities* IV), "
                "cited as Book.chapter, sentence -- except the releaser and the house-master, which "
                "PN IV leaves to another book of Abu Ma'shar's: \"the book which we worked on concerning "
@@ -5216,7 +5216,7 @@ def page_reference():
     st.dataframe(pd.DataFrame(age_rows), hide_index=True, width='stretch', height=_rows_height(len(age_rows)))
 
 pages = {
-    "Part 1: the nativity": [
+    "**The Nativity**": [
         # The default page is served at the ROOT path, never at
         # /chart: Page.url_path returns "" when default is set, and
         # st.navigation registers that empty pathname, so /chart is not
@@ -5233,10 +5233,10 @@ pages = {
         st.Page(page_lots, url_path="lots", title="Lots", icon=":material/functions:"),
         st.Page(page_victors, url_path="victors", title="Lunation and victors", icon=":material/trophy:"),
     ],
-    "Part 2: prediction": [
+    "**Prediction**": [
         st.Page(page_timing, url_path="timing", title="Timing", icon=":material/schedule:"),
     ],
-    "Reference": [
+    "**Reference**": [
         st.Page(page_reference, url_path="reference", title="Reference tables", icon=":material/table_chart:"),
         st.Page(page_sources, url_path="sources", title="Sources and readings", icon=":material/menu_book:"),
     ],

@@ -18,7 +18,7 @@ def test_navigation_sits_at_the_top_and_keeps_its_three_sections():
     assert 'st.navigation(pages, position="top")' in src
     # expanded= is read only when position="sidebar"; it went with the move.
     assert "expanded=True" not in src
-    for section in ('"Part 1: the nativity"', '"Part 2: prediction"', '"Reference"'):
+    for section in ('"**The Nativity**"', '"**Prediction**"', '"**Reference**"'):
         assert section in src
 
 
