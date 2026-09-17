@@ -13896,14 +13896,19 @@ def evaluate_andarzaghar_triplicity_lords(asc_lon, sect):
 # by the partnering (third) lord, which 2.11, 4 makes a stated modifier
 # ("supports them both ... through its strength", "brings [them] down")
 # and 2.3, 22 ranks third. The Lot step: 2.3, 6 turns the reading to the
-# Lot when the lord is "made unfortunate" -- read here as EITHER lord weak
-# (falling, or under the rays) or with an infortune on it -- and Sahl's
-# Lot sentences are read in the app's own order (2.20, 1-2 misery; 2.3, 7
-# and 9 the raise; 2.16, 2 and 4 the middle), which the page calls the
-# app's: Sahl gives an order of investigation (2.3, 6; 2.3, 10), not a
-# priority among verdicts. The Lot's verdict is the class only when both
-# lords are weak (the pair then saying baseness throughout); with one lord
-# strong it is stated beside the class. Three measures are kept apart:
+# Lot when "the lord of the triplicity" is "made unfortunate" -- the
+# sentence's singular states no quantifier, and the app enters on EITHER
+# lord weak (falling, or under the rays) or with an infortune on it, its
+# own reading, said so. The Lot's sentences give judgments of the native
+# (2.20, 1-2 misery; 2.3, 7 and 9 rank and happiness; 2.16, 2 and 4 the
+# middle) and Sahl nowhere says how they combine with Theophilus's (2.11,
+# 1-3): no replacement, no threshold by the number of weak lords, no
+# priority -- he gives an order of investigation (2.3, 6; 2.3, 10), not a
+# precedence among verdicts. So the synthesis carries both judgments with
+# their sentences: a level beside the mixed pair's timing pattern is mixed
+# by design (no single class); the same level twice is concordant; opposed
+# levels, or the Lot's own sentences at two levels, are unresolved, both
+# judgments kept. Three measures are kept apart:
 # the whole-sign place (the spine), 2.3, 17-18's by-sign / by-degree cases
 # (their own rows, from the quadrant cusps), and the 15 degrees by
 # ascensions (2.13, 48-51; 2.3, 4-5; 2.16, 3), a grade row never folded
@@ -14297,7 +14302,8 @@ def evaluate_prosperity(chart_data):
         also = PROSPERITY_ALSO['mixed']
     timing = (", the first lord's time being the beginning of life (2.13, 39)" if key in ('high to low', 'low to high')
               else '')
-    ground = grounds + " -- " + read_as(key) + timing
+    lords_key = key
+    ground = grounds
     deciding = sahl(*refs)
 
     # --- the Lot of Fortune (2.3, 6-9; 2.16; 2.20) ---
@@ -14332,14 +14338,14 @@ def evaluate_prosperity(chart_data):
                                  f"{'in its fall' if lord_in_fall else 'made unfortunate (' + ', '.join(lord_infortunes) + ')'}"
                                  + ("; Mars on the Lot by day" if sect == 'Diurnal' else '') + '; ' + lot_text,
                                  sahl('2.20, 1'), PROSPERITY_ALSO['misery'],
-                                 "he will not cease to be miserable from the day he is born up to the day he dies (2.20, 1)"))
+                                 "he will not cease to be miserable from the day he is born up to the day he dies (2.20, 1)", '2.20, 1'))
             jv_bad = all(p in natal and get_wsh_house(natal[p]['longitude'], asc) in (6, 12)
                          and _prosperity_infortunes_on(natal[p]['longitude'], natal) for p in ('Jupiter', 'Venus'))
             jv_moon = 'Moon' in natal and all(_prosperity_looks(natal[p]['longitude'], natal['Moon']['longitude']) is None for p in ('Jupiter', 'Venus') if p in natal)
             if lot_lord_house in (6, 12) and jv_bad and jv_moon:
                 lot_rows.append(('low', 'miserable', "the lord of the Lot in the sixth or twelfth; Jupiter and Venus made unfortunate there, "
                                  "not looking at the Moon; " + lot_text, sahl('2.20, 2'), PROSPERITY_ALSO['misery'],
-                                 "he will be miserable (2.20, 2)"))
+                                 "he will be miserable (2.20, 2)", '2.20, 2'))
             # 2.3, 7 and 9: the Lot raises
             if (lot_house not in PROSPERITY_FALLING and side == 'eastern' and lord_looks and not lord_infortunes
                     and fortunes_on_lot and not infortunes_on_lot):
@@ -14347,10 +14353,10 @@ def evaluate_prosperity(chart_data):
                                  f"and their rays (whole-sign looking, the app's measure) and looking at it -- 'from a strong position' not tested; "
                                  f"{', '.join(fortunes_on_lot)} looking at the Lot, no infortune looking; "
                                  + lot_text, sahl('2.3, 7'), PROSPERITY_ALSO['lot'],
-                                 "the native will be a king, or prominent, and a powerful noble (2.3, 7)"))
+                                 "the native will be a king, or prominent, and a powerful noble (2.3, 7)", '2.3, 7'))
             if lord_looks is None and lot_lord_house in (5, 11):
                 lot_rows.append(('high', 'good fortune', f"the lord of the Lot not looking at the Lot, in the {_prosperity_nth(lot_lord_house)}; " + lot_text,
-                                 sahl('2.3, 9'), PROSPERITY_ALSO['lot'], "he will be happy (2.3, 9)"))
+                                 sahl('2.3, 9'), PROSPERITY_ALSO['lot'], "he will be happy (2.3, 9)", '2.3, 9'))
             # 2.16, 2 and 4: the middle
             if lord_infortunes:
                 helpers = [p for p in sorted(FORTUNES) if p in natal and p != lot_lord
@@ -14361,52 +14367,93 @@ def evaluate_prosperity(chart_data):
                     lot_rows.append(('middling', 'middling', f"the lord of the Lot made unfortunate ({', '.join(lord_infortunes)}), "
                                      f"{', '.join(helpers)} eastern looking at it from an excellent place; " + lot_text,
                                      sahl('2.16, 2'), PROSPERITY_ALSO['middling'],
-                                     "his good fortune will be in the middle (2.16, 2)"))
+                                     "his good fortune will be in the middle (2.16, 2)", '2.16, 2'))
         if len(fortunes_on_lot) == len([p for p in FORTUNES if p in natal]) == 2 and len(infortunes_on_lot) == 2:
             lot_rows.append(('middling', 'middling', "both fortunes and both infortunes looking at the Lot; " + lot_text,
-                             sahl('2.16, 4'), PROSPERITY_ALSO['middling'], "his livelihood will be in the middle (2.16, 4)"))
+                             sahl('2.16, 4'), PROSPERITY_ALSO['middling'], "his livelihood will be in the middle (2.16, 4)", '2.16, 4'))
 
     # --- the Lot step (2.3, 6): "if you found the lord of the triplicity of
     # the Sun made unfortunate, then you must work with the Lot of Fortune".
-    # The trigger is one lord made unfortunate -- either lord weak, or with
-    # an infortune on it -- not both falling. Among the Lot's verdicts the
-    # order is the app's own (2.20, 1-2, then 2.3, 7 and 9, then 2.16, 2 and
-    # 4); Sahl gives an order of investigation (2.3, 6; 2.3, 10), not a
-    # priority among verdicts, and 2.3, 7 cannot hold with 2.16, 4 (the
-    # infortunes not looking at the Lot against all looking) nor with 2.16,
-    # 2 (the lord cleansed against made unfortunate) nor with 2.20, 1 (the
-    # Lot in a stake or what follows against the sixth or twelfth). The
-    # Lot's verdict is the class only when both lords are weak; with one
-    # lord strong it stands beside the class with no class step.
+    # The entry is one lord made unfortunate -- either lord weak, or with an
+    # infortune on it -- the app's reading of the sentence's singular (which
+    # states no quantifier). The Lot's sentences give judgments of the native
+    # (2.3, 7 a king; 2.3, 9 happy; 2.16, 2 and 4 the middle; 2.20, 1-2
+    # misery), and Sahl nowhere says how they combine with Theophilus's
+    # two-lord judgment (2.11, 1-3): no replacement, no threshold by the
+    # number of weak lords, no priority. So the synthesis carries BOTH
+    # judgments, each with its sentence -- a level beside a timing pattern
+    # (the mixed pair) is mixed by design; the same level twice is
+    # concordant; opposed levels, or the Lot's own sentences at two levels,
+    # are unresolved -- and says the combination is this app's. (2.3, 7
+    # cannot hold with 2.16, 4, 2.16, 2 or 2.20, 1 by predicate; 2.3, 9 can
+    # hold with 2.16 or 2.20, and then no order is installed.)
     made_unfortunate = [f['lord'] for f in (first, second) if f['unfortunate']]
+    lot_judgments = []                    # (level, clause) per Lot sentence met
     if made_unfortunate:
         who = ' and '.join(made_unfortunate) + ' made unfortunate'
+        entry = (f"; the Lot step (2.3, 6), {who} -- the either-lord entry being this app's reading of the sentence's "
+                 "singular")
         if lot is None:
-            ground += f"; the Lot step (2.3, 6), {who}: no Lot of Fortune in hand"
-            deciding += ' ' + sahl('2.3, 6')
+            ground += entry + ": no Lot of Fortune in hand"
         elif not lot_rows:
-            ground += (f"; the Lot step (2.3, 6), {who}: none of 2.20, 1-2, 2.3, 7 and 9, 2.16, 2 and 4 met "
-                       f"({lot_text})")
-            deciding += ' ' + sahl('2.3, 6')
+            ground += entry + f": none of 2.20, 1-2, 2.3, 7 and 9, 2.16, 2 and 4 met ({lot_text})"
         else:
-            order = {'low': 0, 'high': 1, 'middling': 2}
-            ck, _w, cg, cs, ca, cv = min(lot_rows, key=lambda t: order[t[0]])
-            if key == 'low':
-                if ck == 'low':
-                    ground += f"; the Lot step (2.3, 6), {who}: {cg} -- {cv}, confirming the class"
-                else:
-                    # the lords' class 6 becomes the lords' reading alone; the Lot's is the class
-                    ground = ground.replace(read_as('low'), "class 6 by the lords alone (the sixth: wretched, not "
-                                            "ceasing to be, 2.1, 8)")
-                    key = ck
-                    ground += (f"; the Lot step (2.3, 6), {who}: {cg} -- {cv} -- {read_as(key)}, the Lot's verdict "
-                               "taken over the lords' when both are weak (this app's order among the Lot's verdicts: "
-                               "2.20, 1-2, then 2.3, 7 and 9, then 2.16, 2 and 4)")
-                    also = ca
+            ground += (entry + ": " + "; ".join(f"{cg.replace('; ' + lot_text, '')} -- {cv}" for _k, _w, cg, _s, _a, cv, _r in lot_rows)
+                       + f" ({lot_text})")
+            deciding += ' ' + ' '.join(cs for _k, _w, _g, cs, _a, _v, _r in lot_rows)
+            middle_refs = [r for _k, _w, _g, _s, _a, _v, r in lot_rows if r.startswith('2.16')]
+            for ck, _w, _g, _s, _a, _v, r in lot_rows:
+                clause = {'2.3, 7': "the Lot promises very high rank, a king, or prominent, and a powerful noble (2.3, 7)",
+                          '2.3, 9': "the Lot's lord promises happiness (2.3, 9)",
+                          '2.20, 1': "the Lot indicates misery from birth to death (2.20, 1)",
+                          '2.20, 2': "the Lot's lord indicates misery (2.20, 2)"}.get(r)
+                if clause is None:        # 2.16, 2 and 4: one statement, both may support it, no order between them
+                    if r != middle_refs[0]:
+                        continue
+                    clause = f"the Lot indicates middling livelihood ({'; '.join(middle_refs)})"
+                lot_judgments.append((ck, clause))
+        deciding += ' ' + sahl('2.3, 6')
+
+    two_lord = {'high': "the two strong triplicity lords indicate high rank from the beginning of his life to its end (2.11, 1)",
+                'low': ("the two weak triplicity lords indicate baseness throughout life (2.11, 3, read with 2.11, 5)"
+                        if (first['under'] or second['under']) else
+                        "the two falling triplicity lords indicate baseness throughout life (2.11, 3)"),
+                'high to low': "the two triplicity lords indicate benefit in the first lord's time and hardship in the second's (2.11, 2)",
+                'low to high': "the two triplicity lords indicate hardship in the first lord's time and benefit in the second's (2.11, 2)"}[lords_key]
+    class_n = {'high': 1, 'high to low': 2, 'low to high': 5, 'low': 6}[lords_key]
+    no_precedence = ("the combination is this app's, Sahl giving no express precedence between the Lot's sentences and "
+                     "Theophilus's")
+    if not lot_judgments:
+        key = lords_key
+        class_field = f"class {class_n}"
+        ground += f". Synthesis: {two_lord} -- {read_as(lords_key)}{timing}"
+    else:
+        levels = sorted({lv for lv, _c in lot_judgments})
+        lot_clause = '; '.join(c for _lv, c in lot_judgments)
+        level_word = {'high': {'2.3, 7': 'very high rank', '2.3, 9': 'happiness'}, 'middling': 'middling', 'low': 'misery'}
+        if len(levels) > 1:
+            key, class_field = 'unresolved', 'unresolved'
+            ground += (f". Synthesis: the Lot's own sentences disagree -- {lot_clause} -- and {two_lord} -- unresolved: "
+                       "this app installs no priority among the Lot's sentences nor between them and Theophilus's, Sahl "
+                       "giving none; every judgment stands")
+        else:
+            level = levels[0]
+            word = level_word[level] if level != 'high' else ('very high rank' if any('2.3, 7' in c for _l, c in lot_judgments) else 'happiness')
+            if lords_key in ('high to low', 'low to high'):
+                key = 'mixed'
+                class_field = f"{word} by the Lot; class {class_n}'s pattern by the lords"
+                ground += (f". Synthesis: {lot_clause}; {two_lord} -- {word} by the Lot; class {class_n}'s pattern by the "
+                           f"lords, {PROSPERITY_CLASSES[lords_key][0].lower() + PROSPERITY_CLASSES[lords_key][1:]}{timing}; "
+                           f"{no_precedence}")
+            elif level == lords_key:
+                key = lords_key
+                class_field = f"class {class_n}"
+                ground += f". Synthesis: {lot_clause}; {two_lord} -- concordant, {read_as(lords_key)}; {no_precedence}"
             else:
-                ground += (f"; the Lot step (2.3, 6), {who}: {cg} -- {cv}, beside the class with no class step "
-                           "(this app moves the class by the Lot only when both lords are weak)")
-            deciding += ' ' + sahl('2.3, 6') + ' ' + cs
+                key, class_field = 'unresolved', 'unresolved'
+                ground += (f". Synthesis: conflicting status indications -- {lot_clause}; {two_lord} -- unresolved: this "
+                           f"app installs no priority between them, Sahl giving no express precedence between the Lot's "
+                           "sentences and Theophilus's; both judgments stand")
 
     # --- the partnering lord (2.11, 4), ranked third (2.3, 22): a stated
     # modifier, no class step ---
@@ -14423,7 +14470,7 @@ def evaluate_prosperity(chart_data):
         deciding += ' ' + sahl('2.11, 4')
     ground += ". The lords: " + lords_text[0].lower() + lords_text[1:]
 
-    row(key, 'Synthesis (this app)', ground, deciding, also)
+    row(key, 'Synthesis (this app): ' + class_field, ground, deciding, also)
     row('lords', 'The lords, by place', lords_text
         + " Strong is a stake or what follows one, falling the third, sixth, ninth and twelfth (fn 149), by whole "
           "sign; under the rays is 2.11, 5's no strength. The infortunes on a lord are listed: 2.11, 4 makes their "
@@ -14434,7 +14481,7 @@ def evaluate_prosperity(chart_data):
         row('third', 'The partnering lord', f"Third: {describe(third)} -- {effect}; ranked third (2.3, 22)"
             + (f"; in the house of marriage: good fortune at the end of his lifespan" if third['house'] == 7 else ''),
             sahl('2.11, 4', '2.3, 22') + (' ' + sahl('2.19, 5') if third['house'] == 7 else ''), PROSPERITY_ALSO['third'])
-    for ck, cw, cg, cs, ca, _cv in lot_rows:
+    for ck, cw, cg, cs, ca, _cv, _r in lot_rows:
         row('lot ' + ck, f'The Lot: {cw}', cg + ('' if made_unfortunate else
             "; listed: 2.3, 6's turn to the Lot is not met, neither lord being made unfortunate"), cs, ca)
 

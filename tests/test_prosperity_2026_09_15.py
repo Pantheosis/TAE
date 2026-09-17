@@ -103,13 +103,29 @@ def _chart(engine, sect, asc, lot=False, **positions):
     return {'planetary_data': natal, 'ascendant': asc_lon, 'sect': sect, 'lot_of_fortune': lot_lon}
 
 
+CLASS_NUMBER = {'high': 1, 'high to low': 2, 'low to high': 5, 'low': 6}
+
+
 def _verdict(engine, chart):
+    """The synthesis row's key and the rows. key is a class word when the
+    app reads one class (the two lords alone, or the Lot concordant with
+    them), 'mixed' when the Lot's level stands beside the mixed pair's
+    timing pattern, 'unresolved' when the judgments are opposed; the Class
+    cell carries the class field after 'Synthesis (this app): '."""
     rows = engine['evaluate_prosperity'](chart)
     assert rows and all(list(r)[:4] == COLUMNS for r in rows)
     top = rows[0]
-    assert top['Class'] == 'Synthesis (this app)'
-    label = engine['PROSPERITY_CLASSES'][top['key']]
-    assert f"read by this app as class" in top['Ground'] and label[0].lower() + label[1:] in top['Ground']
+    assert top['Class'].startswith('Synthesis (this app): ')
+    field = top['Class'][len('Synthesis (this app): '):]
+    if top['key'] in CLASS_NUMBER:
+        label = engine['PROSPERITY_CLASSES'][top['key']]
+        assert field == f"class {CLASS_NUMBER[top['key']]}"
+        assert 'read by this app as class' in top['Ground'] and label[0].lower() + label[1:] in top['Ground']
+    elif top['key'] == 'mixed':
+        assert 'by the Lot; class' in field and "'s pattern by the lords" in field
+    else:
+        assert top['key'] == 'unresolved' and field == 'unresolved'
+    assert 'Synthesis: ' in top['Ground']
     return top['key'], rows
 
 
@@ -134,7 +150,7 @@ def test_example_1_figure_10_a_pauper(engine):
     assert 'Second: Venus in Leo, the 3rd, falling from the stakes' in lords
     assert key == 'low'                                   # both falling by place, whatever the rays
     assert 'both lords weak -- Mars falling (2.11, 3)' in rows[0]['Ground'] and '2.11, 3' in rows[0]['Sahl']
-    assert 'the Lot step (2.3, 6), Mars and Venus made unfortunate: no Lot of Fortune in hand' in rows[0]['Ground']
+    assert 'the Lot step (2.3, 6), Mars and Venus made unfortunate -- the either-lord entry being this app\'s reading of the sentence\'s singular: no Lot of Fortune in hand' in rows[0]['Ground']
     third = _row(rows, 'third')['Ground']
     assert third.startswith('Third: Moon in Scorpio, the 6th, falling from the stakes') and 'brings [them] down' in third
     assert 'Modified by the partnering lord (2.11, 4): Moon in Scorpio, the 6th, falling from the stakes -- brings [them] down' in rows[0]['Ground']
@@ -155,7 +171,7 @@ def test_example_2_figure_11_a_most_elegant_affair(engine):
     assert '2.3, 18' not in rows[0]['Sahl'] and not [r for r in rows if r['key'] == 'by degree']
     assert _row(rows, 'third')['Ground'].startswith('Third: Jupiter in Cancer, the 4th, a stake') and 'supports them both' in _row(rows, 'third')['Ground']
     # a lord with an infortune on it is made unfortunate for 2.3, 6; the chart carries no Lot to turn to
-    assert 'the Lot step (2.3, 6), Saturn and Mercury made unfortunate: no Lot of Fortune in hand' in rows[0]['Ground']
+    assert 'the Lot step (2.3, 6), Saturn and Mercury made unfortunate -- the either-lord entry being this app\'s reading of the sentence\'s singular: no Lot of Fortune in hand' in rows[0]['Ground']
     assert any(r['Class'] == 'Decline' and r['Ground'].startswith('Saturn, a lord of the sect light\'s triplicity, in the 8th') for r in rows)
 
 
@@ -213,7 +229,8 @@ def test_example_10_figure_19_prosperity_after_labor(engine):
     his life"; Venus "in an angle, oriental ... signifying prosperity and
     the native's good condition after labor". The Lot at 7 Sagittarius as
     the text has it, the eighth; all four looking at it by sign (2.16, 4)
-    stands beside the class, the first lord being made unfortunate."""
+    is the Lot's judgment, middling, carried beside the two lords' timing
+    pattern with no single class, the first lord being made unfortunate."""
     chart = _chart(engine, 'Nocturnal', ('Taurus', 21.0), lot=True, Moon=('Pisces', 1.0), Sun=('Virgo', 17.0),
                    Saturn=('Sagittarius', 14.0), Jupiter=('Libra', 17.0), Mars=('Virgo', 21.0), Venus=('Leo', 17.0),
                    Mercury=('Libra', 5.0))
@@ -222,11 +239,19 @@ def test_example_10_figure_19_prosperity_after_labor(engine):
     lords = _row(rows, 'lords')['Ground']
     assert 'First: Mars in Virgo, the 5th, what follows a stake, under the rays (no strength, 2.11, 5); infortunes on it: Saturn by square' in lords
     assert 'Second: Venus in Leo, the 4th, a stake' in lords
-    assert key == 'low to high'
+    assert key == 'mixed'
+    assert rows[0]['Class'] == "Synthesis (this app): middling by the Lot; class 5's pattern by the lords"
     assert 'the first lord weak -- Mars under the rays (2.11, 5) -- the second strong: benefit in the time of the strong one (2.11, 2)' in rows[0]['Ground']
-    assert '2.11, 2' in rows[0]['Sahl'] and '2.13, 39' in rows[0]['Sahl']
     assert 'the Lot of Fortune in Sagittarius, the 8th, what follows a stake' in rows[0]['Ground']
-    assert 'his livelihood will be in the middle (2.16, 4), beside the class with no class step' in rows[0]['Ground']
+    # the two attributed clauses, the Lot's judgment and the two lords', each with its sentence
+    assert ("Synthesis: the Lot indicates middling livelihood (2.16, 4); the two triplicity lords indicate hardship in the "
+            "first lord's time and benefit in the second's (2.11, 2) -- middling by the Lot; class 5's pattern by the lords, "
+            "the fifth: rises up after wretchedness (2.1, 7), the first lord's time being the beginning of life (2.13, 39); "
+            "the combination is this app's, Sahl giving no express precedence between the Lot's sentences and Theophilus's") in rows[0]['Ground']
+    assert "the either-lord entry being this app's reading of the sentence's singular" in rows[0]['Ground']
+    # Sahl 2.11, 2 verbatim beside it, with the Lot's sentence
+    assert engine['PROSPERITY_SAHL']['2.11, 2'] in rows[0]['Sahl'] and engine['PROSPERITY_SAHL']['2.16, 4'] in rows[0]['Sahl']
+    assert '2.13, 39' in rows[0]['Sahl'] and '2.3, 6' in rows[0]['Sahl']
     assert _row(rows, 'third')['Ground'].startswith('Third: Moon in Pisces, the 11th, what follows a stake') and 'supports them both' in _row(rows, 'third')['Ground']
 
 
@@ -381,37 +406,45 @@ def test_the_lot_raises_two_falling_lords(engine):
     lady Venus in Aries, the first, eastern of the Sun, looking at the Lot
     by opposition, no infortune on her; Jupiter in Aquarius looking at the
     Lot by sextile; Saturn and Mars (Scorpio) not looking at Libra -- 2.3, 7
-    raises the class to the first, both lords being weak. Mars moved to
-    Cancer squares both the Lot and its lady: 2.3, 7 fails and 2.16, 2
-    gives the middle."""
+    met in full against 2.11, 3: opposed status judgments, unresolved, both
+    kept. Mars moved to Cancer squares both the Lot and its lady: 2.3, 7
+    fails and 2.16, 2 gives the middle, against baseness throughout --
+    unresolved likewise."""
     chart = _chart(engine, 'Diurnal', 'Aries', lot=True, Sun=('Gemini', 10.0), Moon=('Sagittarius', 10.0), Saturn='Virgo',
                    Mercury=('Gemini', 25.0), Venus='Aries', Mars='Scorpio', Jupiter='Aquarius')
     assert engine['get_zodiac_sign'](chart['lot_of_fortune']) == 'Libra'
     key, rows = _verdict(engine, chart)
-    assert key == 'high'
+    assert key == 'unresolved' and rows[0]['Class'] == 'Synthesis (this app): unresolved'
     assert rows[0]['Ground'].startswith('both lords weak -- Saturn falling (2.11, 3); Mercury falling (2.11, 3)')
-    assert ('the Lot step (2.3, 6), Saturn and Mercury made unfortunate: the Lot in a stake' in rows[0]['Ground']
-            and "the native will be a king, or prominent, and a powerful noble (2.3, 7) -- read by this app as class 1" in rows[0]['Ground']
-            and "the Lot's verdict taken over the lords' when both are weak" in rows[0]['Ground'])
-    assert '2.3, 6' in rows[0]['Sahl'] and '2.3, 7' in rows[0]['Sahl'] and rows[0]['Also'] == engine['PROSPERITY_ALSO']['lot']
+    assert ("the Lot step (2.3, 6), Saturn and Mercury made unfortunate -- the either-lord entry being this app's reading "
+            "of the sentence's singular: the Lot in a stake" in rows[0]['Ground'])
+    assert ("Synthesis: conflicting status indications -- the Lot promises very high rank, a king, or prominent, and a "
+            "powerful noble (2.3, 7); the two weak triplicity lords indicate baseness throughout life (2.11, 3, read with "
+            "2.11, 5) -- unresolved: this app installs no priority between them, Sahl giving no express precedence between "
+            "the Lot's sentences and Theophilus's; both judgments stand") in rows[0]['Ground']
+    assert '2.3, 6' in rows[0]['Sahl'] and engine['PROSPERITY_SAHL']['2.3, 7'] in rows[0]['Sahl'] and engine['PROSPERITY_SAHL']['2.11, 3'] in rows[0]['Sahl']
+    assert 'read by this app as class' not in rows[0]['Ground']
     chart['planetary_data']['Mars']['longitude'] = 95.0
     key2, rows2 = _verdict(engine, chart)
-    assert key2 == 'middling' and '2.16, 2' in rows2[0]['Sahl'] and not any(r['key'] == 'lot high' for r in rows2)
+    assert key2 == 'unresolved' and '2.16, 2' in rows2[0]['Sahl'] and not any(r['key'] == 'lot high' for r in rows2)
     assert 'Jupiter eastern looking at it from an excellent place' in rows2[0]['Ground']
+    assert 'conflicting status indications -- the Lot indicates middling livelihood (2.16, 2); the two weak triplicity lords indicate baseness throughout life' in rows2[0]['Ground']
 
 
 def test_the_lot_gives_the_middle_when_all_four_look_at_it(engine):
     """Nocturnal, Aries ascending, the Moon in Gemini: Mercury (Virgo, the
     sixth) and Saturn (Sagittarius, the ninth) fall. The Lot in Leo (the
     Sun in Libra) has Jupiter with it, Venus by sextile from Libra, Saturn
-    by trine, Mars by square from Scorpio -- 2.16, 4; its lord the Sun in
-    the seventh is no one's east, so 2.3, 7 does not raise it."""
+    by trine, Mars by square from Scorpio -- 2.16, 4, the middle, against
+    2.11, 3's baseness throughout: unresolved; its lord the Sun in the
+    seventh is no one's east, so 2.3, 7 is not met."""
     chart = _chart(engine, 'Nocturnal', 'Aries', lot=True, Moon='Gemini', Sun='Libra', Mercury='Virgo', Saturn='Sagittarius',
                    Jupiter='Leo', Venus='Libra', Mars='Scorpio')
     assert engine['get_zodiac_sign'](chart['lot_of_fortune']) == 'Leo'
     key, rows = _verdict(engine, chart)
-    assert key == 'middling' and '2.16, 4' in rows[0]['Sahl'] and '2.3, 6' in rows[0]['Sahl']
-    assert rows[0]['Also'] == engine['PROSPERITY_ALSO']['middling']
+    assert key == 'unresolved' and '2.16, 4' in rows[0]['Sahl'] and '2.3, 6' in rows[0]['Sahl']
+    assert 'conflicting status indications -- the Lot indicates middling livelihood (2.16, 4); the two falling triplicity lords indicate baseness throughout life (2.11, 3)' in rows[0]['Ground']
+    assert [r['key'] for r in rows if r['key'].startswith('lot ')] == ['lot middling']
 
 
 def test_misery_confirmed_by_the_lot_in_the_sixth(engine):
@@ -419,7 +452,7 @@ def test_misery_confirmed_by_the_lot_in_the_sixth(engine):
     twelfth) falls and Mercury at 14 Libra is burned; both weak. The Lot
     (the Moon at 10 Pisces) falls at 0 Sagittarius, the sixth, with Mars;
     its lord Jupiter in Capricorn, his fall; Mars by day with the Lot --
-    2.20, 1 confirms the sixth class."""
+    2.20, 1's misery, concordant with 2.11, 3's baseness: the sixth class."""
     chart = _chart(engine, 'Diurnal', 'Cancer', lot=True, Sun=('Libra', 10.0), Moon=('Pisces', 10.0), Saturn='Gemini',
                    Mercury=('Libra', 14.0), Mars='Sagittarius', Jupiter='Capricorn', Venus='Virgo')
     assert engine['get_zodiac_sign'](chart['lot_of_fortune']) == 'Sagittarius'
@@ -428,7 +461,9 @@ def test_misery_confirmed_by_the_lot_in_the_sixth(engine):
     # the weakness named per lord, never one word for both
     assert 'both lords weak -- Saturn falling (2.11, 3); Mercury under the rays (2.11, 5)' in rows[0]['Ground']
     assert "its word is falling, and a lord under the rays, which has no strength by 2.11, 5, is read with it by this app" in rows[0]['Ground']
-    assert 'confirming the class' in rows[0]['Ground'] and 'its lord in its fall' in rows[0]['Ground'] and '2.20, 1' in rows[0]['Sahl']
+    assert ('Synthesis: the Lot indicates misery from birth to death (2.20, 1); the two weak triplicity lords indicate baseness '
+            'throughout life (2.11, 3, read with 2.11, 5) -- concordant, read by this app as class 6') in rows[0]['Ground']
+    assert 'its lord in its fall' in rows[0]['Ground'] and '2.20, 1' in rows[0]['Sahl'] and rows[0]['Class'] == 'Synthesis (this app): class 6'
     assert 'Mercury in Libra, the 4th, a stake, under the rays (no strength, 2.11, 5)' in rows[0]['Ground']
 
 
@@ -542,6 +577,7 @@ def test_the_partnering_lord_under_the_rays_in_a_good_place_is_neither(engine):
     key, rows = _verdict(engine, chart)
     assert key == 'high to low'
     assert 'the first lord strong, the second weak -- Jupiter falling (2.11, 3)' in rows[0]['Ground']
+    assert 'the Lot step (2.3, 6), Sun and Jupiter made unfortunate -- the either-lord entry being this app\'s reading of the sentence\'s singular: no Lot of Fortune in hand' in rows[0]['Ground']
     third = _row(rows, 'third')['Ground']
     assert third.startswith('Third: Saturn in Leo, the 5th, what follows a stake, under the rays (no strength, 2.11, 5)')
     assert "under the rays, no strength (2.11, 5): neither 2.11, 4's support, which wants strength, nor its bringing down, which wants a falling place" in third
@@ -562,6 +598,27 @@ def test_the_lot_rows_say_when_the_turn_to_the_lot_is_not_met(engine):
     assert len(lot_rows) == 1 and '2.3, 9' in lot_rows[0]['Sahl']
     assert lot_rows[0]['Ground'].startswith('the lord of the Lot not looking at the Lot, in the 11th')
     assert lot_rows[0]['Ground'].endswith("; listed: 2.3, 6's turn to the Lot is not met, neither lord being made unfortunate")
+
+
+def test_the_lot_s_own_sentences_at_two_levels_are_unresolved(engine):
+    """Diurnal, Aries rising, the Sun at 10 Leo (the fifth, strong), Jupiter
+    in Sagittarius (the ninth, falling): the Lot (the Moon at 10 Capricorn)
+    at 0 Virgo, the sixth; its lord Mercury in Leo, the fifth, not looking
+    at it -- 2.3, 9, happy; Jupiter (Sagittarius, square), Venus (Cancer,
+    sextile), Saturn (Gemini, square) and Mars (Capricorn, trine) all
+    looking at Virgo -- 2.16, 4, the middle. Two levels from the Lot's own
+    sentences, beside the mixed pair: unresolved, no order installed."""
+    chart = _chart(engine, 'Diurnal', 'Aries', lot=True, Sun=('Leo', 10.0), Moon=('Capricorn', 10.0), Jupiter='Sagittarius',
+                   Saturn='Gemini', Mars='Capricorn', Venus='Cancer', Mercury='Leo')
+    assert engine['get_zodiac_sign'](chart['lot_of_fortune']) == 'Virgo'
+    key, rows = _verdict(engine, chart)
+    assert key == 'unresolved' and rows[0]['Class'] == 'Synthesis (this app): unresolved'
+    assert sorted(r['key'] for r in rows if r['key'].startswith('lot ')) == ['lot high', 'lot middling']
+    assert ("Synthesis: the Lot's own sentences disagree -- the Lot's lord promises happiness (2.3, 9); the Lot indicates "
+            "middling livelihood (2.16, 4) -- and the two triplicity lords indicate benefit in the first lord's time and "
+            "hardship in the second's (2.11, 2) -- unresolved: this app installs no priority among the Lot's sentences nor "
+            "between them and Theophilus's, Sahl giving none; every judgment stands") in rows[0]['Ground']
+    assert all(engine['PROSPERITY_SAHL'][r] in rows[0]['Sahl'] for r in ('2.3, 9', '2.16, 4', '2.11, 2', '2.3, 6'))
 
 
 def test_the_chart_page_renders_the_finding_with_its_four_columns():

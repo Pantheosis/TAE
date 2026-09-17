@@ -2150,3 +2150,33 @@ apart), the wider gate resting on 2.3, 2's "cleansed of the infortunes and of de
 app's. (17) The note's schematic "supports / brings down" is no longer in quotation marks as if the row's
 words. The help's "in Sahl's chapter" (1) stays; `LIFE_LORDS_TIMES` (18) untouched, a follow-up.
 `tables.json` regenerated once, unchanged. Suite on the rebased branch: fully green.
+
+**Second ruling, the Lot step (`PROSPERITY-LOT_ruling_2026-09-17.md`, adopting Astra's
+`PROSPERITY-LOT_astra_ruling.md` on `PROSPERITY-LOT_packet.md`; rows a-f).** The policy of ff76c8e --
+the Lot's verdict replaces the class only when both lords are weak, otherwise beside -- is out: Sahl
+states no replacement rule and no threshold by the number of weak lords, and the Lot's sentences are
+judgments of the native, not evidence to collect. Built (iv): whenever the entry is met and a Lot
+sentence holds, the synthesis carries two attributed clauses -- the Lot's judgment with its sentence and
+the two lords' with theirs -- and says the combination is this app's, Sahl giving no express precedence
+between the Lot's sentences and Theophilus's. The mixed pair (2.11, 2, a timing pattern) with a Lot
+level is mixed by design: "the Lot indicates middling livelihood (2.16, 4); the two triplicity lords
+indicate hardship in the first lord's time and benefit in the second's (2.11, 2)", the Class cell
+"Synthesis (this app): middling by the Lot; class 5's pattern by the lords", 2.11, 2 verbatim in the
+Sahl column beside 2.16, 4 (2.16, 2 and 4 need no order; both may support the one statement). Opposed
+levels -- both falling with 2.3, 7 (or 2.3, 9, or 2.16) met, both strong with 2.20 or 2.16 met -- read
+"conflicting status indications", both judgments named, the Class cell "unresolved", no priority
+installed; the same level twice (both falling with 2.20, both strong with 2.3, 7 or 9) is concordant
+and the class is read; the Lot's own sentences met at two levels (2.3, 9 can hold beside 2.16 or 2.20)
+are unresolved likewise. No Lot sentence met, or no Lot in hand: the two lords' judgment alone, with
+the class. The `key` is the class word, 'mixed' or 'unresolved'. The entry: the Lot-step text and the
+note say the either-lord entry is this app's reading of 2.3, 6's singular, not the sentence's word,
+keeping the "made unfortunate" clause; the note's order-of-investigation paragraph no longer names an
+app's order among the Lot's verdicts (none is installed), the exclusive pairs stand as facts, and every
+"moves the class by the Lot only when both lords are weak" is gone (engine, note, glance). Recorded per
+row e: the packet's background overstated Example 2 (Figure 11), which never mentions the Lot; and
+Figure 11's caption says nocturnal where its prose says diurnal and reads the Sun's lords -- the
+fixture follows the prose. Tests: Figure 19 asserts the two attributed clauses and the Class cell;
+the both-falling-with-2.3, 7 test and the all-four-looking test now read unresolved with both
+judgments; the misery test reads concordant class 6; a new test has 2.3, 9 and 2.16, 4 co-holding
+(the Lot at 0 Virgo, its lord Mercury in the fifth not looking, all four looking) -- unresolved from
+the Lot's own sentences. `tables.json` regenerated once, unchanged. Suite fully green.
