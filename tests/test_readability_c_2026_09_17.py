@@ -515,10 +515,13 @@ def test_the_house_master_direction_shows_the_join_and_denial_and_heads_its_note
     shown = _visible_markdowns(at)
     assert any(m == "**Facts, not judgment:** 1.23, 4's verdict is quoted in the notes and not pronounced."
                for m in shown)
-    join = next(m for m in shown if m.startswith("**The join, and the denial beside it.**"))
-    assert "selected by **Nawbakht's** rule" in join and "directed by **Masha'allah's** operation" in join
-    assert join.endswith("Shown as Sahl's, with the denial beside it.")
-    assert "Two limits of the denial" not in join
+    # Folded on the owner's ruling: one visible sentence (the paragraph's
+    # opening clause and its "The join is this app's" sentence), the
+    # paragraph whole under "The join." and "The denial." in the notes.
+    join = next(m for m in shown if m.startswith("The house-master directed here is selected by **Nawbakht's** rule"))
+    assert join.endswith("(1.23, 2, \"direct it\" -- the governor). The join is this app's; no sentence states it.")
+    assert "1.23, 40 and 43" not in join and "denies" not in join
+    assert not any("The join, and the denial beside it" in m for m in shown)
     assert any(m.startswith("IX.8, 30's turning, the one operation") for m in shown)
     turned = next(m for m in shown if "turned a year a sign from its natal sign (whole signs, as VI.2, 1)" in m)
     assert turned.endswith("(31) and is not shown.")
@@ -526,13 +529,17 @@ def test_the_house_master_direction_shows_the_join_and_denial_and_heads_its_note
                for c in at.main.caption)
     exp = _expander(at, "How the house-master is directed")
     assert exp.icon == NOTES_EXPANDER_ICON
-    assert _headings_in(exp) == ["**Masha'allah's operation, 1.23, 2-4.**", "**Current direction: the readings.**",
-                                 "**Limitations: two limits of the denial.**",
+    assert _headings_in(exp) == ["**Masha'allah's operation, 1.23, 2-4.**", "**The join.**", "**The denial.**",
+                                 "**Limitations: two limits of the denial.**", "**Current direction: the readings.**",
                                  "**Not applied, and the redirection applied.**"]
     md = _markdowns(exp)
     assert md[1].startswith("Masha'allah:\n\n> \"look at the position of the governor") and md[1].endswith("(1.23, 2-4).")
-    assert "IX.8, 32 restricts the **role**" in md[5]
-    assert "is **applied** below when a 1.23, 12 flag fires" in md[7]
+    assert md[3].startswith("The house-master directed here is selected by **Nawbakht's** rule")
+    assert "1.23, 40 and 43 call Masha'allah's governor" in md[3] and md[3].endswith("no sentence states it.")
+    assert md[5].startswith("Abu Ma'shar denies the direction:\n\n> \"the indicator of the lifespan alone")
+    assert "(PN IV IX.8, 32; fn 129: \"Some texts say" in md[5] and md[5].endswith("Shown as Sahl's, with the denial beside it.")
+    assert "IX.8, 32 restricts the **role**" in md[7]
+    assert "is **applied** below when a 1.23, 12 flag fires" in md[11]
 
 
 def test_the_fathers_lot_has_its_summary_visible_and_four_headed_notes(releaser_page):

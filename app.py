@@ -5395,17 +5395,15 @@ def page_releaser():
             st.dataframe(pd.DataFrame(pn4['hm_revolution']), hide_index=True, width='stretch',
                          height=_rows_height(len(pn4['hm_revolution'])),
                          column_config=_wide_text_columns(pd.DataFrame(pn4['hm_revolution'])))
+        # The join and the denial, folded (owner's ruling on the preview):
+        # one sentence visible, the paragraph whole under "The join." and
+        # "The denial." in the block's disclosure below.
         with _prose():
             st.markdown(
-                "**The join, and the denial beside it.** The house-master directed here is selected by **Nawbakht's** "
+                "The house-master directed here is selected by **Nawbakht's** "
                 "rule (1.15, 13: the dignity lord looking at the releaser) and directed by **Masha'allah's** operation "
-                "(1.23, 2, \"direct it\" -- the governor); 1.23, 40 and 43 call Masha'allah's governor \"the "
-                "house-master\" in Sahl's own words, but his governor is found by reception (1.23, 1), and the two "
-                "rules name different planets in about a third of charts. The join is this app's; no sentence "
-                "states it. Abu Ma'shar denies the direction: \"the indicator of the lifespan alone is turned in "
-                "the signs, sign-by-sign, and is not directed degree-by-degree\" (PN IV IX.8, 32; fn 129: \"Some "
-                "texts say that one can also distribute the house-master itself, but to me that seems like a "
-                "misunderstanding\"). Shown as Sahl's, with the denial beside it.")
+                "(1.23, 2, \"direct it\" -- the governor). The join is this app's; no sentence "
+                "states it.")
         st.markdown("IX.8, 30's turning, "
                     "the one operation Abu Ma'shar licenses for the indicator, follows as PN IV's:")
         if pn4['hm_turning']:
@@ -5434,6 +5432,23 @@ def page_releaser():
          "be destroyed; and if it is not burned at the revolution but it is burned in one of the "
          "stakes of the Ascendant of the year, it indicates that as well; and it is worse for that "
          "in the Ascendant itself\" (1.23, 2-4)."),
+        ("The join.",
+         "The house-master directed here is selected by **Nawbakht's** "
+         "rule (1.15, 13: the dignity lord looking at the releaser) and directed by **Masha'allah's** operation "
+         "(1.23, 2, \"direct it\" -- the governor); 1.23, 40 and 43 call Masha'allah's governor \"the "
+         "house-master\" in Sahl's own words, but his governor is found by reception (1.23, 1), and the two "
+         "rules name different planets in about a third of charts. The join is this app's; no sentence "
+         "states it."),
+        ("The denial.",
+         "Abu Ma'shar denies the direction:\n\n> \"the indicator of the lifespan alone is turned in "
+         "the signs, sign-by-sign, and is not directed degree-by-degree\" (PN IV IX.8, 32; fn 129: \"Some "
+         "texts say that one can also distribute the house-master itself, but to me that seems like a "
+         "misunderstanding\").\n\nShown as Sahl's, with the denial beside it."),
+        ("Limitations: two limits of the denial.",
+         "Two limits of the denial: IX.8, 32 restricts the "
+         "**role** -- the planet may still be directed in another capacity, since \"all of the planets and Lots "
+         "are [also] directed\" (III.1, 5); and 1.16, 4 (direct the luminary \"even if a house-master is "
+         "not looking\") is a provision the 1.16 exception built above does not cover."),
         ("Current direction: the readings.",
          "Readings: \"the degree of burning\" is the Sun's natal degree; \"a year for every degree of "
          "ascensions\" is the oblique ascension of the birth latitude applied to the house-master's own "
@@ -5441,11 +5456,6 @@ def page_releaser():
          "luminaries and the Ascendant alike, not PN IV III.1, 12's third case, the proportional "
          "semi-arcs, which is Abu Ma'shar's assignment and not Sahl's); \"in the year of age\" is the "
          "completed year the arc falls in."),
-        ("Limitations: two limits of the denial.",
-         "Two limits of the denial: IX.8, 32 restricts the "
-         "**role** -- the planet may still be directed in another capacity, since \"all of the planets and Lots "
-         "are [also] directed\" (III.1, 5); and 1.16, 4 (direct the luminary \"even if a house-master is "
-         "not looking\") is a provision the 1.16 exception built above does not cover."),
         ("Not applied, and the redirection applied.",
          "Not applied: 4.12, 6 (a retrograde "
          "planet's rays directed conversely); 1.23, 5-11's further witnesses (the lord of the "
