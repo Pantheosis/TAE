@@ -9,7 +9,7 @@ def test_the_lesson_gate_is_gone_and_nothing_is_hidden():
     src = ui_source()
     assert "Show material through" not in src and "lesson_gate" not in src
     assert 'st.navigation(pages, position="top")' in src
-    for section in ('"Part 1: the nativity"', '"Part 2: prediction"', '"Reference"'):
+    for section in ('"**The Nativity**"', '"**Prediction**"', '"**Reference**"'):
         assert section in src
     at = make_app(page="chart").run()
     assert_no_exception(at, "chart")

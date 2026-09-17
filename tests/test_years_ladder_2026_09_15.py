@@ -162,11 +162,13 @@ def test_the_years_table_carries_the_column_at_the_supplement_depth_only(engine)
 
 
 def _timing_text(date, depth):
-    at = make_app(date=date, page="timing")
+    """The releaser page's text (the Releaser tab of the Timing page until
+    2026-09-17; the name stays with the callers)."""
+    at = make_app(date=date, page="releaser")
     at.session_state["_reading_depth"] = depth
     at.run()
-    assert_no_exception(at, f"timing {date} under {depth}")
-    assert "The Releaser" in [t.label for t in at.main.tabs]
+    assert_no_exception(at, f"releaser {date} under {depth}")
+    assert "The releaser" in [h.value for h in at.main.header]
     return " ".join(n.value for n in at.main.markdown) + " " + " ".join(n.value for n in at.main.caption)
 
 

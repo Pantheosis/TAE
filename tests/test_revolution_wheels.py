@@ -291,8 +291,9 @@ def test_timing_page_draws_every_view(view):
     at.run()
     assert_no_exception(at, f"timing view {view}")
     assert at.main.selectbox(key="timing_wheel_view").value == view
-    # Five pictures at least: the wheel and the four distributions' strips.
-    assert len(at.main.image) >= 5, [i for i in at.main.image]
+    # Four pictures at least: the wheel and the three distributions' strips
+    # (the releaser's strip is on The releaser page since 2026-09-17).
+    assert len(at.main.image) >= 4, [i for i in at.main.image]
     assert [d for d in at.main.download_button if "wheel" in d.label]
 
 
@@ -323,14 +324,15 @@ def test_chart_page_offers_the_bounds_ring_and_a_download():
     assert off.main.checkbox(key="chart_bounds").value is False
 
 
-def test_timing_page_has_six_chapters_and_every_table_inside_them():
-    """Six chapters, capitalised as the owner asked, client-side (no key,
-    no rerun on click); every table is still reachable inside its tab."""
+def test_timing_page_has_three_chapters_and_every_table_inside_them():
+    """Three chapters, capitalised as the owner asked, client-side (no key,
+    no rerun on click); every table is still reachable inside its tab. The
+    other three chapters became pages of their own on 2026-09-17 (The
+    releaser, Days and months, Fardar and ages)."""
     at = make_app(date="1240-05-23", page="timing").run()
     assert_no_exception(at, "timing")
     labels = [t.label for t in at.main.tabs]
-    assert labels == ["The Revolution", "Indicators of the Year", "Distributions", "The Releaser",
-                      "Days & Months", "Fardar, Ages & Reference Tables"]
+    assert labels == ["The Revolution", "Indicators of the Year", "Distributions"]
     assert len(at.main.dataframe) >= 30
     # The wheel controls: a selectbox for the view, the rest behind the popover.
     assert at.main.selectbox(key="timing_wheel_view").value == "Year"

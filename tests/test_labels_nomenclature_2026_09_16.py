@@ -282,9 +282,9 @@ def test_the_condition_caption_says_what_the_dignities_page_does(configurations)
 
 
 def test_the_small_days_note_describes_the_control_that_exists():
-    at = make_app(page="timing")
+    at = make_app(page="days")
     at.run()
-    assert_no_exception(at, "timing")
+    assert_no_exception(at, "days")
     note = [c.value for c in at.main.caption if "59' 08\"" in c.value]
     assert len(note) == 1, note
     assert "Only the revolution's Ascendant is directed" not in note[0]
@@ -292,7 +292,7 @@ def test_the_small_days_note_describes_the_control_that_exists():
 
 
 def test_the_alternate_point_control_is_on_the_page():
-    at = make_app(page="timing")
+    at = make_app(page="days")
     at.run()
     labels = [s.label for s in at.main.selectbox]
     assert any(label.startswith("Also direct, for the small days") for label in labels), labels

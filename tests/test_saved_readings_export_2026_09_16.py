@@ -397,7 +397,7 @@ def test_the_entered_block_is_the_record_a_save_would_write(analysis):
 
 def test_the_results_are_keyed_by_page_and_heading(analysis):
     assert set(analysis["results"]) == {"Chart", "Dignities and places", "Configurations",
-                                        "Lots", "Lunation and victors", "Timing"}
+                                        "Lots", "Lunation and victors", "Prediction"}
     for _page, headings in analysis["results"].items():
         for _heading, tables in headings.items():
             assert isinstance(tables, list) and tables
@@ -479,12 +479,19 @@ def test_the_strength_and_weakness_rows_carry_their_testimonies(analysis):
 
 
 def test_the_timing_bundles_tables_are_under_the_pages_own_headings(analysis):
-    at = make_app(page="timing").run()
-    assert_no_exception(at, "timing")
-    on_page = {heading for heading, _cols in table_inventory(at)}
-    exported = set(analysis["results"]["Timing"])
+    """The export's section for the timing bundle keeps its headings; since
+    2026-09-17 the pages that render them are four (Revolutions, The
+    releaser, Days and months, Fardar and ages), so the headings are
+    gathered from all four, and the section is labelled "Prediction" (it
+    was "Timing" while one page rendered them)."""
+    on_page = set()
+    for page in ("timing", "releaser", "days", "fardar"):
+        at = make_app(page=page).run()
+        assert_no_exception(at, page)
+        on_page |= {heading for heading, _cols in table_inventory(at)}
+    exported = set(analysis["results"]["Prediction"])
     missing = exported - on_page
-    assert not missing, f"the export names headings the Timing page does not render: {sorted(missing)}"
+    assert not missing, f"the export names headings the Prediction pages do not render: {sorted(missing)}"
     assert len(exported) > 20
 
 

@@ -143,7 +143,12 @@ def test_new_chart_clears_the_form_to_the_example_nativity(tmp_path, monkeypatch
     assert at.session_state["location_input_key"] == "Florence"
     assert at.session_state["manual_lat_key"] == pytest.approx(43.7698)
     assert at.session_state["manual_lon_key"] == pytest.approx(11.2556)
-    assert at.session_state["target_mode"] == "Date"
+    # The store key, which the top level reads; since 2026-09-17 the form
+    # drops the widget key rather than writing it (a plain value under a
+    # widget's key, written on a page that does not render the widget,
+    # shadowed the store once the widget went stale -- see the loader).
+    assert at.session_state["_target_mode"] == "Date"
+    assert "target_mode" not in at.session_state
     assert "loaded_location" not in at.session_state
     assert _strip(at) == "Unsaved chart"
     # The record itself is untouched, and it is still the chart a fresh

@@ -98,7 +98,8 @@ LOCAL_TIME = time(14, 30)
 # 2026-09-13 the depth also decides whether some render at all -- the Book V
 # degrees, the father Lot's second form, Figure 64's column on the
 # Reference page -- so the multiset differs between depths.)
-PAGES = ["chart", "dignities", "findings", "configurations", "lots", "victors", "timing", "reference", "sources"]
+PAGES = ["chart", "dignities", "findings", "configurations", "lots", "victors", "timing", "releaser", "days", "fardar",
+         "reference", "sources"]
 READING_DEPTHS = ["Course text", "Course text and supplement"]
 
 # The configurable readings (one entry per switch; the matrix test

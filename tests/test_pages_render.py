@@ -69,8 +69,9 @@ def _write_fixture_at_end():
         print(f"\nwrote {TABLES_FIXTURE}")
 
 
-# --- The Timing page's own reading (PN IV, IX.1, 26-34) ------------------
-# This switch is NOT in conftest.SWITCHES: it is read only by page_timing,
+# --- The Days and months page's own reading (PN IV, IX.1, 26-34) ---------
+# This switch is NOT in conftest.SWITCHES: it is read only by page_days
+# (the Days & Months tab of page_timing until 2026-09-17),
 # so putting it in the registry would double the Configurations
 # cross-product (2**8 states x 6 charts) to prove nothing. It is covered
 # instead by the doctrine fixtures, which pin the rule itself, and by
@@ -78,11 +79,11 @@ def _write_fixture_at_end():
 
 @pytest.mark.parametrize("date", list(CHARTS))
 @pytest.mark.parametrize("turn", ["Dykes: always forward", "PN IV IX.1, 26-34"])
-def test_timing_page_renders_under_both_monthly_turn_readings(date, turn):
-    at = make_app(date=date, page="timing")
+def test_days_page_renders_under_both_monthly_turn_readings(date, turn):
+    at = make_app(date=date, page="days")
     at.session_state["_pn4_monthly_turn"] = turn
     at.run()
-    assert_no_exception(at, f"{date} timing, monthly turn = {turn}")
+    assert_no_exception(at, f"{date} days, monthly turn = {turn}")
     assert len(at.main.dataframe) > 0
 
 
@@ -91,7 +92,7 @@ def test_abu_mashars_turn_actually_reverses_a_convertible_indicator():
     seven monthly indicators must be turned backwards on some chart, or
     the switch is inert. The default must leave every one forward."""
     def directions(turn):
-        at = make_app(date="1240-05-23", page="timing")
+        at = make_app(date="1240-05-23", page="days")
         at.session_state["_pn4_monthly_turn"] = turn
         at.run()
         assert_no_exception(at, f"timing {turn}")

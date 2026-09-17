@@ -33,6 +33,14 @@
    ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, Gr. Intr. VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
+  "days": [
+   ["The small days: the revolution's Ascendant distributed round the year", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
+   ["The mighty days: the terminal degree of the year directed through the revolution", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
+   ["The nine methods for the days and hours (IX.7, 1-72)", ["Method", "Opens the year", "This week", "Today", "This hour", "Source"]],
+   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Position", "Way 1: a day per degree, now at", "Way 2: the day's sign", "Way 2: this hour's sign", "Source"]],
+   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Month", "Ninth-part (3 d 9 h 10 m)", "Third (27 h 3 m)", "Ninth of the third (3 h 0.4 m)", "Third of that (1 h 0.1 m)", "Source"]],
+   ["The seven indicators of the month", ["#", "Indicator", "Rooted", "Sign", "Lord", "Turned", "In the root"]]
+  ],
   "dignities": [
    ["Lordship Mapping", ["Planet", "Position", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord", "Own dignity here"]],
    ["Sect", ["Planet", "Planet's sect", "Above horizon", "Of the chart's sect", "Domain (hayz)"]],
@@ -40,6 +48,17 @@
    ["The Moon in the houses — PN IV VII.8, by her transit", ["House", "Reading", "Locator", "Natal Moon here"]],
    ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Masha'allah's condition", "Averse to its place"]],
    ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
+  ],
+  "fardar": [
+   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this app"]],
+   ["Directing: which ascensions, and what a degree is worth", ["Directed in the", "A degree is"]],
+   ["Directing: which ascensions, and what a degree is worth", ["Arc", "Is"]],
+   ["The lords of the triplicity of the sect light, over the life", ["Triplicity of", "Order", "Lord", "Time of life", "Root condition", "Source"]],
+   ["The *fardar*", ["Lord", "Years", "From age", "To age", "Sub-periods", "Active"]],
+   ["When a natal indication comes out (III.7, 32-42)", ["Planet", "Natal sign", "Quadruplicity", "Manifests", "Ascensions of the sign", "Lesser", "Middle", "Greater", "Confirmed by the distribution"]],
+   ["The Ages of Man", ["Planet", "Years", "Ages", "Period of life", "Active"]],
+   ["Chronocrator Matrix", ["Technique", "Active Point", "Active Ruler", "Details"]],
+   ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar", "WS place", "Division (5 deg at the stakes)", "Side of the Sun", "In a share", "On Nativities 1.20 grants (as house-master)", "On Times 4, 7 (a question chart, 4, 2): for comparison"]]
   ],
   "findings": [
    ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
@@ -58,6 +77,18 @@
    ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar (years)"]],
    ["Degrees of nobility and rank", ["Sign", "Sahl (On Nativities 1.38, 41)"]],
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
+  ],
+  "releaser": [
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Candidate", "Degree", "House (division, 5 deg at the stakes; the Lot by whole-sign place)", "Lords of its degree", "Verdict", "Source"]],
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Planet", "Shares", "Looks by", "Rank", "Under the rays"]],
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Testimony", "Met", "Fact", "Counted", "Source"]],
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Fact", "Reads", "Source"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Year of age", "Turned sign", "Reaches", "Source"]],
+   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Harmer", "Named by 31", "Looks at the Sun", "Looks at the Lot", "Source"]],
+   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
+   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]]
   ],
   "sources": [
    ["Readings in force", ["Reading", "In force", "Saved with this chart", "Default", "Set on", "Differs"]],
@@ -100,32 +131,7 @@
    ["The planets, each with its measure under III.1, 12", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
    ["The planets, each with its measure under III.1, 12", ["Point", "Longitude", "Right ascension", "Declination", "Meridian distance", "Semi-arc", "Arc"]],
    ["The planets, each with its measure under III.1, 12", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The planets, each with its measure under III.1, 12", ["Point", "Longitude", "Right ascension", "Declination", "Meridian distance", "Semi-arc", "Arc"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Candidate", "Degree", "House (division, 5 deg at the stakes; the Lot by whole-sign place)", "Lords of its degree", "Verdict", "Source"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Planet", "Shares", "Looks by", "Rank", "Under the rays"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Testimony", "Met", "Fact", "Counted", "Source"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Fact", "Reads", "Source"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Year of age", "Turned sign", "Reaches", "Source"]],
-   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Harmer", "Named by 31", "Looks at the Sun", "Looks at the Lot", "Source"]],
-   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The small days: the revolution's Ascendant distributed round the year", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The mighty days: the terminal degree of the year directed through the revolution", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The nine methods for the days and hours (IX.7, 1-72)", ["Method", "Opens the year", "This week", "Today", "This hour", "Source"]],
-   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Position", "Way 1: a day per degree, now at", "Way 2: the day's sign", "Way 2: this hour's sign", "Source"]],
-   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Month", "Ninth-part (3 d 9 h 10 m)", "Third (27 h 3 m)", "Ninth of the third (3 h 0.4 m)", "Third of that (1 h 0.1 m)", "Source"]],
-   ["The seven indicators of the month", ["#", "Indicator", "Rooted", "Sign", "Lord", "Turned", "In the root"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this app"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Directed in the", "A degree is"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Arc", "Is"]],
-   ["The lords of the triplicity of the sect light, over the life", ["Triplicity of", "Order", "Lord", "Time of life", "Root condition", "Source"]],
-   ["The *fardar*", ["Lord", "Years", "From age", "To age", "Sub-periods", "Active"]],
-   ["When a natal indication comes out (III.7, 32-42)", ["Planet", "Natal sign", "Quadruplicity", "Manifests", "Ascensions of the sign", "Lesser", "Middle", "Greater", "Confirmed by the distribution"]],
-   ["The Ages of Man", ["Planet", "Years", "Ages", "Period of life", "Active"]],
-   ["Chronocrator Matrix", ["Technique", "Active Point", "Active Ruler", "Details"]],
-   ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar", "WS place", "Division (5 deg at the stakes)", "Side of the Sun", "In a share", "On Nativities 1.20 grants (as house-master)", "On Times 4, 7 (a question chart, 4, 2): for comparison"]]
+   ["The planets, each with its measure under III.1, 12", ["Point", "Longitude", "Right ascension", "Declination", "Meridian distance", "Semi-arc", "Arc"]]
   ],
   "victors": [
    ["Prenatal Lunation (Syzygy)", ["Metric", "Value"]],
@@ -164,6 +170,14 @@
    ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, Gr. Intr. VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
+  "days": [
+   ["The small days: the revolution's Ascendant distributed round the year", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
+   ["The mighty days: the terminal degree of the year directed through the revolution", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
+   ["The nine methods for the days and hours (IX.7, 1-72)", ["Method", "Opens the year", "This week", "Today", "This hour", "Source"]],
+   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Position", "Way 1: a day per degree, now at", "Way 2: the day's sign", "Way 2: this hour's sign", "Source"]],
+   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Month", "Ninth-part (3 d 9 h 10 m)", "Third (27 h 3 m)", "Ninth of the third (3 h 0.4 m)", "Third of that (1 h 0.1 m)", "Source"]],
+   ["The seven indicators of the month", ["#", "Indicator", "Rooted", "Sign", "Lord", "Turned", "In the root"]]
+  ],
   "dignities": [
    ["Lordship Mapping", ["Planet", "Position", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord", "Own dignity here"]],
    ["Sect", ["Planet", "Planet's sect", "Above horizon", "Of the chart's sect", "Domain (hayz)"]],
@@ -171,6 +185,17 @@
    ["The Moon in the houses — PN IV VII.8, by her transit", ["House", "Reading", "Locator", "Natal Moon here"]],
    ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Masha'allah's condition", "Averse to its place"]],
    ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
+  ],
+  "fardar": [
+   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this app"]],
+   ["Directing: which ascensions, and what a degree is worth", ["Directed in the", "A degree is"]],
+   ["Directing: which ascensions, and what a degree is worth", ["Arc", "Is"]],
+   ["The lords of the triplicity of the sect light, over the life", ["Triplicity of", "Order", "Lord", "Time of life", "Root condition", "Source"]],
+   ["The *fardar*", ["Lord", "Years", "From age", "To age", "Sub-periods", "Active"]],
+   ["When a natal indication comes out (III.7, 32-42)", ["Planet", "Natal sign", "Quadruplicity", "Manifests", "Ascensions of the sign", "Lesser", "Middle", "Greater", "Confirmed by the distribution"]],
+   ["The Ages of Man", ["Planet", "Years", "Ages", "Period of life", "Active"]],
+   ["Chronocrator Matrix", ["Technique", "Active Point", "Active Ruler", "Details"]],
+   ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar", "WS place", "Division (5 deg at the stakes)", "Side of the Sun", "In a share", "On Nativities 1.20 grants (as house-master)", "On Times 4, 7 (a question chart, 4, 2): for comparison"]]
   ],
   "findings": [
    ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
@@ -189,6 +214,18 @@
    ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar (years)"]],
    ["Degrees of nobility and rank", ["Sign", "Sahl (On Nativities 1.38, 41)"]],
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
+  ],
+  "releaser": [
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Candidate", "Degree", "House (division, 5 deg at the stakes; the Lot by whole-sign place)", "Lords of its degree", "Verdict", "Source"]],
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Planet", "Shares", "Looks by", "Rank", "Under the rays"]],
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Testimony", "Met", "Fact", "Counted", "Source"]],
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Fact", "Reads", "Source"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Year of age", "Turned sign", "Reaches", "Source"]],
+   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Harmer", "Named by 31", "Looks at the Sun", "Looks at the Lot", "Source"]],
+   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
+   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]]
   ],
   "sources": [
    ["Readings in force", ["Reading", "In force", "Saved with this chart", "Default", "Set on", "Differs"]],
@@ -233,32 +270,7 @@
    ["The planets, each with its measure under III.1, 12", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
    ["The planets, each with its measure under III.1, 12", ["Point", "Longitude", "Right ascension", "Declination", "Meridian distance", "Semi-arc", "Arc"]],
    ["The planets, each with its measure under III.1, 12", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The planets, each with its measure under III.1, 12", ["Point", "Longitude", "Right ascension", "Declination", "Meridian distance", "Semi-arc", "Arc"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Candidate", "Degree", "House (division, 5 deg at the stakes; the Lot by whole-sign place)", "Lords of its degree", "Verdict", "Source"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Planet", "Shares", "Looks by", "Rank", "Under the rays"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Testimony", "Met", "Fact", "Counted", "Source"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Fact", "Reads", "Source"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Year of age", "Turned sign", "Reaches", "Source"]],
-   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Harmer", "Named by 31", "Looks at the Sun", "Looks at the Lot", "Source"]],
-   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The small days: the revolution's Ascendant distributed round the year", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The mighty days: the terminal degree of the year directed through the revolution", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The nine methods for the days and hours (IX.7, 1-72)", ["Method", "Opens the year", "This week", "Today", "This hour", "Source"]],
-   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Position", "Way 1: a day per degree, now at", "Way 2: the day's sign", "Way 2: this hour's sign", "Source"]],
-   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Month", "Ninth-part (3 d 9 h 10 m)", "Third (27 h 3 m)", "Ninth of the third (3 h 0.4 m)", "Third of that (1 h 0.1 m)", "Source"]],
-   ["The seven indicators of the month", ["#", "Indicator", "Rooted", "Sign", "Lord", "Turned", "In the root"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this app"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Directed in the", "A degree is"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Arc", "Is"]],
-   ["The lords of the triplicity of the sect light, over the life", ["Triplicity of", "Order", "Lord", "Time of life", "Root condition", "Source"]],
-   ["The *fardar*", ["Lord", "Years", "From age", "To age", "Sub-periods", "Active"]],
-   ["When a natal indication comes out (III.7, 32-42)", ["Planet", "Natal sign", "Quadruplicity", "Manifests", "Ascensions of the sign", "Lesser", "Middle", "Greater", "Confirmed by the distribution"]],
-   ["The Ages of Man", ["Planet", "Years", "Ages", "Period of life", "Active"]],
-   ["Chronocrator Matrix", ["Technique", "Active Point", "Active Ruler", "Details"]],
-   ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar", "WS place", "Division (5 deg at the stakes)", "Side of the Sun", "In a share", "On Nativities 1.20 grants (as house-master)", "On Times 4, 7 (a question chart, 4, 2): for comparison"]]
+   ["The planets, each with its measure under III.1, 12", ["Point", "Longitude", "Right ascension", "Declination", "Meridian distance", "Semi-arc", "Arc"]]
   ],
   "victors": [
    ["Prenatal Lunation (Syzygy)", ["Metric", "Value"]],
@@ -304,6 +316,14 @@
    ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, Gr. Intr. VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
+  "days": [
+   ["The small days: the revolution's Ascendant distributed round the year", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
+   ["The mighty days: the terminal degree of the year directed through the revolution", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
+   ["The nine methods for the days and hours (IX.7, 1-72)", ["Method", "Opens the year", "This week", "Today", "This hour", "Source"]],
+   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Position", "Way 1: a day per degree, now at", "Way 2: the day's sign", "Way 2: this hour's sign", "Source"]],
+   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Month", "Ninth-part (3 d 9 h 10 m)", "Third (27 h 3 m)", "Ninth of the third (3 h 0.4 m)", "Third of that (1 h 0.1 m)", "Source"]],
+   ["The seven indicators of the month", ["#", "Indicator", "Rooted", "Sign", "Lord", "Turned", "In the root"]]
+  ],
   "dignities": [
    ["Lordship Mapping", ["Planet", "Position", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord", "Own dignity here"]],
    ["Sect", ["Planet", "Planet's sect", "Above horizon", "Of the chart's sect", "Domain (hayz)"]],
@@ -311,6 +331,17 @@
    ["The Moon in the houses — PN IV VII.8, by her transit", ["House", "Reading", "Locator", "Natal Moon here"]],
    ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Masha'allah's condition", "Averse to its place"]],
    ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
+  ],
+  "fardar": [
+   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this app"]],
+   ["Directing: which ascensions, and what a degree is worth", ["Directed in the", "A degree is"]],
+   ["Directing: which ascensions, and what a degree is worth", ["Arc", "Is"]],
+   ["The lords of the triplicity of the sect light, over the life", ["Triplicity of", "Order", "Lord", "Time of life", "Root condition", "Source"]],
+   ["The *fardar*", ["Lord", "Years", "From age", "To age", "Sub-periods", "Active"]],
+   ["When a natal indication comes out (III.7, 32-42)", ["Planet", "Natal sign", "Quadruplicity", "Manifests", "Ascensions of the sign", "Lesser", "Middle", "Greater", "Confirmed by the distribution"]],
+   ["The Ages of Man", ["Planet", "Years", "Ages", "Period of life", "Active"]],
+   ["Chronocrator Matrix", ["Technique", "Active Point", "Active Ruler", "Details"]],
+   ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar", "WS place", "Division (5 deg at the stakes)", "Side of the Sun", "In a share", "On Nativities 1.20 grants (as house-master)", "On Times 4, 7 (a question chart, 4, 2): for comparison"]]
   ],
   "findings": [
    ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
@@ -329,6 +360,18 @@
    ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar (years)"]],
    ["Degrees of nobility and rank", ["Sign", "Sahl (On Nativities 1.38, 41)"]],
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
+  ],
+  "releaser": [
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Candidate", "Degree", "House (division, 5 deg at the stakes; the Lot by whole-sign place)", "Lords of its degree", "Verdict", "Source"]],
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Planet", "Shares", "Looks by", "Rank", "Under the rays"]],
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Testimony", "Met", "Fact", "Counted", "Source"]],
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Fact", "Reads", "Source"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Year of age", "Turned sign", "Reaches", "Source"]],
+   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Harmer", "Named by 31", "Looks at the Sun", "Looks at the Lot", "Source"]],
+   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
+   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]]
   ],
   "sources": [
    ["Readings in force", ["Reading", "In force", "Saved with this chart", "Default", "Set on", "Differs"]],
@@ -371,32 +414,7 @@
    ["The planets, each with its measure under III.1, 12", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
    ["The planets, each with its measure under III.1, 12", ["Point", "Longitude", "Right ascension", "Declination", "Meridian distance", "Semi-arc", "Arc"]],
    ["The planets, each with its measure under III.1, 12", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The planets, each with its measure under III.1, 12", ["Point", "Longitude", "Right ascension", "Declination", "Meridian distance", "Semi-arc", "Arc"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Candidate", "Degree", "House (division, 5 deg at the stakes; the Lot by whole-sign place)", "Lords of its degree", "Verdict", "Source"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Planet", "Shares", "Looks by", "Rank", "Under the rays"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Testimony", "Met", "Fact", "Counted", "Source"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Fact", "Reads", "Source"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Year of age", "Turned sign", "Reaches", "Source"]],
-   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Harmer", "Named by 31", "Looks at the Sun", "Looks at the Lot", "Source"]],
-   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The small days: the revolution's Ascendant distributed round the year", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The mighty days: the terminal degree of the year directed through the revolution", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The nine methods for the days and hours (IX.7, 1-72)", ["Method", "Opens the year", "This week", "Today", "This hour", "Source"]],
-   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Position", "Way 1: a day per degree, now at", "Way 2: the day's sign", "Way 2: this hour's sign", "Source"]],
-   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Month", "Ninth-part (3 d 9 h 10 m)", "Third (27 h 3 m)", "Ninth of the third (3 h 0.4 m)", "Third of that (1 h 0.1 m)", "Source"]],
-   ["The seven indicators of the month", ["#", "Indicator", "Rooted", "Sign", "Lord", "Turned", "In the root"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this app"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Directed in the", "A degree is"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Arc", "Is"]],
-   ["The lords of the triplicity of the sect light, over the life", ["Triplicity of", "Order", "Lord", "Time of life", "Root condition", "Source"]],
-   ["The *fardar*", ["Lord", "Years", "From age", "To age", "Sub-periods", "Active"]],
-   ["When a natal indication comes out (III.7, 32-42)", ["Planet", "Natal sign", "Quadruplicity", "Manifests", "Ascensions of the sign", "Lesser", "Middle", "Greater", "Confirmed by the distribution"]],
-   ["The Ages of Man", ["Planet", "Years", "Ages", "Period of life", "Active"]],
-   ["Chronocrator Matrix", ["Technique", "Active Point", "Active Ruler", "Details"]],
-   ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar", "WS place", "Division (5 deg at the stakes)", "Side of the Sun", "In a share", "On Nativities 1.20 grants (as house-master)", "On Times 4, 7 (a question chart, 4, 2): for comparison"]]
+   ["The planets, each with its measure under III.1, 12", ["Point", "Longitude", "Right ascension", "Declination", "Meridian distance", "Semi-arc", "Arc"]]
   ],
   "victors": [
    ["Prenatal Lunation (Syzygy)", ["Metric", "Value"]],
@@ -440,6 +458,14 @@
    ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, Gr. Intr. VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]],
    ["Forward-Looking Conditions", ["Condition", "Planet", "Was Connecting To", "Stations Retrograde In (days)"]]
   ],
+  "days": [
+   ["The small days: the revolution's Ascendant distributed round the year", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
+   ["The mighty days: the terminal degree of the year directed through the revolution", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
+   ["The nine methods for the days and hours (IX.7, 1-72)", ["Method", "Opens the year", "This week", "Today", "This hour", "Source"]],
+   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Position", "Way 1: a day per degree, now at", "Way 2: the day's sign", "Way 2: this hour's sign", "Source"]],
+   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Month", "Ninth-part (3 d 9 h 10 m)", "Third (27 h 3 m)", "Ninth of the third (3 h 0.4 m)", "Third of that (1 h 0.1 m)", "Source"]],
+   ["The seven indicators of the month", ["#", "Indicator", "Rooted", "Sign", "Lord", "Turned", "In the root"]]
+  ],
   "dignities": [
    ["Lordship Mapping", ["Planet", "Position", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord", "Own dignity here"]],
    ["Sect", ["Planet", "Planet's sect", "Above horizon", "Of the chart's sect", "Domain (hayz)"]],
@@ -447,6 +473,17 @@
    ["The Moon in the houses — PN IV VII.8, by her transit", ["House", "Reading", "Locator", "Natal Moon here"]],
    ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Masha'allah's condition", "Averse to its place"]],
    ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
+  ],
+  "fardar": [
+   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this app"]],
+   ["Directing: which ascensions, and what a degree is worth", ["Directed in the", "A degree is"]],
+   ["Directing: which ascensions, and what a degree is worth", ["Arc", "Is"]],
+   ["The lords of the triplicity of the sect light, over the life", ["Triplicity of", "Order", "Lord", "Time of life", "Root condition", "Source"]],
+   ["The *fardar*", ["Lord", "Years", "From age", "To age", "Sub-periods", "Active"]],
+   ["When a natal indication comes out (III.7, 32-42)", ["Planet", "Natal sign", "Quadruplicity", "Manifests", "Ascensions of the sign", "Lesser", "Middle", "Greater", "Confirmed by the distribution"]],
+   ["The Ages of Man", ["Planet", "Years", "Ages", "Period of life", "Active"]],
+   ["Chronocrator Matrix", ["Technique", "Active Point", "Active Ruler", "Details"]],
+   ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar", "WS place", "Division (5 deg at the stakes)", "Side of the Sun", "In a share", "On Nativities 1.20 grants (as house-master)", "On Times 4, 7 (a question chart, 4, 2): for comparison"]]
   ],
   "findings": [
    ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
@@ -465,6 +502,20 @@
    ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar (years)"]],
    ["Degrees of nobility and rank", ["Sign", "Sahl (On Nativities 1.38, 41)"]],
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
+  ],
+  "releaser": [
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Candidate", "Degree", "House (division, 5 deg at the stakes; the Lot by whole-sign place)", "Lords of its degree", "Verdict", "Source"]],
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Planet", "Shares", "Looks by", "Rank", "Under the rays"]],
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Testimony", "Met", "Fact", "Counted", "Source"]],
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Fact", "Reads", "Source"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Year of age", "Turned sign", "Reaches", "Source"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
+   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Harmer", "Named by 31", "Looks at the Sun", "Looks at the Lot", "Source"]],
+   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
+   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]]
   ],
   "sources": [
    ["Readings in force", ["Reading", "In force", "Saved with this chart", "Default", "Set on", "Differs"]],
@@ -509,34 +560,7 @@
    ["The planets, each with its measure under III.1, 12", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
    ["The planets, each with its measure under III.1, 12", ["Point", "Longitude", "Right ascension", "Declination", "Meridian distance", "Semi-arc", "Arc"]],
    ["The planets, each with its measure under III.1, 12", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The planets, each with its measure under III.1, 12", ["Point", "Longitude", "Right ascension", "Declination", "Meridian distance", "Semi-arc", "Arc"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Candidate", "Degree", "House (division, 5 deg at the stakes; the Lot by whole-sign place)", "Lords of its degree", "Verdict", "Source"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Planet", "Shares", "Looks by", "Rank", "Under the rays"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Testimony", "Met", "Fact", "Counted", "Source"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Fact", "Reads", "Source"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Year of age", "Turned sign", "Reaches", "Source"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Harmer", "Named by 31", "Looks at the Sun", "Looks at the Lot", "Source"]],
-   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The small days: the revolution's Ascendant distributed round the year", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The mighty days: the terminal degree of the year directed through the revolution", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The nine methods for the days and hours (IX.7, 1-72)", ["Method", "Opens the year", "This week", "Today", "This hour", "Source"]],
-   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Position", "Way 1: a day per degree, now at", "Way 2: the day's sign", "Way 2: this hour's sign", "Source"]],
-   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Month", "Ninth-part (3 d 9 h 10 m)", "Third (27 h 3 m)", "Ninth of the third (3 h 0.4 m)", "Third of that (1 h 0.1 m)", "Source"]],
-   ["The seven indicators of the month", ["#", "Indicator", "Rooted", "Sign", "Lord", "Turned", "In the root"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this app"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Directed in the", "A degree is"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Arc", "Is"]],
-   ["The lords of the triplicity of the sect light, over the life", ["Triplicity of", "Order", "Lord", "Time of life", "Root condition", "Source"]],
-   ["The *fardar*", ["Lord", "Years", "From age", "To age", "Sub-periods", "Active"]],
-   ["When a natal indication comes out (III.7, 32-42)", ["Planet", "Natal sign", "Quadruplicity", "Manifests", "Ascensions of the sign", "Lesser", "Middle", "Greater", "Confirmed by the distribution"]],
-   ["The Ages of Man", ["Planet", "Years", "Ages", "Period of life", "Active"]],
-   ["Chronocrator Matrix", ["Technique", "Active Point", "Active Ruler", "Details"]],
-   ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar", "WS place", "Division (5 deg at the stakes)", "Side of the Sun", "In a share", "On Nativities 1.20 grants (as house-master)", "On Times 4, 7 (a question chart, 4, 2): for comparison"]]
+   ["The planets, each with its measure under III.1, 12", ["Point", "Longitude", "Right ascension", "Declination", "Meridian distance", "Semi-arc", "Arc"]]
   ],
   "victors": [
    ["Prenatal Lunation (Syzygy)", ["Metric", "Value"]],
@@ -577,6 +601,14 @@
    ["Favor & Recompense", ["Planet", "Condition", "Favored By", "Recompense (days)"]],
    ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, Gr. Intr. VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]]
   ],
+  "days": [
+   ["The small days: the revolution's Ascendant distributed round the year", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
+   ["The mighty days: the terminal degree of the year directed through the revolution", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
+   ["The nine methods for the days and hours (IX.7, 1-72)", ["Method", "Opens the year", "This week", "Today", "This hour", "Source"]],
+   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Position", "Way 1: a day per degree, now at", "Way 2: the day's sign", "Way 2: this hour's sign", "Source"]],
+   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Month", "Ninth-part (3 d 9 h 10 m)", "Third (27 h 3 m)", "Ninth of the third (3 h 0.4 m)", "Third of that (1 h 0.1 m)", "Source"]],
+   ["The seven indicators of the month", ["#", "Indicator", "Rooted", "Sign", "Lord", "Turned", "In the root"]]
+  ],
   "dignities": [
    ["Lordship Mapping", ["Planet", "Position", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord", "Own dignity here"]],
    ["Sect", ["Planet", "Planet's sect", "Above horizon", "Of the chart's sect", "Domain (hayz)"]],
@@ -584,6 +616,17 @@
    ["The Moon in the houses — PN IV VII.8, by her transit", ["House", "Reading", "Locator", "Natal Moon here"]],
    ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Masha'allah's condition", "Averse to its place"]],
    ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
+  ],
+  "fardar": [
+   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this app"]],
+   ["Directing: which ascensions, and what a degree is worth", ["Directed in the", "A degree is"]],
+   ["Directing: which ascensions, and what a degree is worth", ["Arc", "Is"]],
+   ["The lords of the triplicity of the sect light, over the life", ["Triplicity of", "Order", "Lord", "Time of life", "Root condition", "Source"]],
+   ["The *fardar*", ["Lord", "Years", "From age", "To age", "Sub-periods", "Active"]],
+   ["When a natal indication comes out (III.7, 32-42)", ["Planet", "Natal sign", "Quadruplicity", "Manifests", "Ascensions of the sign", "Lesser", "Middle", "Greater", "Confirmed by the distribution"]],
+   ["The Ages of Man", ["Planet", "Years", "Ages", "Period of life", "Active"]],
+   ["Chronocrator Matrix", ["Technique", "Active Point", "Active Ruler", "Details"]],
+   ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar", "WS place", "Division (5 deg at the stakes)", "Side of the Sun", "In a share", "On Nativities 1.20 grants (as house-master)", "On Times 4, 7 (a question chart, 4, 2): for comparison"]]
   ],
   "findings": [
    ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
@@ -602,6 +645,20 @@
    ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar (years)"]],
    ["Degrees of nobility and rank", ["Sign", "Sahl (On Nativities 1.38, 41)"]],
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
+  ],
+  "releaser": [
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Candidate", "Degree", "House (division, 5 deg at the stakes; the Lot by whole-sign place)", "Lords of its degree", "Verdict", "Source"]],
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Planet", "Shares", "Looks by", "Rank", "Under the rays"]],
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Testimony", "Met", "Fact", "Counted", "Source"]],
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Fact", "Reads", "Source"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Year of age", "Turned sign", "Reaches", "Source"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
+   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Harmer", "Named by 31", "Looks at the Sun", "Looks at the Lot", "Source"]],
+   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
+   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]]
   ],
   "sources": [
    ["Readings in force", ["Reading", "In force", "Saved with this chart", "Default", "Set on", "Differs"]],
@@ -645,34 +702,7 @@
    ["The planets, each with its measure under III.1, 12", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
    ["The planets, each with its measure under III.1, 12", ["Point", "Longitude", "Right ascension", "Declination", "Meridian distance", "Semi-arc", "Arc"]],
    ["The planets, each with its measure under III.1, 12", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The planets, each with its measure under III.1, 12", ["Point", "Longitude", "Right ascension", "Declination", "Meridian distance", "Semi-arc", "Arc"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Candidate", "Degree", "House (division, 5 deg at the stakes; the Lot by whole-sign place)", "Lords of its degree", "Verdict", "Source"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Planet", "Shares", "Looks by", "Rank", "Under the rays"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Testimony", "Met", "Fact", "Counted", "Source"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Fact", "Reads", "Source"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Year of age", "Turned sign", "Reaches", "Source"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Harmer", "Named by 31", "Looks at the Sun", "Looks at the Lot", "Source"]],
-   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The small days: the revolution's Ascendant distributed round the year", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The mighty days: the terminal degree of the year directed through the revolution", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The nine methods for the days and hours (IX.7, 1-72)", ["Method", "Opens the year", "This week", "Today", "This hour", "Source"]],
-   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Position", "Way 1: a day per degree, now at", "Way 2: the day's sign", "Way 2: this hour's sign", "Source"]],
-   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Month", "Ninth-part (3 d 9 h 10 m)", "Third (27 h 3 m)", "Ninth of the third (3 h 0.4 m)", "Third of that (1 h 0.1 m)", "Source"]],
-   ["The seven indicators of the month", ["#", "Indicator", "Rooted", "Sign", "Lord", "Turned", "In the root"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this app"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Directed in the", "A degree is"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Arc", "Is"]],
-   ["The lords of the triplicity of the sect light, over the life", ["Triplicity of", "Order", "Lord", "Time of life", "Root condition", "Source"]],
-   ["The *fardar*", ["Lord", "Years", "From age", "To age", "Sub-periods", "Active"]],
-   ["When a natal indication comes out (III.7, 32-42)", ["Planet", "Natal sign", "Quadruplicity", "Manifests", "Ascensions of the sign", "Lesser", "Middle", "Greater", "Confirmed by the distribution"]],
-   ["The Ages of Man", ["Planet", "Years", "Ages", "Period of life", "Active"]],
-   ["Chronocrator Matrix", ["Technique", "Active Point", "Active Ruler", "Details"]],
-   ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar", "WS place", "Division (5 deg at the stakes)", "Side of the Sun", "In a share", "On Nativities 1.20 grants (as house-master)", "On Times 4, 7 (a question chart, 4, 2): for comparison"]]
+   ["The planets, each with its measure under III.1, 12", ["Point", "Longitude", "Right ascension", "Declination", "Meridian distance", "Semi-arc", "Arc"]]
   ],
   "victors": [
    ["Prenatal Lunation (Syzygy)", ["Metric", "Value"]],
@@ -717,6 +747,14 @@
    ["Favor & Recompense", ["Planet", "Condition", "Favored By"]],
    ["Rays cast by ascensions (Ptolemy's method as reported by Abu Ma'shar, Gr. Intr. VII.7)", ["Planet", "Ray", "Zodiacal ray", "Ascensional ray (VII.7)", "Apart", "Hours from stake"]]
   ],
+  "days": [
+   ["The small days: the revolution's Ascendant distributed round the year", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
+   ["The mighty days: the terminal degree of the year directed through the revolution", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
+   ["The nine methods for the days and hours (IX.7, 1-72)", ["Method", "Opens the year", "This week", "Today", "This hour", "Source"]],
+   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Position", "Way 1: a day per degree, now at", "Way 2: the day's sign", "Way 2: this hour's sign", "Source"]],
+   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Month", "Ninth-part (3 d 9 h 10 m)", "Third (27 h 3 m)", "Ninth of the third (3 h 0.4 m)", "Third of that (1 h 0.1 m)", "Source"]],
+   ["The seven indicators of the month", ["#", "Indicator", "Rooted", "Sign", "Lord", "Turned", "In the root"]]
+  ],
   "dignities": [
    ["Lordship Mapping", ["Planet", "Position", "Sign Dispositor", "Exaltation Lord", "Triplicity lord", "Bound lord", "Face lord", "Own dignity here"]],
    ["Sect", ["Planet", "Planet's sect", "Above horizon", "Of the chart's sect", "Domain (hayz)"]],
@@ -724,6 +762,17 @@
    ["The Moon in the houses — PN IV VII.8, by her transit", ["House", "Reading", "Locator", "Natal Moon here"]],
    ["Topical House Lords (Masha'allah)", ["Topical House", "Cusp Sign", "Domicile Lord", "Placed in (WS place)", "Masha'allah's condition", "Averse to its place"]],
    ["Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", ["Planet", "Net", "Ess", "Acc", "Essential Dignities", "Accidental Conditions"]]
+  ],
+  "fardar": [
+   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this app"]],
+   ["Directing: which ascensions, and what a degree is worth", ["Directed in the", "A degree is"]],
+   ["Directing: which ascensions, and what a degree is worth", ["Arc", "Is"]],
+   ["The lords of the triplicity of the sect light, over the life", ["Triplicity of", "Order", "Lord", "Time of life", "Root condition", "Source"]],
+   ["The *fardar*", ["Lord", "Years", "From age", "To age", "Sub-periods", "Active"]],
+   ["When a natal indication comes out (III.7, 32-42)", ["Planet", "Natal sign", "Quadruplicity", "Manifests", "Ascensions of the sign", "Lesser", "Middle", "Greater", "Confirmed by the distribution"]],
+   ["The Ages of Man", ["Planet", "Years", "Ages", "Period of life", "Active"]],
+   ["Chronocrator Matrix", ["Technique", "Active Point", "Active Ruler", "Details"]],
+   ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar", "WS place", "Division (5 deg at the stakes)", "Side of the Sun", "In a share", "On Nativities 1.20 grants (as house-master)", "On Times 4, 7 (a question chart, 4, 2): for comparison"]]
   ],
   "findings": [
    ["The fetus's stay (Sahl)", ["Item", "Value", "Text"]],
@@ -742,6 +791,20 @@
    ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar (years)"]],
    ["Degrees of nobility and rank", ["Sign", "Sahl (On Nativities 1.38, 41)"]],
    ["The Ages of Man", ["Age", "Ruler", "Years", "From", "To"]]
+  ],
+  "releaser": [
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Candidate", "Degree", "House (division, 5 deg at the stakes; the Lot by whole-sign place)", "Lords of its degree", "Verdict", "Source"]],
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Planet", "Shares", "Looks by", "Rank", "Under the rays"]],
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Testimony", "Met", "Fact", "Counted", "Source"]],
+   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Fact", "Reads", "Source"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Year of age", "Turned sign", "Reaches", "Source"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
+   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
+   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Harmer", "Named by 31", "Looks at the Sun", "Looks at the Lot", "Source"]],
+   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
+   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]]
   ],
   "sources": [
    ["Readings in force", ["Reading", "In force", "Saved with this chart", "Default", "Set on", "Differs"]],
@@ -784,34 +847,7 @@
    ["The planets, each with its measure under III.1, 12", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
    ["The planets, each with its measure under III.1, 12", ["Point", "Longitude", "Right ascension", "Declination", "Meridian distance", "Semi-arc", "Arc"]],
    ["The planets, each with its measure under III.1, 12", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The planets, each with its measure under III.1, 12", ["Point", "Longitude", "Right ascension", "Declination", "Meridian distance", "Semi-arc", "Arc"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Candidate", "Degree", "House (division, 5 deg at the stakes; the Lot by whole-sign place)", "Lords of its degree", "Verdict", "Source"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Planet", "Shares", "Looks by", "Rank", "Under the rays"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["Testimony", "Met", "Fact", "Counted", "Source"]],
-   ["The releaser and the house-master (Sahl, *On Nativities* 1.15-1.16, 1.20)", ["From age", "To age", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Fact", "Reads", "Source"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Year of age", "Turned sign", "Reaches", "Source"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The house-master directed (Sahl, *On Nativities* 1.23, 1-11)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Harmer", "Named by 31", "Looks at the Sun", "Looks at the Lot", "Source"]],
-   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The father's Lot: its harmers and their direction (Sahl, *On Nativities* 4.20, 31-36)", ["Target", "Degree", "Arc (years)", "In the year of age", "Source", "Date"]],
-   ["The small days: the revolution's Ascendant distributed round the year", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The mighty days: the terminal degree of the year directed through the revolution", ["From day", "To day", "Date", "Lasting", "Distributor", "Partner", "By", "Rank", "Opened by", "Now"]],
-   ["The nine methods for the days and hours (IX.7, 1-72)", ["Method", "Opens the year", "This week", "Today", "This hour", "Source"]],
-   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Position", "Way 1: a day per degree, now at", "Way 2: the day's sign", "Way 2: this hour's sign", "Source"]],
-   ["The nine methods for the days and hours (IX.7, 1-72)", ["Start", "Month", "Ninth-part (3 d 9 h 10 m)", "Third (27 h 3 m)", "Ninth of the third (3 h 0.4 m)", "Third of that (1 h 0.1 m)", "Source"]],
-   ["The seven indicators of the month", ["#", "Indicator", "Rooted", "Sign", "Lord", "Turned", "In the root"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Point directed", "Measured in", "In this app"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Directed in the", "A degree is"]],
-   ["Directing: which ascensions, and what a degree is worth", ["Arc", "Is"]],
-   ["The lords of the triplicity of the sect light, over the life", ["Triplicity of", "Order", "Lord", "Time of life", "Root condition", "Source"]],
-   ["The *fardar*", ["Lord", "Years", "From age", "To age", "Sub-periods", "Active"]],
-   ["When a natal indication comes out (III.7, 32-42)", ["Planet", "Natal sign", "Quadruplicity", "Manifests", "Ascensions of the sign", "Lesser", "Middle", "Greater", "Confirmed by the distribution"]],
-   ["The Ages of Man", ["Planet", "Years", "Ages", "Period of life", "Active"]],
-   ["Chronocrator Matrix", ["Technique", "Active Point", "Active Ruler", "Details"]],
-   ["Planetary years", ["Planet", "Lesser", "Middle", "Greater", "Mighty", "Fardar", "WS place", "Division (5 deg at the stakes)", "Side of the Sun", "In a share", "On Nativities 1.20 grants (as house-master)", "On Times 4, 7 (a question chart, 4, 2): for comparison"]]
+   ["The planets, each with its measure under III.1, 12", ["Point", "Longitude", "Right ascension", "Declination", "Meridian distance", "Semi-arc", "Arc"]]
   ],
   "victors": [
    ["Prenatal Lunation (Syzygy)", ["Metric", "Value"]],

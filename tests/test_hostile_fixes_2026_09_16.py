@@ -410,14 +410,15 @@ def test_a_name_that_merely_resembles_it_still_saves(tmp_path, monkeypatch):
     assert "-- New Chart 2 --" in json.loads(_saved_path().read_text())
 
 
-# --- M4: the one Timing control that did not survive navigation ------------
+# --- M4: the one Days and months control that did not survive navigation ---
+# (the small days were a tab of the Timing page until 2026-09-17)
 
 def test_the_day_point_choice_survives_navigation(tmp_path, monkeypatch):
     """A plain widget key is dropped by Streamlit when the page is not
     rendered; through the store it stands, as every other page control on
     the page does."""
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
-    at = make_app(date="1982-11-19", page="timing").run()
+    at = make_app(date="1982-11-19", page="days").run()
     box = find_page_widget(at, "selectbox", "Also direct, for the small days")
     other = [o for o in box.options if o.endswith("Sun")][0]
     box.set_value(other).run()
@@ -426,8 +427,8 @@ def test_the_day_point_choice_survives_navigation(tmp_path, monkeypatch):
                or other.split("'s ")[-1] in m.value for m in at.main.markdown)
 
     at._page_hash = calc_hash("chart"); at.run()
-    at._page_hash = calc_hash("timing"); at.run()
-    assert_no_exception(at, "back on the Timing page")
+    at._page_hash = calc_hash("days"); at.run()
+    assert_no_exception(at, "back on the Days and months page")
     assert find_page_widget(at, "selectbox", "Also direct, for the small days").value == other
 
 
@@ -437,7 +438,7 @@ def test_the_day_point_is_not_written_to_the_preferences_file(tmp_path, monkeypa
     owner's call, not this branch's."""
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
     monkeypatch.delenv("ALMUTEN_NO_PREFERENCES", raising=False)
-    at = make_app(date="1982-11-19", page="timing").run()
+    at = make_app(date="1982-11-19", page="days").run()
     box = find_page_widget(at, "selectbox", "Also direct, for the small days")
     box.set_value([o for o in box.options if o.endswith("Sun")][0]).run()
     assert_no_exception(at, "choosing a day point")

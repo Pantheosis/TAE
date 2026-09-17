@@ -303,10 +303,12 @@ def test_the_note_declares_the_conjecture_and_the_conventions(engine):
 
 
 def _timing_text(date, depth):
-    at = make_app(date=date, page="timing")
+    """The releaser page's text (the Releaser tab of the Timing page until
+    2026-09-17; the name stays with the callers)."""
+    at = make_app(date=date, page="releaser")
     at.session_state["_reading_depth"] = depth
     at.run()
-    assert_no_exception(at, f"timing {date} under {depth}")
+    assert_no_exception(at, f"releaser {date} under {depth}")
     text = " ".join(n.value for n in at.main.markdown) + " " + " ".join(n.value for n in at.main.caption)
     return text + " " + " ".join(n.value for n in at.main.subheader)
 
