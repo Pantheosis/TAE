@@ -604,3 +604,42 @@ def test_the_nobility_degrees_state_the_ordinal_convention_above_the_table_and_t
         assert lists.endswith("six of the eight disagreeing; the text reconciles none of it.")
     else:
         assert lists.endswith("Course text and supplement lays it beside this one.")
+
+
+# --- Chart ------------------------------------------------------------------
+
+def test_the_mars_west_tooltip_is_short_and_both_rays_readings_stand_whole_in_notes_under_the_positions():
+    at = make_app(page="chart").run()
+    assert_no_exception(at, "chart")
+    mars = [c for c in at.main.checkbox if c.label == "Mars under the rays to 18° west"][0]
+    assert mars.help == ("Dykes's table for Sahl has Mars under the rays at 18 west; Gr. Intr. VII.2, 31 puts him under the rays "
+                         "at 15 on the western side. Both give 18 east. Full text on the Sources page, and in the notes under this table.")
+    moon = [c for c in at.main.checkbox if c.label == "Moon under the rays to 15°"][0]
+    notes = [n for n in at.main if getattr(n, "type", None) == "status" and n.label == "Sources and editorial notes"]
+    # the one notes expander on the Chart page stands after the positions table
+    md = [m.value for m in notes[0].markdown]
+    assert md[0::2] == ["**The Moon under the rays to 15°.**", "**Mars under the rays to 18° west.**"]
+    assert moon.help == md[1] + " Full text on the Sources page."     # the Moon's tooltip, less its pointer
+    assert md[3] == ("Dykes's table for Sahl (the chapter head of On Nativities 1.22, with fn 175, which reads VII.2, 30's "
+                     "westernizing boundary into 18 degrees) has Mars under the rays at 18 west; Sahl's own sentences are silent "
+                     "on Mars west. Gr. Intr. VII.2, 31 puts him under the rays at 15 on the western side. Both give 18 east. "
+                     "Affects: the Solar phase column here and every test that reads it (Weakness 93, Planetary Condition 27/34/45).")
+    kinds = [getattr(n, "type", None) for n in at.main]
+    positions = next(i for i, n in enumerate(at.main) if getattr(n, "type", None) == "subheader" and n.value == "Planetary Positions")
+    notes_at = next(i for i, n in enumerate(at.main) if getattr(n, "type", None) == "status" and n.label == "Sources and editorial notes")
+    calculated = next(i for i, n in enumerate(at.main) if getattr(n, "type", None) == "subheader" and n.value == "Calculated Points")
+    assert positions < notes_at < calculated
+
+
+def test_the_circumpolar_notes_stand_only_on_a_chart_without_sunrise_or_sunset():
+    at = make_app(page="chart").run()
+    assert "Why the hour lord is approximate here" not in [l for l, _ in _statuses(at)]
+    polar = make_app(page="chart")
+    polar.session_state["manual_lat_key"] = 78.2
+    polar.session_state["manual_lon_key"] = 15.6
+    polar.run()
+    assert_no_exception(polar, "chart, circumpolar")
+    assert [i for l, i in _statuses(polar) if l == "Why the hour lord is approximate here"] == [NOTES_EXPANDER_ICON]
+    notice = [c.value for c in polar.main.caption if "not a temporal hour" in c.value]
+    assert len(notice) == 1 and "explicitly modern approximation" in notice[0] and notice[0].endswith("The Lord of the Day is still exact.")
+    assert len(notice[0]) <= 400

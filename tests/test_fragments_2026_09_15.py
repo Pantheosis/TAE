@@ -330,11 +330,13 @@ def test_the_page_around_the_chart_fragment_is_untouched():
     at = _at("chart")
     kids = list(at.main.children.values())
     # The header, the chart strip, the readings note's (empty) slot, the
-    # fragment, the three sentences, then the page as it was.
+    # fragment, the four sentences in one reading-width container (body
+    # text since readability branch B, 2026-09-17), then the page as it was.
     assert [type(k).__name__ for k in kids[:4]] == ["Header", "Caption", "UnknownElement", "Block"]
     assert kids[2].type == "empty"
-    assert [type(k).__name__ for k in kids[4:8]] == ["Caption"] * 4
-    assert kids[8].value == "Calculation"
+    assert type(kids[4]).__name__ == "Block"
+    assert [type(k).__name__ for k in kids[4].children.values()] == ["Markdown"] * 4
+    assert kids[5].value == "Calculation"
 
 
 def test_the_timing_fragment_holds_the_subheader_picture_and_controls_only():

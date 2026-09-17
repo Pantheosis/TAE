@@ -53,7 +53,6 @@ KEY_LENGTH = 48
 ALLOWED_LONG = (
     # help
     'LMT (local mean time) for charts before standard',
-    "Dykes's table for Sahl (the chapter head of On N",
     'I.2, 1: a revolution is the moment the Sun comes',
     'Year: the revolution alone (Figures 4, 26). Year',
     'Dykes: "Abu Ma\'shar seems to prefer that the SR ',
@@ -88,7 +87,6 @@ ALLOWED_LONG = (
     # glance
     "Flags planets in Sahl's dark signs (Libra, Capri",
     # caption
-    '⚠️ **The Lord of the Hour here is not a temporal',
     'The releaser and the house-master PN IV leaves t',
     "PN IV's own conventions, read from its figures: ",
     'A table, not the wheel of I.6, 1: every point by',

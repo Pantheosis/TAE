@@ -2826,19 +2826,23 @@ def page_chart():
         # page's inventory of tables is what it always was.
         _pick_panel(picked)
     _wheel_block()
+    # The notice says what is shown and what is not affected; the reason --
+    # no temporal hour exists here -- is the full explanation, in notes.
     if chronocrats.get('Approximate'):
         st.caption(
-            "⚠️ **The Lord of the Hour here is not a temporal hour.** No sunrise "
-            "or sunset exists for this date at this location (circumpolar day or night), and "
-            "the temporal hour is *defined* by the interval between them — so it has no "
-            "value at all, and no source in hand contemplates the case. What is shown is an "
+            "⚠️ **The Lord of the Hour here is not a temporal hour.** What is shown is an "
             "explicitly modern approximation: the civil day divided into 24 equal hours, "
             "continuing the same Chaldean cycle. The Lord of the Day is still exact."
         )
-    # Three sentences, the full page width, each its own caption so it
-    # is its own short paragraph and wraps only where the page makes
-    # it. Both layouts print the same three, so the page reads alike
-    # whichever wheel is drawn.
+        _notes_expander("Why the hour lord is approximate here", [
+            ("No temporal hour exists for this date at this location.",
+             "No sunrise "
+             "or sunset exists for this date at this location (circumpolar day or night), and "
+             "the temporal hour is *defined* by the interval between them — so it has no "
+             "value at all, and no source in hand contemplates the case."),
+        ])
+    # Four sentences at reading width, each its own paragraph. Both layouts
+    # print the same four, so the page reads alike whichever wheel is drawn.
     _intro = ("A TNAC study companion: cast the chart by hand, then check it here, table by "
               "table, against what the texts say.",
               "The texts are *The Astrology of Sahl b. Bishr*, vol. I, and Abu Ma'shar's *On the "
@@ -2855,12 +2859,14 @@ def page_chart():
     # including this one; under the harness, where preferences are
     # neither read nor written, it stays 0 and the three stand open.
     if LAUNCH_COUNT <= 2:
-        for _sentence in _intro:
-            st.caption(_sentence)
+        with _prose():
+            for _sentence in _intro:
+                st.markdown(_sentence)
     else:
         with st.expander("About this app", expanded=False):
-            for _sentence in _intro:
-                st.caption(_sentence)
+            with _prose():
+                for _sentence in _intro:
+                    st.markdown(_sentence)
     # The Lesson 5 worksheet's intermediate lines, so a hand
     # calculation can be checked line by line rather than only at
     # the Ascendant. GST is the Greenwich sidereal time at the UT of
@@ -2892,12 +2898,9 @@ def page_chart():
                                "and 72-73 give 12. Affects: the Solar phase column here, and on the Configurations "
                                "page Weakness (93), Planetary Condition and Corruption of the Moon. Full text on the Sources page.")
         _reading_checkbox("Mars under the rays to 18° west", "mars_west_18", "_mars_west_18",
-                          help="Dykes's table for Sahl (the chapter head of On Nativities 1.22, with fn 175, which "
-                               "reads VII.2, 30's westernizing boundary into 18 degrees) has Mars under the rays "
-                               "at 18 west; Sahl's own sentences are silent on Mars west. Gr. Intr. VII.2, 31 puts "
-                               "him under the rays at 15 on the western side. Both "
-                               "give 18 east. Affects: the Solar phase column here and every test that reads it "
-                               "(Weakness 93, Planetary Condition 27/34/45).")
+                          help="Dykes's table for Sahl has Mars under the rays at 18 west; Gr. Intr. VII.2, 31 puts "
+                               "him under the rays at 15 on the western side. Both give 18 east. Full text on the "
+                               "Sources page, and in the notes under this table.")
     # True planets only — angles, nodes, and Lot of Fortune
     # now live in the "Calculated Points" table alongside it.
     # The Lesson 3 homework asks for sign/degree/minute AND absolute
@@ -2914,6 +2917,21 @@ def page_chart():
     st.caption("Quadrant column: Alchabitius house, advancing or retreating in Sahl's sense "
                "(The Introduction Ch. 3, 4-5): stake or succedent versus falling. "
                "Sees ASC: whole-sign aversion to the first place (the 2nd, 6th, 8th and 12th do not see it).")
+    # The two under-the-rays readings' full texts, the Mars tooltip's
+    # sentences whole beside the Moon's, where the checkboxes stand.
+    _notes_expander(NOTES_TITLE, [
+        ("The Moon under the rays to 15°.",
+         "Sahl, On Nativities 1.19, 6 gives 15 degrees for the Moon; Gr. Intr. VII.2, 61 "
+         "and 72-73 give 12. Affects: the Solar phase column here, and on the Configurations "
+         "page Weakness (93), Planetary Condition and Corruption of the Moon."),
+        ("Mars under the rays to 18° west.",
+         "Dykes's table for Sahl (the chapter head of On Nativities 1.22, with fn 175, which "
+         "reads VII.2, 30's westernizing boundary into 18 degrees) has Mars under the rays "
+         "at 18 west; Sahl's own sentences are silent on Mars west. Gr. Intr. VII.2, 31 puts "
+         "him under the rays at 15 on the western side. Both "
+         "give 18 east. Affects: the Solar phase column here and every test that reads it "
+         "(Weakness 93, Planetary Condition 27/34/45)."),
+    ])
     points_col, cusps_col = st.columns(2)
     with points_col:
         st.subheader('Calculated Points', help="Non-planetary chart points: the four angles (Ascendant, Midheaven, Descendant, Imum Coeli), the Moon's Nodes, and the Lot of Fortune (a sect-dependent formula combining the Sun, Moon, and Ascendant).")

@@ -349,30 +349,30 @@ def _chart_page(launches=None):
 
 
 def test_the_introduction_stands_open_on_the_first_two_launches():
-    """Three paragraphs a reader needs once. Under the harness preferences
-    are neither read nor written, so the count stays 0 and every test that
-    expects the three captions still finds them."""
+    """Four paragraphs a reader needs once, body text at reading width since
+    readability branch B (2026-09-17). Under the harness preferences are
+    neither read nor written, so the count stays 0 and every test that
+    expects the four sentences still finds them."""
     for launches in (None, 1, 2):
         at = _chart_page(launches)
-        captions = [c.value for c in at.main.caption]
-        assert any(c.startswith(INTRO_OPENING) for c in captions), launches
+        sentences = [m.value for m in at.main.markdown]
+        assert any(s.startswith(INTRO_OPENING) for s in sentences), launches
         assert not [e for e in at.main.get("expander") if e.label == "About this app"], launches
 
 
 def test_the_introduction_folds_itself_from_the_third_launch():
-    """Folded, not dropped: the same four captions, one click away."""
+    """Folded, not dropped: the same four sentences, one click away."""
     at = _chart_page(3)
     folded = [e for e in at.main.get("expander") if e.label == "About this app"]
     assert len(folded) == 1, [e.label for e in at.main.get("expander")]
     assert folded[0].proto.expanded is False
-    inside = [c.value for c in folded[0].caption]
+    inside = [m.value for m in folded[0].markdown]
     assert len(inside) == 4 and inside[0].startswith(INTRO_OPENING)
-    # and none of the three is left standing bare: the page's own children
-    # carry the chart strip's caption and no more.
-    bare = [child.value for child in at.main.children.values()
-            if type(child).__name__ == "Caption"]
-    assert all(not value.startswith(INTRO_OPENING) for value in bare), bare
-    assert [c.value for c in at.main.caption if c.value.startswith(INTRO_OPENING)] == inside[:1]
+    # and none of the four is left standing bare: outside the expander no
+    # element of the page opens with the first sentence.
+    bare = [m.value for m in at.main.markdown if m.value.startswith(INTRO_OPENING)]
+    assert bare == inside[:1]
+    assert not [c.value for c in at.main.caption if c.value.startswith(INTRO_OPENING)]
 
 
 def test_the_launch_count_is_a_preference_counted_once_a_session():
