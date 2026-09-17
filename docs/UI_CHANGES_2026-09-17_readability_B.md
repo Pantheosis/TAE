@@ -4,8 +4,10 @@ Branch `readability-b-2026-09-17` off `main` at `dfdf6a9` (the merge of PR #75,
 branch A). Branch B of `UI_READABILITY_PLAN_2026-09-17_rev2.md` §2, built to
 `B_BRIEF_2026-09-17.md`. Nine commits: one per page in the brief's order
 (Findings, Dignities and places, Lots, Configurations, Reference tables,
-Chart), the active-readings line, the Chart page's last long block, and this
-note. `engine.py` is byte-identical to `main` (`git diff main -- engine.py`
+Chart), the active-readings line, the Chart page's last long block, this
+note, and the fix round after the two gates (`B_ADVERSARIAL_REPORT_2026-09-17.md`,
+`B_BLIND_TEXT_REPORT_2026-09-17.md`; the paragraphs below read as the
+branch stands after it). `engine.py` is byte-identical to `main` (`git diff main -- engine.py`
 is empty); `tests/fixtures/tables.json` is byte-identical to `main`
 (regenerated once with `UPDATE_TABLE_FIXTURE=1`, 85 passed, no diff: no
 heading and no column changed). Streamlit 1.62.0.
@@ -50,10 +52,11 @@ it; the block's `ALLOWED_LONG` entries are deleted in the same commit.
   since on `main` it opens with the closing mark of fn 45's quotation in the
   same constant). Sections, in chapter order: *The meeting before the birth
   and its Ascendant (1.8, 5-6).* · *The three divisions of 1.8, not
-  computed.* · *The three Moons of 1.9, 1, and the year.* · *The aspects of
-  1.9, 2-10.* · *The conception and the stay by the day and hour, not
-  computed (1.9, 11-14).* The conception-unavailable and unspecified-chart
-  limits stand in the last two and the second.
+  computed.* · *The seven-month native and the four-footed nativities (1.8,
+  1).* · *The three Moons of 1.9, 1, and the year.* · *The aspects of 1.9,
+  2-10.* · *The conception and the stay by the day and hour, not computed
+  (1.9, 11-14).* The conception-unavailable and unspecified-chart limits
+  stand in the last two and the second.
 - **The Moon on the third day (Sahl).** Tooltip: the glance truncated at
   its colon. Summary: the sentence whole. Qualification: *The third day, this
   app's reading of Firmicus.* -- the notes' "This app takes it two days after
@@ -93,7 +96,7 @@ it; the block's `ALLOWED_LONG` entries are deleted in the same commit.
   sign where it does not, malefics Saturn and Mars). Sections: *The
   conditions tested, each with its reading.* (the existing list, first) ·
   *Rhetorius's chapters, as Holden has them.* (the six chapters as
-  blockquotes under bold locator lines; "Holden's notes name them ..." after
+  blockquotes under bold locator lines, Ch. 27's included; "Holden's notes name them ..." after
   Ch. 28, glued as on `main`) · *The besiegers of an afflicted planet.*
 - **Morin's rules for aspects into good and bad houses.** Tooltip: the
   sentence truncated before "read by the kind of ray". Summary: whole.
@@ -148,7 +151,10 @@ No comparison table on this page.
   expander). *This app's ranking convenience.* (the caption's first two
   sentences) before the score table; after it, "**Solar phase** follows Abu
   Ma'shar's walk … (Sahl states no burn boundary, and his Mars westernizes
-  at 18°, not 15°):" then the thresholds table at the expander's width, then
+  at 18°, not 15°):" then the thresholds table at the expander's width with
+  the caption "The figures shown are those in force under the current
+  readings." (so the in-force figures and the lead's parenthetical do not
+  read against each other under the Moon-15 or Mars-18-west reading), then
   "In the heart: within 16' (VII.2, 7-9, from the Sun's own apparent
   diameter). Sahl elsewhere says one whole degree for the heart, …" and the
   **Domain/hayz** paragraph as it was (`DOMAIN_RULE` interpolated, both
@@ -232,7 +238,8 @@ name"), untouched.
   standing; the "about 4% of configured pairs" measurement stays in the notes.
 - **Enclosure.** Tooltip: the one sentence truncated before "-- graded";
   the sentence whole as the summary.
-- **Reception.** Tooltip: the first sentence. Summary: the second.
+- **Reception.** Tooltip: the first sentence. Summary: both sentences
+  (the second's "those" needs the first).
   Qualifications: *Under Sahl's rule.* (the glance's Kind II / Kind IV
   sentence) and *An empty table.* ("An empty table is **not** non-reception
   -- that is a separate set of hostile configurations, in the table below.",
@@ -300,7 +307,10 @@ name"), untouched.
   weakness 94-95; Abu Ma'shar's 3, 47-50 and enclosure; the Moon's 67-68 and
   106).", rides on the in-force line under the checkbox when the reading is
   on and a malefic rules the Ascendant -- where the reading shows, beside
-  the tables it changes -- inside the same fixed `st.empty()` slot.
+  the tables it changes -- inside the same fixed `st.empty()` slot, and
+  stands as well, a copy, as the second paragraph of the reading's entry
+  under Configurable readings on the Sources page, where a reader deciding
+  whether to switch it on can read it with the reading off.
 - **Planetary Condition** (A's block): "the Dignities page" → "the
   Dignities and places page" in the qualification ("They are kept beside
   the Dignities and places page, which prints …") and in the notes ("Topical
@@ -437,12 +447,15 @@ paragraph carried is dropped.
 
 ## Consolidated duplicates
 
-None reduced. Three sentences are copied rather than moved -- the fetus's
+None reduced. Four sentences are copied rather than moved -- the fetus's
 year sentence, the third day's Firmicus sentence and Morin's "unfortunate
 houses" sentence, each visible as a qualification and standing in its notes
-paragraph where a later sentence refers back to it -- and one is copied as
-the eyesight block's method line ("Neither table is precessed here: each is
-applied as printed."). The Mars tooltip's sentences stand once, in the
+paragraph where a later sentence refers back to it, and the eyesight
+block's method line ("Neither table is precessed here: each is applied as
+printed.") -- and a fifth after the gates: the fitting infortune's "When on,
+that malefic drops out of every 'afflicted by an infortune' test in these
+tables (…)" stands on the Configurations in-force line and on the Sources
+page's entry for the reading. The Mars tooltip's sentences stand once, in the
 notes; the Moon's tooltip stands unchanged and its text once more in the
 notes beside them (a copy, so that the two readings' full texts are read
 together).
@@ -622,7 +635,7 @@ worktree at `main`, since removed).
 
 ## Nothing-lost, reverse
 
-`python tests/tools/prose_preserved.py readability-b-2026-09-17 --tree <a detached worktree at main>` from this tree: **146 branch sentences not on main**, plus `LOCATOR-COUNT` lines, which in this direction (base = the branch, tree = main) say the branch holds more copies of a token than main: Ch. 3, 49-55 and VII.5, 129-133 (the reception table's headers and section headings beside the paragraphs), Ch. 3, 58-62 (Non-reception's tooltip and summary), VII.4, 5-8 (the aspects key and its section), Nativities 1.19, VII.2, 31 and VII.2, 61 and 72-73 (the Chart notes beside the tooltips), VII.8, VII.8, 3-8, VII.8, 3 and VII.2 (the witnesses table beside its sentence), Nativities 2.13 (the triplicity block's headings) -- copies made by headings, table headers and a tooltip's sentence standing as the summary too, no copy lost on either side (the forward run reports 0 count drops). Every branch-only sentence classified:
+`python tests/tools/prose_preserved.py readability-b-2026-09-17 --tree <a detached worktree at main>` from this tree: **148 branch sentences not on main**, plus `LOCATOR-COUNT` lines, which in this direction (base = the branch, tree = main) say the branch holds more copies of a token than main: Ch. 3, 49-55 and VII.5, 129-133 (the reception table's headers and section headings beside the paragraphs), Ch. 3, 58-62 (Non-reception's tooltip and summary), VII.4, 5-8 (the aspects key and its section), Nativities 1.19, VII.2, 31 and VII.2, 61 and 72-73 (the Chart notes beside the tooltips), VII.8, VII.8, 3-8, VII.8, 3 and VII.2 (the witnesses table beside its sentence), Nativities 2.13 (the triplicity block's headings) -- copies made by headings, table headers and a tooltip's sentence standing as the summary too, no copy lost on either side (the forward run reports 0 count drops). Every branch-only sentence classified:
 
 *Table rows (the comparison tables' and the keys' rows, and the script's fragments of them)* — 11:
 - VIII.3, 28-29 -- the Lot of the Invisible, which Sahl names
@@ -637,10 +650,7 @@ worktree at `main`, since removed).
 - 3, 49-55) \| Abu Ma'shar (VII.5, 129-133) \| \|---\|---\|---\| \| Direction \| One way only: the connecting planet stands in a dignity of the planet it connects with, and so is received by it \| Also in reverse, where the accepting planet sits in the connector's dignity (130) \| \| Dignities that count \| House or exaltation is perfect reception; triplicity alone ranked below it (50); bound only paired with triplicity (54-55); face never appears \| All five dignities count (129); house/exaltation strongest (131); a lone minor dignity weak unless two of bound/triplicity/face combine (132) \| \| Connection required \| Always \| Reception can hold by looking with no connection at all (133) \|
 - - Kind I (58): B holds no essential dignity at all at A's position -- B is alien in A's sign, so A is not recognised. - Kind II (59-60): A stands in B's own sign of fall, "like one who comes to it from the house of its enemies." - Kind III (61): A is in its own fall and B has no house or exaltation there to rescue it -- "as though the one asking is offering defeat." - Kind IV (62): B is in its own fall, which brings the connection down whatever A's condition. - Kind V (62): B sits in A's own sign of fall.
 
-*Section headings, disclosure titles and bold leads* — 70:
-- Select a house to read the Moon's transit through it in full
-- Select a topical house to read its lord's placement and Masha'allah's sentence
-- Select a Lot to read its standing, source and editor's note
+*Section headings, disclosure titles and bold leads* — 68:
 - How the standings are recorded
 - Why the hour lord is approximate here
 - The text's own reservation.
@@ -667,6 +677,7 @@ worktree at `main`, since removed).
 - No temporal hour exists for this date at this location.
 - The meeting before the birth and its Ascendant (1.8, 5-6).
 - The three divisions of 1.8, not computed.
+- The seven-month native and the four-footed nativities (1.8, 1).
 - The three Moons of 1.9, 1, and the year.
 - The aspects of 1.9, 2-10.
 - The conception and the stay by the day and hour, not computed (1.9, 11-14).
@@ -709,7 +720,11 @@ worktree at `main`, since removed).
 - Testimonies 78 and 83: two measurements.
 - Distinct from Planetary Condition.
 
-*Placeholders and boilerplate (the count caption's constant part, the Mars tooltip's pointer)* — 2:
+*Placeholders and boilerplate (the three selectbox placeholders, the count caption's constant part, the Mars tooltip's pointer, the thresholds table's caption)* — 6:
+- Select a house to read the Moon's transit through it in full
+- Select a topical house to read its lord's placement and Masha'allah's sentence
+- Select a Lot to read its standing, source and editor's note
+- The figures shown are those in force under the current readings.
 - Full text on the Sources page, and in the notes under this table.
 - readings differ from defaults.
 
@@ -806,3 +821,7 @@ worktree at `main`, since removed).
   paragraph after a quotation is free to stand under its own heading.
 - The preview clone's pane was hidden for this agent; the keyboard path
   on a selectbox needs a displayed pane.
+- The Chart page's wheel pick panel (`_pick_panel`, main's strings) says
+  "The Dignities page carries …" twice and "The Reference page carries …"
+  three times; the bar names them "Dignities and places" and "Reference
+  tables" -- for C or a later pass, not this branch's.
