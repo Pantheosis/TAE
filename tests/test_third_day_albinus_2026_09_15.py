@@ -2,7 +2,7 @@
 chart: in the nativity of Albinus (Mathesis II.29, 21-22 and 34; Figure 34)
 "on the third day the Moon, being established in Leo, full of light, flung
 herself into the rays of Mars". With the Moon at 14 58' Cancer and Mars at
-11 18' Aquarius at the birth, the Moon stands on Mars's opposition ray in
+11 15' Aquarius at the birth, the Moon stands on Mars's opposition ray in
 Leo two days after the birth (14 Leo, 182 degrees from him), not three
 (29 Leo, 196): the birth day is the first, so the third day is birth + 2.
 Owner's ruling of 2026-09-15."""

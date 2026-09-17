@@ -11,7 +11,7 @@ from corpus_paths import corpus_file
 
 ITA = corpus_file("ita/ita_photographed.md")
 SPAN_START = "*[ITA p. 71]*"
-SPAN_END = "*[ITA pp. 77-111 not photographed]*"
+SPAN_END = "*[ITA pp. 77-80 not photographed]*"
 
 
 @pytest.fixture(scope="module")
