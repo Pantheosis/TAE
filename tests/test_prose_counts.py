@@ -205,23 +205,30 @@ def test_connection_help_lists_the_planetary_lights(engine):
     assert phrase in ui_source(), f"Connection-rule help should say '({phrase})'"
 
 
-def test_dignity_caption_restates_the_solar_orbs(engine):
-    """The Dignity Evaluation caption quotes SOLAR_BURNED_ORB, SOLAR_RAYS_ORB
-    and CAZIMI_ORB in prose. Build the sentence from the constants."""
-    b, r = engine["SOLAR_BURNED_ORB"], engine["SOLAR_RAYS_ORB"]
-    deg = lambda x: f"{int(x)}°"
-    expected = (f"burned to {deg(b['Saturn'][0])} for Saturn and Jupiter, {deg(b['Mars'][0])} for Mars, "
-                f"{deg(b['Venus'][0])} for Venus and Mercury, {deg(b['Moon'][0])} for the Moon; "
-                f"under the rays to {deg(r['Saturn'][0])}, {deg(r['Mars'][0])} east / {deg(r['Mars'][1])} west, "
-                f"{deg(r['Venus'][0])} east / {deg(r['Venus'][1])} west, and ")
-    ui = re.sub(r'"\n\s+f?"', "", ui_source())   # the caption is a wrapped literal
-    assert expected in ui, f"caption should read: {expected}"
-    # The Moon's figure and the domain rule are sidebar switches, so the
-    # caption interpolates them rather than quoting a number.
-    assert "{MOON_RAYS_ORB:.0f}° for the Moon" in ui
+def test_dignity_thresholds_table_is_built_from_the_solar_orb_constants(engine):
+    """The Dignity Evaluation block prints the solar-phase thresholds as a
+    table built from SOLAR_BURNED_ORB, solar_rays_orb() and CAZIMI_ORB (the
+    caption used to restate them in prose, checked here against the
+    constants; readability branch B, 2026-09-17, made the table read the
+    constants so there is no second set of numbers). The rows equal the
+    constants, and the source types none of the figures."""
+    from conftest import assert_no_exception, make_app
+    b, cazimi = engine["SOLAR_BURNED_ORB"], engine["CAZIMI_ORB"]
+    at = make_app(page="dignities").run()
+    assert_no_exception(at, "dignities")
+    table = [m.value for m in at.main.markdown if m.value.startswith("| Planet | Burned within | Under the rays within |")]
+    assert len(table) == 1, table
+    rows = re.findall(r"^\| (\w+) \| ([^|]+?) \| ([^|]+?) \|$", table[0], re.M)[1:]
+    span = lambda e, w: f"{e:.0f}°" if e == w else f"{e:.0f}° east / {w:.0f}° west"
+    assert rows == [(p, span(*b[p]), span(*engine["solar_rays_orb"](p))) for p in b]
+    ui = ui_source()
+    assert "for _planet, _burn in SOLAR_BURNED_ORB.items()" in ui and "solar_rays_orb(_planet)" in ui
+    assert "round(CAZIMI_ORB * 60)" in ui and round(cazimi * 60) == 16
+    assert "burned to 6° for Saturn and Jupiter" not in ui, "the thresholds are typed in prose again"
+    # The domain rule is a page switch, so the paragraph interpolates it
+    # rather than quoting a name.
     assert "currently {DOMAIN_RULE}" in ui and "DOMAIN_RULE == DOMAIN_RULE_OPTIONS[0]" in ui
-    assert b["Saturn"] == b["Jupiter"] and b["Venus"] == b["Mercury"] and r["Venus"] == r["Mercury"]
-    assert round(engine["CAZIMI_ORB"] * 60) == 16 and "in the heart within 16'" in ui
+    assert b["Saturn"] == b["Jupiter"] and b["Venus"] == b["Mercury"]
 
 
 def test_forward_horizon_is_quoted_correctly(engine):

@@ -182,3 +182,114 @@ def test_the_findings_page_no_longer_says_the_app_in_the_migrated_blocks():
     src = ui_source()
     start, end = src.index("def page_findings():"), src.index("def page_dignities():")
     assert "the app's" not in src[start:end] and "the app " not in src[start:end]
+
+
+# --- Dignities and places ------------------------------------------------
+
+MOON_TITLE = "The Moon in the houses — PN IV VII.8, by her transit"
+LORDS_TITLE = "Topical House Lords (Masha'allah)"
+
+
+def _table_under(at, title, columns):
+    frames = [df.value for df in at.main.dataframe if list(df.value.columns) == columns]
+    assert len(frames) == 1, [list(df.value.columns) for df in at.main.dataframe]
+    return frames[0]
+
+
+def test_the_moon_in_the_houses_shows_its_summary_and_two_qualifications_then_the_table_and_a_selector(engine):
+    at = make_app(page="dignities").run()
+    assert_no_exception(at, "dignities")
+    assert _heading(at, MOON_TITLE).help == ("A natal analogy: VII.8 reads the Moon's transit through the houses, and the natal "
+                                             "Moon's own whole-sign house is marked.")
+    block = _between(at, MOON_TITLE, LORDS_TITLE)
+    assert [k for k, _ in block] == ["markdown", "markdown", "markdown", "dataframe", "selectbox"], block
+    assert block[0][1].startswith("A natal analogy: VII.8 reads the Moon's transit through the houses from the three positions")
+    assert "it supplies no condition split" in block[0][1]
+    assert block[1][1].startswith("**The text's own reservation.** (From this indication) is the text's own reservation")
+    assert block[2][1].startswith("**The translator's readings.** Where the translator reads conflicting dreams")
+    table = _table_under(at, MOON_TITLE, ['House', 'Reading', 'Locator', 'Natal Moon here'])
+    box = [s for s in at.main.selectbox if s.key == "the_moon_in_the_houses_pn_iv_vii_8_by_her_transit_detail"][0]
+    assert box.value is None and box.placeholder == "Select a house to read the Moon's transit through it in full"
+    ordinal = engine["HOUSE_ORDINAL"]
+    assert box.options == [f"{ordinal[h]} house" + (" (the natal Moon's)" if natal == 'Yes' else "")
+                           for h, natal in zip(table['House'], table['Natal Moon here'])]
+    assert sum(1 for o in box.options if o.endswith("(the natal Moon's)")) == 1
+    natal = [o for o in box.options if o.endswith("(the natal Moon's)")][0]
+    box.select(natal)
+    at.run()
+    assert_no_exception(at, "dignities, a house chosen")
+    row = table[table['Natal Moon here'] == 'Yes'].iloc[0]
+    md = _markdown(at)
+    assert f"**The Moon in the {ordinal[row['House']]} house.** {row['Reading']}" in md
+    assert f"{row['Locator']}. Natal Moon here: Yes." in md
+
+
+def test_the_house_lords_show_the_condition_and_its_implementation_apart_and_read_one_lord_with_its_result(engine):
+    at = make_app(page="dignities").run()
+    assert_no_exception(at, "dignities")
+    assert _heading(at, LORDS_TITLE).help == ("For each of the twelve topical houses, its domicile lord's own whole-sign placement, and "
+                                              "Masha'allah's delineation for that [placed-in, rules] pairing -- the classical way of "
+                                              "reading what a house's ruler is \"doing\" elsewhere in the chart.")
+    block = _between(at, LORDS_TITLE)
+    kinds = [k for k, _ in block]
+    assert kinds[:8] == ["markdown", "markdown", "markdown", "dataframe", "selectbox", "expander", "table", "status"], kinds
+    assert block[0][1] == ("Every cell's wording is this app's paraphrase of Sahl's own sentence for that pairing, from his "
+                           "twelve lords-of-places passages in On Nativities.")
+    assert block[1][1] == ("**Masha'allah's condition.** Masha'allah's condition is his own, stated at the end of eight of the "
+                           "twelve lord-of-the-Nth sections.")
+    assert block[2][1].startswith("**This app's implementation.** Whole-sign: an infortune with, square or opposite the house or its lord")
+    assert block[2][1].endswith("with the column saying whether he would apply them.")
+    assert block[5][1] == "Masha'allah readings for lord placements" and block[7][1] == "Sources and editorial notes"
+    grid = [df.value for df in at.main.dataframe if 'Averse to its place' in df.value.columns][0]
+    readings = [t.value for t in at.main.table if "Masha'allah Signification" in t.value.columns][0]
+    box = [s for s in at.main.selectbox if s.key == "topical_house_lords_masha_allah_detail"][0]
+    assert box.value is None
+    assert box.placeholder == "Select a topical house to read its lord's placement and Masha'allah's sentence"
+    ordinal = engine["HOUSE_ORDINAL"]
+    assert box.options == [f"Lord of the {ordinal[h]}: {lord}, in the {ordinal[placed]} place"
+                           for h, lord, placed in zip(grid['Topical House'], grid['Domicile Lord'], grid['Placed in (WS place)'])]
+    box.select(box.options[7])
+    at.run()
+    assert_no_exception(at, "dignities, a lord chosen")
+    row, reading = grid.iloc[7], readings.iloc[7]
+    md = _markdown(at)
+    assert (f"**{box.options[7]}.** Masha'allah's condition: {row[chr(77) + chr(97) + 'sha' + chr(39) + 'allah' + chr(39) + 's condition']}. "
+            f"Averse to its place: {row['Averse to its place']}.") in md
+    assert f"**Masha'allah's signification.** {reading['Masha' + chr(39) + 'allah Signification']}" in md
+    notes = "\n".join(md)
+    for section in ("**The twelve passages, and the arrangement.**", "**Masha'allah's condition, where he states it.**"):
+        assert section in md, section
+    assert "the lord of the first 1.36, 79-97; the second 2.14, 9-28" in notes
+    assert ("sections:\n\n> \"Work in this chapter if the lord of the third and the third [itself] were free of the infortunes, "
+            "and the fortunes do not witness\"\n\n(On Nativities 3.10, 14; likewise 4.11, 24; 6.3.4, 24; 7.1, 217; 9.4, 35; "
+            "10.2.4, 13; 11.1, 28; 12.1, 47).") in notes
+    assert not [c for c in at.main.caption if c.value.startswith("Masha'allah's condition is his own")]
+
+
+@pytest.mark.parametrize("switches, moon, mars_west", [({}, 12.0, 15.0), ({"moon_rays": True}, 15.0, 15.0),
+                                                        ({"mars_west": True}, 12.0, 18.0)])
+def test_the_dignity_thresholds_table_follows_the_constants_and_the_readings(engine, switches, moon, mars_west):
+    at = make_app(page="dignities", switches=switches).run()
+    assert_no_exception(at, "dignities")
+    md = _markdown(at)
+    statement = [m for m in md if m.startswith("**This app's ranking convenience.** The point weights are this app's own ranking convenience")]
+    table = [m for m in md if m.startswith("| Planet | Burned within | Under the rays within |")]
+    assert len(statement) == 1 and len(table) == 1
+    # The statement stands before the score table, the method table after it.
+    order = []
+    for node in at.main:
+        kind = getattr(node, "type", None)
+        if kind == "markdown" and node.value in (statement[0], table[0]):
+            order.append("statement" if node.value == statement[0] else "method table")
+        elif kind == "dataframe" and 'Ess' in node.value.columns:
+            order.append("score table")
+    assert order == ["statement", "score table", "method table"]
+    rows = dict((p, (b, r)) for p, b, r in re.findall(r"^\| (\w+) \| ([^|]+?) \| ([^|]+?) \|$", table[0], re.M)[1:])
+    b = engine["SOLAR_BURNED_ORB"]
+    assert list(rows) == list(b)
+    assert rows["Saturn"] == (f"{b['Saturn'][0]:.0f}°", "15°") and rows["Venus"] == ("7°", "12° east / 15° west")
+    assert rows["Moon"] == (f"{b['Moon'][0]:.0f}°", f"{moon:.0f}°")
+    assert rows["Mars"] == (f"{b['Mars'][0]:.0f}°", f"18° east / {mars_west:.0f}° west" if mars_west != 18.0 else "18°")
+    heart = [m for m in md if m.startswith("In the heart: within 16' (VII.2, 7-9, from the Sun's own apparent diameter).")]
+    assert len(heart) == 1 and "Sahl elsewhere says one whole degree for the heart" in heart[0]
+    assert any(m.startswith("**Domain/hayz** follows the Domain switch beside the Sect table above, currently ") for m in md)

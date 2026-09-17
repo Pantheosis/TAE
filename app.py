@@ -3268,28 +3268,62 @@ def page_dignities():
         ("Why both condition readings remain visible.",
          "Neither is chosen for you. The only thing available to choose with is the Net from the Planetary Condition table, and that number is this app's own arithmetic -- Abu Ma'shar enumerates the VII.6 conditions, never totals them, gives no weighting and no tie rule. An invented score silently picking one of two classical delineations turns a convenience into a verdict.\n\nThe Net is shown as a **lean** instead, and reads Indeterminate within a margin of one, which is the width of a single testimony: those charts sit one label away from the opposite reading, and should be judged on the condition counts and the labels rather than on the number."),
     ])
-    st.subheader("The Moon in the houses — PN IV VII.8, by her transit", help="A natal analogy: VII.8 reads the Moon's transit through the houses from the three positions (the Ascendant of the root, the Ascendant of the revolution and the sign of the terminal point), so long as she is in each; it supplies no condition split, so each house has one reading, mixed where the sentence is mixed, and the natal Moon's own whole-sign house is marked. (From this indication) is the text's own reservation: the Moon's indication alone shows this, and another indication could show otherwise. Where the translator reads conflicting dreams or simply different, both are given; his reading of takes away the same in the tenth is marked as his guess; the third's some of him and his parents is as printed.")
+    st.subheader("The Moon in the houses — PN IV VII.8, by her transit", help="A natal analogy: VII.8 reads the Moon's transit through the houses, and the natal Moon's own whole-sign house is marked.")
+    with _prose():
+        st.markdown("A natal analogy: VII.8 reads the Moon's transit through the houses from the three positions (the Ascendant of the root, the Ascendant of the revolution and the sign of the terminal point), so long as she is in each; it supplies no condition split, so each house has one reading, mixed where the sentence is mixed, and the natal Moon's own whole-sign house is marked.")
+        st.markdown("**The text's own reservation.** (From this indication) is the text's own reservation: the Moon's indication alone shows this, and another indication could show otherwise.")
+        st.markdown("**The translator's readings.** Where the translator reads conflicting dreams or simply different, both are given; his reading of takes away the same in the tenth is marked as his guess; the third's some of him and his parents is as printed.")
     st.dataframe(pd.DataFrame(moon_in_houses_data), hide_index=True, width='stretch', height=_rows_height(len(moon_in_houses_data)),
                  column_config={'House': st.column_config.TextColumn(width="small"),
                                 'Reading': st.column_config.TextColumn(width="large"),
                                 'Locator': st.column_config.TextColumn(width="small"),
                                 'Natal Moon here': st.column_config.TextColumn(width="small")})
-    st.subheader("Topical House Lords (Masha'allah)", help='For each of the twelve topical houses, its domicile lord\'s own whole-sign placement, and Masha\'allah\'s delineation for that [placed-in, rules] pairing -- the classical way of reading what a house\'s ruler is "doing" elsewhere in the chart. Every cell\'s wording is this app\'s paraphrase of Sahl\'s own sentence for that pairing, from his twelve lords-of-places passages in On Nativities (the lord of the first 1.36, 79-97; the second 2.14, 9-28; the third 3.10, 1-13; the fourth 4.11, 2-23; the fifth 5.1, 78-90; the sixth 6.3.4, 12-23; the seventh 7.1, 205-216; the eighth 8.5, 2-13; the ninth 9.4, 23-34; the tenth 10.2.4, 1-12; the eleventh 11.1, 16-27; the twelfth 12.1, 35-46), with Sahl\'s own conditions kept (if received, if a fortune or an infortune looked at it) and his locator in parentheses after the text. Sahl has a sentence for every one of the 144 pairings, so no cell is empty; the one his translator brackets as illegible (the lord of the fifth in the eighth, 5.1, 85) says so and carries the sense of his footnote. The arrangement -- those twelve chapters laid out as a grid of the lord of each place in each place -- follows the TNAC Reference Guide for the Planets and Places (Dykes, 2023); the wording does not.')
+    # One house's row printed whole under the table, in the table's order:
+    # the reading, its locator, and the natal marker as the column has it.
+    _moon_rows = [{**r, 'House label': f"{HOUSE_ORDINAL[r['House']]} house"
+                   + (" (the natal Moon's)" if r['Natal Moon here'] == 'Yes' else "")} for r in moon_in_houses_data]
+    def _moon_in_house_detail(row):
+        st.markdown(f"**The Moon in the {HOUSE_ORDINAL[row['House']]} house.** {row['Reading']}")
+        st.markdown(f"{row['Locator']}. Natal Moon here: {row['Natal Moon here'] or 'No'}.")
+    _detail_selector("The Moon in the houses — PN IV VII.8, by her transit", _moon_rows, 'House label', _moon_in_house_detail,
+                     "Select a house to read the Moon's transit through it in full")
+    st.subheader("Topical House Lords (Masha'allah)", help='For each of the twelve topical houses, its domicile lord\'s own whole-sign placement, and Masha\'allah\'s delineation for that [placed-in, rules] pairing -- the classical way of reading what a house\'s ruler is "doing" elsewhere in the chart.')
+    with _prose():
+        st.markdown("Every cell's wording is this app's paraphrase of Sahl's own sentence for that pairing, from his twelve lords-of-places passages in On Nativities.")
+        st.markdown("**Masha'allah's condition.** Masha'allah's condition is his own, stated at the end of eight of the twelve lord-of-the-Nth sections.")
+        st.markdown("**This app's implementation.** Whole-sign: an infortune with, square or opposite the house or its lord; a fortune in any aspect or assembly. "
+                    "It is met on about one row in ten; the readings are shown regardless, with the column saying whether he would apply them.")
     # Averse: the lord sits in the 2nd, 6th, 8th or 12th sign from the
     # house it rules, so it does not see its own place.
     lords_rows = _house_lord_rows()
     st.dataframe(pd.DataFrame(lords_rows), hide_index=True, width='content', height=_rows_height(len(lords_rows)),
                  column_config=_yes_no_columns(pd.DataFrame(lords_rows)))
-    st.caption("Masha'allah's condition is his own, stated at the end of eight of the twelve lord-of-the-Nth sections: \"Work in this chapter "
-               "if the lord of the third and the third [itself] were free of the infortunes, and the fortunes do not witness\" "
-               "(On Nativities 3.10, 14; likewise 4.11, 24; 6.3.4, 24; 7.1, 217; 9.4, 35; 10.2.4, 13; 11.1, 28; 12.1, 47). "
-               "Whole-sign: an infortune with, square or opposite the house or its lord; a fortune in any aspect or assembly. "
-               "It is met on about one row in ten; the readings are shown regardless, with the column saying whether he would apply them.")
+    # One lord's row printed whole, in the table's order: the placement,
+    # the condition's result and the aversion beside the reading itself.
+    _lord_rows = [{**r, **shown, 'Lord': f"Lord of the {HOUSE_ORDINAL[r['Topical House']]}: {r['Domicile Lord']}, "
+                                         f"in the {HOUSE_ORDINAL[r['Placed in (WS place)']]} place"}
+                  for r, shown in zip(house_lords_data, lords_rows)]
+    def _house_lord_detail(row):
+        _condition, _text = row["Masha'allah's condition"], row["Masha'allah Signification"]
+        st.markdown(f"**{row['Lord']}.** Masha'allah's condition: {_condition}. Averse to its place: {row['Averse to its place']}.")
+        st.markdown(f"**Masha'allah's signification.** {_text}")
+    _detail_selector("Topical House Lords (Masha'allah)", _lord_rows, 'Lord', _house_lord_detail,
+                     "Select a topical house to read its lord's placement and Masha'allah's sentence")
     with st.expander("Masha'allah readings for lord placements", expanded=READING_DEPTH == READING_DEPTH_OPTIONS[1]):
         st.table(pd.DataFrame(house_lords_data,
                               columns=['Topical House', 'Domicile Lord', 'Placed in (WS place)', "Masha'allah Signification"]),
                  hide_index=True)
+    _notes_expander(NOTES_TITLE, [
+        ("The twelve passages, and the arrangement.",
+         'Every cell\'s wording is this app\'s paraphrase of Sahl\'s own sentence for that pairing, from his twelve lords-of-places passages in On Nativities (the lord of the first 1.36, 79-97; the second 2.14, 9-28; the third 3.10, 1-13; the fourth 4.11, 2-23; the fifth 5.1, 78-90; the sixth 6.3.4, 12-23; the seventh 7.1, 205-216; the eighth 8.5, 2-13; the ninth 9.4, 23-34; the tenth 10.2.4, 1-12; the eleventh 11.1, 16-27; the twelfth 12.1, 35-46), with Sahl\'s own conditions kept (if received, if a fortune or an infortune looked at it) and his locator in parentheses after the text. Sahl has a sentence for every one of the 144 pairings, so no cell is empty; the one his translator brackets as illegible (the lord of the fifth in the eighth, 5.1, 85) says so and carries the sense of his footnote. The arrangement -- those twelve chapters laid out as a grid of the lord of each place in each place -- follows the TNAC Reference Guide for the Planets and Places (Dykes, 2023); the wording does not.'),
+        ("Masha'allah's condition, where he states it.",
+         'Masha\'allah\'s condition is his own, stated at the end of eight of the twelve lord-of-the-Nth sections:\n\n> "Work in this chapter if the lord of the third and the third [itself] were free of the infortunes, and the fortunes do not witness"\n\n(On Nativities 3.10, 14; likewise 4.11, 24; 6.3.4, 24; 7.1, 217; 9.4, 35; 10.2.4, 13; 11.1, 28; 12.1, 47).'),
+    ])
     with st.expander("Planetary Dignity Evaluation (Hellenistic/Rhetorius reconstruction)", expanded=READING_DEPTH == READING_DEPTH_OPTIONS[1]):
+        # The statement the score table cannot be read without, before it.
+        with _prose():
+            st.markdown("**This app's ranking convenience.** The point weights are this app's own ranking convenience -- no source in hand "
+                        "totals these conditions. The geometry each test uses is sourced.")
         dignity_list = []
         for p in essential.keys():
             ess = essential[p]
@@ -3306,24 +3340,32 @@ def page_dignities():
 
         df_dignity = pd.DataFrame(dignity_list).sort_values(by="Net", ascending=False)
         st.dataframe(df_dignity, hide_index=True, width='stretch')
-        st.caption(
-            "The point weights are this app's own ranking convenience -- no source in hand "
-            "totals these conditions. The geometry each test uses is sourced. **Solar phase** "
-            "follows Abu Ma'shar's walk through the synodic cycle (VII.2); Sahl's *On Nativities* "
-            "1.22 and al-Biruni give the under-the-rays figures independently (Sahl states no burn "
-            "boundary, and his Mars westernizes at 18°, not 15°): burned to "
-            "6° for Saturn and Jupiter, 10° for Mars, 7° for Venus and Mercury, "
-            "6° for the Moon; under the rays to 15°, 18° east / 15° west, "
-            f"12° east / 15° west, and {MOON_RAYS_ORB:.0f}° for the Moon; in the heart within 16' "
-            "(VII.2, 7-9, from the Sun's own apparent diameter). Sahl elsewhere says one whole "
-            "degree for the heart, and that reading is used where his own testimonies are "
-            f"scored. **Domain/hayz** follows the Domain switch beside the Sect table above, currently {DOMAIN_RULE}: "
-            + ("VII.1, 37-39 and VII.6, 13 -- the planet's own sect need not match the chart's; "
-               "the hemisphere requirement is what flips with it."
-               if DOMAIN_RULE == DOMAIN_RULE_OPTIONS[0] else
-               "On Nativities 1.23, 17 -- a male planet by day above the earth in a male sign, by "
-               "night under the earth in a female sign; the feminine planets by hemisphere only.")
-        )
+        # The solar-phase thresholds as a method table, built from the
+        # constants the evaluators read -- SOLAR_BURNED_ORB, solar_rays_orb()
+        # (which applies the Moon's and Mars's readings) and CAZIMI_ORB -- so
+        # the page carries no second set of numbers to drift from them.
+        def _span(east, west):
+            return f"{east:.0f}°" if east == west else f"{east:.0f}° east / {west:.0f}° west"
+        _phase_rows = "\n".join(f"| {_planet} | {_span(*_burn)} | {_span(*solar_rays_orb(_planet))} |"
+                                for _planet, _burn in SOLAR_BURNED_ORB.items())
+        with _prose():
+            st.markdown("**Solar phase** follows Abu Ma'shar's walk through the synodic cycle (VII.2); Sahl's *On Nativities* "
+                        "1.22 and al-Biruni give the under-the-rays figures independently (Sahl states no burn "
+                        "boundary, and his Mars westernizes at 18°, not 15°):")
+        st.markdown("| Planet | Burned within | Under the rays within |\n|---|---|---|\n" + _phase_rows)
+        with _prose():
+            st.markdown(f"In the heart: within {round(CAZIMI_ORB * 60)}' (VII.2, 7-9, from the Sun's own apparent diameter). "
+                        "Sahl elsewhere says one whole "
+                        "degree for the heart, and that reading is used where his own testimonies are "
+                        "scored.")
+            st.markdown(
+                f"**Domain/hayz** follows the Domain switch beside the Sect table above, currently {DOMAIN_RULE}: "
+                + ("VII.1, 37-39 and VII.6, 13 -- the planet's own sect need not match the chart's; "
+                   "the hemisphere requirement is what flips with it."
+                   if DOMAIN_RULE == DOMAIN_RULE_OPTIONS[0] else
+                   "On Nativities 1.23, 17 -- a male planet by day above the earth in a male sign, by "
+                   "night under the earth in a female sign; the feminine planets by hemisphere only.")
+            )
 
 def page_configurations():
     if not chart_ok:

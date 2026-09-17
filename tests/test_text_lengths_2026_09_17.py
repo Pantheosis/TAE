@@ -54,8 +54,6 @@ ALLOWED_LONG = (
     # help
     'LMT (local mean time) for charts before standard',
     "Dykes's table for Sahl (the chapter head of On N",
-    "A natal analogy: VII.8 reads the Moon's transit ",
-    'For each of the twelve topical houses, its domic',
     'Sahl, Choices Ch. 1, 12: "that infortune was goo',
     'I.2, 1: a revolution is the moment the Sun comes',
     'Year: the revolution alone (Figures 4, 26). Year',
@@ -99,8 +97,6 @@ ALLOWED_LONG = (
     'Two degree tables from Book V that no condition ',
     # caption
     '⚠️ **The Lord of the Hour here is not a temporal',
-    "Masha'allah's condition is his own, stated at th",
-    "The point weights are this app's own ranking con",
     'The releaser and the house-master PN IV leaves t',
     "PN IV's own conventions, read from its figures: ",
     'A table, not the wheel of I.6, 1: every point by',

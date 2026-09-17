@@ -1223,7 +1223,11 @@ def test_the_help_and_caption_state_what_the_table_is(engine):
     assert any(c.startswith("The third column is Rhetorius Ch. 57 and Firmicus, Mathesis III, as the texts state it") for c in captions)
     assert not any("If Well Placed" in c or "Fifteen Rhetorius halves" in c for c in captions)
     moon = [h for h in at.main.subheader if h.value == "The Moon in the houses — PN IV VII.8, by her transit"]
-    assert len(moon) == 1 and "supplies no condition split" in moon[0].help and "natal analogy" in moon[0].help
+    assert len(moon) == 1 and moon[0].help.startswith("A natal analogy:")
+    # The tooltip's long sentence is visible body text above the table since
+    # readability branch B (2026-09-17); the tooltip keeps its opening.
+    moon_summary = [m.value for m in at.main.markdown if m.value.startswith("A natal analogy: VII.8 reads the Moon's transit")]
+    assert len(moon_summary) == 1 and "supplies no condition split" in moon_summary[0]
     frames = [n.value for n in at.main if getattr(n, "type", None) == "dataframe"]
     moon_frame = [f for f in frames if list(f.columns) == ['House', 'Reading', 'Locator', 'Natal Moon here']]
     assert len(moon_frame) == 1 and len(moon_frame[0]) == 12 and list(moon_frame[0]['Natal Moon here']).count('Yes') == 1
