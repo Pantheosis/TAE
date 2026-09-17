@@ -601,22 +601,6 @@ def _home_place():
     return home if home_place_is_valid(home) else None
 
 
-def _set_home_place():
-    """on_click of "Set as home": the place the sidebar resolved on the run
-    the button was drawn in -- the coordinates and the label the resolved
-    box showed, kept in _resolved_* only while the place is valid, which is
-    the only time the button is drawn. _remember compares first, so setting
-    the same place again writes nothing."""
-    lat = st.session_state.get("_resolved_lat")
-    lon = st.session_state.get("_resolved_lon")
-    label = st.session_state.get("_resolved_label")
-    home = {"label": str(label or ""), "lat": float(lat), "lon": float(lon)} \
-        if lat is not None and lon is not None else None
-    if home_place_is_valid(home):
-        st.session_state["home_place"] = home
-        _remember("home_place", home)
-
-
 def _forget_home_place():
     """on_click of "Forget home": the session's copy and the file's."""
     st.session_state.pop("home_place", None)
@@ -666,13 +650,23 @@ def _here_and_now():
     else:
         local = engine.local_clock(instant)
         standard = TIME_STANDARD_OPTIONS[2]
-    st.session_state["time_standard_key"] = standard
+    offset_hours = None
     if standard == TIME_STANDARD_OPTIONS[2]:
         offset_hours = local.utcoffset().total_seconds() / 3600.0
-        # Never an offset outside the number_input's bounds (H5), which a
-        # clock cannot give anyway; quarter-hours stand as they are.
-        if utc_offset_in_range(offset_hours):
-            st.session_state["utc_offset_key"] = float(offset_hours)
+        # Never an offset outside the number_input's bounds (H5). A clock
+        # cannot give one short of a broken TZ string, but when it does the
+        # cast is REFUSED, before anything is written: a Manual standard
+        # with the old offset left underneath would cast a wrong chart
+        # with nothing said. The sentence stands in the notice slot beside
+        # the picker until the next load, new chart or save clears it.
+        if not utc_offset_in_range(offset_hours):
+            st.session_state["_record_notice"] = (
+                "This computer's clock has an offset outside ±14 hours, "
+                "so Here & Now cast nothing.")
+            return
+    st.session_state["time_standard_key"] = standard
+    if offset_hours is not None:
+        st.session_state["utc_offset_key"] = float(offset_hours)     # quarter-hours stand
     st.session_state["date_input_key"] = f"{local.year:04d}-{local.month:02d}-{local.day:02d}"
     st.session_state["time_input_key"] = time(local.hour, local.minute, local.second)
     st.session_state["manual_coords_key"] = True
@@ -681,6 +675,15 @@ def _here_and_now():
     # The coordinate fields show the home's name rather than a bare pair
     # (the loaded-label rule under the fields).
     st.session_state["loaded_location"] = {"label": home["label"], "lat": float(lat), "lon": float(lon)}
+    # What the record loaded said about itself is popped where the cast
+    # makes it false or answers it: the H3/H5 notice describes fields the
+    # boxes no longer hold, and "saved before the time standard was stored
+    # ... check it" is answered by the standard written above. The readings
+    # question (_readings_pending, "'X' was saved under other readings")
+    # is LEFT standing: it is neither -- X was saved under other readings
+    # still, the picker still names X, and which readings the chart is
+    # read under is the reader's to say, which the cast does not say. An
+    # edit of the date keeps the question too.
     st.session_state.pop("_loaded_without_standard", None)
     st.session_state.pop("_record_notice", None)
 
@@ -1066,13 +1069,25 @@ else:
     # they are switched on (F02a).
     st.session_state["_resolved_lat"] = float(lat)
     st.session_state["_resolved_lon"] = float(lon)
-    st.session_state["_resolved_label"] = str(location_query)
     # "Set as home", under the resolved-place box, only while a place is
     # resolved and in range: it keeps this place as the home the
-    # "Here & Now" button casts at. Its callback reads _resolved_*, written
-    # just above on the run the button was drawn in.
-    st.sidebar.button("Set as home", key="_set_home", on_click=_set_home_place,
-                      help="Keep this place as the home that Here & Now casts a chart for.")
+    # "Here & Now" button casts at. The press is handled HERE, from THIS
+    # run's lat, lon and location_query -- the values the box beside the
+    # button shows -- and not in an on_click callback reading _resolved_*
+    # from the run before: the natural gesture, a city typed over and the
+    # button clicked without Enter, delivers the edit and the click in one
+    # run, and a callback wrote the previous place (Madrid in the box,
+    # Berlin written; the adversarial pass). The "Here & Now" button at the
+    # top of the sidebar was drawn before this press was seen, so when the
+    # home changes the run is repeated from the sidebar's foot, where every
+    # field has been drawn, as the delete confirmation does.
+    if st.sidebar.button("Set as home", key="_set_home",
+                         help="Keep this place as the home that Here & Now casts a chart for."):
+        _home_set = {"label": str(location_query), "lat": float(lat), "lon": float(lon)}
+        if home_place_is_valid(_home_set) and _home_set != st.session_state.get("home_place"):
+            st.session_state["home_place"] = _home_set
+            _remember("home_place", _home_set)
+            st.session_state["_home_changed"] = True
 _home_now = _home_place()
 if _home_now:
     st.sidebar.caption(f"Home: {escape(_home_now['label'])} · "
@@ -1331,6 +1346,13 @@ if _readings_open_now:
         if _sk in _saved_readings:
             _set_reading(_wk, _sk, _saved_readings[_sk])
     st.session_state.pop("_readings_pending", None)
+    st.rerun()
+
+# A home set under Birthplace on this run: the "Here & Now" button at the
+# top of the sidebar was drawn disabled before the press was seen, so the
+# run is repeated from here, where every field has been drawn and a rerun
+# costs nothing. Once: the flag is popped.
+if st.session_state.pop("_home_changed", None):
     st.rerun()
 
 # The delete the confirmation asked for, done here rather than where it was

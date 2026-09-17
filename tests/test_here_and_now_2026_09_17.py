@@ -150,6 +150,38 @@ def test_set_as_home_writes_the_resolved_place_and_the_caption_names_it(prefs_on
     assert _home_caption(at) is None
 
 
+def test_set_as_home_writes_the_place_the_box_shows_on_that_run(prefs_on):
+    """The natural gesture -- a city typed over and the button clicked
+    without Enter -- delivers the edit and the click in one run. The press
+    is handled at the button's site from that run's resolved place, so the
+    home is the place the box beside the button shows, not the last
+    run's (the adversarial pass: Madrid in the box, Berlin written)."""
+    at = _florence_app().run()
+    at.sidebar.text_input(key="location_input_key").set_value("Paris")
+    at.sidebar.button(key="_set_home").click()
+    at.run()
+    assert_no_exception(at, "edit and click in one run")
+    box = [s.value for s in at.sidebar.success][0]
+    assert box.startswith("**Paris, ")
+    on_disk = json.loads(_prefs_path().read_text())["home_place"]
+    assert on_disk["label"].startswith("Paris, ")
+    assert on_disk["lat"] == pytest.approx(48.85, abs=0.05)
+    assert _home_caption(at).startswith(f"Home: {on_disk['label']} · ")
+    # The top button sees the new home on that very run (the run is
+    # repeated from the sidebar's foot once the home has changed).
+    assert not _here_now(at).disabled
+    # The same with a coordinate: the field edited and the button clicked
+    # in one run writes the edited pair.
+    at.sidebar.toggle(key="manual_coords_key").set_value(True).run()
+    at.sidebar.number_input(key="manual_lat_key").set_value(10.0)
+    at.sidebar.button(key="_set_home").click()
+    at.run()
+    assert_no_exception(at, "coordinate and click in one run")
+    on_disk = json.loads(_prefs_path().read_text())["home_place"]
+    assert on_disk["lat"] == 10.0
+    assert on_disk["label"].startswith("Manual [10.0000, ")
+
+
 def test_a_home_in_the_file_is_carried_into_a_fresh_session(prefs_on):
     _prefs_path().parent.mkdir(parents=True)
     _prefs_path().write_text(json.dumps({"home_place": {"label": "Petoskey, MI (US)", "lat": 45.3733, "lon": -84.9553}}))
@@ -356,6 +388,36 @@ def test_a_home_with_no_zone_is_cast_by_this_computers_clock(prefs_on, monkeypat
     assert at.session_state["utc_offset_key"] == -10.0
 
 
+def test_a_clock_offset_outside_the_bounds_refuses_the_cast(prefs_on, monkeypatch):
+    """No zone and an OS clock outside +-14 (only a broken TZ string gives
+    one): nothing is written -- a Manual standard with the old offset left
+    underneath would cast a wrong chart silently -- and one sentence
+    stands in the notice slot beside the picker."""
+    from timezonefinder import TimezoneFinder
+    at = make_app(page="chart")
+    at.session_state["home_place"] = dict(AT_SEA)
+    at.run()
+    before = {k: at.session_state[k] for k in ("date_input_key", "time_input_key", "time_standard_key",
+                                                "manual_lat_key", "manual_lon_key")}
+    monkeypatch.setattr(TimezoneFinder, "timezone_at", lambda self, **kw: None)
+    _freeze(monkeypatch, NOON_ISH, local=timezone(timedelta(hours=15)))
+    _here_now(at).click().run()
+    assert_no_exception(at, "offset out of bounds")
+    for key, value in before.items():
+        assert at.session_state[key] == value, key
+    assert "utc_offset_key" not in at.session_state
+    assert "loaded_location" not in at.session_state
+    assert [w.value for w in at.sidebar.warning] == [
+        "This computer's clock has an offset outside ±14 hours, so Here & Now cast nothing."]
+    assert _strip(at).startswith("Unsaved chart · 1240-05-23 14:30:00")
+    # A clock inside the bounds casts, and the sentence goes with the cast.
+    _freeze(monkeypatch, NOON_ISH, local=timezone(timedelta(hours=14)))
+    _here_now(at).click().run()
+    assert at.session_state["utc_offset_key"] == 14.0
+    assert at.session_state["date_input_key"] == "2026-09-18"
+    assert not [w.value for w in at.sidebar.warning]
+
+
 def test_the_repeated_hour_is_cast_under_a_manual_offset(prefs_on, monkeypatch):
     """The sidebar's Standard branch refuses a clock time that happens twice
     (fall-back), so at that one hour the instant is written under Manual
@@ -445,6 +507,39 @@ def test_a_legacy_record_notice_is_cleared_by_the_cast(prefs_on, monkeypatch):
     assert at.session_state["time_standard_key"] == STANDARD
 
 
+def test_the_readings_question_outlives_the_cast(prefs_on, monkeypatch):
+    """A record loaded under other readings poses a question -- open its
+    readings, or keep the current ones -- that the cast leaves standing:
+    the record was saved under other readings still, the picker still
+    names it, and which readings the chart is read under is the reader's
+    to say. The picker's caption then reads both lines."""
+    _store_path().parent.mkdir(parents=True)
+    _store_path().write_text(json.dumps({"Other": {
+        "date_string": "1983-11-19", "time_string": "14:30:00", "time_standard": STANDARD,
+        "location_query": "Somewhere", "lat": 45.0, "lon": -84.0,
+        "readings": {"_connection_rule": "Abu Ma'shar"}}}))
+    at = _florence_app()
+    at.session_state["home_place"] = dict(GOOD)
+    at.run()
+    at.sidebar.selectbox(key="chart_picker").select("Other").run()
+    assert any("saved under other readings" in i.value for i in at.sidebar.info)
+    assert at.session_state["_readings_pending"] == "Other"
+    _freeze(monkeypatch, NOON_ISH)
+    _here_now(at).click().run()
+    assert_no_exception(at, "cast over a record with a readings question")
+    assert at.session_state["_readings_pending"] == "Other"
+    assert any("saved under other readings" in i.value for i in at.sidebar.info)
+    assert any(b.label == "Open saved readings" for b in at.sidebar.button)
+    captions = [c.value for c in at.sidebar.caption]
+    assert "Edited since it was saved." in captions
+    assert "Saved with other readings." in captions
+    assert _strip(at).startswith("Other (modified) · 2026-09-17 14:34:56")
+    # Keep current readings answers it, as it did before the cast.
+    [b for b in at.sidebar.button if b.label == "Keep current readings"][0].click().run()
+    assert "_readings_pending" not in at.session_state
+    assert at.session_state["date_input_key"] == "2026-09-17"
+
+
 # --- The page text -----------------------------------------------------------
 
 def test_the_sidebar_text_is_short_and_in_this_apps_voice():
@@ -452,7 +547,8 @@ def test_the_sidebar_text_is_short_and_in_this_apps_voice():
     for text in ("Cast a chart for the home place at this moment, by this computer's clock.",
                  "Set a home place under Birthplace first.",
                  "Keep this place as the home that Here & Now casts a chart for.",
-                 "Remove the home place; Here & Now is then disabled."):
+                 "Remove the home place; Here & Now is then disabled.",
+                 "so Here & Now cast nothing."):
         assert text in src
         assert len(text) <= 300
         assert "the app" not in text
