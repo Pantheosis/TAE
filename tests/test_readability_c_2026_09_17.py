@@ -251,3 +251,230 @@ def test_the_additions_note_is_headed_and_a_planet_can_be_read_whole(engine):
         assert f"**Other witnesses.** {row['Witnesses']}" in text
         if planet == "Mercury":
             assert "adds or subtracts nothing" not in row["Ch. 4"] or "fn 28" in row["Ch. 4"]
+
+
+# --- Revolutions -----------------------------------------------------------
+
+def _timing(date="1240-05-23", **state):
+    at = make_app(date=date, page="timing")
+    for key, value in state.items():
+        at.session_state[key] = value
+    at.run()
+    assert_no_exception(at, "timing")
+    return at
+
+
+REVOLUTIONS_BLOCKS = {
+    # subheader: (tooltip, visible markdown openings, expander label, section headings)
+    "The revolution of the year": (
+        "I.2, 1: a revolution is the moment the Sun comes back to \"his position in which he was at the root\". "
+        "I.2, 4: derive its Ascendant and the twelve houses.",
+        ["**A true-Sun return.** The engine uses a **true**-Sun return; Abu Ma'shar computes a mean Sun"],
+        None, []),
+    "The image of the revolution of the year: its points (I.6, 3-8)": (
+        "I.6, 8 and Figure 52: 14 planets, 98 rays, the Head and Tail twice each, 38 twelfth-parts -- 154 -- "
+        "\"and the Lots according to how you do it\"; I.6, 9-10: within a house, by degree.",
+        [],
+        "How the image table is built",
+        ["What I.6, 3-8 asks for.", "A table, by the revolution's cusps.", "The twelfth-parts."]),
+    "The reading checklist (I.7, 1-26)": (
+        "\"If you made the image of the revolution of the year, then understand:\" (I.7, 1) -- twenty-six things.",
+        ["**Facts from this app's own evaluators**, run on the revolution's data as on the root's"],
+        "The twenty-six things, and what is not read",
+        ["The checklist, I.7, 2-26.", "Not read, and said so.", "The Lots, the principle, and the worked example."]),
+    "Indicators of the year, in Abu Ma'shar's order": (
+        "II.1, 5-24 ranks nineteen indicators of the year and II.1, 25 says \"each one in turn is stronger in "
+        "indication than the one which is after it\".",
+        ["The first five are computed here; the rest are delineation material.",
+         "**Note the order: within a year** the lord of the year outranks the distributor (II.1, 25; II.23, 1)."],
+        "The lord of the year and the distributor, ranked by scope",
+        ["Within one year, and across several.", "Sahl's two sentences, as printed.",
+         "The editor's emendation, not adopted.", "The disagreement, recorded and not resolved."]),
+    "The sign of the terminal point and its lord, examined (II.3, 2-19)": (
+        "II.3, 2: examine the sign of the terminal point in the root -- which house of the circle, whose house, "
+        "exaltation and triplicity, which planets, Lots and twelfth-parts are in it, who looks at it or casts rays "
+        "at it and from where, and whether it is devoid of them.",
+        ["**Facts, not a verdict.** II.3, 5-6 name the factors of a suitable and a contrary condition"],
+        "How the factors are read",
+        ["What II.3, 3-18 asks.", "Row conventions.", "Not built."]),
+    "Indicators 6-19: the fact each one reads": (
+        "II.1, 11-24 list the remaining fourteen indicators, in II.1, 25's order of strength.",
+        ["Each reads a fact from the root and the revolution and judges it in a chapter of its own",
+         "**Facts, not judgments:** the delineation chapters behind these rows"],
+        "Row conventions of the fourteen indicators",
+        ["What each row reads."]),
+    "The lord of the orb (VI.1)": (
+        "VI.1, 4: \"the lord of the hour in which the native was born\" is assigned to the Ascendant and the first "
+        "year; VI.1, 5-8: the next hour lord down the spheres to the next house and the next year, and on past twelve.",
+        ["Row 5 above is this year's. The table here is VI.1, 18-19"],
+        "The cycle of the hour lords, and the three answers to their names",
+        ["The continuing cycle.", "The names of the lords: three answers, and what is built.",
+         "What PN IV presupposes: the planetary hours.", "Not built, and built elsewhere."]),
+    "The governor (IX.9, 1-10; IX.2, 4-7)": (
+        "IX.9, 1-9 name eight testimonies and IX.9, 10 the rule; IX.2, 4 gives a second, sign-level governor for "
+        "the first month.",
+        ["**Partial by nature, and said so per row.** Testimony #3 and the releaser's half of #4 need the longevity "
+         "releaser, which PN IV does not supply (IX.8, 123); they are filled from the releaser's distribution "
+         "(Sahl, On Nativities 1.15, on The releaser page)"],
+        "How the governor is tallied",
+        ["The eight testimonies, and the rule.", "The meaning of \"alone\".", "A reading of \"the first lord\".",
+         "The first month's governor (IX.2, 4).", "The condition of the primary planet, and what is not built."]),
+    "The Moon's connections in her sign, and the portions of the year (II.22)": (
+        "The revolution's Moon is followed by the ephemeris until she leaves her sign, and every perfection of "
+        "body or Ptolemaic ray before that is a connection.",
+        [],
+        "How the Moon's connections are read",
+        ["The sentences of II.22.", "Read into the sentences.", "Not counted, and not built.",
+         "Where else this computation is used."]),
+    "When a luminary is lord of the year: the proxies (II.13, 1; II.14, 1; II.22, 1-5)": (
+        "II.14, 1 adds the distributor; II.22, 1-5 give the Moon's list. Dykes's fn 237 reads these as proxies "
+        "standing in for the luminary.",
+        ["**The first proxy needs the releaser.** The first proxy in every version is the sign the longevity "
+         "releaser's distribution stands in, which PN IV does not supply (IX.8, 123)"],
+        "The proxies, and what each depends on",
+        ["II.13, 1, whole.", "The Sun's proxies, as read.", "The Moon's rows."]),
+    "The turning of the houses of the root (VI.2)": (
+        "Only the **turning** is built: whole-sign profection from each point's own natal position, as for the "
+        "Ascendant.",
+        ["**Two rows for a cusp in another sign.** VI.2, 21-24: a quadrant cusp that falls in another sign"],
+        "The turning, the direction, and the twelve Lots",
+        ["VI.2, 1, whole.", "The direction \"a year for every degree\".", "Which twelve Lots: not stated.",
+         "A substitution read from the editor.", "The triplicity lords, and what is not built."]),
+    "The distribution from the Ascendant (the *jar bakhtar*)": (
+        "III.1, 12: the Ascendant is directed by the ascensions \"of the country in which the native was born\" -- "
+        "oblique ascensions of the birth latitude, one degree of ascension to a year (III.1, 13). III.1, 14: the "
+        "Persians gave this particular distribution, and no other, the name *jar bakhtar*.",
+        ["III.1, 11: the lord of the bound reached is the distributor, \"whether it looked at [the bound] or not\". "
+         "III.1, 15-16: the most recent body or ray met is the partner"],
+        None, []),
+    "The distribution analysed (III.2)": (
+        "III.2, 4-9: a checklist of questions about the bound the distribution stands in, answered here as facts.",
+        ["**Facts and classification, not judgment:** the conditions III.2's delineation turns on"],
+        "How the distribution is classified",
+        ["Method: the checklist, the types, the transitions, the ranking.",
+         "Classifications, and the three planets of neither nature.",
+         "The transitions, and the transits into the bound.", "Qualifications on the quoted conclusions.",
+         "No worked example."]),
+    "The distribution from the Midheaven and the fourth": (
+        "III.1, 12: \"what is in the Midheaven or the fourth is directed by the ascensions of the right sphere\" -- "
+        "right ascension, one degree to a year (III.1, 13), the lord of the bound reached as distributor (III.1, 11) "
+        "and the last body or ray met as partner (III.1, 15-16), exactly as for the Ascendant.",
+        ["Right ascension has no latitude in it, so these two distributions are defined at every latitude",
+         "**What PN IV does not supply here, stated rather than filled in.**"],
+        "Five things the book leaves unsaid of this distribution",
+        ["No topic from the author.", "Not among the year's indicators.", "No worked example.",
+         "The partner at birth, by analogy.", "\"In\", read as on the axial degree itself."]),
+    "The planets, each with its measure under III.1, 12": (
+        "A planet **on** an axial degree is directed as that degree is. Every other planet is the third case, "
+        "whose method PN IV defers to a book it does not reproduce.",
+        [],
+        "The third case: proportional semi-arcs",
+        ["III.1, 12, whole.", "The three positional cases.", "The formula.", "Definitions.", "Sign conventions.",
+         "Not used, and not built."]),
+}
+
+
+@pytest.fixture(scope="module")
+def timing_page():
+    return _timing()
+
+
+@pytest.mark.parametrize("title", list(REVOLUTIONS_BLOCKS))
+def test_each_revolutions_block_has_its_tooltip_visible_text_and_headed_notes(timing_page, title):
+    tooltip, visible, label, sections = REVOLUTIONS_BLOCKS[title]
+    at = timing_page
+    assert _heading(at, title).help == tooltip
+    assert len(tooltip) <= 300
+    shown = _visible_markdowns(at)
+    for opening in visible:
+        assert any(m.startswith(opening) for m in shown), opening
+    if label:
+        exp = _expander(at, label)
+        assert exp.icon == NOTES_EXPANDER_ICON
+        assert _headings_in(exp) == [f"**{s}**" for s in sections]
+        assert not exp.dataframe
+
+
+def test_the_revolutions_page_has_no_text_over_its_ceiling():
+    from test_text_lengths_2026_09_17 import offenders
+    src = ui_source()
+    start = src.index("def page_timing():")
+    end = src.index("def page_releaser():")
+    first_line = src[:start].count("\n") + 1
+    last_line = src[:end].count("\n") + 1
+    assert not [o for o in offenders() if first_line <= o[1] <= last_line]
+
+
+def test_the_wheel_legend_letters_are_the_badges_the_wheel_is_drawn_with(timing_page):
+    exp = _expander(timing_page, "How the wheel is drawn")
+    assert exp.icon == NOTES_EXPANDER_ICON
+    assert _headings_in(exp) == ["**The five views.**", "**Chart layers.**", "**Points shown.**",
+                                 "**Display conventions: whole signs drawn, cusps computed.**"]
+    points = next(m for m in _markdowns(exp) if m.startswith("| Mark | Meaning |"))
+    table, _, sentence = points.partition("\n\n")
+    rows = [tuple(c.strip() for c in ln.strip("|").split("|")) for ln in table.split("\n")[2:]]
+    letters = [(mark, meaning) for mark, meaning in rows if len(mark) <= 2]
+    assert letters == [("TP", "the terminal point of the year (I.6, 5)"),
+                       ("D", "distributor (I.6, 6's time lords, lettered under a natal planet)"),
+                       ("P", "partner"), ("F", "lord of the fardar"), ("f", "its divider"), ("O", "lord of the orb")]
+    # Each letter's meaning is the definition the sentence beneath gives it, verbatim.
+    assert ("TP marks the terminal point of the year (I.6, 5); the letters under a natal planet mark I.6, 6's time "
+            "lords -- D distributor, P partner, F lord of the fardar, f its divider, O lord of the orb; the solid "
+            "arc from the natal Ascendant is the distribution") in sentence
+    for mark, meaning in letters[1:]:
+        assert f"{mark} {meaning.split(' (')[0]}" in sentence, mark
+    # And the letters are the ones the wheel is badged with, F and f distinct.
+    src = ui_source()
+    badges = re.findall(r"\('(?:distributor|partner|lord|sub_lord)'\), '([A-Za-z])'\)|\(pn4\['orb'\], '([A-Za-z])'\)", src)
+    drawn = [a or b for a, b in badges]
+    assert drawn == ["D", "P", "F", "f", "O"] == [mark for mark, _m in letters[1:]]
+    arcs = [mark for mark, _m in rows if "arc" in mark]
+    assert arcs == ["dashed arc", "solid arc"]
+    caption = next(c.value for c in timing_page.main.caption if c.value.startswith("Default points are Dykes's"))
+    assert caption.endswith("the inventory table below is the authority the picture is held to.")
+
+
+def test_the_three_positional_cases_are_the_engines_own_rows(timing_page, engine):
+    exp = _expander(timing_page, "The third case: proportional semi-arcs")
+    cases = next(m for m in _markdowns(exp) if m.startswith("| Point directed | Measured in |"))
+    rows = [ln for ln in cases.split("\n") if ln.startswith("| ") and not ln.startswith("| Point")]
+    assert rows == [f"| {r['Point directed']} | {r['Measured in']} |" for r in engine["PN4_ASCENSION_ROWS"]]
+    assert cases.endswith("A planet **on** an axial degree is directed as that degree is.")
+    formula = next(m for m in _markdowns(exp) if "`PromMD - (SigMD / SigSA) * PromSA`" in m)
+    assert formula.endswith("`PromMD - (SigMD / SigSA) * PromSA`")
+    assert "-- PromMD - (SigMD / SigSA) * PromSA -- a degree of it a year (III.1, 13)." in formula
+
+
+def test_the_orb_blocks_hour_lord_line_shows_only_where_the_chart_page_flags_the_approximation():
+    florence = _timing()
+    assert not any(m.startswith("**The natal hour lord is approximate here.**") for m in _visible_markdowns(florence))
+    polar = _timing(manual_lat_key=78.2, manual_lon_key=15.6)
+    lines = [m for m in _visible_markdowns(polar) if m.startswith("**The natal hour lord is approximate here.**")]
+    assert len(lines) == 1 and "flagged equal-hour approximation where the Sun is circumpolar" in lines[0]
+    notes = _expander(polar, "The cycle of the hour lords, and the three answers to their names")
+    assert any("flagged equal-hour approximation where the Sun is circumpolar" in m for m in _markdowns(notes))
+
+
+def test_the_orb_names_table_lists_the_four_readings_with_their_status(timing_page):
+    exp = _expander(timing_page, "The cycle of the hour lords, and the three answers to their names")
+    table = next(m for m in _markdowns(exp) if m.startswith("| Reading | Here |"))
+    for row in ("| The continuing cycle (VI.1, 5-8): the loop of seven runs on against the cycle of twelve | Built |",
+                "| The names fixed to the first cycle (VI.1, 10) | Shown beside the loop's planet for the same name; neither is stated for 18-19 |",
+                "| A single-cycle version, each house keeping its first hour lord for life (Intro Figure 48, Dykes's thought) | Not built; VI.1, 8 states the loop and the loop is built |",
+                "| The twelve-year reset of the named lords (Intro Sect. 13, \"my idea\") | Not built |"):
+        assert row in table, row
+    assert "and the reset Dykes proposes (Intro Sect. 13, \"my idea\") is a third answer, his own." in table
+
+
+def test_the_refused_distribution_keeps_its_notes_and_qualifications():
+    """Far north the Ascendant's distribution is refused; the visible
+    statements and the notes stand regardless."""
+    at = _timing(manual_lat_key=78.2, manual_lon_key=15.6)
+    warnings = [w.value for w in at.main.warning]
+    assert any(w.startswith("Refused at this latitude.") for w in warnings)
+    for label in ("How the distribution is classified", "Five things the book leaves unsaid of this distribution",
+                  "The third case: proportional semi-arcs"):
+        _expander(at, label)
+    shown = _visible_markdowns(at)
+    assert any(m.startswith("No current distribution to analyse") for m in shown)
+    assert any(m.startswith("**Facts and classification, not judgment:**") for m in shown)
