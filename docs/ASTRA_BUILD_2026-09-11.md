@@ -2027,3 +2027,104 @@ tenth-house twin III.5, 86 already was; the p. 48 Saturn entry stays. Counts aft
 the help, the tests, the entries file and this section say so. The three new and one re-anchored
 fixture rows verified against their passages by script (367 rows in all). `tables.json` regenerated
 once without -n, unchanged.
+## 2026-09-17: fortune and livelihood amended after Astra's reading
+
+The PROSPERITY ruling (owner, 2026-09-16, adopting Astra's `PROSPERITY_astra_ruling.md` whole; brief
+`BUILD_PROSPERITY_AMEND_BUILDER_BRIEF_2026-09-16.md` with its 2026-09-17 addenda), rows a-e and the text
+row, on the 2026-09-15 build above. Branch `prosperity-amendments-2026-09-17` off c7c2ab9. Nothing
+outside the finding, its evaluator, its constants, its tests and this log; no house-system change; the
+forty Sahl sentences and their pins, the BA/JN parallels and the display-only status unchanged.
+
+1. **Heading and synthesis.** The finding is "Sahl: indications of fortune and livelihood" (the
+   `tables.json` key; six inventory lines). The first row's label is "Synthesis (this app)", and the
+   'Class' column's help is Astra's sentence ("The first two triplicity lords describe the pattern
+   across their periods; the partnering lord, the Lot of Fortune, and other conditions modify the
+   reading. A single seven-class outcome is not specified for every combination in Sahl's chapter.").
+   The row keeps the class number as "read by this app as class N, <2.1's label>" after its grounds:
+   both strong "high rank from the beginning of his life to its end (2.11, 1)" (both in the stakes adds
+   2.3, 2); the mixed pair "benefit in the time of the strong one (2.11, 2) -- read by this app as class
+   2 [or 5], the first lord's time being the beginning of life (2.13, 39)"; both weak names the weakness
+   per lord, "Saturn falling (2.11, 3); Mercury under the rays (2.11, 5)", never one word for two, and
+   says that 2.11, 3's word is falling and a lord under the rays (no strength, 2.11, 5) is read with it.
+   `PROSPERITY_CLASSES` is unchanged (the labels).
+2. **The partnering lord.** A row beside the lords ('third', "The partnering lord"), moved up from
+   under the Lot rows: its whole-sign place, strong or falling by the same test as the other two, its
+   effect in Sahl's words -- "supports them both in their elevation, through its strength" / "brings
+   [them] down, a falling place" -- cited 2.11, 4 and "ranked third (2.3, 22)" (2.3, 22 added to
+   `PROSPERITY_SAHL`). A partner under the rays in a stake or what follows one is neither, and the row
+   says why (2.11, 4's support wants strength, its bringing down a falling place); the old code called
+   every not-strong partner "brings them down". The synthesis appends "Modified by the partnering lord
+   (2.11, 4): <place> -- <effect>; no class step". Example 11's Lot "of the nature of Venus" is named in
+   the note as not a rule and is not read.
+3. **Three measures kept apart.** The spine reads the whole-sign place. 2.3, 17-18 are their own rows
+   ("By sign and by degree", key `by degree`) from the quadrant cusps when the chart carries them: 17, a
+   stake by sign and a cadent house by the cusps -- "reputation, but it corrupts assets"; 18, not a
+   stake by sign and an angular house by the cusps -- "assets and a fine condition, without fame"; each
+   says it moves nothing. 2.3, 18 is gone from the synthesis row's grade (the 2026-09-15 check's finding
+   2 had it fire on a succedent lord by degree; now the succedent pair rests on 2.11, 1 alone and the
+   `succedent` Also says so). The grade row says "A third measure, the ascensional grade, beside the
+   synthesis ... never folded into strong or weak". 2.3, 17 added to `PROSPERITY_SAHL`.
+4. **Middling routes.** 2.11, 14 added (`PROSPERITY_SAHL`; row key `assets`, "The middle: the lord of
+   the house of assets"): the whole-sign second's domicile lord falling by place and with no infortune
+   with it or in its square or opposition, "what is middling of assets", listed, with fn 154's doubt on
+   "falling" named. 2.3, 19-21 were already Decline rows (owner, 2026-09-15) and stay; the note lists
+   every route -- 2.13, 50 / 2.16, 3 (the grade), 2.16, 2 and 4 (the Lot), 2.16, 5 (third place
+   disputed), 2.16, 6 (from BA, supplement only), 2.11, 14, 2.3, 19 -- and Abu 'Ali's succedents rule as
+   quoted, not applied. The 2.16 rows keep their statuses.
+5. **Precedence and predicates.** The Lot step's trigger is either lord "made unfortunate" (2.3, 6),
+   read as a lord weak (falling or under the rays) or with an infortune on it (2.20, 1's gloss, the
+   app's measure everywhere else); the old gate was Abu 'Ali's both-cadent. What the step does: the
+   Lot's verdict (the app's order 2.20, 1-2, then 2.3, 7 and 9, then 2.16, 2 and 4, kept) is the class
+   only when both lords are weak, as before; with one lord strong it stands in the synthesis "beside
+   the class with no class step (this app moves the class by the Lot only when both lords are weak)".
+   That keeps Abu 'Ali's Figures 11 (both succedent, each squared by an infortune; the Lot's 2.16, 2
+   would say the middle) and 19 (Mars under the rays; the Lot's 2.16, 4 says the middle) at the classes
+   he states, and is said on the page as the app's policy. The note calls the order "this app's order;
+   Sahl gives an order of investigation (2.3, 6; 2.3, 10), not a priority among verdicts" (2.3, 10
+   added to `PROSPERITY_SAHL`, quoted) and names the pairs that cannot both hold under one measure of
+   looking -- 2.3, 7 against 2.16, 4 (the infortunes not looking / all looking), 2.3, 7 against 2.16, 2
+   (the lord cleansed / made unfortunate), 2.3, 7 against 2.20, 1 (a stake or what follows / the sixth
+   or twelfth) -- so the order decides only between 2.3, 9 and the rest, and between 2.20 and 2.16; the
+   code's ordering is kept for those. **2.3, 9:** the code already read the Lot's LORD's whole-sign
+   place (`lot_lord_house in (5, 11)` with `lord_looks is None`); verified, no fix, the note now says the
+   "it" is the lord. **2.20, 1:** the note states the reading -- the first clause two alternatives (the
+   lord made unfortunate / the Lot unfortunate); "it" in "the sixth and twelfth" the Lot, in one of the
+   two; the infortunes with it or in square/opposition as the gloss of unfortunate; the lord in its fall
+   or made unfortunate, alternatives; the parenthesis the sect light; the Mars clause for a day birth
+   only (fn 256) -- and that the row tests the Lot in the sixth or twelfth with an infortune on it, its
+   lord in fall or made unfortunate, and Mars on the Lot by day, all together. **2.20, 2:** read whole
+   with its continuation over the page (it was already whole in `PROSPERITY_SAHL`); the note quotes it
+   and says the bracketed "worse is if" clause is an aggravation, not tested. The Lot rows are still
+   listed when the turn is not made, and then say "listed: 2.3, 6's turn to the Lot is not met".
+6. **Fixtures** (`tests/test_prosperity_2026_09_15.py`, 22 -> 26 tests, 0 xfail). The module docstring
+   states the evidential status: printed signs; unprinted degrees unknown; the sign-only charts carry
+   NO Lot (a Lot from unprinted degrees could stand in either of two signs), so `_chart(..., lot=True)`
+   computes one only for the degree charts (Figures 16, 18-21) and the rules-beyond-the-twelve tests;
+   six charts internally inconsistent per Dykes. The six former xfail(strict) figures (14, 15, 16, 18,
+   20, 21) are observation tests: each asserts the lords' places from the printed signs (the lords row),
+   the partnering lord, the Lot's place where printed, and `key != <Abu 'Ali's class>` with Dykes's note
+   in the message; no expected class. The six that pass (10, 11, 12, 13, 17, 19) assert the lords'
+   places, strong or falling, the partnering lord's effect, the synthesis, and (19, degrees printed) the
+   Lot at 7 Sagittarius and Mars under the rays; Figures 10 and 17 lose the "no Lot rows" assertion (no
+   Lot), Figure 11 loses 2.3, 18's mention. Figure 20 rebuilt from the restored p. 253 text (Moon 8.07
+   already on main from PR #67): by the printed signs Mars is the 3rd and Venus the 6th -- both cadent,
+   as Abu 'Ali says -- the Moon the 10th (supports), the computed Lot in Taurus, the 8th (4 Taurus
+   against his tenth degree, fn 60); the observation is that the synthesis is not his rise. The p. 253
+   re-read itself was the witness pass's (corpus PR #10; the brief's "p. 254" is Figure 21's page); no
+   photograph read, no corpus file edited here.
+7. **Corpus notes.** `photographs_by_page/_PN1_NOTES.txt` (OCR project root, not a repository) gains the
+   p. 256 flag: the last sentence of [Advancement after labor] concludes favourably from an adverse
+   premise; the page is collated, so the oddity is the print's; collate against BA III.2.4 / Carmen I.28,
+   27 before any use; nothing built from it. The witness report already records the p. 253 restoration
+   and the p. 256 heading repair, so neither is repeated there.
+8. `tables.json` regenerated once without xdist: the six title lines only. New tests: 2.3, 17-18 rows
+   from the cusps (three rows on one chart, none without cusps); 2.11, 14 (fires, then goes when Mars
+   squares the lord); the partner under the rays in the fifth ("neither"); the Lot rows' "turn not met"
+   suffix on Figure 13 with its Lot. `PROSPERITY_SAHL` 44 -> 48 (2.3, 10; 2.3, 17; 2.3, 22; 2.11, 14),
+   verbatim-tested. Suite: 3142 passed, 1 skipped, 0 xfailed; the four failures are main's own and not
+   this branch's (`test_jn_years_additions_2026_09_15.py` x2, a moved corpus page marker owned by another
+   build; `test_years_ladder_2026_09_15.py` and `test_andarzaghar_triplicity_lords_2026_09_15.py`,
+   re-pinned in PR #68), confirmed failing identically on a clean origin/main checkout.
+
+Left as found, outside this finding: `LIFE_LORDS_TIMES['third']` still cites 2.17, 5 for the third lord
+in the seventh (the sentence is 2.19, 5; the check of 2026-09-15 noted it, finding 17).
