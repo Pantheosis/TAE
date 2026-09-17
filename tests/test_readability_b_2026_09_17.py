@@ -293,3 +293,73 @@ def test_the_dignity_thresholds_table_follows_the_constants_and_the_readings(eng
     heart = [m for m in md if m.startswith("In the heart: within 16' (VII.2, 7-9, from the Sun's own apparent diameter).")]
     assert len(heart) == 1 and "Sahl elsewhere says one whole degree for the heart" in heart[0]
     assert any(m.startswith("**Domain/hayz** follows the Domain switch beside the Sect table above, currently ") for m in md)
+
+
+# --- Lots ------------------------------------------------------------------
+
+def test_the_classical_lots_key_pairs_each_lots_own_formula_with_where_it_is_stated():
+    at = make_app(page="lots").run()
+    assert_no_exception(at, "lots")
+    key = [n for n in at.main if getattr(n, "type", None) == "status" and n.label == "Where the four classical Lots are stated"]
+    assert len(key) == 1 and key[0].icon == NOTES_EXPANDER_ICON
+    md = [m.value for m in key[0].markdown]
+    table = [df.value for df in at.main.dataframe if 'Lot Name' in df.value.columns][0]
+    rows = re.findall(r"^\| (Lot of \w+) \| ([^|]+?) \| ([^|]+?) \|$", md[0], re.M)
+    assert [lot for lot, _, _ in rows] == list(table['Lot Name'])
+    assert [formula for _, formula, _ in rows] == list(table['Formula'])
+    where = dict((lot, stated) for lot, _, stated in rows)
+    assert where['Lot of Fortune'] == where['Lot of Exaltation'] == "Stated in Sahl"
+    assert where['Lot of Spirit'].startswith("Gr. Intr. VIII.3, 28-29") and "which Sahl names" in where['Lot of Spirit']
+    assert where['Lot of Basis'].startswith("Gr. Intr. VIII.4, 22-24") and "fn 67: the Greek Basis" in where['Lot of Basis']
+    assert md[1] == "**The four, in the sources' words.**"
+    assert md[2].startswith("Fortune and Exaltation are stated in Sahl. Spirit -- the Lot of the Invisible, which Sahl names -- is stated at")
+    assert md[2].endswith("All four carry their provenance under Provenance and standing per Lot, below the Topical Lots table.")
+
+
+@pytest.mark.parametrize("depth", READING_DEPTHS)
+def test_a_lots_provenance_is_read_by_selecting_it_and_the_comparison_table_stays(depth):
+    at = make_app(page="lots")
+    at.session_state["_reading_depth"] = depth
+    at.run()
+    assert_no_exception(at, "lots")
+    table = [t.value for t in at.main.table if 'Editor’s note' in t.value.columns][0]
+    box = [s for s in at.main.selectbox if s.key == "provenance_and_standing_per_lot_detail"][0]
+    assert box.value is None and box.placeholder == "Select a Lot to read its standing, source and editor's note"
+    assert box.options == list(table['Lot'])
+    expanders = [e.label for e in at.main.get("expander")]
+    assert "Provenance and standing per Lot" in expanders
+    death = [o for o in box.options if o == "Lot of death"][0]
+    box.select(death)
+    at.run()
+    assert_no_exception(at, "lots, a Lot chosen")
+    row = table[table['Lot'] == "Lot of death"].iloc[0]
+    md = _markdown(at)
+    assert f"**{row['Topic']}: Lot of death.**" in md
+    for field in ('Standing', 'Source', 'Editor’s note'):
+        if row[field]:
+            assert f"**{field}.** {row[field]}" in md, field
+
+
+def test_the_standings_note_labels_its_four_cases_and_keeps_the_lot_of_death_apart():
+    at = make_app(page="lots").run()
+    assert_no_exception(at, "lots")
+    note = [n for n in at.main if getattr(n, "type", None) == "status" and n.label == "How the standings are recorded"]
+    assert len(note) == 1 and note[0].icon == NOTES_EXPANDER_ICON
+    md = [m.value for m in note[0].markdown]
+    assert md[0::2] == ["**The Standing column.**", "**Four kinds of case.**",
+                        "**The Lot of death: a stated rule with a manuscript variant.**"]
+    assert md[1].startswith("The **Standing** column records his editorial position in his own words where he states one.")
+    cases = md[3].split("\n")
+    assert [c.split(":**")[0] for c in cases] == ["- **Sahl himself rules", "- **Dykes names his choice",
+                                                  "- **Dykes marks one standard", "- **Dykes only tabulates"]
+    assert '"both of the Lots are correct, so work with them both together" (3.11, 4)' in cases[0]
+    assert '"I have used M here"' in cases[1] and "We should follow Paul." in cases[1]
+    assert '"the usual calculation ... is that of Hermes."' in cases[2]
+    assert "Sahl quietly switches to Masha'allah's treatise on Lots" in cases[3]
+    assert md[5].startswith("The Lot of death is projected from Saturn: **stated** by Abu Ma'shar (Gr. Intr. VIII.4, 226; VIII.6, 69)")
+    assert md[5].endswith("A stated rule with a manuscript variant, not an emendation.")
+    src = ui_source()
+    lots = src[src.index("def page_lots():"):src.index("def page_victors():")]
+    for caps in ("MORE THAN ONCE", "STANDING column", "SAHL HIMSELF RULES", "DYKES NAMES HIS CHOICE",
+                 "DYKES MARKS ONE STANDARD", "DYKES ONLY TABULATES", "STATED by"):
+        assert caps not in lots, caps

@@ -3765,9 +3765,23 @@ def page_lots():
     classical_rows = _classical_lot_rows()
     st.dataframe(pd.DataFrame(classical_rows), hide_index=True, width='stretch', height=_rows_height(len(classical_rows)),
                  column_config=_wide_text_columns(pd.DataFrame(classical_rows)))
-    with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-        st.markdown('Fortune and Exaltation are stated in Sahl. Spirit -- the Lot of the Invisible, which Sahl names -- is stated at Gr. Intr. VIII.3, 28-29: by day from the Moon to the Sun, by night the reverse, from the Ascendant. Basis is stated at Gr. Intr. VIII.4, 22-24 as "the Lot of firmness and survival, the Lot of the Ascendant\'s support" (fn 67: the Greek Basis): by day from Fortune to the Invisible, by night the contrary, from the Ascendant -- the same construction as Sahl\'s Lot of passion (7.1, 141) and Abu Ma\'shar\'s Lot of Venus, with which VIII.4, 24 says it coincides. All four carry their provenance under Provenance and standing per Lot, below the Topical Lots table.')
-    st.subheader('Topical Lots (Sahl, On Nativities)' + ("; three rows of Abu Ma'shar's" if READING_DEPTH == READING_DEPTH_OPTIONS[1] else ''), help="Sahl's topical Lots, each with its own provenance. He gives several of them MORE THAN ONCE, with formulas that genuinely conflict, and Dykes's apparatus does not silently reconcile them -- so neither does this table.")
+    # The key: each classical Lot's formula (the table's own cell) against
+    # where the sources state it, then the paragraph the key was built from.
+    _stated_where = {
+        'Lot of Fortune': "Stated in Sahl",
+        'Lot of Exaltation': "Stated in Sahl",
+        'Lot of Spirit': "Gr. Intr. VIII.3, 28-29 -- the Lot of the Invisible, which Sahl names",
+        'Lot of Basis': "Gr. Intr. VIII.4, 22-24, \"the Lot of firmness and survival, the Lot of the Ascendant's support\" (fn 67: the Greek Basis)",
+    }
+    _classical_key = "| Lot | Formula | Stated where |\n|---|---|---|\n" + "\n".join(
+        f"| {r['Lot Name']} | {r['Formula']} | {_stated_where[r['Lot Name']]} |" for r in classical_rows)
+    with st.expander("Where the four classical Lots are stated", icon=NOTES_ICON):
+        st.markdown(_classical_key)
+        _note_sections([
+            ("The four, in the sources' words.",
+             'Fortune and Exaltation are stated in Sahl. Spirit -- the Lot of the Invisible, which Sahl names -- is stated at Gr. Intr. VIII.3, 28-29: by day from the Moon to the Sun, by night the reverse, from the Ascendant. Basis is stated at Gr. Intr. VIII.4, 22-24 as "the Lot of firmness and survival, the Lot of the Ascendant\'s support" (fn 67: the Greek Basis): by day from Fortune to the Invisible, by night the contrary, from the Ascendant -- the same construction as Sahl\'s Lot of passion (7.1, 141) and Abu Ma\'shar\'s Lot of Venus, with which VIII.4, 24 says it coincides. All four carry their provenance under Provenance and standing per Lot, below the Topical Lots table.'),
+        ])
+    st.subheader('Topical Lots (Sahl, On Nativities)' + ("; three rows of Abu Ma'shar's" if READING_DEPTH == READING_DEPTH_OPTIONS[1] else ''), help="Sahl's topical Lots, each with its own provenance. He gives several of them **more than once**, with formulas that genuinely conflict, and Dykes's apparatus does not silently reconcile them -- so neither does this table.")
     _reading_radio("House-based Lots measure to the", LOT_HOUSE_CUSP_OPTIONS, "lot_house_cusp", "_lot_house_cusp",
                    help="'The second place', 'the degree of the eighth place', 'the ninth' (On Nativities 2.15, 1; "
                         "8.6, 1; Ch. 9, 9): the Ascendant's degree carried into that sign, or the Alchabitius cusp. "
@@ -3786,12 +3800,31 @@ def page_lots():
     # reader (F11), and their definitions carry the same three fields every
     # other Lot's does. Nothing new is written for them.
     provenance_rows = [r for r in topical_lots if r['Lot'] in CLASSICAL_LOT_NAMES] + topical_rows
+    # One Lot's provenance read whole -- its standing, source and editor's
+    # note -- from the same rows the comparison table prints, which stays
+    # in its expander as the secondary view.
+    def _lot_provenance_detail(row):
+        st.markdown(f"**{row['Topic']}: {row['Lot']}.**")
+        for _field in ('Standing', 'Source', 'Editor’s note'):
+            if row.get(_field):
+                st.markdown(f"**{_field}.** {row[_field]}")
+    _detail_selector("Provenance and standing per Lot", provenance_rows, 'Lot', _lot_provenance_detail,
+                     "Select a Lot to read its standing, source and editor's note")
     with st.expander("Provenance and standing per Lot"):
         st.table(pd.DataFrame(provenance_rows, columns=['Topic', 'Lot', 'Standing', 'Source', 'Editor’s note']),
                  hide_index=True)
 
-    with st.expander("Sources and editorial notes", icon=":material/menu_book:"):
-        st.markdown('The STANDING column records his editorial position in his own words where he states one.\n\nFour kinds of case. SAHL HIMSELF RULES: of the two sibling Lots, "both of the Lots are correct, so work with them both together" (3.11, 4) -- neither is subordinate. DYKES NAMES HIS CHOICE: of the three witnesses to the Lot of enemies, "I have used M here"; on the night reversal of the Saturn-Moon work Lot, "Paul instructs us to reverse it by night, but Abu Ma\'shar says not to. We should follow Paul." DYKES MARKS ONE STANDARD: on children, "the usual calculation ... is that of Hermes." DYKES ONLY TABULATES: three Lots for work, after noting that "Sahl quietly switches to Masha\'allah\'s treatise on Lots ... without telling us that the formula is different."\n\nEvery formula is taken from the running prose or a footnote, never from one of the summary tables.\n\nThe Lot of death is projected from Saturn: STATED by Abu Ma\'shar (Gr. Intr. VIII.4, 226; VIII.6, 69), and Sahl 8.6, 1 as printed agrees, his manuscripts reading the Ascendant (fn 89, with Masha\'allah\'s manuscripts and Dorotheus for Saturn). A stated rule with a manuscript variant, not an emendation.')
+    _notes_expander("How the standings are recorded", [
+        ("The Standing column.",
+         'The **Standing** column records his editorial position in his own words where he states one. Every formula is taken from the running prose or a footnote, never from one of the summary tables.'),
+        ("Four kinds of case.",
+         '- **Sahl himself rules:** of the two sibling Lots, "both of the Lots are correct, so work with them both together" (3.11, 4) -- neither is subordinate.\n'
+         '- **Dykes names his choice:** of the three witnesses to the Lot of enemies, "I have used M here"; on the night reversal of the Saturn-Moon work Lot, "Paul instructs us to reverse it by night, but Abu Ma\'shar says not to. We should follow Paul."\n'
+         '- **Dykes marks one standard:** on children, "the usual calculation ... is that of Hermes."\n'
+         '- **Dykes only tabulates:** three Lots for work, after noting that "Sahl quietly switches to Masha\'allah\'s treatise on Lots ... without telling us that the formula is different."'),
+        ("The Lot of death: a stated rule with a manuscript variant.",
+         'The Lot of death is projected from Saturn: **stated** by Abu Ma\'shar (Gr. Intr. VIII.4, 226; VIII.6, 69), and Sahl 8.6, 1 as printed agrees, his manuscripts reading the Ascendant (fn 89, with Masha\'allah\'s manuscripts and Dorotheus for Saturn). A stated rule with a manuscript variant, not an emendation.'),
+    ])
 def page_victors():
     if not chart_ok:
         _recovery_panel("Lunation and victors")
