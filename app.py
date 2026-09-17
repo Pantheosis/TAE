@@ -5178,19 +5178,25 @@ def page_releaser():
                      standing="Supplement · display only",
                      glance="What each planet joined to the house-master or looking at it would add to or subtract "
                             "from its years by Abu 'Ali's chapter.",
+                     # The summary folded (owner's ruling on the preview): the
+                     # glance sentence and the Witnesses sentence visible, the
+                     # rule's detail whole under the first notes heading.
                      summary="What each planet joined to the house-master or looking at it would add to or subtract "
-                             "from its years by Abu 'Ali's chapter: a fortune joined, trine or sextile adds its "
-                             "lesser years, at one of three grades the chapter leaves undefined (none chosen, none "
-                             "defaulting to years); a bad one joined, square or opposite subtracts its lesser years; "
-                             "a fortune's square or opposition and a bad one's sextile or trine are the chapter's "
-                             "explicit zero; Mercury by Dykes's fn 28, a conjecture, the cases it does not pair "
-                             "left undecided under it; the Sun and Moon, given no modifier by the chapter, carry "
-                             "'Umar's solar rule and Abu Bakr's sentence on the luminaries as witnesses. Abu Bakr "
+                             "from its years by Abu 'Ali's chapter. Abu Bakr "
                              "and 'Umar stand beside each row in the Witnesses column with their own conditions.",
                      qualifications=["**Display only:** no sum is formed, and Sahl's grant above is not changed."],
                      detail=_additions_detail, detail_key='Planet',
                      detail_placeholder="Select a planet to read its effect, grades, reading and witnesses",
                      note_sections=[
+                         ("The chapter's rule, as read.",
+                          "What each planet joined to the house-master or looking at it would add to or subtract "
+                          "from its years by Abu 'Ali's chapter: a fortune joined, trine or sextile adds its "
+                          "lesser years, at one of three grades the chapter leaves undefined (none chosen, none "
+                          "defaulting to years); a bad one joined, square or opposite subtracts its lesser years; "
+                          "a fortune's square or opposition and a bad one's sextile or trine are the chapter's "
+                          "explicit zero; Mercury by Dykes's fn 28, a conjecture, the cases it does not pair "
+                          "left undecided under it; the Sun and Moon, given no modifier by the chapter, carry "
+                          "'Umar's solar rule and Abu Bakr's sentence on the luminaries as witnesses."),
                          ("Abu 'Ali's chapter, whole.",
                           f"Abu 'Ali, Judgments of Nativities Ch. 4, whole:\n\n> \"{JN_CH4_SENTENCES['fortune']}\" \"{JN_CH4_SENTENCES['infortune']}\" "
                           f"\"{JN_CH4_SENTENCES['nothing']}\" \"{JN_CH4_SENTENCES['mercury']}\" \"{JN_CH4_SENTENCES['mars']}\"\n\n"

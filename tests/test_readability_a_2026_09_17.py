@@ -299,16 +299,21 @@ def test_the_house_masters_years_and_abu_alis_additions_keep_their_flags_and_dis
                                  "from its years by Abu 'Ali's chapter.")
     block = _between(at, additions[0].value)
     assert block[0][0] == "caption" and block[0][1].startswith("Supplement · display only · ")
-    assert block[1][0] == "markdown" and block[1][1].startswith("What each planet joined to the house-master or looking at it would add to or subtract from its years by Abu 'Ali's chapter: a fortune joined, trine or sextile adds its lesser years")
+    # Folded on the owner's ruling (branch C): the summary is the glance
+    # sentence and the Witnesses sentence; the rule's detail is the first
+    # notes section, "The chapter's rule, as read."
+    assert block[1][0] == "markdown" and block[1][1] == ("What each planet joined to the house-master or looking at it would add to or subtract from its years by Abu 'Ali's chapter. "
+                                                         "Abu Bakr and 'Umar stand beside each row in the Witnesses column with their own conditions.")
     assert block[2] == ("markdown", "**Display only:** no sum is formed, and Sahl's grant above is not changed.")
     assert block[3][0] == "dataframe"
     notes = _expander_text(at, "Sources and editorial notes", "Abu 'Ali's chapter, whole")
     # Re-pinned on branch C: the engine note's one section is five headed
     # sections (its paragraphs), the first "What the rows state.".
-    for section in ("**Abu 'Ali's chapter, whole.**", "**What the rows state.**", "**Conventions of this display.**",
+    for section in ("**The chapter's rule, as read.**", "**Abu 'Ali's chapter, whole.**", "**What the rows state.**", "**Conventions of this display.**",
                     "**Abu Bakr, a witness beside Abu 'Ali.**", "**'Umar al-Tabari, a witness.**"):
         assert section in notes, section
     assert "Display only: no total is formed and these rows do not change the Sahl-based grant of the years above" in notes
+    assert "a fortune joined, trine or sextile adds its lesser years, at one of three grades the chapter leaves undefined" in notes
     assert "> \"" in notes
 
 

@@ -233,6 +233,8 @@ def test_the_additions_note_is_headed_and_a_planet_can_be_read_whole(engine):
     _heading(at, title)
     exp = _expander(at, "Sources and editorial notes")
     heads = _headings_in(exp)
+    assert heads[0] == "**The chapter's rule, as read.**"
+    assert _markdowns(exp)[1].startswith("What each planet joined to the house-master") and _markdowns(exp)[1].endswith("as witnesses.")
     for h in ("**What the rows state.**", "**Abu Bakr and 'Umar, separate witnesses.**",
               "**Grades left unchosen, and Mercury's conjecture.**", "**The luminaries.**",
               "**Conventions of this display.**"):
