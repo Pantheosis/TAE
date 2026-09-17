@@ -85,7 +85,6 @@ ALLOWED_LONG = (
     'Two rows: the lord of the year by annual profect',
     'The lesser, middle, greater and mighty years and',
     # glance
-    "Flags planets in Sahl's dark signs (Libra, Capri",
     # caption
     'The releaser and the house-master PN IV leaves t',
     "PN IV's own conventions, read from its figures: ",

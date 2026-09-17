@@ -698,3 +698,21 @@ def test_the_configurations_tabs_keep_their_place_with_several_readings_off_defa
     kinds = lambda at: [getattr(c, "type", None) for c in at.main.children.values()]
     assert kinds(plain).index("tab_container") == kinds(changed).index("tab_container")
     assert kinds(changed)[3] == "flex_container" and kinds(plain)[3] == "empty"
+
+
+def test_special_degrees_shows_its_sentence_whole_above_the_table_and_its_two_rules_as_blockquotes():
+    at = make_app(date="1240-09-18", page="chart").run()      # the default chart has no special degree
+    assert_no_exception(at, "chart")
+    title = "Special Degrees & Conditions"
+    assert _heading(at, title).help == ("Flags planets in Sahl's dark signs (Libra, Capricorn), in the two signs of his burned place, "
+                                        "in a welled degree of their sign, or in one of Sahl's two sign-boundary conditions.")
+    block = _between(at, title, "Degrees of nobility and rank")
+    assert [k for k, _ in block][:3] == ["markdown", "dataframe", "status"], block
+    assert block[0][1].startswith("Flags planets in Sahl's dark signs (Libra, Capricorn), in the two signs of his burned place (\"the end of Libra")
+    md = _markdown(at)
+    assert "**Entering a sign.**" in md and "**Leaving a sign.**" in md
+    text = "\n".join(md)
+    assert "**Entering**:\n\n> \"every planet which is at the beginning of a sign is weak" in text
+    assert "then indeed the strength of the planet IS in that sign\"\n\n(Fifty Aphorisms #15, 31-33) -- so the 29th degree still counts" in text
+    for tooltip in ("Calculation", "Quadrant divisions (Alchabitius)"):
+        assert "this app" in _heading(at, tooltip).help and "the app" not in _heading(at, tooltip).help
