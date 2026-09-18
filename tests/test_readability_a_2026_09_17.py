@@ -360,7 +360,7 @@ def test_the_victor_worksheet_shows_three_steps_and_the_two_by_two_of_the_four_c
     assert heading.help == ("Ibn Ezra's victor worksheet (his book is not in hand), reproduced cell for cell so it can be "
                             "checked against a hand-filled sheet.")
     block = _between(at, "Victor of the Chart")
-    assert block[0] == ("caption", "ibn Ezra's victor #1, 1485/1537")
+    assert block[0] == ("caption", "ibn Ezra's victor #1 -- 1485/1537")
     steps = block[1][1]
     assert steps.startswith("1. The first five rows score each planet's essential-dignity claim **at that point's** degree")
     assert "\n2. Then Lord of the Day (+7), Lord of the Hour (+6) and Places are added **once** each, not per point" in steps

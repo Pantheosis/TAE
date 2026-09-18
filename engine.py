@@ -3625,8 +3625,8 @@ def evaluate_accidental_dignities(planetary_data, natal_houses, sect, jd=None,
         # "Increasing in its rate of movement (with respect to the five
         # planets) is that it travels more than its mean motion" -- Great
         # Introduction VII.1, 29. But 30-31 immediately excepts the two
-        # inferiors: "the mean motion of Venus and Mercury in one day at a
-        # [particular] time is not like their mean travel for the day," so
+        # inferiors: "their mean motion in one day at a
+        # [particular] time is not like their mean travel for the day" (30), so
         # for them the comparison is against the SUN's motion that day, not
         # their own mean. An earlier version measured all seven against
         # their own means.
@@ -4392,7 +4392,7 @@ def _sahl_body_row(row):
     was computed and then thrown away by all of them. The evaluators that
     belong to Sahl's doctrine now admit it through this predicate; Abu
     Ma'shar's VII.6 table does not, because VII.5, 14 denies the case
-    outright ("they mix their natures in a weak way", not a connection)."""
+    outright ("mixing their natures" in a weak way, not a connection)."""
     return row.get('sahl_body_connection', False)
 
 def evaluate_transfers_of_light(planetary_data):
@@ -7006,7 +7006,7 @@ LOT_DEFINITIONS = [
          note='"They began [2] the Lot of the Invisible by day from her up to the Sun in degrees of equality, '
               'and by night from the Sun to the Moon ... cast out from the beginning of the sign of the Ascendant" '
               '(Gr. Intr. VIII.3, 28-29). Sahl names it the Lot of the Invisible, later Spirituality (notes on '
-              'Ch. 9.5, 73 and Ch. 11, 5 -- the chapter preamble -- confirm the identity) but nowhere states the formula.'),
+              'Ch. 9.5, 73 and On Nativities Ch. 11, 5 -- the chapter preamble -- confirm the identity) but nowhere states the formula.'),
     # [9] of the Great Introduction, the Greek Basis (fn 67): Fortune to the
     # Invisible from the Ascendant, reversed at night -- the same construction
     # as Sahl's Lot of passion (7.1, 141) and Abu Ma'shar's Lot of Venus [6],
@@ -8529,7 +8529,7 @@ FEMININE_QUADRANT_HOUSES = {1, 2, 3, 7, 8, 9}
 ADVANCING_BY_QUADRANT_FIG90 = {4, 5, 6, 10, 11, 12}   # Gr. Intr. VII.3, 2 / VI.26, 3; not Sahl 83
 
 # Approximate geocentric distance range (AU) per planet, used only as a
-# modern proxy for "rising up in the circle of the apogee" (VII.6, 23) --
+# modern proxy for "rising up in the circle of their apogee" (VII.6, 23) --
 # swisseph doesn't expose the classical deferent/epicycle apogee for
 # non-lunar bodies, so this substitutes "farther from Earth than usual" for
 # the true Ptolemaic concept. An approximation, flagged as such.
@@ -12089,7 +12089,7 @@ def sahl_house_master_years(planet, planetary_data, cusps, sect, essential):
 # read as the Moon's position two days after the birth moment, the birth
 # day counted as the first and the birth hour kept: Sahl's own words
 # elsewhere are "the position of the Moon, where she is on the third day
-# from the nativity" (Ch. 9, 3) and "the position of the Moon on the
+# from the nativity" (On Nativities Ch. 9, 3) and "the position of the Moon on the
 # third day, the seventh, and the fortieth day" (1.30, 22); no sentence
 # of his fixes the count or the hour. The count is read from Firmicus's
 # worked chart (Mathesis II.29, 34, the nativity of Albinus; III.14,
@@ -13136,7 +13136,7 @@ def sahl_house_master_direction(planetary_data, house_master, obliquity, geo_lat
     conjunction of the infortunes and the degree of burning, and its
     opposition and its square, a year for every degree of ascensions."
     The house-master's natal degree is directed forward by the oblique
-    ascension of the birth latitude -- "the ascensions of that city",
+    ascension of the birth latitude -- "the ascensions in that city",
     1.15, 17; 1.16, 4; 1.18, 21 -- to the bodies, squares and oppositions
     of Saturn and Mars and to the Sun's degree, read as "the degree of
     burning". One row per target within the span, in age order. Refuses
@@ -17279,7 +17279,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
     #  age     -- completed CIVIL anniversaries, II.3, 1's count for the
     #             profection ("for every year the native has completed"),
     #             the lord of the orb (VI.1, by year) and the age labels;
-    #  cycle   -- completed SOLAR RETURNS, I.2, 1-3's year ("when he came
+    #  cycle   -- completed SOLAR RETURNS, I.2, 1-3's year ("until he came
     #             back to his position ... a solar year will have been
     #             concluded"): the revolution, its months and its day
     #             clocks belong to the return that CONTAINS the target,

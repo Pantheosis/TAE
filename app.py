@@ -3198,7 +3198,7 @@ def page_findings():
                   ("The sentences: 1.29, 11-13 and 1.26, 7.",
                    'On Nativities 1.29, 11:\n\n> "' + SAHL_1_29_11 + '"\n\n1.29, 12:\n\n> "' + SAHL_1_29_12 + '"\n\n1.29, 13:\n\n> "' + SAHL_1_29_13 + '"\n\n(fn 304: "' + SAHL_1_29_FN304 + '")\n\nDykes\'s fn 303 on 11:\n\n> "' + SAHL_1_29_FN303 + '"\n\n1.26, 7:\n\n> "' + SAHL_1_26_7 + '"'),
                   ("The day count.",
-                   'No sentence of 1.29 or 1.26 says when "the third day of the Moon" is taken; Sahl\'s words elsewhere are "the position of the Moon, where she is on the third day from the nativity" (9, 3) and "the position of the Moon on the third day, the seventh, and the fortieth day" (1.30, 22). This app takes it two days after the birth, the birth day counted as the first (Firmicus, Mathesis II.29, 34, in the nativity of Albinus; III.14, 17-19), the birth hour kept, and computes the Moon, the Sun and the infortunes there. The count rests on his worked chart, the nativity of Albinus: Firmicus gives its places by sign only (II.29, 22), and "on the third day the Moon, being established in Leo, full of light, flung herself into the rays of Mars"; Leo opposes Mars\'s Aquarius by sign on the second day and the third alike, so the count is read by degree from Dykes\'s Figure 34, his approximate chart (fn 129: within a day) -- the Moon at 14 Cancer and Mars at 11 Aquarius at the birth, and the Moon on Mars\'s opposition ray in Leo two days after, sixteen degrees past it after three. That is this app\'s reading of Firmicus, not his statement of the count. Of the third day he says, "and this day, that is the third, operates in a very powerful way in nativities" (II.29, 34), and at III.14, 17-19 that on it "she decrees all things in a similar way" to the first.'),
+                   'No sentence of 1.29 or 1.26 says when "the third day of the Moon" is taken; Sahl\'s words elsewhere are "the position of the Moon, where she is on the third day from the nativity" (On Nativities Ch. 9, 3) and "the position of the Moon on the third day, the seventh, and the fortieth day" (1.30, 22). This app takes it two days after the birth, the birth day counted as the first (Firmicus, Mathesis II.29, 34, in the nativity of Albinus; III.14, 17-19), the birth hour kept, and computes the Moon, the Sun and the infortunes there. The count rests on his worked chart, the nativity of Albinus: Firmicus gives its places by sign only (II.29, 22), and "on the third day the Moon, being established in Leo, full of light, flung herself into the rays of Mars" (II.29, 34); Leo opposes Mars\'s Aquarius by sign on the second day and the third alike, so the count is read by degree from Dykes\'s Figure 34, his approximate chart (fn 129: within a day) -- the Moon at 14 Cancer and Mars at 11 Aquarius at the birth, and the Moon on Mars\'s opposition ray in Leo two days after, sixteen degrees past it after three. That is this app\'s reading of Firmicus, not his statement of the count. Of the third day he says, "and this day, that is the third, operates in a very powerful way in nativities" (II.29, 34), and at III.14, 17-19 that on it "she decrees all things in a similar way" to the first.'),
                   ("The corruption tests.",
                    '1.29, 3 names the corruptions the chapter has in view:\n\n> "' + SAHL_1_29_3 + '"\n\nSo the third-day Moon is read as corrupted when an infortune looks at her by whole sign (Saturn and Mars where they stand on that day), when she is burned (within the twelve degrees this app uses for the Moon, The Introduction Ch. 3, 103), or when she is falling from the stakes by the whole-sign place from the Ascendant of the nativity (1.30, 33: "how is her position relative to the Ascendant"). Nothing else of the Moon\'s ten defects is read here.'),
                   ("The four-footed signs.",
@@ -3227,7 +3227,7 @@ def page_findings():
               detail=_prosperity_row, detail_key='Class')
     _notes_expander("How the prosperity reading is assembled", [
         ("The two triplicity lords.",
-         "The first two triplicity lords describe the pattern across their periods; the partnering lord, the Lot of Fortune, and other conditions modify the reading. The pattern is Theophilus's, 2.11, 1-3 --\n\n> \"" + PROSPERITY_SAHL['2.11, 1'] + " " + PROSPERITY_SAHL['2.11, 2'] + " " + PROSPERITY_SAHL['2.11, 3'] + "\"\n\n-- with 2.11, 5,\n\n> \"" + PROSPERITY_SAHL['2.11, 5'] + "\",\n\nand 2.13, 40,\n\n> \"" + PROSPERITY_SAHL['2.13, 40'] + "\"\n\nStrong is a stake or what follows one, falling the third, sixth, ninth and twelfth (fn 149 on \"strong\"), by whole sign. Both strong is read as class 1 (both in the stakes is 2.3, 2's \"happy for all the days of his life\"); both weak as class 6, the ground naming each lord's weakness -- falling (2.11, 3) or under the rays (2.11, 5) -- since 2.11, 3's word is falling and 2.11, 5 says only that a lord under the rays has no strength; the mixed pair is a timing pattern, \"benefit in the time of the strong one\" (2.11, 2), read by this app as class 2 when the first lord is the strong one and class 5 when the second is, the first lord's time being the beginning of life (2.13, 39). The infortunes with a lord or in its square or opposition are listed: 2.11, 4 makes their aspect an increase or a subtraction, not a class step, and Abu 'Ali's charts read the lords' places."),
+         "The first two triplicity lords describe the pattern across their periods; the partnering lord, the Lot of Fortune, and other conditions modify the reading. The pattern is Theophilus's, 2.11, 1-3 --\n\n> \"" + PROSPERITY_SAHL['2.11, 1'] + " " + PROSPERITY_SAHL['2.11, 2'] + " " + PROSPERITY_SAHL['2.11, 3'] + "\"\n\n-- with 2.11, 5,\n\n> \"" + PROSPERITY_SAHL['2.11, 5'] + "\",\n\nand 2.13, 40,\n\n> \"" + PROSPERITY_SAHL['2.13, 40'] + "\"\n\nStrong is a stake or what follows one, falling the third, sixth, ninth and twelfth (fn 149 on \"strong\"), by whole sign. Both strong is read as class 1 (both in the stakes is 2.3, 2's \"happy for all the days of his life\"); both weak as class 6, the ground naming each lord's weakness -- falling (2.11, 3) or under the rays (2.11, 5) -- since 2.11, 3's word is falling and 2.11, 5 says only that a lord under the rays has no strength; the mixed pair is a timing pattern, \"his benefit will be in the time of the strong one\" (2.11, 2), read by this app as class 2 when the first lord is the strong one and class 5 when the second is, the first lord's time being the beginning of life (2.13, 39). The infortunes with a lord or in its square or opposition are listed: 2.11, 4 makes their aspect an increase or a subtraction, not a class step, and Abu 'Ali's charts read the lords' places."),
         ("The partnering lord.",
          "2.11, 4:\n\n> \"" + PROSPERITY_SAHL['2.11, 4'] + "\"\n\n-- the third lord of the sect light's triplicity is a stated modifier, ranked third by 2.3, 22 (\"" + PROSPERITY_SAHL['2.3, 22'] + "\"): its row gives its whole-sign place and its effect in Sahl's words, and the synthesis appends the modification -- \"Modified by the partnering lord (2.11, 4)\", its place, its effect, \"no class step\" -- Sahl giving no class step for it. A lord under the rays in a stake or what follows one is neither: 2.11, 4's support wants strength and its bringing down a falling place. Abu 'Ali's own phrase for the Lot at Figure 20, \"of the nature of Venus\", is not a rule Sahl states and is not read."),
         ("Three measures, kept apart.",
@@ -4217,7 +4217,7 @@ def page_victors():
              "Not modelled: " + SAHL_1_7_UNMODELLED + "."),
         ])
     st.subheader('Victor of the Chart', help="Ibn Ezra's victor worksheet (his book is not in hand), reproduced cell for cell so it can be checked against a hand-filled sheet.")
-    st.caption("ibn Ezra's victor #1, 1485/1537")
+    st.caption("ibn Ezra's victor #1 -- 1485/1537")
     with _prose():
         st.markdown("1. The first five rows score each planet's essential-dignity claim **at that point's** degree -- Sun, Moon, Ascendant, Lot of Fortune, and the prenatal New/Full Moon.\n"
                     "2. Then Lord of the Day (+7), Lord of the Hour (+6) and Places are added **once** each, not per point; Places is keyed the other way round, by the candidate planet's own whole-sign house.\n"
@@ -4469,7 +4469,7 @@ def page_timing():
                     # WHEEL_DARK and the rest read what was left here.
                     _timing_dark = _reading_checkbox("Dark wheel", "wheel_dark", "_wheel_dark", help=WHEEL_DARK_HELP)
                     want_lots = _reading_checkbox("Lots", "timing_lots", "_timing_lots",
-                                                  help="I.6, 3-4: the Lots \"according to how you do it\" -- this app's, "
+                                                  help="I.6, 3-4 and 8: the Lots \"according to how you do it\" -- this app's, "
                                                        "beyond Fortune, as short ticks with their names.")
                     want_rays = _reading_checkbox("Rays", "timing_rays", "_timing_rays",
                                                   help="I.6, 3-4 and 8: the 98 rays, as ticks -- too many to letter; the "
@@ -4748,9 +4748,9 @@ def page_timing():
         st.markdown("**Figure 55 -- the four cases, in the book's words; which one holds is left to the reader:**")
         st.dataframe(pd.DataFrame(ii3['figure_55']), hide_index=True, width='stretch', height=_rows_height(4))
         _notes_expander("How the factors are read", [
-            ("What II.3, 3-18 asks.",
-             "II.3, 3: the same in the revolution, with where those planets were and are, and their "
-             "condition in each. II.3, 5-8: the lord of the year's condition in root and revolution "
+            ("What PN IV II.3, 3-18 asks.",
+             "PN IV II.3, 3: the same in the revolution, with where those planets were and are, and their "
+             "condition in each. PN IV II.3, 5-8: the lord of the year's condition in root and revolution "
              "compared four ways (Figure 55); II.3, 9-18: reception, a stake of the revolution's "
              "Ascendant under an infortune, aversion to the Ascendant."),
             ("Row conventions.",
@@ -4758,7 +4758,7 @@ def page_timing():
              "\"westernization from the Sun\" is shown as the solar side (fn 47).\n"
              "- Aspects to the sign and to the lord are by whole sign.\n"
              "- Also read: the twelfth-parts (Gr. Intr. V.18, 3) and fn 37-41's "
-             "classes of sign (VI.4, 4-6: loving, hating, hostile by aspect; IX.2, 33: matching in ascensions, in "
+             "classes of sign (Gr. Intr. VI.4, 4-6: loving, hating, hostile by aspect; IX.2, 33: matching in ascensions, in "
              "daylight, or one belt) and of degree (V.20's bright, dusky, empty and dark degrees, the editor's "
              "\"probably\"), as facts on rows [3] and [4-7]."),
             ("Not built.",
@@ -5608,7 +5608,7 @@ def page_releaser():
         ("Current direction: the readings.",
          "Readings: \"the degree of burning\" is the Sun's natal degree; \"a year for every degree of "
          "ascensions\" is the oblique ascension of the birth latitude applied to the house-master's own "
-         "degree, as 1.15, 17, 1.16, 4 and 1.18, 21 apply \"the ascensions of that city\" to the "
+         "degree, as 1.15, 17, 1.16, 4 and 1.18, 21 apply \"the ascensions in that city\" to the "
          "luminaries and the Ascendant alike, not PN IV III.1, 12's third case, the proportional "
          "semi-arcs, which is Abu Ma'shar's assignment and not Sahl's); \"in the year of age\" is the "
          "completed year the arc falls in."),
@@ -6252,7 +6252,7 @@ def page_fardar():
              "p. 77) where Sahl's English does not."),
             ("Figure 146, On Times 4, 7 and On Nativities 1.20, 10-17.",
              "**Figure 146 (VII.8, p. 487)**, verified against the prose restatement at VII.8, 3-8 and the "
-             "fardar total the text gives (\"that is 75 years\", VII.8, 3), agrees with PN IV's IV.1, 2 cell "
+             "fardar total the text gives (\"that is 75 years\", Gr. Intr. VII.8, 3), agrees with PN IV's IV.1, 2 cell "
              "for cell. **On Times Ch. 4, 7:** \"if the ruler was in a stake, eastern, it grants its greater "
              "years; or if it was in what follows the stakes, it grants its middle years; and if it was "
              "falling, it grants its lesser years.\" **On Nativities 1.20, 10-17:** greater in the Ascendant, "
