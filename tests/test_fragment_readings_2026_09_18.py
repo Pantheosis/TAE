@@ -226,8 +226,11 @@ def test_the_chart_wheels_renderer_runs_under_the_runs_readings(shared_fragments
     """The Chart page's fragment reaches one engine function, the wheel's
     renderer generate_hybrid_svg. With every reading off its default, the
     renderer on the fragment rerun answers, for every reading, what the
-    full run answered -- and not the module default."""
-    at = make_app(page="chart")
+    full run answered -- and not the module default. 1240-10-05 Florence,
+    on which fitting_infortune(asc) gives Saturn, so SOFTENED_INFORTUNE is
+    not compared None against None (1240-05-23's Ascendant is ruled by a
+    benefic, for which the reading is None both ways)."""
+    at = make_app(page="chart", date="1240-10-05")
     import engine
     seen = []
     original = engine.generate_hybrid_svg
@@ -250,6 +253,8 @@ def test_the_chart_wheels_renderer_runs_under_the_runs_readings(shared_fragments
     assert full_readings != defaults, "the run's readings are off their defaults, so the probe has teeth"
     assert full_readings["LOT_HOUSE_CUSP"] == engine.LOT_HOUSE_CUSP_OPTIONS[1]
     assert full_readings["MOON_RAYS_ORB"] == 15.0
+    assert full_readings["SOFTENED_INFORTUNE"] is not None, \
+        "the probe date must give fitting_infortune(asc) a planet, or this reading is compared None against None"
 
     _fragment_rerun(at, shared_fragments._fragments)
     assert seen, "the fragment rerun regenerated the wheel"
@@ -267,8 +272,9 @@ def test_every_fragment_pins_the_runs_readings_in_its_own_thread(page, shared_fr
     two tick grids (Configurations) reach no engine function at all, so
     what can be observed for them is the pin itself, which is what makes any evaluator they may come to call answer
     as the full run's would. At main no pin happens in the fragment's
-    thread."""
-    at = make_app(page=page)
+    thread. The chart run uses 1240-10-05 Florence rather than the
+    default 1240-05-23, on which fitting_infortune(asc) is None."""
+    at = make_app(page=page, date="1240-10-05") if page == "chart" else make_app(page=page)
     import engine
     pins = []
     _record_pins(engine, monkeypatch, pins)
@@ -424,12 +430,15 @@ def test_every_pin_in_the_file_goes_through_the_record():
 
 
 def _registry_widget_keys(tree):
-    """The widget keys of READINGS_REGISTRY, read from the tuple literal."""
+    """The widget keys and the store keys of READINGS_REGISTRY, read from
+    the tuple literal -- so a control keyed straight on a store key (rather
+    than drawn through the app's _reading_* helpers on the widget key) is
+    caught too."""
     for node in tree.body:
         if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "READINGS_REGISTRY" for t in node.targets):
             rows = node.value.elts
-            keys = {row.elts[1].value for row in rows}
-            assert len(keys) == len(rows) >= 9
+            keys = {row.elts[1].value for row in rows} | {row.elts[2].value for row in rows}
+            assert len(keys) == 2 * len(rows) >= 18
             return keys
     raise LookupError("READINGS_REGISTRY not found")
 

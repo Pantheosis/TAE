@@ -24,7 +24,15 @@ _collected = {}
 
 
 def _render(date, page, view):
-    at = make_app(date=date, page=page, view=view).run()
+    at = make_app(date=date, page=page, view=view)
+    # Pin the target to the day the fixture was regenerated on (an ISO
+    # date string, the key app.py reads through _reading("target_date",
+    # "_target_date", ...)) so a page whose table set is target-dependent
+    # -- the Timing page's "image of the revolution" tables, which drop a
+    # row set when the birthday target rolls the revolution in force to a
+    # new year -- does not drift off the fixture on the day this suite runs.
+    at.session_state["_target_date"] = "2026-09-17"
+    at.run()
     assert_no_exception(at, f"{date} {slot_name(page, view)}")
     return at
 
