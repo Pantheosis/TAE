@@ -5,6 +5,7 @@ The engine itself is engine.py, beside this file, and arrives whole through
 the star import below. Run this file, not that one: ``streamlit run app.py``.
 """
 
+import functools
 import hashlib
 import json
 import platform
@@ -958,31 +959,101 @@ COORDINATE_RANGE_MESSAGE = ("Latitude must be between -90 and 90 and longitude "
 # typed "latitude, longitude" pair; the toggle exposes the coordinate
 # fields themselves, which is also how a saved chart is restored (the
 # loader writes these three keys, as the harness does).
+ATLAS_MISSING_MESSAGE = "`atlas.db` not found. Please ensure it is in the root directory."
+ATLAS_NO_MATCH_MESSAGE = "No matches found in offline atlas."
+
+
+def _atlas_matches(city_search):
+    """The offline atlas's matches for a city text, as {label: (lat, lon)}
+    in the atlas's own order, the most populous first -- the order the
+    selectbox under the search box offers them in -- or None with the
+    sentence that says why there are none. The one lookup, so that the
+    search box and the coordinate fields' start (below) cannot resolve a
+    text two ways."""
+    db_path = Path(__file__).parent / "atlas.db"
+    if not db_path.exists():
+        return None, ATLAS_MISSING_MESSAGE
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT name, admin1, country, lat, lon
+            FROM cities
+            WHERE name LIKE ? COLLATE NOCASE OR ascii_name LIKE ? COLLATE NOCASE
+            ORDER BY population DESC
+            LIMIT 20
+        """, (city_search + '%', city_search + '%'))
+        matches = cursor.fetchall()
+    if not matches:
+        return None, ATLAS_NO_MATCH_MESSAGE
+    options = {}
+    for m in matches:
+        # Format: City, State/Admin (Country Code)
+        label = f"{m[0]}, {m[1]} ({m[2]})"
+        # Deduplicate identical names in the same region
+        if label in options:
+            label += f" [{m[3]:.4f}, {m[4]:.4f}]"
+        options[label] = (m[3], m[4])
+    return options, None
+
+
+def _place_the_box_holds(text):
+    """The place a city-box text resolves to before any choice among its
+    matches: a typed "latitude, longitude" pair, or the atlas's first
+    match -- what the selectbox would offer first. (None, None) when the
+    text resolves to nothing."""
+    if not text:
+        return None, None
+    typed = parse_lat_lon(text)
+    if typed:
+        return typed
+    options, _why = _atlas_matches(text)
+    if options:
+        return next(iter(options.values()))
+    return None, None
+
+
 def _manual_coords_switched():
-    """on_change: switching the coordinate fields ON starts them at the
-    place that is resolved now, not at the Florence constants (F02 of the
-    review of 2026-09-16: the toggle reads as a change of input method and
-    was acting as a change of location). A callback runs BEFORE the widgets
-    of the rerun it triggers, so writing their keys here is what the loader
-    of a saved chart already does. Nothing resolved yet: the constants
-    stand as the fields' default."""
-    if not st.session_state.get("manual_coords_key"):
-        return
-    resolved_lat = st.session_state.get("_resolved_lat")
-    resolved_lon = st.session_state.get("_resolved_lon")
-    if resolved_lat is not None and resolved_lon is not None:
-        st.session_state["manual_lat_key"] = float(resolved_lat)
-        st.session_state["manual_lon_key"] = float(resolved_lon)
+    """on_change: the toggle moved on this run. A callback runs BEFORE the
+    widgets of the rerun it triggers and before the script has resolved
+    anything, so all it can know is that the switch happened; the fields
+    are started at the toggle's own site, below, from this run's values.
+    (Until 2026-09-18 the callback itself wrote the fields from
+    _resolved_lat/_resolved_lon, the PREVIOUS run's place: a city typed
+    over the box and the toggle clicked without Enter -- the click's
+    mouse-down commits the text, so the edit and the switch arrive in one
+    run -- started the fields at the place the box no longer showed.)"""
+    st.session_state["_coords_switched"] = True
 
 
 manual_coords = st.sidebar.toggle("Enter coordinates directly", key="manual_coords_key",
                                   on_change=_manual_coords_switched,
                                   help="Or type them into the search box as 'latitude, longitude'.")
+_coords_switched = bool(st.session_state.pop("_coords_switched", None))
 
 # The reason a place cannot be read, in the words the sidebar already used;
 # it becomes chart_error below, which the recovery panel prints.
 location_error = None
 if manual_coords:
+    if _coords_switched:
+        # F02 of the review of 2026-09-16: switching the fields ON is a
+        # change of input method, not of place, so they start at the place
+        # the city box holds -- as of THIS run. The box's committed text is
+        # in its key on this run whether or not the box is drawn. Text that
+        # has moved since it was last resolved is resolved here, as the box
+        # would resolve it; text the last run resolved keeps that resolution
+        # (its choice among the matches included), and so does text that
+        # resolves to nothing, the last place that resolved being the one
+        # the reader was working from. Nothing ever resolved: the constants.
+        _text = st.session_state.get("location_input_key")
+        _start_lat, _start_lon = None, None
+        if _text is not None and _text != st.session_state.get("_resolved_text"):
+            _start_lat, _start_lon = _place_the_box_holds(_text)
+        if _start_lat is None or _start_lon is None:
+            _start_lat = st.session_state.get("_resolved_lat")
+            _start_lon = st.session_state.get("_resolved_lon")
+        if _start_lat is not None and _start_lon is not None:
+            st.session_state["manual_lat_key"] = float(_start_lat)
+            st.session_state["manual_lon_key"] = float(_start_lon)
     st.session_state.setdefault("manual_lat_key", EXAMPLE_CHART["manual_lat_key"])
     st.session_state.setdefault("manual_lon_key", EXAMPLE_CHART["manual_lon_key"])
     # What the fields hold BEFORE the widgets clamp them to their own
@@ -1010,6 +1081,7 @@ if manual_coords:
         location_query = loaded_location["label"]
     else:
         location_query = f"Manual [{lat:.4f}, {lon:.4f}]"
+    city_search = None
 else:
     st.session_state.setdefault('location_input_key', EXAMPLE_CHART['location_input_key'])
     city_search = st.sidebar.text_input("City, or latitude, longitude", key="location_input_key",
@@ -1019,39 +1091,16 @@ else:
         lat, lon = _typed
         location_query = f"Manual [{lat:.4f}, {lon:.4f}]"
     elif city_search:
-        db_path = Path(__file__).parent / "atlas.db"
-        if db_path.exists():
-            with sqlite3.connect(db_path) as conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    SELECT name, admin1, country, lat, lon
-                    FROM cities
-                    WHERE name LIKE ? COLLATE NOCASE OR ascii_name LIKE ? COLLATE NOCASE
-                    ORDER BY population DESC
-                    LIMIT 20
-                """, (city_search + '%', city_search + '%'))
-                matches = cursor.fetchall()
-
-            if matches:
-                options = {}
-                for m in matches:
-                    # Format: City, State/Admin (Country Code)
-                    label = f"{m[0]}, {m[1]} ({m[2]})"
-                    # Deduplicate identical names in the same region
-                    if label in options:
-                        label += f" [{m[3]:.4f}, {m[4]:.4f}]"
-                    options[label] = (m[3], m[4])
-
-                selected_label = st.sidebar.selectbox("Select specific location:", list(options.keys()))
-                lat, lon = options[selected_label]
-                location_query = selected_label
-            else:
-                location_error = "No matches found in offline atlas."
-                st.sidebar.warning(location_error)
-                lat, lon, location_query = None, None, None
-        else:
-            location_error = "`atlas.db` not found. Please ensure it is in the root directory."
+        options, location_error = _atlas_matches(city_search)
+        if options:
+            selected_label = st.sidebar.selectbox("Select specific location:", list(options.keys()))
+            lat, lon = options[selected_label]
+            location_query = selected_label
+        elif location_error == ATLAS_MISSING_MESSAGE:
             st.sidebar.error(location_error)
+            lat, lon, location_query = None, None, None
+        else:
+            st.sidebar.warning(location_error)
             lat, lon, location_query = None, None, None
     else:
         location_error = "No place is resolved."
@@ -1075,10 +1124,12 @@ elif not coordinates_in_range(lat, lon):
     chart_error = COORDINATE_RANGE_MESSAGE
     st.sidebar.error(COORDINATE_RANGE_MESSAGE)
 else:
-    # The place now resolved, for the coordinate fields to start from when
-    # they are switched on (F02a).
+    # The place now resolved, with the city text it came from (None when
+    # it came from the fields), for the coordinate fields to start from
+    # when they are switched on while the box still holds that text (F02a).
     st.session_state["_resolved_lat"] = float(lat)
     st.session_state["_resolved_lon"] = float(lon)
+    st.session_state["_resolved_text"] = city_search
 
 # --- The home place's popover, in the sidebar's first row -----------------
 # Drawn HERE, after the Birthplace block, into the slot reserved at the top
@@ -1433,9 +1484,51 @@ LOT_HOUSE_CUSP = _reading("lot_house_cusp", "_lot_house_cusp", LOT_HOUSE_CUSP_OP
 # run, before any evaluator is called. FITTING_INFORTUNE is not among them:
 # no evaluator reads it, the page reads it to compute SOFTENED_INFORTUNE,
 # which is pinned where it is named (D-13, below).
-engine.set_readings(CONNECTION_PROFILE=CONNECTION_PROFILE, EASTERN_RULE=EASTERN_RULE,
-                    MOON_RAYS_ORB=MOON_RAYS_ORB, MARS_WEST_RAYS_18=MARS_WEST_RAYS_18,
-                    DOMAIN_RULE=DOMAIN_RULE, LOT_HOUSE_CUSP=LOT_HOUSE_CUSP)
+#
+# Every pin goes through _pin_readings, which keeps a record of what this run
+# pinned, because a run has a second kind of thread. A click on a widget
+# inside a @st.fragment reruns the fragment's body alone, and Streamlit runs
+# that body in a fresh ScriptRunner thread whenever the previous run's runner
+# has stopped -- the usual case, the reader clicking after the page has
+# rendered. The top level does not execute on such a rerun, so nothing pins
+# there, and an evaluator called from the body read the module defaults: the
+# Timing wheel's house-based Lots stood at the whole-sign cusps under a
+# 'quadrant cusp' run (G18 of the doctrine audit, 2026-09-18). Fragments are
+# therefore declared with _pinned_fragment, below, which pins this record
+# before the body runs, so the body's thread answers as the full run's did.
+_RUN_READINGS = {}
+
+
+def _pin_readings(**values):
+    """Pin readings for this run, on the engine for this thread's evaluators
+    and in _RUN_READINGS for the fragment reruns that follow it."""
+    engine.set_readings(**values)
+    _RUN_READINGS.update(values)
+
+
+def _pinned_fragment(func):
+    """st.fragment, with this run's readings pinned before the body runs.
+
+    The body Streamlit stores for a fragment rerun is a closure over the
+    full run that declared it, so _RUN_READINGS read here is that run's
+    record -- the very values the run pinned at the top and under
+    chart_ok -- and the readings a fragment rerun's thread evaluates under
+    are the full run's. Nothing between the two runs can have changed
+    them: every doctrinal reading's control stands outside the fragments,
+    so moving one is a full run. During the full run itself the pin is the
+    same values again, in the same thread. No fragment in this file may
+    use st.fragment directly; tests/test_fragment_readings_2026_09_18.py
+    walks the file for that."""
+    @functools.wraps(func)
+    def _pinned(*args, **kwargs):
+        engine.set_readings(**_RUN_READINGS)
+        return func(*args, **kwargs)
+    return st.fragment(_pinned)
+
+
+_pin_readings(CONNECTION_PROFILE=CONNECTION_PROFILE, EASTERN_RULE=EASTERN_RULE,
+              MOON_RAYS_ORB=MOON_RAYS_ORB, MARS_WEST_RAYS_18=MARS_WEST_RAYS_18,
+              DOMAIN_RULE=DOMAIN_RULE, LOT_HOUSE_CUSP=LOT_HOUSE_CUSP)
 # Owner's decision 2026-09-10: ship Abu Ma'shar's quadruplicity turn (IX.1, 26-34)
 # as a reading, defaulting to Dykes' plain forward count. Read only by the
 # Timing page, so it is not in the Configurations cross-product.
@@ -1651,7 +1744,7 @@ if chart_ok:
     sect = chart_data['sect']
     # D-13: named here, before any evaluator runs, since they read it.
     SOFTENED_INFORTUNE = fitting_infortune(chart_data['ascendant']) if FITTING_INFORTUNE else None
-    engine.set_readings(SOFTENED_INFORTUNE=SOFTENED_INFORTUNE)
+    _pin_readings(SOFTENED_INFORTUNE=SOFTENED_INFORTUNE)
 
     essential = evaluate_essential_dignities(p_data, sect)
     accidental = evaluate_accidental_dignities(p_data, chart_data['houses'], sect, chart_data['julian_day'],
@@ -2903,7 +2996,7 @@ def page_chart():
     # -- picture and controls row -- is inside its body and nothing
     # else is. The three captions, the circumpolar warning and the
     # rest of the page stay outside, where they are not redrawn.
-    @st.fragment
+    @_pinned_fragment
     def _wheel_block():
         st.session_state.setdefault("_chart_bounds", True)
         # The four controls in one row across the page, aligned on
@@ -3446,7 +3539,7 @@ def page_dignities():
     # its Lean, both PN IV halves whole, and every entry of its
     # Rhetorius/Firmicus list in full, the entries a long cell left to the
     # detail included.
-    @st.fragment
+    @_pinned_fragment
     def _planets_in_houses_block():
         _event = st.dataframe(pd.DataFrame(planets_in_houses_data, columns=['Planet', 'Placed in (WS place)', 'Lean']),
                               hide_index=True, width='content', height=_rows_height(len(planets_in_houses_data)),
@@ -3777,7 +3870,7 @@ def page_configurations():
             # selecting a row reruns that grid's block alone, the way
             # a wheel control reruns _wheel_block(). Everything the
             # fragment draws is drawn inside _tick_grid, inside its body.
-            @st.fragment
+            @_pinned_fragment
             def _strength_grid_block():
                 _tick_grid(_gap, 'Strength of the Planets', 'Sahl, The Introduction Ch. 3, 78-88', strength_data,
                            'Strength Testimonies', STRENGTH_COLUMNS,
@@ -3791,7 +3884,7 @@ def page_configurations():
                                 'Distinct from the Abu Ma\'shar-based Planetary Condition table, which scores a broader, later scheme.'),
                            ])
 
-            @st.fragment
+            @_pinned_fragment
             def _weakness_grid_block():
                 _tick_grid(_gap, 'Weakness of the Planets', 'Sahl, The Introduction Ch. 3, 91-100', weakness_data,
                            'Weakness Testimonies', WEAKNESS_COLUMNS,
@@ -4440,8 +4533,14 @@ def page_timing():
         # the values its own widgets hold -- including the theme, which
         # is taken from this block's own Dark wheel checkbox rather
         # than from the top level's WHEEL_THEME, that being a full
-        # run's value and not one a fragment rerun moves.
-        @st.fragment
+        # run's value and not one a fragment rerun moves. The Lots
+        # ring is the one thing any fragment computes through an
+        # evaluator that reads a reading (lot_by_id, LOT_HOUSE_CUSP),
+        # and the reason every fragment is declared with
+        # _pinned_fragment: the rerun's thread is pinned to this run's
+        # readings before the body runs, so the ring carries the Lots
+        # the Lots page's table carries.
+        @_pinned_fragment
         def _timing_wheel_block():
             st.subheader("The charts, drawn",
                          help="The Wide layout adds a positions column per chart; hover the picture for the expand arrows.")
