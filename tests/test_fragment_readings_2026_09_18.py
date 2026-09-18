@@ -147,13 +147,17 @@ def _readback(engine):
 
 
 def _record_pins(engine, monkeypatch, log):
-    """Wrap engine.set_readings to log (thread, values pinned, what the
-    thread then answers)."""
+    """Wrap engine.set_readings to log (thread object, pins, answers).
+
+    A completed runner's numeric thread identifier can be recycled before
+    the fragment runner starts. The Thread objects remain distinct, which
+    is the lifecycle this test needs to distinguish.
+    """
     original = engine.set_readings
 
     def _recording(**values):
         original(**values)
-        log.append((threading.get_ident(), dict(values), _readback(engine)))
+        log.append((threading.current_thread(), dict(values), _readback(engine)))
 
     monkeypatch.setattr(engine, "set_readings", _recording)
 

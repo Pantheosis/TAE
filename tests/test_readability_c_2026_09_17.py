@@ -852,17 +852,15 @@ def test_the_1_20_readings_are_headed_sections_not_a_caption(engine):
     exp = _expander(at, "How 1.20 is read here")
     assert exp.icon == NOTES_EXPANDER_ICON
     assert _headings_in(exp) == ["**The placement: the division, and a power judgment.**", "**The vocabulary.**",
-                                 "**The sentences, as read.**", "**On Times 4, 7, and 1.23, 53 and 61.**",
-                                 "**The test-chart figures.**"]
+                                 "**The sentences, as read.**", "**On Times 4, 7, and 1.23, 53 and 61.**"]
     md = _markdowns(exp)
     assert md[1].startswith("Readings of 1.20 made here: the house-master is placed by the Alchabitius DIVISION")
     vocabulary = [ln for ln in md[3].split("\n") if ln.startswith("- ")]
-    assert [ln[:11] for ln in vocabulary] == ['- "enhanced', '- "a share"', '- "eastern"', '- "under th', '- "alien" =']
+    assert [ln[:11] for ln in vocabulary] == ['- "enhanced', '- "a share"', '- for the f', '- "under th', '- "alien" =']
     readings = [ln for ln in md[5].split("\n") if ln.startswith("- ")]
     assert [ln[:9] for ln in readings] == ["- 10 and ", '- "under ', "- 12 is s", "- 13 is i", "- 14-15 a", "- 19 and ",
                                             "- where a", "- Placeme"]
     assert md[7].startswith("On Times 4, 7 is a rule") and "\n\n1.23, 53 and 61:" in md[7]
-    assert md[9].startswith("On 406 test charts")
     bodies = "\n".join(m for m in md if not re.fullmatch(r"\*\*.+\*\*", m))
     shown = re.sub(r"(^|\n)- ", r"\1", bodies)
     assert re.sub(r"\s+", " ", shown).strip() == re.sub(r"\s+", " ", engine["SAHL_1_20_READINGS"]).strip()

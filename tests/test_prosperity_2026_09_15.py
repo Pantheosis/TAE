@@ -115,16 +115,19 @@ def _verdict(engine, chart):
     rows = engine['evaluate_prosperity'](chart)
     assert rows and all(list(r)[:4] == COLUMNS for r in rows)
     top = rows[0]
-    assert top['Class'].startswith('Synthesis (this app): ')
-    field = top['Class'][len('Synthesis (this app): '):]
     if top['key'] in CLASS_NUMBER:
+        assert top['Class'].startswith('Synthesis (this app): ')
+        field = top['Class'][len('Synthesis (this app): '):]
         label = engine['PROSPERITY_CLASSES'][top['key']]
         assert field == f"class {CLASS_NUMBER[top['key']]}"
         assert 'read by this app as class' in top['Ground'] and label[0].lower() + label[1:] in top['Ground']
     elif top['key'] == 'mixed':
+        field = top['Class'][len('Synthesis (this app): '):]
         assert 'by the Lot; class' in field and "'s pattern by the lords" in field
     else:
-        assert top['key'] == 'unresolved' and field == 'unresolved'
+        assert top['key'] == 'unresolved'
+        assert isinstance(top['Class'], engine['UnresolvedResult'])
+        assert top['Class'].alternatives
     assert 'Synthesis: ' in top['Ground']
     return top['key'], rows
 
@@ -414,7 +417,7 @@ def test_the_lot_raises_two_falling_lords(engine):
                    Mercury=('Gemini', 25.0), Venus='Aries', Mars='Scorpio', Jupiter='Aquarius')
     assert engine['get_zodiac_sign'](chart['lot_of_fortune']) == 'Libra'
     key, rows = _verdict(engine, chart)
-    assert key == 'unresolved' and rows[0]['Class'] == 'Synthesis (this app): unresolved'
+    assert key == 'unresolved' and isinstance(rows[0]['Class'], engine['UnresolvedResult'])
     assert rows[0]['Ground'].startswith('both lords weak -- Saturn falling (2.11, 3); Mercury falling (2.11, 3)')
     assert ("the Lot step (2.3, 6), Saturn and Mercury made unfortunate -- the either-lord entry being this app's reading "
             "of the sentence's singular: the Lot in a stake" in rows[0]['Ground'])
@@ -612,7 +615,7 @@ def test_the_lot_s_own_sentences_at_two_levels_are_unresolved(engine):
                    Saturn='Gemini', Mars='Capricorn', Venus='Cancer', Mercury='Leo')
     assert engine['get_zodiac_sign'](chart['lot_of_fortune']) == 'Virgo'
     key, rows = _verdict(engine, chart)
-    assert key == 'unresolved' and rows[0]['Class'] == 'Synthesis (this app): unresolved'
+    assert key == 'unresolved' and isinstance(rows[0]['Class'], engine['UnresolvedResult'])
     assert sorted(r['key'] for r in rows if r['key'].startswith('lot ')) == ['lot high', 'lot middling']
     assert ("Synthesis: the Lot's own sentences disagree -- the Lot's lord promises happiness (2.3, 9); the Lot indicates "
             "middling livelihood (2.16, 4) -- and the two triplicity lords indicate benefit in the first lord's time and "
@@ -635,12 +638,13 @@ def test_misery_beside_the_mixed_pair_is_a_conflict_not_a_mixture(engine):
                    Saturn='Virgo', Mars='Sagittarius', Venus='Taurus', Mercury='Aries')
     assert engine['get_zodiac_sign'](chart['lot_of_fortune']) == 'Sagittarius'
     key, rows = _verdict(engine, chart)
-    assert key == 'unresolved' and rows[0]['Class'] == 'Synthesis (this app): unresolved'
+    assert key == 'unresolved' and isinstance(rows[0]['Class'], engine['UnresolvedResult'])
     assert [r['key'] for r in rows if r['key'].startswith('lot ')] == ['lot low']
     assert ("Synthesis: conflicting status indications -- the Lot indicates misery from birth to death (2.20, 1); the two "
             "triplicity lords indicate benefit in the first lord's time and hardship in the second's (2.11, 2) -- unresolved: "
             "this app installs no priority between them") in rows[0]['Ground']
-    assert 'mixed' not in rows[0]['Class'] and "'s pattern by the lords" not in rows[0]['Class']
+    assert all('mixed' not in str(value) and "'s pattern by the lords" not in str(value)
+               for _name, value in rows[0]['Class'].alternatives)
     assert engine['PROSPERITY_SAHL']['2.20, 1'] in rows[0]['Sahl'] and engine['PROSPERITY_SAHL']['2.11, 2'] in rows[0]['Sahl']
     chart['planetary_data']['Jupiter']['longitude'], chart['planetary_data']['Saturn']['longitude'] = 180.0, 270.0
     key2, rows2 = _verdict(engine, chart)

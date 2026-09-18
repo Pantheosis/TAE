@@ -130,7 +130,8 @@ def test_mercury_by_fn_28_is_dykess_reading(engine):
     rows = {r['planet']: r for r in _rows(engine, "Sun", Sun=135.0, Mercury=190.0, Venus=200.0, Jupiter=345.0, Saturn=345.0, Mars=345.0)}
     m = rows['Mercury']
     assert (m['aspect'], m['effect'], m['lesser_years'], m['grades'], m['literal']) == ('sextile', 'adds', 20, None, 'adds')
-    assert m['reading'] == "Dykes fn 28 (conjectural interpretation): with or aspecting Venus, himself sextile to the house-master -- adds 20 years"
+    assert m['reading'] == ("Dykes fn 28 (conjectural interpretation): with or aspecting Venus, himself sextile to the "
+                            "house-master; Venus adds under Ch. 4 -- adds 20 years")
     assert m['sentence'] == engine["JN_CH4_SENTENCES"]['mercury']
     assert m['witnesses'] == engine["JN_CH4_WITNESSES"]['mercury']
     rows = {r['planet']: r for r in _rows(engine, "Sun", Sun=135.0, Mercury=225.0, Saturn=230.0, Venus=15.0, Jupiter=15.0, Mars=15.0)}
@@ -138,7 +139,8 @@ def test_mercury_by_fn_28_is_dykess_reading(engine):
     assert 'Saturn' in rows['Mercury']['reading'] and rows['Mercury']['reading'].endswith("subtracts 20 years")
     # the house-master itself is not Mercury's company: Venus as house-master, Mercury sextile her, no other fortune
     rows = {r['planet']: r for r in _rows(engine, "Venus", Venus=135.0, Mercury=190.0, Sun=100.0, Jupiter=345.0, Saturn=345.0, Mars=345.0)}
-    assert (rows['Mercury']['effect'], rows['Mercury']['literal']) == ('not specified', None)
+    assert isinstance(rows['Mercury']['effect'], engine['UnresolvedResult'])
+    assert (rows['Mercury']['effect'].status, rows['Mercury']['literal']) == ('unavailable', None)
 
 
 def _mercury(engine, **planets):
@@ -160,25 +162,28 @@ def test_mercurys_four_cases_as_ruled(engine):
     Joined to the house-master with a fortune is the unstated pairing too."""
     far = dict(Jupiter=345.0, Saturn=345.0, Mars=345.0, Venus=345.0)     # Pisces: averse to Aries and to Libra
     r, w = _mercury(engine, Sun=135.0, Mercury=220.0, Venus=230.0, Jupiter=75.0, Saturn=75.0, Mars=75.0)  # Gemini: averse to Scorpio
-    assert (r['aspect'], r['effect'], r['literal']) == ('square', 'not decided', 'adds')
-    assert w['Reading'] == ("not decided under fn 28: this pairing is unstated · Abu 'Ali's sentence read literally: adds 20 years "
-                            "(if the fortune is one 'which add[s]')")
+    assert r['aspect'] == 'square' and r['literal'] == 'adds'
+    assert isinstance(r['effect'], engine['UnresolvedResult']) and r['effect'].status == 'not decided'
+    assert 'required sextile or trine' in r['effect'].reason and w['Reading'] == r['effect']
     r, w = _mercury(engine, Sun=135.0, Mercury=10.0, **{**far, 'Saturn': 20.0})
-    assert (r['aspect'], r['effect'], r['literal']) == ('trine', 'not decided', 'subtracts')
-    assert w['Reading'] == "not decided under fn 28: this pairing is unstated · Abu 'Ali's sentence read literally: subtracts 20 years"
+    assert r['aspect'] == 'trine' and r['literal'] == 'subtracts'
+    assert isinstance(r['effect'], engine['UnresolvedResult']) and r['effect'].status == 'not decided'
+    assert w['Reading'] == r['effect']
     r, w = _mercury(engine, Sun=135.0, Mercury=190.0, **far)
-    assert (r['aspect'], r['effect'], r['literal']) == ('sextile', 'not specified', None)
-    assert w['Reading'] == "not specified; not an explicit zero"
+    assert r['aspect'] == 'sextile' and r['literal'] is None
+    assert isinstance(r['effect'], engine['UnresolvedResult']) and r['effect'].status == 'unavailable'
+    assert w['Reading'] == r['effect']
     r, w = _mercury(engine, Sun=135.0, Mercury=190.0, **{**far, 'Venus': 195.0, 'Saturn': 200.0})
-    assert (r['aspect'], r['effect'], r['literal']) == ('sextile', 'unresolved', None)
-    assert w['Reading'] == "mixed associations: authorial result unresolved"
-    assert w['Ch. 4'].startswith("Dykes fn 28: conjectural interpretation")
+    assert r['aspect'] == 'sextile' and r['literal'] is None
+    assert isinstance(r['effect'], engine['UnresolvedResult']) and r['effect'].status == 'unresolved'
+    assert w['Reading'] == r['effect'] and w['Ch. 4'] == r['effect']
     assert w['Witnesses'] == engine["JN_CH4_WITNESSES"]['mercury']
     assert "not to be said about Mercury" in w['Witnesses'] and "increase the evil and misfortune" in w['Witnesses']
     assert w['Grade'] == "-" and w['Its own lesser years'] == "-"
     r, w = _mercury(engine, Sun=135.0, Mercury=140.0, **{**far, 'Venus': 145.0})
-    assert (r['aspect'], r['effect'], r['literal']) == ('joined', 'not decided', 'adds')
-    assert w['Reading'].startswith("not decided under fn 28") and w['Reading'].endswith("(if the fortune is one 'which add[s]')")
+    assert r['aspect'] == 'joined' and r['literal'] == 'adds'
+    assert isinstance(r['effect'], engine['UnresolvedResult']) and r['effect'].status == 'not decided'
+    assert w['Reading'] == r['effect']
 
 
 def test_the_zero_rows_print_the_explicit_zero_and_the_witnesses(engine):

@@ -63,7 +63,7 @@ FINDINGS = {
         "What 1.8 and 1.9 let this app state of the fetus's stay in the belly. Display only; nothing scores it.",
         "What 1.8 and 1.9 let this app state of the fetus's stay in the belly: the meeting before the birth",
         ["**Not computed.** 1.8's three divisions are framed from a chart the text does not name",
-         "**This app's reading of the year.** This app takes the year as the calendar anniversary"],
+         "**This app's reading of the year.** The anniversary repeats the local birth month, day and clock time"],
         ["The meeting before the birth and its Ascendant (1.8, 5-6).",
          "The three divisions of 1.8, not computed.",
          "The seven-month native and the four-footed nativities (1.8, 1).",
@@ -74,7 +74,8 @@ FINDINGS = {
         "1240-05-23",
         "The Moon on the third day -- two days after the birth, the birth day counted as the first. Display only; nothing scores it.",
         "The Moon on the third day -- two days after the birth, the birth day counted as the first: her sign and place",
-        ["**The third day, this app's reading of Firmicus.** This app takes it two days after the birth"],
+        ["**The third day, this app's reading of Firmicus.** This app takes it two days after the birth",
+         "This limited reading checks whole-sign co-presence, square or opposition with an infortune"],
         ["The sentences: 1.29, 11-13 and 1.26, 7.", "The day count.", "The corruption tests.",
          "The four-footed signs.", "Clauses not evaluated: 1.29, 11 and 12."]),
     "Places harming the eyesight": (
@@ -89,7 +90,7 @@ FINDINGS = {
         "1240-05-23",
         "Valens's eleven phases of the Moon, the chart's Moon placed in one by its angle ahead of the Sun. Display only; nothing scores it.",
         "Valens's eleven phases of the Moon, the chart's Moon placed in one by its angle ahead of the Sun, with what he says",
-        ["**Phase boundaries used by this app.** Eight of his boundaries are degrees he gives"],
+        ["**Two independent measures.** The 12° bounds not given by Valens are Abu Ma'shar's phase markers"],
         ["Phase boundaries used by this app.", "Source phase list.", "Phase indications.", "Rulers actually named."]),
     "Affliction and fortification after Rhetorius": (
         "1240-05-23",
@@ -396,7 +397,7 @@ def test_the_aspects_notes_open_with_a_column_meaning_key_and_keep_every_sentenc
     assert meaning["Light, Heavy"].startswith("The standing classes both authors name as nouns")
     assert meaning["Connecting planet"] == "The separate, directed fact: which one is actually closing the aspect"
     for section in ("**The columns, and what each one measures.**", "**Motion, orb and bodies.**",
-                    "**Connection, and where the rules differ.**", "**Strength: two measures.**",
+                    "**Connection, and where the rules differ.**", "**Strength for assemblies; distance for aspects.**",
                     "**Light and heavy: the standing classes.**", "**The connecting planet, and retrogradation.**"):
         assert section in md, section
     text = "\n".join(md)
@@ -435,7 +436,8 @@ def test_reception_shows_its_qualifications_above_the_table_and_its_comparison_i
     assert kinds[:5] == ["markdown", "markdown", "markdown", "dataframe", "status"], kinds
     assert block[0][1] == ("Who receives whom, on what dignity, which way round, and how strongly. The two authors differ on every "
                            "one of those, so the Connection rule at the top of this page governs here too.")
-    assert block[1][1].startswith("**Under Sahl's rule.** Under Sahl's rule a pair refused by non-reception Kind II")
+    assert block[1][1].startswith("**Under Sahl's rule.** A pair refused by non-reception Kind II or Kind III")
+    assert "Kind IV and Kind V keep the reception row but mark it brought down" in block[1][1]
     assert block[2][1] == ("**An empty table.** An empty table is **not** non-reception -- that is a separate set of hostile "
                            "configurations, in the table below.")
     assert block[4][1] == "Sahl and Abu Ma'shar on reception"
@@ -467,13 +469,15 @@ def test_non_reception_lists_its_five_kinds_and_the_strength_grids_carry_headed_
     assert _heading(at, "Non-reception").help.endswith("a distinct finding from simply lacking reception.")
     block = _between(at, "Non-reception", "Returning")
     assert [k for k, _ in block][:4] == ["caption", "markdown", "markdown", "dataframe"], block
-    assert block[2][1].startswith("**Under Sahl's rule.** Under Sahl's rule Kind II overrides any reception for the same pair")
+    assert block[2][1].startswith("**Under Sahl's rule.** Kind II and Kind III override any reception for the same pair")
+    assert "Kind IV and Kind V mark the pair's reception brought down" in block[2][1]
     md = _markdown(at)
     kinds = [m for m in md if m.startswith("- **Kind I (58):**")][0].split("\n")
     assert [k.split(":**")[0] for k in kinds] == ["- **Kind I (58)", "- **Kind II (59-60)", "- **Kind III (61)", "- **Kind IV (62)", "- **Kind V (62)"]
     assert "A is in its **own** fall" in kinds[2]
     for section in ("**Sahl's A -> B model.**", "**The five kinds.**", "**Testimonies 78 and 83: two measurements.**",
-                    "**Sahl's five-degree rule.**", "**Distinct from Planetary Condition.**", "**The ten, in words.**"):
+                    "**Sahl's five-degree rule.**", "**Testimony 88: quarter and sign.**",
+                    "**Distinct from Planetary Condition.**", "**The ten, in words.**"):
         assert section in md, section
     text = "\n".join(md)
     assert "83 also carries Sahl's **five-degree rule**:\n\n> \"the planet will not be falling from the stake" in text
@@ -628,8 +632,9 @@ def test_the_mars_west_tooltip_is_short_and_both_rays_readings_stand_whole_in_no
     at = make_app(page="chart").run()
     assert_no_exception(at, "chart")
     mars = [c for c in at.main.checkbox if c.label == "Mars under the rays to 18° west"][0]
-    assert mars.help == ("Dykes's table for Sahl has Mars under the rays at 18 west; Gr. Intr. VII.2, 31 puts him under the rays "
-                         "at 15 on the western side. Both give 18 east. Full text on the Sources page, and in the notes under this table.")
+    assert mars.help == ("Dykes's table has Mars under the rays at 18° west; Gr. Intr. VII.2, 31 gives 15°. "
+                         "With this reading on, the table's 22° figure closes his setting band. Both give 18° east. "
+                         "Full text is on Sources and in this table's notes.")
     moon = [c for c in at.main.checkbox if c.label == "Moon under the rays to 15°"][0]
     notes = [n for n in at.main if getattr(n, "type", None) == "status" and n.label == "Sources and editorial notes"]
     # the one notes expander on the Chart page stands after the positions table
@@ -638,7 +643,8 @@ def test_the_mars_west_tooltip_is_short_and_both_rays_readings_stand_whole_in_no
     assert moon.help == md[1] + " Full text on the Sources page."     # the Moon's tooltip, less its pointer
     assert md[3] == ("Dykes's table for Sahl (the chapter head of On Nativities 1.22, with fn 175, which reads VII.2, 30's "
                      "westernizing boundary into 18 degrees) has Mars under the rays at 18 west; Sahl's own sentences are silent "
-                     "on Mars west. Gr. Intr. VII.2, 31 puts him under the rays at 15 on the western side. Both give 18 east. "
+                     "on Mars west. Gr. Intr. VII.2, 31 puts him under the rays at 15 on the western side. With the reading on, "
+                     "Dykes's paired 22-degree figure keeps the setting band from above 18 through 22. Both give 18 east. "
                      "Affects: the Solar phase column here and every test that reads it (Weakness 93, Planetary Condition 27/34/45).")
     kinds = [getattr(n, "type", None) for n in at.main]
     positions = next(i for i, n in enumerate(at.main) if getattr(n, "type", None) == "subheader" and n.value == "Planetary Positions")
