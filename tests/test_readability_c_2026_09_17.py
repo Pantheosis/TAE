@@ -302,7 +302,7 @@ REVOLUTIONS_BLOCKS = {
         "at it and from where, and whether it is devoid of them.",
         ["**Facts, not a verdict.** II.3, 5-6 name the factors of a suitable and a contrary condition"],
         "How the factors are read",
-        ["What II.3, 3-18 asks.", "Row conventions.", "Not built."]),
+        ["What PN IV II.3, 3-18 asks.", "Row conventions.", "Not built."]),
     "Indicators 6-19: the fact each one reads": (
         "II.1, 11-24 list the remaining fourteen indicators, in II.1, 25's order of strength.",
         ["Each reads a fact from the root and the revolution and judges it in a chapter of its own",
