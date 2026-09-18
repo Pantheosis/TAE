@@ -102,14 +102,17 @@ def _images(node, found=None):
 # --- 1. The two functions are fragments -----------------------------------
 
 def _fragment_defs():
-    """Every function in the UI half decorated @st.fragment, by name."""
+    """Every function in the UI half declared a fragment, by name. Since
+    2026-09-18 the decorator is the app's own @_pinned_fragment -- st.fragment
+    with the run's readings re-pinned in a fragment rerun's thread
+    (test_fragment_readings_2026_09_18.py) -- and no bare @st.fragment
+    remains, which that file guards."""
     tree = ast.parse(ui_source())
     out = {}
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
             for dec in node.decorator_list:
-                if isinstance(dec, ast.Attribute) and dec.attr == "fragment" \
-                        and isinstance(dec.value, ast.Name) and dec.value.id == "st":
+                if isinstance(dec, ast.Name) and dec.id == "_pinned_fragment":
                     out[node.name] = node
     return out
 

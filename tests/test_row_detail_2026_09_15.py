@@ -229,13 +229,15 @@ def test_the_moons_weakness_testimonies_on_the_default_chart(engine):
 # --- D. The page ------------------------------------------------------------
 
 def _fragment_defs():
+    # The decorator is the app's own @_pinned_fragment since 2026-09-18
+    # (test_fragment_readings_2026_09_18.py): st.fragment with the run's
+    # readings re-pinned in a fragment rerun's thread.
     tree = ast.parse(ui_source())
     out = {}
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
             for dec in node.decorator_list:
-                if isinstance(dec, ast.Attribute) and dec.attr == "fragment" \
-                        and isinstance(dec.value, ast.Name) and dec.value.id == "st":
+                if isinstance(dec, ast.Name) and dec.id == "_pinned_fragment":
                     out[node.name] = node
     return out
 
