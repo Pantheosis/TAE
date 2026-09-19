@@ -3190,12 +3190,36 @@ EASTERN_RULE = EASTERN_RULE_OPTIONS[0]
 # is the later Lilly-era convention and belongs to neither.
 CAZIMI_ORB = 16.0 / 60.0
 
-def solar_phase(planet, lon, sun_lon, speed_in_lon=None):
+SOLAR_HEART_ORBS = {"Sahl": 1.0, "Abu Ma'shar": CAZIMI_ORB}
+
+
+def solar_separation(lon, sun_lon):
+    """Shorter unrounded separation in longitude, including zodiac wrap."""
+    distance = abs((lon % 360.0) - (sun_lon % 360.0))
+    return min(distance, 360.0 - distance)
+
+
+def in_solar_heart(planet, lon, sun_lon, *, source):
+    """Sahl's inclusive degree (Introduction 3, 87); VII.2, 7-9's 16′."""
+    limit = SOLAR_HEART_ORBS[source]
+    return planet != 'Sun' and solar_separation(lon, sun_lon) <= limit
+
+
+def sahl_under_rays(planet, lon, sun_lon, speed_in_lon=None):
+    """Sahl's heart exception; retain the selected outer solar boundaries."""
+    return solar_phase(planet, lon, sun_lon, speed_in_lon, source='Sahl')[0] in ('Burned', 'Under the rays')
+
+
+def solar_phase(planet, lon, sun_lon, speed_in_lon=None, *, source="Abu Ma'shar"):
     """Where a planet stands relative to the Sun, per Gr. Intr. VII.2 and
     Sahl, On Nativities Ch.1.22. Returns (phase, side, elongation) where
     phase is one of 'Cazimi', 'Burned', 'Under the rays', 'Degrees of
     setting' or None, and side is 'eastern' (rising before the Sun, a
     morning star) or 'western'.
+
+    `source` selects only the heart: Sahl's inclusive one-degree separation
+    (Introduction 3, 87; Aphorisms 74, 79), or Abu Ma'shar's inclusive 16′.
+    Outer radii, motion policy and reading switches remain unchanged.
 
     `speed_in_lon` selects the inferiors' direction-specific endpoints and,
     on the eastern side, their burned limit. VII.2 gives them TWO eastern
@@ -3213,11 +3237,11 @@ def solar_phase(planet, lon, sun_lon, speed_in_lon=None):
     if planet == 'Sun':
         return None, None, 0.0
     signed = ((lon - sun_lon + 180.0) % 360.0) - 180.0
-    elongation = abs(signed)
+    elongation = solar_separation(lon, sun_lon)
     side = 'eastern' if signed < 0 else 'western'
     idx = 0 if side == 'eastern' else 1
-    if elongation <= CAZIMI_ORB:
-        return 'Cazimi', side, elongation          # VII.2, 7-9: 16' inclusive, both sides
+    if in_solar_heart(planet, lon, sun_lon, source=source):
+        return 'Cazimi', side, elongation          # the named source's inclusive heart, both sides
     # Endpoint ownership is per boundary and direction. Most eastern
     # boundaries are completion (exclusive) and most western boundaries are
     # entry (inclusive); the source-linked exception table above covers the
@@ -5505,7 +5529,7 @@ def evaluate_returning(planetary_data, accidental, ascendant_lon):
             fast, slow = r['applicant'] or r['light_name'], r['receiver'] or r['heavy_name']
             acc_slow = accidental[slow]
 
-            if acc_slow['Retrograde'] or acc_slow['Combust'] or acc_slow['UnderBeams']:
+            if acc_slow['Retrograde'] or sahl_under_rays(slow, planetary_data[slow]['longitude'], planetary_data['Sun']['longitude'], planetary_data[slow].get('speed_in_lon')):
                 results.append({'Manner': 'I (65)', 'Planet': fast, 'Returned By': slow})
 
             fast_house = get_wsh_house(planetary_data[fast]['longitude'], ascendant_lon)
@@ -7358,27 +7382,30 @@ LOT_DEFINITIONS = [
     dict(id='father_burnt', topic='Father', name='Lot of the father (Saturn under the rays)',
          start='Mars', end='Jupiter', project='Ascendant', reverse_at_night=False,
          source='Sahl, On Nativities Ch. 4.14, 2',
-         confidence='conditional -- see the Active column',
-         note='"Now if Saturn was under the rays, then count from Mars to Jupiter." This '
+         confidence='conditional -- see the Status column',
+         note='"Now if Saturn was under the rays, then count from Mars to Jupiter, and project it from the Ascendant." This '
               'replaces the ordinary father Lot only while Saturn is actually under the '
-              'rays; the row reports whether that condition holds in this chart.'),
+              "rays; the row reports whether that condition holds in this chart. Sahl leaves the night order unstated; "
+              "this app retains Mars to Jupiter at both times. Abu Ma'shar, Gr. Intr. VIII.4, 74 reverses it "
+              "by night; Dykes's fn 92 conjectures a reversal and Jupiter to Mars by day. Those variants "
+              "are not applied here."),
     # Abu Ma'shar's own preference for the same case, shown only under
     # "Course text and supplement" (owner, 2026-09-13): VIII.4, 74 gives the
     # Mars-Jupiter form to "some of the people" (fn 92: Dorotheus), and 75
     # prefers Hermes' -- Saturn's indication gone, the Sun's stands, so the
     # Lot is taken from the Sun to Jupiter by day and the contrary by night.
-    dict(id='father_burnt_abu', topic='Father', name="Lot of the father (Saturn under the rays), Abu Ma'shar's form",
+    dict(id='father_burnt_abu', topic='Father', name="Lot of the father (Saturn under the rays), Hermes' form preferred by Abu Ma'shar",
          start='Sun', end='Jupiter', project='Ascendant', reverse_at_night=True, supplement=True,
          source="Abu Ma'shar, Gr. Intr. VIII.4, 75",
-         confidence='conditional -- see the Active column; the supplement, beside Sahl\'s row; Dykes\'s fn 93 '
+         confidence='conditional -- see the Status column; the supplement, beside Sahl\'s row; Dykes\'s fn 93 '
                     'objects: "The obvious flaw in this logic is that being under the rays should nullify '
                     'Jupiter\'s indication as well."',
          note='"But what Hermes said is more correct, because Jupiter is more indicative for fathers than '
               'Mars is; moreover, if Saturn\'s indication was nullified by his being under the Sun\'s rays, '
               'the indication of the Sun would still stand, so if Saturn was under the rays it would be '
               'necessary for it to be taken by day from the Sun to Jupiter (and by night the contrary), and '
-              'that be cast out from the Ascendant, just as Hermes said." Active on the same condition as '
-              'Sahl\'s row.'),
+              'that be cast out from the Ascendant, just as Hermes said." Compared under '
+              'Sahl\'s condition profile; an applicable comparison, never selected here.'),
     dict(id='mother', topic='Mother', name='Lot of the mother',
          start='Venus', end='Moon', project='Ascendant', reverse_at_night=True,
          source="Sahl, On Nativities Ch. 4.14 (Dykes's note 198)",
@@ -7645,17 +7672,63 @@ def _lot_longitude(d, planetary_data, asc, cusps, sect, resolved):
         return None
     return (p + b - a) % 360.0, start, end
 
+FATHER_SUBSTITUTION_TEXT = "Now if Saturn was under the rays, then count from Mars to Jupiter, and project it from the Ascendant."
+FATHER_NIGHT_POLICY = "night reversal unstated in Sahl; stated order retained"
+FATHER_CONDITION_READING = ("Sahl's heart through 1° excluded; Saturn's rays to 15°, "
+                            "outside at 15° on the morning side and inside on the evening side")
+
+
+def father_lot_selection(planetary_data, asc, cusps, sect):
+    """One operative Lot under Sahl 4.14, 1-2, with its natal provenance.
+
+    Formula rows remain independent reference calculations. This selection
+    is reused by the reading and by 4.20, 31-36, never reselected in transit.
+    """
+    def unavailable(reason):
+        return UnresolvedResult(reason=reason, source='Sahl, On Nativities 4.14, 1-2', status='unavailable')
+    if asc is None or any(p not in planetary_data or planetary_data[p].get('longitude') is None for p in ('Sun', 'Saturn')):
+        return unavailable("the father's Lot needs the Ascendant, Sun and Saturn")
+    sun, sat = planetary_data['Sun']['longitude'], planetary_data['Saturn']['longitude']
+    phase, side, distance = solar_phase('Saturn', sat, sun, planetary_data['Saturn'].get('speed_in_lon'), source='Sahl')
+    substitute = phase in ('Burned', 'Under the rays')
+    formula_id = 'father_burnt' if substitute else 'father'
+    definition = next(d for d in LOT_DEFINITIONS if d['id'] == formula_id)
+    calculated = _lot_longitude(definition, planetary_data, asc, cusps, sect, {})
+    if calculated is None:
+        return unavailable("Saturn meets the substitution condition, but Mars or Jupiter is unavailable")
+    degree, start, end = calculated
+    return {'longitude': degree, 'formula_id': formula_id, 'substituted': substitute,
+            'formula': f"Ascendant + ({end} - {start})",
+            'order_note': FATHER_NIGHT_POLICY if substitute else f"{'day' if sect == 'Diurnal' else 'night'} order",
+            'source': definition['source'], 'condition_profile': FATHER_CONDITION_READING,
+            'condition': ("Saturn is under the rays; the ordinary Sun–Saturn formula is replaced" if substitute else
+                          "Saturn is in the heart; the substitution does not apply" if phase == 'Cazimi' else
+                          "Saturn is outside the substitution's ray interval"),
+            'heart': phase == 'Cazimi', 'distance': distance, 'side': side}
+
+
+def operative_lot_definitions():
+    """The father's comparison formulas are not additional operative Lots."""
+    return (d for d in LOT_DEFINITIONS if d['id'] not in ('father_burnt', 'father_burnt_abu'))
+
+
 def lot_by_id(lot_id, planetary_data, asc, cusps, sect):
     """A single Lot by its LOT_DEFINITIONS id, resolving the rows it feeds
     on first. The one place the chart-level Lot of Fortune and the
     Classical Lots table get their arithmetic -- the formula used to be
     written out three times, and the two Lots tables once disagreed on
     every night chart."""
+    if lot_id == 'father':
+        selection = father_lot_selection(planetary_data, asc, cusps, sect)
+        return None if isinstance(selection, UnresolvedResult) else selection['longitude']
     resolved = {}
     for d in LOT_DEFINITIONS:
         got = _lot_longitude(d, planetary_data, asc, cusps, sect, resolved)
         if got is not None:
             resolved[d['id']] = got[0]
+        if d['id'] == 'father':
+            selection = father_lot_selection(planetary_data, asc, cusps, sect)
+            resolved['father'] = None if isinstance(selection, UnresolvedResult) else selection['longitude']
         if d['id'] == lot_id:
             return resolved.get(lot_id)
     raise KeyError(lot_id)
@@ -7670,6 +7743,7 @@ def calculate_topical_lots(planetary_data, asc, cusps, sect):
     is_diurnal = (sect == 'Diurnal')
     resolved = {}
     rows = []
+    father = father_lot_selection(planetary_data, asc, cusps, sect)
     for d in LOT_DEFINITIONS:
         got = _lot_longitude(d, planetary_data, asc, cusps, sect, resolved)
         if got is None:
@@ -7677,23 +7751,29 @@ def calculate_topical_lots(planetary_data, asc, cusps, sect):
         lon, start, end = got
         resolved[d['id']] = lon
         arc = 'day' if is_diurnal else 'night'
-        active = 'yes'
-        if d['id'] in ('father_burnt', 'father_burnt_abu'):
-            # Only replaces the ordinary father Lot while Saturn is in fact
-            # under the rays (4.14, 2). Shown either way, but the row now
-            # says whether its condition holds instead of leaving the
-            # reader to check.
-            _ph, _sd, _el = solar_phase('Saturn', planetary_data['Saturn']['longitude'],
-                                         planetary_data['Sun']['longitude'], planetary_data['Saturn'].get('speed_in_lon'))
-            active = 'yes' if _ph in ('Burned', 'Under the rays', 'Cazimi') else 'NO -- Saturn is not under the rays'
+        status = 'Available'
+        if d['topic'] == 'Father':
+            if isinstance(father, UnresolvedResult):
+                status = father
+            elif d['id'] == 'father':
+                status = 'Replaced — reference calculation' if father['substituted'] else 'Selected — read and directed'
+            elif father['substituted']:
+                status = 'Selected — read and directed' if d['id'] == 'father_burnt' else 'Applicable alternative — not selected'
+            else:
+                status = ('Not applicable — heart exception under the selected reading' if father['heart'] else
+                          'Not applicable' if d['id'] == 'father_burnt' else 'Not applicable under this condition profile')
+        # Dependencies see the operative degree; this row retains its raw reference arithmetic.
+        if d['id'] == 'father':
+            resolved['father'] = None if isinstance(father, UnresolvedResult) else father['longitude']
         rows.append({
             'Topic': d['topic'],
             'Lot': d['name'],
-            'Active': active,
+            'Status': status,
             'Position': get_degree_string(lon),
             'WS place': get_wsh_house(lon, asc),
             'Lord': SIGN_TO_DOMICILE.get(get_zodiac_sign(lon), '-'),
             'Formula': (f"{d['project']} + ({end} - {start})"
+                        + (f'; {FATHER_NIGHT_POLICY}' if d['id'] == 'father_burnt' else '')
                         + ('' if not d['reverse_at_night'] else f'  [{arc} order]')
                         + ((f"  [{d['cusp_rule']}, this Lot's own rule]" if d.get('cusp_rule') else f'  [{reading("LOT_HOUSE_CUSP")}]')
                            if 'cusp' in (start, end, d['project']) or start.startswith('cusp') or end.startswith('cusp') else '')),
@@ -9434,7 +9514,7 @@ def evaluate_strength_of_planets(planetary_data, essential, accidental, ascendan
             # it is measured here rather than reusing that flag.
             if planet != 'Sun':
                 sun_lon = planetary_data['Sun']['longitude']
-                if abs(((lon - sun_lon + 180.0) % 360.0) - 180.0) <= 1.0:
+                if in_solar_heart(planet, lon, sun_lon, source='Sahl'):
                     _add('87', 'In the heart of the Sun (87)',
                          _fact('Distance from the Sun', abs(((lon - sun_lon + 180.0) % 360.0) - 180.0)),
                          _fact('Window', 1.0))
@@ -9533,12 +9613,12 @@ def evaluate_weakness_of_planets(planetary_data, essential, accidental, ascendan
             # "the Sun having already overtaken it (that is, if it was in front
             # of the Sun)" -- belongs to this testimony, not to 98; Fig. 24
             # pairs them as one "(93, 99) Under the rays" row.
-            if acc['Combust'] or acc['UnderBeams']:
+            if sahl_under_rays(planet, lon, sun_lon, data.get('speed_in_lon')):
                 signed_from_sun = ((lon - sun_lon + 180.0) % 360.0) - 180.0
                 western = signed_from_sun > 0
                 _add('93', 'Under the rays of the Sun' + (', western/overtaken (93, 99)' if western else ' (93)'),
-                     _fact('Combust (accidental)', acc['Combust']),
-                     _fact('Under the beams (accidental)', acc['UnderBeams']),
+                     _fact('Solar phase (Sahl)', solar_phase(planet, lon, sun_lon, data.get('speed_in_lon'), source='Sahl')[0]),
+                     _fact('Heart limit (degrees, inclusive)', 1.0),
                      _fact('Signed distance from the Sun (positive is western)', signed_from_sun))
 
             # (94) Connecting with the infortunes from an assembly, opposition,
@@ -12242,7 +12322,7 @@ def _sahl_examine_candidate(label, lon, planetary_data, cusps, sect, places, sel
     under_1_19_6 = False
     if self_planet == 'Moon' and 'Sun' in planetary_data:
         elong = abs(((lon - planetary_data['Sun']['longitude'] + 180.0) % 360.0) - 180.0)
-        if elong <= 15.0:
+        if elong <= 15.0 and not in_solar_heart('Moon', lon, planetary_data['Sun']['longitude'], source='Sahl'):
             under_1_19_6 = True
             fit = False
             why += (f"; within 15 degrees of the Sun ({elong:.1f}): \"not fit to take up [the role of the] manager\" "
@@ -12289,7 +12369,7 @@ def _sahl_rank_house_master(cand, planetary_data, cusps):
     if not cand['looking'] and cand.get('sharer_1_20_6'):
         rank, planet = cand['sharer_1_20_6']
         phase = solar_phase(planet, planetary_data[planet]['longitude'], planetary_data['Sun']['longitude'],
-                            planetary_data[planet].get('speed_in_lon'))[0]
+                            planetary_data[planet].get('speed_in_lon'), source='Sahl')[0]
         return [{'Planet': planet, 'Shares': rank, 'Looks by': 'not looking',
                  'Rank': 'house-master by 1.20, 6: eastern, with a share in the Ascendant, "not looking at it"',
                  'Under the rays': (f"{phase}: \"deceptive, subtractive, corrupting\" (1.20, 5)"
@@ -12304,7 +12384,7 @@ def _sahl_rank_house_master(cand, planetary_data, cusps):
         in_asc_with = (cand['place'] == 1 and 'bound' in d['ranks']
                        and get_effective_house(planetary_data[planet]['longitude'], cusps) == 1)
         phase = solar_phase(planet, planetary_data[planet]['longitude'], planetary_data['Sun']['longitude'],
-                            planetary_data[planet].get('speed_in_lon'))[0]
+                            planetary_data[planet].get('speed_in_lon'), source='Sahl')[0]
         rows.append({'Planet': planet, 'Shares': ', '.join(d['ranks']), 'Looks by': d['aspect'],
                      '_key': (0 if in_asc_with else 1, -len(d['ranks']), best),
                      'Rank': ('the bound lord in the Ascendant with the releaser: "stronger than the others" (1.20, 4)'
@@ -12446,7 +12526,7 @@ def _sahl_house_master_years_branch(planet, planetary_data, cusps, sect, essenti
     if planet == 'Sun':
         east = west = rays = False
     else:
-        phase, side = solar_phase(planet, lon, planetary_data['Sun']['longitude'], row.get('speed_in_lon'))[:2]
+        phase, side = solar_phase(planet, lon, planetary_data['Sun']['longitude'], row.get('speed_in_lon'), source='Sahl')[:2]
         if planet == 'Moon' and moon_eastern is not None:
             east, west = moon_eastern, not moon_eastern
         else:
@@ -13329,6 +13409,13 @@ def jn_years_ladder(planet, division, facts, eastern=None):
     return _jn_years_ladder_branch(planet, division, facts, eastern)
 
 
+def _jn_solar_facts(planet, planetary_data, facts):
+    """Keep JN's existing solar convention separate from Sahl's heart."""
+    row = planetary_data[planet]
+    phase = solar_phase(planet, row['longitude'], planetary_data['Sun']['longitude'], row.get('speed_in_lon'))[0]
+    return dict(facts, **{'under the rays': phase in ('Burned', 'Under the rays')})
+
+
 def jn_years_fallback(planet, planetary_data, cusps, sect, essential):
     """The JN Ch. 3 supplement where a complete Sahl 1.20 route is silent.
 
@@ -13342,7 +13429,7 @@ def jn_years_fallback(planet, planetary_data, cusps, sect, essential):
         g = sahl_house_master_years(planet, planetary_data, cusps, sect, essential)
         if g is None or g['grade'] is not None:
             return None
-        return jn_years_ladder(planet, g['division'], g['facts'])
+        return jn_years_ladder(planet, g['division'], _jn_solar_facts(planet, planetary_data, g['facts']))
 
     routes = []
     for label, eastern in (('if the Moon is eastern', True), ('if the Moon is not eastern', False)):
@@ -13355,7 +13442,7 @@ def jn_years_fallback(planet, planetary_data, cusps, sect, essential):
                      'jn': None, 'umar': [], 'text': sahl['text'], 'citation': 'Sahl, On Nativities 1.20',
                      'table_note': None, 'result': sahl['result'], 'route': 'Sahl 1.20'}
         else:
-            route = jn_years_ladder(planet, sahl['division'], sahl['facts'], eastern=eastern)
+            route = jn_years_ladder(planet, sahl['division'], _jn_solar_facts(planet, planetary_data, sahl['facts']), eastern=eastern)
             route = dict(route, route='JN Ch. 3 after Sahl 1.20 is silent')
         routes.append((label, route))
     eastern, western = routes[0][1], routes[1][1]
@@ -14031,7 +14118,7 @@ def sahl_house_master_in_revolution(house_master, chart_data, sr):
     if house_master not in rev:
         return []
     lon = rev[house_master]['longitude']
-    phase, side, elong = solar_phase(house_master, lon, rev['Sun']['longitude'], rev[house_master].get('speed_in_lon'))
+    phase, side, elong = solar_phase(house_master, lon, rev['Sun']['longitude'], rev[house_master].get('speed_in_lon'), source='Sahl')
     house = get_wsh_house(lon, sr['ascendant'])
     with_infortune = [p for p in SAHL_INFORTUNES if p != house_master and p in rev
                       and get_zodiac_sign(rev[p]['longitude']) == get_zodiac_sign(lon)]
@@ -14604,7 +14691,7 @@ def pn4_turned_sign(natal_lon, completed_years):
     """VI.2, 1: "a year for every sign", from the point's own position."""
     return get_zodiac_sign(pn4_profect(natal_lon, int(completed_years)))
 
-def _pn4_condition_string(data, planet):
+def _pn4_condition_string(data, planet, *, compare_sahl=False):
     """A planet's condition as the II.3 examination prints it: sign, motion,
     side of the Sun, solar phase. '-' when the planet is absent."""
     r = data.get(planet)
@@ -14612,7 +14699,15 @@ def _pn4_condition_string(data, planet):
         return '-'
     motion = 'retrograde' if r.get('speed_in_lon', 1.0) < 0 else 'direct'
     phase, side, _el = solar_phase(planet, r['longitude'], data['Sun']['longitude'], r.get('speed_in_lon'))
-    return f"{get_zodiac_sign(r['longitude'])}, {motion}, {side or '-'}{', ' + phase.lower() if phase else ''}"
+    condition = f"{get_zodiac_sign(r['longitude'])}, {motion}, {side or '-'}{', ' + phase.lower() if phase else ''}"
+    if compare_sahl:
+        sahl_phase = solar_phase(planet, r['longitude'], data['Sun']['longitude'],
+                                 r.get('speed_in_lon'), source='Sahl')[0]
+        sahl_text = 'in the heart' if sahl_phase == 'Cazimi' else (sahl_phase or 'outside the solar bands').lower()
+        if planet == 'Sun':
+            sahl_text = 'the Sun itself; no solar testimony'
+        return f"Abu Ma'shar (heart through 16′): {condition}; Sahl (heart through 1°): {sahl_text}"
+    return condition
 
 def _triplicity_lords_in_sect_order(sign, sect):
     """The Dorothean lords of SIGN's triplicity in the engine's order: day
@@ -14668,7 +14763,7 @@ def triplicity_lords_of_life(chart_data, point='sect light'):
     for rank, lord in zip(('first', 'second', 'third'), _triplicity_lords_in_sect_order(sign, sect)):
         rows.append({'Triplicity of': f'{sign} ({label})', 'Order': rank, 'Lord': lord,
                      'Time of life': LIFE_LORDS_TIMES[rank] if point != 'Ascendant' else '-',
-                     'Root condition': _pn4_condition_string(natal, lord), 'Source': source})
+                     'Root condition': _pn4_condition_string(natal, lord, compare_sahl=True), 'Source': source})
     return rows
 
 
@@ -15117,7 +15212,7 @@ def evaluate_prosperity(chart_data):
             continue
         lon = r['longitude']
         house = get_wsh_house(lon, asc)
-        phase, _side, _el = solar_phase(lord, lon, sun_lon, r.get('speed_in_lon'))
+        phase, _side, _el = solar_phase(lord, lon, sun_lon, r.get('speed_in_lon'), source='Sahl')
         under = phase in ('Burned', 'Under the rays')
         falling = house in PROSPERITY_FALLING
         strong = not falling and not under
@@ -16795,7 +16890,7 @@ def _pn4_looks_at_sign(data, sign, exclude=()):
 
 def _pn4_lots_in_sign(chart, sign):
     names = []
-    for d in LOT_DEFINITIONS:
+    for d in operative_lot_definitions():
         lon = lot_by_id(d['id'], chart['planetary_data'], chart['ascendant'], chart['houses'], chart['sect'])
         if lon is not None and get_zodiac_sign(lon) == sign:
             names.append(d['name'])
@@ -17229,7 +17324,7 @@ def pn4_revolution_image(chart_data, sr, year, age, current, fardar, orb, lat, e
             add(label, 'twelfth-part of a house', f"twelfth-part of the degree of house {i + 1} ({get_degree_string(cusp)})",
                 pn4_twelfth_part(cusp), cite + ' (fn 31: the quadrant cusps)')
             counts['twelfth-parts of houses'] += 1
-        for d in LOT_DEFINITIONS:
+        for d in operative_lot_definitions():
             lon = lot_by_id(d['id'], data, chart['ascendant'], chart['houses'], chart['sect'])
             if lon is not None:
                 add(label, 'Lot', d['name'], lon, 'I.6, 4; 8: "according to how you do it"')
@@ -18435,8 +18530,8 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
             (_pn4_seg_degree({'from': elapsed}, ascendant, chart_data, lat) if (segments and current) else None)),
         'short_life': sahl_short_life_testimonies(chart_data, chart_data['lot_of_fortune']),
         # DIS-10: the father's Lot (4.20, 31-36): the harmers, and 32's two directions
-        'father_lot': (lambda lot: (None if lot is None else {
-            'lot': lot,
+        'father_lot': (lambda selection: (None if isinstance(selection, UnresolvedResult) else (lambda lot: {
+            'lot': lot, 'selection': selection,
             'harmers': sahl_father_lot_harmers(chart_data['sect'], chart_data['planetary_data'], lot,
                                                chart_data['planetary_data']['Sun']['longitude']),
             'second': 'Sun' if chart_data['sect'] == 'Diurnal' else 'Saturn',
@@ -18448,7 +18543,7 @@ def pn4_timing_bundle(chart_data, lat, lon, birth_date, target_date, rule, chron
                 chart_data['planetary_data'], 'Sun' if chart_data['sect'] == 'Diurnal' else 'Saturn', chart_data['obliquity'], lat,
                 origin_jd=chart_data['julian_day'], sun_target=False,
                 target_planets=(('Mars', 'Saturn', 'Mercury') if chart_data['sect'] == 'Diurnal' else ('Mars', 'Mercury'))),
-        }))(lot_by_id('father', chart_data['planetary_data'], ascendant, chart_data['houses'], chart_data['sect'])),
+        })(selection['longitude'])))(father_lot_selection(chart_data['planetary_data'], ascendant, chart_data['houses'], chart_data['sect'])),
         # REL-5-7: 1.23, 13-14 -- when a 1.23, 12 flag fires, the lord of the Ascendant, then the Ascendant's degree
         'hm_redirect': (lambda lord: ({
             'lord': lord,

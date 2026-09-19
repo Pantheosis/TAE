@@ -3465,7 +3465,8 @@ def test_triplicity_lords_of_life_follow_the_sect_light_in_sect_order(engine):
     assert rows[0]["Source"].startswith("Sahl, On Nativities 2.11, 1-4") and "VI.2, 4" in rows[0]["Source"]
     assert "beginning of his life" in rows[0]["Time of life"] and "end of his lifespan" in rows[2]["Time of life"]
     assert not any(re.search(r"\d+ years|\b(30|60|90)\b", r["Time of life"]) for r in rows)
-    assert rows[0]["Root condition"].startswith("Leo")   # Venus at 130 in the fixture
+    assert rows[0]["Root condition"].startswith("Abu Ma'shar (heart through 16′): Leo")  # Venus at 130
+    assert "; Sahl (heart through 1°):" in rows[0]["Root condition"]
     night = dict(root, sect="Nocturnal", planetary_data=dict(root["planetary_data"], **pdata(Moon=280.0)))
     rows = engine["triplicity_lords_of_life"](night)
     assert [r["Lord"] for r in rows] == ["Moon", "Venus", "Mars"]

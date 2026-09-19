@@ -215,9 +215,9 @@ def test_the_moons_weakness_testimonies_on_the_default_chart(engine):
     """The Moon: 93 and 98 -- two of the ten."""
     facts, pool = _testimonies(engine, EVALUATORS[1], "Moon")
     assert list(facts) == ["93", "98"]
-    assert "Combust (accidental): yes" in facts["93"]
+    assert "Solar phase (Sahl): Burned" in facts["93"]
     assert pool["accidental"]["Moon"]["Combust"]
-    assert "Under the beams (accidental): no" in facts["93"]
+    assert "Heart limit (degrees, inclusive): 1.00" in facts["93"]
     assert any(f.startswith("Signed distance from the Sun (positive is western): ") for f in facts["93"])
     rulers = engine["get_essential_rulers"](pool["p"]["Moon"]["longitude"])
     assert facts["98"] == [f"Domicile lord where it sits: {rulers['domicile']}",

@@ -67,7 +67,7 @@
   ],
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
-   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
+   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Status"]]
   ],
   "reference": [
    ["Dignities by sign", ["Sign", "Domicile", "Exaltation", "Triplicity, day", "Triplicity, night", "Participating", "Faces (1st, 2nd, 3rd)"]],
@@ -204,7 +204,7 @@
   ],
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
-   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
+   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Status"]]
   ],
   "reference": [
    ["Dignities by sign", ["Sign", "Domicile", "Exaltation", "Triplicity, day", "Triplicity, night", "Participating", "Faces (1st, 2nd, 3rd)"]],
@@ -350,7 +350,7 @@
   ],
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
-   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
+   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Status"]]
   ],
   "reference": [
    ["Dignities by sign", ["Sign", "Domicile", "Exaltation", "Triplicity, day", "Triplicity, night", "Participating", "Faces (1st, 2nd, 3rd)"]],
@@ -492,7 +492,7 @@
   ],
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
-   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
+   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Status"]]
   ],
   "reference": [
    ["Dignities by sign", ["Sign", "Domicile", "Exaltation", "Triplicity, day", "Triplicity, night", "Participating", "Faces (1st, 2nd, 3rd)"]],
@@ -635,7 +635,7 @@
   ],
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
-   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
+   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Status"]]
   ],
   "reference": [
    ["Dignities by sign", ["Sign", "Domicile", "Exaltation", "Triplicity, day", "Triplicity, night", "Participating", "Faces (1st, 2nd, 3rd)"]],
@@ -781,7 +781,7 @@
   ],
   "lots": [
    ["Classical Lots", ["Lot Name", "Position", "WS place", "Sign Dispositor", "Formula", "Standing"]],
-   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Active"]]
+   ["Topical Lots (Sahl, On Nativities)", ["Topic", "Lot", "Position", "WS place", "Lord", "Formula", "Status"]]
   ],
   "reference": [
    ["Dignities by sign", ["Sign", "Domicile", "Exaltation", "Triplicity, day", "Triplicity, night", "Participating", "Faces (1st, 2nd, 3rd)"]],

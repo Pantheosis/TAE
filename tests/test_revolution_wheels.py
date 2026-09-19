@@ -139,6 +139,8 @@ def test_year_over_root_agrees_with_the_inventory_cell_for_cell(engine, date_str
     def extras_for(c):
         out = []
         for d in engine["LOT_DEFINITIONS"]:
+            if d["id"] in ("father_burnt", "father_burnt_abu"):
+                continue  # F4: comparison rows are not additional operational Lots.
             if d["id"] == "fortune":
                 continue
             lon = engine["lot_by_id"](d["id"], c["planetary_data"], c["ascendant"], c["houses"], c["sect"])

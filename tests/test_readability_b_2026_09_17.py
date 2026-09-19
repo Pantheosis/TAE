@@ -640,7 +640,9 @@ def test_the_mars_west_tooltip_is_short_and_both_rays_readings_stand_whole_in_no
     # the one notes expander on the Chart page stands after the positions table
     md = [m.value for m in notes[0].markdown]
     assert md[0::2] == ["**The Moon under the rays to 15°.**", "**Mars under the rays to 18° west.**"]
-    assert moon.help == md[1] + " Full text on the Sources page."     # the Moon's tooltip, less its pointer
+    assert "prosperity" in moon.help and "prosperity" in md[1]
+    assert "2.11, 5" in moon.help and "103" in moon.help
+    assert len(moon.help) <= 300
     assert md[3] == ("Dykes's table for Sahl (the chapter head of On Nativities 1.22, with fn 175, which reads VII.2, 30's "
                      "westernizing boundary into 18 degrees) has Mars under the rays at 18 west; Sahl's own sentences are silent "
                      "on Mars west. Gr. Intr. VII.2, 31 puts him under the rays at 15 on the western side. With the reading on, "

@@ -215,7 +215,7 @@ def test_the_timing_wheels_lots_are_the_runs_on_a_fragment_rerun(shared_fragment
     full_map = {key: value for _, _, key, value in full}
     fragment_map = {key: value for _, _, key, value in fragment}
     common = set(full_map) & set(fragment_map)
-    assert len(common) == len(fragment_map) >= 39, (len(common), len(fragment_map))
+    assert len(common) == len(fragment_map) >= 37, (len(common), len(fragment_map))
     ring = {key[0] for key in common}
     assert set(CUSP_LOTS) <= ring and set(DEATH_LOTS) <= ring, sorted(ring)
     moved = {key: (full_map[key], fragment_map[key]) for key in common

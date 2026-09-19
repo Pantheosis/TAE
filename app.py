@@ -3241,9 +3241,9 @@ def page_chart():
     pos_col.subheader('Planetary Positions', help="The seven classical planets' ecliptic (tropical) longitude at the moment of birth, in sign and degree.")
     with moon_col:
         _reading_checkbox("Moon under the rays to 15°", "moon_rays_15", "_moon_rays_15",
-                          help="Sahl, On Nativities 1.19, 6 gives 15 degrees for the Moon; Gr. Intr. VII.2, 61 "
-                               "and 72-73 give 12. Affects: the Solar phase column here, and on the Configurations "
-                               "page Weakness (93), Planetary Condition and Corruption of the Moon. Full text on the Sources page.")
+                          help="Sahl, On Nativities 1.19, 6: 15°; Gr. Intr. VII.2, 61 and 72-73: 12°. Affects solar phase, "
+                               "ray-dependent configurations and prosperity's triplicity lords (2.11, 5). "
+                               "The separate burning rule (103) stays within 12°. Full text in the notes below.")
         _reading_checkbox("Mars under the rays to 18° west", "mars_west_18", "_mars_west_18",
                           help="Dykes's table has Mars under the rays at 18° west; Gr. Intr. VII.2, 31 gives 15°. "
                                "With this reading on, the table's 22° figure closes his setting band. Both give 18° "
@@ -3270,7 +3270,7 @@ def page_chart():
         ("The Moon under the rays to 15°.",
          "Sahl, On Nativities 1.19, 6 gives 15 degrees for the Moon; Gr. Intr. VII.2, 61 "
          "and 72-73 give 12. Affects: the Solar phase column here, and on the Configurations "
-         "page Weakness (93), Planetary Condition and Corruption of the Moon."),
+         "page Weakness (93), Planetary Condition and the ray-dependent Moon conditions; also the prosperity triplicity lords (Sahl 2.11, 5). The separate Moon burning rule (103) remains within 12°. "),
         ("Mars under the rays to 18° west.",
          "Dykes's table for Sahl (the chapter head of On Nativities 1.22, with fn 175, which "
          "reads VII.2, 30's westernizing boundary into 18 degrees) has Mars under the rays "
@@ -3393,6 +3393,8 @@ def page_findings():
               summary="The first row is this app's synthesis: the class it reads from the first and second lords of the sect light's triplicity by whole-sign place, said so, with the partnering lord's modification (2.11, 4) and, when the Lot of Fortune is worked (2.3, 6), the Lot's judgment beside the lords' -- mixed or unresolved where Sahl gives no precedence; under it the lords, the partnering lord, and every further rule of the chapter that the chart meets, each with Sahl's sentence and the parallel in the Book of Aristotle or Abu 'Ali.",
               qualifications=["**This app's synthesis.** A single seven-class outcome is not specified for every combination in Sahl's chapter, so the first row is this app's synthesis and says \"read by this app as class N\" with its grounds."],
               detail=_prosperity_row, detail_key='Class')
+    st.caption("For the triplicity lords in Sahl 2.11, 5, the heart through 1° is exempt from the rays. "
+               "Falling or a separate infortune still applies; the Moon's outer ray limit follows the 12°/15° reading.")
     _notes_expander("How the prosperity reading is assembled", [
         ("The two triplicity lords.",
          "The first two triplicity lords describe the pattern across their periods; the partnering lord, the Lot of Fortune, and other conditions modify the reading. The pattern is Theophilus's, 2.11, 1-3 --\n\n> \"" + PROSPERITY_SAHL['2.11, 1'] + " " + PROSPERITY_SAHL['2.11, 2'] + " " + PROSPERITY_SAHL['2.11, 3'] + "\"\n\n-- with 2.11, 5,\n\n> \"" + PROSPERITY_SAHL['2.11, 5'] + "\",\n\nand 2.13, 40,\n\n> \"" + PROSPERITY_SAHL['2.13, 40'] + "\"\n\nStrong is a stake or what follows one, falling the third, sixth, ninth and twelfth (fn 149 on \"strong\"), by whole sign. Both strong is read as class 1 (both in the stakes is 2.3, 2's \"happy for all the days of his life\"); both weak as class 6, the ground naming each lord's weakness -- falling (2.11, 3) or under the rays (2.11, 5) -- since 2.11, 3's word is falling and 2.11, 5 says only that a lord under the rays has no strength; the mixed pair is a timing pattern, \"his benefit will be in the time of the strong one\" (2.11, 2), read by this app as class 2 when the first lord is the strong one and class 5 when the second is, the first lord's time being the beginning of life (2.13, 39). The infortunes with a lord or in its square or opposition are listed: 2.11, 4 makes their aspect an increase or a subtraction, not a class step, and Abu 'Ali's charts read the lords' places."),
@@ -3967,6 +3969,8 @@ def page_configurations():
     def sahl_strength():
         with st.container(border=True):
             st.markdown("**Strength and weakness** — Ch. 3, 77-112")
+            st.caption("Sahl's heart of the Sun includes 1° on either side: 87 applies there and 93 does not. "
+                       "Abu Ma'shar's solar judgments retain their own heart through 16′.")
 
             # Each tick grid, with its answer key, its notes and the
             # row detail a selection opens, is one @st.fragment:
@@ -4335,8 +4339,10 @@ def page_lots():
     # A row flagged Supplement (Abu Ma'shar's: a form of a Lot Sahl also
     # gives, or a Lot of his Sahl has not) is shown only under Course text and supplement.
     topical_rows = _topical_lot_rows()
-    st.dataframe(pd.DataFrame(topical_rows, columns=['Topic', 'Lot', 'Position', 'WS place', 'Lord', 'Formula', 'Active']),
+    st.dataframe(pd.DataFrame(_display_rows(topical_rows), columns=['Topic', 'Lot', 'Position', 'WS place', 'Lord', 'Formula', 'Status']),
                  hide_index=True, width='stretch', height=_rows_height(len(topical_rows)))
+    st.markdown(f'> “{FATHER_SUBSTITUTION_TEXT}” — Sahl, On Nativities 4.14, 2.')
+    st.caption(FATHER_CONDITION_READING + '. ' + FATHER_NIGHT_POLICY + '.')
     # The four classical Lots keep their POSITIONS out of the table above --
     # they have their own table at the top of this page -- but their
     # provenance belongs here, which is where the classical note sends the
@@ -4348,13 +4354,13 @@ def page_lots():
     # in its expander as the secondary view.
     def _lot_provenance_detail(row):
         st.markdown(f"**{row['Topic']}: {row['Lot']}.**")
-        for _field in ('Standing', 'Source', 'Editor’s note'):
-            if row.get(_field):
-                st.markdown(f"**{_field}.** {row[_field]}")
+        for _field in ('Status', 'Standing', 'Source', 'Editor’s note'):
+            if row.get(_field) is not None:
+                st.markdown(f"**{_field}.** {_display_result(row[_field])}")
     _detail_selector("Provenance and standing per Lot", provenance_rows, 'Lot', _lot_provenance_detail,
                      "Select a Lot to read its standing, source and editor's note")
     with st.expander("Provenance and standing per Lot"):
-        st.table(pd.DataFrame(provenance_rows, columns=['Topic', 'Lot', 'Standing', 'Source', 'Editor’s note']),
+        st.table(pd.DataFrame(_display_rows(provenance_rows), columns=['Topic', 'Lot', 'Status', 'Standing', 'Source', 'Editor’s note']),
                  hide_index=True)
 
     _notes_expander("How the standings are recorded", [
@@ -4704,7 +4710,7 @@ def page_timing():
             def _ring_extras(chart):
                 out = []
                 if want_lots:
-                    for d in LOT_DEFINITIONS:
+                    for d in operative_lot_definitions():
                         if d['id'] == 'fortune':
                             continue
                         lot_lon = lot_by_id(d['id'], chart['planetary_data'], chart['ascendant'], chart['houses'], chart['sect'])
@@ -5887,10 +5893,13 @@ def page_releaser():
                      help="32: \"direct the degree of the Lot of the father and the "
                           "Sun by day, and by night the Lot and Saturn\".")
         with _prose():
-            st.markdown(f"The Lot of the father stands at **{get_degree_string(_fl['lot'])}** (4.14, 1); the second point "
+            st.markdown(f"The Lot of the father stands at **{get_degree_string(_fl['lot'])}** ({_fl['selection']['source']}); the second point "
                         f"directed is **the {_fl['second']}** (32). fn 288 -- Dykes: Mars the main malefic in both sects, "
                         f"Saturn barred by night because he indicates the father, Mercury when made unfortunate -- is the "
                         f"editor's reading and is quoted, not applied; 31 is applied as printed.")
+        st.markdown(f"**Selected formula:** {_fl['selection']['formula']}. {_fl['selection']['order_note']}. {_fl['selection']['condition']}.")
+        st.caption(_fl['selection']['condition_profile'] + '.')
+        st.markdown(f'> “{FATHER_SUBSTITUTION_TEXT}” — Sahl, On Nativities 4.14, 2.')
         st.dataframe(pd.DataFrame(_fl['harmers']), hide_index=True, width='stretch', height=_rows_height(len(_fl['harmers'])),
                      column_config=_wide_text_columns(pd.DataFrame(_fl['harmers'])))
         for _lab, _tab in (("From the degree of the Lot of the father (32), to the harmers' bodies, squares and oppositions", _fl['from_lot']),
@@ -5952,12 +5961,12 @@ def page_days():
     _day_points.update({f"the revolution's {p_}": (_sr_pd[p_]['longitude'], f"the revolution's {p_}") for p_ in PN4_SEVEN if p_ in _sr_pd})
     _day_points.update({f"the revolution's house {i_ + 1} (cusp {get_degree_string(c_)})": (c_, f"the revolution's house {i_ + 1}")
                         for i_, c_ in enumerate(list(_sr_ch['houses'])[:12])})
-    for _lr in calculate_topical_lots(_sr_pd, _sr_ch['ascendant'], _sr_ch['houses'], _sr_ch['sect']):
-        if _lr['Supplement'] and READING_DEPTH != READING_DEPTH_OPTIONS[1]:
+    for _definition in operative_lot_definitions():
+        if _definition.get('supplement') and READING_DEPTH != READING_DEPTH_OPTIONS[1]:
             continue
-        _day_points[f"the revolution's {_lr['Lot']}"] = (lot_by_id(next(d['id'] for d in LOT_DEFINITIONS if d['name'] == _lr['Lot']),
-                                                                  _sr_pd, _sr_ch['ascendant'], _sr_ch['houses'], _sr_ch['sect']),
-                                                        f"the revolution's {_lr['Lot']}")
+        _label = f"the revolution's {_definition['name']}"
+        _day_points[_label] = (lot_by_id(_definition['id'], _sr_pd, _sr_ch['ascendant'],
+                                        _sr_ch['houses'], _sr_ch['sect']), _label)
     # Through the store, like the View, Wheel layout and Inner wheel
     # controls beside it (M4 of the hostile pass of 2026-09-16): a plain
     # key is dropped by Streamlit the moment the page is not rendered,
@@ -6628,7 +6637,7 @@ def page_sources():
             "**Moon under the rays to 15 degrees (Sahl, On Nativities 1.19, 6)** (Chart page, Planetary Positions) -- "
             "Gr. Intr. VII.2, 61 and 72-73 give 12; Sahl gives 15 for the Moon's fitness as releaser.",
             "Affects: the Solar phase column of Planetary Positions; on the Configurations page, "
-            "Weakness of the Planets (93), Planetary Condition and Corruption of the Moon."),
+            "Weakness of the Planets (93), Planetary Condition and the ray-dependent Moon conditions; also the prosperity triplicity lords (Sahl 2.11, 5). The separate Moon burning rule (103) remains within 12°. "),
         "_mars_west_18": (
             "**Mars under the rays to 18 degrees west (Dykes's table in On Nativities 1.22, fn 175)** (Chart page, Planetary Positions) -- "
             "Gr. Intr. VII.2, 31 has Mars under the rays at 15 on the western side; Dykes's chapter-head table for "
