@@ -418,10 +418,14 @@ D3_GRANT_READERS = {
     # owner's unit). This is the thing the control used to forbid; it is
     # admitted by the owner's decision, not by a reading.
     "sahl_house_master_years",
+    # F10 G11 splits the public reader into two explicit lunar-orientation
+    # branches before comparing their structured outcomes. This helper is
+    # still the same 1.20 grant reader; it does not create another grant.
+    "_sahl_house_master_years_branch",
 }
 D3_FARDAR_READERS = {"evaluate_planetary_years_display", "pn4_fardar_sequence",
                      "pn4_activation_ages", "reference_planetary_years_rows",
-                     "sahl_house_master_years"}          # reads the grant keys only (FINAL-A1); listed because it reads the table
+                     "sahl_house_master_years", "_sahl_house_master_years_branch"}
 # jn_years_fallback (reconciliation decision 9, owner 2026-09-15) grants Abu
 # 'Ali's years where 1.20 is silent, at the supplement depth only. It reads
 # JN_YEARS_TABLE (Ch. 4's own counts), not PLANETARY_YEARS, and so is in

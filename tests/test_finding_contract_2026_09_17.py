@@ -21,7 +21,8 @@ import pytest
 from conftest import (APP_PATH, NOTES_EXPANDER_ICON, NOTES_EXPANDER_LABEL, assert_no_exception,
                       table_inventory, ui_source)
 
-HELPERS = ("PROSE_WIDTH", "_prose", "NOTES_ICON", "NOTES_TITLE", "_note_sections", "_notes_expander",
+HELPERS = ("PROSE_WIDTH", "_prose", "NOTES_ICON", "NOTES_TITLE", "_display_result", "_display_rows",
+           "_note_sections", "_notes_expander",
            "_slug", "_detail_selector", "_finding", "_absent", "_WIDE_TEXT_COLUMNS", "_wide_text_columns",
            "_YES_NO_COLUMNS", "_yes_no_columns", "_MEDIUM_TEXT_COLUMNS", "_medium_text_columns",
            "_PARAGRAPH", "_CITATION_LOCATOR", "_tick_grid", "_row_detail", "_rows_height")
@@ -44,7 +45,17 @@ def _segments(names):
     return "\n\n".join(found[n] for n in names)
 
 
-SCRIPT_HEAD = "import re\nimport streamlit as st\nimport pandas as pd\n\n"
+SCRIPT_HEAD = """import re
+import streamlit as st
+import pandas as pd
+
+class YearsOutcome:
+    pass
+
+class UnresolvedResult:
+    pass
+
+"""
 
 ROWS = [{"Name": "Alpha", "Value": "one", "Ground": "the first ground"},
         {"Name": "Beta", "Value": "two", "Ground": "the second ground"},

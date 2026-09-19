@@ -170,10 +170,9 @@ def _testimonies(engine, name, planet):
 
 
 def test_the_suns_strength_testimonies_on_the_default_chart(engine):
-    """Fig. 24's row for the Sun: 79, 80, 81, 82, 83, 85, 88 -- seven of the
-    eleven -- and at least one fact of each, read back against the chart."""
+    """The Sun has six testimonies; 88 needs matching quarter and sign."""
     facts, pool = _testimonies(engine, EVALUATORS[0], "Sun")
-    assert list(facts) == ["79", "80", "81", "82", "83", "85", "88"]
+    assert list(facts) == ["79", "80", "81", "82", "83", "85"]
     assert facts["79"] == ["Share of dignity: Joy"]
     assert pool["accidental"]["Sun"]["Joy"]
     assert "Retrograde (accidental): no" in facts["80"]
@@ -187,15 +186,15 @@ def test_the_suns_strength_testimonies_on_the_default_chart(engine):
     assert f"Quadrant division: {quadrant}" in facts["83"]
     assert "Angular and succedent divisions: 1, 2, 4, 5, 7, 8, 10, 11" in facts["83"]
     assert facts["85"] == ["Planet is diurnal: yes", f"Sect: {pool['sect']}"]
-    sign = engine["get_zodiac_sign"](pool["p"]["Sun"]["longitude"])
-    assert f"Sign: {sign}" in facts["88"] and "Gender: Masculine" in facts["88"]
-    assert "Sign gender: Masculine" in facts["88"]
+    position = engine["quadrant_strength_position"](pool["p"]["Sun"]["longitude"], pool["cusps"])
+    assert engine["get_zodiac_sign"](pool["p"]["Sun"]["longitude"]) in engine["MASCULINE_SIGNS"]
+    assert position["quarter_gender"] == "Feminine"
 
 
 def test_saturns_strength_testimonies_on_the_default_chart(engine):
-    """Saturn: 78, 79, 80, 81, 82, 83, 85, 88 -- eight of the eleven."""
+    """Saturn has seven testimonies; 88 needs matching quarter and sign."""
     facts, pool = _testimonies(engine, EVALUATORS[0], "Saturn")
-    assert list(facts) == ["78", "79", "80", "81", "82", "83", "85", "88"]
+    assert list(facts) == ["78", "79", "80", "81", "82", "83", "85"]
     place = engine["get_wsh_house"](pool["p"]["Saturn"]["longitude"], pool["asc"])
     assert facts["78"] == [f"Whole-sign place: {place}", "Excellent places: 1, 4, 5, 7, 10, 11"]
     assert place in engine["EXCELLENT_PLACES"]
@@ -207,8 +206,9 @@ def test_saturns_strength_testimonies_on_the_default_chart(engine):
     quadrant = engine["get_effective_house"](pool["p"]["Saturn"]["longitude"], pool["cusps"])
     assert f"Quadrant division: {quadrant}" in facts["83"]
     assert "Planet is diurnal: yes" in facts["85"]
-    assert "Quadrant gender: Masculine" in facts["88"]
-    assert f"Sign: {engine['get_zodiac_sign'](pool['p']['Saturn']['longitude'])}" in facts["88"]
+    position = engine["quadrant_strength_position"](pool["p"]["Saturn"]["longitude"], pool["cusps"])
+    assert position["quarter_gender"] == "Masculine"
+    assert engine["get_zodiac_sign"](pool["p"]["Saturn"]["longitude"]) in engine["FEMININE_SIGNS"]
 
 
 def test_the_moons_weakness_testimonies_on_the_default_chart(engine):
@@ -353,12 +353,12 @@ def test_no_selection_draws_no_panel_on_either_depth(depth):
 @pytest.mark.parametrize("depth", READING_DEPTHS)
 def test_selecting_the_suns_row_draws_its_strength_testimonies_inside_the_fragment(engine, depth):
     at = _render(depth, seed={STRENGTH_KEY: [0]})
-    assert _panel_headings(at) == ["Sun: 7 of 11 testimonies"]
+    assert _panel_headings(at) == ["Sun: 6 of 11 testimonies"]
     row = next(r for r in _rows(engine, DEFAULT)[0][EVALUATORS[0]] if r["Planet"] == "Sun")
     block = _grid_block(at, "Strength of the Planets")
     kids = list(block.children.values())
     assert [type(k).__name__ for k in kids[:3]] == ["Subheader", "Caption", "Dataframe"]
-    assert kids[3].value == "Sun: 7 of 11 testimonies"
+    assert kids[3].value == "Sun: 6 of 11 testimonies"
     assert [type(k).__name__ for k in kids[-2:]] == ["Expander", "Status"]
     # Between the heading and the expanders: one block per ticked testimony,
     # in numerical order -- caption, the sentence, then the facts.
@@ -397,7 +397,7 @@ def test_selecting_the_moons_row_draws_her_weakness_testimonies(engine, depth):
 
 def test_both_grids_can_be_selected_at_once():
     at = _render(READING_DEPTHS[0], seed={STRENGTH_KEY: [6], WEAKNESS_KEY: [0]})
-    assert _panel_headings(at) == ["Saturn: 8 of 11 testimonies", "Sun: 1 of 10 testimonies"]
+    assert _panel_headings(at) == ["Saturn: 7 of 11 testimonies", "Sun: 1 of 10 testimonies"]
 
 
 def test_the_panels_captions_name_only_paragraph_numbers_of_the_grid():
@@ -412,5 +412,4 @@ def test_the_panels_captions_name_only_paragraph_numbers_of_the_grid():
     for heading in _panel_headings(at):
         _, count, total = PANEL_HEADING.match(heading).groups()
         assert total in ("11", "10") and 1 <= int(count) <= int(total)
-
 

@@ -136,12 +136,14 @@ def test_where_sahl_is_silent_the_class_is_ch_3s_for_the_place(engine):
     j = engine["jn_years_fallback"]("Sun", data, cusps, "Diurnal", ess)
     assert (j["class"], j["count"], j["steps"]) == ("middle", 69.5, [])
     assert "69.5" in j["table_note"] and "39.5" in j["table_note"]
-    # No step below days: the Moon at 15 Cancer (the ninth, her domicile),
-    # under the rays and western of a Sun at 10 Cancer -- silent; lesser ->
-    # months -> days, two steps.
+    # The Moon's orientality is not borrowed from solar side. In the ninth,
+    # eastern reaches Sahl's middle years while not eastern reaches the JN
+    # ladder and its two-step days result.
     g, j = _both(engine, "Moon", Moon=105.0, Sun=100.0)
-    assert g["grade"] is None and (j["class"], j["unit"], j["count"]) == ("days", "days", 25)
-    assert [s for s, _ in j["steps"]] == ["not oriental", "burned up"]
+    assert isinstance(g["grade"], engine["UnresolvedResult"])
+    assert [(value.number, value.unit) for _, value in j["result"].alternatives] == [(39.5, "years"), (25, "days")]
+    west = j["alternative_routes"][1][1]
+    assert [s for s, _ in west["steps"]] == ["not oriental", "burned up"]
 
 
 def test_the_years_table_carries_the_column_at_the_supplement_depth_only(engine):
@@ -151,13 +153,14 @@ def test_the_years_table_carries_the_column_at_the_supplement_depth_only(engine)
     p, sect = c["planetary_data"], c["sect"]
     ess = engine["evaluate_essential_dignities"](p, sect)
     plain = engine["evaluate_planetary_years_display"](p, c["houses"], c["ascendant"], sect, ess)
-    col = "Where 1.20 is silent: Abu 'Ali, Judgments of Nativities Ch. 3 (with 'Umar, TBN I.4.3); the supplement"
+    col = "Where 1.20 is silent or conditional: Abu 'Ali, Judgments of Nativities Ch. 3 (with 'Umar, TBN I.4.3); the supplement"
     assert all(col not in r for r in plain)
     rows = engine["evaluate_planetary_years_display"](p, c["houses"], c["ascendant"], sect, ess, supplement=True)
     for r in rows:
-        silent = r["On Nativities 1.20 grants (as house-master)"].startswith("1.20 silent")
-        assert (r[col] != "-") == silent, r
-        if silent:
+        grant = r["On Nativities 1.20 grants (as house-master)"]
+        needs_fallback = grant == "1.20 silent" or isinstance(grant, engine["UnresolvedResult"])
+        assert (r[col] != "-") == needs_fallback, r
+        if needs_fallback and not isinstance(r[col], engine["UnresolvedResult"]):
             assert r[col].split(",")[0].split(" ")[0] in engine["JN_YEARS_LADDER"]["ranks"]
 
 
@@ -175,17 +178,16 @@ def _timing_text(date, depth):
 def test_the_releaser_tab_renders_at_the_supplement_depth():
     """The 1240-05-23 chart: Jupiter, the house-master, is graded by 1.20, 20,
     so the ladder does not appear at either depth. 1240-02-02 (Florence,
-    14:30): the Moon, house-master, in the eleventh by the division, in a
-    share and not eastern -- no sentence reaches her; the ladder appears
-    at the supplement depth only, with its citation and both sides of the
-    additions."""
+    14:30): the Moon, house-master, is otherwise qualified in the eleventh;
+    the page preserves the two lunar-orientality routes."""
     text = _timing_text("1240-05-23", "Course text and supplement")
     assert "The house-master's years" in text and "1.20, 20" in text
     assert "supplement's ladder" not in text
     for depth, shown in (("Course text", False), ("Course text and supplement", True)):
         text = _timing_text("1240-02-02", depth)
-        assert "1.20 silent: no sentence of 10-34 reaches Moon" in text
-        assert ("supplement's ladder" in text) == shown, depth
+        assert "The supplied passages do not define the Moon’s orientality" in text
+        assert "the greater years, 108 (Moon)" in text
+        assert ("Sahl-first result" in text) == shown, depth
         if shown:
             assert "Abu 'Ali, Judgments of Nativities Ch. 3 (with 'Umar, TBN I.4.3)" in text
             assert "the lesser years, 25 (Moon), succedent by the division (11) -- not oriental (1 step down)" in text

@@ -56,7 +56,18 @@ def test_third_day_moon_is_the_ephemeris_moon_two_days_on(engine):
 
 
 def _rows_for(engine, moon, sun=300.0, saturn=290.0, mars=250.0, natal_saturn=290.0, natal_mars=250.0, asc=95.0):
-    third = {'Moon': moon, 'Sun': sun, 'Saturn': saturn, 'Mars': mars}
+    positions = {
+        'Sun': (sun, 1.0), 'Moon': (moon, 13.0), 'Mercury': (25.0, 1.2),
+        'Venus': (55.0, 1.1), 'Mars': (mars, 0.7), 'Jupiter': (265.0, 0.08),
+        'Saturn': (saturn, 0.03),
+    }
+    planetary_data = {
+        name: {'longitude': lon, 'latitude': 0.0, 'distance': 1.0,
+               'speed_in_lon': speed, 'speed_in_lat': 0.0, 'speed_in_dist': 0.0}
+        for name, (lon, speed) in positions.items()
+    }
+    third = {'planetary_data': planetary_data,
+             **{name: row['longitude'] for name, row in planetary_data.items()}}
     return engine["moon_third_day_rows"](third, {'Saturn': natal_saturn, 'Mars': natal_mars}, asc)
 
 
@@ -77,15 +88,16 @@ def test_four_footed_and_afflicted_meets_1_26_7(engine):
     assert 'Saturn' not in looking.split('(')[0]
     assert _row(rows, 'Burning')['Value'].startswith('No')
     assert _row(rows, 'Falling')['Value'].startswith('No: the 2nd place')
-    assert _row(rows, 'Corrupted')['Value'] == 'Corrupted: an infortune looking (Mars by square from Scorpio)'
+    assert _row(rows, 'Third-day Moon: corruption checks')['Value'] == (
+        'Corruption found in these checks: infortune relation (Mars by square from Scorpio)')
     assert _row(rows, '1.26, 7')['Value'].startswith('Met: a sign having four feet, and Mars by square from Scorpio')
-    assert _row(rows, '1.29, 11')['Value'].startswith('Does not hold')
+    assert _row(rows, '1.29, 11')['Value'].startswith('Third-day component does not hold')
     # 1.29, 12's first clause: the natal infortunes are in the 8th and 6th, not the 1st or 7th.
     twelve = _row(rows, '1.29, 12')['Value']
-    assert twelve.startswith('Not met: the two infortunes not both in the Ascendant or seventh')
+    assert twelve.startswith('Not met: the two infortunes are not both in the Ascendant or seventh')
     # Move the natal infortunes into the Ascendant and the seventh: met, since the third day is corrupted.
     rows2 = _rows_for(engine, moon=130.0, mars=215.0, saturn=290.0, natal_saturn=100.0, natal_mars=280.0, asc=95.0)
-    assert _row(rows2, '1.29, 12')['Value'].startswith('Met: the two infortunes in the Ascendant or seventh')
+    assert _row(rows2, '1.29, 12')['Value'].startswith("The first clause's two components hold")
 
 
 def test_not_four_footed_and_clean_is_not_corrupted(engine):
@@ -95,18 +107,18 @@ def test_not_four_footed_and_clean_is_not_corrupted(engine):
     Then the Ascendant in Leo: the second place, nothing corrupts her."""
     rows = _rows_for(engine, moon=160.0, saturn=310.0, mars=10.0, sun=300.0, asc=95.0)
     assert _row(rows, 'A sign having four feet')['Value'].startswith("No: Virgo")
-    assert _row(rows, 'The infortunes looking')['Value'].startswith('No: Saturn in Aquarius and Mars in Aries')
+    assert _row(rows, 'The infortunes looking')['Value'].startswith('No intersign look: Saturn in Aquarius and Mars in Aries')
     assert _row(rows, 'Falling')['Value'].startswith('Yes: the 3rd place')
-    assert _row(rows, 'Corrupted')['Value'] == 'Corrupted: falling'
+    assert _row(rows, 'Third-day Moon: corruption checks')['Value'] == 'Corruption found in these checks: falling'
     assert _row(rows, '1.26, 7')['Value'] == 'Not met: the sign has no four feet'
     clean = _rows_for(engine, moon=160.0, saturn=310.0, mars=10.0, sun=300.0, asc=125.0)
     assert _row(clean, 'Falling')['Value'] == 'No: the 2nd place from the Ascendant of the nativity'
-    assert _row(clean, 'Corrupted')['Value'] == 'Not corrupted: no infortune looking, not burned, not falling'
-    assert _row(clean, '1.29, 11')['Value'].startswith('Holds: the third day of the Moon not corrupted')
+    assert _row(clean, 'Third-day Moon: corruption checks')['Value'] == 'No corruption found in these checks'
+    assert _row(clean, '1.29, 11')['Value'].startswith('Third-day component holds')
     # Burned: the Sun 8 degrees off.
     burned = _rows_for(engine, moon=160.0, saturn=310.0, mars=10.0, sun=168.0, asc=125.0)
     assert _row(burned, 'Burning')['Value'].startswith('Yes: 8.0° from the Sun')
-    assert _row(burned, 'Corrupted')['Value'] == 'Corrupted: burned'
+    assert _row(burned, 'Third-day Moon: corruption checks')['Value'] == 'Corruption found in these checks: burned'
 
 
 def test_four_footed_signs_follow_1_38_1(engine):

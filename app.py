@@ -1803,8 +1803,13 @@ if chart_ok:
     book_v_degrees_data = evaluate_book_v_degrees(p_data, chart_data['ascendant'], chart_data['lot_of_fortune'], sect)
     nobility_degrees_data = evaluate_nobility_degrees(p_data, chart_data['ascendant'], sect)
     moon_third_day_data = evaluate_moon_third_day(chart_data)
-    gestation_data = evaluate_gestation(chart_data, lat, lon)
+    gestation_data = evaluate_gestation(
+        chart_data, lat, lon,
+        birth_context={'local_moment': local_dt, 'time_standard': time_standard,
+                       'timezone': tz_name, 'utc_offset_hours': utc_offset_hours,
+                       'birth_calendar': civil_calendar(local_dt.year, local_dt.month, local_dt.day)})
     mercury_phase_sect_data = evaluate_mercury_phase_sect(p_data, sect)
+    mercury_company_data = evaluate_mercury_company(p_data)
     moon_phase_valens_data = evaluate_moon_phase_valens(p_data)
     morin_aspects_data = evaluate_morin_aspects(p_data, chart_data['houses'], chart_data['ascendant'])
     eyesight_places_data = evaluate_eyesight_places(p_data, chart_data['ascendant'])
@@ -1978,8 +1983,29 @@ def _slug(title):
 # and the row's fields printed whole under it by the caller's own
 # renderer. Widget key `<slug>_detail`, the slug derived from the
 # finding's title as _tick_grid derives its grid key.
+def _display_result(value):
+    """Turn engine result objects into scalar page text at the UI boundary."""
+    if isinstance(value, YearsOutcome):
+        return value.text
+    if not isinstance(value, UnresolvedResult):
+        return value
+    heading = value.display_label or {
+        'unresolved': 'Unresolved',
+        'unavailable': 'Unavailable',
+        'unassigned': 'Unassigned',
+        'not decided': 'Not decided',
+    }[value.status]
+    alternatives = ('; '.join(f"{name}: {_display_result(result)}" for name, result in value.alternatives)
+                    if value.display_alternatives else '')
+    return f"{heading} — {value.reason}" + (f" ({alternatives})" if alternatives else '')
+
+
+def _display_rows(rows):
+    return [{key: _display_result(value) for key, value in row.items()} for row in rows]
+
+
 def _detail_selector(title, data, detail_key, detail, placeholder):
-    options = [str(row[detail_key]) for row in data]
+    options = [str(_display_result(row[detail_key])) for row in data]
     if len(set(options)) != len(options):
         options = [f"{n}. {option}" for n, option in enumerate(options, 1)]
     picked = st.selectbox("Read details for", options, index=None, key=f"{_slug(title)}_detail",
@@ -2028,7 +2054,7 @@ def _finding(bucket, title, citation, data, glance=None, notes=None, columns=Non
     # columns= pins the order (pandas otherwise takes the first
     # row's); height= shows every row of a table meant to be read
     # whole, instead of st.dataframe's ten-row inner scroll.
-    _df = pd.DataFrame(data, columns=columns)
+    _df = pd.DataFrame(_display_rows(data), columns=columns)
     # column_help= is the one-line definition of a column whose HEADING is
     # a term of art, carried on the heading itself rather than in the notes
     # expander, so the word is defined where it is read (F10).
@@ -2247,10 +2273,13 @@ def _tick_grid(bucket, title, citation, data, text_key, columns, glance=None, no
     grid = []
     for row in data:
         cited = {m.group(1) for m in map(_PARAGRAPH.search, row['Labels']) if m}
+        unresolved = {t['n'] for t in row.get('Testimonies', [])
+                      if isinstance(t.get('result'), UnresolvedResult)}
         cells = {'Planet': row['Planet']}
         for num, header in columns:
-            cells[header] = '\u2713' if num in cited else ''
-        cells['Count'] = row['Count']
+            cells[header] = '?' if num in unresolved else ('\u2713' if num in cited else '')
+        cells['Count'] = (f"{row['Count']} resolved; {len(unresolved)} unresolved"
+                          if unresolved else row['Count'])
         grid.append(cells)
     # Each testimony column's header becomes the words alone -- "78
     # excellent place" reads "excellent place" -- with the sentence
@@ -2278,7 +2307,15 @@ def _tick_grid(bucket, title, citation, data, text_key, columns, glance=None, no
     if _picked and 0 <= _picked[0] < len(data):
         _row_detail(data[_picked[0]], len(columns), _locator)
     with st.expander("Answer key: testimonies in words"):
-        st.dataframe(pd.DataFrame(data, columns=['Planet', text_key, 'Count']),
+        answer_rows = [{
+            'Planet': row['Planet'],
+            text_key: (row[text_key] + ('; ' if row[text_key] else '')
+                       + '; '.join(_display_result(t['result']) for t in row.get('Testimonies', [])
+                                  if isinstance(t.get('result'), UnresolvedResult))),
+            'Count': (f"{row['Count']} resolved; {row.get('Unresolved Count', 0)} unresolved"
+                      if row.get('Unresolved Count') else row['Count']),
+        } for row in data]
+        st.dataframe(pd.DataFrame(answer_rows, columns=['Planet', text_key, 'Count']),
                      hide_index=True, width='stretch', height=_rows_height(len(data)))
     if notes or note_sections:
         with st.expander(NOTES_TITLE, icon=NOTES_ICON):
@@ -2295,10 +2332,13 @@ def _tick_grid(bucket, title, citation, data, text_key, columns, glance=None, no
 # Nothing here is computed on the page; the panel restates the
 # evaluator's own reasoning and adds no test of its own.
 def _row_detail(row, total, locator):
-    st.subheader(f"{row['Planet']}: {row['Count']} of {total} testimonies")
+    unresolved_count = row.get('Unresolved Count', 0)
+    count_text = (f"{row['Count']} resolved of {total}; {unresolved_count} unresolved"
+                  if unresolved_count else f"{row['Count']} of {total}")
+    st.subheader(f"{row['Planet']}: {count_text} testimonies")
     for testimony in sorted(row.get('Testimonies', []), key=lambda t: int(t['n'])):
         st.caption(f"{locator}, {testimony['n']}" if locator else f"sentence {testimony['n']}")
-        st.markdown(testimony['sentence'])
+        st.markdown(_display_result(testimony['sentence']))
         facts = [fact.partition(': ') for fact in testimony['facts']]
         if len(facts) == 1:
             st.caption(testimony['facts'][0])
@@ -2415,14 +2455,18 @@ def _sect_table_rows():
     for p, data in p_data.items():
         if p == 'North Node':
             continue
-        own_diurnal = planet_sect_is_diurnal(p, data['longitude'], p_data['Sun']['longitude'])
+        own_diurnal = accidental[p].get(
+            'PlanetSect', planet_sect_is_diurnal(p, data['longitude'], p_data['Sun']['longitude']))
         above = (data['longitude'] - chart_data['ascendant']) % 360 > 180.0
         rows.append({
             "Planet": p,
-            "Planet's sect": 'Diurnal' if own_diurnal else 'Nocturnal',
+            "Planet's sect": (own_diurnal if isinstance(own_diurnal, UnresolvedResult)
+                               else ('Diurnal' if own_diurnal else 'Nocturnal')),
             "Above horizon": 'Yes' if above else 'No',
-            "Of the chart's sect": 'Yes' if own_diurnal == (sect == 'Diurnal') else 'No',
-            "Domain (hayz)": 'Yes' if accidental[p]['Hayz'] else 'No',
+            "Of the chart's sect": (own_diurnal if isinstance(own_diurnal, UnresolvedResult)
+                                     else ('Yes' if own_diurnal == (sect == 'Diurnal') else 'No')),
+            "Domain (hayz)": (accidental[p]['Hayz'] if isinstance(accidental[p]['Hayz'], UnresolvedResult)
+                              else ('Yes' if accidental[p]['Hayz'] is True else 'No')),
         })
     return rows
 
@@ -2690,15 +2734,35 @@ def analysis_tables():
 
 
 def _jsonable(value):
-    """A value as JSON holds it. The engine's rows are strings, numbers,
-    bools and lists of those; a tuple becomes a list, a set a sorted list,
-    and anything else is written as the text it prints as rather than
-    dropped -- an export that silently loses a field is worse than one that
-    quotes it."""
+    """A value as JSON holds it, with conditional results kept explicit."""
     if value is None or isinstance(value, (str, bool, int)):
         return value
     if isinstance(value, float):
         return value if isfinite(value) else str(value)
+    if isinstance(value, UnresolvedResult):
+        return {
+            'result_type': 'UnresolvedResult',
+            'status': value.status,
+            'reason': value.reason,
+            'source': value.source,
+            'alternatives': [
+                {'name': name, 'value': _jsonable(result)}
+                for name, result in value.alternatives
+            ],
+            'display_label': value.display_label,
+            'display_alternatives': value.display_alternatives,
+            'display': _display_result(value),
+        }
+    if isinstance(value, YearsOutcome):
+        return {
+            'result_type': 'YearsOutcome',
+            'sentence': value.sentence,
+            'grade': value.grade,
+            'number': _jsonable(value.number),
+            'unit': value.unit,
+            'text': value.text,
+            'display': _display_result(value),
+        }
     if isinstance(value, dict):
         return {str(k): _jsonable(v) for k, v in value.items()}
     if isinstance(value, (list, tuple)):
@@ -2751,10 +2815,18 @@ def _markdown_table(rows):
     if not rows:
         return "_No rows._\n"
     columns = list(dict.fromkeys(k for row in rows for k in row))
-    def cell(value):
+    def printable(value):
+        if (isinstance(value, dict)
+                and value.get('result_type') in {'UnresolvedResult', 'YearsOutcome'}):
+            return str(value['display'])
         if isinstance(value, (list, tuple)):
-            value = "; ".join(str(v) for v in value)
-        return str(value).replace("|", "\\|").replace("\n", " ")
+            return "; ".join(printable(v) for v in value)
+        if isinstance(value, dict):
+            return json.dumps(value, ensure_ascii=False, sort_keys=True)
+        return str(value)
+
+    def cell(value):
+        return printable(value).replace("|", "\\|").replace("\n", " ")
     out = ["| " + " | ".join(cell(c) for c in columns) + " |",
            "|" + "|".join("---" for _ in columns) + "|"]
     for row in rows:
@@ -3173,9 +3245,9 @@ def page_chart():
                                "and 72-73 give 12. Affects: the Solar phase column here, and on the Configurations "
                                "page Weakness (93), Planetary Condition and Corruption of the Moon. Full text on the Sources page.")
         _reading_checkbox("Mars under the rays to 18° west", "mars_west_18", "_mars_west_18",
-                          help="Dykes's table for Sahl has Mars under the rays at 18 west; Gr. Intr. VII.2, 31 puts "
-                               "him under the rays at 15 on the western side. Both give 18 east. Full text on the "
-                               "Sources page, and in the notes under this table.")
+                          help="Dykes's table has Mars under the rays at 18° west; Gr. Intr. VII.2, 31 gives 15°. "
+                               "With this reading on, the table's 22° figure closes his setting band. Both give 18° "
+                               "east. Full text is on Sources and in this table's notes.")
     # True planets only — angles, nodes, and Lot of Fortune
     # now live in the "Calculated Points" table alongside it.
     # The Lesson 3 homework asks for sign/degree/minute AND absolute
@@ -3203,7 +3275,8 @@ def page_chart():
          "Dykes's table for Sahl (the chapter head of On Nativities 1.22, with fn 175, which "
          "reads VII.2, 30's westernizing boundary into 18 degrees) has Mars under the rays "
          "at 18 west; Sahl's own sentences are silent on Mars west. Gr. Intr. VII.2, 31 puts "
-         "him under the rays at 15 on the western side. Both "
+         "him under the rays at 15 on the western side. With the reading on, Dykes's paired "
+         "22-degree figure keeps the setting band from above 18 through 22. Both "
          "give 18 east. Affects: the Solar phase column here and every test that reads it "
          "(Weakness 93, Planetary Condition 27/34/45)."),
     ])
@@ -3267,7 +3340,7 @@ def page_findings():
               glance="What 1.8 and 1.9 let this app state of the fetus's stay in the belly. Display only; nothing scores it.",
               summary="What 1.8 and 1.9 let this app state of the fetus's stay in the belly: the meeting before the birth and its Ascendant (1.8, 5-6), the three Moons of 1.9, 1 and the sentence of 1.9, 2-10 that names their aspects.",
               qualifications=["**Not computed.** 1.8's three divisions are framed from a chart the text does not name and are not computed; the rows say what is not.",
-                              "**This app's reading of the year.** This app takes the year as the calendar anniversary at the birth hour (a Julian year of 365.25 days only where the anniversary's digits name no day), its own reading, and the aspects of the past and renewed Moons to the Moon of the nativity by whole sign; a sentence of 2-10 whose condition holds is a row, and where none holds the row says so."],
+                              "**This app's reading of the year.** The anniversary repeats the local birth month, day and clock time in the birth calendar, then converts that selected moment to UT. A named zone uses its rule on the target date; LMT and manual offsets stay fixed. A date or local clock time that does not exist, or is ambiguous, is unavailable without a fallback. The aspects are whole-sign; a sentence of 2-10 whose condition holds is a row, and where none holds the row says so."],
               note_sections=[
                   ("The meeting before the birth and its Ascendant (1.8, 5-6).",
                    'On Nativities 1.8, 5-6:\n\n> "' + SAHL_1_8_5 + ' ' + SAHL_1_8_6 + '"\n\n-- the meeting is the last New Moon before the birth; Dykes\'s fn 40 ("' + SAHL_1_8_FN40 + '") allows the lunation generally, so the opposition is shown beside it when that was the lunation nearer the birth. The Ascendant is erected for the hour of the meeting at the birthplace.'),
@@ -3276,7 +3349,7 @@ def page_findings():
                   ("The seven-month native and the four-footed nativities (1.8, 1).",
                    '1.8, 1:\n\n> "' + SAHL_1_8_1 + '"'),
                   ("The three Moons of 1.9, 1, and the year.",
-                   '1.9, 1:\n\n> "' + SAHL_1_9_1 + '"\n\nFn 45:\n\n> "' + SAHL_1_9_FN45 + '"\n\nThis app takes the year as the calendar anniversary at the birth hour (a Julian year of 365.25 days only where the anniversary\'s digits name no day), its own reading, and the aspects of the past and renewed Moons to the Moon of the nativity by whole sign; a sentence of 2-10 whose condition holds is a row, and where none holds the row says so.'),
+                   '1.9, 1:\n\n> "' + SAHL_1_9_1 + '"\n\nFn 45:\n\n> "' + SAHL_1_9_FN45 + '"\n\nThe numerical convention repeats the local birth month, day and clock time in the birth calendar and only then converts to UT. Named zones use the target date\'s rule; LMT and manual offsets remain fixed. Invalid, ambiguous, or nonexistent target moments are unavailable without substituting an elapsed-year duration. The aspects of the past and renewed Moons to the natal Moon are whole-sign; a sentence of 2-10 whose condition holds is a row, and where none holds the row says so.'),
                   ("The aspects of 1.9, 2-10.",
                    '1.9, 2-10:\n\n> "' + ' '.join(t for _, t in SAHL_1_9_RULES) + '"\n\n(fn 47: "' + SAHL_1_9_FN47 + '"; fn 49: "' + SAHL_1_9_FN49 + '"; fn 51: "' + SAHL_1_9_FN51 + '")'),
                   ("The conception and the stay by the day and hour, not computed (1.9, 11-14).",
@@ -3285,15 +3358,16 @@ def page_findings():
     _finding(_gap, "The Moon on the third day (Sahl)", "Sahl, On Nativities 1.29, 11-12; 1.26, 7", moon_third_day_data,
               columns=MOON_THIRD_DAY_COLUMNS, height=_rows_height(len(moon_third_day_data)),
               glance="The Moon on the third day -- two days after the birth, the birth day counted as the first. Display only; nothing scores it.",
-              summary="The Moon on the third day -- two days after the birth, the birth day counted as the first: her sign and place, whether the sign has four feet (1.26, 7), whether an infortune looks at her, whether she is burned or falling -- \"corrupted\" in 1.29, 3's own terms -- and what 1.29, 11-12 and 1.26, 7 say of that.",
-              qualifications=["**The third day, this app's reading of Firmicus.** This app takes it two days after the birth, the birth day counted as the first (Firmicus, Mathesis II.29, 34, in the nativity of Albinus; III.14, 17-19), the birth hour kept, and computes the Moon, the Sun and the infortunes there."],
+              summary="The Moon on the third day -- two days after the birth, the birth day counted as the first: her sign and place, 1.26, 7's intersign looks, co-presence, enclosure, burning, falling, and the limited third-day component of 1.29, 11-12.",
+              qualifications=["**The third day, this app's reading of Firmicus.** This app takes it two days after the birth, the birth day counted as the first (Firmicus, Mathesis II.29, 34, in the nativity of Albinus; III.14, 17-19), the birth hour kept, and computes all seven planets with motion there.",
+                              THIRD_DAY_CORRUPTION_READER],
               note_sections=[
                   ("The sentences: 1.29, 11-13 and 1.26, 7.",
                    'On Nativities 1.29, 11:\n\n> "' + SAHL_1_29_11 + '"\n\n1.29, 12:\n\n> "' + SAHL_1_29_12 + '"\n\n1.29, 13:\n\n> "' + SAHL_1_29_13 + '"\n\n(fn 304: "' + SAHL_1_29_FN304 + '")\n\nDykes\'s fn 303 on 11:\n\n> "' + SAHL_1_29_FN303 + '"\n\n1.26, 7:\n\n> "' + SAHL_1_26_7 + '"'),
                   ("The day count.",
-                   'No sentence of 1.29 or 1.26 says when "the third day of the Moon" is taken; Sahl\'s words elsewhere are "the position of the Moon, where she is on the third day from the nativity" (On Nativities Ch. 9, 3) and "the position of the Moon on the third day, the seventh, and the fortieth day" (1.30, 22). This app takes it two days after the birth, the birth day counted as the first (Firmicus, Mathesis II.29, 34, in the nativity of Albinus; III.14, 17-19), the birth hour kept, and computes the Moon, the Sun and the infortunes there. The count rests on his worked chart, the nativity of Albinus: Firmicus gives its places by sign only (II.29, 22), and "on the third day the Moon, being established in Leo, full of light, flung herself into the rays of Mars" (II.29, 34); Leo opposes Mars\'s Aquarius by sign on the second day and the third alike, so the count is read by degree from Dykes\'s Figure 34, his approximate chart (fn 129: within a day) -- the Moon at 14 Cancer and Mars at 11 Aquarius at the birth, and the Moon on Mars\'s opposition ray in Leo two days after, sixteen degrees past it after three. That is this app\'s reading of Firmicus, not his statement of the count. Of the third day he says, "and this day, that is the third, operates in a very powerful way in nativities" (II.29, 34), and at III.14, 17-19 that on it "she decrees all things in a similar way" to the first.'),
+                   'No sentence of 1.29 or 1.26 says when "the third day of the Moon" is taken; Sahl\'s words elsewhere are "the position of the Moon, where she is on the third day from the nativity" (On Nativities Ch. 9, 3) and "the position of the Moon on the third day, the seventh, and the fortieth day" (1.30, 22). This app takes it two days after the birth, the birth day counted as the first (Firmicus, Mathesis II.29, 34, in the nativity of Albinus; III.14, 17-19), the birth hour kept, and computes all seven planets with motion there. Sahl\'s fn 95 and Holden\'s fn 2 on Rhetorius independently witness this inclusive count. Firmicus gives the worked chart\'s places by sign (II.29, 22), and says "on the third day the Moon, being established in Leo, full of light, flung herself into the rays of Mars" (II.29, 34). At the corrected Figure 34 instant, the Moon remains in Cancer one day after the birth, reaches Leo on Mars\'s opposition ray two days after, and is past that ray three days after. Of the third day he says, "and this day, that is the third, operates in a very powerful way in nativities" (II.29, 34), and at III.14, 17-19 that on it "she decrees all things in a similar way" to the first. The retained birth hour is this app\'s numerical convention.'),
                   ("The corruption tests.",
-                   '1.29, 3 names the corruptions the chapter has in view:\n\n> "' + SAHL_1_29_3 + '"\n\nSo the third-day Moon is read as corrupted when an infortune looks at her by whole sign (Saturn and Mars where they stand on that day), when she is burned (within the twelve degrees this app uses for the Moon, The Introduction Ch. 3, 103), or when she is falling from the stakes by the whole-sign place from the Ascendant of the nativity (1.30, 33: "how is her position relative to the Ascendant"). Nothing else of the Moon\'s ten defects is read here.'),
+                   '1.29, 3 names the corruptions the chapter has in view:\n\n> "' + SAHL_1_29_3 + '"\n\nSo the third-day Moon is read as corrupted under this limited profile by co-presence, square or opposition with an infortune, enclosure, burning or falling. This remains separate from 1.26, 7\'s broader looking predicate; enclosure uses Sahl\'s separation, application and intervening-ray evaluation. Burning is within twelve degrees (The Introduction Ch. 3, 103), and falling is the whole-sign place from the natal Ascendant (1.30, 33). The square/opposition aggravation is 1.29, 31. Other lunar defects are outside this row.'),
                   ("The four-footed signs.",
                    '1.26, 7\'s sign is taken from 1.38, 1:\n\n> "' + SAHL_1_38_1 + '"\n\n-- Aries, Taurus, Leo and the second half of Sagittarius. 1.26, 7 is one indicator among the chapter\'s; the row says met or not met and no more.'),
                   ("Clauses not evaluated: 1.29, 11 and 12.",
@@ -3308,8 +3382,9 @@ def page_findings():
     # paragraphs, the words the table holds and nothing else.
     def _prosperity_row(row):
         for _field in ('Class', 'Ground', 'Sahl', 'Also'):
-            if row.get(_field):
-                st.markdown(f"**{_field}.** {row[_field]}")
+            _value = row.get(_field)
+            if _value is not None and _value != '':
+                st.markdown(f"**{_field}.** {_display_result(_value)}")
     _finding(_gap, "Sahl: indications of fortune and livelihood", "Sahl, On Nativities 2.1-2.21",
               [r for r in prosperity_data if READING_DEPTH == READING_DEPTH_OPTIONS[1] or not r['Supplement']],
               columns=['Class', 'Ground', 'Sahl', 'Also'],
@@ -3421,7 +3496,7 @@ def page_findings():
                   standing="Supplement · display only",
                   glance="Valens's eleven phases of the Moon, the chart's Moon placed in one by its angle ahead of the Sun. Display only; nothing scores it.",
                   summary="Valens's eleven phases of the Moon, the chart's Moon placed in one by its angle ahead of the Sun, with what he says the phase indicates and the planet that adds its influence to the day he names.",
-                  qualifications=["**Phase boundaries used by this app.** Eight of his boundaries are degrees he gives; the rest are Abu Ma'shar's 12-degree markers of the Moon's phases applied to Valens's, and the notes say which."],
+                  qualifications=["**Two independent measures.** The 12° bounds not given by Valens are Abu Ma'shar's phase markers (ITA II.10.5) applied to Valens's phases; the Solar phase row follows the selected Moon-rays reading -- Sahl's 15° or Abu Ma'shar's 12° -- so at 13° the Moon can be both under the rays and in first visibility, each under its own author."],
                   note_sections=[
                       ("Phase boundaries used by this app.",
                        'His degrees are moments; this app reads each phase as running from its own degree to the next one\'s, so the crescent is 45-90, the quarter 90-135, the gibbous 135-180, the second gibbous 225-270, the second quarter 270-315 -- his degrees at both ends. The boundaries he does not give are Abu Ma\'shar\'s markers of the Moon\'s phases (Abbr. II.27-31, in ITA II.10.5), where she changes her property at 12° from the conjunction and from the opposition, applied here to Valens\'s phases: the new moon to 12° after the conjunction and the final visibility from 12° before it, the first visibility from 12° to his 45°, the full moon to 12° after the opposition, and the phase "when it first begins to wane" from there to his second gibbous at 225°, where his "What Each Phase Indicates" puts it, between the full moon and the second gibbous. Abu Ma\'shar\'s fourth marker, 12° before the opposition, is not used: Valens\'s gibbous runs to his 180°. The angle is the Moon\'s longitude less the Sun\'s, counted forward.'),
@@ -3448,7 +3523,14 @@ def page_findings():
                   "Firmicus, Mathesis III.7, 7-9 and 26-30 (Dykes's fnn 186, 194)", mercury_phase_sect_data,
                   standing="Supplement · display only",
                   glance="Whether Mercury's phase matches the sect of the chart: a morning star in a diurnal nativity or an evening star in a nocturnal one matches; the other two pairings do not. One row for every chart, in Dykes's words for each case. Display only; nothing scores it.",
-                  notes="Firmicus, Mathesis III.7 (Dykes), fn 194, on the figures for the sixth place (26-29): \"In the Figures here I have put the scenarios slightly out of order. In the top row we see the success that comes from Mercury's phase matching that of the chart (morning star-diurnal, evening star-nocturnal). In the second row, mismatches between the phase and sect produce less respected and independent uses of the intellect and skill.\" Fn 186, on the morning star in the second place (7): \"In this case he would be a morning star in a nocturnal chart, so there would be a mismatch between his phase and the sect of the chart.\" The examples: 7-9 for the second place (obscure men; lenders and business men; philologists), 26-30 for the sixth (the greatest fortune from speech, advocacy or business; interpreters, fishermen, sculptors; malign people; those in charge of accounts, banking, granaries, medicines, legal instruments; the scribes of judges). This app reads \"morning star\" as Mercury eastern of the Sun, rising before him, and \"evening star\" as western, the same reading its Solar phase column uses; the sect each phase gives him is Abu Ma'shar's rule, rising before the Sun diurnal and setting after him nocturnal (Gr. Intr. IV.9, in ITA V.11), the rule the Sect table applies. The Reading column gives fn 194's phrase for the matching and the mismatching case.")
+                  summary="Mercury's displayed sect follows solar phase, with exact conjunction unassigned; Abū Maʿshar also gives a company rule, shown separately because the text states no precedence.",
+                  notes="Firmicus, Mathesis III.7 (Dykes), fn 194, on the figures for the sixth place (26-29): \"In the Figures here I have put the scenarios slightly out of order. In the top row we see the success that comes from Mercury's phase matching that of the chart (morning star-diurnal, evening star-nocturnal). In the second row, mismatches between the phase and sect produce less respected and independent uses of the intellect and skill.\" Fn 186, on the morning star in the second place (7): \"In this case he would be a morning star in a nocturnal chart, so there would be a mismatch between his phase and the sect of the chart.\" The examples: 7-9 for the second place (obscure men; lenders and business men; philologists), 26-30 for the sixth (the greatest fortune from speech, advocacy or business; interpreters, fishermen, sculptors; malign people; those in charge of accounts, banking, granaries, medicines, legal instruments; the scribes of judges). This app reads \"morning star\" as Mercury eastern of the Sun, rising before him, and \"evening star\" as western, the same reading its Solar phase column uses; the sect each phase gives him is Abu Ma'shar's rule, rising before the Sun diurnal and setting after him nocturnal (Gr. Intr. IV.9, in ITA V.11), the rule the Sect table applies. The Reading column gives fn 194's phrase for the matching and the mismatching case. Exact normalized conjunction satisfies neither directional clause in Abu Maʿshar IV.9, 8, so the phase result is unassigned there; Mercury's native diurnal indication remains explanatory evidence. IV.9, 10 supplies the separate company indication below, and the text states no precedence between the two rules.")
+        _finding(_gap, "Mercury's company and sect",
+                  "Abū Maʿshar, Great Introduction IV.9, 10; ITA fn 171", mercury_company_data,
+                  standing="Display only; no override",
+                  columns=['Companion', 'Relationship', 'Companion sect', 'Company indication', 'Precedence'],
+                  glance="Mercury's qualifying planetary company and each companion's sect, displayed separately from the adopted phase result.",
+                  summary="Company means same-sign assembly or a connection under the selected relation rule. The Sun is excluded. Every qualifying companion is shown; conflicting indications are retained without a vote or tie-break.")
         _finding(_gap, "Affliction and fortification after Rhetorius",
                   "Rhetorius Chs. 26-28, 41-42 (Holden)", rhetorius_affliction_data,
                   standing="Supplement · display only",
@@ -3509,8 +3591,10 @@ def page_dignities():
                             "(13) on the Configurations page. Full text on the Sources page.")
     with sect_col:
         sect_rows = _sect_table_rows()
-        st.dataframe(pd.DataFrame(sect_rows), hide_index=True, width='stretch', height=_rows_height(len(sect_rows)),
-                     column_config=_yes_no_columns(pd.DataFrame(sect_rows)))
+        sect_df = pd.DataFrame(_display_rows(sect_rows))
+        st.dataframe(sect_df, hide_index=True, width='stretch', height=_rows_height(len(sect_rows)),
+                     column_config=_yes_no_columns(sect_df))
+    st.markdown("Mercury's displayed sect follows solar phase, with exact conjunction unassigned; Abū Maʿshar also gives a company rule, shown separately because the text states no precedence.")
     st.caption("Sect: Sahl, The Introduction Ch. 3, 85. Domain: Gr. Intr. VII.1, 37 and VII.6, 13 "
                "(or Masha'allah, On Nativities 1.23, 17, per the switch).")
     # One planet's row printed whole: its placement with the Lean and the
@@ -3518,7 +3602,7 @@ def page_dignities():
     def _planet_in_house_detail(row):
         _n = len(row['Entries'])
         st.markdown(f"**{row['Planet']} in the {HOUSE_ORDINAL[row['Placed in (WS place)']]} place.** "
-                    f"Lean: {row['Lean']} (Net {row['Net']}; {row['Standing']}).")
+                    f"Lean: {_display_result(row['Lean'])} (Net {_display_result(row['Net'])}; {row['Standing']}).")
         st.markdown(f"**If in a suitable condition (PN IV).** {row['If in a suitable condition']}")
         st.markdown(f"**If in a bad condition (PN IV).** {row['If in a bad condition']}")
         st.markdown(f"**Rhetorius and Firmicus, as the texts state it: {_n} {'entry' if _n == 1 else 'entries'}.**")
@@ -3541,7 +3625,7 @@ def page_dignities():
     # detail included.
     @_pinned_fragment
     def _planets_in_houses_block():
-        _event = st.dataframe(pd.DataFrame(planets_in_houses_data, columns=['Planet', 'Placed in (WS place)', 'Lean']),
+        _event = st.dataframe(pd.DataFrame(_display_rows(planets_in_houses_data), columns=['Planet', 'Placed in (WS place)', 'Lean']),
                               hide_index=True, width='content', height=_rows_height(len(planets_in_houses_data)),
                               on_select="rerun", selection_mode="single-row", key="topical_planets_in_houses_grid")
         _picked = list(_event.selection.rows)
@@ -3552,7 +3636,7 @@ def page_dignities():
         _detail_selector('Topical Planets in Houses', planets_in_houses_data, 'Planet', _planet_in_house_detail,
                          "Select a planet to read its complete entries and sources")
         with st.expander("Rhetorius / PN IV readings for these placements", expanded=READING_DEPTH == READING_DEPTH_OPTIONS[1]):
-            st.table(pd.DataFrame(planets_in_houses_data,
+            st.table(pd.DataFrame(_display_rows(planets_in_houses_data),
                                   columns=['Planet', 'Net', 'Standing', 'If in a suitable condition', 'If in a bad condition',
                                            'Rhetorius and Firmicus, as the texts state it']),
                      hide_index=True)
@@ -3629,17 +3713,34 @@ def page_dignities():
         for p in essential.keys():
             ess = essential[p]
             acc = accidental[p]
-
+            acc_score = acc['Accidental Score']
+            if isinstance(acc_score, UnresolvedResult):
+                net_score = UnresolvedResult(
+                    reason=(f"known subtotal {ess['Essential Score'] + acc['Known Accidental Score']}; "
+                            'the +3 domain contribution is unassigned'),
+                    source=acc_score.source,
+                    alternatives=tuple((name, ess['Essential Score'] + value)
+                                       for name, value in acc_score.alternatives),
+                    status=acc_score.status,
+                )
+            else:
+                net_score = ess['Essential Score'] + acc_score
             dignity_list.append({
                 "Planet": p,
-                "Net": ess['Essential Score'] + acc['Accidental Score'],
+                "Net": net_score,
                 "Ess": ess['Essential Score'],
-                "Acc": acc['Accidental Score'],
+                "Acc": acc_score,
                 "Essential Dignities": ", ".join(ess['Essential Labels']) if ess['Essential Labels'] else "-",
                 "Accidental Conditions": ", ".join(acc['Accidental Labels']) if acc['Accidental Labels'] else "-",
             })
 
-        df_dignity = pd.DataFrame(dignity_list).sort_values(by="Net", ascending=False)
+        resolved_dignity = sorted(
+            (row for row in dignity_list if not isinstance(row['Net'], UnresolvedResult)),
+            key=lambda row: row['Net'], reverse=True)
+        unresolved_dignity = [row for row in dignity_list if isinstance(row['Net'], UnresolvedResult)]
+        if unresolved_dignity:
+            st.caption("Rows with an unresolved Net are shown after the resolved ranking and are unranked; their possible totals are printed in the Net and Acc cells.")
+        df_dignity = pd.DataFrame(_display_rows(resolved_dignity + unresolved_dignity))
         st.dataframe(df_dignity, hide_index=True, width='stretch')
         # The solar-phase thresholds as a method table, built from the
         # constants the evaluators read -- SOLAR_BURNED_ORB, solar_rays_orb()
@@ -3652,7 +3753,8 @@ def page_dignities():
         with _prose():
             st.markdown("**Solar phase** follows Abu Ma'shar's walk through the synodic cycle (VII.2); Sahl's *On Nativities* "
                         "1.22 and al-Biruni give the under-the-rays figures independently (Sahl states no burn "
-                        "boundary, and his Mars westernizes at 18°, not 15°):")
+                        "boundary; Dykes's table for Sahl has Mars westernizing at 18°, while Sahl's own sentences "
+                        "are silent on Mars west):")
         st.markdown("| Planet | Burned within | Under the rays within |\n|---|---|---|\n" + _phase_rows)
         st.caption("The figures shown are those in force under the current readings.")
         with _prose():
@@ -3728,6 +3830,7 @@ def page_configurations():
                                     "configured at all.",
                       'Orientation': "Dexter, Dykes's right: the ray cast to earlier degrees of the zodiac; sinister, his "
                                      "left: to later ones (Sahl glossary, Right/left).",
+                      'Strength': "A source-backed grade for an assembly from the two bodies and a shared bound (Gr. Intr. VII.4, 5-8). Aspect rows use a dash; their exact angular distance is shown separately.",
                   },
                   caption="A separating pair stays connected inside Sahl's window (The Introduction Ch. 3, 7–10), "
                           "which is why Connecting planet, Motion and Connection can differ in one row.",
@@ -3741,15 +3844,15 @@ def page_configurations():
                        "| Bodies | Whether each planet falls inside the other's sphere of power, which is asymmetric because the spheres differ in size |\n"
                        "| Connection | The active author's verdict, named as his own text names the state |\n"
                        "| Rules differ | The pairs where the two tests disagree |\n"
-                       "| Strength | Two different measures: for an assembly the source's own, whose body reaches whose (VII.4, 5-8) and whether they share a bound; for an aspect \"(app scale)\", this app's own scanning aid |\n"
+                       "| Strength | For an assembly only: the source's own grade from whose body reaches whose (VII.4, 5-8) and whether they share a bound; aspect rows carry no invented grade |\n"
                        "| Light, Heavy | The standing classes both authors name as nouns (Saturn heaviest through the Moon lightest), not a reading of momentary speed |\n"
                        "| Connecting planet | The separate, directed fact: which one is actually closing the aspect |"),
                       ("Motion, orb and bodies.",
                        "**Motion** and **Exact Orb Dist** are the degree-to-degree approach. **Bodies** is whether each planet falls inside the other's sphere of power, which is asymmetric because the spheres differ in size: Abu Ma'shar, Gr. Intr. VII.4, 7 notes that Saturn sits inside the Moon's body from 12 degrees while she only enters his at a little under 9."),
                       ("Connection, and where the rules differ.",
                        "**Connection** is the active author's verdict, named as his own text names the state -- switch the Connection rule at the top of this page to see where they disagree; **Rules differ** marks the pairs where the two tests disagree."),
-                      ("Strength: two measures.",
-                       "**Strength** is two different measures. For an assembly it is the source's own: whose body reaches whose (VII.4, 5-8) and whether they share a bound. For an aspect it is marked \"(app scale)\", because VII.5, 4 grades looking as a continuum with no cutoffs anywhere -- \"the strongest thing there is in its looking is the degree related most closely by number to the degree of its own sign, and if the aspect was far from these degrees, its aspect will be weaker.\" The thirds are this app's own scanning aid; the measurement itself is the Exact Orb Dist column."),
+                      ("Strength for assemblies; distance for aspects.",
+                       "**Strength** is graded only for an assembly, from whose body reaches whose (VII.4, 5-8) and whether the planets share a bound. VII.5, 4 describes an aspect as progressively weaker farther from its exact degree but supplies no cutoffs; aspect rows therefore show no grade, and **Exact Orb Dist** carries the stated measurement."),
                       ("Light and heavy: the standing classes.",
                        "**Light** and **heavy** are the standing classes both authors name as nouns (Saturn heaviest through the Moon lightest), not a reading of momentary speed: they are fixed, and a planet slowing toward its station does not thereby become heavy."),
                       ("The connecting planet, and retrogradation.",
@@ -3776,7 +3879,7 @@ def page_configurations():
             _finding(_gap, f"Reception — {CONNECTION_PROFILE} rule", None, reception_data,
                       glance='Who receives whom, on what dignity, which way round, and how strongly.',
                       summary='Who receives whom, on what dignity, which way round, and how strongly. The two authors differ on every one of those, so the Connection rule at the top of this page governs here too.',
-                      qualifications=['**Under Sahl\'s rule.** Under Sahl\'s rule a pair refused by non-reception Kind II (the connection made from the receiver\'s fall) is not also listed as received -- refusal wins, as on Sahl\'s own chart (Questions Ch. 1, 63 with 40-41) -- and a pair of Kind IV (the receiver in its own fall) keeps its row marked brought down, which is 62\'s own word.',
+                      qualifications=['**Under Sahl\'s rule.** A pair refused by non-reception Kind II or Kind III is not also listed as received -- refusal wins. Questions Ch. 1, 63 with 40-41 supplies the worked refusal context. Kind IV and Kind V keep the reception row but mark it brought down, naming whether the receiver is in its own fall or in the applicant\'s fall (62).',
                                       '**An empty table.** An empty table is **not** non-reception -- that is a separate set of hostile configurations, in the table below.'])
             # The notes as a sibling disclosure, so that the source comparison
             # can stand at the page's width (three columns) before the
@@ -3806,7 +3909,7 @@ def page_configurations():
             _finding(_gap, 'Non-reception', 'Sahl, The Introduction Ch. 3, 58-62', non_reception_data,
                       glance="Five named ways a connection is refused rather than received (Sahl, The Introduction Ch. 3, 58-62), a distinct finding from simply lacking reception.",
                       summary="Five named ways a connection is refused rather than received (Sahl, The Introduction Ch. 3, 58-62), a distinct finding from simply lacking reception; the Kind column numbers them and the notes spell each one out.",
-                      qualifications=["**Under Sahl's rule.** Under Sahl's rule Kind II overrides any reception for the same pair (only a minor one is possible there; Questions Ch. 1, 63 with 40-41), and Kind IV marks the pair's reception brought down without removing it (62)."],
+                      qualifications=["**Under Sahl's rule.** Kind II and Kind III override any reception for the same pair; Questions Ch. 1, 63 with 40-41 supplies the worked refusal context. Kind IV and Kind V mark the pair's reception brought down without removing it, with their distinct reasons (62)."],
                       note_sections=[
                           ("Sahl's A -> B model.", "Sahl's A -> B model: A is the connecting (applying) planet, B the planet it connects with."),
                           ("The five kinds.",
@@ -3814,7 +3917,7 @@ def page_configurations():
                            "- **Kind II (59-60):** A stands in B's own sign of fall, \"like one who comes to it from the house of its enemies.\"\n"
                            "- **Kind III (61):** A is in its **own** fall and B has no house or exaltation there to rescue it -- \"as though the one asking is offering defeat.\"\n"
                            "- **Kind IV (62):** B is in its own fall, which brings the connection down whatever A's condition.\n"
-                           "- **Kind V (62):** B sits in A's own sign of fall."),
+                           "- **Kind V (62):** B sits in A's own sign of fall; any surviving reception is marked brought down because the receiver stands in the applicant's fall."),
                       ])
             _finding(_gap, 'Returning', 'Sahl, The Introduction Ch. 3, 65-69', returning_data,
                       glance='Manner I: a planet connects with a retrograde planet or one under the rays -- it "returns to it what it accepted," corrupting the question.',
@@ -3879,7 +3982,9 @@ def page_configurations():
                                ("Testimonies 78 and 83: two measurements.",
                                 'Testimonies 78 and 83 look similar but are different measurements. 78 is whole-sign, narrowed to the six places that **look** at the Ascendant. 83, advancing, is **dynamic** -- read against the Alchabitius quadrant cusps, since the note on 83 says the word means "dynamically angular or succeedent, i.e. by primary motion with respect to the angular axes, and not by whole sign." A planet leaving an angle is withdrawing even while its whole sign is still angular, so the two disagree for about a third of placements.'),
                                ("Sahl's five-degree rule.",
-                                '83 also carries Sahl\'s **five-degree rule**:\n\n> "the planet will not be falling from the stake unless it was 5 degrees distant from its rear -- I mean, if the stake was 10 degrees of Aries, then every planet which has less than 5 degrees between it and the stake is truly counted as being in the stake"\n\n(Fifty Aphorisms #44, 88), which he states again in On Nativities Ch. 1.22, 9. A planet a few degrees short of an angle is therefore angular, not cadent; the row says so when that is why it qualifies. It moves about 5% of placements, all of them cadent-to-angular. Sahl states the rule twice for the stakes and once for every house (On Nativities 1.18, 19: "and likewise in all of the houses"); this app reads that as the four stakes only, the course\'s reading, Lesson 3 §4-5, adopted here.'),
+                                '83 also carries Sahl\'s **five-degree rule**:\n\n> "the planet will not be falling from the stake unless it was 5 degrees distant from its rear -- I mean, if the stake was 10 degrees of Aries, then every planet which has less than 5 degrees between it and the stake is truly counted as being in the stake"\n\n(Fifty Aphorisms #44, 88), which he states again in On Nativities Ch. 1.22, 9. This app includes the boundary at exactly five degrees. A planet in that band before one of the four angular degrees is therefore angular, not cadent; the row says so when that is why it qualifies. Sahl states the rule twice for the stakes and once for every house (On Nativities 1.18, 19: "and likewise in all of the houses"); this app reads that as the four stakes only, the course\'s reading, Lesson 3 §4-5, adopted here.'),
+                               ("Testimony 88: quarter and sign.",
+                                QUADRANT_GENDER_READER + " Testimony 88 requires both the planet's matching-gender quarter and its matching-gender sign; one without the other does not earn the testimony."),
                                ("Distinct from Planetary Condition.",
                                 'Distinct from the Abu Ma\'shar-based Planetary Condition table, which scores a broader, later scheme.'),
                            ])
@@ -3995,8 +4100,16 @@ def page_configurations():
                 "placement and chooses neither, showing this Net as a lean; a Net of −1, 0 or +1 is Indeterminate on both "
                 "pages. Read the four counts and the labels themselves in preference to the single number."
             )
+            st.markdown(
+                f"**Divided-house strength and quarter gender.** {QUADRANT_GENDER_READER} "
+                f"{SUN_NINTH_EXCEPTION_READER}"
+            )
         condition_list = []
         for p, cond in abu_mashar_condition.items():
+            positive_labels = list(cond['Positive Labels']) + [
+                _display_result(value) for value in cond.get('Unresolved Positive Labels', ())]
+            negative_labels = list(cond['Negative Labels']) + [
+                _display_result(value) for value in cond.get('Unresolved Negative Labels', ())]
             condition_list.append({
                 "Planet": p,
                 # VII.6's own four sections, kept apart: the chapter
@@ -4008,32 +4121,41 @@ def page_configurations():
                 # str, not int-or-'': a column mixing the two is an
                 # object column that Arrow rejects.
                 "Moon Defects": str(cond['Moon Defects']) if cond['Moon Defects'] else '',
-                "Good Fortune / Strength": ", ".join(cond['Positive Labels']) if cond['Positive Labels'] else "-",
-                "Weakness / Misfortune": ", ".join(cond['Negative Labels']) if cond['Negative Labels'] else "-",
+                "Good Fortune / Strength": ", ".join(positive_labels) if positive_labels else "-",
+                "Weakness / Misfortune": ", ".join(negative_labels) if negative_labels else "-",
                 # Last, and labelled app arithmetic in the qualification
                 # above: VII.6 never totals its conditions.
                 "Net": cond['Net'],
                 "Verdict": cond['Condition'],
             })
-        df_condition = pd.DataFrame(condition_list).sort_values(by="Net", ascending=False)
+        resolved_condition = sorted(
+            (row for row in condition_list if not isinstance(row['Net'], UnresolvedResult)),
+            key=lambda row: row['Net'], reverse=True)
+        unresolved_condition = [row for row in condition_list if isinstance(row['Net'], UnresolvedResult)]
+        condition_ordered = resolved_condition + unresolved_condition
+        if unresolved_condition:
+            st.caption("Rows with an unresolved Net are shown after the resolved heuristic ranking and are unranked; the possible totals and verdicts remain visible.")
+        df_condition = pd.DataFrame(_display_rows(condition_ordered))
         st.dataframe(df_condition, hide_index=True, width='stretch', height=_rows_height(len(df_condition)))
         # The rows in the order the table displays them (its index after the
         # sort is the row list's positions), so the selectbox lists the
         # planets as the table does.
-        condition_shown = [condition_list[i] for i in df_condition.index]
+        condition_shown = condition_ordered
         # One planet's row in words: the four counts (and the Moon's own),
         # Net and Verdict on one line, then the evaluator's own label lists
         # as bullets under the table's two label headings -- the arrays as
         # the engine holds them, never the joined cell split on its commas.
         def _condition_detail(row):
             cond = abu_mashar_condition[row['Planet']]
-            counts = (f"Good Fortune {row['Good Fortune']} · Strength {row['Strength']} · Weakness {row['Weakness']} · "
+            counts = (f"Good Fortune {_display_result(row['Good Fortune'])} · Strength {row['Strength']} · Weakness {row['Weakness']} · "
                       f"Misfortune {row['Misfortune']}"
                       + (f" · Moon Defects {row['Moon Defects']}" if row['Moon Defects'] else "")
-                      + f" · Net {row['Net']} · Verdict {row['Verdict']}")
+                      + f" · Net {_display_result(row['Net'])} · Verdict {_display_result(row['Verdict'])}")
             st.markdown(f"**{row['Planet']}.** {counts}")
-            for heading, labels in (("Good Fortune / Strength", cond['Positive Labels']),
-                                    ("Weakness / Misfortune", cond['Negative Labels'])):
+            for heading, labels in (("Good Fortune / Strength", list(cond['Positive Labels']) +
+                                     [_display_result(value) for value in cond.get('Unresolved Positive Labels', ())]),
+                                    ("Weakness / Misfortune", list(cond['Negative Labels']) +
+                                     [_display_result(value) for value in cond.get('Unresolved Negative Labels', ())])):
                 st.markdown(f"**{heading}**\n\n" + ("\n".join(f"- {label}" for label in labels) if labels else "-"))
         _detail_selector('Planetary Condition', condition_shown, 'Planet', _condition_detail,
                          "Select a planet to read its conditions in words")
@@ -4042,6 +4164,8 @@ def page_configurations():
              "The Moon's eleven corruptions (63-74) are shown as their own count rather than folded in with the rest. Sahl's ten (The Introduction Ch. 3, 103-112) are a different list, not a variant reading of this one, and have their own table, Corruption of the Moon, in the Sahl view: Abu Ma'shar has eclipse, the twelfth-part of Saturn or Mars, southern latitude and the ninth house, none of which Sahl lists; Sahl has her own fall, connection with a fallen planet, and wildness, none of which appear here."),
             ("How this app's count is formed.",
              "The four counts and the labels are the report. **Net** and **Verdict** are a convenience of this app and **not** Abu Ma'shar's: he enumerates the conditions but never totals them, and the chapter supplies no weighting and no rule for ties. They are kept because Topical Planets in Houses on the Dignities and places page prints both the good and the bad reading for every placement and chooses neither: this Net is shown there as a lean, and a Net of −1, 0 or +1 is Indeterminate in both places.\n\nTwo distortions in the raw count are corrected so that one fact cannot vote repeatedly: the Moon's eleven corruptions contribute a single entry (as their own checklist they had been dragging her to a Bad verdict about three times as often as any other planet), and multiple reception rows for one planet likewise count once."),
+            ("The divided-house classification in 26 and 39.",
+             "VII.6, 26 and 39 are the positive and negative sides of one divided-house classification. Both use the Alchabitius division after the five-degree allowance at the four stakes; the boundary is included. " + QUADRANT_GENDER_READER + " Dykes's fn 231 also leaves a whole-sign reading of 39 open; that editorial alternative is preserved here as a note rather than mixed into this evaluator. " + SUN_NINTH_EXCEPTION_READER),
             ("Enclosure under this source.",
              "Enclosure here is Abu Ma'shar's own (56-62) -- by degree within 7 degrees either side counting rays as well as bodies, by sign in the 2nd and 12th, or separating from one encloser and connecting with the other -- and it can be **dissolved**: the degree type when the Sun or a fortune casts a ray within 7 degrees of the enclosed planet (60), the sign type by any look from them (61). The standalone Enclosure table in the Connection group of the Sahl view is Sahl's separate version.\n\nThe by-sign type counts an encloser's **rays** as well as its body, which is what 58 says twice. Be aware that this makes it common: it fires on roughly 43% of placements, because a planet's rays reach eight of the twelve signs. A bodies-only variant at about 2% exists in the code (SIGN_ENCLOSURE_BODIES_ONLY) but is this project's own conjecture, not the text, so it is off."),
         ])
@@ -4405,30 +4529,30 @@ def _jn_ch4_note_sections():
 # Sahl 1.20's readings (SAHL_1_20_READINGS, reaching the page through
 # the hm_years dict's 'readings'), the engine's one long sentence under
 # headings this page places: the placement, the vocabulary as a list, the
-# sentence readings as a list, On Times and 1.23, the test-chart figures.
+# sentence readings as a list, then On Times and 1.23.
 # DIVISION and POWER are the engine's own capitals and stand, as BY SCOPE
 # does in the scope note: the constant is not edited for display.
 def _sahl_1_20_readings_sections(text):
-    p = _paragraphs(text, "\"enhanced\" (7-9) =", "\"a share\" =", "\"eastern\" and", "\"under the rays\" =",
+    p = _paragraphs(text, "\"enhanced\" (7-9) =", "\"a share\" =", "for the five planets", "\"under the rays\" =",
                     "\"alien\" =", "10 and 20 as fn 158", "\"under the earth\" (11)", "12 is subsumed by 10",
                     "13 is illegible", "14-15 are printed", "19 and 22 (alien", "where a sentence names months",
-                    "Placements no sentence reaches", "On Times 4, 7 is a rule", "1.23, 53 and 61:", "On 406 test charts")
+                    "Placements no sentence reaches", "On Times 4, 7 is a rule", "1.23, 53 and 61:")
     return [("The placement: the division, and a power judgment.", p[0]),
             ("The vocabulary.", "\n".join(f"- {s}" for s in p[1:6])),
             ("The sentences, as read.", "\n".join(f"- {s}" for s in p[6:14])),
-            ("On Times 4, 7, and 1.23, 53 and 61.", p[14] + "\n\n" + p[15]),
-            ("The test-chart figures.", p[16])]
+            ("On Times 4, 7, and 1.23, 53 and 61.", p[14] + "\n\n" + p[15])]
 
 def _additions_detail(row):
     """One planet of the additions table, its cells whole under the
     column headings the table carries."""
-    st.markdown(f"**{row['Planet']}**, {row['Looks at the house-master']}.")
-    st.markdown(f"**Effect (Ch. 4).** {row['Ch. 4']}.")
-    st.markdown(f"**Conditional grades.** Its own lesser years: {row['Its own lesser years']}; if middling in "
-                f"strength: {row['If middling in strength']}; if more unsound: {row['If more unsound']}. "
-                f"Grade: {row['Grade']}.")
-    st.markdown(f"**This app's reading.** {row['Reading']}.")
-    st.markdown(f"**Other witnesses.** {row['Witnesses']}")
+    shown = {key: _display_result(value) for key, value in row.items()}
+    st.markdown(f"**{shown['Planet']}**, {shown['Looks at the house-master']}.")
+    st.markdown(f"**Effect (Ch. 4).** {shown['Ch. 4']}.")
+    st.markdown(f"**Conditional grades.** Its own lesser years: {shown['Its own lesser years']}; if middling in "
+                f"strength: {shown['If middling in strength']}; if more unsound: {shown['If more unsound']}. "
+                f"Grade: {shown['Grade']}.")
+    st.markdown(f"**This app's reading.** {shown['Reading']}.")
+    st.markdown(f"**Other witnesses.** {shown['Witnesses']}")
 
 
 def _year_under_examination():
@@ -4775,7 +4899,8 @@ def page_timing():
         st.dataframe(pd.DataFrame(pn4['i7_ascendant']), hide_index=True, width='stretch', height=_rows_height(5),
                      column_config=_wide_text_columns(pd.DataFrame(pn4['i7_ascendant'])))
         st.markdown("**I.7, 7-24 -- the planets, in both times** (the numbers are I.7's sentences):")
-        st.dataframe(pd.DataFrame(pn4['i7_planets']), hide_index=True, width='stretch', height=_rows_height(14))
+        _i7_planet_rows = _display_rows(pn4['i7_planets'])
+        st.dataframe(pd.DataFrame(_i7_planet_rows), hide_index=True, width='stretch', height=_rows_height(14))
         _notes_expander("The twenty-six things, and what is not read", [
             ("The checklist, I.7, 2-26.",
              "- 2-6: the revolution's Ascendant -- its house in the root, who is in it "
@@ -4839,8 +4964,10 @@ def page_timing():
         st.dataframe(pd.DataFrame(ii3['revolution_rows']), hide_index=True, width='stretch', height=_rows_height(5),
                      column_config=_wide_text_columns(pd.DataFrame(ii3['revolution_rows'])))
         st.markdown(f"**The lord of the year, {pn4['year']['lord']}: the factors of II.3, 5-6, per chart:**")
-        st.dataframe(pd.DataFrame(ii3['lord_rows']), hide_index=True, width='stretch', height=_rows_height(6),
-                     column_config=_wide_text_columns(pd.DataFrame(ii3['lord_rows'])))
+        _ii3_lord_rows = _display_rows(ii3['lord_rows'])
+        _ii3_lord_df = pd.DataFrame(_ii3_lord_rows)
+        st.dataframe(_ii3_lord_df, hide_index=True, width='stretch', height=_rows_height(6),
+                     column_config=_wide_text_columns(_ii3_lord_df))
         st.dataframe(pd.DataFrame(ii3['refinement_rows']), hide_index=True, width='stretch',
                      height=_rows_height(len(ii3['refinement_rows'])),
                      column_config=_wide_text_columns(pd.DataFrame(ii3['refinement_rows'])))
@@ -5393,24 +5520,36 @@ def page_releaser():
                  column_config=_wide_text_columns(pd.DataFrame(_sl['rows'])))
     if pn4['hm_years']:
         _y = pn4['hm_years']
+        _j = pn4['hm_years_jn']
+        _conditional_j = (_j if _j and isinstance(_j.get('result'), UnresolvedResult) else None)
+        _years_text = _display_result(
+            _conditional_j['result']
+            if _conditional_j and READING_DEPTH == READING_DEPTH_OPTIONS[1]
+            else _y['text'])
         st.markdown(f"**The house-master's years** (Sahl, *On Nativities* 1.20, 7-34, Nawbakht -- the section "
-                    f"1.23, 68, Masha'allah, sends the reader to): **{_y['text']}**.\n\nPlaced by division "
+                    f"1.23, 68, Masha'allah, sends the reader to): **{_years_text}**.\n\nPlaced by division "
                     f"{_y['division']} (the **power** unit).\n\nThese are the years the infortunes may cut off (1.23, 53 and "
                     f"61) and the input PN IV III.2, 110-111's gate names (\"only if those years matched the years of "
                     f"the lifespan which his indicator in the root had already pointed out\").")
+        if isinstance(_y['grade'], UnresolvedResult):
+            st.markdown("The supplied passages do not define the Moon’s orientality, so any grant or reduction that depends on it remains unresolved.")
         for _f in _y['flags']:
             st.markdown(f"- {_f}")
         _notes_expander("How 1.20 is read here", _sahl_1_20_readings_sections(_y['readings']))
-        if _y['grade'] is None and pn4['hm_years_jn'] and READING_DEPTH == READING_DEPTH_OPTIONS[1]:
-            _j = pn4['hm_years_jn']
-            st.markdown(f"**Where 1.20 is silent, the supplement's ladder** ({_j['citation']}): **{_j['text']}**. "
-                        f"The place: \"{_j['jn']}\"")
-            for _step, _sent in _j['steps']:
-                st.markdown(f"- {_step}: \"{_sent}\"")
-            if _j['table_note']:
-                st.markdown(f"- {_j['table_note']}")
-            for _u in _j['umar']:
-                st.markdown(f"- {_u.replace('<', chr(92) + '<')}")
+        if ((_y['grade'] is None or isinstance(_y['grade'], UnresolvedResult)) and _j
+                and READING_DEPTH == READING_DEPTH_OPTIONS[1]):
+            if isinstance(_j['result'], UnresolvedResult):
+                st.markdown(f"**The Sahl-first result, with the supplement's ladder used only in a silent alternative** "
+                            f"({_j['citation']}): **{_display_result(_j['result'])}**.")
+            else:
+                st.markdown(f"**Where 1.20 is silent, the supplement's ladder** ({_j['citation']}): "
+                            f"**{_display_result(_j['text'])}**. The place: \"{_j['jn']}\"")
+                for _step, _sent in _j['steps']:
+                    st.markdown(f"- {_step}: \"{_sent}\"")
+                if _j['table_note']:
+                    st.markdown(f"- {_j['table_note']}")
+                for _u in _j['umar']:
+                    st.markdown(f"- {_u.replace('<', chr(92) + '<')}")
             # The engine's note on the ladder: its first paragraph -- whose
             # ladder this is, and that Sahl's grade is never overridden --
             # visible at reading width; the rest under their headings.
@@ -5421,6 +5560,9 @@ def page_releaser():
         if READING_DEPTH == READING_DEPTH_OPTIONS[1]:
             # JN Ch. 4's second half, display only (2026-09-15): one row a planet, no sum.
             _add = pn4['hm_years_additions']
+            with _prose():
+                st.markdown("Under the adopted reading of ‘which add,’ Mercury’s +20 requires both a benefic companion "
+                            "that itself adds under JN Ch. 4 and Mercury’s sextile or trine to the house-master.")
             _finding([], "Additions and subtractions to the house-master's years (Abu 'Ali)",
                      JN_CH4_ADDITIONS_CITATION,
                      _add,      # never empty under a house-master: a luminary row is always present
@@ -6250,7 +6392,8 @@ def page_fardar():
                       "**power** unit) and what On Times 4, 7 -- a question-chart rule, 4, 2 -- would "
                       "give it, for comparison.")
     st.caption("Display only · Gr. Intr. VII.8, Figure 146")
-    st.dataframe(pd.DataFrame(planetary_years_data), hide_index=True, width='stretch', height=_rows_height(len(planetary_years_data)))
+    st.dataframe(pd.DataFrame(_display_rows(planetary_years_data)), hide_index=True, width='stretch',
+                 height=_rows_height(len(planetary_years_data)))
     with _prose():
         st.markdown("**Applied to one planet only:** the house-master The releaser page names "
                     "from On Nativities 1.15, whose grant is printed there with its sentence.")
@@ -6490,7 +6633,8 @@ def page_sources():
             "**Mars under the rays to 18 degrees west (Dykes's table in On Nativities 1.22, fn 175)** (Chart page, Planetary Positions) -- "
             "Gr. Intr. VII.2, 31 has Mars under the rays at 15 on the western side; Dykes's chapter-head table for "
             "Sahl, with fn 175 reading VII.2, 30's westernizing boundary into 18, has him at 18; Sahl's own sentences "
-            "are silent on Mars west. Both agree on 18 east.",
+            "are silent on Mars west. With this reading on, the table's paired 22-degree figure is the outer edge "
+            "of the setting band. Both agree on 18 east.",
             "Affects: the Solar phase column and every test that "
             "reads it; a 3-degree band on one planet."),
         "_fitting_infortune": (
