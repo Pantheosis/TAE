@@ -195,3 +195,30 @@ def test_known_aggregators_partition_unresolved_results_before_counts_and_ranks(
         assert resolved.func.id == 'sorted'
         _has_isinstance_of_net(resolved, negated=True)
         _has_isinstance_of_net(unresolved, negated=False)
+
+
+def test_dignities_readings_tables_render_an_unassigned_mercury_without_a_repr_leak(monkeypatch):
+    """The blind check of 2026-09-18 found the Dignities page's "Rhetorius / PN IV
+    readings" table printing the UnresolvedResult repr in Mercury's Net cell when
+    his sect is unassigned (exact conjunction with the Sun). The chart is the
+    ephemeris chart with Mercury moved onto the Sun's degree, the checker's own
+    recipe; every frame the page draws must pass through the display boundary."""
+    at = make_app(date='1240-05-23', page='dignities')   # make_app syncs (reloads) the engine: patch after it
+    import engine
+    original = engine.calculate_traditional_chart_jd
+
+    def mercury_on_the_sun(*args, **kwargs):
+        chart = original(*args, **kwargs)
+        chart['planetary_data']['Mercury']['longitude'] = chart['planetary_data']['Sun']['longitude']
+        return chart
+    monkeypatch.setattr(engine, 'calculate_traditional_chart_jd', mercury_on_the_sun)
+    at.run()
+    assert_no_exception(at)
+    frames = [el.value for el in at.main.dataframe] + [el.value for el in at.main.table]
+    assert frames, "the Dignities page drew no frames"
+    cells = [cell for frame in frames for cell in frame.astype(str).values.ravel()]
+    leaks = [cell for cell in cells if 'UnresolvedResult(' in cell or 'YearsOutcome(' in cell]
+    assert not leaks, leaks[:3]
+    texts = cells + [node.value for node in at.main.markdown]
+    assert any('unassigned' in t.lower() or 'unresolved' in t.lower() for t in texts), \
+        "the unassigned Mercury never reached the page"

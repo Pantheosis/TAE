@@ -3625,7 +3625,7 @@ def page_dignities():
     # detail included.
     @_pinned_fragment
     def _planets_in_houses_block():
-        _event = st.dataframe(pd.DataFrame(planets_in_houses_data, columns=['Planet', 'Placed in (WS place)', 'Lean']),
+        _event = st.dataframe(pd.DataFrame(_display_rows(planets_in_houses_data), columns=['Planet', 'Placed in (WS place)', 'Lean']),
                               hide_index=True, width='content', height=_rows_height(len(planets_in_houses_data)),
                               on_select="rerun", selection_mode="single-row", key="topical_planets_in_houses_grid")
         _picked = list(_event.selection.rows)
@@ -3636,7 +3636,7 @@ def page_dignities():
         _detail_selector('Topical Planets in Houses', planets_in_houses_data, 'Planet', _planet_in_house_detail,
                          "Select a planet to read its complete entries and sources")
         with st.expander("Rhetorius / PN IV readings for these placements", expanded=READING_DEPTH == READING_DEPTH_OPTIONS[1]):
-            st.table(pd.DataFrame(planets_in_houses_data,
+            st.table(pd.DataFrame(_display_rows(planets_in_houses_data),
                                   columns=['Planet', 'Net', 'Standing', 'If in a suitable condition', 'If in a bad condition',
                                            'Rhetorius and Firmicus, as the texts state it']),
                      hide_index=True)
